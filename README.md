@@ -9,7 +9,7 @@
 ```
 git clone git@github.com:yuce/hzc.git
 cd hzc
-go build go build github.com/hazelcast/hzc/cmd/hzc
+go build github.com/hazelcast/hzc/cmd/hzc
 ```
 
 ## Running
