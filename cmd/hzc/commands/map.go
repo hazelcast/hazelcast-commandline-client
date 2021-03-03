@@ -11,6 +11,12 @@ var mapName string
 var mapKey string
 var mapValue string
 
+//var mapKeyType string
+var mapValueType string
+
+//var mapKeyPath string
+var mapValueFile string
+
 var mapCmd = &cobra.Command{
 	Use:   "map",
 	Short: "Map operations",
@@ -44,4 +50,15 @@ func getMap(clientConfig *hazelcast.Config, mapName string) (hazelcast.Map, erro
 	} else {
 		return result, nil
 	}
+}
+
+func decorateCommandWithKeyFlags(cmd *cobra.Command) {
+	cmd.PersistentFlags().StringVar(&mapKey, "key", "", "key of the map")
+}
+
+func decorateCommandWithValueFlags(cmd *cobra.Command) {
+	flags := cmd.PersistentFlags()
+	flags.StringVar(&mapValue, "value", "", "value of the map")
+	flags.StringVar(&mapValueType, "value-type", "string", "type of the value, one of: string, json")
+	flags.StringVar(&mapValueFile, "value-file", "", `path to the file that contains the value. Use "-" (dash) to read from stdin`)
 }

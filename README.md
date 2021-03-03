@@ -17,6 +17,9 @@ go build github.com/hazelcast/hzc/cmd/hzc
 Make sure a Hazelcast v4 instance is running.  
 
 ```
+# Get help
+hzc --help
+
 # Put to a map
 hzc map put --name my-map --key my-key --value my-value
 

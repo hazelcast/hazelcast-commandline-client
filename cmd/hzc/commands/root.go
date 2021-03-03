@@ -2,11 +2,9 @@ package commands
 
 import (
 	"fmt"
+	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"log"
-
-	homedir "github.com/mitchellh/go-homedir"
 )
 
 const DefaultConfigFile = ".hzc.yaml"
@@ -44,7 +42,6 @@ func initConfig() {
 	} else {
 		home, err := homedir.Dir()
 		cobra.CheckErr(err)
-		log.Println("HOME_DIR", home)
 		viper.AddConfigPath(home)
 		viper.SetConfigName(DefaultConfigFile)
 	}
