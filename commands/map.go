@@ -1,9 +1,11 @@
 package commands
 
 import (
+	"context"
 	"errors"
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast"
+
+	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 )
 
@@ -11,10 +13,7 @@ var mapName string
 var mapKey string
 var mapValue string
 
-//var mapKeyType string
 var mapValueType string
-
-//var mapKeyPath string
 var mapValueFile string
 
 var mapCmd = &cobra.Command{
@@ -31,21 +30,22 @@ func init() {
 	mapCmd.PersistentFlags().StringVar(&mapName, "name", "", "specify the map")
 }
 
-func getMap(clientConfig *hazelcast.Config, mapName string) (hazelcast.Map, error) {
-	var client hazelcast.Client
+func getMap(clientConfig *hazelcast.Config, mapName string) (*hazelcast.Map, error) {
+	ctx := context.TODO()
+	var client *hazelcast.Client
 	var err error
 	if mapName == "" {
 		return nil, errors.New("map name is required")
 	}
 	if clientConfig == nil {
-		client, err = hazelcast.NewClient()
+		client, err = hazelcast.StartNewClient(ctx)
 	} else {
-		client, err = hazelcast.NewClientWithConfig(clientConfig)
+		client, err = hazelcast.StartNewClientWithConfig(ctx, *clientConfig)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("error creating the client: %w", err)
 	}
-	if result, err := client.GetMap(mapName); err != nil {
+	if result, err := client.GetMap(ctx, mapName); err != nil {
 		return nil, err
 	} else {
 		return result, nil
