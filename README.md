@@ -20,7 +20,7 @@ gh repo clone hazelcast/hazelcast-commandline-client
 
 ```
 cd hazelcast-commandline-client
-go build github.com/hazelcast-commandline-client
+go build github.com/hazelcast/hazelcast-commandline-client
 ```
 
 ## Running
