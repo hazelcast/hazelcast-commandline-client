@@ -1,10 +1,11 @@
 package commands
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast"
-	"github.com/hazelcast/hzc/cmd/hzc/commands/internal"
+	"github.com/hazelcast/hazelcast-commandline-client/commands/internal"
 	"github.com/spf13/cobra"
 	"io/ioutil"
 	"os"
@@ -14,6 +15,7 @@ var mapPutCmd = &cobra.Command{
 	Use:   "put",
 	Short: "Put to map",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		ctx := context.TODO()
 		var err error
 		var normalizedValue interface{}
 		m, err := getMap(internal.DefaultConfig(), mapName)
@@ -27,15 +29,10 @@ var mapPutCmd = &cobra.Command{
 			return err
 		}
 		// TODO: process returned value which is SerializedData
-		_, err = m.Put(mapKey, normalizedValue)
+		_, err = m.Put(ctx, mapKey, normalizedValue)
 		if err != nil {
 			return fmt.Errorf("error putting value for key %s from map %s: %w", mapKey, mapName, err)
 		}
-		/*
-			if value != nil {
-				fmt.Println(value)
-			}
-		*/
 		return nil
 	},
 }
@@ -60,7 +57,8 @@ func normalizeMapValue() (interface{}, error) {
 	case internal.TypeString:
 		return valueStr, nil
 	case internal.TypeJSON:
-		return hazelcast.CreateJSONValueFromString(valueStr), nil
+		json.Unmarshal([]byte(mapValue), &valueStr)
+		return valueStr, nil
 	}
 	return nil, fmt.Errorf("%s is not a known value type", mapValueType)
 }
