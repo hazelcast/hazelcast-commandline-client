@@ -2,13 +2,14 @@ package commands
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/hazelcast/hazelcast-commandline-client/commands/internal"
-	"github.com/spf13/cobra"
 	"io/ioutil"
 	"os"
+
+	"github.com/hazelcast/hazelcast-commandline-client/commands/internal"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/spf13/cobra"
 )
 
 var mapPutCmd = &cobra.Command{
@@ -57,8 +58,7 @@ func normalizeMapValue() (interface{}, error) {
 	case internal.TypeString:
 		return valueStr, nil
 	case internal.TypeJSON:
-		json.Unmarshal([]byte(mapValue), &valueStr)
-		return valueStr, nil
+		return serialization.JSON(valueStr), nil
 	}
 	return nil, fmt.Errorf("%s is not a known value type", mapValueType)
 }

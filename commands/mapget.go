@@ -4,7 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+
+	"github.com/alecthomas/chroma/quick"
 	"github.com/hazelcast/hazelcast-commandline-client/commands/internal"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/spf13/cobra"
 )
 
@@ -24,19 +28,16 @@ var mapGetCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("error getting value for key %s from map %s: %w", mapKey, mapName, err)
 		}
-		//if value != nil {
-		//	switch v := value.(type) {
-		//	case *hazelcast.JSONValue:
-		//		if err := quick.Highlight(os.Stdout, v.ToString(),
-		//			"json", "terminal", "tango"); err != nil {
-		//			fmt.Println(v.ToString())
-		//		}
-		//	default:
-		//		fmt.Println(value)
-		//	}
-		//}
 		if value != nil {
-			fmt.Println(value)
+			switch v := value.(type) {
+			case serialization.JSON:
+				if err := quick.Highlight(os.Stdout, v.String(),
+					"json", "terminal", "tango"); err != nil {
+					fmt.Println(v.String())
+				}
+			default:
+				fmt.Println(value)
+			}
 		}
 		return nil
 	},

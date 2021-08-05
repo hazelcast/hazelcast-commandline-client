@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 )
@@ -12,10 +13,7 @@ var mapName string
 var mapKey string
 var mapValue string
 
-//var mapKeyType string
 var mapValueType string
-
-//var mapKeyPath string
 var mapValueFile string
 
 var mapCmd = &cobra.Command{
@@ -61,8 +59,6 @@ func decorateCommandWithKeyFlags(cmd *cobra.Command) {
 func decorateCommandWithValueFlags(cmd *cobra.Command) {
 	flags := cmd.PersistentFlags()
 	flags.StringVar(&mapValue, "value", "", "value of the map")
-	flags.StringVar(&mapValueType, "value-type",
-		"string", "type of the value, one of: string, json")
-	flags.StringVar(&mapValueFile, "value-file",
-		"", `path to the file that contains the value. Use "-" (dash) to read from stdin`)
+	flags.StringVar(&mapValueType, "value-type", "string", "type of the value, one of: string, json")
+	flags.StringVar(&mapValueFile, "value-file", "", `path to the file that contains the value. Use "-" (dash) to read from stdin`)
 }
