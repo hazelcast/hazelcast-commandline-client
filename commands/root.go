@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"log"
 
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
@@ -11,11 +12,11 @@ import (
 const DefaultConfigFile = ".hzc.yaml"
 
 var (
-	cfgFile     string
-	addresses   string
-	clusterName string
-	cloudToken  string
-	rootCmd     = &cobra.Command{
+	cfgFile   string
+	addresses string
+	cluster   string
+	token     string
+	rootCmd   = &cobra.Command{
 		Use:   "hz-cli",
 		Short: "Hazelcast command-line client",
 		Long:  "Hazelcast command-line client connects your command-line to a Hazelcast cluster.",
@@ -27,17 +28,16 @@ var (
 
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		panic(err)
+		log.Fatal(err)
 	}
 }
 
 func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", fmt.Sprintf("config file (default is $HOME/%s)", DefaultConfigFile))
-	rootCmd.PersistentFlags().StringVar(&addresses, "addr", "", "Addresses of the instances in the cluster.")
-	rootCmd.PersistentFlags().StringVar(&clusterName, "cluster-name", "", "Name of the cluster that contains the instances.")
-	rootCmd.PersistentFlags().StringVar(&cloudToken, "cloud-token", "", "Your Hazelcast Cloud token.")
+	rootCmd.PersistentFlags().StringVar(&addresses, "addr", "", "addresses of the instances in the cluster.")
+	rootCmd.PersistentFlags().StringVar(&cluster, "cluster", "", "name of the cluster that contains the instances.")
+	rootCmd.PersistentFlags().StringVar(&token, "token", "", "your Hazelcast Cloud token.")
 	rootCmd.AddCommand(mapCmd)
 }
 

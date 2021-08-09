@@ -1,4 +1,4 @@
-module github.com/hazelcast/hz-cli
+module github.com/hazelcast/hazelcast-commandline-client
 
 go 1.15
 

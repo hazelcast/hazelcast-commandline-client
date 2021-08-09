@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/hazelcast/hz-cli/commands"
+	"github.com/hazelcast/hazelcast-commandline-client/commands"
 )
 
 func main() {

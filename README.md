@@ -20,7 +20,7 @@ gh repo clone hazelcast/hazelcast-commandline-client
 
 ```
 cd hazelcast-commandline-client
-go build github.com/hazelcast/hz-cli
+go build -o hz-cli github.com/hazelcast/hazelcast-commandline-client
 ```
 
 ## Running
@@ -40,7 +40,7 @@ hz-cli map get --name my-map --key my-key
 
 ## Examples
 
-### With Default Configuration
+### Default Configuration
 ```
 hz-cli map put --name my-map --key a --value-type string --value "Meet"
 hz-cli map get --name my-map --key a
@@ -49,15 +49,15 @@ hz-cli map put --name my-map --key b --value-type json --value {"english":"Greet
 hz-cli map get --name my-map --key b
 > {meet:greet}
 ```
-### With Custom Configuration
-- Hazelcast Cloud configuration
+### Custom Configuration via Command Line
+#### Connect to Hazelcast Cloud
 ```
 hz-cli --cloud-token <YOUR_HAZELCAST_CLOUD_TOKEN> --cluster-name <YOUR_CLUSTER_NAME> map put --name map --key a --value-type json --value {"meet":"greet"}
 hz-cli --cloud-token <YOUR_HAZELCAST_CLOUD_TOKEN> --cluster-name <YOUR_CLUSTER_NAME> map get --name map --key a
 > {meet:greet}
 ```
 
-- Local Hazelcast Cluster configuration
+#### Connect to Local Hazelcast instance
 ```
 hz-cli --addr 192.168.1.1:5701,192.168.1.1:5702 --cluster-name <YOUR_CLUSTER_NAME> map put --name my-map --key a --value-type string --value "Meet"
 hz-cli --addr 192.168.1.1:5701,192.168.1.1:5702 --cluster-name <YOUR_CLUSTER_NAME> map get --name my-map --key a
