@@ -7,8 +7,8 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/hazelcast/hazelcast-commandline-client/commands/internal"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hz-cli/commands/internal"
 	"github.com/spf13/cobra"
 )
 
@@ -19,7 +19,7 @@ var mapPutCmd = &cobra.Command{
 		ctx := context.TODO()
 		var err error
 		var normalizedValue interface{}
-		m, err := getMap(internal.DefaultConfig(), mapName)
+		m, err := getMap(retrieveFlagValues(cmd), mapName)
 		if err != nil {
 			return fmt.Errorf("error getting map %s: %w", mapName, err)
 		}
