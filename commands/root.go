@@ -36,7 +36,7 @@ func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", fmt.Sprintf("config file (default is $HOME/%s)", DefaultConfigFile))
 	rootCmd.PersistentFlags().StringVar(&addresses, "addr", "", "Addresses of the instances in the cluster.")
-	rootCmd.PersistentFlags().StringVar(&clusterName, "cluster-group-name", "", "Name of the cluster that contains the instances.")
+	rootCmd.PersistentFlags().StringVar(&clusterName, "cluster-name", "", "Name of the cluster that contains the instances.")
 	rootCmd.PersistentFlags().StringVar(&cloudToken, "cloud-token", "", "Your Hazelcast Cloud token.")
 	rootCmd.AddCommand(mapCmd)
 }

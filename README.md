@@ -52,14 +52,14 @@ hz-cli map get --name my-map --key b
 ### With Custom Configuration
 - Hazelcast Cloud configuration
 ```
-hz-cli --cloud-token <YOUR_HAZELCAST_CLOUD_TOKEN> --cluster-group-name <YOUR_CLUSTER_GROUP_NAME> map put --name map --key a --value-type json --value {"meet":"greet"}
-hz-cli --cloud-token <YOUR_HAZELCAST_CLOUD_TOKEN> --cluster-group-name <YOUR_CLUSTER_GROUP_NAME> map get --name map --key a
+hz-cli --cloud-token <YOUR_HAZELCAST_CLOUD_TOKEN> --cluster-name <YOUR_CLUSTER_GROUP_NAME> map put --name map --key a --value-type json --value {"meet":"greet"}
+hz-cli --cloud-token <YOUR_HAZELCAST_CLOUD_TOKEN> --cluster-name <YOUR_CLUSTER_GROUP_NAME> map get --name map --key a
 > {meet:greet}
 ```
 
 - Local Hazelcast Cluster configuration
 ```
-hz-cli --addr 192.168.1.1:5701,192.168.1.1:5702 --cluster-group-name <YOUR_CLUSTER_GROUP_NAME> map put --name my-map --key a --value-type string --value "Meet"
-hz-cli --addr 192.168.1.1:5701,192.168.1.1:5702 --cluster-group-name <YOUR_CLUSTER_GROUP_NAME> map get --name my-map --key a
+hz-cli --addr 192.168.1.1:5701,192.168.1.1:5702 --cluster-name <YOUR_CLUSTER_GROUP_NAME> map put --name my-map --key a --value-type string --value "Meet"
+hz-cli --addr 192.168.1.1:5701,192.168.1.1:5702 --cluster-name <YOUR_CLUSTER_GROUP_NAME> map get --name my-map --key a
 > "Meet"
 ```

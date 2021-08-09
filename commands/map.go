@@ -72,7 +72,7 @@ func retrieveFlagValues(cmd *cobra.Command) *hazelcast.Config {
 		addresses := strings.Split(addrRaw, ",")
 		customConfig.Cluster.Network.Addresses = addresses
 	}
-	clusterGroupName, err := flags.GetString("cluster-group-name")
+	clusterGroupName, err := flags.GetString("cluster-name")
 	if err != nil {
 		fmt.Println(err)
 	}
