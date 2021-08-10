@@ -19,7 +19,11 @@ var mapPutCmd = &cobra.Command{
 		ctx := context.TODO()
 		var err error
 		var normalizedValue interface{}
-		m, err := getMap(internal.DefaultConfig(), mapName)
+		config, err := retrieveFlagValues(cmd)
+		if err != nil {
+			return err
+		}
+		m, err := getMap(config, mapName)
 		if err != nil {
 			return fmt.Errorf("error getting map %s: %w", mapName, err)
 		}

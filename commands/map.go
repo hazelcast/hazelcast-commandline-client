@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
+	"github.com/hazelcast/hazelcast-commandline-client/commands/internal"
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 )
@@ -18,7 +20,7 @@ var mapValueFile string
 
 var mapCmd = &cobra.Command{
 	Use:   "map",
-	Short: "Map operations",
+	Short: "map operations",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return cmd.Help()
 	},
@@ -50,6 +52,32 @@ func getMap(clientConfig *hazelcast.Config, mapName string) (*hazelcast.Map, err
 	} else {
 		return result, nil
 	}
+}
+
+func retrieveFlagValues(cmd *cobra.Command) (*hazelcast.Config, error) {
+	flags := cmd.InheritedFlags()
+	config := internal.DefaultConfig()
+	cloudToken, err := flags.GetString("token")
+	if err != nil {
+		return nil, err
+	}
+	if cloudToken != "" {
+		config.Cluster.Cloud.Token = cloudToken
+		config.Cluster.Cloud.Enabled = true
+	} else {
+		addrRaw, err := flags.GetString("addr")
+		if err != nil {
+			return nil, err
+		}
+		addresses := strings.Split(addrRaw, ",")
+		config.Cluster.Network.Addresses = addresses
+	}
+	clusterGroupName, err := flags.GetString("cluster")
+	if err != nil {
+		return nil, err
+	}
+	config.Cluster.Name = clusterGroupName
+	return config, nil
 }
 
 func decorateCommandWithKeyFlags(cmd *cobra.Command) {

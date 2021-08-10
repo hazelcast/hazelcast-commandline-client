@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/alecthomas/chroma/quick"
-	"github.com/hazelcast/hazelcast-commandline-client/commands/internal"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/spf13/cobra"
 )
@@ -17,7 +16,11 @@ var mapGetCmd = &cobra.Command{
 	Short: "Get from map",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := context.TODO()
-		m, err := getMap(internal.DefaultConfig(), mapName)
+		config, err := retrieveFlagValues(cmd)
+		if err != nil {
+			return err
+		}
+		m, err := getMap(config, mapName)
 		if err != nil {
 			return fmt.Errorf("error getting map %s: %w", mapName, err)
 		}
