@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/hazelcast/hazelcast-commandline-client/commands/internal"
@@ -29,7 +30,7 @@ var mapCmd = &cobra.Command{
 func init() {
 	mapCmd.AddCommand(mapGetCmd)
 	mapCmd.AddCommand(mapPutCmd)
-	mapCmd.PersistentFlags().StringVar(&mapName, "name", "", "specify the map")
+	mapCmd.PersistentFlags().StringVarP(&mapName, "name", "m", "", "specify the map name")
 }
 
 func getMap(clientConfig *hazelcast.Config, mapName string) (*hazelcast.Map, error) {
@@ -41,8 +42,14 @@ func getMap(clientConfig *hazelcast.Config, mapName string) (*hazelcast.Map, err
 	}
 	if clientConfig == nil {
 		client, err = hazelcast.StartNewClient(ctx)
+		if err != nil {
+			log.Fatal(err)
+		}
 	} else {
 		client, err = hazelcast.StartNewClientWithConfig(ctx, *clientConfig)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 	if err != nil {
 		return nil, fmt.Errorf("error creating the client: %w", err)
@@ -57,7 +64,7 @@ func getMap(clientConfig *hazelcast.Config, mapName string) (*hazelcast.Map, err
 func retrieveFlagValues(cmd *cobra.Command) (*hazelcast.Config, error) {
 	flags := cmd.InheritedFlags()
 	config := internal.DefaultConfig()
-	cloudToken, err := flags.GetString("token")
+	cloudToken, err := flags.GetString("cloud-token")
 	if err != nil {
 		return nil, err
 	}
@@ -65,14 +72,19 @@ func retrieveFlagValues(cmd *cobra.Command) (*hazelcast.Config, error) {
 		config.Cluster.Cloud.Token = cloudToken
 		config.Cluster.Cloud.Enabled = true
 	} else {
-		addrRaw, err := flags.GetString("addr")
+		addrRaw, err := flags.GetString("address")
 		if err != nil {
 			return nil, err
 		}
 		addresses := strings.Split(addrRaw, ",")
+		for i := 0; i < len(addresses); i++ {
+			if !strings.Contains(addresses[i], ":5701") {
+				addresses[i] = strings.Split(addresses[i], ":")[0] + ":5701"
+			}
+		}
 		config.Cluster.Network.Addresses = addresses
 	}
-	clusterGroupName, err := flags.GetString("cluster")
+	clusterGroupName, err := flags.GetString("cluster-name")
 	if err != nil {
 		return nil, err
 	}
@@ -81,12 +93,16 @@ func retrieveFlagValues(cmd *cobra.Command) (*hazelcast.Config, error) {
 }
 
 func decorateCommandWithKeyFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&mapKey, "key", "", "key of the map")
+	cmd.PersistentFlags().StringVarP(&mapKey, "key", "k", "", "key of the map")
+	cmd.MarkFlagRequired("key")
 }
 
 func decorateCommandWithValueFlags(cmd *cobra.Command) {
 	flags := cmd.PersistentFlags()
-	flags.StringVar(&mapValue, "value", "", "value of the map")
-	flags.StringVar(&mapValueType, "value-type", "string", "type of the value, one of: string, json")
-	flags.StringVar(&mapValueFile, "value-file", "", `path to the file that contains the value. Use "-" (dash) to read from stdin`)
+	flags.StringVarP(&mapValue, "value", "v", "", "value of the map")
+	flags.StringVarP(&mapValueType, "value-type", "t", "string", "type of the value, one of: string, json")
+	flags.StringVarP(&mapValueFile, "value-file", "f", "", `path to the file that contains the value. Use "-" (dash) to read from stdin`)
+	cmd.RegisterFlagCompletionFunc("value-type", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return []string{"json", "string"}, cobra.ShellCompDirectiveDefault
+	})
 }
