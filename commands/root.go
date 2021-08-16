@@ -3,7 +3,10 @@ package commands
 import (
 	"fmt"
 	"log"
+	"strings"
 
+	"github.com/hazelcast/hazelcast-commandline-client/commands/internal"
+	"github.com/hazelcast/hazelcast-go-client"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -38,7 +41,6 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&addresses, "addr", "", "addresses of the instances in the cluster.")
 	rootCmd.PersistentFlags().StringVar(&cluster, "cluster", "", "name of the cluster that contains the instances.")
 	rootCmd.PersistentFlags().StringVar(&token, "token", "", "your Hazelcast Cloud token.")
-	rootCmd.AddCommand(mapCmd)
 }
 
 func initConfig() {
@@ -54,4 +56,30 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
+}
+
+func retrieveFlagValues(cmd *cobra.Command) (*hazelcast.Config, error) {
+	flags := cmd.InheritedFlags()
+	config := internal.DefaultConfig()
+	cloudToken, err := flags.GetString("token")
+	if err != nil {
+		return nil, err
+	}
+	if cloudToken != "" {
+		config.Cluster.Cloud.Token = cloudToken
+		config.Cluster.Cloud.Enabled = true
+	} else {
+		addrRaw, err := flags.GetString("addr")
+		if err != nil {
+			return nil, err
+		}
+		addresses := strings.Split(addrRaw, ",")
+		config.Cluster.Network.Addresses = addresses
+	}
+	clusterGroupName, err := flags.GetString("cluster")
+	if err != nil {
+		return nil, err
+	}
+	config.Cluster.Name = clusterGroupName
+	return config, nil
 }

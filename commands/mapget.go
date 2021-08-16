@@ -48,4 +48,5 @@ var mapGetCmd = &cobra.Command{
 
 func init() {
 	mapGetCmd.PersistentFlags().StringVar(&mapKey, "key", "", "key of the map")
+	mapCmd.AddCommand(mapGetCmd)
 }

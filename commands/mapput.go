@@ -88,4 +88,5 @@ func loadValueFIle(path string) (string, error) {
 func init() {
 	decorateCommandWithKeyFlags(mapPutCmd)
 	decorateCommandWithValueFlags(mapPutCmd)
+	mapCmd.AddCommand(mapPutCmd)
 }
