@@ -29,7 +29,7 @@ var mapCmd = &cobra.Command{
 func init() {
 	mapCmd.AddCommand(mapGetCmd)
 	mapCmd.AddCommand(mapPutCmd)
-	mapCmd.PersistentFlags().StringVar(&mapName, "name", "", "specify the map")
+	mapCmd.PersistentFlags().StringVarP(&mapName, "name", "m", "", "specify the map")
 }
 
 func getMap(clientConfig *hazelcast.Config, mapName string) (*hazelcast.Map, error) {
@@ -57,7 +57,7 @@ func getMap(clientConfig *hazelcast.Config, mapName string) (*hazelcast.Map, err
 func retrieveFlagValues(cmd *cobra.Command) (*hazelcast.Config, error) {
 	flags := cmd.InheritedFlags()
 	config := internal.DefaultConfig()
-	cloudToken, err := flags.GetString("token")
+	cloudToken, err := flags.GetString("cloud-token")
 	if err != nil {
 		return nil, err
 	}
@@ -65,14 +65,14 @@ func retrieveFlagValues(cmd *cobra.Command) (*hazelcast.Config, error) {
 		config.Cluster.Cloud.Token = cloudToken
 		config.Cluster.Cloud.Enabled = true
 	} else {
-		addrRaw, err := flags.GetString("addr")
+		addrRaw, err := flags.GetString("address")
 		if err != nil {
 			return nil, err
 		}
 		addresses := strings.Split(addrRaw, ",")
 		config.Cluster.Network.Addresses = addresses
 	}
-	clusterGroupName, err := flags.GetString("cluster")
+	clusterGroupName, err := flags.GetString("cluster-name")
 	if err != nil {
 		return nil, err
 	}
@@ -81,12 +81,12 @@ func retrieveFlagValues(cmd *cobra.Command) (*hazelcast.Config, error) {
 }
 
 func decorateCommandWithKeyFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&mapKey, "key", "", "key of the map")
+	cmd.PersistentFlags().StringVarP(&mapKey, "key", "k", "", "key of the map")
 }
 
 func decorateCommandWithValueFlags(cmd *cobra.Command) {
 	flags := cmd.PersistentFlags()
-	flags.StringVar(&mapValue, "value", "", "value of the map")
-	flags.StringVar(&mapValueType, "value-type", "string", "type of the value, one of: string, json")
-	flags.StringVar(&mapValueFile, "value-file", "", `path to the file that contains the value. Use "-" (dash) to read from stdin`)
+	flags.StringVarP(&mapValue, "value", "v", "", "value of the map")
+	flags.StringVarP(&mapValueType, "value-type", "p", "string", "type of the value, one of: string, json")
+	flags.StringVarP(&mapValueFile, "value-file", "f", "", `path to the file that contains the value. Use "-" (dash) to read from stdin`)
 }
