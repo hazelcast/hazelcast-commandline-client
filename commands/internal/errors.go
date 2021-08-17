@@ -1,6 +1,8 @@
 package internal
 
-import "errors"
+import (
+	"errors"
+)
 
 var ErrMapKeyMissing = errors.New("map key is required")
 var ErrMapValueMissing = errors.New("map value is required")
