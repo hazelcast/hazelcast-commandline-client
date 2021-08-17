@@ -44,8 +44,9 @@ func getMap(clientConfig *hazelcast.Config, mapName string) (*hazelcast.Map, err
 		if err, ok := obj.(error); ok {
 			var addrErr *net.AddrError
 			if errors.As(err, &addrErr) {
-				log.Fatal(err)
+				log.Fatal(fmt.Errorf("given address is invalid: %s\n%s", addrErr.Addr, err))
 			}
+			log.Fatal(err)
 		}
 	}()
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
