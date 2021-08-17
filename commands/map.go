@@ -5,10 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"strings"
+	"time"
 
 	"github.com/hazelcast/hazelcast-commandline-client/commands/internal"
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/types"
 	"github.com/spf13/cobra"
 )
 
@@ -34,9 +37,19 @@ func init() {
 }
 
 func getMap(clientConfig *hazelcast.Config, mapName string) (*hazelcast.Map, error) {
-	ctx := context.TODO()
 	var client *hazelcast.Client
 	var err error
+	defer func() {
+		obj := recover()
+		if err, ok := obj.(error); ok {
+			var addrErr *net.AddrError
+			if errors.As(err, &addrErr) {
+				log.Fatal(err)
+			}
+		}
+	}()
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
 	if mapName == "" {
 		return nil, errors.New("map name is required")
 	}
@@ -46,6 +59,7 @@ func getMap(clientConfig *hazelcast.Config, mapName string) (*hazelcast.Map, err
 			log.Fatal(err)
 		}
 	} else {
+		clientConfig.Cluster.ConnectionStrategy.Retry.InitialBackoff = types.Duration(1 * time.Second)
 		client, err = hazelcast.StartNewClientWithConfig(ctx, *clientConfig)
 		if err != nil {
 			log.Fatal(err)
@@ -77,11 +91,6 @@ func retrieveFlagValues(cmd *cobra.Command) (*hazelcast.Config, error) {
 			return nil, err
 		}
 		addresses := strings.Split(addrRaw, ",")
-		for i := 0; i < len(addresses); i++ {
-			if !strings.HasSuffix(addresses[i], ":5701") {
-				return nil, internal.RaiseErrAddressInvalid(addresses[i])
-			}
-		}
 		config.Cluster.Network.Addresses = addresses
 	}
 	cluster, err := flags.GetString("cluster-name")
