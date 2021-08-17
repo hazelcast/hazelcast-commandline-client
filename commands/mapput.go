@@ -19,7 +19,7 @@ var mapPutCmd = &cobra.Command{
 		ctx := context.TODO()
 		var err error
 		var normalizedValue interface{}
-		config, err := retrieveFlagValues(cmd)
+		config, err := internal.RetrieveFlagValues(cmd)
 		if err != nil {
 			return err
 		}
@@ -33,7 +33,6 @@ var mapPutCmd = &cobra.Command{
 		if normalizedValue, err = normalizeMapValue(); err != nil {
 			return err
 		}
-		// TODO: process returned value which is SerializedData
 		_, err = m.Put(ctx, mapKey, normalizedValue)
 		if err != nil {
 			return fmt.Errorf("error putting value for key %s from map %s: %w", mapKey, mapName, err)
@@ -43,8 +42,6 @@ var mapPutCmd = &cobra.Command{
 }
 
 func normalizeMapValue() (interface{}, error) {
-	// TODO: move flag related code out
-	// --value and --value-file arguments are mutually exclusive
 	var valueStr string
 	var err error
 	if mapValue != "" && mapValueFile != "" {

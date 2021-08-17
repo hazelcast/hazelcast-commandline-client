@@ -2,30 +2,20 @@ package commands
 
 import (
 	"fmt"
-	"io/ioutil"
-	"log"
-	"net/http"
 
+	"github.com/hazelcast/hazelcast-commandline-client/commands/internal"
 	"github.com/spf13/cobra"
 )
 
-var clusterqueryCmd = &cobra.Command{
-	Use:   "clusterquery",
-	Short: "retrieve information from your local cluster",
+var clusterQueryCmd = &cobra.Command{
+	Use:   "query",
+	Short: "retrieve information from the cluster",
 	Run: func(cmd *cobra.Command, args []string) {
-		resp, err := http.Get("http://127.0.0.1:5701/hazelcast/rest/management/cluster/version")
-		if err != nil {
-			log.Fatal(err)
-		}
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			log.Fatal(err)
-		}
-		str := string(body)
-		fmt.Println(str)
+		defer internal.HzDefer()
+		fmt.Println(internal.ClusterConnect(cmd, "query", nil))
 	},
 }
 
 func init() {
-	clusterCmd.AddCommand(clusterqueryCmd)
+	clusterCmd.AddCommand(clusterQueryCmd)
 }

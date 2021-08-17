@@ -6,7 +6,7 @@ import (
 
 var clusterCmd = &cobra.Command{
 	Use:   "cluster",
-	Short: "Administrative cluster operations",
+	Short: "administrative cluster operations",
 	Long: `Administrative cluster operations which controls a 
 	Hazelcast Cloud cluster by manipulating its state and other features.`,
 	RunE: func(cmd *cobra.Command, args []string) error {

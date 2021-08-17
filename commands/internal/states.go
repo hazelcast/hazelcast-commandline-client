@@ -1,8 +1,8 @@
 package internal
 
 const (
-	Active      = "active"
-	NoMigration = "no-migration"
-	Passive     = "passive"
-	Frozen      = "frozen"
+	ClusterStateActive      = "active"
+	ClusterStateNoMigration = "no-migration"
+	ClusterStatePassive     = "passive"
+	ClusterStateFrozen      = "frozen"
 )

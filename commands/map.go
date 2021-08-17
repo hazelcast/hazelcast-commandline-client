@@ -4,8 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
+	"net"
+	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/types"
 	"github.com/spf13/cobra"
 )
 
@@ -25,22 +29,33 @@ var mapCmd = &cobra.Command{
 }
 
 func init() {
-	mapCmd.PersistentFlags().StringVar(&mapName, "name", "", "specify the map")
+	mapCmd.PersistentFlags().StringVarP(&mapName, "name", "m", "", "specify the map name")
 	rootCmd.AddCommand(mapCmd)
 }
 
 func getMap(clientConfig *hazelcast.Config, mapName string) (*hazelcast.Map, error) {
-	ctx := context.TODO()
 	var client *hazelcast.Client
 	var err error
+	defer func() {
+		obj := recover()
+		if err, ok := obj.(error); ok {
+			var addrErr *net.AddrError
+			if errors.As(err, &addrErr) {
+				log.Fatal(fmt.Errorf("given address is invalid: %s\n%s", addrErr.Addr, err))
+			}
+			log.Fatal(err)
+		}
+	}()
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
 	if mapName == "" {
 		return nil, errors.New("map name is required")
 	}
 	if clientConfig == nil {
-		client, err = hazelcast.StartNewClient(ctx)
-	} else {
-		client, err = hazelcast.StartNewClientWithConfig(ctx, *clientConfig)
+		clientConfig = &hazelcast.Config{}
 	}
+	clientConfig.Cluster.ConnectionStrategy.Retry.InitialBackoff = types.Duration(1 * time.Second)
+	client, err = hazelcast.StartNewClientWithConfig(ctx, *clientConfig)
 	if err != nil {
 		return nil, fmt.Errorf("error creating the client: %w", err)
 	}
@@ -52,12 +67,16 @@ func getMap(clientConfig *hazelcast.Config, mapName string) (*hazelcast.Map, err
 }
 
 func decorateCommandWithKeyFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&mapKey, "key", "", "key of the map")
+	cmd.PersistentFlags().StringVarP(&mapKey, "key", "k", "", "key of the map")
+	cmd.MarkFlagRequired("key")
 }
 
 func decorateCommandWithValueFlags(cmd *cobra.Command) {
 	flags := cmd.PersistentFlags()
-	flags.StringVar(&mapValue, "value", "", "value of the map")
-	flags.StringVar(&mapValueType, "value-type", "string", "type of the value, one of: string, json")
-	flags.StringVar(&mapValueFile, "value-file", "", `path to the file that contains the value. Use "-" (dash) to read from stdin`)
+	flags.StringVarP(&mapValue, "value", "v", "", "value of the map")
+	flags.StringVarP(&mapValueType, "value-type", "t", "string", "type of the value, one of: string, json")
+	flags.StringVarP(&mapValueFile, "value-file", "f", "", `path to the file that contains the value. Use "-" (dash) to read from stdin`)
+	cmd.RegisterFlagCompletionFunc("value-type", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return []string{"json", "string"}, cobra.ShellCompDirectiveDefault
+	})
 }

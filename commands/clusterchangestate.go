@@ -2,10 +2,6 @@ package commands
 
 import (
 	"fmt"
-	"io/ioutil"
-	"log"
-	"net/http"
-	"strings"
 
 	"github.com/hazelcast/hazelcast-commandline-client/commands/internal"
 	"github.com/spf13/cobra"
@@ -13,39 +9,18 @@ import (
 
 var (
 	newState              string
-	clusterchangestateCmd = &cobra.Command{
-		Use:   "clusterchangestate",
-		Short: "change state of your local cluster",
+	clusterChangeStateCmd = &cobra.Command{
+		Use:   "changestate",
+		Short: "change state of the cluster",
 		Run: func(cmd *cobra.Command, args []string) {
-			config, err := retrieveFlagValues(cmd)
-			if err != nil {
-				log.Fatal(err)
-			}
-			var params string
-			switch newState {
-			case internal.Active, internal.NoMigration, internal.Frozen, internal.Passive:
-				params = fmt.Sprintf("%s&%s&%s", config.Cluster.Name, config.Cluster.Security.Credentials.Password, newState)
-			default:
-				log.Fatal("Invalid new state.")
-			}
-			pr := strings.NewReader(params)
-			url := fmt.Sprintf("%s?%s", "http://127.0.0.1:5701/hazelcast/rest/management/cluster/changeState", params)
-			resp, err := http.Post(url, "application/x-www-form-urlencoded", pr)
-			if err != nil {
-				log.Fatal(err)
-			}
-			body, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				log.Fatal(err)
-			}
-			sb := string(body)
-			fmt.Println(sb)
+			defer internal.HzDefer()
+			fmt.Println(internal.ClusterConnect(cmd, "changestate", &newState))
 		},
 	}
 )
 
 func init() {
-	clusterCmd.AddCommand(clusterchangestateCmd)
 	clusterCmd.PersistentFlags().StringVarP(&newState, "state", "s", "", "new state of the cluster")
 	clusterCmd.MarkFlagRequired("state")
+	clusterCmd.AddCommand(clusterChangeStateCmd)
 }
