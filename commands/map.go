@@ -84,11 +84,11 @@ func retrieveFlagValues(cmd *cobra.Command) (*hazelcast.Config, error) {
 		}
 		config.Cluster.Network.Addresses = addresses
 	}
-	clusterGroupName, err := flags.GetString("cluster-name")
+	cluster, err := flags.GetString("cluster-name")
 	if err != nil {
 		return nil, err
 	}
-	config.Cluster.Name = clusterGroupName
+	config.Cluster.Name = cluster
 	return config, nil
 }
 
