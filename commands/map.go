@@ -55,16 +55,12 @@ func getMap(clientConfig *hazelcast.Config, mapName string) (*hazelcast.Map, err
 		return nil, errors.New("map name is required")
 	}
 	if clientConfig == nil {
-		client, err = hazelcast.StartNewClient(ctx)
-		if err != nil {
-			log.Fatal(err)
-		}
-	} else {
-		clientConfig.Cluster.ConnectionStrategy.Retry.InitialBackoff = types.Duration(1 * time.Second)
-		client, err = hazelcast.StartNewClientWithConfig(ctx, *clientConfig)
-		if err != nil {
-			log.Fatal(err)
-		}
+		clientConfig = &hazelcast.Config{}
+	}
+	clientConfig.Cluster.ConnectionStrategy.Retry.InitialBackoff = types.Duration(1 * time.Second)
+	client, err = hazelcast.StartNewClientWithConfig(ctx, *clientConfig)
+	if err != nil {
+		log.Fatal(err)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("error creating the client: %w", err)
