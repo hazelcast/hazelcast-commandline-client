@@ -78,8 +78,8 @@ func retrieveFlagValues(cmd *cobra.Command) (*hazelcast.Config, error) {
 		}
 		addresses := strings.Split(addrRaw, ",")
 		for i := 0; i < len(addresses); i++ {
-			if !strings.Contains(addresses[i], ":5701") {
-				addresses[i] = strings.Split(addresses[i], ":")[0] + ":5701"
+			if !strings.HasSuffix(addresses[i], ":5701") {
+				return nil, internal.RaiseErrAddressInvalid(addresses[i])
 			}
 		}
 		config.Cluster.Network.Addresses = addresses
