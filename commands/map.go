@@ -6,10 +6,8 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"strings"
 	"time"
 
-	"github.com/hazelcast/hazelcast-commandline-client/commands/internal"
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/types"
 	"github.com/spf13/cobra"
@@ -23,7 +21,7 @@ var mapValueType string
 var mapValueFile string
 
 var mapCmd = &cobra.Command{
-	Use:   "map",
+	Use:   "map {get | put} --name mapname --key keyname [--value-type type | --value-file file | --value value]",
 	Short: "map operations",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return cmd.Help()
@@ -31,9 +29,8 @@ var mapCmd = &cobra.Command{
 }
 
 func init() {
-	mapCmd.AddCommand(mapGetCmd)
-	mapCmd.AddCommand(mapPutCmd)
 	mapCmd.PersistentFlags().StringVarP(&mapName, "name", "m", "", "specify the map name")
+	rootCmd.AddCommand(mapCmd)
 }
 
 func getMap(clientConfig *hazelcast.Config, mapName string) (*hazelcast.Map, error) {
@@ -60,9 +57,6 @@ func getMap(clientConfig *hazelcast.Config, mapName string) (*hazelcast.Map, err
 	clientConfig.Cluster.ConnectionStrategy.Retry.InitialBackoff = types.Duration(1 * time.Second)
 	client, err = hazelcast.StartNewClientWithConfig(ctx, *clientConfig)
 	if err != nil {
-		log.Fatal(err)
-	}
-	if err != nil {
 		return nil, fmt.Errorf("error creating the client: %w", err)
 	}
 	if result, err := client.GetMap(ctx, mapName); err != nil {
@@ -70,32 +64,6 @@ func getMap(clientConfig *hazelcast.Config, mapName string) (*hazelcast.Map, err
 	} else {
 		return result, nil
 	}
-}
-
-func retrieveFlagValues(cmd *cobra.Command) (*hazelcast.Config, error) {
-	flags := cmd.InheritedFlags()
-	config := internal.DefaultConfig()
-	cloudToken, err := flags.GetString("cloud-token")
-	if err != nil {
-		return nil, err
-	}
-	if cloudToken != "" {
-		config.Cluster.Cloud.Token = cloudToken
-		config.Cluster.Cloud.Enabled = true
-	} else {
-		addrRaw, err := flags.GetString("address")
-		if err != nil {
-			return nil, err
-		}
-		addresses := strings.Split(addrRaw, ",")
-		config.Cluster.Network.Addresses = addresses
-	}
-	cluster, err := flags.GetString("cluster-name")
-	if err != nil {
-		return nil, err
-	}
-	config.Cluster.Name = cluster
-	return config, nil
 }
 
 func decorateCommandWithKeyFlags(cmd *cobra.Command) {

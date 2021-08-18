@@ -13,13 +13,13 @@ import (
 )
 
 var mapPutCmd = &cobra.Command{
-	Use:   "put",
+	Use:   "put [--name mapname | --key keyname | --value-type type | --value-file file | --value value]",
 	Short: "Put to map",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := context.TODO()
 		var err error
 		var normalizedValue interface{}
-		config, err := retrieveFlagValues(cmd)
+		config, err := internal.MakeConfig(cmd)
 		if err != nil {
 			return err
 		}
@@ -85,4 +85,5 @@ func loadValueFIle(path string) (string, error) {
 func init() {
 	decorateCommandWithKeyFlags(mapPutCmd)
 	decorateCommandWithValueFlags(mapPutCmd)
+	mapCmd.AddCommand(mapPutCmd)
 }
