@@ -1,8 +1,8 @@
 package internal
 
 const (
-	ClusterGetState    = "getstate"
-	ClusterChangeState = "changestate"
+	ClusterGetState    = "get-state"
+	ClusterChangeState = "change-state"
 	ClusterShutdown    = "shutdown"
 	ClusterQuery       = "query"
 )

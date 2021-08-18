@@ -13,11 +13,11 @@ import (
 )
 
 var mapGetCmd = &cobra.Command{
-	Use:   "get",
+	Use:   "get [--name mapname | --key keyname]",
 	Short: "Get from map",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := context.TODO()
-		config, err := internal.RetrieveFlagValues(cmd)
+		config, err := internal.MakeConfig(cmd)
 		if err != nil {
 			return err
 		}

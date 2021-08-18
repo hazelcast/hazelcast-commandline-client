@@ -14,7 +14,7 @@ func DefaultConfig() *hazelcast.Config {
 	return &config
 }
 
-func RetrieveFlagValues(cmd *cobra.Command) (*hazelcast.Config, error) {
+func MakeConfig(cmd *cobra.Command) (*hazelcast.Config, error) {
 	flags := cmd.InheritedFlags()
 	config := DefaultConfig()
 	cloudToken, err := flags.GetString("cloud-token")

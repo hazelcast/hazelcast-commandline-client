@@ -17,7 +17,7 @@ var (
 	cluster   string
 	token     string
 	rootCmd   = &cobra.Command{
-		Use:   "hz-cli",
+		Use:   "hz-cli {cluster | help | map} [--address address | --cloud-token token | --cluster-name name | --config config]",
 		Short: "Hazelcast command-line client",
 		Long:  "Hazelcast command-line client connects your command-line to a Hazelcast cluster.",
 		RunE: func(cmd *cobra.Command, args []string) error {

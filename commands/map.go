@@ -21,7 +21,7 @@ var mapValueType string
 var mapValueFile string
 
 var mapCmd = &cobra.Command{
-	Use:   "map",
+	Use:   "map {get | put} --name mapname --key keyname [--value-type type | --value-file file | --value value]",
 	Short: "map operations",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return cmd.Help()
