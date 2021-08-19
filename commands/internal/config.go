@@ -38,5 +38,6 @@ func MakeConfig(cmd *cobra.Command) (*hazelcast.Config, error) {
 		return nil, err
 	}
 	config.Cluster.Name = strings.TrimSpace(cluster)
+	config.Cluster.Unisocket = true
 	return config, nil
 }
