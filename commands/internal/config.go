@@ -29,8 +29,10 @@ func MakeConfig(cmd *cobra.Command) (*hazelcast.Config, error) {
 		if err != nil {
 			return nil, err
 		}
-		addresses := strings.Split(addrRaw, ",")
-		config.Cluster.Network.Addresses = addresses
+		if addrRaw != "" {
+			addresses := strings.Split(addrRaw, ",")
+			config.Cluster.Network.Addresses = addresses
+		}
 	}
 	cluster, err := flags.GetString("cluster-name")
 	if err != nil {
