@@ -37,8 +37,6 @@ func MakeConfig(cmd *cobra.Command) (*hazelcast.Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	if cluster != "" {
-		config.Cluster.Name = cluster
-	}
+	config.Cluster.Name = cluster
 	return config, nil
 }
