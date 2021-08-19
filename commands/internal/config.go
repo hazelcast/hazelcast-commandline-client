@@ -22,7 +22,7 @@ func MakeConfig(cmd *cobra.Command) (*hazelcast.Config, error) {
 		return nil, err
 	}
 	if token != "" {
-		config.Cluster.Cloud.Token = token
+		config.Cluster.Cloud.Token = strings.TrimSpace(token)
 		config.Cluster.Cloud.Enabled = true
 	}
 	addrRaw, err := flags.GetString("address")
@@ -30,13 +30,13 @@ func MakeConfig(cmd *cobra.Command) (*hazelcast.Config, error) {
 		return nil, err
 	}
 	if addrRaw != "" {
-		addresses := strings.Split(addrRaw, ",")
+		addresses := strings.Split(strings.TrimSpace(addrRaw), ",")
 		config.Cluster.Network.Addresses = addresses
 	}
 	cluster, err := flags.GetString("cluster-name")
 	if err != nil {
 		return nil, err
 	}
-	config.Cluster.Name = cluster
+	config.Cluster.Name = strings.TrimSpace(cluster)
 	return config, nil
 }
