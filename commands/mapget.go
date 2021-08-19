@@ -23,6 +23,9 @@ var mapGetCmd = &cobra.Command{
 		}
 		m, err := getMap(config, mapName)
 		if err != nil {
+			if errors.Is(err, context.DeadlineExceeded) {
+				return fmt.Errorf("cluster cannot be accessed: %s", err)
+			}
 			return fmt.Errorf("error getting map %s: %w", mapName, err)
 		}
 		if mapKey == "" {
