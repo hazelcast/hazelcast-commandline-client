@@ -23,7 +23,8 @@ archives:
     files:
       - completion_bash.sh
       - completion_zsh.zsh
-      - Makefile
+      - install_bash.sh
+      - install_zsh.zsh
       - README.md
 checksum:
   name_template: 'checksums.txt'
