@@ -20,6 +20,7 @@ archives:
   - files:
     - completion_bash.sh
     - completion_zsh.zsh
+    - Makefile
     - README.md
 checksum:
   name_template: 'checksums.txt'
