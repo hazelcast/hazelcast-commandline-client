@@ -20,12 +20,6 @@ archives:
       darwin: Darwin
       linux: Linux
       amd64: x86_64
-    files:
-      - completion_bash.sh
-      - completion_zsh.zsh
-      - install_bash.sh
-      - install_zsh.zsh
-      - README.md
 checksum:
   name_template: 'checksums.txt'
 snapshot:
