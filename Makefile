@@ -1,4 +1,7 @@
-.PHONY: build
+.PHONY: install
 
-build:
-	go build github.com/hazelcast/hzc/cmd/hzc
+install:
+case $(echo $SHELL) in 
+	*/zsh) zsh install_zsh.zsh;;
+	*/bash) sh install_bash.sh;;
+esac
