@@ -17,27 +17,27 @@ func DefaultConfig() *hazelcast.Config {
 func MakeConfig(cmd *cobra.Command) (*hazelcast.Config, error) {
 	flags := cmd.InheritedFlags()
 	config := DefaultConfig()
-	cloudToken, err := flags.GetString("cloud-token")
+	token, err := flags.GetString("cloud-token")
 	if err != nil {
 		return nil, err
 	}
-	if cloudToken != "" {
-		config.Cluster.Cloud.Token = cloudToken
+	if token != "" {
+		config.Cluster.Cloud.Token = strings.TrimSpace(token)
 		config.Cluster.Cloud.Enabled = true
-	} else {
-		addrRaw, err := flags.GetString("address")
-		if err != nil {
-			return nil, err
-		}
-		if addrRaw != "" {
-			addresses := strings.Split(addrRaw, ",")
-			config.Cluster.Network.Addresses = addresses
-		}
+	}
+	addrRaw, err := flags.GetString("address")
+	if err != nil {
+		return nil, err
+	}
+	if addrRaw != "" {
+		addresses := strings.Split(strings.TrimSpace(addrRaw), ",")
+		config.Cluster.Network.Addresses = addresses
 	}
 	cluster, err := flags.GetString("cluster-name")
 	if err != nil {
 		return nil, err
 	}
-	config.Cluster.Name = cluster
+	config.Cluster.Name = strings.TrimSpace(cluster)
+	config.Cluster.Unisocket = true
 	return config, nil
 }
