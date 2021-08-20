@@ -3,7 +3,8 @@ before:
     - go mod tidy
     - go generate ./...
 builds:
-  - env:
+  - 
+    env:
       - CGO_ENABLED=0
     binary: hz-cli
     goos:
@@ -13,15 +14,17 @@ builds:
       - amd64
       - arm64
 archives:
-  - replacements:
+  - 
+    id: default
+    replacements:
       darwin: Darwin
       linux: Linux
       amd64: x86_64
-  - files:
-    - completion_bash.sh
-    - completion_zsh.zsh
-    - Makefile
-    - README.md
+    files:
+      - completion_bash.sh
+      - completion_zsh.zsh
+      - Makefile
+      - README.md
 checksum:
   name_template: 'checksums.txt'
 snapshot:
