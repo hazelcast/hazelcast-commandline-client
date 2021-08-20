@@ -23,6 +23,25 @@ cd hazelcast-commandline-client
 go build -o hz-cli github.com/hazelcast/hazelcast-commandline-client
 ```
 
+## Download & Install
+
+### Download the Project & Extract from archive
+```
+wget <TARGET_BINARY>
+tar -xvf <TARGET_BINARY>.tar.gz
+cd <TARGET_BINARY>
+```
+
+### Install project to Bash
+```
+sh install_bash.sh
+```
+
+### Install project to Zsh
+```
+zsh install_zsh.zsh
+```
+
 ## Running
 
 Make sure a Hazelcast v5.2021.07.1 instance is running.
