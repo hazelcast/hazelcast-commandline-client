@@ -27,11 +27,8 @@ go build -o hz-cli github.com/hazelcast/hazelcast-commandline-client
 
 ### Download the Project & Extract from archive
 
-Download the installation script from the repository.
-After the download, use the command below to install Hazelcast CLC.
-
 ```
-sh install.sh
+curl https://github.com/hazelcast/hazelcast-commandline-client/blob/main/install.sh | bash
 ```
 
 ## Running

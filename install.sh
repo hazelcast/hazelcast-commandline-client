@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 bash_autocompletion=$(cat << EOF
 # bash completion V2 for hz-cli                               -*- shell-script -*-
