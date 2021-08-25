@@ -4,6 +4,12 @@
 
 * Go 1.15 or better
 
+## Download & Install
+
+```
+curl https://github.com/hazelcast/hazelcast-commandline-client/blob/main/install.sh | bash
+```
+
 ## Build
 
 ### Download the Repository from Git CLI
@@ -21,14 +27,6 @@ gh repo clone hazelcast/hazelcast-commandline-client
 ```
 cd hazelcast-commandline-client
 go build -o hz-cli github.com/hazelcast/hazelcast-commandline-client
-```
-
-## Download & Install
-
-### Download the Project & Extract from archive
-
-```
-curl https://github.com/hazelcast/hazelcast-commandline-client/blob/main/install.sh | bash
 ```
 
 ## Running
