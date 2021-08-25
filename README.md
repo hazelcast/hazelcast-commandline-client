@@ -4,6 +4,12 @@
 
 * Go 1.15 or better
 
+## Download & Install
+
+```
+curl https://github.com/hazelcast/hazelcast-commandline-client/blob/main/install.sh | bash
+```
+
 ## Build
 
 ### Download the Repository from Git CLI
@@ -52,14 +58,21 @@ hz-cli map get --name my-map --key b
 ### Custom Configuration via Command Line
 #### Connect to Hazelcast Cloud
 ```
-hz-cli --token <YOUR_HAZELCAST_CLOUD_TOKEN> --cluster <YOUR_CLUSTER_NAME> map put --name map --key a --value-type json --value {"meet":"greet"}
-hz-cli --token <YOUR_HAZELCAST_CLOUD_TOKEN> --cluster <YOUR_CLUSTER_NAME> map get --name map --key a
+hz-cli --cloud-token <YOUR_HAZELCAST_CLOUD_TOKEN> --cluster-name <YOUR_CLUSTER_NAME> map put --name map --key a --value-type json --value {"meet":"greet"}
+hz-cli --cloud-token <YOUR_HAZELCAST_CLOUD_TOKEN> --cluster-name <YOUR_CLUSTER_NAME> map get --name map --key a
 > {meet:greet}
 ```
 
 #### Connect to Local Hazelcast instance
 ```
-hz-cli --addr 192.168.1.1:5701,192.168.1.1:5702 --cluster <YOUR_CLUSTER_NAME> map put --name my-map --key a --value-type string --value "Meet"
-hz-cli --addr 192.168.1.1:5701,192.168.1.1:5702 --cluster <YOUR_CLUSTER_NAME> map get --name my-map --key a
+hz-cli --address 192.168.1.1:5701,192.168.1.1:5702 --cluster-name <YOUR_CLUSTER_NAME> map put --name my-map --key a --value-type string --value "Meet"
+hz-cli --address 192.168.1.1:5701,192.168.1.1:5702 --cluster-name <YOUR_CLUSTER_NAME> map get --name my-map --key a
+> "Meet"
+```
+
+#### Use custom configuration file
+```
+hz-cli --config <CONFIG_PATH> mapp put --name my-map --key a --value-type string --value "Meet"
+hz-cli --config <CONFIG_PATH> mapp get --name my-map --key a
 > "Meet"
 ```
