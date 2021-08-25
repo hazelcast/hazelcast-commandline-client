@@ -1,4 +1,4 @@
 .PHONY: build
 
 build:
-	go build github.com/hazelcast/hzc/cmd/hzc
+	go build -o hz-cli github.com/hazelcast/hazelcast-commandline-client
