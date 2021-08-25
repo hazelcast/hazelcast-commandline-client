@@ -32,6 +32,7 @@ const defaultConfigPath string = ".hzc.yaml"
 
 func DefaultConfig() *hazelcast.Config {
 	config := hazelcast.NewConfig()
+	config.Cluster.Unisocket = true
 	config.Logger.Level = logger.ErrorLevel
 	return &config
 }
@@ -64,7 +65,6 @@ func MakeConfig(cmd *cobra.Command) (*hazelcast.Config, error) {
 			if err != nil {
 				return nil, err
 			}
-			config.Cluster.Unisocket = true
 			out, err := yaml.Marshal(config)
 			if err != nil {
 				return nil, err
