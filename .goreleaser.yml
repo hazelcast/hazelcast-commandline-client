@@ -1,0 +1,32 @@
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+builds:
+  - 
+    env:
+      - CGO_ENABLED=0
+    binary: hz-cli
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+archives:
+  - 
+    id: default
+    replacements:
+      darwin: Darwin
+      linux: Linux
+      amd64: x86_64
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ incpatch .Tag }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
