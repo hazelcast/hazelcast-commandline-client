@@ -503,8 +503,23 @@ You can run it with:
 
 ./hz-cli
 
-For help:
+A Simple Guideline:
 
-./hz-cli help
+Q: Do you have a Hazelcast cluster running?
+A: If yes, then you can start with ./hz-cli help to learn the tool.
+   If no, download & install the Hazelcast via package manager(brew, apt)
+   or retrieve the binary from the website.
+
+Q: Do you want to manage your cluster?:
+A: If yes, you can use ./hz-cli cluster --help to see available commands.
+
+Q: Do you want to store or retrieve data from a map in your cluster?
+A: If yes, you can use ./hz-cli map --help to see available commands.
+
+For any other questions, you can use 
+
+./hz-cli help 
+
+to learn the tool.
 
 EOM
