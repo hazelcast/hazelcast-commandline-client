@@ -16,12 +16,19 @@
 package internal
 
 import (
+	"fmt"
+	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/logger"
+	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
 )
+
+const defaultConfigPath string = ".hzc.yaml"
 
 func DefaultConfig() *hazelcast.Config {
 	config := hazelcast.NewConfig()
@@ -32,6 +39,52 @@ func DefaultConfig() *hazelcast.Config {
 func MakeConfig(cmd *cobra.Command) (*hazelcast.Config, error) {
 	flags := cmd.InheritedFlags()
 	config := DefaultConfig()
+	var confBytes []byte
+	confPath, err := flags.GetString("config")
+	if err != nil {
+		return nil, err
+	}
+	if confPath != "" {
+		confBytes, err = ioutil.ReadFile(confPath)
+		if err != nil {
+			return nil, err
+		}
+		fmt.Println("read by custom config file")
+	} else {
+		hdir, err := homedir.Dir()
+		if err != nil {
+			return nil, err
+		}
+		if err = os.Chdir(hdir); err != nil {
+			return nil, err
+		}
+		if _, err := os.Stat(defaultConfigPath); err != nil {
+			fmt.Println("default file does not exist.")
+			_, err := os.Create(defaultConfigPath)
+			if err != nil {
+				return nil, err
+			}
+			config.Cluster.Unisocket = true
+			out, err := yaml.Marshal(config)
+			if err != nil {
+				return nil, err
+			}
+			err = ioutil.WriteFile(defaultConfigPath, out, 0666)
+			if err != nil {
+				return nil, err
+			}
+			fmt.Println("default config file created at `~/.hzc.yaml`")
+		}
+		confBytes, err = ioutil.ReadFile(defaultConfigPath)
+		if err != nil {
+			return nil, err
+		}
+		fmt.Println("read by default config file at `~/.hzc.yaml`")
+	}
+	yaml.Unmarshal(confBytes, config)
+	if err != nil {
+		return nil, err
+	}
 	token, err := flags.GetString("cloud-token")
 	if err != nil {
 		return nil, err
@@ -53,6 +106,5 @@ func MakeConfig(cmd *cobra.Command) (*hazelcast.Config, error) {
 		return nil, err
 	}
 	config.Cluster.Name = strings.TrimSpace(cluster)
-	config.Cluster.Unisocket = true
 	return config, nil
 }
