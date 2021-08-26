@@ -51,16 +51,16 @@ hz-cli map get --name my-map --key my-key
 hz-cli map put --name my-map --key a --value-type string --value "Meet"
 hz-cli map get --name my-map --key a
 > "Meet"
-hz-cli map put --name my-map --key b --value-type json --value {"english":"Greetings"}
+hz-cli map put --name my-map --key b --value-type json --value '{"english":"Greetings"}'
 hz-cli map get --name my-map --key b
-> {meet:greet}
+> {"english":"Greetings"}
 ```
 ### Custom Configuration via Command Line
 #### Connect to Hazelcast Cloud
 ```
-hz-cli --cloud-token <YOUR_HAZELCAST_CLOUD_TOKEN> --cluster-name <YOUR_CLUSTER_NAME> map put --name map --key a --value-type json --value {"meet":"greet"}
+hz-cli --cloud-token <YOUR_HAZELCAST_CLOUD_TOKEN> --cluster-name <YOUR_CLUSTER_NAME> map put --name map --key a --value-type json --value '{"meet":"greet"}'
 hz-cli --cloud-token <YOUR_HAZELCAST_CLOUD_TOKEN> --cluster-name <YOUR_CLUSTER_NAME> map get --name map --key a
-> {meet:greet}
+> {"meet":"greet"}
 ```
 
 #### Connect to Local Hazelcast instance
