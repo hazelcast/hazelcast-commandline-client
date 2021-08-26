@@ -16,6 +16,7 @@
 package internal
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -28,7 +29,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-const defaultConfigPath string = ".hzc.yaml"
+const defaultConfigFilename string = ".hzc.yaml"
 
 func DefaultConfig() *hazelcast.Config {
 	config := hazelcast.NewConfig()
@@ -37,53 +38,66 @@ func DefaultConfig() *hazelcast.Config {
 	return &config
 }
 
+func registerConfig(config *hazelcast.Config) error {
+	var err error
+	var out []byte
+	// if _, err = os.Create(defaultConfigPath); err != nil {
+	// 	return err
+	// }
+	if out, err = yaml.Marshal(config); err != nil {
+		return err
+	}
+	if err = ioutil.WriteFile(defaultConfigFilename, out, 0666); err != nil {
+		return fmt.Errorf("writing default configuration: %w", err)
+	}
+	fmt.Println("default config file is created at `~/.hzc.yaml`")
+	return nil
+}
+
+func validateConfig(config *hazelcast.Config) error {
+	var err error
+	var hdir string
+	if hdir, err = homedir.Dir(); err != nil {
+		return err
+	}
+	if err = os.Chdir(hdir); err != nil {
+		return err
+	}
+	if _, err := os.Stat(defaultConfigFilename); err != nil {
+		if !errors.Is(err, os.ErrNotExist) {
+			return err
+		}
+		registerConfig(config)
+	}
+	return nil
+}
+
 func MakeConfig(cmd *cobra.Command) (*hazelcast.Config, error) {
 	flags := cmd.InheritedFlags()
 	config := DefaultConfig()
 	var confBytes []byte
-	confPath, err := flags.GetString("config")
+	var confPath string
+	var err error
+	confPath, err = flags.GetString("config")
 	if err != nil {
 		return nil, err
 	}
 	if confPath != "" {
 		confBytes, err = ioutil.ReadFile(confPath)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("reading configuration at %s: %w", confPath, err)
 		}
-		fmt.Println("read by custom config file")
 	} else {
-		hdir, err := homedir.Dir()
-		if err != nil {
+		confPath = "HOME"
+		if err := validateConfig(config); err != nil {
 			return nil, err
 		}
-		if err = os.Chdir(hdir); err != nil {
-			return nil, err
+		if confBytes, err = ioutil.ReadFile(defaultConfigFilename); err != nil {
+			return nil, fmt.Errorf("reading configuration at %s: %w", confPath, err)
 		}
-		if _, err := os.Stat(defaultConfigPath); err != nil {
-			fmt.Println("default file does not exist.")
-			_, err := os.Create(defaultConfigPath)
-			if err != nil {
-				return nil, err
-			}
-			out, err := yaml.Marshal(config)
-			if err != nil {
-				return nil, err
-			}
-			err = ioutil.WriteFile(defaultConfigPath, out, 0666)
-			if err != nil {
-				return nil, err
-			}
-			fmt.Println("default config file created at `~/.hzc.yaml`")
-		}
-		confBytes, err = ioutil.ReadFile(defaultConfigPath)
-		if err != nil {
-			return nil, err
-		}
-		fmt.Println("read by default config file at `~/.hzc.yaml`")
 	}
-	yaml.Unmarshal(confBytes, config)
-	if err != nil {
-		return nil, err
+	if err = yaml.Unmarshal(confBytes, config); err != nil {
+		return nil, fmt.Errorf("error reading configuration at %s: %w", confPath, err)
 	}
 	token, err := flags.GetString("cloud-token")
 	if err != nil {
