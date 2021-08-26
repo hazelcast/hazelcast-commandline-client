@@ -38,36 +38,26 @@ func DefaultConfig() *hazelcast.Config {
 	return &config
 }
 
-func registerConfig(config *hazelcast.Config) error {
+func registerConfig(config *hazelcast.Config, confPath string) error {
 	var err error
 	var out []byte
-	// if _, err = os.Create(defaultConfigPath); err != nil {
-	// 	return err
-	// }
 	if out, err = yaml.Marshal(config); err != nil {
 		return err
 	}
-	if err = ioutil.WriteFile(defaultConfigFilename, out, 0666); err != nil {
+	if err = ioutil.WriteFile(confPath, out, 0666); err != nil {
 		return fmt.Errorf("writing default configuration: %w", err)
 	}
 	fmt.Println("default config file is created at `~/.hzc.yaml`")
 	return nil
 }
 
-func validateConfig(config *hazelcast.Config) error {
-	var err error
-	var hdir string
-	if hdir, err = homedir.Dir(); err != nil {
-		return err
-	}
-	if err = os.Chdir(hdir); err != nil {
-		return err
-	}
-	if _, err := os.Stat(defaultConfigFilename); err != nil {
+func validateConfig(config *hazelcast.Config, confPath string) error {
+	if _, err := os.Stat(confPath); err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
 			return err
+		} else {
+			registerConfig(config, confPath)
 		}
-		registerConfig(config)
 	}
 	return nil
 }
@@ -88,11 +78,15 @@ func MakeConfig(cmd *cobra.Command) (*hazelcast.Config, error) {
 			return nil, fmt.Errorf("reading configuration at %s: %w", confPath, err)
 		}
 	} else {
-		confPath = "HOME"
-		if err := validateConfig(config); err != nil {
+		var hdir string
+		if hdir, err = homedir.Dir(); err != nil {
 			return nil, err
 		}
-		if confBytes, err = ioutil.ReadFile(defaultConfigFilename); err != nil {
+		confPath = hdir + "/" + defaultConfigFilename
+		if err := validateConfig(config, confPath); err != nil {
+			return nil, err
+		}
+		if confBytes, err = ioutil.ReadFile(confPath); err != nil {
 			return nil, fmt.Errorf("reading configuration at %s: %w", confPath, err)
 		}
 	}
