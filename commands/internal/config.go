@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client"
@@ -55,9 +56,8 @@ func validateConfig(config *hazelcast.Config, confPath string) error {
 	if _, err := os.Stat(confPath); err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
 			return err
-		} else {
-			registerConfig(config, confPath)
 		}
+		registerConfig(config, confPath)
 	}
 	return nil
 }
@@ -82,7 +82,7 @@ func MakeConfig(cmd *cobra.Command) (*hazelcast.Config, error) {
 		if hdir, err = homedir.Dir(); err != nil {
 			return nil, err
 		}
-		confPath = hdir + "/" + defaultConfigFilename
+		confPath = filepath.Join(hdir, defaultConfigFilename)
 		if err := validateConfig(config, confPath); err != nil {
 			return nil, err
 		}
