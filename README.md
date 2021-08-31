@@ -4,7 +4,7 @@
 
 * Go 1.15 or better
 
-## Easy Download & Install
+## Download & Install
 
 ```
 curl https://github.com/hazelcast/hazelcast-commandline-client/blob/main/install.sh | bash
@@ -12,14 +12,9 @@ curl https://github.com/hazelcast/hazelcast-commandline-client/blob/main/install
 
 ## Build
 
-### Download the Repository from Git CLI
+### Download the Repository using Git
 ```
 git clone https://github.com/hazelcast/hazelcast-commandline-client.git
-```
-
-### Download the Repository from GitHub CLI
-```
-gh repo clone hazelcast/hazelcast-commandline-client
 ```
 
 ### Then, Build the Project
@@ -31,11 +26,31 @@ go build -o hz-cli github.com/hazelcast/hazelcast-commandline-client
 
 ## Running
 
-Make sure a Hazelcast v5.2021.07.1 instance is running.
+Make sure a Hazelcast 4 or Hazelcast 5 cluster is running.
 
 ```
 # Get help
 hz-cli --help
+```
+
+## Configuration
+```
+# Using a Default Config
+# Connect to a Hazelcast Cloud cluster
+# <YOUR_HAZELCAST_CLOUD_TOKEN>: token which appears on the advanced
+configuration section in Hazelcast Cloud.
+# <CLUSTER_NAME>: name of the cluster
+hz-cli --cloud-token <YOUR_HAZELCAST_CLOUD_TOKEN> --cluster-name <CLUSTER_NAME>
+
+# Connect to a Local Hazelcast cluster
+# <ADDRESSES>: addresses of the members of the Hazelcast cluster
+e.g. 192.168.1.1:5702,192.168.1.2:5703,192.168.1.3:5701
+# <CLUSTER_NAME>: name of the cluster
+hz-cli --address <ADDRESSES> --cluster-name <YOUR_CLUSTER_NAME>
+
+# Using a Custom Config
+# <CONFIG_PATH>: path of the target configuration
+hz-cli --config <CONFIG_PATH>
 ```
 
 ## Operations
@@ -56,7 +71,7 @@ hz-cli cluster shutdown
 hz-cli cluster version
 ```
 
-### Register value
+### Get Value & Put Value
 
 #### Map
 
@@ -70,15 +85,15 @@ hz-cli map put --name my-map --key my-key --value my-value
 
 ## Examples
 
-### With a Default Configuration
+### Using a Default Configuration
 
-#### Register a Value in type Map
+#### Put a Value in type Map
 ```
-hz-cli map put --name my-map --key a --value-type string --value "Meet"
-hz-cli map get --name my-map --key a
+hz-cli map put --name map --key a --value-type string --value "Meet"
+hz-cli map get --name map --key a
 > "Meet"
-hz-cli map put --name my-map --key b --value-type json --value '{"english":"Greetings"}'
-hz-cli map get --name my-map --key b
+hz-cli map put --name map --key b --value-type json --value '{"english":"Greetings"}'
+hz-cli map get --name map --key b
 > {"english":"Greetings"}
 ```
 
@@ -91,70 +106,5 @@ hz-cli cluster change-state --state frozen
 hz-cli cluster shutdown
 > {"status":"success"}
 hz-cli cluster version
-> {"status":"success","version":"5.0"}
-```
-
-### With a Custom Configuration via Command Line
-
-#### Operate on Hazelcast Cloud
-
-##### Register a Value in type Map
-```
-hz-cli --cloud-token <YOUR_HAZELCAST_CLOUD_TOKEN> --cluster-name <YOUR_CLUSTER_NAME> map put --name map --key a --value-type string --value "Meet"
-hz-cli --cloud-token <YOUR_HAZELCAST_CLOUD_TOKEN> --cluster-name <YOUR_CLUSTER_NAME> map get --name map --key a
-> "Meet"
-hz-cli --cloud-token <YOUR_HAZELCAST_CLOUD_TOKEN> --cluster-name <YOUR_CLUSTER_NAME> map put --name map --key b --value-type json --value '{"english":"Greetings"}'
-hz-cli --cloud-token <YOUR_HAZELCAST_CLOUD_TOKEN> --cluster-name <YOUR_CLUSTER_NAME> map get --name map --key b
-> {"english":"Greetings"}
-```
-
-##### Manage the Cluster
-*Cluster management operations are not permitted in Hazelcast Cloud*
-
-#### Operate on Local Hazelcast instance
-
-##### Register a Value in type Map
-```
-hz-cli --address 192.168.1.1:5701,192.168.1.1:5702 --cluster-name <YOUR_CLUSTER_NAME> map put --name my-map --key a --value-type string --value "Meet"
-hz-cli --address 192.168.1.1:5701,192.168.1.1:5702 --cluster-name <YOUR_CLUSTER_NAME> map get --name my-map --key a
-> "Meet"
-hz-cli --address 192.168.1.1:5701,192.168.1.1:5702 --cluster-name <YOUR_CLUSTER_NAME> map put --name my-map --key b --value-type json --value '{"english":"Greetings"}'
-hz-cli --address 192.168.1.1:5701,192.168.1.1:5702 --cluster-name <YOUR_CLUSTER_NAME> map get --name my-map --key b
-> {"english":"Greetings"}
-```
-
-##### Manage the Cluster
-```
-hz-cli --address 192.168.1.1:5701,192.168.1.1:5702 --cluster-name <YOUR_CLUSTER_NAME> cluster get-state
-> {"status":"success","state":"active"}
-hz-cli --address 192.168.1.1:5701,192.168.1.1:5702 --cluster-name <YOUR_CLUSTER_NAME> cluster change-state --state frozen
-> {"status":"success","state":"frozen"}
-hz-cli --address 192.168.1.1:5701,192.168.1.1:5702 --cluster-name <YOUR_CLUSTER_NAME> cluster shutdown
-> {"status":"success"}
-hz-cli --address 192.168.1.1:5701,192.168.1.1:5702 --cluster-name <YOUR_CLUSTER_NAME> cluster version
-> {"status":"success","version":"5.0"}
-```
-
-### With a custom configuration file
-
-#### Register a Value in type Map
-```
-hz-cli --config <CONFIG_PATH> map put --name my-map --key a --value-type string --value "Meet"
-hz-cli --config <CONFIG_PATH> map get --name my-map --key a
-> "Meet"
-hz-cli --config <CONFIG_PATH> map put --name my-map --key b --value-type json --value '{"english":"Greetings"}'
-hz-cli --config <CONFIG_PATH> map get --name my-map --key b
-> {"english":"Greetings"}
-```
-
-#### Manage the Cluster
-```
-hz-cli --config <CONFIG_PATH> cluster get-state
-> {"status":"success","state":"active"}
-hz-cli --config <CONFIG_PATH> cluster change-state --state frozen
-> {"status":"success","state":"frozen"}
-hz-cli --config <CONFIG_PATH> cluster shutdown
-> {"status":"success"}
-hz-cli --config <CONFIG_PATH> cluster version
 > {"status":"success","version":"5.0"}
 ```
