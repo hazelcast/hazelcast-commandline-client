@@ -4,7 +4,7 @@
 
 * Go 1.15 or better
 
-## Download & Install
+## Easy Download & Install
 
 ```
 curl https://github.com/hazelcast/hazelcast-commandline-client/blob/main/install.sh | bash
@@ -36,17 +36,42 @@ Make sure a Hazelcast v5.2021.07.1 instance is running.
 ```
 # Get help
 hz-cli --help
+```
+
+## Operations
+
+### Cluster Management
+```
+# Get state of the cluster
+hz-cli cluster get-state
+
+# Change state of the cluster
+# Either of these: active | frozen | no_migration | passive
+hz-cli cluster change-state --state <NEW_STATE>
+
+# Shutdown the cluster
+hz-cli cluster shutdown
+
+# Get the version of the cluster
+hz-cli cluster version
+```
+
+### Register value
+
+#### Map
+
+```
+# Get from a map
+hz-cli map get --name my-map --key my-key
 
 # Put to a map
 hz-cli map put --name my-map --key my-key --value my-value
-
-# Get from a map
-hz-cli map get --name my-map --key my-key
 ```
 
 ## Examples
 
-### Default Configuration
+### With a Default Configuration
+
 #### Register a Value in type Map
 ```
 hz-cli map put --name my-map --key a --value-type string --value "Meet"
@@ -69,7 +94,7 @@ hz-cli cluster version
 > {"status":"success","version":"5.0"}
 ```
 
-### Custom Configuration via Command Line
+### With a Custom Configuration via Command Line
 
 #### Operate on Hazelcast Cloud
 
@@ -110,9 +135,9 @@ hz-cli --address 192.168.1.1:5701,192.168.1.1:5702 --cluster-name <YOUR_CLUSTER_
 > {"status":"success","version":"5.0"}
 ```
 
-#### Use custom configuration file
+### With a custom configuration file
 
-##### Register a Value in type Map
+#### Register a Value in type Map
 ```
 hz-cli --config <CONFIG_PATH> map put --name my-map --key a --value-type string --value "Meet"
 hz-cli --config <CONFIG_PATH> map get --name my-map --key a
@@ -120,4 +145,16 @@ hz-cli --config <CONFIG_PATH> map get --name my-map --key a
 hz-cli --config <CONFIG_PATH> map put --name my-map --key b --value-type json --value '{"english":"Greetings"}'
 hz-cli --config <CONFIG_PATH> map get --name my-map --key b
 > {"english":"Greetings"}
+```
+
+#### Manage the Cluster
+```
+hz-cli --config <CONFIG_PATH> cluster get-state
+> {"status":"success","state":"active"}
+hz-cli --config <CONFIG_PATH> cluster change-state --state frozen
+> {"status":"success","state":"frozen"}
+hz-cli --config <CONFIG_PATH> cluster shutdown
+> {"status":"success"}
+hz-cli --config <CONFIG_PATH> cluster version
+> {"status":"success","version":"5.0"}
 ```
