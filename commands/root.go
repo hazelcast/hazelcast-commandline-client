@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"log"
 
+	clusterDir "github.com/hazelcast/hazelcast-commandline-client/commands/cluster"
+	mapDir "github.com/hazelcast/hazelcast-commandline-client/commands/types/map"
 	"github.com/spf13/cobra"
 )
 
@@ -32,7 +34,7 @@ var (
 	rootCmd   = &cobra.Command{
 		Use:   "hz-cli {cluster | help | map} [--address address | --cloud-token token | --cluster-name name | --config config]",
 		Short: "Hazelcast command-line client",
-		Long:  "Hazelcast command-line client connects your command-line to a Hazelcast cluster.",
+		Long:  "Hazelcast command-line client connects your command-line to a Hazelcast cluster",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Help()
 		},
@@ -45,15 +47,16 @@ func Execute() {
 	}
 }
 
-func init() {
-	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", fmt.Sprintf("config file (default is $HOME/%s)", DefaultConfigFile))
-	rootCmd.PersistentFlags().StringVarP(&addresses, "address", "a", "", "addresses of the instances in the cluster.")
-	rootCmd.PersistentFlags().StringVarP(&cluster, "cluster-name", "n", "", "name of the cluster that contains the instances.")
-	rootCmd.PersistentFlags().StringVar(&token, "cloud-token", "", "your Hazelcast Cloud token.")
-	rootCmd.CompletionOptions.DisableDefaultCmd = true
+func decorateRootCommand(cmd *cobra.Command) {
+	cmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", fmt.Sprintf("config file (default is $HOME/%s)", DefaultConfigFile))
+	cmd.PersistentFlags().StringVarP(&addresses, "address", "a", "", "addresses of the instances in the cluster.")
+	cmd.PersistentFlags().StringVarP(&cluster, "cluster-name", "n", "", "name of the cluster that contains the instances.")
+	cmd.PersistentFlags().StringVar(&token, "cloud-token", "", "your Hazelcast Cloud token.")
+	cmd.CompletionOptions.DisableDefaultCmd = true
 }
 
-func initConfig() {
-
+func init() {
+	decorateRootCommand(rootCmd)
+	rootCmd.AddCommand(clusterDir.ClusterCmd)
+	rootCmd.AddCommand(mapDir.MapCmd)
 }

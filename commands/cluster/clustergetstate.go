@@ -13,11 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package internal
+package commands
 
-const (
-	ClusterGetStateEndpoint    = "/hazelcast/rest/management/cluster/state"
-	ClusterChangeStateEndpoint = "/hazelcast/rest/management/cluster/changeState"
-	ClusterShutdownEndpoint    = "/hazelcast/rest/management/cluster/clusterShutdown"
-	ClusterQueryEndpoint       = "/hazelcast/rest/management/cluster/version"
+import (
+	"fmt"
+	"log"
+
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
+	"github.com/spf13/cobra"
 )
+
+var clusterGetStateCmd = &cobra.Command{
+	Use:   "get-state",
+	Short: "get state of the cluster",
+	Run: func(cmd *cobra.Command, args []string) {
+		defer internal.ErrorRecover()
+		config, err := internal.MakeConfig(cmd)
+		if err != nil {
+			log.Fatal(err)
+		}
+		result, err := internal.CallClusterOperation(config, "get-state", nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(*result)
+	},
+}
+
+func init() {
+}

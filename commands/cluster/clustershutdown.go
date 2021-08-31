@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/hazelcast/hazelcast-commandline-client/commands/internal"
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/spf13/cobra"
 )
 
@@ -41,5 +41,4 @@ var clusterShutdownCmd = &cobra.Command{
 }
 
 func init() {
-	clusterCmd.AddCommand(clusterShutdownCmd)
 }

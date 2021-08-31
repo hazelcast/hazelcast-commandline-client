@@ -18,10 +18,8 @@ package internal
 import (
 	"fmt"
 	"io/ioutil"
-	"math/rand"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
 )
@@ -41,7 +39,7 @@ func CallClusterOperation(config *hazelcast.Config, operation string, state *str
 	switch operation {
 	case ClusterGetState, ClusterChangeState, ClusterShutdown:
 		resp, err = http.Post(url, "application/x-www-form-urlencoded", pr)
-	case ClusterQuery:
+	case ClusterVersion:
 		resp, err = http.Get(url)
 	}
 	if err != nil {
@@ -60,8 +58,7 @@ func NewRESTCall(config *hazelcast.Config, operation string, state *string) *RES
 	var member, url string
 	var params string
 	var addresses []string = config.Cluster.Network.Addresses
-	rand.Seed(time.Now().Unix())
-	member = addresses[rand.Intn(len(addresses))]
+	member = addresses[0]
 	switch operation {
 	case ClusterGetState:
 		url = fmt.Sprintf("http://%s%s", member, ClusterGetStateEndpoint)
@@ -69,8 +66,8 @@ func NewRESTCall(config *hazelcast.Config, operation string, state *string) *RES
 		url = fmt.Sprintf("http://%s%s", member, ClusterChangeStateEndpoint)
 	case ClusterShutdown:
 		url = fmt.Sprintf("http://%s%s", member, ClusterShutdownEndpoint)
-	case ClusterQuery:
-		url = fmt.Sprintf("http://%s%s", member, ClusterQueryEndpoint)
+	case ClusterVersion:
+		url = fmt.Sprintf("http://%s%s", member, ClusterVersionEndpoint)
 	default:
 		panic("Invalid operation to set connection obj.")
 	}
@@ -85,7 +82,7 @@ func NewParams(config *hazelcast.Config, operation string, state *string) string
 		params = fmt.Sprintf("%s&%s", config.Cluster.Name, config.Cluster.Security.Credentials.Password)
 	case ClusterChangeState:
 		params = fmt.Sprintf("%s&%s&%s", config.Cluster.Name, config.Cluster.Security.Credentials.Password, EnsureState(state))
-	case ClusterQuery:
+	case ClusterVersion:
 		params = ""
 	default:
 		panic("invalid operation to set params.")
