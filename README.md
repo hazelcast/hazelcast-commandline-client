@@ -97,7 +97,7 @@ hz-cli map get --name map --key b
 > {"english":"Greetings"}
 ```
 
-#### Manage the Cluster
+#### Managing the Cluster
 ```
 hz-cli cluster get-state
 > {"status":"success","state":"active"}
