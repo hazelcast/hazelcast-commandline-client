@@ -35,7 +35,7 @@ var mapValue string
 var mapValueType string
 var mapValueFile string
 
-var mapCmd = &cobra.Command{
+var MapCmd = &cobra.Command{
 	Use:   "map {get | put} --name mapname --key keyname [--value-type type | --value-file file | --value value]",
 	Short: "map operations",
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -44,8 +44,8 @@ var mapCmd = &cobra.Command{
 }
 
 func init() {
-	mapCmd.PersistentFlags().StringVarP(&mapName, "name", "m", "", "specify the map name")
-	rootCmd.AddCommand(mapCmd)
+	MapCmd.AddCommand(mapGetCmd)
+	MapCmd.AddCommand(mapPutCmd)
 }
 
 func getMap(clientConfig *hazelcast.Config, mapName string) (*hazelcast.Map, error) {
@@ -81,13 +81,18 @@ func getMap(clientConfig *hazelcast.Config, mapName string) (*hazelcast.Map, err
 	}
 }
 
+func decorateCommandWithMapNameFlags(cmd *cobra.Command) {
+	cmd.Flags().StringVarP(&mapName, "name", "m", "", "specify the map name")
+	cmd.MarkFlagRequired("name")
+}
+
 func decorateCommandWithKeyFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVarP(&mapKey, "key", "k", "", "key of the map")
+	cmd.Flags().StringVarP(&mapKey, "key", "k", "", "key of the map")
 	cmd.MarkFlagRequired("key")
 }
 
 func decorateCommandWithValueFlags(cmd *cobra.Command) {
-	flags := cmd.PersistentFlags()
+	flags := cmd.Flags()
 	flags.StringVarP(&mapValue, "value", "v", "", "value of the map")
 	flags.StringVarP(&mapValueType, "value-type", "t", "string", "type of the value, one of: string, json")
 	flags.StringVarP(&mapValueFile, "value-file", "f", "", `path to the file that contains the value. Use "-" (dash) to read from stdin`)

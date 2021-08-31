@@ -22,14 +22,14 @@ import (
 	"os"
 
 	"github.com/alecthomas/chroma/quick"
-	"github.com/hazelcast/hazelcast-commandline-client/commands/internal"
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/spf13/cobra"
 )
 
 var mapGetCmd = &cobra.Command{
 	Use:   "get [--name mapname | --key keyname]",
-	Short: "Get from map",
+	Short: "get from map",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := context.TODO()
 		config, err := internal.MakeConfig(cmd)
@@ -66,7 +66,6 @@ var mapGetCmd = &cobra.Command{
 }
 
 func init() {
-	mapGetCmd.PersistentFlags().StringVarP(&mapKey, "key", "k", "", "key of the map")
-	mapGetCmd.MarkFlagRequired("key")
-	mapCmd.AddCommand(mapGetCmd)
+	decorateCommandWithMapNameFlags(mapGetCmd)
+	decorateCommandWithKeyFlags(mapGetCmd)
 }

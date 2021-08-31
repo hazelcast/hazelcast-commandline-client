@@ -16,8 +16,8 @@
 package internal
 
 const (
-	ClusterGetState    = "get-state"
-	ClusterChangeState = "change-state"
-	ClusterShutdown    = "shutdown"
-	ClusterQuery       = "query"
+	ClusterGetStateEndpoint    = "/hazelcast/rest/management/cluster/state"
+	ClusterChangeStateEndpoint = "/hazelcast/rest/management/cluster/changeState"
+	ClusterShutdownEndpoint    = "/hazelcast/rest/management/cluster/clusterShutdown"
+	ClusterVersionEndpoint     = "/hazelcast/rest/management/cluster/version"
 )

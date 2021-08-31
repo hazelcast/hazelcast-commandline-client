@@ -22,14 +22,14 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/hazelcast/hazelcast-commandline-client/commands/internal"
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/spf13/cobra"
 )
 
 var mapPutCmd = &cobra.Command{
 	Use:   "put [--name mapname | --key keyname | --value-type type | --value-file file | --value value]",
-	Short: "Put to map",
+	Short: "put to map",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := context.TODO()
 		var err error
@@ -101,7 +101,7 @@ func loadValueFIle(path string) (string, error) {
 }
 
 func init() {
+	decorateCommandWithMapNameFlags(mapPutCmd)
 	decorateCommandWithKeyFlags(mapPutCmd)
 	decorateCommandWithValueFlags(mapPutCmd)
-	mapCmd.AddCommand(mapPutCmd)
 }
