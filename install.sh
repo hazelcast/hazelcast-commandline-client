@@ -34,18 +34,18 @@ rm -rf "hz-cli_$tag.tar.gz" "hz-cli_$tag/"
 
 case "$(printf "${SHELL##*bin\/}")" in
     "zsh")
-        completionUrl=$(printf "https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/%s" "zsh_completion.zsh")
-        curl -L "$completionUrl" > "./zsh_completion.sh"
+        completionUrl=$(printf "https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/%s" "zsh_completion.sh")
+        curl "$completionUrl" --output "./zsh_completion.sh"
         echo "autoload -U compinit; compinit" >> ~/.zshrc;
         cat "./zsh_completion.sh" > "${fpath[1]}/_hz-cli"
     ;;
     "bash")
         completionUrl=$(printf "https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/%s" "bash_completion.sh")
-        curl -L "$completionUrl" > "./bash_completion.sh"
+        curl "$completionUrl" --output "./bash_completion.sh"
         if [ "$(uname)" == "Darwin" ]; then
-            cat "bash_completion.sh" > /usr/local/etc/bash_completion.d/hz-cli
+            cat "./bash_completion.sh" > /usr/local/etc/bash_completion.d/hz-cli
         elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
-            cat "bash_completion.sh" > /etc/bash_completion.d/hz-cli
+            cat "./bash_completion.sh" > /etc/bash_completion.d/hz-cli
         fi
     ;;
 esac
