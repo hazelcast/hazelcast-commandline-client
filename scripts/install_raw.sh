@@ -1,7 +1,6 @@
-#!/usr/bin/env bash
 
 read -rd '' bashrcAddition << EOF
-for bcfile in ~/.bash_completion.d/* ; do
+for bcfile in \$HOME/.bash_completion.d/* ; do
     [ -f "\$bcfile" ] && . "\$bcfile"
 done
 EOF
@@ -37,58 +36,84 @@ chmod +x "./hz-cli"
 
 case "$(printf "${SHELL##*bin\/}")" in
     "zsh")
-        completionUrl=$(printf "https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/%s" "zsh_completion.sh")
-        curl --silent "$completionUrl" --output ~/.zsh_completion.sh
-        if [[ ! "$(cat ~/.zshrc)" == *"$(echo "autoload -U compinit; compinit")"* ]]; then
-            echo "autoload -U compinit; compinit" >> ~/.zshrc
+        if [ ! -d "$HOME/.local" ]; then
+            mkdir $HOME/.local
         fi
-        cat ~/.zsh_completion.sh > "${fpath[1]}/_hz-cli"
+        if [ ! -d "$HOME/.local/bin" ]; then
+            mkdir $HOME/.local/bin
+        fi
+        if [[ ! "$(cat $HOME/.zshrc)" == *"$(echo "export PATH=$HOME/.local/bin:$PATH")"* ]]; then
+            echo "export PATH=$HOME/.local/bin:$PATH" >> $HOME/.zshrc
+        fi
+        if [ ! -f "$HOME/.local/bin/hz-cli" ]; then
+            mv ./hz-cli $HOME/.local/bin/hz-cli
+        fi
+        completionUrl=$(printf "https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/%s" "zsh_completion.sh")
+        curl --silent "$completionUrl" --output $HOME/.zsh_completion.sh
+        if [[ ! "$(cat $HOME/.zshrc)" == *"$(echo "autoload -U compinit; compinit")"* ]]; then
+            echo "autoload -U compinit; compinit" >> $HOME/.zshrc
+        fi
+        cat $HOME/.zsh_completion.sh > "${fpath[1]}/_hz-cli"
+        rm -rf $HOME/.zsh_completion.sh
     ;;
     "bash")
-        if [ ! -d "~/.bash_completion.d" ]; then
-            mkdir ~/.bash_completion.d
+        if [ ! -d "$HOME/.local" ]; then
+            mkdir $HOME/.local
+        fi
+        if [ ! -d "$HOME/.local/bin" ]; then
+            mkdir $HOME/.local/bin
+        fi
+        if [[ ! "$(cat $HOME/.bashrc)" == *"$(echo "export PATH=$HOME/.local/bin:$PATH")"* ]]; then
+            echo "export PATH=$HOME/.local/bin:$PATH" >> $HOME/.bashrc
+        fi
+        if [ ! -f "$HOME/.local/bin/hz-cli" ]; then
+            mv ./hz-cli $HOME/.local/bin/hz-cli
+        fi
+        if [ ! -d "$HOME/.bash_completion.d" ]; then
+            mkdir $HOME/.bash_completion.d
         fi
         completionUrl=$(printf "https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/%s" "bash_completion.sh")
-        curl --silent "$completionUrl" --output ~/.bash_completion.d/hz-cli
-        if [[ ! "$(cat ~/.bashrc)" == *"$(echo "$bashrcAddition")"* ]]; then
-            echo "$bashrcAddition" >> ~/.bashrc
+        curl --silent "$completionUrl" --output $HOME/.bash_completion.d/hz-cli
+        if [[ ! "$(cat $HOME/.bashrc)" == *"$(echo "$bashrcAddition")"* ]]; then
+            echo "$bashrcAddition" >> $HOME/.bashrc
         fi
+        source $HOME/.bashrc
     ;;
 esac
 
 clear
 
-cat <<-'EOM'
+echo "$greetings"
+while :
+do
+    echo "$install_options"
+    read selection
+    case "$selection" in
+        "1")
+            clear;
+            echo "$local_manual";
+            break;
+        ;;
+        "2")
+            clear;
+            echo "$cloud_manual";
+            break;
+        ;;
+        "3")
+            clear;
+            exit 0;
+        ;;
+        *)
+            clear;
+            echo "Unknown option. Try again.\n";
+    esac
+done
 
-    +       +  o    o     o     o---o o----o o      o---o     o     o----o o--o--o
-    + +   + +  |    |    / \       /  |      |     /         / \    |         |
-    + + + + +  o----o   o   o     o   o----o |    o         o   o   o----o    |
-    + +   + +  |    |  /     \   /    |      |     \       /     \       |    |
-    +       +  o    o o       o o---o o----o o----o o---o o       o o----o    o
-
-Hazelcast CommandLine Client is installed.
-For changes to take effect, restart your shell session/terminal.
-After that, you can run it with:
-
-./hz-cli
-
-A Simple Guideline:
-
-Q: Do you have a Hazelcast cluster running?
-A: If yes, then you can start with ./hz-cli help to learn the tool.
-   If no, download & install the Hazelcast via package manager(brew, apt)
-   or retrieve the binary from the website.
-
-Q: Do you want to manage your cluster?:
-A: If yes, you can use ./hz-cli cluster --help to see available commands.
-
-Q: Do you want to store or retrieve data from a map in your cluster?
-A: If yes, you can use ./hz-cli map --help to see available commands.
-
-For any other questions, you can use 
-
-./hz-cli help 
-
-to learn the tool.
-
-EOM
+case "$(printf "${SHELL##*bin\/}")" in
+    "zsh")
+        /bin/zsh;
+    ;;
+    "bash")
+        /bin/bash;
+    ;;
+esac
