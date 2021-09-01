@@ -9,7 +9,8 @@ read -rd '' greetings << EOF
 +       +  o    o o       o o---o o----o o----o o---o o       o o----o    o
 
 Hazelcast CommandLine Client is installed.
-You can run it with:
+For changes to take effect, restart your shell session/terminal.
+After that, you can run it with:
 
 ./hz-cli
 
@@ -100,7 +101,15 @@ If you don't have a running cluster, would you like to see a tutorial how to do 
 Select option 1, 2 or 3 and press Enter:
 EOF
 
-clear;
+read -rd '' bashrcAddition << EOF
+for bcfile in \$HOME/.bash_completion.d/* ; do
+    [ -f "\$bcfile" ] && . "\$bcfile"
+done
+EOF
+
+read -rd '' zshrcAddition << EOF
+echo "export PATH=\$HOME/.local/bin:\$PATH" >> \$HOME/.zshrc
+EOF
 
 ghExtractTag() {
   tagUrl=$(curl "https://github.com/$1/releases/latest" -s -L -I -o /dev/null -w '%{url_effective}')
@@ -114,7 +123,7 @@ case "$(uname -s | tr '[:upper:]' '[:lower:]')" in
     "linux")
         case "$machine" in
             "arm64"*) bin_id='Linux_arm64' ;;
-            *"x86_64") bin_id='Linux64_x86_64' ;;
+            *"x86_64") bin_id='Linux_x86_64' ;;
         esac
     ;;
     "darwin")
@@ -125,25 +134,41 @@ case "$(uname -s | tr '[:upper:]' '[:lower:]')" in
     ;;
 esac
 
-tag=$(githubLatestTag hazelcast/hazelcast-commandline-client)
-finalUrl=$(printf "https://github.com/hazelcast/hazelcast-commandline-client/releases/download/v%s/hazelcast-commandline-client_%s_%s.tar.gz" "$tag" "$tag" "$bin_id")
+tag=$(ghExtractTag hazelcast/hazelcast-commandline-client)
+releaseUrl=$(printf "https://github.com/hazelcast/hazelcast-commandline-client/releases/download/v%s/hz-cli_%s_%s" "$tag" "$tag" "$bin_id")
 
-curl -L "$finalUrl" > "hz-cli"
+curl -L --silent "$releaseUrl" --output "hz-cli"
+chmod +x "./hz-cli"
+
+mkdir -p $HOME/.local/bin
+mv ./hz-cli $HOME/.local/bin/hz-cli
 
 case "$(printf "${SHELL##*bin\/}")" in
     "zsh")
+        if [[ ! "$(cat $HOME/.zshrc)" == *"$(echo "export PATH=$HOME/.local/bin:$PATH")"* ]]; then
+            echo "add $HOME/.local/bin to PATH to access hz-cli from any directory"
+            echo "open your .zshrc file and at the end, add the line below:"
+            echo "$zshrcAddition"
+        fi
         completionUrl=$(printf "https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/%s" "zsh_completion.sh")
-        curl "$completionUrl" --output "./zsh_completion.sh"
-        echo "autoload -U compinit; compinit" >> ~/.zshrc;
-        cat "./zsh_completion.sh" > "${fpath[1]}/_hz-cli"
+        curl --silent "$completionUrl" --output $HOME/.zsh_completion.sh
+        if [[ ! "$(cat $HOME/.zshrc)" == *"$(echo "autoload -U compinit; compinit")"* ]]; then
+            echo "autoload -U compinit; compinit" >> $HOME/.zshrc
+        fi
+        cat $HOME/.zsh_completion.sh > "${fpath[1]}/_hz-cli"
+        rm -rf $HOME/.zsh_completion.sh
     ;;
     "bash")
+        if [[ ! "$(cat $HOME/.bashrc)" == *"$(echo "export PATH=$HOME/.local/bin:$PATH")"* ]]; then
+            echo "export PATH=$HOME/.local/bin:$PATH" >> $HOME/.bashrc
+        fi
+        if [ ! -d "$HOME/.bash_completion.d" ]; then
+            mkdir $HOME/.bash_completion.d
+        fi
         completionUrl=$(printf "https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/%s" "bash_completion.sh")
-        curl "$completionUrl" --output "./bash_completion.sh"
-        if [ "$(uname)" == "Darwin" ]; then
-            cat "./bash_completion.sh" > /usr/local/etc/bash_completion.d/hz-cli
-        elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
-            cat "./bash_completion.sh" > /etc/bash_completion.d/hz-cli
+        curl --silent "$completionUrl" --output $HOME/.bash_completion.d/hz-cli
+        if [[ ! "$(cat $HOME/.bashrc)" == *"$(echo "$bashrcAddition")"* ]]; then
+            echo "$bashrcAddition" >> $HOME/.bashrc
         fi
     ;;
 esac
@@ -155,21 +180,26 @@ do
     read selection
     case "$selection" in
         "1")
-            clear;
             echo "$local_manual";
             break;
         ;;
         "2")
-            clear;
             echo "$cloud_manual";
             break;
         ;;
         "3")
-            clear;
             exit 0;
         ;;
         *)
-            clear;
             echo "Unknown option. Try again.\n";
     esac
 done
+
+case "$(printf "${SHELL##*bin\/}")" in
+    "zsh")
+        /bin/zsh;
+    ;;
+    "bash")
+        /bin/bash;
+    ;;
+esac
