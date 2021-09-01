@@ -123,3 +123,9 @@ func MakeConfig(cmd *cobra.Command) (*hazelcast.Config, error) {
 	}
 	return config, nil
 }
+
+func IsVerbose(cmd *cobra.Command) bool {
+	flags := cmd.InheritedFlags()
+	verbose, _ := flags.GetBool("verbose")
+	return verbose
+}

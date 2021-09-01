@@ -27,8 +27,9 @@ import (
 const DefaultConfigFile = ".hzc.yaml"
 
 var (
-	cfgFile   string
+	verbose   bool
 	addresses string
+	cfgFile   string
 	cluster   string
 	token     string
 	rootCmd   = &cobra.Command{
@@ -48,6 +49,7 @@ func Execute() {
 }
 
 func decorateRootCommand(cmd *cobra.Command) {
+	cmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "enable verbose mode")
 	cmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", fmt.Sprintf("config file (default is $HOME/%s)", DefaultConfigFile))
 	cmd.PersistentFlags().StringVarP(&addresses, "address", "a", "", "addresses of the instances in the cluster.")
 	cmd.PersistentFlags().StringVarP(&cluster, "cluster-name", "n", "", "name of the cluster that contains the instances.")

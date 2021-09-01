@@ -23,10 +23,12 @@ import (
 	"os"
 
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
+	"github.com/hazelcast/hazelcast-commandline-client/verbose"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/spf13/cobra"
 )
 
+var isVerbose bool
 var mapPutCmd = &cobra.Command{
 	Use:   "put [--name mapname | --key keyname | --value-type type | --value-file file | --value value]",
 	Short: "put to map",
@@ -34,9 +36,11 @@ var mapPutCmd = &cobra.Command{
 		ctx := context.TODO()
 		var err error
 		var normalizedValue interface{}
+		isVerbose = internal.IsVerbose(cmd)
 		config, err := internal.MakeConfig(cmd)
 		if err != nil {
-			return err
+			err := internal.ErrConfigInvalid.AddErr(err)
+			return errors.New(verbose.Resolve(isVerbose, *verbose.Red, nil, err))
 		}
 		m, err := getMap(config, mapName)
 		if err != nil {
@@ -46,7 +50,8 @@ var mapPutCmd = &cobra.Command{
 			return fmt.Errorf("error getting map %s: %w", mapName, err)
 		}
 		if mapKey == "" {
-			return internal.ErrMapKeyMissing
+			err := internal.ErrMapKeyMissing.AddErr(err)
+			return errors.New(verbose.Resolve(isVerbose, *verbose.Red, nil, err))
 		}
 		if normalizedValue, err = normalizeMapValue(); err != nil {
 			return err
@@ -63,7 +68,8 @@ func normalizeMapValue() (interface{}, error) {
 	var valueStr string
 	var err error
 	if mapValue != "" && mapValueFile != "" {
-		return nil, internal.ErrMapValueAndFileMutuallyExclusive
+		e := internal.ErrMapValueAndFileMutuallyExclusive.AddErr(err)
+		return nil, errors.New(verbose.Resolve(isVerbose, *verbose.Red, nil, e))
 	} else if mapValue != "" {
 		valueStr = mapValue
 	} else if mapValueFile != "" {
@@ -71,7 +77,8 @@ func normalizeMapValue() (interface{}, error) {
 			return nil, fmt.Errorf("error loading value: %w", err)
 		}
 	} else {
-		return nil, internal.ErrMapValueMissing
+		err := internal.ErrMapValueMissing.AddErr(err)
+		return nil, errors.New(verbose.Resolve(isVerbose, *verbose.Red, nil, err))
 	}
 	switch mapValueType {
 	case internal.TypeString:
