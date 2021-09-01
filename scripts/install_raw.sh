@@ -5,6 +5,10 @@ for bcfile in \$HOME/.bash_completion.d/* ; do
 done
 EOF
 
+read -rd '' zshrcAddition << EOF
+echo "export PATH=\$HOME/.local/bin:\$PATH" >> \$HOME/.zshrc
+EOF
+
 ghExtractTag() {
   tagUrl=$(curl "https://github.com/$1/releases/latest" -s -L -I -o /dev/null -w '%{url_effective}')
   printf "%s\n" "${tagUrl##*v}"
@@ -34,19 +38,15 @@ releaseUrl=$(printf "https://github.com/hazelcast/hazelcast-commandline-client/r
 curl -L --silent "$releaseUrl" --output "hz-cli"
 chmod +x "./hz-cli"
 
+mkdir -p $HOME/.local/bin
+mv ./hz-cli $HOME/.local/bin/hz-cli
+
 case "$(printf "${SHELL##*bin\/}")" in
     "zsh")
-        if [ ! -d "$HOME/.local" ]; then
-            mkdir $HOME/.local
-        fi
-        if [ ! -d "$HOME/.local/bin" ]; then
-            mkdir $HOME/.local/bin
-        fi
         if [[ ! "$(cat $HOME/.zshrc)" == *"$(echo "export PATH=$HOME/.local/bin:$PATH")"* ]]; then
-            echo "export PATH=$HOME/.local/bin:$PATH" >> $HOME/.zshrc
-        fi
-        if [ ! -f "$HOME/.local/bin/hz-cli" ]; then
-            mv ./hz-cli $HOME/.local/bin/hz-cli
+            echo "add $HOME/.local/bin to PATH to access hz-cli from any directory"
+            echo "open your .zshrc file and at the end, add the line below:"
+            echo "$zshrcAddition"
         fi
         completionUrl=$(printf "https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/%s" "zsh_completion.sh")
         curl --silent "$completionUrl" --output $HOME/.zsh_completion.sh
@@ -57,17 +57,8 @@ case "$(printf "${SHELL##*bin\/}")" in
         rm -rf $HOME/.zsh_completion.sh
     ;;
     "bash")
-        if [ ! -d "$HOME/.local" ]; then
-            mkdir $HOME/.local
-        fi
-        if [ ! -d "$HOME/.local/bin" ]; then
-            mkdir $HOME/.local/bin
-        fi
         if [[ ! "$(cat $HOME/.bashrc)" == *"$(echo "export PATH=$HOME/.local/bin:$PATH")"* ]]; then
             echo "export PATH=$HOME/.local/bin:$PATH" >> $HOME/.bashrc
-        fi
-        if [ ! -f "$HOME/.local/bin/hz-cli" ]; then
-            mv ./hz-cli $HOME/.local/bin/hz-cli
         fi
         if [ ! -d "$HOME/.bash_completion.d" ]; then
             mkdir $HOME/.bash_completion.d
@@ -77,37 +68,8 @@ case "$(printf "${SHELL##*bin\/}")" in
         if [[ ! "$(cat $HOME/.bashrc)" == *"$(echo "$bashrcAddition")"* ]]; then
             echo "$bashrcAddition" >> $HOME/.bashrc
         fi
-        source $HOME/.bashrc
     ;;
 esac
-
-clear
-
-echo "$greetings"
-while :
-do
-    echo "$install_options"
-    read selection
-    case "$selection" in
-        "1")
-            clear;
-            echo "$local_manual";
-            break;
-        ;;
-        "2")
-            clear;
-            echo "$cloud_manual";
-            break;
-        ;;
-        "3")
-            clear;
-            exit 0;
-        ;;
-        *)
-            clear;
-            echo "Unknown option. Try again.\n";
-    esac
-done
 
 case "$(printf "${SHELL##*bin\/}")" in
     "zsh")
