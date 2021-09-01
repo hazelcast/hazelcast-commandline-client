@@ -16,6 +16,7 @@ builds:
 archives:
   - 
     id: default
+    format: binary
     replacements:
       darwin: Darwin
       linux: Linux

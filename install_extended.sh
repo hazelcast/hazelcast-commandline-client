@@ -128,11 +128,7 @@ esac
 tag=$(githubLatestTag hazelcast/hazelcast-commandline-client)
 finalUrl=$(printf "https://github.com/hazelcast/hazelcast-commandline-client/releases/download/v%s/hazelcast-commandline-client_%s_%s.tar.gz" "$tag" "$tag" "$bin_id")
 
-curl -L "$finalUrl" > "hz-cli_$tag.tar.gz"
-tar -xvzf "hz-cli_$tag.tar.gz" "hz-cli_$tag/hz-cli"
-
-mv "hz-cli_$tag/hz-cli" "./hz-cli"
-rm -rf "hz-cli_$tag.tar.gz" "hz-cli_$tag/"
+curl -L "$finalUrl" > "hz-cli"
 
 case "$(printf "${SHELL##*bin\/}")" in
     "zsh")
