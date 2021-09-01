@@ -7,7 +7,13 @@
 ## Download & Install
 
 ```
-curl https://github.com/hazelcast/hazelcast-commandline-client/blob/main/install.sh | bash
+curl https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/scripts/install_raw.sh | bash
+```
+
+## Extended Download & Install
+
+```
+curl https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/scripts/install_extended.sh | bash
 ```
 
 ## Build

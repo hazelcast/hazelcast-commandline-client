@@ -9,7 +9,8 @@ read -rd '' greetings << EOF
 +       +  o    o o       o o---o o----o o----o o---o o       o o----o    o
 
 Hazelcast CommandLine Client is installed.
-You can run it with:
+For changes to take effect, restart your shell session/terminal.
+After that, you can run it with:
 
 ./hz-cli
 
@@ -100,7 +101,11 @@ If you don't have a running cluster, would you like to see a tutorial how to do 
 Select option 1, 2 or 3 and press Enter:
 EOF
 
-clear;
+read -rd '' bashrcAddition << EOF
+for bcfile in ~/.bash_completion.d/* ; do
+    [ -f "\$bcfile" ] && . "\$bcfile"
+done
+EOF
 
 ghExtractTag() {
   tagUrl=$(curl "https://github.com/$1/releases/latest" -s -L -I -o /dev/null -w '%{url_effective}')
@@ -114,7 +119,7 @@ case "$(uname -s | tr '[:upper:]' '[:lower:]')" in
     "linux")
         case "$machine" in
             "arm64"*) bin_id='Linux_arm64' ;;
-            *"x86_64") bin_id='Linux64_x86_64' ;;
+            *"x86_64") bin_id='Linux_x86_64' ;;
         esac
     ;;
     "darwin")
@@ -125,28 +130,34 @@ case "$(uname -s | tr '[:upper:]' '[:lower:]')" in
     ;;
 esac
 
-tag=$(githubLatestTag hazelcast/hazelcast-commandline-client)
-finalUrl=$(printf "https://github.com/hazelcast/hazelcast-commandline-client/releases/download/v%s/hazelcast-commandline-client_%s_%s.tar.gz" "$tag" "$tag" "$bin_id")
+tag=$(ghExtractTag hazelcast/hazelcast-commandline-client)
+releaseUrl=$(printf "https://github.com/hazelcast/hazelcast-commandline-client/releases/download/v%s/hz-cli_%s_%s" "$tag" "$tag" "$bin_id")
 
-curl -L "$finalUrl" > "hz-cli"
+curl -L --silent "$releaseUrl" --output "hz-cli"
+chmod +x "./hz-cli"
 
 case "$(printf "${SHELL##*bin\/}")" in
     "zsh")
         completionUrl=$(printf "https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/%s" "zsh_completion.sh")
-        curl "$completionUrl" --output "./zsh_completion.sh"
-        echo "autoload -U compinit; compinit" >> ~/.zshrc;
-        cat "./zsh_completion.sh" > "${fpath[1]}/_hz-cli"
+        curl --silent "$completionUrl" --output ~/.zsh_completion.sh
+        if [[ ! "$(cat ~/.zshrc)" == *"$(echo "autoload -U compinit; compinit")"* ]]; then
+            echo "autoload -U compinit; compinit" >> ~/.zshrc
+        fi
+        cat ~/.zsh_completion.sh > "${fpath[1]}/_hz-cli"
     ;;
     "bash")
+        if [ ! -d "~/.bash_completion.d" ]; then
+            mkdir ~/.bash_completion.d
+        fi
         completionUrl=$(printf "https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/%s" "bash_completion.sh")
-        curl "$completionUrl" --output "./bash_completion.sh"
-        if [ "$(uname)" == "Darwin" ]; then
-            cat "./bash_completion.sh" > /usr/local/etc/bash_completion.d/hz-cli
-        elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
-            cat "./bash_completion.sh" > /etc/bash_completion.d/hz-cli
+        curl --silent "$completionUrl" --output ~/.bash_completion.d/hz-cli
+        if [[ ! "$(cat ~/.bashrc)" == *"$(echo "$bashrcAddition")"* ]]; then
+            echo "$bashrcAddition" >> ~/.bashrc
         fi
     ;;
 esac
+
+clear
 
 echo "$greetings"
 while :
