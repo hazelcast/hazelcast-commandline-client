@@ -19,8 +19,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/spf13/cobra"
+
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
 var clusterGetStateCmd = &cobra.Command{

@@ -19,9 +19,10 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/spf13/cobra"
+
 	clusterDir "github.com/hazelcast/hazelcast-commandline-client/commands/cluster"
 	mapDir "github.com/hazelcast/hazelcast-commandline-client/commands/types/map"
-	"github.com/spf13/cobra"
 )
 
 const DefaultConfigFile = ".hzc.yaml"

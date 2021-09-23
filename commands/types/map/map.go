@@ -19,13 +19,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"log"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/types"
 	"github.com/spf13/cobra"
+
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
 var mapName string
@@ -54,7 +55,7 @@ func getMap(clientConfig *hazelcast.Config, mapName string) (*hazelcast.Map, err
 	defer func() {
 		obj := recover()
 		if err, ok := obj.(error); ok {
-			networkErr := internal.HandleNetworkError(err)
+			networkErr, _ := internal.HandleNetworkError(err)
 			log.Fatal(networkErr)
 		}
 	}()

@@ -20,11 +20,13 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 
-	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/spf13/cobra"
+
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
 var mapPutCmd = &cobra.Command{
@@ -41,7 +43,7 @@ var mapPutCmd = &cobra.Command{
 		m, err := getMap(config, mapName)
 		if err != nil {
 			if errors.Is(err, context.DeadlineExceeded) {
-				return fmt.Errorf("cluster cannot be accessed")
+				log.Fatal(internal.ErrConnectionTimeout)
 			}
 			return fmt.Errorf("error getting map %s: %w", mapName, err)
 		}
@@ -67,7 +69,7 @@ func normalizeMapValue() (interface{}, error) {
 	} else if mapValue != "" {
 		valueStr = mapValue
 	} else if mapValueFile != "" {
-		if valueStr, err = loadValueFIle(mapValueFile); err != nil {
+		if valueStr, err = loadValueFile(mapValueFile); err != nil {
 			return nil, fmt.Errorf("error loading value: %w", err)
 		}
 	} else {
@@ -82,7 +84,7 @@ func normalizeMapValue() (interface{}, error) {
 	return nil, fmt.Errorf("%s is not a known value type", mapValueType)
 }
 
-func loadValueFIle(path string) (string, error) {
+func loadValueFile(path string) (string, error) {
 	if path == "" {
 		return "", errors.New("path cannot be empty")
 	}

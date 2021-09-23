@@ -33,18 +33,23 @@ func CallClusterOperation(config *hazelcast.Config, operation string, state *str
 	var err error
 	obj := NewRESTCall(config, operation, state)
 	params := obj.params
-	url := obj.url
+	urlStr := obj.url
 	pr := strings.NewReader(params)
 	var resp *http.Response
 	switch operation {
 	case ClusterGetState, ClusterChangeState, ClusterShutdown:
-		resp, err = http.Post(url, "application/x-www-form-urlencoded", pr)
+		resp, err = http.Post(urlStr, "application/x-www-form-urlencoded", pr)
 	case ClusterVersion:
-		resp, err = http.Get(url)
+		resp, err = http.Get(urlStr)
 	}
 	if err != nil {
-		networkError := HandleNetworkError(err)
-		return nil, networkError
+		if clusterErr, handled := HandleClusterError(err); handled {
+			return nil, clusterErr
+		}
+		if networkError, handled := HandleNetworkError(err); handled {
+			return nil, networkError
+		}
+		return nil, err
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)

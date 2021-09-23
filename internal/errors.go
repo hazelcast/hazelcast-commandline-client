@@ -19,60 +19,29 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/url"
+	"strings"
 	"syscall"
 )
 
-// Error types
-const (
-	Network = "Network"
-	Map     = "Map Operation"
-)
-
-// hzError Internal error type to differentiate known and unknown errors
-type hzError struct {
-	message   string
-	errorType string
-}
-
-func NewHzError(errorType, message string) *hzError {
-	return &hzError{errorType: errorType, message: message}
-}
-
-func (hzerr *hzError) Error() string {
-	if hzerr == nil {
-		return ""
-	}
-	return fmt.Sprintf("[%s Error]: %s", hzerr.errorType, hzerr.message)
-}
-
-func (hzerr *hzError) Type() string {
-	if hzerr == nil {
-		return ""
-	}
-	return hzerr.Type()
-}
-
-func NewHzMapError(message string) *hzError {
-	return NewHzError(Map, message)
-}
-
 // Map errors
 var (
-	ErrMapKeyMissing                    = NewHzMapError("map key is required")
-	ErrMapValueMissing                  = NewHzMapError("map value is required")
-	ErrMapValueAndFileMutuallyExclusive = NewHzMapError("only one of --value and --value-file must be specified")
+	ErrMapKeyMissing                    = errors.New("map key is required")
+	ErrMapValueMissing                  = errors.New("map value is required")
+	ErrMapValueAndFileMutuallyExclusive = errors.New("only one of --value and --value-file must be specified")
 )
 
-func NewHzNetworkError(message string) *hzError {
-	return NewHzError(Network, message)
-}
+// Cluster errors
+var (
+	ErrRestAPIDisabled = errors.New("Cannot access Hazelcast REST API. Is it enabled? Check this link to find out more: " + RESTApiDocs)
+)
 
 // Network errors
 var (
-	ErrTimeout           = NewHzNetworkError("connection timed out")
-	ErrUnknownHost       = NewHzNetworkError("destination address cannot be resolved or unreachable, please make sure hazelcast cluster is up and running")
-	ErrConnectionRefused = NewHzNetworkError("connection refused")
-	ErrInvalidAddress    = NewHzNetworkError("invalid address")
+	ErrUnknownHost       = errors.New("destination address cannot be resolved or unreachable, please make sure hazelcast cluster is up and running")
+	ErrConnectionTimeout = errors.New("Can not connect to Hazelcast Cluster. Please make sure Hazelcast cluster is up, reachable and running. Check this link to create a IMDG cluster: " + QuickStartDocs)
+	ErrConnectionRefused = errors.New("connection refused")
+	ErrInvalidAddress    = errors.New("invalid address")
 )
 
 func ErrorRecover() {
@@ -82,39 +51,42 @@ func ErrorRecover() {
 	}
 }
 
-func HandleNetworkError(err error) error {
+func HandleClusterError(err error) (error, bool) {
+	var urlError *url.Error
+	if errors.As(err, &urlError) && strings.Contains(urlError.Error(), "EOF") {
+		return ErrRestAPIDisabled, true
+	}
+	return err, false
+}
+
+func HandleNetworkError(err error) (error, bool) {
 	var netErr net.Error
 	if errors.As(err, &netErr) {
 		if netErr.Timeout() {
-			return ErrTimeout
+			return ErrConnectionTimeout, true
 		}
 
-		/*var addrErr *net.AddrError
+		var addrErr *net.AddrError
 		if errors.As(err, &addrErr) {
-			return fmt.Errorf("%v:%s", ErrInvalidAddress, addrErr.Error())
-		} */
+			return fmt.Errorf("%v:%s", ErrInvalidAddress, addrErr.Error()), true
+		}
 	}
 
 	var netOpErr *net.OpError
 	if errors.As(err, &netOpErr) {
 		if netOpErr.Op == "dial" {
-			return ErrUnknownHost
+			return ErrUnknownHost, true
 		} else if netOpErr.Op == "read" {
-			return ErrConnectionRefused
+			return ErrConnectionRefused, true
 		}
 	}
 
 	var syscallErr syscall.Errno
 	//TODO these syscall errors seem platform specific, decide on what to do
 	if errors.As(err, &syscallErr) && syscallErr == syscall.ECONNREFUSED {
-		return ErrConnectionRefused
-	}
-
-	var addrErr *net.AddrError
-	if errors.As(err, &addrErr) {
-		return fmt.Errorf("%v, %s", ErrInvalidAddress, addrErr.Error())
+		return ErrConnectionRefused, true
 	}
 
 	// Cannot decide on error, leave it as is, unknown
-	return err
+	return err, false
 }

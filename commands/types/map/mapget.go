@@ -19,12 +19,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/alecthomas/chroma/quick"
-	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/spf13/cobra"
+
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
 var mapGetCmd = &cobra.Command{
@@ -38,8 +40,8 @@ var mapGetCmd = &cobra.Command{
 		}
 		m, err := getMap(config, mapName)
 		if err != nil {
-			if errors.Is(err, context.DeadlineExceeded) {
-				return internal.ErrTimeout
+			if errors.As(err, &context.DeadlineExceeded) {
+				log.Fatal(internal.ErrConnectionTimeout)
 			}
 			return fmt.Errorf("error getting map %s: %w", mapName, err)
 		}
