@@ -31,6 +31,7 @@ import (
 )
 
 const defaultConfigFilename string = ".hzc.yaml"
+const defaultConfigPathFromHomeDir string = ".local/share/hz-cli"
 
 func DefaultConfig() *hazelcast.Config {
 	config := hazelcast.NewConfig()
@@ -45,10 +46,16 @@ func registerConfig(config *hazelcast.Config, confPath string) error {
 	if out, err = yaml.Marshal(config); err != nil {
 		return err
 	}
+
+	filePath, _ := filepath.Split(confPath)
+	if err = os.MkdirAll(filePath, os.ModePerm); err != nil {
+		return fmt.Errorf("cannot create parent directories for configuration file: %w", err)
+	}
+
 	if err = ioutil.WriteFile(confPath, out, 0666); err != nil {
 		return fmt.Errorf("writing default configuration: %w", err)
 	}
-	fmt.Println("default config file is created at `~/.hzc.yaml`")
+	fmt.Printf("default config file is created at `%s`\n", confPath)
 	return nil
 }
 
@@ -82,7 +89,7 @@ func MakeConfig(cmd *cobra.Command) (*hazelcast.Config, error) {
 		if hdir, err = homedir.Dir(); err != nil {
 			return nil, err
 		}
-		confPath = filepath.Join(hdir, defaultConfigFilename)
+		confPath = filepath.Join(hdir, defaultConfigPathFromHomeDir, defaultConfigFilename)
 		if err := validateConfig(config, confPath); err != nil {
 			return nil, err
 		}
