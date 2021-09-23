@@ -38,9 +38,8 @@ var (
 
 // Network errors
 var (
-	ErrUnknownHost       = errors.New("destination address cannot be resolved or unreachable, please make sure hazelcast cluster is up and running")
-	ErrConnectionTimeout = errors.New("Can not connect to Hazelcast Cluster. Please make sure Hazelcast cluster is up, reachable and running. Check this link to create a IMDG cluster: " + QuickStartDocs)
-	ErrConnectionRefused = errors.New("connection refused")
+	ErrConnectionTimeout = errors.New("Can not connect to Hazelcast Cluster. Please make sure Hazelcast cluster is reachable, up and running. Check this link to create a IMDG cluster: " + QuickStartDocs)
+	ErrConnectionRefused = errors.New("Can not connect to Hazelcast Cluster. Please make sure Hazelcast cluster is reachable, up and running. Check this link to create a IMDG cluster: " + QuickStartDocs)
 	ErrInvalidAddress    = errors.New("invalid address")
 )
 
@@ -75,7 +74,7 @@ func HandleNetworkError(err error) (error, bool) {
 	var netOpErr *net.OpError
 	if errors.As(err, &netOpErr) {
 		if netOpErr.Op == "dial" {
-			return ErrUnknownHost, true
+			return ErrConnectionRefused, true
 		} else if netOpErr.Op == "read" {
 			return ErrConnectionRefused, true
 		}
