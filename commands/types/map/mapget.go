@@ -18,6 +18,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/alecthomas/chroma/quick"
