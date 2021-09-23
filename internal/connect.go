@@ -43,7 +43,8 @@ func CallClusterOperation(config *hazelcast.Config, operation string, state *str
 		resp, err = http.Get(url)
 	}
 	if err != nil {
-		return nil, err
+		networkError := HandleNetworkError(err)
+		return nil, networkError
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)

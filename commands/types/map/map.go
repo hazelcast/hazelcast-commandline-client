@@ -19,8 +19,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"log"
-	"net"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
@@ -54,11 +54,8 @@ func getMap(clientConfig *hazelcast.Config, mapName string) (*hazelcast.Map, err
 	defer func() {
 		obj := recover()
 		if err, ok := obj.(error); ok {
-			var addrErr *net.AddrError
-			if errors.As(err, &addrErr) {
-				log.Fatal(fmt.Errorf("given address is invalid: %s\n%s", addrErr.Addr, err))
-			}
-			log.Fatal(err)
+			networkErr := internal.HandleNetworkError(err)
+			log.Fatal(networkErr)
 		}
 	}()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

@@ -39,7 +39,7 @@ var mapGetCmd = &cobra.Command{
 		m, err := getMap(config, mapName)
 		if err != nil {
 			if errors.Is(err, context.DeadlineExceeded) {
-				return fmt.Errorf("cluster cannot be accessed: %s", err)
+				return internal.ErrTimeout
 			}
 			return fmt.Errorf("error getting map %s: %w", mapName, err)
 		}
@@ -58,6 +58,7 @@ var mapGetCmd = &cobra.Command{
 					fmt.Println(v.String())
 				}
 			default:
+				fmt.Println(v)
 				fmt.Println(value)
 			}
 		}
