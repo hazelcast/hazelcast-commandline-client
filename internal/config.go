@@ -25,13 +25,11 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/logger"
-	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )
 
-const defaultConfigFilename string = ".hzc.yaml"
-const defaultConfigPathFromHomeDir string = ".local/share/hz-cli"
+const defaultConfigFilename = "config.yaml"
 
 func DefaultConfig() *hazelcast.Config {
 	config := hazelcast.NewConfig()
@@ -64,7 +62,9 @@ func validateConfig(config *hazelcast.Config, confPath string) error {
 		if !errors.Is(err, os.ErrNotExist) {
 			return err
 		}
-		registerConfig(config, confPath)
+		if err = registerConfig(config, confPath); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -85,11 +85,7 @@ func MakeConfig(cmd *cobra.Command) (*hazelcast.Config, error) {
 			return nil, fmt.Errorf("reading configuration at %s: %w", confPath, err)
 		}
 	} else {
-		var hdir string
-		if hdir, err = homedir.Dir(); err != nil {
-			return nil, err
-		}
-		confPath = filepath.Join(hdir, defaultConfigPathFromHomeDir, defaultConfigFilename)
+		confPath = DefaultConfigFile()
 		if err := validateConfig(config, confPath); err != nil {
 			return nil, err
 		}
@@ -129,4 +125,9 @@ func MakeConfig(cmd *cobra.Command) (*hazelcast.Config, error) {
 		config.Cluster.Name = "dev"
 	}
 	return config, nil
+}
+
+func DefaultConfigFile() string {
+	homeDirectoryPath, _ := os.UserHomeDir()
+	return filepath.Join(homeDirectoryPath, ".local/share/hz-cli", defaultConfigFilename)
 }
