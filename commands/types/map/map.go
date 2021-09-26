@@ -17,9 +17,7 @@ package commands
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
@@ -49,34 +47,37 @@ func init() {
 	MapCmd.AddCommand(mapPutCmd)
 }
 
-func getMap(clientConfig *hazelcast.Config, mapName string) (*hazelcast.Map, error) {
-	var client *hazelcast.Client
-	var err error
+func getMap(clientConfig *hazelcast.Config, mapName string) (result *hazelcast.Map, err error) {
 	defer func() {
 		obj := recover()
-		if err, ok := obj.(error); ok {
-			networkErr, _ := internal.HandleNetworkError(err)
-			log.Fatal(networkErr)
+		if panicErr, ok := obj.(error); ok {
+			err = panicErr
+			if msg, handled := internal.TranslateError(err); handled {
+				fmt.Println("Error: ", msg)
+				return
+			}
+			fmt.Println("Error: Something went wrong")
 		}
 	}()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if mapName == "" {
-		return nil, errors.New("map name is required")
-	}
 	if clientConfig == nil {
 		clientConfig = &hazelcast.Config{}
 	}
 	clientConfig.Cluster.ConnectionStrategy.Retry.InitialBackoff = types.Duration(1 * time.Second)
-	client, err = hazelcast.StartNewClientWithConfig(ctx, *clientConfig)
+	hzcClient, err := hazelcast.StartNewClientWithConfig(ctx, *clientConfig)
 	if err != nil {
+		if msg, handled := internal.TranslateError(err); handled {
+			fmt.Println("Error: ", msg)
+			return
+		}
+		fmt.Println("Error: Something went wrong")
 		return nil, fmt.Errorf("error creating the client: %w", err)
 	}
-	if result, err := client.GetMap(ctx, mapName); err != nil {
-		return nil, err
-	} else {
-		return result, nil
+	if result, err = hzcClient.GetMap(ctx, mapName); err != nil {
+		fmt.Println("Error: Something went wrong")
 	}
+	return
 }
 
 func decorateCommandWithMapNameFlags(cmd *cobra.Command) {

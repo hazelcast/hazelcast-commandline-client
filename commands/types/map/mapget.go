@@ -17,9 +17,7 @@ package commands
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/alecthomas/chroma/quick"
@@ -32,25 +30,20 @@ import (
 var mapGetCmd = &cobra.Command{
 	Use:   "get [--name mapname | --key keyname]",
 	Short: "get from map",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	Run: func(cmd *cobra.Command, args []string) {
 		ctx := context.TODO()
 		config, err := internal.MakeConfig(cmd)
 		if err != nil {
-			return err
+			return
 		}
 		m, err := getMap(config, mapName)
 		if err != nil {
-			if errors.As(err, &context.DeadlineExceeded) {
-				log.Fatal(internal.ErrConnectionTimeout)
-			}
-			return fmt.Errorf("error getting map %s: %w", mapName, err)
-		}
-		if mapKey == "" {
-			return errors.New("map key is required")
+			return
 		}
 		value, err := m.Get(ctx, mapKey)
 		if err != nil {
-			return fmt.Errorf("error getting value for key %s from map %s: %w", mapKey, mapName, err)
+			fmt.Printf("Error: Cannot get value for key %s from map %s\n", mapKey, mapName)
+			return
 		}
 		if value != nil {
 			switch v := value.(type) {
@@ -63,8 +56,10 @@ var mapGetCmd = &cobra.Command{
 				fmt.Println(v)
 				fmt.Println(value)
 			}
+			return
 		}
-		return nil
+		fmt.Println("There is no value corresponding to the provided key")
+		return
 	},
 }
 

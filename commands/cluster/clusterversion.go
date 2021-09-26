@@ -17,7 +17,6 @@ package commands
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/spf13/cobra"
 
@@ -31,11 +30,11 @@ var clusterVersionCmd = &cobra.Command{
 		defer internal.ErrorRecover()
 		config, err := internal.MakeConfig(cmd)
 		if err != nil {
-			log.Fatal(err)
+			return
 		}
 		result, err := internal.CallClusterOperation(config, "version", nil)
 		if err != nil {
-			log.Fatal(err)
+			return
 		}
 		fmt.Println(*result)
 	},

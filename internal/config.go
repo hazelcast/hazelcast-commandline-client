@@ -76,26 +76,32 @@ func MakeConfig(cmd *cobra.Command) (*hazelcast.Config, error) {
 	if confPath != "" {
 		confBytes, err = ioutil.ReadFile(confPath)
 		if err != nil {
+			fmt.Println("Error: Cannot read configuration file. Please make sure configuration path is correct and process have sufficient permission.")
 			return nil, fmt.Errorf("reading configuration at %s: %w", confPath, err)
 		}
 	} else {
 		var hdir string
 		if hdir, err = homedir.Dir(); err != nil {
+			fmt.Println("Error: Cannot decide user home directory")
 			return nil, err
 		}
 		confPath = filepath.Join(hdir, defaultConfigFilename)
 		if err := validateConfig(config, confPath); err != nil {
+			fmt.Printf("Error: Cannot create default configuration file on default config path %s. Please check that process has necessary permissions to write to default config path or provide a custom config path\n\n", confPath)
 			return nil, err
 		}
 		if confBytes, err = ioutil.ReadFile(confPath); err != nil {
+			fmt.Println("Error: Cannot read configuration file. Please make sure configuration path is correct and process have sufficient permission.")
 			return nil, fmt.Errorf("reading configuration at %s: %w", confPath, err)
 		}
 	}
 	if err = yaml.Unmarshal(confBytes, config); err != nil {
+		fmt.Println("Error: Configuration file is not a valid yaml file")
 		return nil, fmt.Errorf("error reading configuration at %s: %w", confPath, err)
 	}
 	token, err := flags.GetString("cloud-token")
 	if err != nil {
+		fmt.Println("Error: Invalid value for --cloud-token")
 		return nil, err
 	}
 	if token != "" {
@@ -104,6 +110,7 @@ func MakeConfig(cmd *cobra.Command) (*hazelcast.Config, error) {
 	}
 	addrRaw, err := flags.GetString("address")
 	if err != nil {
+		fmt.Println("Error: Invalid value for --address")
 		return nil, err
 	}
 	if addrRaw != "" {
@@ -115,6 +122,7 @@ func MakeConfig(cmd *cobra.Command) (*hazelcast.Config, error) {
 	}
 	cluster, err := flags.GetString("cluster-name")
 	if err != nil {
+		fmt.Println("Error: Invalid value for --cluster-name")
 		return nil, err
 	}
 	if cluster != "" {

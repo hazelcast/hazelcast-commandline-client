@@ -16,31 +16,13 @@
 package internal
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net"
 	"net/url"
 	"strings"
 	"syscall"
-)
-
-// Map errors
-var (
-	ErrMapKeyMissing                    = errors.New("map key is required")
-	ErrMapValueMissing                  = errors.New("map value is required")
-	ErrMapValueAndFileMutuallyExclusive = errors.New("only one of --value and --value-file must be specified")
-)
-
-// Cluster errors
-var (
-	ErrRestAPIDisabled = errors.New("Cannot access Hazelcast REST API. Is it enabled? Check this link to find out more: " + RESTApiDocs)
-)
-
-// Network errors
-var (
-	ErrConnectionTimeout = errors.New("Can not connect to Hazelcast Cluster. Please make sure Hazelcast cluster is reachable, up and running. Check this link to create a IMDG cluster: " + QuickStartDocs)
-	ErrConnectionRefused = errors.New("Can not connect to Hazelcast Cluster. Please make sure Hazelcast cluster is reachable, up and running. Check this link to create a IMDG cluster: " + QuickStartDocs)
-	ErrInvalidAddress    = errors.New("invalid address")
 )
 
 func ErrorRecover() {
@@ -50,42 +32,49 @@ func ErrorRecover() {
 	}
 }
 
-func HandleClusterError(err error) (error, bool) {
-	var urlError *url.Error
-	if errors.As(err, &urlError) && strings.Contains(urlError.Error(), "EOF") {
-		return ErrRestAPIDisabled, true
+func TranslateError(err error, op ...string) (string, bool) {
+	if len(op) == 1 {
+		if msg, handled := TranslateClusterError(err, op[0]); handled {
+			return msg, true
+		}
 	}
-	return err, false
+	return TranslateNetworkError(err)
 }
 
-func HandleNetworkError(err error) (error, bool) {
+func TranslateClusterError(err error, operation string) (string, bool) {
+	var urlError *url.Error
+	if errors.As(err, &urlError) && strings.Contains(urlError.Error(), "EOF") {
+		if operation == ClusterShutdown {
+			return "Cannot access Hazelcast REST API. Is it enabled? If yes, check CLUSTER_WRITE endpoint group is enabled https://docs.hazelcast.com/imdg/latest/management/rest-endpoint-groups.html\nIf not check this link to find out more: https://docs.hazelcast.com/imdg/latest/clients/rest.html", true
+		}
+		return "Cannot access Hazelcast REST API. Is it enabled? Check this link to find out more: https://docs.hazelcast.com/imdg/latest/clients/rest.html", true
+	}
+	return "", false
+}
+
+func TranslateNetworkError(err error) (string, bool) {
 	var netErr net.Error
 	if errors.As(err, &netErr) {
 		if netErr.Timeout() {
-			return ErrConnectionTimeout, true
+			return "Can not connect to Hazelcast Cluster. Please make sure Hazelcast cluster is reachable, up and running. Check this link to create a IMDG cluster: https://docs.hazelcast.com/imdg/latest/getting-started.html", true
 		}
-
 		var addrErr *net.AddrError
 		if errors.As(err, &addrErr) {
-			return fmt.Errorf("%v:%s", ErrInvalidAddress, addrErr.Error()), true
+			return "Invalid cluster address. Please make sure Hazelcast cluster is reachable, up and running. Check this link to create a IMDG cluster: https://docs.hazelcast.com/imdg/latest/getting-started.html", true
 		}
 	}
-
 	var netOpErr *net.OpError
-	if errors.As(err, &netOpErr) {
-		if netOpErr.Op == "dial" {
-			return ErrConnectionRefused, true
-		} else if netOpErr.Op == "read" {
-			return ErrConnectionRefused, true
-		}
+	if errors.As(err, &netOpErr) && netOpErr.Op == "dial" {
+		return "Can not connect to Hazelcast Cluster. Please make sure Hazelcast cluster is reachable, up and running. Check this link to create a IMDG cluster: https://docs.hazelcast.com/imdg/latest/getting-started.html", true
 	}
-
 	var syscallErr syscall.Errno
 	//TODO these syscall errors seem platform specific, decide on what to do
 	if errors.As(err, &syscallErr) && syscallErr == syscall.ECONNREFUSED {
-		return ErrConnectionRefused, true
+		return "Can not connect to Hazelcast Cluster. Please make sure Hazelcast cluster is reachable, up and running. Check this link to create a IMDG cluster: https://docs.hazelcast.com/imdg/latest/getting-started.html", true
 	}
-
+	if errors.Is(err, context.DeadlineExceeded) {
+		return "Can not connect to Hazelcast Cluster. Please make sure Hazelcast cluster is reachable, up and running. Check this link to create a IMDG cluster: https://docs.hazelcast.com/imdg/latest/getting-started.html", true
+	}
 	// Cannot decide on error, leave it as is, unknown
-	return err, false
+	return "", false
 }

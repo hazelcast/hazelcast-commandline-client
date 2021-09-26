@@ -21,8 +21,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	clusterDir "github.com/hazelcast/hazelcast-commandline-client/commands/cluster"
-	mapDir "github.com/hazelcast/hazelcast-commandline-client/commands/types/map"
+	clustercmd "github.com/hazelcast/hazelcast-commandline-client/commands/cluster"
+	mapcmd "github.com/hazelcast/hazelcast-commandline-client/commands/types/map"
 )
 
 const DefaultConfigFile = ".hzc.yaml"
@@ -58,6 +58,6 @@ func decorateRootCommand(cmd *cobra.Command) {
 
 func init() {
 	decorateRootCommand(rootCmd)
-	rootCmd.AddCommand(clusterDir.ClusterCmd)
-	rootCmd.AddCommand(mapDir.MapCmd)
+	rootCmd.AddCommand(clustercmd.ClusterCmd)
+	rootCmd.AddCommand(mapcmd.MapCmd)
 }

@@ -30,12 +30,12 @@ type RESTCall struct {
 }
 
 func CallClusterOperation(config *hazelcast.Config, operation string, state *string) (*string, error) {
-	var err error
 	obj := NewRESTCall(config, operation, state)
 	params := obj.params
 	urlStr := obj.url
 	pr := strings.NewReader(params)
 	var resp *http.Response
+	var err error
 	switch operation {
 	case ClusterGetState, ClusterChangeState, ClusterShutdown:
 		resp, err = http.Post(urlStr, "application/x-www-form-urlencoded", pr)
@@ -43,17 +43,17 @@ func CallClusterOperation(config *hazelcast.Config, operation string, state *str
 		resp, err = http.Get(urlStr)
 	}
 	if err != nil {
-		if clusterErr, handled := HandleClusterError(err); handled {
-			return nil, clusterErr
+		if msg, handled := TranslateError(err, operation); handled {
+			fmt.Println("Error: ", msg)
+			return nil, err
 		}
-		if networkError, handled := HandleNetworkError(err); handled {
-			return nil, networkError
-		}
+		fmt.Println("Error: Something went wrong")
 		return nil, err
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
+		fmt.Println("Error: Could not read the response from the cluster")
 		return nil, err
 	}
 	sb := string(body)

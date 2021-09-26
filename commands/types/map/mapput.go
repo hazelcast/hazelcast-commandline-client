@@ -20,7 +20,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -32,32 +31,27 @@ import (
 var mapPutCmd = &cobra.Command{
 	Use:   "put [--name mapname | --key keyname | --value-type type | --value-file file | --value value]",
 	Short: "put to map",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	Run: func(cmd *cobra.Command, args []string) {
 		ctx := context.TODO()
 		var err error
 		var normalizedValue interface{}
 		config, err := internal.MakeConfig(cmd)
 		if err != nil {
-			return err
+			return
 		}
 		m, err := getMap(config, mapName)
 		if err != nil {
-			if errors.Is(err, context.DeadlineExceeded) {
-				log.Fatal(internal.ErrConnectionTimeout)
-			}
-			return fmt.Errorf("error getting map %s: %w", mapName, err)
-		}
-		if mapKey == "" {
-			return internal.ErrMapKeyMissing
+			return
 		}
 		if normalizedValue, err = normalizeMapValue(); err != nil {
-			return err
+			return
 		}
 		_, err = m.Put(ctx, mapKey, normalizedValue)
 		if err != nil {
-			return fmt.Errorf("error putting value for key %s from map %s: %w", mapKey, mapName, err)
+			fmt.Printf("error putting value for key %s from map %s\n", mapKey, mapName)
+			return
 		}
-		return nil
+		return
 	},
 }
 
@@ -65,15 +59,18 @@ func normalizeMapValue() (interface{}, error) {
 	var valueStr string
 	var err error
 	if mapValue != "" && mapValueFile != "" {
-		return nil, internal.ErrMapValueAndFileMutuallyExclusive
+		fmt.Println("Error: Only one of --value and --value-file must be specified")
+		return nil, errors.New("only one of --value and --value-file must be specified")
 	} else if mapValue != "" {
 		valueStr = mapValue
 	} else if mapValueFile != "" {
 		if valueStr, err = loadValueFile(mapValueFile); err != nil {
+			fmt.Println("Error: Cannot load the value file. Please make sure file exists and process has correct access rights")
 			return nil, fmt.Errorf("error loading value: %w", err)
 		}
 	} else {
-		return nil, internal.ErrMapValueMissing
+		fmt.Println("Error: One of the value flag must be set")
+		return nil, errors.New("map value is required")
 	}
 	switch mapValueType {
 	case internal.TypeString:
@@ -81,6 +78,7 @@ func normalizeMapValue() (interface{}, error) {
 	case internal.TypeJSON:
 		return serialization.JSON(valueStr), nil
 	}
+	fmt.Println("Error: Provided value type parameter is not a known type. Please provide either 'string' or 'json'")
 	return nil, fmt.Errorf("%s is not a known value type", mapValueType)
 }
 
