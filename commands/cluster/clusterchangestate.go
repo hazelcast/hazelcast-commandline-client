@@ -17,10 +17,10 @@ package commands
 
 import (
 	"fmt"
-	"log"
+
+	"github.com/spf13/cobra"
 
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
-	"github.com/spf13/cobra"
 )
 
 var (
@@ -31,12 +31,12 @@ var (
 		Run: func(cmd *cobra.Command, args []string) {
 			defer internal.ErrorRecover()
 			config, err := internal.MakeConfig(cmd)
-			if err != nil {
-				log.Fatal(err)
+			if err != nil { //TODO error look like unhandled although it is handled in MakeConfig.Find a better approach
+				return
 			}
 			result, err := internal.CallClusterOperation(config, "change-state", &newState)
 			if err != nil {
-				log.Fatal(err)
+				return
 			}
 			fmt.Println(*result)
 		},

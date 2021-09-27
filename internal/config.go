@@ -23,10 +23,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
+
+	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
 const defaultConfigFilename = "config.yaml"
@@ -82,22 +83,27 @@ func MakeConfig(cmd *cobra.Command) (*hazelcast.Config, error) {
 	if confPath != "" {
 		confBytes, err = ioutil.ReadFile(confPath)
 		if err != nil {
+			fmt.Printf("Error: Cannot read configuration file on %s. Please make sure configuration path is correct and process have sufficient permission.\n", confPath)
 			return nil, fmt.Errorf("reading configuration at %s: %w", confPath, err)
 		}
 	} else {
 		confPath = DefautConfigPath()
 		if err := validateConfig(config, confPath); err != nil {
+			fmt.Printf("Error: Cannot create default configuration file on default config path %s. Please check that process has necessary permissions to write to default config path or provide a custom config path\n", confPath)
 			return nil, err
 		}
 		if confBytes, err = ioutil.ReadFile(confPath); err != nil {
+			fmt.Printf("Error: Cannot read configuration file on default config path %s. Please make sure process have sufficient permission to access configuration path", confPath)
 			return nil, fmt.Errorf("reading configuration at %s: %w", confPath, err)
 		}
 	}
 	if err = yaml.Unmarshal(confBytes, config); err != nil {
+		fmt.Println("Error: Configuration file is not a valid yaml file")
 		return nil, fmt.Errorf("error reading configuration at %s: %w", confPath, err)
 	}
 	token, err := flags.GetString("cloud-token")
 	if err != nil {
+		fmt.Println("Error: Invalid value for --cloud-token")
 		return nil, err
 	}
 	if token != "" {
@@ -106,6 +112,7 @@ func MakeConfig(cmd *cobra.Command) (*hazelcast.Config, error) {
 	}
 	addrRaw, err := flags.GetString("address")
 	if err != nil {
+		fmt.Println("Error: Invalid value for --address")
 		return nil, err
 	}
 	if addrRaw != "" {
@@ -117,6 +124,7 @@ func MakeConfig(cmd *cobra.Command) (*hazelcast.Config, error) {
 	}
 	cluster, err := flags.GetString("cluster-name")
 	if err != nil {
+		fmt.Println("Error: Invalid value for --cluster-name")
 		return nil, err
 	}
 	if cluster != "" {
