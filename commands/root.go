@@ -23,9 +23,8 @@ import (
 
 	clustercmd "github.com/hazelcast/hazelcast-commandline-client/commands/cluster"
 	mapcmd "github.com/hazelcast/hazelcast-commandline-client/commands/types/map"
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
-
-const DefaultConfigFile = ".hzc.yaml"
 
 var (
 	cfgFile   string
@@ -49,7 +48,7 @@ func Execute() {
 }
 
 func decorateRootCommand(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", fmt.Sprintf("config file (default is $HOME/%s)", DefaultConfigFile))
+	cmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", fmt.Sprintf("config file (default is %s)", internal.DefautConfigPath()))
 	cmd.PersistentFlags().StringVarP(&addresses, "address", "a", "", "addresses of the instances in the cluster.")
 	cmd.PersistentFlags().StringVarP(&cluster, "cluster-name", "n", "", "name of the cluster that contains the instances.")
 	cmd.PersistentFlags().StringVar(&token, "cloud-token", "", "your Hazelcast Cloud token.")
