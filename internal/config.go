@@ -25,12 +25,11 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/logger"
-	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )
 
-const defaultConfigFilename string = ".hzc.yaml"
+const defaultConfigFilename = "config.yaml"
 
 func DefaultConfig() *hazelcast.Config {
 	config := hazelcast.NewConfig()
@@ -45,10 +44,16 @@ func registerConfig(config *hazelcast.Config, confPath string) error {
 	if out, err = yaml.Marshal(config); err != nil {
 		return err
 	}
-	if err = ioutil.WriteFile(confPath, out, 0666); err != nil {
+
+	filePath, _ := filepath.Split(confPath)
+	if err = os.MkdirAll(filePath, os.ModePerm); err != nil {
+		return fmt.Errorf("cannot create parent directories for configuration file: %w", err)
+	}
+
+	if err = ioutil.WriteFile(confPath, out, 0600); err != nil {
 		return fmt.Errorf("writing default configuration: %w", err)
 	}
-	fmt.Println("default config file is created at `~/.hzc.yaml`")
+	fmt.Printf("default config file is created at `%s`\n", confPath)
 	return nil
 }
 
@@ -57,7 +62,9 @@ func validateConfig(config *hazelcast.Config, confPath string) error {
 		if !errors.Is(err, os.ErrNotExist) {
 			return err
 		}
-		registerConfig(config, confPath)
+		if err = registerConfig(config, confPath); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -78,11 +85,7 @@ func MakeConfig(cmd *cobra.Command) (*hazelcast.Config, error) {
 			return nil, fmt.Errorf("reading configuration at %s: %w", confPath, err)
 		}
 	} else {
-		var hdir string
-		if hdir, err = homedir.Dir(); err != nil {
-			return nil, err
-		}
-		confPath = filepath.Join(hdir, defaultConfigFilename)
+		confPath = DefautConfigPath()
 		if err := validateConfig(config, confPath); err != nil {
 			return nil, err
 		}
@@ -122,4 +125,12 @@ func MakeConfig(cmd *cobra.Command) (*hazelcast.Config, error) {
 		config.Cluster.Name = "dev"
 	}
 	return config, nil
+}
+
+func DefautConfigPath() string {
+	homeDirectoryPath, err := os.UserHomeDir()
+	if err != nil {
+		panic(fmt.Errorf("retrieving home directory: %w", err))
+	}
+	return filepath.Join(homeDirectoryPath, ".local/share/hz-cli", defaultConfigFilename)
 }
