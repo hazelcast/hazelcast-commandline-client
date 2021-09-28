@@ -43,10 +43,17 @@ echo "Hazelcast Commandline Client (CLC) is downloaded to \$HOME/.local/bin/$PRO
 echo
 
 
-read -rd '' addToPathDirectives << EOF
+read -rd '' addToPathDirectivesZSH << EOF
 *Add \$HOME/.local/bin to PATH to access hz-cli from any directory
 - To add it to your path, simply execute:
 > echo "export PATH=\$HOME/.local/bin:\$PATH" >> \$HOME/.zshrc
+
+EOF
+
+read -rd '' addToPathDirectivesBASH << EOF
+*Add \$HOME/.local/bin to PATH to access hz-cli from any directory
+- To add it to your path, simply execute:
+> echo "export PATH=\$HOME/.local/bin:\$PATH" >> \$HOME/.bashrc
 
 EOF
 
@@ -68,7 +75,7 @@ EOF
 case "$(printf "${SHELL##*bin\/}")" in
     "zsh")
         if [[ ! -r $HOME/.zshrc || ! "$(cat $HOME/.zshrc)" == *"$(echo "export PATH=$HOME/.local/bin:$PATH")"* ]]; then
-            echo "$addToPathDirectives"
+            echo "$addToPathDirectivesZSH"
         fi
         curl --silent "https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/zsh_completion.zsh" --output $HOME/.zsh_completion.sh
         mkdir -p $HZCLI_HOME/autocompletion/zsh
@@ -77,13 +84,12 @@ case "$(printf "${SHELL##*bin\/}")" in
     ;;
     "bash")
         if [[ ! "$(cat $HOME/.bashrc)" == *"$(echo "export PATH=$HOME/.local/bin:$PATH")"* ]]; then
-            echo "export PATH=$HOME/.local/bin:$PATH" >> $HOME/.bashrc
+            echo "$addToPathDirectivesBASH"
         fi
         if [ ! -d "$HOME/.bash_completion.d" ]; then
             mkdir $HOME/.bash_completion.d
         fi
-        completionUrl=$(printf "https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/%s" "bash_completion.sh")
-        curl --silent "$completionUrl" --output $HOME/.bash_completion.d/hz-cli
+        curl --silent "https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/bash_completion.sh" --output $HOME/.bash_completion.d/hz-cli
         if [[ ! "$(cat $HOME/.bashrc)" == *"$(echo "$bashrcAddition")"* ]]; then
             echo "$bashrcAddition" >> $HOME/.bashrc
         fi
