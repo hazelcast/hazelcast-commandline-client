@@ -44,39 +44,39 @@ echo
 
 
 read -rd '' addToPathDirectivesZSH << EOF
-*Add \$HOME/.local/bin to PATH to access hz-cli from any directory
-To add it to your path, simply execute:
-echo "export PATH=\$HOME/.local/bin:\$PATH" >> \$HOME/.zshrc
+* Add \$HOME/.local/bin to PATH to access hz-cli from any directory
+  To add it to your path, simply execute:
+  echo "export PATH=\$HOME/.local/bin:\$PATH" >> \$HOME/.zshrc
 
 EOF
 
 read -rd '' addToPathDirectivesBASH << EOF
-*Add \$HOME/.local/bin to PATH to access hz-cli from any directory
-To add it to your path, simply execute:
-echo "export PATH=\$HOME/.local/bin:\$PATH" >> \$HOME/.bashrc
+* Add \$HOME/.local/bin to PATH to access hz-cli from any directory
+  To add it to your path, simply execute:
+  echo "export PATH=\$HOME/.local/bin:\$PATH" >> \$HOME/.bashrc
 
 EOF
 
 read -rd '' zshAutocompletionDirectives << EOF
 * To enable autocompletion capability for Zsh if you have not already
-Append the line below in your .zshrc file if it doesn't exists
-autoload -U compinit; compinit
+  Append the line below in your .zshrc file if it doesn't exists
+  autoload -U compinit; compinit
 
 * Enable autocompletion for Hazelcast Commandline Client (CLC)
-Create a symbolic link of autocompletion script to one of your paths in your fpath such as
-sudo ln -s $HZCLI_HOME/autocompletion/zsh/hz-cli \${fpath[1]}/_hz-cli
+  Create a symbolic link of autocompletion script to one of your paths in your fpath such as
+  sudo ln -s $HZCLI_HOME/autocompletion/zsh/hz-cli \${fpath[1]}/_hz-cli
 
 * Restart your terminal for the CLC autocompletion to take effect
-or renew your session via:
-/usr/bin/zsh
+  or renew your session via:
+  /usr/bin/zsh
 
 EOF
 
 read -rd '' bashAutocompletionDirectives << EOF
 
 * Restart your terminal for the CLC autocompletion to take effect
-or renew your session via:
-exec "\$BASH"
+  or renew your session via:
+  exec "\$BASH"
 
 EOF
 
@@ -84,6 +84,7 @@ case "$(printf "${SHELL##*bin\/}")" in
     "zsh")
         if [[ ! -r $HOME/.zshrc || ! "$(cat $HOME/.zshrc)" == *"$(echo "export PATH=$HOME/.local/bin:$PATH")"* ]]; then
             echo "$addToPathDirectivesZSH"
+            echo
         fi
         curl --silent "https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/zsh_completion.zsh" --output $HOME/.zsh_completion.sh
         mkdir -p $HZCLI_HOME/autocompletion/zsh
@@ -91,8 +92,9 @@ case "$(printf "${SHELL##*bin\/}")" in
         echo "$zshAutocompletionDirectives"
     ;;
     "bash")
-        if [[ ! "$(cat $HOME/.bashrc)" == *"$(echo "export PATH=$HOME/.local/bin:$PATH")"* ]]; then
+        if [[ ! $PATH == *"$HOME/.local/bin"* ]]; then
             echo "$addToPathDirectivesBASH"
+            echo
         fi
         xdg_home="$XDG_DATA_HOME"
         if [ -z "$xdg_home" ]; then
