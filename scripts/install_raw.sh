@@ -45,30 +45,30 @@ echo
 
 read -rd '' addToPathDirectivesZSH << EOF
 *Add \$HOME/.local/bin to PATH to access hz-cli from any directory
-- To add it to your path, simply execute:
-> echo "export PATH=\$HOME/.local/bin:\$PATH" >> \$HOME/.zshrc
+To add it to your path, simply execute:
+echo "export PATH=\$HOME/.local/bin:\$PATH" >> \$HOME/.zshrc
 
 EOF
 
 read -rd '' addToPathDirectivesBASH << EOF
 *Add \$HOME/.local/bin to PATH to access hz-cli from any directory
-- To add it to your path, simply execute:
-> echo "export PATH=\$HOME/.local/bin:\$PATH" >> \$HOME/.bashrc
+To add it to your path, simply execute:
+echo "export PATH=\$HOME/.local/bin:\$PATH" >> \$HOME/.bashrc
 
 EOF
 
 read -rd '' zshAutocompletionDirectives << EOF
 * To enable autocompletion capability for Zsh if you have not already
-- Append the line below in your .zshrc file if it doesn't exists
-> autoload -U compinit; compinit
+Append the line below in your .zshrc file if it doesn't exists
+autoload -U compinit; compinit
 
 * Enable autocompletion for Hazelcast Commandline Client (CLC)
-- Create a symbolic link of autocompletion script to one of your paths in your fpath such as
-> sudo ln -s $HZCLI_HOME/autocompletion/zsh/hz-cli \${fpath[1]}/_hz-cli
+Create a symbolic link of autocompletion script to one of your paths in your fpath such as
+sudo ln -s $HZCLI_HOME/autocompletion/zsh/hz-cli \${fpath[1]}/_hz-cli
 
 * Restart your terminal for the CLC autocompletion to take effect
 or renew your session via:
-> /usr/bin/zsh
+/usr/bin/zsh
 
 EOF
 
