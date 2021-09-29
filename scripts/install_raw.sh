@@ -72,6 +72,28 @@ or renew your session via:
 
 EOF
 
+xdg_home="$XDG_DATA_HOME"
+if [ -z "$xdg_home" ]; then
+    # XDG_DATA_HOME was not set
+    xdg_home="$HOME/.local/share"
+fi
+bash_completion_dir="$BASH_COMPLETION_USER_DIR"
+if [ -z "$bash_completion_dir" ]; then
+    # BASH_COMPLETION_USER_DIR was not set
+    bash_completion_dir="$xdg_home/bash-completion"
+fi
+
+read -rd '' bashAutocompletionDirectives << EOF
+* Enable autocompletion for Hazelcast Commandline Client (CLC)
+Create a symbolic link of autocompletion script to bash-completion:
+sudo ln -s $HZCLI_HOME/autocompletion/bash/hz-cli $bash_completion_dir/completions/hz-cli
+
+* Restart your terminal for the CLC autocompletion to take effect
+or renew your session via:
+/usr/bin/sh
+
+EOF
+
 case "$(printf "${SHELL##*bin\/}")" in
     "zsh")
         if [[ ! -r $HOME/.zshrc || ! "$(cat $HOME/.zshrc)" == *"$(echo "export PATH=$HOME/.local/bin:$PATH")"* ]]; then
@@ -86,12 +108,9 @@ case "$(printf "${SHELL##*bin\/}")" in
         if [[ ! "$(cat $HOME/.bashrc)" == *"$(echo "export PATH=$HOME/.local/bin:$PATH")"* ]]; then
             echo "$addToPathDirectivesBASH"
         fi
-        if [ ! -d "$HOME/.bash_completion.d" ]; then
-            mkdir $HOME/.bash_completion.d
-        fi
-        curl --silent "https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/bash_completion.sh" --output $HOME/.bash_completion.d/hz-cli
-        if [[ ! "$(cat $HOME/.bashrc)" == *"$(echo "$bashrcAddition")"* ]]; then
-            echo "$bashrcAddition" >> $HOME/.bashrc
-        fi
+        mkdir -p $bash_completion_dir/completions
+        mkdir -p $HZCLI_HOME/autocompletion/bash
+        curl --silent "https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/bash_completion.sh" --output $HZCLI_HOME/autocompletion/bash/hz-cli
+        echo "$bashAutocompletionDirectives"
     ;;
 esac
