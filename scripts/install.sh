@@ -2,11 +2,6 @@
 
 PROGRAM_NAME="hz-cli"
 HZCLI_HOME="$HOME/.local/share/hz-cli"
-read -rd '' bashrcAddition << EOF
-for bcfile in \$HOME/.bash_completion.d/* ; do
-    [ -f "\$bcfile" ] && . "\$bcfile"
-done
-EOF
 
 ghExtractTag() {
   tagUrl=$(curl "https://github.com/$1/releases/latest" -s -L -I -o /dev/null -w '%{url_effective}')
@@ -41,7 +36,6 @@ mkdir -p $HOME/.local/bin
 mv $HOME/hz-cli $HOME/.local/bin
 echo "Hazelcast Commandline Client (CLC) is downloaded to \$HOME/.local/bin/$PROGRAM_NAME"
 echo
-
 
 read -rd '' addToPathDirectivesZSH << EOF
 * Add \$HOME/.local/bin to PATH to access hz-cli from any directory
@@ -80,36 +74,34 @@ read -rd '' bashAutocompletionDirectives << EOF
 
 EOF
 
-case "$(printf "${SHELL##*bin\/}")" in
-    "zsh")
-        if [[ ! -r $HOME/.zshrc || ! "$(cat $HOME/.zshrc)" == *"$(echo "export PATH=$HOME/.local/bin:$PATH")"* ]]; then
-            echo "$addToPathDirectivesZSH"
-            echo
-        fi
-        curl --silent "https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/zsh_completion.zsh" --output $HOME/.zsh_completion.sh
-        mkdir -p $HZCLI_HOME/autocompletion/zsh
-        mv $HOME/.zsh_completion.sh $HZCLI_HOME/autocompletion/zsh/hz-cli
-        echo "$zshAutocompletionDirectives"
-    ;;
-    "bash")
-        if [[ ! $PATH == *"$HOME/.local/bin"* ]]; then
-            echo "$addToPathDirectivesBASH"
-            echo
-        fi
-        xdg_home="$XDG_DATA_HOME"
-        if [ -z "$xdg_home" ]; then
-            # XDG_DATA_HOME was not set
-            xdg_home="$HOME/.local/share"
-        fi
-        bash_completion_dir="$BASH_COMPLETION_USER_DIR"
-        if [ -z "$bash_completion_dir" ]; then
-            # BASH_COMPLETION_USER_DIR was not set
-            bash_completion_dir="$xdg_home/bash-completion"
-        fi
-        mkdir -p $bash_completion_dir/completions
-        mkdir -p $HZCLI_HOME/autocompletion/bash
-        curl --silent "https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/bash_completion.sh" --output $HZCLI_HOME/autocompletion/bash/hz-cli
-        ln -s $HZCLI_HOME/autocompletion/bash/hz-cli $bash_completion_dir/completions/hz-cli
-        echo "$bashAutocompletionDirectives"
-    ;;
-esac
+echo "Installation for ZSH:"
+if [[ ! -r $HOME/.zshrc || ! "$(cat $HOME/.zshrc)" == *"$(echo "export PATH=$HOME/.local/bin:$PATH")"* ]]; then
+    echo "$addToPathDirectivesZSH"
+    echo
+fi
+curl --silent "https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/zsh_completion.zsh" --output $HOME/.zsh_completion.sh
+mkdir -p $HZCLI_HOME/autocompletion/zsh
+mv $HOME/.zsh_completion.sh $HZCLI_HOME/autocompletion/zsh/hz-cli
+echo "$zshAutocompletionDirectives"
+
+echo
+echo "Installation for BASH:"
+if [[ ! $PATH == *"$HOME/.local/bin"* ]]; then
+    echo "$addToPathDirectivesBASH"
+    echo
+fi
+xdg_home="$XDG_DATA_HOME"
+if [ -z "$xdg_home" ]; then
+    # XDG_DATA_HOME was not set
+    xdg_home="$HOME/.local/share"
+fi
+bash_completion_dir="$BASH_COMPLETION_USER_DIR"
+if [ -z "$bash_completion_dir" ]; then
+    # BASH_COMPLETION_USER_DIR was not set
+    bash_completion_dir="$xdg_home/bash-completion"
+fi
+mkdir -p $bash_completion_dir/completions
+mkdir -p $HZCLI_HOME/autocompletion/bash
+curl --silent "https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/bash_completion.sh" --output $HZCLI_HOME/autocompletion/bash/hz-cli
+ln -s $HZCLI_HOME/autocompletion/bash/hz-cli $bash_completion_dir/completions/hz-cli
+echo "$bashAutocompletionDirectives"
