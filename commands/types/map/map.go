@@ -53,7 +53,7 @@ func getMap(clientConfig *hazelcast.Config, mapName string) (result *hazelcast.M
 		if panicErr, ok := obj.(error); ok {
 			err = panicErr
 			if msg, handled := internal.TranslateError(err); handled {
-				fmt.Println("Error: ", msg)
+				fmt.Println("Error:", msg)
 				return
 			}
 			fmt.Println("Error: Something went wrong")
@@ -68,7 +68,7 @@ func getMap(clientConfig *hazelcast.Config, mapName string) (result *hazelcast.M
 	hzcClient, err := hazelcast.StartNewClientWithConfig(ctx, *clientConfig)
 	if err != nil {
 		if msg, handled := internal.TranslateError(err); handled {
-			fmt.Println("Error: ", msg)
+			fmt.Println("Error:", msg)
 			return
 		}
 		fmt.Println("Error: Something went wrong")
