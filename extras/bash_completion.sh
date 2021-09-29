@@ -23,7 +23,7 @@ __hz-cli_get_completion_results() {
     # Prepare the command to request completions for the program.
     # Calling ${words[0]} instead of directly hz-cli allows to handle aliases
     args=("${words[@]:1}")
-    requestComp="${words[0]} __complete ${args[*]}"
+    requestComp="${words[0]} __completeNoDesc ${args[*]}"
 
     lastParam=${words[$((${#words[@]}-1))]}
     lastChar=${lastParam:$((${#lastParam}-1)):1}
