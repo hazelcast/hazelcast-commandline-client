@@ -62,7 +62,7 @@ read -rd '' zshAutocompletionDirectives << EOF
 
 * Restart your terminal for the CLC autocompletion to take effect
   or renew your session via:
-  /usr/bin/zsh
+  /bin/zsh
 
 EOF
 
