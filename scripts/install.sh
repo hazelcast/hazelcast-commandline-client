@@ -39,15 +39,15 @@ echo
 
 read -rd '' addToPathDirectivesZSH << EOF
 * Add \$HOME/.local/bin to PATH to access hz-cli from any directory
-  To add it to your path, simply execute:
-  echo "export PATH=\$HOME/.local/bin:\$PATH" >> \$HOME/.zshrc
+  Append the line below in your .zshrc file if it doesn't exists
+  export PATH=\$HOME/.local/bin:\$PATH" >> \$HOME/.zshrc
 
 EOF
 
 read -rd '' addToPathDirectivesBASH << EOF
 * Add \$HOME/.local/bin to PATH to access hz-cli from any directory
-  To add it to your path, simply execute:
-  echo "export PATH=\$HOME/.local/bin:\$PATH" >> \$HOME/.bashrc
+  Append the line below in your .bashrc file if it doesn't exists
+  export PATH=\$HOME/.local/bin:\$PATH" >> \$HOME/.bashrc
 
 EOF
 

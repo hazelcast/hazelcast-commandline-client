@@ -5,18 +5,11 @@
 * Go 1.15 or better
 
 ## Download & Install
-### Bash
 ```
 curl https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/scripts/install.sh | bash
 ```
 
-### Zsh
-```
-curl https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/scripts/install.sh | zsh
-```
-
 ## Build
-
 ### Download the Repository using Git
 ```
 git clone https://github.com/hazelcast/hazelcast-commandline-client.git
