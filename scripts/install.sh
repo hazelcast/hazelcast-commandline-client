@@ -85,7 +85,7 @@ mv $HOME/.zsh_completion.sh $HZCLI_HOME/autocompletion/zsh/hz-cli
 echo "$zshAutocompletionDirectives"
 
 echo
-echo "Installation for BASH:"
+echo "Installation for Bash:"
 if [[ ! $PATH == *"$HOME/.local/bin"* ]]; then
     echo "$addToPathDirectivesBASH"
     echo
@@ -100,8 +100,8 @@ if [ -z "$bash_completion_dir" ]; then
     # BASH_COMPLETION_USER_DIR was not set
     bash_completion_dir="$xdg_home/bash-completion"
 fi
-mkdir -p $bash_completion_dir/completions
-mkdir -p $HZCLI_HOME/autocompletion/bash
-curl --silent "https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/bash_completion.sh" --output $HZCLI_HOME/autocompletion/bash/hz-cli
-ln -s $HZCLI_HOME/autocompletion/bash/hz-cli $bash_completion_dir/completions/hz-cli
+mkdir -p "${bash_completion_dir}/completions"
+mkdir -p "${HZCLI_HOME}/autocompletion/bash"
+curl --silent "https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/bash_completion.sh" --output "${HZCLI_HOME}/autocompletion/bash/hz-cli"
+ln -s $HZCLI_HOME/autocompletion/bash/hz-cli "${bash_completion_dir}/completions/hz-cli"
 echo "$bashAutocompletionDirectives"

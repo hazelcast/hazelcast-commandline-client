@@ -5,12 +5,12 @@
 * Go 1.15 or better
 
 ## Download & Install
-For bash:
+### Bash
 ```
 curl https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/scripts/install.sh | bash
 ```
 
-For zsh:
+### Zsh
 ```
 curl https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/scripts/install.sh | zsh
 ```
