@@ -44,7 +44,7 @@ func CallClusterOperation(config *hazelcast.Config, operation string, state *str
 	}
 	if err != nil {
 		if msg, handled := TranslateError(err, operation); handled {
-			fmt.Println("Error: ", msg)
+			fmt.Println("Error:", msg)
 			return nil, err
 		}
 		fmt.Println("Error: Something went wrong")
