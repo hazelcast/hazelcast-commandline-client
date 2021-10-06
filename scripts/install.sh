@@ -74,7 +74,7 @@ read -rd '' bashAutocompletionDirectives << EOF
 
 EOF
 
-echo "Installation for ZSH:"
+echo "Installation for Zsh:"
 if [[ ! -r $HOME/.zshrc || ! "$(cat $HOME/.zshrc)" == *"$(echo "export PATH=$HOME/.local/bin:$PATH")"* ]]; then
     echo "$addToPathDirectivesZSH"
     echo
