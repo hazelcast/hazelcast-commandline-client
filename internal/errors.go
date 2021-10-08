@@ -44,9 +44,12 @@ func TranslateError(err error, op ...string) (string, bool) {
 func TranslateClusterError(err error, operation string) (string, bool) {
 	var urlError *url.Error
 	if errors.As(err, &urlError) && strings.Contains(urlError.Error(), "EOF") {
-		if operation == ClusterShutdown {
+		if operation == ClusterShutdown || operation == ClusterChangeState {
 			return "Cannot access Hazelcast REST API. Is it enabled? If yes, check CLUSTER_WRITE endpoint group is enabled https://docs.hazelcast.com/imdg/latest/management/rest-endpoint-groups.html\nIf not check this link to find out more: https://docs.hazelcast.com/imdg/latest/clients/rest.html", true
 		}
+		return "Cannot access Hazelcast REST API. Is it enabled? Check this link to find out more: https://docs.hazelcast.com/imdg/latest/clients/rest.html", true
+	}
+	if errors.Is(err, syscall.ECONNRESET) {
 		return "Cannot access Hazelcast REST API. Is it enabled? Check this link to find out more: https://docs.hazelcast.com/imdg/latest/clients/rest.html", true
 	}
 	return "", false
