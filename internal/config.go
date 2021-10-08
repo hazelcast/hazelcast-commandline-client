@@ -83,17 +83,17 @@ func MakeConfig(cmd *cobra.Command) (*hazelcast.Config, error) {
 	if confPath != "" {
 		confBytes, err = ioutil.ReadFile(confPath)
 		if err != nil {
-			fmt.Printf("Error: Cannot read configuration file on %s. Please make sure configuration path is correct and process have sufficient permission.\n", confPath)
+			fmt.Printf("Error: Cannot read configuration file on %s. Make sure configuration path is correct and process have sufficient permission.\n", confPath)
 			return nil, fmt.Errorf("reading configuration at %s: %w", confPath, err)
 		}
 	} else {
 		confPath = DefautConfigPath()
 		if err := validateConfig(config, confPath); err != nil {
-			fmt.Printf("Error: Cannot create default configuration file on default config path %s. Please check that process has necessary permissions to write to default config path or provide a custom config path\n", confPath)
+			fmt.Printf("Error: Cannot create default configuration file on default config path %s. Check that process has necessary permissions to write to default config path or provide a custom config path\n", confPath)
 			return nil, err
 		}
 		if confBytes, err = ioutil.ReadFile(confPath); err != nil {
-			fmt.Printf("Error: Cannot read configuration file on default config path %s. Please make sure process have sufficient permission to access configuration path", confPath)
+			fmt.Printf("Error: Cannot read configuration file on default config path %s. Make sure process have sufficient permission to access configuration path", confPath)
 			return nil, fmt.Errorf("reading configuration at %s: %w", confPath, err)
 		}
 	}

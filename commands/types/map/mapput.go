@@ -65,7 +65,7 @@ func normalizeMapValue() (interface{}, error) {
 		valueStr = mapValue
 	} else if mapValueFile != "" {
 		if valueStr, err = loadValueFile(mapValueFile); err != nil {
-			fmt.Println("Error: Cannot load the value file. Please make sure file exists and process has correct access rights")
+			fmt.Println("Error: Cannot load the value file. Make sure file exists and process has correct access rights")
 			return nil, fmt.Errorf("error loading value: %w", err)
 		}
 	} else {
@@ -78,7 +78,7 @@ func normalizeMapValue() (interface{}, error) {
 	case internal.TypeJSON:
 		return serialization.JSON(valueStr), nil
 	}
-	fmt.Println("Error: Provided value type parameter is not a known type. Please provide either 'string' or 'json'")
+	fmt.Println("Error: Provided value type parameter is not a known type. Provide either 'string' or 'json'")
 	return nil, fmt.Errorf("%s is not a known value type", mapValueType)
 }
 
