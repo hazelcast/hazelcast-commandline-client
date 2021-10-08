@@ -57,7 +57,7 @@ func getMap(clientConfig *hazelcast.Config, mapName string) (result *hazelcast.M
 				fmt.Println("Error:", msg)
 				return
 			}
-			fmt.Println("Error: Something went wrong")
+			fmt.Println("Error:", err)
 		}
 	}()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -74,11 +74,11 @@ func getMap(clientConfig *hazelcast.Config, mapName string) (result *hazelcast.M
 			fmt.Println("Error:", msg)
 			return
 		}
-		fmt.Println("Error: Something went wrong")
+		fmt.Println("Error:", err)
 		return nil, fmt.Errorf("error creating the client: %w", err)
 	}
 	if result, err = hzcClient.GetMap(ctx, mapName); err != nil {
-		fmt.Println("Error: Something went wrong")
+		fmt.Println("Error:", err)
 	}
 	return
 }

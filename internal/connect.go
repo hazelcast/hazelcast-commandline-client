@@ -47,7 +47,7 @@ func CallClusterOperation(config *hazelcast.Config, operation string, state *str
 			fmt.Println("Error:", msg)
 			return nil, err
 		}
-		fmt.Println("Error: Something went wrong")
+		fmt.Println("Error:", err)
 		return nil, err
 	}
 	defer resp.Body.Close()
