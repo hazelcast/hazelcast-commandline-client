@@ -53,7 +53,6 @@ var mapGetCmd = &cobra.Command{
 					fmt.Println(v.String())
 				}
 			default:
-				fmt.Println(v)
 				fmt.Println(value)
 			}
 			return

@@ -28,6 +28,9 @@ var clusterVersionCmd = &cobra.Command{
 	Short: "retrieve information from the cluster",
 	Run: func(cmd *cobra.Command, args []string) {
 		defer internal.ErrorRecover()
+		if isCloudInvocation(cmd) {
+			return
+		}
 		config, err := internal.MakeConfig(cmd)
 		if err != nil { //TODO error look like unhandled although it is handled in MakeConfig.Find a better approach
 			return

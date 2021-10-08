@@ -43,7 +43,7 @@ func CallClusterOperation(config *hazelcast.Config, operation string, state *str
 		resp, err = http.Get(urlStr)
 	}
 	if err != nil {
-		if msg, handled := TranslateError(err, operation); handled {
+		if msg, handled := TranslateError(err, config.Cluster.Cloud.Enabled, operation); handled {
 			fmt.Println("Error:", msg)
 			return nil, err
 		}

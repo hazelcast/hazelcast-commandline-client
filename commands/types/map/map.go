@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/types"
 	"github.com/spf13/cobra"
 
@@ -52,7 +53,7 @@ func getMap(clientConfig *hazelcast.Config, mapName string) (result *hazelcast.M
 		obj := recover()
 		if panicErr, ok := obj.(error); ok {
 			err = panicErr
-			if msg, handled := internal.TranslateError(err); handled {
+			if msg, handled := internal.TranslateError(err, clientConfig.Cluster.Cloud.Enabled); handled {
 				fmt.Println("Error:", msg)
 				return
 			}
@@ -65,9 +66,11 @@ func getMap(clientConfig *hazelcast.Config, mapName string) (result *hazelcast.M
 		clientConfig = &hazelcast.Config{}
 	}
 	clientConfig.Cluster.ConnectionStrategy.Retry.InitialBackoff = types.Duration(1 * time.Second)
-	hzcClient, err := hazelcast.StartNewClientWithConfig(ctx, *clientConfig)
+	configCopy := *clientConfig
+	configCopy.Logger.Level = logger.OffLevel // internal event loop prints error logs
+	hzcClient, err := hazelcast.StartNewClientWithConfig(ctx, configCopy)
 	if err != nil {
-		if msg, handled := internal.TranslateError(err); handled {
+		if msg, handled := internal.TranslateError(err, clientConfig.Cluster.Cloud.Enabled); handled {
 			fmt.Println("Error:", msg)
 			return
 		}
