@@ -54,7 +54,7 @@ func registerConfig(config *hazelcast.Config, confPath string) error {
 	if err = ioutil.WriteFile(confPath, out, 0600); err != nil {
 		return fmt.Errorf("writing default configuration: %w", err)
 	}
-	fmt.Printf("default config file is created at `%s`\n", confPath)
+	fmt.Printf("Default configuration file for command line client is created at `%s`\n", confPath)
 	return nil
 }
 
