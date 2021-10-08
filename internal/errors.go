@@ -56,7 +56,7 @@ func TranslateClusterError(err error, operation string) (string, bool) {
 }
 
 func TranslateNetworkError(err error, isCloudCluster bool) (string, bool) {
-	cannotConnectErr := "Can not connect to Hazelcast Cluster. Please make sure Hazelcast cluster is reachable, up and running. Check this link to create a local hazelcast cluster: https://docs.hazelcast.com/hazelcast/latest/getting-started/quickstart"
+	cannotConnectErr := "Can not connect to Hazelcast Cluster. Please make sure Hazelcast cluster is reachable, up and running. Check this link to create a local Hazelcast cluster: https://docs.hazelcast.com/hazelcast/latest/getting-started/quickstart"
 	/*var netErr net.Error
 	if errors.As(err, &netErr) {
 		if netErr.Timeout() {
@@ -80,13 +80,13 @@ func TranslateNetworkError(err error, isCloudCluster bool) (string, bool) {
 	}
 	if errors.Is(err, context.DeadlineExceeded) {
 		if isCloudCluster {
-			return "Can not connect to Hazelcast Cloud Cluster. Please make sure that provided cloud-token and cluster-name parameters are correct.", true
+			return "Can not connect to Hazelcast Cloud Cluster. Make sure that provided cloud-token and cluster-name parameters are correct.", true
 		}
 		return cannotConnectErr, true
 	}
 	var addrErr *net.AddrError
 	if errors.As(err, &addrErr) {
-		return "Invalid cluster address. Please make sure Hazelcast cluster is reachable, up and running. Check this link to create a local hazelcast cluster: https://docs.hazelcast.com/hazelcast/latest/getting-started/quickstart", true
+		return "Invalid cluster address. Make sure Hazelcast cluster is reachable, up and running. Check this link to create a local hazelcast cluster: https://docs.hazelcast.com/hazelcast/latest/getting-started/quickstart", true
 	}
 	// Cannot decide on error, leave it as is, unknown
 	return "", false
