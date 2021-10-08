@@ -29,6 +29,7 @@ var clusterShutdownCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		defer internal.ErrorRecover()
 		if isCloudInvocation(cmd) {
+			fmt.Println("Cluster operations on cloud are not supported. Checkout https://github.com/hazelcast/hazelcast-cloud-cli for cluster management on cloud.")
 			return
 		}
 		config, err := internal.MakeConfig(cmd)

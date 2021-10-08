@@ -27,6 +27,7 @@ var ClusterCmd = &cobra.Command{
 	Long:  `administrative cluster operations which controls a Hazelcast cluster by manipulating its state and other features`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if isCloudInvocation(cmd) {
+			fmt.Println("Cluster operations on cloud are not supported. Checkout https://github.com/hazelcast/hazelcast-cloud-cli for cluster management on cloud.")
 			return nil
 		}
 		return cmd.Help()
@@ -42,9 +43,5 @@ func init() {
 
 func isCloudInvocation(cmd *cobra.Command) bool {
 	token, _ := cmd.InheritedFlags().GetString("cloud-token")
-	if token != "" {
-		fmt.Println("Hazelcast clc does not support cluster operations on cloud. Go checkout https://github.com/hazelcast/hazelcast-cloud-cli for cluster management on cloud.")
-		return true
-	}
-	return false
+	return token != ""
 }
