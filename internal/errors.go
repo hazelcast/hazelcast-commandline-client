@@ -32,48 +32,51 @@ func ErrorRecover() {
 	}
 }
 
-func TranslateError(err error, op ...string) (string, bool) {
+func TranslateError(err error, isCloudCluster bool, op ...string) (string, bool) {
 	if len(op) == 1 {
 		if msg, handled := TranslateClusterError(err, op[0]); handled {
 			return msg, true
 		}
 	}
-	return TranslateNetworkError(err)
+	return TranslateNetworkError(err, isCloudCluster)
 }
 
 func TranslateClusterError(err error, operation string) (string, bool) {
 	var urlError *url.Error
 	if errors.As(err, &urlError) && strings.Contains(urlError.Error(), "EOF") {
-		if operation == ClusterShutdown {
-			return "Cannot access Hazelcast REST API. Is it enabled? If yes, check CLUSTER_WRITE endpoint group is enabled https://docs.hazelcast.com/imdg/latest/management/rest-endpoint-groups.html\nIf not check this link to find out more: https://docs.hazelcast.com/imdg/latest/clients/rest.html", true
+		if operation == ClusterShutdown || operation == ClusterChangeState {
+			return "Cannot access Hazelcast REST API. Is it enabled? If yes, check CLUSTER_WRITE endpoint group is enabled https://docs.hazelcast.com/hazelcast/latest/maintain-cluster/rest-api#using-rest-endpoint-groups\nIf not check this link to find out more: https://docs.hazelcast.com/hazelcast/5.0/maintain-cluster/rest-api#enabling-rest-api", true
 		}
-		return "Cannot access Hazelcast REST API. Is it enabled? Check this link to find out more: https://docs.hazelcast.com/imdg/latest/clients/rest.html", true
+		return "Cannot access Hazelcast REST API. Is it enabled? Check this link to find out more: https://docs.hazelcast.com/hazelcast/latest/maintain-cluster/rest-api#enabling-rest-api", true
+	}
+	if errors.Is(err, syscall.ECONNRESET) {
+		return "Cannot access Hazelcast REST API. Is it enabled? Check this link to find out more: https://docs.hazelcast.com/hazelcast/latest/maintain-cluster/rest-api#enabling-rest-api", true
 	}
 	return "", false
 }
 
-func TranslateNetworkError(err error) (string, bool) {
-	var netErr net.Error
-	if errors.As(err, &netErr) {
-		if netErr.Timeout() {
-			return "Can not connect to Hazelcast Cluster. Please make sure Hazelcast cluster is reachable, up and running. Check this link to create a IMDG cluster: https://docs.hazelcast.com/imdg/latest/getting-started.html", true
-		}
-		var addrErr *net.AddrError
-		if errors.As(err, &addrErr) {
-			return "Invalid cluster address. Please make sure Hazelcast cluster is reachable, up and running. Check this link to create a IMDG cluster: https://docs.hazelcast.com/imdg/latest/getting-started.html", true
-		}
-	}
+func TranslateNetworkError(err error, isCloudCluster bool) (string, bool) {
+	cannotConnectErr := "Can not connect to Hazelcast Cluster. Make sure Hazelcast cluster is reachable, up and running. Check this link to create a local Hazelcast cluster: https://docs.hazelcast.com/hazelcast/latest/getting-started/quickstart"
 	var netOpErr *net.OpError
-	if errors.As(err, &netOpErr) && netOpErr.Op == "dial" {
-		return "Can not connect to Hazelcast Cluster. Please make sure Hazelcast cluster is reachable, up and running. Check this link to create a IMDG cluster: https://docs.hazelcast.com/imdg/latest/getting-started.html", true
+	if errors.As(err, &netOpErr) {
+		if netOpErr.Op == "dial" {
+			return cannotConnectErr, true
+		}
 	}
 	var syscallErr syscall.Errno
 	//TODO these syscall errors seem platform specific, decide on what to do
 	if errors.As(err, &syscallErr) && syscallErr == syscall.ECONNREFUSED {
-		return "Can not connect to Hazelcast Cluster. Please make sure Hazelcast cluster is reachable, up and running. Check this link to create a IMDG cluster: https://docs.hazelcast.com/imdg/latest/getting-started.html", true
+		return cannotConnectErr, true
 	}
 	if errors.Is(err, context.DeadlineExceeded) {
-		return "Can not connect to Hazelcast Cluster. Please make sure Hazelcast cluster is reachable, up and running. Check this link to create a IMDG cluster: https://docs.hazelcast.com/imdg/latest/getting-started.html", true
+		if isCloudCluster {
+			return "Can not connect to Hazelcast Cloud Cluster. Make sure cluster is running and provided cloud-token and cluster-name parameters are correct.", true
+		}
+		return cannotConnectErr, true
+	}
+	var addrErr *net.AddrError
+	if errors.As(err, &addrErr) {
+		return "Invalid cluster address. Make sure Hazelcast cluster is reachable, up and running. Check this link to create a local Hazelcast cluster: https://docs.hazelcast.com/hazelcast/latest/getting-started/quickstart", true
 	}
 	// Cannot decide on error, leave it as is, unknown
 	return "", false
