@@ -70,7 +70,7 @@ func TranslateNetworkError(err error, isCloudCluster bool) (string, bool) {
 	}
 	if errors.Is(err, context.DeadlineExceeded) {
 		if isCloudCluster {
-			return "Can not connect to Hazelcast Cloud Cluster. Make sure that provided cloud-token and cluster-name parameters are correct.", true
+			return "Can not connect to Hazelcast Cloud Cluster. Make sure cluster is running and provided cloud-token and cluster-name parameters are correct.", true
 		}
 		return cannotConnectErr, true
 	}

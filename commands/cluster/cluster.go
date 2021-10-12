@@ -21,13 +21,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const invocationOnCloudErrorMessage = "Cluster operations on cloud are not supported. Checkout https://github.com/hazelcast/hazelcast-cloud-cli for cluster management on cloud."
+
 var ClusterCmd = &cobra.Command{
 	Use:   "cluster {get-state | change-state | shutdown | query} [--state new-state]",
 	Short: "administrative cluster operations",
 	Long:  `administrative cluster operations which controls a Hazelcast cluster by manipulating its state and other features`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if isCloudInvocation(cmd) {
-			fmt.Println("Cluster operations on cloud are not supported. Checkout https://github.com/hazelcast/hazelcast-cloud-cli for cluster management on cloud.")
+			fmt.Println(invocationOnCloudErrorMessage)
 			return nil
 		}
 		return cmd.Help()
