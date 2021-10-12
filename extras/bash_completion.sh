@@ -1,6 +1,6 @@
-# bash completion V2 for hz-cli                               -*- shell-script -*-
+# bash completion V2 for hzc                                  -*- shell-script -*-
 
-__hz-cli_debug()
+__hzc_debug()
 {
     if [[ -n ${BASH_COMP_DEBUG_FILE:-} ]]; then
         echo "$*" >> "${BASH_COMP_DEBUG_FILE}"
@@ -9,41 +9,41 @@ __hz-cli_debug()
 
 # Macs have bash3 for which the bash-completion package doesn't include
 # _init_completion. This is a minimal version of that function.
-__hz-cli_init_completion()
+__hzc_init_completion()
 {
     COMPREPLY=()
     _get_comp_words_by_ref "$@" cur prev words cword
 }
 
-# This function calls the hz-cli program to obtain the completion
+# This function calls the hzc program to obtain the completion
 # results and the directive.  It fills the 'out' and 'directive' vars.
-__hz-cli_get_completion_results() {
+__hzc_get_completion_results() {
     local requestComp lastParam lastChar args
 
     # Prepare the command to request completions for the program.
-    # Calling ${words[0]} instead of directly hz-cli allows to handle aliases
+    # Calling ${words[0]} instead of directly hzc allows to handle aliases
     args=("${words[@]:1}")
-    requestComp="${words[0]} __completeNoDesc ${args[*]}"
+    requestComp="${words[0]} __complete ${args[*]}"
 
     lastParam=${words[$((${#words[@]}-1))]}
     lastChar=${lastParam:$((${#lastParam}-1)):1}
-    __hz-cli_debug "lastParam ${lastParam}, lastChar ${lastChar}"
+    __hzc_debug "lastParam ${lastParam}, lastChar ${lastChar}"
 
     if [ -z "${cur}" ] && [ "${lastChar}" != "=" ]; then
         # If the last parameter is complete (there is a space following it)
         # We add an extra empty parameter so we can indicate this to the go method.
-        __hz-cli_debug "Adding extra empty parameter"
+        __hzc_debug "Adding extra empty parameter"
         requestComp="${requestComp} ''"
     fi
 
-    # When completing a flag with an = (e.g., hz-cli -n=<TAB>)
+    # When completing a flag with an = (e.g., hzc -n=<TAB>)
     # bash focuses on the part after the =, so we need to remove
     # the flag part from $cur
     if [[ "${cur}" == -*=* ]]; then
         cur="${cur#*=}"
     fi
 
-    __hz-cli_debug "Calling ${requestComp}"
+    __hzc_debug "Calling ${requestComp}"
     # Use eval to handle any environment variables and such
     out=$(eval "${requestComp}" 2>/dev/null)
 
@@ -55,11 +55,11 @@ __hz-cli_get_completion_results() {
         # There is not directive specified
         directive=0
     fi
-    __hz-cli_debug "The completion directive is: ${directive}"
-    __hz-cli_debug "The completions are: ${out[*]}"
+    __hzc_debug "The completion directive is: ${directive}"
+    __hzc_debug "The completions are: ${out[*]}"
 }
 
-__hz-cli_process_completion_results() {
+__hzc_process_completion_results() {
     local shellCompDirectiveError=1
     local shellCompDirectiveNoSpace=2
     local shellCompDirectiveNoFileComp=4
@@ -68,23 +68,23 @@ __hz-cli_process_completion_results() {
 
     if [ $((directive & shellCompDirectiveError)) -ne 0 ]; then
         # Error code.  No completion.
-        __hz-cli_debug "Received error from custom completion go code"
+        __hzc_debug "Received error from custom completion go code"
         return
     else
         if [ $((directive & shellCompDirectiveNoSpace)) -ne 0 ]; then
             if [[ $(type -t compopt) = "builtin" ]]; then
-                __hz-cli_debug "Activating no space"
+                __hzc_debug "Activating no space"
                 compopt -o nospace
             else
-                __hz-cli_debug "No space directive not supported in this version of bash"
+                __hzc_debug "No space directive not supported in this version of bash"
             fi
         fi
         if [ $((directive & shellCompDirectiveNoFileComp)) -ne 0 ]; then
             if [[ $(type -t compopt) = "builtin" ]]; then
-                __hz-cli_debug "Activating no file completion"
+                __hzc_debug "Activating no file completion"
                 compopt +o default
             else
-                __hz-cli_debug "No file completion directive not supported in this version of bash"
+                __hzc_debug "No file completion directive not supported in this version of bash"
             fi
         fi
     fi
@@ -100,7 +100,7 @@ __hz-cli_process_completion_results() {
         done
 
         filteringCmd="_filedir $fullFilter"
-        __hz-cli_debug "File filtering command: $filteringCmd"
+        __hzc_debug "File filtering command: $filteringCmd"
         $filteringCmd
     elif [ $((directive & shellCompDirectiveFilterDirs)) -ne 0 ]; then
         # File completion for directories only
@@ -109,21 +109,21 @@ __hz-cli_process_completion_results() {
         local subdir
         subdir=$(printf "%s" "${out[0]}")
         if [ -n "$subdir" ]; then
-            __hz-cli_debug "Listing directories in $subdir"
+            __hzc_debug "Listing directories in $subdir"
             pushd "$subdir" >/dev/null 2>&1 && _filedir -d && popd >/dev/null 2>&1 || return
         else
-            __hz-cli_debug "Listing directories in ."
+            __hzc_debug "Listing directories in ."
             _filedir -d
         fi
     else
-        __hz-cli_handle_standard_completion_case
+        __hzc_handle_standard_completion_case
     fi
 
-    __hz-cli_handle_special_char "$cur" :
-    __hz-cli_handle_special_char "$cur" =
+    __hzc_handle_special_char "$cur" :
+    __hzc_handle_special_char "$cur" =
 }
 
-__hz-cli_handle_standard_completion_case() {
+__hzc_handle_standard_completion_case() {
     local tab comp
     tab=$(printf '\t')
 
@@ -145,9 +145,9 @@ __hz-cli_handle_standard_completion_case() {
             continue
         fi
 
-        __hz-cli_debug "Original comp: $comp"
-        comp="$(__hz-cli_format_comp_descriptions "$comp" "$longest")"
-        __hz-cli_debug "Final comp: $comp"
+        __hzc_debug "Original comp: $comp"
+        comp="$(__hzc_format_comp_descriptions "$comp" "$longest")"
+        __hzc_debug "Final comp: $comp"
         completions+=("$comp")
     done < <(printf "%s\n" "${out[@]}")
 
@@ -157,15 +157,15 @@ __hz-cli_handle_standard_completion_case() {
 
     # If there is a single completion left, remove the description text
     if [ ${#COMPREPLY[*]} -eq 1 ]; then
-        __hz-cli_debug "COMPREPLY[0]: ${COMPREPLY[0]}"
+        __hzc_debug "COMPREPLY[0]: ${COMPREPLY[0]}"
         comp="${COMPREPLY[0]%% *}"
-        __hz-cli_debug "Removed description from single completion, which is now: ${comp}"
+        __hzc_debug "Removed description from single completion, which is now: ${comp}"
         COMPREPLY=()
         COMPREPLY+=("$comp")
     fi
 }
 
-__hz-cli_handle_special_char()
+__hzc_handle_special_char()
 {
     local comp="$1"
     local char=$2
@@ -178,7 +178,7 @@ __hz-cli_handle_special_char()
     fi
 }
 
-__hz-cli_format_comp_descriptions()
+__hzc_format_comp_descriptions()
 {
     local tab
     tab=$(printf '\t')
@@ -221,7 +221,7 @@ __hz-cli_format_comp_descriptions()
     printf "%q" "${comp}"
 }
 
-__start_hz-cli()
+__start_hzc()
 {
     local cur prev words cword split
 
@@ -232,28 +232,28 @@ __start_hz-cli()
     if declare -F _init_completion >/dev/null 2>&1; then
         _init_completion -n "=:" || return
     else
-        __hz-cli_init_completion -n "=:" || return
+        __hzc_init_completion -n "=:" || return
     fi
 
-    __hz-cli_debug
-    __hz-cli_debug "========= starting completion logic =========="
-    __hz-cli_debug "cur is ${cur}, words[*] is ${words[*]}, #words[@] is ${#words[@]}, cword is $cword"
+    __hzc_debug
+    __hzc_debug "========= starting completion logic =========="
+    __hzc_debug "cur is ${cur}, words[*] is ${words[*]}, #words[@] is ${#words[@]}, cword is $cword"
 
     # The user could have moved the cursor backwards on the command-line.
     # We need to trigger completion from the $cword location, so we need
     # to truncate the command-line ($words) up to the $cword location.
     words=("${words[@]:0:$cword+1}")
-    __hz-cli_debug "Truncated words[*]: ${words[*]},"
+    __hzc_debug "Truncated words[*]: ${words[*]},"
 
     local out directive
-    __hz-cli_get_completion_results
-    __hz-cli_process_completion_results
+    __hzc_get_completion_results
+    __hzc_process_completion_results
 }
 
 if [[ $(type -t compopt) = "builtin" ]]; then
-    complete -o default -F __start_hz-cli hz-cli
+    complete -o default -F __start_hzc hzc
 else
-    complete -o default -o nospace -F __start_hz-cli hz-cli
+    complete -o default -o nospace -F __start_hzc hzc
 fi
 
 # ex: ts=4 sw=4 et filetype=sh

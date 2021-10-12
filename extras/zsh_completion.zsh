@@ -1,8 +1,8 @@
-#compdef _hz-cli hz-cli
+#compdef _hzc hzc
 
-# zsh completion for hz-cli                               -*- shell-script -*-
+# zsh completion for hzc                                  -*- shell-script -*-
 
-__hz-cli_debug()
+__hzc_debug()
 {
     local file="$BASH_COMP_DEBUG_FILE"
     if [[ -n ${file} ]]; then
@@ -10,7 +10,7 @@ __hz-cli_debug()
     fi
 }
 
-_hz-cli()
+_hzc()
 {
     local shellCompDirectiveError=1
     local shellCompDirectiveNoSpace=2
@@ -21,21 +21,21 @@ _hz-cli()
     local lastParam lastChar flagPrefix requestComp out directive comp lastComp noSpace
     local -a completions
 
-    __hz-cli_debug "\n========= starting completion logic =========="
-    __hz-cli_debug "CURRENT: ${CURRENT}, words[*]: ${words[*]}"
+    __hzc_debug "\n========= starting completion logic =========="
+    __hzc_debug "CURRENT: ${CURRENT}, words[*]: ${words[*]}"
 
     # The user could have moved the cursor backwards on the command-line.
     # We need to trigger completion from the $CURRENT location, so we need
     # to truncate the command-line ($words) up to the $CURRENT location.
     # (We cannot use $CURSOR as its value does not work when a command is an alias.)
     words=("${=words[1,CURRENT]}")
-    __hz-cli_debug "Truncated words[*]: ${words[*]},"
+    __hzc_debug "Truncated words[*]: ${words[*]},"
 
     lastParam=${words[-1]}
     lastChar=${lastParam[-1]}
-    __hz-cli_debug "lastParam: ${lastParam}, lastChar: ${lastChar}"
+    __hzc_debug "lastParam: ${lastParam}, lastChar: ${lastChar}"
 
-    # For zsh, when completing a flag with an = (e.g., hz-cli -n=<TAB>)
+    # For zsh, when completing a flag with an = (e.g., hzc -n=<TAB>)
     # completions must be prefixed with the flag
     setopt local_options BASH_REMATCH
     if [[ "${lastParam}" =~ '-.*=' ]]; then
@@ -44,26 +44,26 @@ _hz-cli()
     fi
 
     # Prepare the command to obtain completions
-    requestComp="${words[1]} __completeNoDesc ${words[2,-1]}"
+    requestComp="${words[1]} __complete ${words[2,-1]}"
     if [ "${lastChar}" = "" ]; then
         # If the last parameter is complete (there is a space following it)
         # We add an extra empty parameter so we can indicate this to the go completion code.
-        __hz-cli_debug "Adding extra empty parameter"
+        __hzc_debug "Adding extra empty parameter"
         requestComp="${requestComp} \"\""
     fi
 
-    __hz-cli_debug "About to call: eval ${requestComp}"
+    __hzc_debug "About to call: eval ${requestComp}"
 
     # Use eval to handle any environment variables and such
     out=$(eval ${requestComp} 2>/dev/null)
-    __hz-cli_debug "completion output: ${out}"
+    __hzc_debug "completion output: ${out}"
 
     # Extract the directive integer following a : from the last line
     local lastLine
     while IFS='\n' read -r line; do
         lastLine=${line}
     done < <(printf "%s\n" "${out[@]}")
-    __hz-cli_debug "last line: ${lastLine}"
+    __hzc_debug "last line: ${lastLine}"
 
     if [ "${lastLine[1]}" = : ]; then
         directive=${lastLine[2,-1]}
@@ -73,16 +73,16 @@ _hz-cli()
         out=${out[1,-$suffix]}
     else
         # There is no directive specified.  Leave $out as is.
-        __hz-cli_debug "No directive found.  Setting do default"
+        __hzc_debug "No directive found.  Setting do default"
         directive=0
     fi
 
-    __hz-cli_debug "directive: ${directive}"
-    __hz-cli_debug "completions: ${out}"
-    __hz-cli_debug "flagPrefix: ${flagPrefix}"
+    __hzc_debug "directive: ${directive}"
+    __hzc_debug "completions: ${out}"
+    __hzc_debug "flagPrefix: ${flagPrefix}"
 
     if [ $((directive & shellCompDirectiveError)) -ne 0 ]; then
-        __hz-cli_debug "Completion received error. Ignoring completions."
+        __hzc_debug "Completion received error. Ignoring completions."
         return
     fi
 
@@ -97,14 +97,14 @@ _hz-cli()
             local tab=$(printf '\t')
             comp=${comp//$tab/:}
 
-            __hz-cli_debug "Adding completion: ${comp}"
+            __hzc_debug "Adding completion: ${comp}"
             completions+=${comp}
             lastComp=$comp
         fi
     done < <(printf "%s\n" "${out[@]}")
 
     if [ $((directive & shellCompDirectiveNoSpace)) -ne 0 ]; then
-        __hz-cli_debug "Activating nospace."
+        __hzc_debug "Activating nospace."
         noSpace="-S ''"
     fi
 
@@ -121,17 +121,17 @@ _hz-cli()
         done
         filteringCmd+=" ${flagPrefix}"
 
-        __hz-cli_debug "File filtering command: $filteringCmd"
+        __hzc_debug "File filtering command: $filteringCmd"
         _arguments '*:filename:'"$filteringCmd"
     elif [ $((directive & shellCompDirectiveFilterDirs)) -ne 0 ]; then
         # File completion for directories only
         local subDir
         subdir="${completions[1]}"
         if [ -n "$subdir" ]; then
-            __hz-cli_debug "Listing directories in $subdir"
+            __hzc_debug "Listing directories in $subdir"
             pushd "${subdir}" >/dev/null 2>&1
         else
-            __hz-cli_debug "Listing directories in ."
+            __hzc_debug "Listing directories in ."
         fi
 
         local result
@@ -142,17 +142,17 @@ _hz-cli()
         fi
         return $result
     else
-        __hz-cli_debug "Calling _describe"
+        __hzc_debug "Calling _describe"
         if eval _describe "completions" completions $flagPrefix $noSpace; then
-            __hz-cli_debug "_describe found some completions"
+            __hzc_debug "_describe found some completions"
 
             # Return the success of having called _describe
             return 0
         else
-            __hz-cli_debug "_describe did not find completions."
-            __hz-cli_debug "Checking if we should do file completion."
+            __hzc_debug "_describe did not find completions."
+            __hzc_debug "Checking if we should do file completion."
             if [ $((directive & shellCompDirectiveNoFileComp)) -ne 0 ]; then
-                __hz-cli_debug "deactivating file completion"
+                __hzc_debug "deactivating file completion"
 
                 # We must return an error code here to let zsh know that there were no
                 # completions found by _describe; this is what will trigger other
@@ -161,7 +161,7 @@ _hz-cli()
                 return 1
             else
                 # Perform file completion
-                __hz-cli_debug "Activating file completion"
+                __hzc_debug "Activating file completion"
 
                 # We must return the result of this command, so it must be the
                 # last command, or else we must store its result to return it.
@@ -172,6 +172,6 @@ _hz-cli()
 }
 
 # don't run the completion function when being source-ed or eval-ed
-if [ "$funcstack[1]" = "_hz-cli" ]; then
-	_hz-cli
+if [ "$funcstack[1]" = "_hzc" ]; then
+	_hzc
 fi
