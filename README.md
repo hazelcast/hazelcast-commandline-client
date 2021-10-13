@@ -19,7 +19,7 @@ git clone https://github.com/hazelcast/hazelcast-commandline-client.git
 
 ```
 cd hazelcast-commandline-client
-go build -o hz-cli github.com/hazelcast/hazelcast-commandline-client
+go build -o hzc github.com/hazelcast/hazelcast-commandline-client
 ```
 
 ## Running
@@ -28,7 +28,7 @@ Make sure a Hazelcast 4 or Hazelcast 5 cluster is running.
 
 ```
 # Get help
-hz-cli --help
+hzc --help
 ```
 
 ## Configuration
@@ -38,17 +38,17 @@ hz-cli --help
 # <YOUR_HAZELCAST_CLOUD_TOKEN>: token which appears on the advanced
 configuration section in Hazelcast Cloud.
 # <CLUSTER_NAME>: name of the cluster
-hz-cli --cloud-token <YOUR_HAZELCAST_CLOUD_TOKEN> --cluster-name <CLUSTER_NAME>
+hzc --cloud-token <YOUR_HAZELCAST_CLOUD_TOKEN> --cluster-name <CLUSTER_NAME>
 
 # Connect to a Local Hazelcast cluster
 # <ADDRESSES>: addresses of the members of the Hazelcast cluster
 e.g. 192.168.1.1:5702,192.168.1.2:5703,192.168.1.3:5701
 # <CLUSTER_NAME>: name of the cluster
-hz-cli --address <ADDRESSES> --cluster-name <YOUR_CLUSTER_NAME>
+hzc --address <ADDRESSES> --cluster-name <YOUR_CLUSTER_NAME>
 
 # Using a Custom Config
 # <CONFIG_PATH>: path of the target configuration
-hz-cli --config <CONFIG_PATH>
+hzc --config <CONFIG_PATH>
 ```
 
 ## Operations
@@ -56,17 +56,17 @@ hz-cli --config <CONFIG_PATH>
 ### Cluster Management
 ```
 # Get state of the cluster
-hz-cli cluster get-state
+hzc cluster get-state
 
 # Change state of the cluster
 # Either of these: active | frozen | no_migration | passive
-hz-cli cluster change-state --state <NEW_STATE>
+hzc cluster change-state --state <NEW_STATE>
 
 # Shutdown the cluster
-hz-cli cluster shutdown
+hzc cluster shutdown
 
 # Get the version of the cluster
-hz-cli cluster version
+hzc cluster version
 ```
 
 ### Get Value & Put Value
@@ -75,10 +75,10 @@ hz-cli cluster version
 
 ```
 # Get from a map
-hz-cli map get --name my-map --key my-key
+hzc map get --name my-map --key my-key
 
 # Put to a map
-hz-cli map put --name my-map --key my-key --value my-value
+hzc map put --name my-map --key my-key --value my-value
 ```
 
 ## Examples
@@ -87,22 +87,22 @@ hz-cli map put --name my-map --key my-key --value my-value
 
 #### Put a Value in type Map
 ```
-hz-cli map put --name map --key a --value-type string --value "Meet"
-hz-cli map get --name map --key a
+hzc map put --name map --key a --value-type string --value "Meet"
+hzc map get --name map --key a
 > "Meet"
-hz-cli map put --name map --key b --value-type json --value '{"english":"Greetings"}'
-hz-cli map get --name map --key b
+hzc map put --name map --key b --value-type json --value '{"english":"Greetings"}'
+hzc map get --name map --key b
 > {"english":"Greetings"}
 ```
 
 #### Managing the Cluster
 ```
-hz-cli cluster get-state
+hzc cluster get-state
 > {"status":"success","state":"active"}
-hz-cli cluster change-state --state frozen
+hzc cluster change-state --state frozen
 > {"status":"success","state":"frozen"}
-hz-cli cluster shutdown
+hzc cluster shutdown
 > {"status":"success"}
-hz-cli cluster version
+hzc cluster version
 > {"status":"success","version":"5.0"}
 ```
