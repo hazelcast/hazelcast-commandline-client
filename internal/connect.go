@@ -16,6 +16,7 @@
 package internal
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -24,18 +25,25 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 )
 
+var InvalidStateErr = errors.New("invalid new state")
+
 type RESTCall struct {
 	url    string
 	params string
 }
 
 func CallClusterOperation(config *hazelcast.Config, operation string, state *string) (*string, error) {
-	obj := NewRESTCall(config, operation, state)
+	obj, err := NewRESTCall(config, operation, *state)
+	if err != nil {
+		if err == InvalidStateErr {
+			fmt.Println("Error: invalid new state. It should be one the following:\n", ClusterStateActive, ClusterStateFrozen, ClusterStateNoMigration, ClusterStatePassive)
+		}
+		return nil, err
+	}
 	params := obj.params
 	urlStr := obj.url
 	pr := strings.NewReader(params)
 	var resp *http.Response
-	var err error
 	switch operation {
 	case ClusterGetState, ClusterChangeState, ClusterShutdown:
 		resp, err = http.Post(urlStr, "application/x-www-form-urlencoded", pr)
@@ -60,7 +68,7 @@ func CallClusterOperation(config *hazelcast.Config, operation string, state *str
 	return &sb, nil
 }
 
-func NewRESTCall(config *hazelcast.Config, operation string, state *string) *RESTCall {
+func NewRESTCall(config *hazelcast.Config, operation string, state string) (*RESTCall, error) {
 	var member, url string
 	var params string
 	var addresses []string = config.Cluster.Network.Addresses
@@ -69,6 +77,9 @@ func NewRESTCall(config *hazelcast.Config, operation string, state *string) *RES
 	case ClusterGetState:
 		url = fmt.Sprintf("http://%s%s", member, ClusterGetStateEndpoint)
 	case ClusterChangeState:
+		if !EnsureState(state) {
+			return nil, InvalidStateErr
+		}
 		url = fmt.Sprintf("http://%s%s", member, ClusterChangeStateEndpoint)
 	case ClusterShutdown:
 		url = fmt.Sprintf("http://%s%s", member, ClusterShutdownEndpoint)
@@ -78,16 +89,16 @@ func NewRESTCall(config *hazelcast.Config, operation string, state *string) *RES
 		panic("Invalid operation to set connection obj.")
 	}
 	params = NewParams(config, operation, state)
-	return &RESTCall{url: url, params: params}
+	return &RESTCall{url: url, params: params}, nil
 }
 
-func NewParams(config *hazelcast.Config, operation string, state *string) string {
+func NewParams(config *hazelcast.Config, operation string, state string) string {
 	var params string
 	switch operation {
 	case ClusterGetState, ClusterShutdown:
 		params = fmt.Sprintf("%s&%s", config.Cluster.Name, config.Cluster.Security.Credentials.Password)
 	case ClusterChangeState:
-		params = fmt.Sprintf("%s&%s&%s", config.Cluster.Name, config.Cluster.Security.Credentials.Password, EnsureState(state))
+		params = fmt.Sprintf("%s&%s&%s", config.Cluster.Name, config.Cluster.Security.Credentials.Password, state)
 	case ClusterVersion:
 		params = ""
 	default:
@@ -96,11 +107,10 @@ func NewParams(config *hazelcast.Config, operation string, state *string) string
 	return params
 }
 
-func EnsureState(state *string) string {
-	switch *state {
+func EnsureState(state string) bool {
+	switch state {
 	case ClusterStateActive, ClusterStateFrozen, ClusterStateNoMigration, ClusterStatePassive:
-		return *state
-	default:
-		panic("invalid new state.")
+		return true
 	}
+	return false
 }
