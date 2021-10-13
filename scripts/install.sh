@@ -103,5 +103,5 @@ fi
 mkdir -p "${bash_completion_dir}/completions"
 mkdir -p "${HZCLI_HOME}/autocompletion/bash"
 curl --silent "https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/bash_completion.sh" --output "${HZCLI_HOME}/autocompletion/bash/hz-cli"
-ln -s $HZCLI_HOME/autocompletion/bash/hz-cli "${bash_completion_dir}/completions/hzc"
+ln -s $HZCLI_HOME/autocompletion/bash/hz-cli "${bash_completion_dir}/completions/$PROGRAM_NAME"
 echo "$bashAutocompletionDirectives"
