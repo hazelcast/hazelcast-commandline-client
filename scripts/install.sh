@@ -40,14 +40,14 @@ echo
 read -rd '' addToPathDirectivesZSH << EOF
 * Add \$HOME/.local/bin to PATH to access hzc from any directory
   Append the line below in your .zshrc file if it doesn't exists
-  export PATH=\$HOME/.local/bin:\$PATH" >> \$HOME/.zshrc
+  export PATH=\$HOME/.local/bin:\$PATH >> \$HOME/.zshrc
 
 EOF
 
 read -rd '' addToPathDirectivesBASH << EOF
 * Add \$HOME/.local/bin to PATH to access hzc from any directory
   Append the line below in your .bashrc file if it doesn't exists
-  export PATH=\$HOME/.local/bin:\$PATH" >> \$HOME/.bashrc
+  export PATH=\$HOME/.local/bin:\$PATH >> \$HOME/.bashrc
 
 EOF
 
@@ -105,3 +105,7 @@ mkdir -p "${HZCLI_HOME}/autocompletion/bash"
 curl --silent "https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/bash_completion.sh" --output "${HZCLI_HOME}/autocompletion/bash/hz-cli"
 ln -s $HZCLI_HOME/autocompletion/bash/hz-cli "${bash_completion_dir}/completions/$PROGRAM_NAME"
 echo "$bashAutocompletionDirectives"
+
+mkdir -p "${HZCLI_HOME}/bin/"
+curl --silent "https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/scripts/uninstall.sh" --output "${HZCLI_HOME}/bin/"
+echo "You can uninstall hz command line tools by running ./${HZCLI_HOME}/bin/uninstall.sh"
