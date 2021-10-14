@@ -38,7 +38,7 @@ var (
 			if err != nil { //TODO error look like unhandled although it is handled in MakeConfig.Find a better approach
 				return
 			}
-			result, err := internal.CallClusterOperation(config, "change-state", &newState)
+			result, err := internal.CallClusterOperationWithState(config, "change-state", &newState)
 			if err != nil {
 				return
 			}

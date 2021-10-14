@@ -32,7 +32,12 @@ type RESTCall struct {
 	params string
 }
 
-func CallClusterOperation(config *hazelcast.Config, operation string, state *string) (*string, error) {
+func CallClusterOperation(config *hazelcast.Config, operation string) (*string, error) {
+	var str string
+	return CallClusterOperationWithState(config, operation, &str)
+}
+
+func CallClusterOperationWithState(config *hazelcast.Config, operation string, state *string) (*string, error) {
 	obj, err := NewRESTCall(config, operation, *state)
 	if err != nil {
 		if errors.Is(err, InvalidStateErr) {

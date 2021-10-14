@@ -36,7 +36,7 @@ var clusterVersionCmd = &cobra.Command{
 		if err != nil { //TODO error look like unhandled although it is handled in MakeConfig.Find a better approach
 			return
 		}
-		result, err := internal.CallClusterOperation(config, "version", nil)
+		result, err := internal.CallClusterOperation(config, "version")
 		if err != nil {
 			return
 		}
