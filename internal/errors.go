@@ -57,6 +57,10 @@ func TranslateClusterError(err error, operation string) (string, bool) {
 
 func TranslateNetworkError(err error, isCloudCluster bool) (string, bool) {
 	cannotConnectErr := "Can not connect to Hazelcast Cluster. Make sure Hazelcast cluster is reachable, up and running. Check this link to create a local Hazelcast cluster: https://docs.hazelcast.com/hazelcast/latest/getting-started/quickstart"
+	if strings.Contains(err.Error(), "connect to any cluster") {
+		return cannotConnectErr, true
+	}
+
 	var netOpErr *net.OpError
 	if errors.As(err, &netOpErr) {
 		if netOpErr.Op == "dial" {

@@ -39,15 +39,15 @@ echo
 
 read -rd '' addToPathDirectivesZSH << EOF
 * Add \$HOME/.local/bin to PATH to access hzc from any directory.
-  Execute the line below to add it to .zshrc:
-  export PATH=\$HOME/.local/bin:\$PATH >> \$HOME/.zshrc
+  Append the line below to add it to .zshrc:
+  export PATH=\$HOME/.local/bin:\$PATH
 
 EOF
 
 read -rd '' addToPathDirectivesBASH << EOF
 * Add \$HOME/.local/bin to PATH to access hzc from any directory.
-  Execute the line below to add it to .bashrc:
-  export PATH=\$HOME/.local/bin:\$PATH >> \$HOME/.bashrc
+  Append the line below to add it to .bashrc:
+  export PATH=\$HOME/.local/bin:\$PATH
 
 EOF
 

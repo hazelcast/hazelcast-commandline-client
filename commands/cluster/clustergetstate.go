@@ -36,7 +36,7 @@ var clusterGetStateCmd = &cobra.Command{
 		if err != nil { //TODO error look like unhandled although it is handled in MakeConfig.Find a better approach
 			return
 		}
-		result, err := internal.CallClusterOperation(config, "get-state", nil)
+		result, err := internal.CallClusterOperation(config, "get-state")
 		if err != nil {
 			return
 		}
