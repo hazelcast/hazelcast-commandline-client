@@ -35,8 +35,10 @@ type RESTCall struct {
 func CallClusterOperation(config *hazelcast.Config, operation string, state *string) (*string, error) {
 	obj, err := NewRESTCall(config, operation, *state)
 	if err != nil {
-		if err == InvalidStateErr {
+		if errors.Is(err, InvalidStateErr) {
 			fmt.Println("Error: invalid new state. It should be one the following:\n", ClusterStateActive, ClusterStateFrozen, ClusterStateNoMigration, ClusterStatePassive)
+		} else {
+			fmt.Println("Error:", err)
 		}
 		return nil, err
 	}
