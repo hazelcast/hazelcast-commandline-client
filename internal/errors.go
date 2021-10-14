@@ -23,6 +23,8 @@ import (
 	"net/url"
 	"strings"
 	"syscall"
+
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 )
 
 func ErrorRecover() {
@@ -57,7 +59,7 @@ func TranslateClusterError(err error, operation string) (string, bool) {
 
 func TranslateNetworkError(err error, isCloudCluster bool) (string, bool) {
 	connectErrMsg := "Can not connect to Hazelcast Cluster. Make sure Hazelcast cluster is reachable, up and running. Check this link to create a local Hazelcast cluster: https://docs.hazelcast.com/hazelcast/latest/getting-started/quickstart"
-	if strings.Contains(err.Error(), "connect to any cluster") {
+	if errors.Is(err, hzerrors.ErrIllegalState) {
 		return connectErrMsg, true
 	}
 
