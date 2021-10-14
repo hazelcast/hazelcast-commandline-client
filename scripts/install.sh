@@ -107,5 +107,6 @@ ln -s $HZCLI_HOME/autocompletion/bash/hz-cli "${bash_completion_dir}/completions
 echo "$bashAutocompletionDirectives"
 
 mkdir -p "${HZCLI_HOME}/bin/"
-curl --silent "https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/scripts/uninstall.sh" --output "${HZCLI_HOME}/bin/"
-echo "You can uninstall hz command line tools by running ./${HZCLI_HOME}/bin/uninstall.sh"
+curl --silent "https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/scripts/uninstall.sh" --output "${HZCLI_HOME}/bin/uninstall.sh"
+chmod +x ${HZCLI_HOME}/bin/uninstall.sh
+echo "You can uninstall hz command line tools by running ${HZCLI_HOME}/bin/uninstall.sh"
