@@ -18,6 +18,8 @@ package commands
 import (
 	"fmt"
 	"log"
+	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -53,6 +55,10 @@ func decorateRootCommand(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVarP(&cluster, "cluster-name", "n", "", "name of the cluster that contains the instances.")
 	cmd.PersistentFlags().StringVar(&token, "cloud-token", "", "your Hazelcast Cloud token.")
 	cmd.CompletionOptions.DisableDefaultCmd = true
+
+	if mode := os.Getenv("MODE"); strings.EqualFold(mode, "dev") { // This is used to generate completion scripts
+		cmd.CompletionOptions.DisableDefaultCmd = false
+	}
 }
 
 func init() {
