@@ -15,7 +15,7 @@ fi
 
 rm -rf ${HZCLI_HOME} #remove hzcli related files (config.yaml,.hzc.yaml,autocompletion scripts)
 
-echo "To remove autocompletion on zsh, execute:"
+echo "To remove autocompletion on Zsh, execute:"
 echo "sudo rm \${fpath[1]}/_$PROGRAM_NAME"
 
 xdg_home="$XDG_DATA_HOME"

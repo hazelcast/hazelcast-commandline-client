@@ -36,7 +36,7 @@ func CallClusterOperation(config *hazelcast.Config, operation string, state *str
 	obj, err := NewRESTCall(config, operation, *state)
 	if err != nil {
 		if errors.Is(err, InvalidStateErr) {
-			fmt.Println("Error: invalid new state. It should be one the following:\n", ClusterStateActive, ClusterStateFrozen, ClusterStateNoMigration, ClusterStatePassive)
+			fmt.Printf("Error: invalid new state. It should be one the following: %s, %s, %s, %s\n", ClusterStateActive, ClusterStateFrozen, ClusterStateNoMigration, ClusterStatePassive)
 		} else {
 			fmt.Println("Error:", err)
 		}
