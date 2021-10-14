@@ -56,27 +56,27 @@ func TranslateClusterError(err error, operation string) (string, bool) {
 }
 
 func TranslateNetworkError(err error, isCloudCluster bool) (string, bool) {
-	cannotConnectErrMsg := "Can not connect to Hazelcast Cluster. Make sure Hazelcast cluster is reachable, up and running. Check this link to create a local Hazelcast cluster: https://docs.hazelcast.com/hazelcast/latest/getting-started/quickstart"
+	connectErrMsg := "Can not connect to Hazelcast Cluster. Make sure Hazelcast cluster is reachable, up and running. Check this link to create a local Hazelcast cluster: https://docs.hazelcast.com/hazelcast/latest/getting-started/quickstart"
 	if strings.Contains(err.Error(), "connect to any cluster") {
-		return cannotConnectErrMsg, true
+		return connectErrMsg, true
 	}
 
 	var netOpErr *net.OpError
 	if errors.As(err, &netOpErr) {
 		if netOpErr.Op == "dial" {
-			return cannotConnectErrMsg, true
+			return connectErrMsg, true
 		}
 	}
 	var syscallErr syscall.Errno
 	//TODO these syscall errors seem platform specific, decide on what to do
 	if errors.As(err, &syscallErr) && syscallErr == syscall.ECONNREFUSED {
-		return cannotConnectErrMsg, true
+		return connectErrMsg, true
 	}
 	if errors.Is(err, context.DeadlineExceeded) {
 		if isCloudCluster {
 			return "Can not connect to Hazelcast Cloud Cluster. Make sure cluster is running and provided cloud-token and cluster-name parameters are correct.", true
 		}
-		return cannotConnectErrMsg, true
+		return connectErrMsg, true
 	}
 	var addrErr *net.AddrError
 	if errors.As(err, &addrErr) {
