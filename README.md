@@ -9,6 +9,11 @@
 curl https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/scripts/install.sh | bash
 ```
 
+### Uninstall
+```
+~/.local/share/hz-cli/bin/uninstall.sh
+```
+
 ## Build
 ### Download the Repository using Git
 ```
