@@ -1,9 +1,5 @@
 # Hazelcast CLC
 
-## Requirements
-
-* Go 1.15 or better
-
 ## Download & Install
 ```
 curl https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/scripts/install.sh | bash
@@ -15,6 +11,8 @@ curl https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/ma
 ```
 
 ## Build
+### Requirements
+* Go 1.15 or better
 ### Download the Repository using Git
 ```
 git clone https://github.com/hazelcast/hazelcast-commandline-client.git
