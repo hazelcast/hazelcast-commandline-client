@@ -118,7 +118,7 @@ func MakeConfig(cmd *cobra.Command) (*hazelcast.Config, error) {
 	if addrRaw != "" {
 		addresses := strings.Split(strings.TrimSpace(addrRaw), ",")
 		config.Cluster.Network.Addresses = addresses
-	} else {
+	} else if len(config.Cluster.Network.Addresses) == 0 {
 		addresses := []string{"localhost:5701"}
 		config.Cluster.Network.Addresses = addresses
 	}
@@ -129,7 +129,7 @@ func MakeConfig(cmd *cobra.Command) (*hazelcast.Config, error) {
 	}
 	if cluster != "" {
 		config.Cluster.Name = strings.TrimSpace(cluster)
-	} else {
+	} else if config.Cluster.Name == "" {
 		config.Cluster.Name = "dev"
 	}
 	return config, nil
