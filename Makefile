@@ -2,7 +2,7 @@
 
 build:
 	go build -o hzc github.com/hazelcast/hazelcast-commandline-client
-generate-completion:
+generate-completion: build
 	mkdir -p extras
-	MODE="dev" go run github.com/hazelcast/hazelcast-commandline-client completion bash --no-descriptions > extras/bash_completion.sh
-	MODE="dev" go run github.com/hazelcast/hazelcast-commandline-client completion zsh --no-descriptions > extras/zsh_completion.zsh
+	MODE="dev" ./hzc completion bash --no-descriptions > extras/bash_completion.sh
+	MODE="dev" ./hzc completion zsh --no-descriptions > extras/zsh_completion.zsh
