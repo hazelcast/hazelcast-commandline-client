@@ -17,16 +17,19 @@ package commands
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
+var states = []string{"active", "no_migration", "frozen", "passive"}
+
 var (
 	newState              string
 	clusterChangeStateCmd = &cobra.Command{
-		Use:   "change-state [--state new-state]",
+		Use:   fmt.Sprintf("change-state [--state [%s]]", strings.Join(states, ",")),
 		Short: "change state of the cluster",
 		Run: func(cmd *cobra.Command, args []string) {
 			defer internal.ErrorRecover()
@@ -48,9 +51,9 @@ var (
 )
 
 func init() {
-	clusterChangeStateCmd.Flags().StringVarP(&newState, "state", "s", "", "new state of the cluster")
+	clusterChangeStateCmd.Flags().StringVarP(&newState, "state", "s", "", fmt.Sprintf("new state of the cluster: %s", strings.Join(states, ",")))
 	clusterChangeStateCmd.MarkFlagRequired("state")
 	clusterChangeStateCmd.RegisterFlagCompletionFunc("state", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"active", "no_migration", "frozen", "passive"}, cobra.ShellCompDirectiveDefault
+		return states, cobra.ShellCompDirectiveDefault
 	})
 }

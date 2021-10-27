@@ -115,7 +115,7 @@ func NewParams(config *hazelcast.Config, operation string, state string) string 
 }
 
 func EnsureState(state string) bool {
-	switch state {
+	switch strings.ToLower(state) {
 	case ClusterStateActive, ClusterStateFrozen, ClusterStateNoMigration, ClusterStatePassive:
 		return true
 	}
