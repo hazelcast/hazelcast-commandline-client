@@ -1,15 +1,26 @@
 # Hazelcast CLC
 
 ## Download & Install
+
+### With Brew [Recommended]
+Hazelcast CLC is distributed via [Homebrew Package Manager](https://brew.sh).
+```
+brew tap utku-caglayan/hazelcast-clc
+brew install hazelcast-commandline-client
+```
+To uninstall:
+```
+brew uninstall hazelcast-commandline-client
+brew untap utku-caglayan/hazelcast-clc
+```
+### With Script:
 ```
 curl https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/scripts/install.sh | bash
 ```
-
-### Uninstall
+To uninstall:
 ```
 ~/.local/share/hz-cli/bin/uninstall.sh
 ```
-
 ## Build
 ### Requirements
 * Go 1.15 or better

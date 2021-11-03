@@ -37,6 +37,8 @@ var (
 		Use:   "hzc {cluster | help | map} [--address address | --cloud-token token | --cluster-name name | --config config]",
 		Short: "Hazelcast command-line client",
 		Long:  "Hazelcast command-line client connects your command-line to a Hazelcast cluster",
+		Example: "`hzc map --name my-map put --key hello --value world` - put entry into map directly\n" +
+			"`hzc help` - print help",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Help()
 		},
