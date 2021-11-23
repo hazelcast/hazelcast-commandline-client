@@ -21,41 +21,112 @@ import (
 	"os"
 	"strings"
 
+	"github.com/c-bata/go-prompt"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 
 	clustercmd "github.com/hazelcast/hazelcast-commandline-client/commands/cluster"
 	mapcmd "github.com/hazelcast/hazelcast-commandline-client/commands/types/map"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/cobraprompt"
 )
 
 var (
-	cfgFile   string
-	addresses string
-	cluster   string
-	token     string
-	rootCmd   = &cobra.Command{
+	RootCmd = &cobra.Command{
 		Use:   "hzc {cluster | help | map} [--address address | --cloud-token token | --cluster-name name | --config config]",
 		Short: "Hazelcast command-line client",
 		Long:  "Hazelcast command-line client connects your command-line to a Hazelcast cluster",
 		Example: "`hzc map --name my-map put --key hello --value world` - put entry into map directly\n" +
 			"`hzc help` - print help",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if _, err := internal.MakeConfig(); err != nil {
+				return err
+			}
 			return cmd.Help()
 		},
+		SilenceUsage: true,
+	}
+	RootCmdInteractive = &cobra.Command{
+		Use:   "hzc {cluster | help | map} [--address address | --cloud-token token | --cluster-name name | --config config]",
+		Short: "Hazelcast command-line client",
+		Long:  "Hazelcast command-line client connects your command-line to a Hazelcast cluster",
+		Example: "`hzc map --name my-map put --key hello --value world` - put entry into map directly\n" +
+			"`hzc help` - print help",
 	}
 )
 
+func addressAndClusterNamePrefix() (prefix string, useLive bool) {
+	if config := internal.Configuration; config != nil {
+		return fmt.Sprintf("hzc %s@%s> ", config.Cluster.Network.Addresses[0], config.Cluster.Name), true
+	}
+	return "hzc address@clusterName> ", true
+}
+
+var advancedPrompt = &cobraprompt.CobraPrompt{
+	RootCmd:                  RootCmdInteractive,
+	PersistFlagValues:        true,
+	ShowHelpCommandAndFlags:  true,
+	ShowHiddenFlags:          true,
+	SuggestFlagsWithoutDash:  true,
+	DisableCompletionCommand: true,
+	AddDefaultExitCommand:    true,
+	GoPromptOptions: []prompt.Option{
+		prompt.OptionTitle("cobra-prompt"),
+		prompt.OptionLivePrefix(addressAndClusterNamePrefix),
+		prompt.OptionMaxSuggestion(10),
+	},
+	OnErrorFunc: func(err error) {
+		RootCmd.PrintErrln(err)
+		RootCmdInteractive.Help()
+	},
+}
+
+func IsInteractiveCall() bool {
+	cmd, flags, err := RootCmd.Find(os.Args[1:])
+	if err != nil {
+		return false
+	}
+	for _, flag := range flags {
+		if flag == "--help" || flag == "-h" {
+			return false
+		}
+	}
+	if cmd.Name() == "help" {
+		return false
+	}
+	if cmd == RootCmd {
+		return true
+	}
+	return false
+}
+
 func Execute() {
-	if err := rootCmd.Execute(); err != nil {
+	if err := RootCmd.Execute(); err != nil {
 		log.Fatal(err)
 	}
 }
 
+func ExecuteInteractive() {
+	if err := RootCmd.Execute(); err != nil { // to parse global persistent flags
+		log.Fatal(err)
+	}
+	var flagsToExclude []string
+	RootCmd.PersistentFlags().VisitAll(func(flag *pflag.Flag) {
+		flagsToExclude = append(flagsToExclude, flag.Name)
+	})
+	advancedPrompt.FlagsToExclude = flagsToExclude
+
+	RootCmdInteractive.AddCommand(clustercmd.ClusterCmd, mapcmd.MapCmd)
+	RootCmdInteractive.SetHelpFunc(customHelp)
+	decorateRootCommand(RootCmdInteractive)
+	advancedPrompt.Run()
+}
+
 func decorateRootCommand(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", fmt.Sprintf("config file, only supports yaml for now (default path is %s).", internal.DefautConfigPath()))
-	cmd.PersistentFlags().StringVarP(&addresses, "address", "a", "", fmt.Sprintf("addresses of the instances in the cluster (default is %s).", internal.DefaultClusterAddress))
-	cmd.PersistentFlags().StringVarP(&cluster, "cluster-name", "", "", fmt.Sprintf("name of the cluster that contains the instances (default is %s).", internal.DefaultClusterName))
-	cmd.PersistentFlags().StringVar(&token, "cloud-token", "", "your Hazelcast Cloud token.")
+	cmd.PersistentFlags().StringVarP(&internal.CfgFile, "config", "c", internal.DefautConfigPath(), fmt.Sprintf("config file, only supports yaml for now (default path is %s).", internal.DefautConfigPath()))
+	cmd.PersistentFlags().StringVarP(&internal.Address, "address", "a", "", fmt.Sprintf("addresses of the instances in the cluster (default is %s).", internal.DefaultClusterAddress))
+	cmd.PersistentFlags().StringVarP(&internal.Cluster, "cluster-name", "", "", fmt.Sprintf("name of the cluster that contains the instances (default is %s).", internal.DefaultClusterName))
+	cmd.PersistentFlags().StringVar(&internal.Token, "cloud-token", "", "your Hazelcast Cloud token.")
 	cmd.CompletionOptions.DisableDefaultCmd = true
 
 	if mode := os.Getenv("MODE"); strings.EqualFold(mode, "dev") { // This is used to generate completion scripts
@@ -63,8 +134,21 @@ func decorateRootCommand(cmd *cobra.Command) {
 	}
 }
 
-func init() {
+func customHelp(command *cobra.Command, args []string) {
+	if len(args) == 0 && command.Short == "Hazelcast command-line client" { // do not show help for root command
+		return
+	}
+	command.HelpFunc()
+	RootCmdInteractive.SetHelpFunc(nil)
+	RootCmdInteractive.Help()
+	RootCmdInteractive.SetHelpFunc(customHelp)
+}
+
+func initRootCommand(rootCmd *cobra.Command) {
 	decorateRootCommand(rootCmd)
-	rootCmd.AddCommand(clustercmd.ClusterCmd)
-	rootCmd.AddCommand(mapcmd.MapCmd)
+	rootCmd.AddCommand(clustercmd.ClusterCmd, mapcmd.MapCmd)
+}
+
+func init() {
+	initRootCommand(RootCmd)
 }

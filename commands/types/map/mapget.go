@@ -32,7 +32,7 @@ var mapGetCmd = &cobra.Command{
 	Short: "get from map",
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := context.TODO()
-		config, err := internal.MakeConfig(cmd)
+		config, err := internal.MakeConfig()
 		if err != nil { //TODO error look like unhandled although it is handled in MakeConfig.Find a better approach
 			return
 		}

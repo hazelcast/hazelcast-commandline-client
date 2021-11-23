@@ -32,7 +32,7 @@ var clusterShutdownCmd = &cobra.Command{
 			fmt.Println(invocationOnCloudErrorMessage)
 			return
 		}
-		config, err := internal.MakeConfig(cmd)
+		config, err := internal.MakeConfig()
 		if err != nil { //TODO error look like unhandled although it is handled in MakeConfig.Find a better approach
 			return
 		}
