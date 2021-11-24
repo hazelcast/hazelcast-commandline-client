@@ -44,7 +44,6 @@ var (
 			}
 			return cmd.Help()
 		},
-		SilenceUsage: true,
 	}
 	RootCmdInteractive = &cobra.Command{
 		Use:   "hzc {cluster | help | map} [--address address | --cloud-token token | --cluster-name name | --config config]",
