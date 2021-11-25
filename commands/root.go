@@ -106,7 +106,10 @@ func Execute() {
 }
 
 func ExecuteInteractive() {
-	if err := RootCmd.Execute(); err != nil { // to parse global persistent flags
+	if err := RootCmd.ParseFlags(os.Args); err != nil { // to parse global persistent flags
+		log.Fatal(err)
+	}
+	if _, err := internal.MakeConfig(); err != nil { // initialize global config
 		log.Fatal(err)
 	}
 	var flagsToExclude []string
