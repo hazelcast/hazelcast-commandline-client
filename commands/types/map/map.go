@@ -84,7 +84,7 @@ func getMap(clientConfig *hazelcast.Config, mapName string) (result *hazelcast.M
 }
 
 func decorateCommandWithMapNameFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&mapName, "name", "m", "", "specify the map name")
+	cmd.Flags().StringVarP(&mapName, "name", "n", "", "specify the map name")
 	cmd.MarkFlagRequired("name")
 }
 
