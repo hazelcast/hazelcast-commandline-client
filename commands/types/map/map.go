@@ -18,11 +18,8 @@ package commands
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/logger"
-	"github.com/hazelcast/hazelcast-go-client/types"
 	"github.com/spf13/cobra"
 
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
@@ -49,31 +46,12 @@ func init() {
 }
 
 func getMap(clientConfig *hazelcast.Config, mapName string) (result *hazelcast.Map, err error) {
-	defer func() {
-		obj := recover()
-		if panicErr, ok := obj.(error); ok {
-			err = panicErr
-			if msg, handled := internal.TranslateError(err, clientConfig.Cluster.Cloud.Enabled); handled {
-				fmt.Println("Error:", msg)
-				return
-			}
-			fmt.Println("Error:", err)
-		}
-	}()
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
 	if clientConfig == nil {
 		clientConfig = &hazelcast.Config{}
 	}
-	clientConfig.Cluster.ConnectionStrategy.Retry.InitialBackoff = types.Duration(1 * time.Second)
-	configCopy := clientConfig.Clone()
-	configCopy.Logger.Level = logger.OffLevel // internal event loop prints error logs
-	hzcClient, err := hazelcast.StartNewClientWithConfig(ctx, configCopy)
+	ctx := context.Background()
+	hzcClient, err := internal.ConnectToCluster(ctx, clientConfig.Clone())
 	if err != nil {
-		if msg, handled := internal.TranslateError(err, clientConfig.Cluster.Cloud.Enabled); handled {
-			fmt.Println("Error:", msg)
-			return
-		}
 		fmt.Println("Error:", err)
 		return nil, fmt.Errorf("error creating the client: %w", err)
 	}

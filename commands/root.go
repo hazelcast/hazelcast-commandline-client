@@ -16,6 +16,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -45,13 +46,6 @@ var (
 			return cmd.Help()
 		},
 	}
-	RootCmdInteractive = &cobra.Command{
-		Use:   "hzc {cluster | help | map} [--address address | --cloud-token token | --cluster-name name | --config config]",
-		Short: "Hazelcast command-line client",
-		Long:  "Hazelcast command-line client connects your command-line to a Hazelcast cluster",
-		Example: "`hzc map --name my-map put --key hello --value world` - put entry into map directly\n" +
-			"`hzc help` - print help",
-	}
 )
 
 func addressAndClusterNamePrefix() (prefix string, useLive bool) {
@@ -62,7 +56,7 @@ func addressAndClusterNamePrefix() (prefix string, useLive bool) {
 }
 
 var advancedPrompt = &cobraprompt.CobraPrompt{
-	RootCmd:                  RootCmdInteractive,
+	RootCmd:                  RootCmd,
 	PersistFlagValues:        true,
 	ShowHelpCommandAndFlags:  true,
 	ShowHiddenFlags:          true,
@@ -70,13 +64,13 @@ var advancedPrompt = &cobraprompt.CobraPrompt{
 	DisableCompletionCommand: true,
 	AddDefaultExitCommand:    true,
 	GoPromptOptions: []prompt.Option{
-		prompt.OptionTitle("cobra-prompt"),
+		prompt.OptionTitle("hazelcast commandline client"),
 		prompt.OptionLivePrefix(addressAndClusterNamePrefix),
 		prompt.OptionMaxSuggestion(10),
 	},
 	OnErrorFunc: func(err error) {
 		RootCmd.PrintErrln(err)
-		RootCmdInteractive.Help()
+		RootCmd.Help()
 	},
 }
 
@@ -106,22 +100,30 @@ func Execute() {
 }
 
 func ExecuteInteractive() {
+	RootCmd.RunE = nil                                  // disable help text on each new line
 	if err := RootCmd.ParseFlags(os.Args); err != nil { // to parse global persistent flags
 		log.Fatal(err)
 	}
-	if _, err := internal.MakeConfig(); err != nil { // initialize global config
+	conf, err := internal.MakeConfig()
+	if err != nil { // initialize global config
 		log.Fatal(err)
+	}
+	if _, err = internal.ConnectToCluster(context.Background(), conf.Clone()); err != nil {
+		fmt.Println("Error creating the client: %w", err)
+		return
 	}
 	var flagsToExclude []string
 	RootCmd.PersistentFlags().VisitAll(func(flag *pflag.Flag) {
 		flagsToExclude = append(flagsToExclude, flag.Name)
 	})
 	advancedPrompt.FlagsToExclude = flagsToExclude
-
-	RootCmdInteractive.AddCommand(clustercmd.ClusterCmd, mapcmd.MapCmd)
-	RootCmdInteractive.SetHelpFunc(customHelp)
-	decorateRootCommand(RootCmdInteractive)
-	advancedPrompt.Run()
+	RootCmd.SetHelpFunc(customHelp)
+	RootCmd.SilenceUsage = true
+	RootCmd.Example = "> map put -k key -m myMap -v someValue\n" +
+		"> map get -k key -m myMap\n" +
+		"> cluster version"
+	RootCmd.Use = ""
+	advancedPrompt.Run(context.Background())
 }
 
 func decorateRootCommand(cmd *cobra.Command) {
@@ -141,9 +143,9 @@ func customHelp(command *cobra.Command, args []string) {
 		return
 	}
 	command.HelpFunc()
-	RootCmdInteractive.SetHelpFunc(nil)
-	RootCmdInteractive.Help()
-	RootCmdInteractive.SetHelpFunc(customHelp)
+	command.SetHelpFunc(nil)
+	command.Help()
+	command.SetHelpFunc(customHelp)
 }
 
 func initRootCommand(rootCmd *cobra.Command) {

@@ -1,6 +1,8 @@
 package cobraprompt
 
 import (
+	"context"
+	"fmt"
 	"os"
 	"strings"
 
@@ -59,7 +61,7 @@ type CobraPrompt struct {
 
 // Run will automatically generate suggestions for all cobra commands and flags defined by RootCmd
 // and execute the selected commands. Run will also reset all given flags by default, see PersistFlagValues
-func (co CobraPrompt) Run() {
+func (co CobraPrompt) Run(ctx context.Context) {
 	if co.RootCmd == nil {
 		panic("RootCmd is not set. Please set RootCmd")
 	}
@@ -70,7 +72,7 @@ func (co CobraPrompt) Run() {
 		func(in string) {
 			promptArgs := strings.Fields(in)
 			os.Args = append([]string{os.Args[0]}, promptArgs...)
-			if err := co.RootCmd.Execute(); err != nil {
+			if err := co.RootCmd.ExecuteContext(ctx); err != nil {
 				if co.OnErrorFunc != nil {
 					co.OnErrorFunc(err)
 				} else {
@@ -84,13 +86,11 @@ func (co CobraPrompt) Run() {
 		},
 		co.GoPromptOptions...,
 	)
-
 	p.Run()
 }
 
 func (co CobraPrompt) prepare() {
 	if co.ShowHelpCommandAndFlags {
-		// TODO: Add suggestions for help command
 		co.RootCmd.InitDefaultHelpCmd()
 	}
 
@@ -134,12 +134,14 @@ func findSuggestions(co *CobraPrompt, d *prompt.Document) []prompt.Suggest {
 		if stringInSlice(co.FlagsToExclude, flag.Name) {
 			return
 		}
+		flagUsage := "--" + flag.Name
 		if strings.HasPrefix(d.GetWordBeforeCursor(), "--") {
-			suggestions = append(suggestions, prompt.Suggest{Text: "--" + flag.Name, Description: flag.Usage})
-		} else if co.SuggestFlagsWithoutDash && d.GetWordBeforeCursor() == "" && flag.Shorthand != "" {
-			suggestions = append(suggestions, prompt.Suggest{Text: "-" + flag.Shorthand, Description: flag.Usage})
-		} else if strings.HasPrefix(d.GetWordBeforeCursor(), "-") && flag.Shorthand != "" {
-			suggestions = append(suggestions, prompt.Suggest{Text: "-" + flag.Shorthand, Description: flag.Usage})
+			suggestions = append(suggestions, prompt.Suggest{Text: flagUsage, Description: flag.Usage})
+		} else if (co.SuggestFlagsWithoutDash && d.GetWordBeforeCursor() == "") || strings.HasPrefix(d.GetWordBeforeCursor(), "-") {
+			if flag.Shorthand != "" {
+				flagUsage = fmt.Sprintf("-%s, %s", flag.Shorthand, flagUsage)
+			}
+			suggestions = append(suggestions, prompt.Suggest{Text: flagUsage, Description: flag.Usage})
 		}
 	}
 
