@@ -45,18 +45,22 @@ func init() {
 	MapCmd.AddCommand(mapPutCmd)
 }
 
-func getMap(clientConfig *hazelcast.Config, mapName string) (result *hazelcast.Map, err error) {
+func getMap(ctx context.Context, clientConfig *hazelcast.Config, mapName string) (result *hazelcast.Map, err error) {
 	if clientConfig == nil {
 		clientConfig = &hazelcast.Config{}
 	}
-	ctx := context.Background()
 	hzcClient, err := internal.ConnectToCluster(ctx, clientConfig.Clone())
 	if err != nil {
 		fmt.Println("Error:", err)
 		return nil, fmt.Errorf("error creating the client: %w", err)
 	}
 	if result, err = hzcClient.GetMap(ctx, mapName); err != nil {
-		fmt.Println("Error:", err)
+		errorMsg := err.Error()
+		if msg, isHandled := internal.TranslateNetworkError(err, clientConfig.Cluster.Cloud.Enabled); isHandled {
+			errorMsg = msg
+		}
+		fmt.Println("Error:", errorMsg)
+		return nil, err
 	}
 	return
 }

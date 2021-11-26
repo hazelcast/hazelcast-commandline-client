@@ -68,9 +68,8 @@ var advancedPrompt = &cobraprompt.CobraPrompt{
 		prompt.OptionLivePrefix(addressAndClusterNamePrefix),
 		prompt.OptionMaxSuggestion(10),
 	},
-	OnErrorFunc: func(err error) {
-		RootCmd.PrintErrln(err)
-		RootCmd.Help()
+	OnErrorFunc: func(err error) { // handle error noop to prevent application from crashing
+		return
 	},
 }
 
@@ -100,7 +99,6 @@ func Execute() {
 }
 
 func ExecuteInteractive() {
-	RootCmd.RunE = nil                                  // disable help text on each new line
 	if err := RootCmd.ParseFlags(os.Args); err != nil { // to parse global persistent flags
 		log.Fatal(err)
 	}
@@ -108,17 +106,17 @@ func ExecuteInteractive() {
 	if err != nil { // initialize global config
 		log.Fatal(err)
 	}
+	fmt.Println("Connecting to the cluster ...")
 	if _, err = internal.ConnectToCluster(context.Background(), conf.Clone()); err != nil {
-		fmt.Println("Error creating the client: %w", err)
+		fmt.Printf("Error: %s\n", err)
 		return
 	}
 	var flagsToExclude []string
 	RootCmd.PersistentFlags().VisitAll(func(flag *pflag.Flag) {
 		flagsToExclude = append(flagsToExclude, flag.Name)
 	})
+	flagsToExclude = append(flagsToExclude, "help")
 	advancedPrompt.FlagsToExclude = flagsToExclude
-	RootCmd.SetHelpFunc(customHelp)
-	RootCmd.SilenceUsage = true
 	RootCmd.Example = "> map put -k key -m myMap -v someValue\n" +
 		"> map get -k key -m myMap\n" +
 		"> cluster version"
@@ -136,16 +134,6 @@ func decorateRootCommand(cmd *cobra.Command) {
 	if mode := os.Getenv("MODE"); strings.EqualFold(mode, "dev") { // This is used to generate completion scripts
 		cmd.CompletionOptions.DisableDefaultCmd = false
 	}
-}
-
-func customHelp(command *cobra.Command, args []string) {
-	if len(args) == 0 && command.Short == "Hazelcast command-line client" { // do not show help for root command
-		return
-	}
-	command.HelpFunc()
-	command.SetHelpFunc(nil)
-	command.Help()
-	command.SetHelpFunc(customHelp)
 }
 
 func initRootCommand(rootCmd *cobra.Command) {
