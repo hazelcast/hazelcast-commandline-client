@@ -32,6 +32,11 @@ import (
 
 const defaultConfigFilename = "config.yaml"
 
+const (
+	DefaultClusterAddress = "localhost:5701"
+	DefaultClusterName    = "dev"
+)
+
 func DefaultConfig() *hazelcast.Config {
 	config := hazelcast.NewConfig()
 	config.Cluster.Unisocket = true
@@ -98,7 +103,7 @@ func MakeConfig(cmd *cobra.Command) (*hazelcast.Config, error) {
 		}
 	}
 	if err = yaml.Unmarshal(confBytes, config); err != nil {
-		fmt.Println("Error: Configuration file is not a valid yaml file")
+		fmt.Println("Error: Configuration file is not a valid yaml file, configuration read from", confPath)
 		return nil, fmt.Errorf("error reading configuration at %s: %w", confPath, err)
 	}
 	token, err := flags.GetString("cloud-token")
@@ -119,7 +124,7 @@ func MakeConfig(cmd *cobra.Command) (*hazelcast.Config, error) {
 		addresses := strings.Split(strings.TrimSpace(addrRaw), ",")
 		config.Cluster.Network.Addresses = addresses
 	} else if len(config.Cluster.Network.Addresses) == 0 {
-		addresses := []string{"localhost:5701"}
+		addresses := []string{DefaultClusterAddress}
 		config.Cluster.Network.Addresses = addresses
 	}
 	cluster, err := flags.GetString("cluster-name")
@@ -130,7 +135,7 @@ func MakeConfig(cmd *cobra.Command) (*hazelcast.Config, error) {
 	if cluster != "" {
 		config.Cluster.Name = strings.TrimSpace(cluster)
 	} else if config.Cluster.Name == "" {
-		config.Cluster.Name = "dev"
+		config.Cluster.Name = DefaultClusterName
 	}
 	return config, nil
 }
