@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/c-bata/go-prompt"
+	"github.com/google/shlex"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -70,8 +71,12 @@ func (co CobraPrompt) Run(ctx context.Context) {
 
 	p := prompt.New(
 		func(in string) {
-			promptArgs := strings.Fields(in)
 			if in == "" { // do not execute root command if no input given
+				return
+			}
+			promptArgs, err := shlex.Split(in)
+			if err != nil {
+				fmt.Println("unable to parse commands")
 				return
 			}
 			os.Args = append([]string{os.Args[0]}, promptArgs...)
