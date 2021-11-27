@@ -123,7 +123,7 @@ func ExecuteInteractive() {
 }
 
 func decorateRootCommand(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVarP(&internal.CfgFile, "config", "c", internal.DefautConfigPath(), fmt.Sprintf("config file, only supports yaml for now (default path is %s).", internal.DefautConfigPath()))
+	cmd.PersistentFlags().StringVarP(&internal.CfgFile, "config", "c", internal.DefautConfigPath(), fmt.Sprintf("config file, only supports yaml for now"))
 	cmd.PersistentFlags().StringVarP(&internal.Address, "address", "a", "", fmt.Sprintf("addresses of the instances in the cluster (default is %s).", internal.DefaultClusterAddress))
 	cmd.PersistentFlags().StringVarP(&internal.Cluster, "cluster-name", "", "", fmt.Sprintf("name of the cluster that contains the instances (default is %s).", internal.DefaultClusterName))
 	cmd.PersistentFlags().StringVar(&internal.Token, "cloud-token", "", "your Hazelcast Cloud token.")
