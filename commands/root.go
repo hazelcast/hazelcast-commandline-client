@@ -49,10 +49,7 @@ var (
 )
 
 func addressAndClusterNamePrefix() (prefix string, useLive bool) {
-	if config := internal.Configuration; config != nil {
-		return fmt.Sprintf("hzc %s@%s> ", config.Cluster.Network.Addresses[0], config.Cluster.Name), true
-	}
-	return "hzc address@clusterName> ", true
+	return fmt.Sprintf("hzc %s@%s> ", internal.Configuration.Cluster.Network.Addresses[0], internal.Configuration.Cluster.Name), true
 }
 
 var advancedPrompt = &cobraprompt.CobraPrompt{
@@ -68,7 +65,8 @@ var advancedPrompt = &cobraprompt.CobraPrompt{
 		prompt.OptionLivePrefix(addressAndClusterNamePrefix),
 		prompt.OptionMaxSuggestion(10),
 	},
-	OnErrorFunc: func(err error) { // handle error noop to prevent application from crashing
+	OnErrorFunc: func(err error) {
+		// handle error noop to prevent application from crashing
 		return
 	},
 }
