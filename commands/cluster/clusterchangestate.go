@@ -34,7 +34,7 @@ var (
 		Run: func(cmd *cobra.Command, args []string) {
 			defer internal.ErrorRecover()
 			config, err := internal.MakeConfig()
-			//TODO error look like unhandled although it is handled in MakeConfig. Find a better approach
+			// TODO error look like unhandled although it is handled in MakeConfig. Find a better approach
 			if err != nil {
 				return
 			}

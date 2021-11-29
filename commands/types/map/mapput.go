@@ -38,7 +38,7 @@ var mapPutCmd = &cobra.Command{
 		var err error
 		var normalizedValue interface{}
 		config, err := internal.MakeConfig()
-		//TODO error look like unhandled although it is handled in MakeConfig. Find a better approach
+		// TODO error look like unhandled although it is handled in MakeConfig. Find a better approach
 		if err != nil {
 			return
 		}
