@@ -28,12 +28,13 @@ var clusterShutdownCmd = &cobra.Command{
 	Short: "shuts down the cluster",
 	Run: func(cmd *cobra.Command, args []string) {
 		defer internal.ErrorRecover()
-		if isCloudInvocation(cmd) {
-			fmt.Println(invocationOnCloudErrorMessage)
-			return
-		}
 		config, err := internal.MakeConfig()
 		if err != nil { //TODO error look like unhandled although it is handled in MakeConfig.Find a better approach
+			return
+		}
+		// check if it is cloud invocation
+		if config.Cluster.Cloud.Token != "" {
+			fmt.Println(invocationOnCloudErrorMessage)
 			return
 		}
 		result, err := internal.CallClusterOperation(config, "shutdown")

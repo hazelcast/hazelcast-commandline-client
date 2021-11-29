@@ -19,6 +19,8 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
 const invocationOnCloudErrorMessage = "Cluster operations on cloud are not supported. Checkout https://github.com/hazelcast/hazelcast-cloud-cli for cluster management on cloud."
@@ -28,7 +30,12 @@ var ClusterCmd = &cobra.Command{
 	Short: "administrative cluster operations",
 	Long:  `administrative cluster operations which controls a Hazelcast cluster by manipulating its state and other features`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if isCloudInvocation(cmd) {
+		hzConf, err := internal.MakeConfig()
+		if err != nil {
+			return err
+		}
+		// check if it is cloud invocation
+		if hzConf.Cluster.Cloud.Token != "" {
 			fmt.Println(invocationOnCloudErrorMessage)
 			return nil
 		}
@@ -41,9 +48,4 @@ func init() {
 	ClusterCmd.AddCommand(clusterChangeStateCmd)
 	ClusterCmd.AddCommand(clusterShutdownCmd)
 	ClusterCmd.AddCommand(clusterVersionCmd)
-}
-
-func isCloudInvocation(cmd *cobra.Command) bool {
-	token, _ := cmd.InheritedFlags().GetString("cloud-token")
-	return token != ""
 }
