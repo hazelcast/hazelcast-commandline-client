@@ -23,39 +23,28 @@ const PersistFlagValuesFlag = "persist-flag-values"
 type CobraPrompt struct {
 	// RootCmd is the start point, all its sub commands and flags will be available as suggestions
 	RootCmd *cobra.Command
-
 	// GoPromptOptions is for customize go-prompt
 	// see https://github.com/c-bata/go-prompt/blob/master/option.go
 	GoPromptOptions []prompt.Option
-
 	// DynamicSuggestionsFunc will be executed if a command has CallbackAnnotation as an annotation. If it's included
 	// the value will be provided to the DynamicSuggestionsFunc function.
 	DynamicSuggestionsFunc func(annotationValue string, document *prompt.Document) []prompt.Suggest
-
 	// PersistFlagValues will persist flags. For example have verbose turned on every command.
 	PersistFlagValues bool
-
 	// FlagsToExclude is a list of flag names to specify flags to exclude from suggestions
 	FlagsToExclude []string
-
 	// Suggests flags without user type "-"
 	SuggestFlagsWithoutDash bool
-
 	// ShowHelpCommandAndFlags will make help command and flag for every command available.
 	ShowHelpCommandAndFlags bool
-
 	// DisableCompletionCommand will disable the default completion command for cobra
 	DisableCompletionCommand bool
-
 	// ShowHiddenCommands makes hidden commands available
 	ShowHiddenCommands bool
-
 	// ShowHiddenFlags makes hidden flags available
 	ShowHiddenFlags bool
-
 	// AddDefaultExitCommand adds a command for exiting prompt loop
 	AddDefaultExitCommand bool
-
 	// OnErrorFunc handle error for command.Execute, if not set print error and exit
 	OnErrorFunc func(err error)
 }
@@ -66,12 +55,11 @@ func (co CobraPrompt) Run(ctx context.Context) {
 	if co.RootCmd == nil {
 		panic("RootCmd is not set. Please set RootCmd")
 	}
-
 	co.prepare()
-
 	p := prompt.New(
 		func(in string) {
-			if in == "" { // do not execute root command if no input given
+			// do not execute root command if no input given
+			if in == "" {
 				return
 			}
 			promptArgs, err := shlex.Split(in)
@@ -101,11 +89,9 @@ func (co CobraPrompt) prepare() {
 	if co.ShowHelpCommandAndFlags {
 		co.RootCmd.InitDefaultHelpCmd()
 	}
-
 	if co.DisableCompletionCommand {
 		co.RootCmd.CompletionOptions.DisableDefaultCmd = true
 	}
-
 	if co.AddDefaultExitCommand {
 		co.RootCmd.AddCommand(&cobra.Command{
 			Use:   "exit",
@@ -115,7 +101,6 @@ func (co CobraPrompt) prepare() {
 			},
 		})
 	}
-
 	if co.PersistFlagValues {
 		co.RootCmd.PersistentFlags().BoolP(PersistFlagValuesFlag, "",
 			false, "Persist last given value for flags")
@@ -125,11 +110,9 @@ func (co CobraPrompt) prepare() {
 func findSuggestions(co *CobraPrompt, d *prompt.Document) []prompt.Suggest {
 	command := co.RootCmd
 	args := strings.Fields(d.CurrentLine())
-
 	if found, _, err := command.Find(args); err == nil {
 		command = found
 	}
-
 	var suggestions []prompt.Suggest
 	persistFlagValues, _ := command.Flags().GetBool(PersistFlagValuesFlag)
 	addFlags := func(flag *pflag.Flag) {
@@ -152,10 +135,8 @@ func findSuggestions(co *CobraPrompt, d *prompt.Document) []prompt.Suggest {
 			suggestions = append(suggestions, prompt.Suggest{Text: flagUsage, Description: flag.Usage})
 		}
 	}
-
 	command.LocalFlags().VisitAll(addFlags)
 	command.InheritedFlags().VisitAll(addFlags)
-
 	if command.HasAvailableSubCommands() {
 		for _, c := range command.Commands() {
 			if !c.Hidden && !co.ShowHiddenCommands {
@@ -166,7 +147,6 @@ func findSuggestions(co *CobraPrompt, d *prompt.Document) []prompt.Suggest {
 			}
 		}
 	}
-
 	annotation := command.Annotations[DynamicSuggestionsAnnotation]
 	if co.DynamicSuggestionsFunc != nil && annotation != "" {
 		suggestions = append(suggestions, co.DynamicSuggestionsFunc(annotation, d)...)

@@ -35,7 +35,8 @@ var mapGetCmd = &cobra.Command{
 		ctx, cancel := context.WithTimeout(cmd.Context(), time.Second*3)
 		defer cancel()
 		config, err := internal.MakeConfig()
-		if err != nil { //TODO error look like unhandled although it is handled in MakeConfig.Find a better approach
+		//TODO error look like unhandled although it is handled in MakeConfig. Find a better approach
+		if err != nil {
 			return
 		}
 		m, err := getMap(ctx, config, mapName)

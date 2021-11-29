@@ -147,7 +147,8 @@ func ConnectToCluster(ctx context.Context, clientConfig hazelcast.Config) (cli *
 	ctx, cancel := context.WithTimeout(ctx, goClientConnectionTimeout)
 	defer cancel()
 	configCopy := clientConfig.Clone()
-	configCopy.Logger.Level = logger.OffLevel // internal event loop prints error logs
+	// prevent internal event loop to print error logs
+	configCopy.Logger.Level = logger.OffLevel
 	cli, err = hazelcast.StartNewClientWithConfig(ctx, configCopy)
 	if client == nil {
 		client = cli

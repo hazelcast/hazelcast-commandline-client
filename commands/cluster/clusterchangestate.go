@@ -34,7 +34,8 @@ var (
 		Run: func(cmd *cobra.Command, args []string) {
 			defer internal.ErrorRecover()
 			config, err := internal.MakeConfig()
-			if err != nil { //TODO error look like unhandled although it is handled in MakeConfig.Find a better approach
+			//TODO error look like unhandled although it is handled in MakeConfig. Find a better approach
+			if err != nil {
 				return
 			}
 			// check if it is cloud invocation

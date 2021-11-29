@@ -97,11 +97,13 @@ func Execute() {
 }
 
 func ExecuteInteractive() {
-	if err := RootCmd.ParseFlags(os.Args); err != nil { // to parse global persistent flags
+	// parse global persistent flags
+	if err := RootCmd.ParseFlags(os.Args); err != nil {
 		log.Fatal(err)
 	}
+	// initialize global config
 	conf, err := internal.MakeConfig()
-	if err != nil { // initialize global config
+	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("Connecting to the cluster ...")
@@ -128,8 +130,8 @@ func decorateRootCommand(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVarP(&internal.Cluster, "cluster-name", "", "", fmt.Sprintf("name of the cluster that contains the instances (default is %s).", internal.DefaultClusterName))
 	cmd.PersistentFlags().StringVar(&internal.Token, "cloud-token", "", "your Hazelcast Cloud token.")
 	cmd.CompletionOptions.DisableDefaultCmd = true
-
-	if mode := os.Getenv("MODE"); strings.EqualFold(mode, "dev") { // This is used to generate completion scripts
+	// This is used to generate completion scripts
+	if mode := os.Getenv("MODE"); strings.EqualFold(mode, "dev") {
 		cmd.CompletionOptions.DisableDefaultCmd = false
 	}
 }
