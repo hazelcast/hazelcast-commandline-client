@@ -101,10 +101,11 @@ func (co CobraPrompt) prepare() {
 			},
 		})
 	}
-	if co.PersistFlagValues {
-		co.RootCmd.PersistentFlags().BoolP(PersistFlagValuesFlag, "",
-			false, "Persist last given value for flags")
-	}
+}
+
+func RegisterPersistFlag(co *cobra.Command) {
+	co.PersistentFlags().BoolP(PersistFlagValuesFlag, "",
+		false, "Persist last given value for flags")
 }
 
 func findSuggestions(co *CobraPrompt, d *prompt.Document) []prompt.Suggest {
@@ -114,7 +115,10 @@ func findSuggestions(co *CobraPrompt, d *prompt.Document) []prompt.Suggest {
 		command = found
 	}
 	var suggestions []prompt.Suggest
-	persistFlagValues, _ := command.Flags().GetBool(PersistFlagValuesFlag)
+	persistFlagValues, err := command.Flags().GetBool(PersistFlagValuesFlag)
+	if err != nil {
+		fmt.Println("cannot parse persist flag err: ", err)
+	}
 	addFlags := func(flag *pflag.Flag) {
 		if flag.Changed && !persistFlagValues {
 			flag.Value.Set(flag.DefValue)

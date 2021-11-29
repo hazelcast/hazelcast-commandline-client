@@ -97,6 +97,7 @@ func Execute() {
 }
 
 func ExecuteInteractive() {
+	cobraprompt.RegisterPersistFlag(RootCmd)
 	// parse global persistent flags
 	if err := RootCmd.ParseFlags(os.Args); err != nil {
 		log.Fatal(err)

@@ -122,6 +122,9 @@ func MakeConfig() (*hazelcast.Config, error) {
 		config.Cluster.Network.Addresses = addresses
 	} else if len(config.Cluster.Network.Addresses) == 0 {
 		addresses := []string{DefaultClusterAddress}
+		if config.Cluster.Cloud.Enabled {
+			addresses = []string{"hazelcast-cloud"}
+		}
 		config.Cluster.Network.Addresses = addresses
 	}
 	if Cluster != "" {
