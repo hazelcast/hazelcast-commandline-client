@@ -61,7 +61,7 @@ var advancedPrompt = &cobraprompt.CobraPrompt{
 	DisableCompletionCommand: true,
 	AddDefaultExitCommand:    true,
 	GoPromptOptions: []prompt.Option{
-		prompt.OptionTitle("hazelcast commandline client"),
+		prompt.OptionTitle("Hazelcast Client"),
 		prompt.OptionLivePrefix(addressAndClusterNamePrefix),
 		prompt.OptionMaxSuggestion(10),
 	},
