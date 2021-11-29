@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/spf13/cobra"
@@ -32,14 +33,16 @@ var mapPutCmd = &cobra.Command{
 	Use:   "put [--name mapname | --key keyname | --value-type type | --value-file file | --value value]",
 	Short: "put to map",
 	Run: func(cmd *cobra.Command, args []string) {
-		ctx := context.TODO()
+		ctx, cancel := context.WithTimeout(cmd.Context(), time.Second*3)
+		defer cancel()
 		var err error
 		var normalizedValue interface{}
-		config, err := internal.MakeConfig(cmd)
-		if err != nil { //TODO error look like unhandled although it is handled in MakeConfig.Find a better approach
+		config, err := internal.MakeConfig()
+		// TODO error look like unhandled although it is handled in MakeConfig. Find a better approach
+		if err != nil {
 			return
 		}
-		m, err := getMap(config, mapName)
+		m, err := getMap(ctx, config, mapName)
 		if err != nil {
 			return
 		}

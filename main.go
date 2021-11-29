@@ -20,5 +20,10 @@ import (
 )
 
 func main() {
-	commands.Execute()
+	isInteractive := commands.IsInteractiveCall()
+	if isInteractive {
+		commands.ExecuteInteractive()
+	} else {
+		commands.Execute()
+	}
 }

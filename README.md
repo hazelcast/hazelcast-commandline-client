@@ -43,6 +43,8 @@ Make sure a Hazelcast 4 or Hazelcast 5 cluster is running.
 ```
 # Get help
 hzc --help
+# or interactively
+hzc
 ```
 
 ## Configuration

@@ -16,16 +16,23 @@
 package internal
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
 var InvalidStateErr = errors.New("invalid new state")
+
+const goClientConnectionTimeout = 5 * time.Second
+
+var client *hazelcast.Client
 
 type RESTCall struct {
 	url    string
@@ -120,4 +127,31 @@ func EnsureState(state string) bool {
 		return true
 	}
 	return false
+}
+
+func ConnectToCluster(ctx context.Context, clientConfig *hazelcast.Config) (cli *hazelcast.Client, err error) {
+	if client != nil {
+		return client, nil
+	}
+	defer func() {
+		obj := recover()
+		if panicErr, ok := obj.(error); ok {
+			err = panicErr
+		}
+		if err != nil {
+			if msg, handled := TranslateError(err, clientConfig.Cluster.Cloud.Enabled); handled {
+				err = fmt.Errorf(msg)
+			}
+		}
+	}()
+	ctx, cancel := context.WithTimeout(ctx, goClientConnectionTimeout)
+	defer cancel()
+	configCopy := clientConfig.Clone()
+	// prevent internal event loop to print error logs
+	configCopy.Logger.Level = logger.OffLevel
+	cli, err = hazelcast.StartNewClientWithConfig(ctx, configCopy)
+	if client == nil {
+		client = cli
+	}
+	return
 }

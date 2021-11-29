@@ -23,7 +23,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 
 	"github.com/hazelcast/hazelcast-go-client"
@@ -35,6 +34,14 @@ const defaultConfigFilename = "config.yaml"
 const (
 	DefaultClusterAddress = "localhost:5701"
 	DefaultClusterName    = "dev"
+)
+
+var (
+	Configuration *hazelcast.Config
+	CfgFile       string
+	Cluster       string
+	Token         string
+	Address       string
 )
 
 func DefaultConfig() *hazelcast.Config {
@@ -53,13 +60,13 @@ func registerConfig(config *hazelcast.Config, confPath string) error {
 
 	filePath, _ := filepath.Split(confPath)
 	if err = os.MkdirAll(filePath, os.ModePerm); err != nil {
-		return fmt.Errorf("cannot create parent directories for configuration file: %w", err)
+		return fmt.Errorf("cannot create parent directories for Configuration file: %w", err)
 	}
 
 	if err = ioutil.WriteFile(confPath, out, 0600); err != nil {
-		return fmt.Errorf("writing default configuration: %w", err)
+		return fmt.Errorf("writing default Configuration: %w", err)
 	}
-	fmt.Printf("Default configuration file for command line client is created at `%s`\n", confPath)
+	fmt.Printf("Default Configuration file for command line client is created at `%s`\n", confPath)
 	return nil
 }
 
@@ -75,68 +82,57 @@ func validateConfig(config *hazelcast.Config, confPath string) error {
 	return nil
 }
 
-func MakeConfig(cmd *cobra.Command) (*hazelcast.Config, error) {
-	flags := cmd.InheritedFlags()
+func MakeConfig() (*hazelcast.Config, error) {
+	if Configuration != nil {
+		return Configuration, nil
+	}
 	config := DefaultConfig()
 	var confBytes []byte
-	var confPath string
+	confPath := CfgFile
 	var err error
-	confPath, err = flags.GetString("config")
-	if err != nil {
-		return nil, err
-	}
-	if confPath != "" {
+
+	if confPath != DefautConfigPath() {
 		confBytes, err = ioutil.ReadFile(confPath)
 		if err != nil {
-			fmt.Printf("Error: Cannot read configuration file on %s. Make sure configuration path is correct and process have sufficient permission.\n", confPath)
-			return nil, fmt.Errorf("reading configuration at %s: %w", confPath, err)
+			fmt.Printf("Error: Cannot read Configuration file on %s. Make sure Configuration path is correct and process have sufficient permission.\n", confPath)
+			return nil, fmt.Errorf("reading Configuration at %s: %w", confPath, err)
 		}
 	} else {
 		confPath = DefautConfigPath()
 		if err := validateConfig(config, confPath); err != nil {
-			fmt.Printf("Error: Cannot create default configuration file on default config path %s. Check that process has necessary permissions to write to default config path or provide a custom config path\n", confPath)
+			fmt.Printf("Error: Cannot create default Configuration file on default config path %s. Check that process has necessary permissions to write to default config path or provide a custom config path\n", confPath)
 			return nil, err
 		}
 		if confBytes, err = ioutil.ReadFile(confPath); err != nil {
-			fmt.Printf("Error: Cannot read configuration file on default config path %s. Make sure process have sufficient permission to access configuration path", confPath)
-			return nil, fmt.Errorf("reading configuration at %s: %w", confPath, err)
+			fmt.Printf("Error: Cannot read Configuration file on default config path %s. Make sure process have sufficient permission to access Configuration path", confPath)
+			return nil, fmt.Errorf("reading Configuration at %s: %w", confPath, err)
 		}
 	}
 	if err = yaml.Unmarshal(confBytes, config); err != nil {
 		fmt.Println("Error: Configuration file is not a valid yaml file, configuration read from", confPath)
-		return nil, fmt.Errorf("error reading configuration at %s: %w", confPath, err)
+		return nil, fmt.Errorf("error reading Configuration at %s: %w", confPath, err)
 	}
-	token, err := flags.GetString("cloud-token")
-	if err != nil {
-		fmt.Println("Error: Invalid value for --cloud-token")
-		return nil, err
-	}
-	if token != "" {
-		config.Cluster.Cloud.Token = strings.TrimSpace(token)
+	if Token != "" {
+		config.Cluster.Cloud.Token = strings.TrimSpace(Token)
 		config.Cluster.Cloud.Enabled = true
 	}
-	addrRaw, err := flags.GetString("address")
-	if err != nil {
-		fmt.Println("Error: Invalid value for --address")
-		return nil, err
-	}
+	addrRaw := Address
 	if addrRaw != "" {
 		addresses := strings.Split(strings.TrimSpace(addrRaw), ",")
 		config.Cluster.Network.Addresses = addresses
 	} else if len(config.Cluster.Network.Addresses) == 0 {
 		addresses := []string{DefaultClusterAddress}
+		if config.Cluster.Cloud.Enabled {
+			addresses = []string{"hazelcast-cloud"}
+		}
 		config.Cluster.Network.Addresses = addresses
 	}
-	cluster, err := flags.GetString("cluster-name")
-	if err != nil {
-		fmt.Println("Error: Invalid value for --cluster-name")
-		return nil, err
-	}
-	if cluster != "" {
-		config.Cluster.Name = strings.TrimSpace(cluster)
+	if Cluster != "" {
+		config.Cluster.Name = strings.TrimSpace(Cluster)
 	} else if config.Cluster.Name == "" {
 		config.Cluster.Name = DefaultClusterName
 	}
+	Configuration = config
 	return config, nil
 }
 

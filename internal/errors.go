@@ -70,7 +70,7 @@ func TranslateNetworkError(err error, isCloudCluster bool) (string, bool) {
 		}
 	}
 	var syscallErr syscall.Errno
-	//TODO these syscall errors seem platform specific, decide on what to do
+	// TODO these syscall errors seem platform specific, decide on what to do
 	if errors.As(err, &syscallErr) && syscallErr == syscall.ECONNREFUSED {
 		return connectErrMsg, true
 	}
