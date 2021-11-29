@@ -49,8 +49,8 @@ type CobraPrompt struct {
 	OnErrorFunc func(err error)
 }
 
-// Run will automatically generate suggestions for all cobra commands and flags defined by RootCmd
-// and execute the selected commands. Run will also reset all given flags by default, see PersistFlagValues
+// Run will automatically generate suggestions for all cobra commands and flags defined by RootCmd and execute the selected commands.
+// Run will also reset all given flags by default, see PersistFlagValues
 func (co CobraPrompt) Run(ctx context.Context) {
 	if co.RootCmd == nil {
 		panic("RootCmd is not set. Please set RootCmd")

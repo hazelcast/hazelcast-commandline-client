@@ -129,7 +129,7 @@ func EnsureState(state string) bool {
 	return false
 }
 
-func ConnectToCluster(ctx context.Context, clientConfig hazelcast.Config) (cli *hazelcast.Client, err error) {
+func ConnectToCluster(ctx context.Context, clientConfig *hazelcast.Config) (cli *hazelcast.Client, err error) {
 	if client != nil {
 		return client, nil
 	}

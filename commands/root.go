@@ -107,7 +107,8 @@ func ExecuteInteractive() {
 		log.Fatal(err)
 	}
 	fmt.Println("Connecting to the cluster ...")
-	if _, err = internal.ConnectToCluster(context.Background(), conf.Clone()); err != nil {
+	ctx := context.Background()
+	if _, err = internal.ConnectToCluster(ctx, conf); err != nil {
 		fmt.Printf("Error: %s\n", err)
 		return
 	}
@@ -117,11 +118,11 @@ func ExecuteInteractive() {
 	})
 	flagsToExclude = append(flagsToExclude, "help")
 	advancedPrompt.FlagsToExclude = flagsToExclude
-	RootCmd.Example = "> map put -k key -m myMap -v someValue\n" +
-		"> map get -k key -m myMap\n" +
-		"> cluster version"
+	RootCmd.Example = `> map put -k key -m myMap -v someValue
+> map get -k key -m myMap
+> cluster version`
 	RootCmd.Use = ""
-	advancedPrompt.Run(context.Background())
+	advancedPrompt.Run(ctx)
 }
 
 func decorateRootCommand(cmd *cobra.Command) {
