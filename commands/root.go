@@ -63,6 +63,7 @@ var advancedPrompt = &cobraprompt.CobraPrompt{
 		prompt.OptionTitle("Hazelcast Client"),
 		prompt.OptionLivePrefix(addressAndClusterNamePrefix),
 		prompt.OptionMaxSuggestion(10),
+		prompt.OptionCompletionOnDown(),
 	},
 	OnErrorFunc: func(err error) {
 		// handle error noop to prevent application from crashing

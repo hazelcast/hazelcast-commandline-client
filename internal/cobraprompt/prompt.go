@@ -103,6 +103,7 @@ func (co CobraPrompt) Run(ctx context.Context) {
 			if err := co.RootCmd.ExecuteContext(ctx); err != nil {
 				if err == ExitError {
 					exitPromptSafely()
+					return
 				}
 				if co.OnErrorFunc != nil {
 					co.OnErrorFunc(err)
@@ -113,6 +114,9 @@ func (co CobraPrompt) Run(ctx context.Context) {
 			}
 		},
 		func(d prompt.Document) []prompt.Suggest {
+			if d.Text == "" {
+				return nil
+			}
 			return findSuggestions(&co, &d)
 		},
 		co.GoPromptOptions...,
@@ -129,8 +133,10 @@ func (co CobraPrompt) prepare() {
 	}
 	if co.AddDefaultExitCommand {
 		co.RootCmd.AddCommand(&cobra.Command{
-			Use:   "exit",
-			Short: "Exit prompt",
+			Use:           "exit",
+			Short:         "Exit prompt",
+			SilenceErrors: true,
+			SilenceUsage:  true,
 			RunE: func(cmd *cobra.Command, args []string) error {
 				return ExitError
 			},
@@ -169,7 +175,8 @@ func findSuggestions(co *CobraPrompt, d *prompt.Document) []prompt.Suggest {
 			suggestions = append(suggestions, prompt.Suggest{Text: flagUsage, Description: flag.Usage})
 		} else if (co.SuggestFlagsWithoutDash && d.GetWordBeforeCursor() == "") || strings.HasPrefix(d.GetWordBeforeCursor(), "-") {
 			if flag.Shorthand != "" {
-				flagUsage = fmt.Sprintf("-%s, %s", flag.Shorthand, flagUsage)
+				suggestions = append(suggestions, prompt.Suggest{Text: "-" + flag.Shorthand, Description: "or " + flagUsage + " " + flag.Usage})
+				return
 			}
 			suggestions = append(suggestions, prompt.Suggest{Text: flagUsage, Description: flag.Usage})
 		}
