@@ -1,26 +1,22 @@
 # Hazelcast CLC
 
-## Download & Install
+## Installation
+There are two ways you can install command line client:
+* With Brew([Homebrew Package Manager](https://brew.sh)) [**Recommended**]
+* With custom installation
 
-### With Brew [Recommended]
-Hazelcast CLC is distributed via [Homebrew Package Manager](https://brew.sh).
-```
-brew tap utku-caglayan/hazelcast-clc
-brew install hazelcast-commandline-client
-```
-To uninstall:
-```
-brew uninstall hazelcast-commandline-client
-brew untap utku-caglayan/hazelcast-clc
-```
-### With Script:
-```
-curl https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/scripts/install.sh | bash
-```
-To uninstall:
-```
-~/.local/share/hz-cli/bin/uninstall.sh
-```
+| Installation Method 	| Install                                                                                   	| Uninstall 	|
+|---------------------	|-------------------------------------------------------------------------------------------	|-----------	|
+| Brew  | <pre>brew tap utku-caglayan/hazelcast-clc<br>brew install hazelcast-commandline-client</pre> 	|    <pre>brew uninstall hazelcast-commandline-client<br>brew untap utku-caglayan/hazelcast-clc</pre>       	|
+| Custom Script       	| `curl https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/scripts/install.sh \| bash`                                                                                          	|`~/.local/share/hz-cli/bin/uninstall.sh`|
+
+:bangbang: Please follow the instructions to enable autocompletion for Brew
+### **To have superior experience, enable autocompletion on Brew:**
+- If you are using brew on **bash**: <br>`brew install bash-completion` and follow the printed "Caveats" section.<br>Example instruction:<br>Add the following line to your ~/.bash_profile: `[[ -r "/home/ubuntu/.linuxbrew/etc/profile.d/bash_completion.sh" ]] && . "/home/ubuntu/.linuxbrew/etc/profile.d/bash_completion.sh"`.<br>Note that paths may differ depending on your installation, so you should follow the Caveats section on your system.
+
+- If you are using brew on **zsh**:    
+  https://docs.brew.sh/Shell-Completion#configuring-completions-in-zsh
+
 ## Build
 ### Requirements
 * Go 1.15 or better
@@ -36,7 +32,7 @@ cd hazelcast-commandline-client
 go build -o hzc github.com/hazelcast/hazelcast-commandline-client
 ```
 
-## Running
+## Usage
 
 Make sure a Hazelcast 4 or Hazelcast 5 cluster is running.
 
