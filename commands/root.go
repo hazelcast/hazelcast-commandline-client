@@ -54,7 +54,6 @@ func addressAndClusterNamePrefix() (prefix string, useLive bool) {
 
 var advancedPrompt = &cobraprompt.CobraPrompt{
 	RootCmd:                  RootCmd,
-	PersistFlagValues:        true,
 	ShowHelpCommandAndFlags:  true,
 	ShowHiddenFlags:          true,
 	SuggestFlagsWithoutDash:  true,
