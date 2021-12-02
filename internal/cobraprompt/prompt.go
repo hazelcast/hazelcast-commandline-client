@@ -114,6 +114,7 @@ func (co CobraPrompt) Run(ctx context.Context) {
 			}
 		},
 		func(d prompt.Document) []prompt.Suggest {
+			// no suggestion on new line
 			if d.Text == "" {
 				return nil
 			}
