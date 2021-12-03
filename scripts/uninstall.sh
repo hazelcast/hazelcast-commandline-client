@@ -19,11 +19,11 @@ fi
 rm -f "${bash_completion_dir}/completions/$PROGRAM_NAME"
 
 echo "For Bash:"
-echo "- You can remove ~/.local/bin from your path by removing a line in the form \"PATH=\$HOME/.local/bin:\$PATH\" from ~/.bashrc"
+echo '- You can remove ~/.local/bin from your path by removing a line in the form "PATH=$HOME/.local/bin:$PATH" from ~/.bashrc'
 echo
 
 echo "For Zsh:"
-echo "- You can remove ~/.local/bin from your path by removing a line in the form \"PATH=\$HOME/.local/bin:\$PATH\" from ~/.zshrc"
-echo "- To remove autocompletion on Zsh, execute:"
-echo "  sudo rm \${fpath[1]}/_$PROGRAM_NAME"
+echo '- You can remove ~/.local/bin from your path by removing a line in the form "PATH=$HOME/.local/bin:$PATH" from ~/.zshrc'
+echo '- To remove autocompletion on Zsh, execute:'
+echo '  sudo rm \${fpath[1]}/_$PROGRAM_NAME'
 

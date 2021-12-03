@@ -44,16 +44,16 @@ func TranslateError(err error, isCloudCluster bool, op ...string) (string, bool)
 }
 
 func TranslateClusterError(err error, operation string) (string, bool) {
-	var urlError *url.Error
-	isRestApiEnabledError := `Cannot access Hazelcast REST API.
-REST service is disabled in the configuration by default. It enables you to manage cluster with rest-api calls.
+	var urlErr *url.Error
+	restAPIErr := `Cannot access Hazelcast REST API.
+REST service is disabled in the configuration by default. It enables you to manage cluster with REST-API calls.
 You should enable it on your CLUSTER MEMBERS to use the cluster commands.
 Check this link to find out more: https://docs.hazelcast.com/hazelcast/latest/maintain-cluster/rest-api#enabling-rest-api`
-	if errors.As(err, &urlError) && strings.Contains(urlError.Error(), "EOF") {
+	if errors.As(err, &urlErr) && strings.Contains(urlErr.Error(), "EOF") {
 		if operation == ClusterShutdown || operation == ClusterChangeState {
 			return `Cannot access Hazelcast REST endpoint.
 - Is REST API enabled?
-REST service is disabled in the configuration by default. It enables you to manage cluster with rest-api calls.
+REST service is disabled in the configuration by default. It enables you to manage cluster with REST-API calls.
 You should enable it on your CLUSTER MEMBERS to use the cluster commands.
 Check this link to find out more: https://docs.hazelcast.com/hazelcast/latest/maintain-cluster/rest-api#enabling-rest-api
 
@@ -61,10 +61,10 @@ Check this link to find out more: https://docs.hazelcast.com/hazelcast/latest/ma
 Endpoints of Hazelcast REST API are grouped for fine-grained authorization. Commands such as "cluster change-state" that manipulates cluster state, must be enabled explicitly.
 Check this link to find out more: https://docs.hazelcast.com/hazelcast/latest/maintain-cluster/rest-api#using-rest-endpoint-groups`, true
 		}
-		return isRestApiEnabledError, true
+		return restAPIErr, true
 	}
 	if errors.Is(err, syscall.ECONNRESET) {
-		return isRestApiEnabledError, true
+		return restAPIErr, true
 	}
 	return "", false
 }

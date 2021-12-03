@@ -14,7 +14,7 @@ There are two ways you can install command line client:
 - For **Bash** users:
   - Execute `brew install bash-completion` and follow the printed "Caveats" section. 
     <br>Example instruction:<br>
-    Add the following line to your ~/.bash_profile:<br>
+    Add the following line to your ~/.bash_profile:
     ```
      [[ -r "/home/ubuntu/.linuxbrew/etc/profile.d/bash_completion.sh" ]] && . "/home/ubuntu/.linuxbrew/etc/profile.d/bash_completion.sh"
     ```
