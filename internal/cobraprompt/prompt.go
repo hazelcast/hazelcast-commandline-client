@@ -51,11 +51,11 @@ type CobraPrompt struct {
 	OnErrorFunc func(err error)
 }
 
-var ExitError = errors.New("exit prompt")
+var ErrExit = errors.New("exit prompt")
 
 // Terminal breaks on os.Exit for go-prompt https://github.com/c-bata/go-prompt/issues/59#issuecomment-376002177
 func exitPromptSafely() {
-	panic(ExitError)
+	panic(ErrExit)
 }
 
 func handleExit() {
@@ -63,7 +63,7 @@ func handleExit() {
 	case nil:
 		return
 	case error:
-		if v == ExitError {
+		if errors.Is(v, ErrExit) {
 			return
 		}
 		fmt.Println(v)
@@ -101,7 +101,7 @@ func (co CobraPrompt) Run(ctx context.Context) {
 			}
 			os.Args = append([]string{os.Args[0]}, promptArgs...)
 			if err := co.RootCmd.ExecuteContext(ctx); err != nil {
-				if err == ExitError {
+				if errors.Is(err, ErrExit) {
 					exitPromptSafely()
 					return
 				}
@@ -139,7 +139,7 @@ func (co CobraPrompt) prepare() {
 			SilenceErrors: true,
 			SilenceUsage:  true,
 			RunE: func(cmd *cobra.Command, args []string) error {
-				return ExitError
+				return ErrExit
 			},
 		})
 	}
@@ -176,7 +176,7 @@ func findSuggestions(co *CobraPrompt, d *prompt.Document) []prompt.Suggest {
 			suggestions = append(suggestions, prompt.Suggest{Text: flagUsage, Description: flag.Usage})
 		} else if (co.SuggestFlagsWithoutDash && d.GetWordBeforeCursor() == "") || strings.HasPrefix(d.GetWordBeforeCursor(), "-") {
 			if flag.Shorthand != "" {
-				suggestions = append(suggestions, prompt.Suggest{Text: "-" + flag.Shorthand, Description: "or " + flagUsage + " " + flag.Usage})
+				suggestions = append(suggestions, prompt.Suggest{Text: fmt.Sprintf("-%s", flag.Shorthand), Description: fmt.Sprintf("or %s %s", flagUsage, flag.Usage)})
 				return
 			}
 			suggestions = append(suggestions, prompt.Suggest{Text: flagUsage, Description: flag.Usage})
