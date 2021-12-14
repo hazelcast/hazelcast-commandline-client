@@ -2,18 +2,20 @@
 
 ## Installation
 
-There are two ways you can install command line client:
-* With [Brew](https://brew.sh) [**Recommended**]
-* With script installation
+There are two ways you can install the command line client:
+* Using [Brew](https://brew.sh) [**Recommended**]
+* Using script installation
 
 ### Installing with Brew [Recommended]
 
-<pre>brew tap utku-caglayan/hazelcast-clc<br>brew install hazelcast-commandline-client</pre>
-
-**To have superior experience, enable autocompletion on Brew:**
+```
+brew tap utku-caglayan/hazelcast-clc
+brew install hazelcast-commandline-client
+```
+**To have a superior experience, enable autocompletion on Brew:**
 - For **Bash** users:
-  - Execute `brew install bash-completion` and follow the printed "Caveats" section. 
-    <br>Example instruction:<br>
+  - Execute `brew install bash-completion` and follow the printed "Caveats" section.  
+    Example instruction:
     Add the following line to your ~/.bash_profile:
     ```
      [[ -r "/home/ubuntu/.linuxbrew/etc/profile.d/bash_completion.sh" ]] && . "/home/ubuntu/.linuxbrew/etc/profile.d/bash_completion.sh"
@@ -23,9 +25,6 @@ There are two ways you can install command line client:
 - For **Zsh** users
   - Follow https://docs.brew.sh/Shell-Completion#configuring-completions-in-zsh 
 
-
-
-  
 ### Installation with script
 
 ```
@@ -38,7 +37,10 @@ Depending on how you install the command line client, choose the uninstallation 
 
 ### Uninstallation using Brew
 
-<pre>brew uninstall hazelcast-commandline-client<br>brew untap utku-caglayan/hazelcast-clc</pre>
+```
+brew uninstall hazelcast-commandline-client
+brew untap utku-caglayan/hazelcast-clc
+```
 
 ### Uninstallation using script
 
@@ -100,7 +102,7 @@ e.g. 192.168.1.1:5702,192.168.1.2:5703,192.168.1.3:5701
 # <CLUSTER_NAME>: name of the cluster
 hzc --address <ADDRESSES> --cluster-name <YOUR_CLUSTER_NAME>
 
-# Using a Custom Config
+# Using Custom Config
 # <CONFIG_PATH>: path of the target configuration
 hzc --config <CONFIG_PATH>
 ```
@@ -110,12 +112,12 @@ hzc --config <CONFIG_PATH>
 ### Requirements
 * Go 1.15 or better
  
-### Download the Repository using Git
+### Download the repository using Git
 ```
 git clone https://github.com/hazelcast/hazelcast-commandline-client.git
 ```
 
-### Then, Build the Project
+### Then, build the project
 
 ```
 cd hazelcast-commandline-client
