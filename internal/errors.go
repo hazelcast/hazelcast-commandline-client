@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	restOrClusterWriteEnabledMessage = `Cannot access Hazelcast REST endpoint.
+	restOrClusterWriteEnabledMsg = `Cannot access Hazelcast REST endpoint.
 - Is REST API enabled?
 REST service is disabled in the configuration by default. It enables you to manage cluster with REST-API calls.
 You should enable it on your CLUSTER MEMBERS to use the cluster commands.
@@ -37,7 +37,7 @@ Check this link to find out more: https://docs.hazelcast.com/hazelcast/latest/ma
 - If yes, is CLUSTER_WRITE endpoint group enabled?
 Endpoints of Hazelcast REST API are grouped for fine-grained authorization. Commands such as "cluster change-state" that manipulates cluster state, must be enabled explicitly.
 Check this link to find out more: https://docs.hazelcast.com/hazelcast/latest/maintain-cluster/rest-api#using-rest-endpoint-groups`
-	restAPIEnabledMessage = `Cannot access Hazelcast REST API.
+	restEnabledMsg = `Cannot access Hazelcast REST API.
 REST service is disabled in the configuration by default. It enables you to manage cluster with REST-API calls.
 You should enable it on your CLUSTER MEMBERS to use the cluster commands.
 Check this link to find out more: https://docs.hazelcast.com/hazelcast/latest/maintain-cluster/rest-api#enabling-rest-api`
@@ -63,12 +63,12 @@ func TranslateClusterError(err error, operation string) (string, bool) {
 	var urlErr *url.Error
 	if errors.As(err, &urlErr) && strings.Contains(urlErr.Error(), "EOF") {
 		if operation == ClusterShutdown || operation == ClusterChangeState {
-			return restOrClusterWriteEnabledMessage, true
+			return restOrClusterWriteEnabledMsg, true
 		}
-		return restAPIEnabledMessage, true
+		return restEnabledMsg, true
 	}
 	if errors.Is(err, syscall.ECONNRESET) {
-		return restAPIEnabledMessage, true
+		return restEnabledMsg, true
 	}
 	return "", false
 }
