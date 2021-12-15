@@ -27,6 +27,22 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 )
 
+const (
+	restOrClusterWriteEnabledMsg = `Cannot access Hazelcast REST endpoint.
+- Is REST API enabled?
+REST service is disabled in the configuration by default. It enables you to manage cluster with REST-API calls.
+You should enable it on your CLUSTER MEMBERS to use the cluster commands.
+Check this link to find out more: https://docs.hazelcast.com/hazelcast/latest/maintain-cluster/rest-api#enabling-rest-api
+
+- If yes, is CLUSTER_WRITE endpoint group enabled?
+Endpoints of Hazelcast REST API are grouped for fine-grained authorization. Commands such as "cluster change-state" that manipulates cluster state, must be enabled explicitly.
+Check this link to find out more: https://docs.hazelcast.com/hazelcast/latest/maintain-cluster/rest-api#using-rest-endpoint-groups`
+	restEnabledMsg = `Cannot access Hazelcast REST API.
+REST service is disabled in the configuration by default. It enables you to manage cluster with REST-API calls.
+You should enable it on your CLUSTER MEMBERS to use the cluster commands.
+Check this link to find out more: https://docs.hazelcast.com/hazelcast/latest/maintain-cluster/rest-api#enabling-rest-api`
+)
+
 func ErrorRecover() {
 	obj := recover()
 	if err, ok := obj.(error); ok {
@@ -44,15 +60,15 @@ func TranslateError(err error, isCloudCluster bool, op ...string) (string, bool)
 }
 
 func TranslateClusterError(err error, operation string) (string, bool) {
-	var urlError *url.Error
-	if errors.As(err, &urlError) && strings.Contains(urlError.Error(), "EOF") {
+	var urlErr *url.Error
+	if errors.As(err, &urlErr) && strings.Contains(urlErr.Error(), "EOF") {
 		if operation == ClusterShutdown || operation == ClusterChangeState {
-			return "Cannot access Hazelcast REST API. Is it enabled? If yes, check CLUSTER_WRITE endpoint group is enabled https://docs.hazelcast.com/hazelcast/latest/maintain-cluster/rest-api#using-rest-endpoint-groups\nIf not check this link to find out more: https://docs.hazelcast.com/hazelcast/5.0/maintain-cluster/rest-api#enabling-rest-api", true
+			return restOrClusterWriteEnabledMsg, true
 		}
-		return "Cannot access Hazelcast REST API. Is it enabled? Check this link to find out more: https://docs.hazelcast.com/hazelcast/latest/maintain-cluster/rest-api#enabling-rest-api", true
+		return restEnabledMsg, true
 	}
 	if errors.Is(err, syscall.ECONNRESET) {
-		return "Cannot access Hazelcast REST API. Is it enabled? Check this link to find out more: https://docs.hazelcast.com/hazelcast/latest/maintain-cluster/rest-api#enabling-rest-api", true
+		return restEnabledMsg, true
 	}
 	return "", false
 }

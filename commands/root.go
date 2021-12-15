@@ -54,7 +54,6 @@ func addressAndClusterNamePrefix() (prefix string, useLive bool) {
 
 var advancedPrompt = &cobraprompt.CobraPrompt{
 	RootCmd:                  RootCmd,
-	PersistFlagValues:        true,
 	ShowHelpCommandAndFlags:  true,
 	ShowHiddenFlags:          true,
 	SuggestFlagsWithoutDash:  true,
@@ -64,6 +63,7 @@ var advancedPrompt = &cobraprompt.CobraPrompt{
 		prompt.OptionTitle("Hazelcast Client"),
 		prompt.OptionLivePrefix(addressAndClusterNamePrefix),
 		prompt.OptionMaxSuggestion(10),
+		prompt.OptionCompletionOnDown(),
 	},
 	OnErrorFunc: func(err error) {
 		// handle error noop to prevent application from crashing
@@ -119,7 +119,7 @@ func ExecuteInteractive() {
 	})
 	flagsToExclude = append(flagsToExclude, "help")
 	advancedPrompt.FlagsToExclude = flagsToExclude
-	RootCmd.Example = `> map put -k key -m myMap -v someValue
+	RootCmd.Example = `> map put -k key -n myMap -v someValue
 > map get -k key -m myMap
 > cluster version`
 	RootCmd.Use = ""

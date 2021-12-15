@@ -2,8 +2,10 @@ package cobraprompt
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
+	"runtime/debug"
 	"strings"
 
 	"github.com/c-bata/go-prompt"
@@ -49,9 +51,39 @@ type CobraPrompt struct {
 	OnErrorFunc func(err error)
 }
 
+var ErrExit = errors.New("exit prompt")
+
+// Terminal breaks on os.Exit for go-prompt https://github.com/c-bata/go-prompt/issues/59#issuecomment-376002177
+func exitPromptSafely() {
+	panic(ErrExit)
+}
+
+func handleExit() {
+	switch v := recover().(type) {
+	case nil:
+		return
+	case error:
+		if errors.Is(v, ErrExit) {
+			return
+		}
+		fmt.Println(v)
+	default:
+		fmt.Println(v)
+		fmt.Println(string(debug.Stack()))
+	}
+}
+
 // Run will automatically generate suggestions for all cobra commands and flags defined by RootCmd and execute the selected commands.
 // Run will also reset all given flags by default, see PersistFlagValues
 func (co CobraPrompt) Run(ctx context.Context) {
+	defer handleExit()
+	// let ctrl+c exit prompt
+	co.GoPromptOptions = append(co.GoPromptOptions, prompt.OptionAddKeyBind(prompt.KeyBind{
+		Key: prompt.ControlC,
+		Fn: func(_ *prompt.Buffer) {
+			exitPromptSafely()
+		},
+	}))
 	if co.RootCmd == nil {
 		panic("RootCmd is not set. Please set RootCmd")
 	}
@@ -69,15 +101,23 @@ func (co CobraPrompt) Run(ctx context.Context) {
 			}
 			os.Args = append([]string{os.Args[0]}, promptArgs...)
 			if err := co.RootCmd.ExecuteContext(ctx); err != nil {
+				if errors.Is(err, ErrExit) {
+					exitPromptSafely()
+					return
+				}
 				if co.OnErrorFunc != nil {
 					co.OnErrorFunc(err)
 				} else {
 					co.RootCmd.PrintErrln(err)
-					os.Exit(1)
+					exitPromptSafely()
 				}
 			}
 		},
 		func(d prompt.Document) []prompt.Suggest {
+			// no suggestion on new line
+			if d.Text == "" {
+				return nil
+			}
 			return findSuggestions(&co, &d)
 		},
 		co.GoPromptOptions...,
@@ -94,10 +134,12 @@ func (co CobraPrompt) prepare() {
 	}
 	if co.AddDefaultExitCommand {
 		co.RootCmd.AddCommand(&cobra.Command{
-			Use:   "exit",
-			Short: "Exit prompt",
-			Run: func(cmd *cobra.Command, args []string) {
-				os.Exit(0)
+			Use:           "exit",
+			Short:         "Exit prompt",
+			SilenceErrors: true,
+			SilenceUsage:  true,
+			RunE: func(cmd *cobra.Command, args []string) error {
+				return ErrExit
 			},
 		})
 	}
@@ -134,7 +176,8 @@ func findSuggestions(co *CobraPrompt, d *prompt.Document) []prompt.Suggest {
 			suggestions = append(suggestions, prompt.Suggest{Text: flagUsage, Description: flag.Usage})
 		} else if (co.SuggestFlagsWithoutDash && d.GetWordBeforeCursor() == "") || strings.HasPrefix(d.GetWordBeforeCursor(), "-") {
 			if flag.Shorthand != "" {
-				flagUsage = fmt.Sprintf("-%s, %s", flag.Shorthand, flagUsage)
+				suggestions = append(suggestions, prompt.Suggest{Text: fmt.Sprintf("-%s", flag.Shorthand), Description: fmt.Sprintf("or %s %s", flagUsage, flag.Usage)})
+				return
 			}
 			suggestions = append(suggestions, prompt.Suggest{Text: flagUsage, Description: flag.Usage})
 		}
