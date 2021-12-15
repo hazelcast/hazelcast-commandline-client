@@ -119,7 +119,7 @@ func ExecuteInteractive() {
 	})
 	flagsToExclude = append(flagsToExclude, "help")
 	advancedPrompt.FlagsToExclude = flagsToExclude
-	RootCmd.Example = `> map put -k key -m myMap -v someValue
+	RootCmd.Example = `> map put -k key -n myMap -v someValue
 > map get -k key -m myMap
 > cluster version`
 	RootCmd.Use = ""
