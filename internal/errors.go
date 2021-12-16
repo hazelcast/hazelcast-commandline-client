@@ -28,19 +28,17 @@ import (
 )
 
 const (
-	restOrClusterWriteEnabledMsg = `Cannot access Hazelcast REST endpoint.
-- Is REST API enabled?
-REST service is disabled in the configuration by default. It enables you to manage cluster with REST-API calls.
-You should enable it on your CLUSTER MEMBERS to use the cluster commands.
-Check this link to find out more: https://docs.hazelcast.com/hazelcast/latest/maintain-cluster/rest-api#enabling-rest-api
+	restEnabledMsg = `Cannot access Hazelcast REST endpoint.
 
-- If yes, is CLUSTER_WRITE endpoint group enabled?
-Endpoints of Hazelcast REST API are grouped for fine-grained authorization. Commands such as "cluster change-state" that manipulates cluster state, must be enabled explicitly.
-Check this link to find out more: https://docs.hazelcast.com/hazelcast/latest/maintain-cluster/rest-api#using-rest-endpoint-groups`
-	restEnabledMsg = `Cannot access Hazelcast REST API.
-REST service is disabled in the configuration by default. It enables you to manage cluster with REST-API calls.
-You should enable it on your CLUSTER MEMBERS to use the cluster commands.
-Check this link to find out more: https://docs.hazelcast.com/hazelcast/latest/maintain-cluster/rest-api#enabling-rest-api`
+- Is REST API enabled?
+The CLI uses REST API for cluster management operations. Therefore, in order to perform them, you have to enable the REST API in the "member"
+configuration (which is disabled by default).
+
+To enable REST API, follow the instructions in the member log or see the documentation: https://docs.hazelcast.com/hazelcast/latest/maintain-cluster/rest-api#enabling-rest-api`
+	restOrClusterWriteEnabledMsg = restEnabledMsg + "\n\n" + `- If yes, is CLUSTER_WRITE endpoint group enabled?
+For operations that change state/configuration of the cluster (e.g. "cluster change-state"), you need to have "CLUSTER_WRITE" permission on the REST API to prevent unauthorized changes.
+
+To change CLUSTER_WRITE permission, see the documentation: https://docs.hazelcast.com/hazelcast/latest/maintain-cluster/rest-api#using-rest-endpoint-groups`
 )
 
 func ErrorRecover() {
