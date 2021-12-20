@@ -51,10 +51,15 @@ var mapPutCmd = &cobra.Command{
 		}
 		_, err = m.Put(ctx, mapKey, normalizedValue)
 		if err != nil {
-			fmt.Printf("error putting value for key %s from map %s\n", mapKey, mapName)
+			fmt.Printf("Cannot put value for key %s to map %s\n", mapKey, mapName)
+			isCloudCluster := config.Cluster.Cloud.Enabled
+			if networkErrMsg, handled := internal.TranslateNetworkError(err, isCloudCluster); handled {
+				fmt.Println("Error: ", networkErrMsg)
+				return
+			}
+			fmt.Printf("Unknown cause: %s\n", err)
 			return
 		}
-		return
 	},
 }
 

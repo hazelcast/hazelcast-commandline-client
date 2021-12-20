@@ -45,7 +45,13 @@ var mapGetCmd = &cobra.Command{
 		}
 		value, err := m.Get(ctx, mapKey)
 		if err != nil {
-			fmt.Printf("Error: Cannot get value for key %s from map %s\n", mapKey, mapName)
+			fmt.Printf("Cannot get value for key %s from map %s\n", mapKey, mapName)
+			isCloudCluster := config.Cluster.Cloud.Enabled
+			if networkErrMsg, handled := internal.TranslateNetworkError(err, isCloudCluster); handled {
+				fmt.Println("Error: ", networkErrMsg)
+				return
+			}
+			fmt.Printf("Unknown cause: %s\n", err)
 			return
 		}
 		if value != nil {
