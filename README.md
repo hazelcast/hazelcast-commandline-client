@@ -120,11 +120,13 @@ The cluster creation and retrieving connection info can be done directly in comm
 - Get the cluster name and discovery token:
   
   ```
-  # cluster name
+  # Get cluster name
   hzcloud starter-cluster get --cluster-id 2285 --output json | jq '.releaseName'
+  > "ex-1111"
   
-  # discovery token
+  # Get discovery token
   hzcloud starter-cluster get --cluster-id 2285 --output json | jq '.discoveryTokens[].token'
+  > "exampleHashDiscoveryToken"
   ```
 
 - Connect to the cluster using the command line client using the credentials above:
