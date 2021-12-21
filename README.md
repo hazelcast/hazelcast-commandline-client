@@ -67,6 +67,14 @@ hzc map --name myMap put --key myKey --value myValue
 
 The cluster creation and retrieving connection info can be done directly in command line using [Hazelcast Cloud CLI](https://github.com/hazelcast/hazelcast-cloud-cli).
 
+- Authenticate to Hazelcast Cloud account:
+
+  ```  
+  hzcloud login
+  -  Api Key: SAMPLE_API_KEY
+  -  Api Secret: SAMPLE_API_SECRET
+  ```
+
 - Create cluster:
 
   ```
