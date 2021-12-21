@@ -58,9 +58,75 @@ hzc
 
 # Print help
 hzc --help
+
+# Non-interactive mode
+hzc map --name myMap put --key myKey --value myValue
 ```
 
-### More examples
+## Connecting to Hazelcast Cloud
+
+The cluster creation and retrieving connection info can be done directly in command line using [Hazelcast Cloud CLI](https://github.com/hazelcast/hazelcast-cloud-cli).
+
+- Create cluster:
+
+  ```
+  hzcloud starter-cluster create \
+  --cloud-provider=aws \
+  --cluster-type=FREE \
+  --name=mycluster \
+  --region=us-west-2 \
+  --total-memory=0.2 \
+  --hazelcast-version=5.0
+
+  > Cluster 2258 is creating. You can check the status using hzcloud starter-cluster list.
+  ```
+  
+- Wait until the cluster is running:
+
+  ```
+  hzcloud starter-cluster list
+  
+  > 
+  ┌────────┬────────────┬─────────┬─────────┬──────────────┬────────────────┬───────────┬─────────┐
+  │ Id     │ Name       │ State   │ Version │ Memory (GiB) │ Cloud Provider │ Region    │ Is Free │
+  ├────────┼────────────┼─────────┼─────────┼──────────────┼────────────────┼───────────┼─────────┤
+  │ 2285   │ mycluster  │ PENDING │ 5.0     │          0.2 │ aws            │ us-west-2 │ true    │
+  ├────────┼────────────┼─────────┼─────────┼──────────────┼────────────────┼───────────┼─────────┤
+  │ Total: │ 1          │         │         │              │                │           │         │
+  └────────┴────────────┴─────────┴─────────┴──────────────┴────────────────┴───────────┴─────────┘
+  
+  ...
+  
+  hzcloud starter-cluster list
+  > 
+  ┌────────┬────────────┬─────────┬─────────┬──────────────┬────────────────┬───────────┬─────────┐
+  │ Id     │ Name       │ State   │ Version │ Memory (GiB) │ Cloud Provider │ Region    │ Is Free │
+  ├────────┼────────────┼─────────┼─────────┼──────────────┼────────────────┼───────────┼─────────┤
+  │ 2285   │ mycluster  │ RUNNING │ 5.0     │          0.2 │ aws            │ us-west-2 │ true    │
+  ├────────┼────────────┼─────────┼─────────┼──────────────┼────────────────┼───────────┼─────────┤
+  │ Total: │ 1          │         │         │              │                │           │         │
+  └────────┴────────────┴─────────┴─────────┴──────────────┴────────────────┴───────────┴─────────┘
+
+  ```
+
+- Get the cluster name and discovery token:
+  
+  ```
+  # cluster name
+  hzcloud starter-cluster get --cluster-id 2285 --output json | jq '.releaseName'
+  
+  # discovery token
+  hzcloud starter-cluster get --cluster-id 2285 --output json | jq '.discoveryTokens[].token'
+  ```
+
+- Connect to the cluster using the command line client using the credentials above:
+
+  ```
+  hzc --cluster-name <CLUSTER NAME> --cloud-token <DISCOVERY TOKEN>
+  ```
+
+
+## More examples
 
 ```
 # Get from a map
@@ -90,21 +156,15 @@ hzc cluster version
 
 ## Configuration
 ```
-# Using a Default Config
-# Connect to a Hazelcast Cloud cluster
-# <YOUR_HAZELCAST_CLOUD_TOKEN>: token which appears on the advanced configuration section in Hazelcast Cloud.
-# <CLUSTER_NAME>: name of the cluster
-hzc --cloud-token <YOUR_HAZELCAST_CLOUD_TOKEN> --cluster-name <CLUSTER_NAME>
+# Using Custom Config
+# <CONFIG_PATH>: path of the target configuration
+hzc --config <CONFIG_PATH>
 
 # Connect to a Local Hazelcast cluster
 # <ADDRESSES>: addresses of the members of the Hazelcast cluster
 e.g. 192.168.1.1:5702,192.168.1.2:5703,192.168.1.3:5701
 # <CLUSTER_NAME>: name of the cluster
 hzc --address <ADDRESSES> --cluster-name <YOUR_CLUSTER_NAME>
-
-# Using Custom Config
-# <CONFIG_PATH>: path of the target configuration
-hzc --config <CONFIG_PATH>
 ```
 
 ## Build from source
