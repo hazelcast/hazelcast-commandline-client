@@ -75,7 +75,7 @@ The cluster creation and retrieving connection info can be done directly in comm
   -  Api Secret: SAMPLE_API_SECRET
   ```
 
-- Create cluster:
+- Create a cluster:
 
   ```
   hzcloud starter-cluster create \
