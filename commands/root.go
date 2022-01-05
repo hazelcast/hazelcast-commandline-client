@@ -27,6 +27,7 @@ import (
 	"github.com/spf13/pflag"
 
 	clustercmd "github.com/hazelcast/hazelcast-commandline-client/commands/cluster"
+	compactcmd "github.com/hazelcast/hazelcast-commandline-client/commands/compact"
 	mapcmd "github.com/hazelcast/hazelcast-commandline-client/commands/types/map"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/cobraprompt"
@@ -141,7 +142,7 @@ func decorateRootCommand(cmd *cobra.Command) {
 
 func initRootCommand(rootCmd *cobra.Command) {
 	decorateRootCommand(rootCmd)
-	rootCmd.AddCommand(clustercmd.ClusterCmd, mapcmd.MapCmd)
+	rootCmd.AddCommand(clustercmd.ClusterCmd, mapcmd.MapCmd, compactcmd.CompactCmd)
 }
 
 func init() {

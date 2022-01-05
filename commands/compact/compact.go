@@ -32,7 +32,14 @@ var CompactCmd = &cobra.Command{
 	Use: "compact LANGUAGE SCHEMA_FILE [flags]\n" +
 		"\nArguments:\n" +
 		"  LANGUAGE    Language to generate codecs for. Possible values are [java cpp cs py ts go]\n" +
-		"  SCHEMA_FILE Path to the schema file.\n",
+		"  SCHEMA_FILE Path to the schema file. Schema file is a yaml file in the following format:" +
+		`
+  classes:
+   - name: <name of the class>
+     fields:
+       - name: <field name>
+         type: <field type>
+         default: <default value>`,
 	Short: "Hazelcast Code Generator for Compact Serializer",
 	Long:  "Generate domain classes from given schema file for the selected language.",
 	Args: func(cmd *cobra.Command, args []string) error {

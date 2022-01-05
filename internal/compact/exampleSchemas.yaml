@@ -1,0 +1,106 @@
+classes:
+  - name: TypesWithDefaults
+    fields:
+      - name: mboolean
+        type: boolean
+        default: true
+      - name: mbyte
+        type: int8
+        default: 8
+      - name: mshort
+        type: int16
+        default: 16
+      - name: mint
+        type: int32
+        default: 32
+      - name: mlong
+        type: int64
+        default: 64
+      - name: mfloat
+        type: float32
+        default: 32.32
+      - name: mdouble
+        type: float64
+        default: 64.64
+  - name: AllTypes
+    fields:
+      - name: mboolean
+        type: boolean
+      - name: mboolean_array
+        type: boolean[]
+      - name: mbyte
+        type: int8
+      - name: mbyte_array
+        type: int8[]
+      - name: mshort
+        type: int16
+      - name: mshort_array
+        type: int16[]
+      - name: mint
+        type: int32
+      - name: mint_array
+        type: int32[]
+      - name: mlong
+        type: int64
+      - name: mlong_array
+        type: int64[]
+      - name: mfloat
+        type: float32
+      - name: mfloat_array
+        type: float32[]
+      - name: mdouble
+        type: float64
+      - name: mdouble_array
+        type: float64[]
+      - name: mstring
+        type: string
+      - name: mstring_array
+        type: string[]
+      - name: mdate
+        type: date
+      - name: mdate_array
+        type: date[]
+      - name: mtime
+        type: time
+      - name: mtime_array
+        type: time[]
+      - name: mtimestamp
+        type: timestamp
+      - name: mtimestamp_array
+        type: timestamp[]
+      - name: mtimestampWithTimezone
+        type: timestampWithTimezone
+      - name: mtimestampWithTimezone_array
+        type: timestampWithTimezone[]
+      - name: mnullableboolean
+        type: nullableBoolean
+      - name: mnullableboolean_array
+        type: nullableBoolean[]
+      - name: mnullablebyte
+        type: nullableInt8
+      - name: mnullablebyte_array
+        type: nullableInt8[]
+      - name: mnullableshort
+        type: nullableInt16
+      - name: mnullableshort_array
+        type: nullableInt16[]
+      - name: mnullableint
+        type: nullableInt32
+      - name: mnullableint_array
+        type: nullableInt32[]
+      - name: mnullablelong
+        type: nullableInt64
+      - name: mnullablelong_array
+        type: nullableInt64[]
+      - name: mnullablefloat
+        type: nullableFloat32
+      - name: mnullablefloat_array
+        type: nullableFloat32[]
+      - name: mnullabledouble
+        type: nullableFloat64
+      - name: mnullabledouble_array
+        type: nullableFloat64[]
+      - name: mcompact
+        type: TypesWithDefaults
+      - name: mcompact_array
+        type: TypesWithDefaults[]
