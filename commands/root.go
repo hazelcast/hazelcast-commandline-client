@@ -27,6 +27,7 @@ import (
 	"github.com/spf13/pflag"
 
 	clustercmd "github.com/hazelcast/hazelcast-commandline-client/commands/cluster"
+	"github.com/hazelcast/hazelcast-commandline-client/commands/sql"
 	mapcmd "github.com/hazelcast/hazelcast-commandline-client/commands/types/map"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/cobraprompt"
@@ -34,7 +35,7 @@ import (
 
 var (
 	RootCmd = &cobra.Command{
-		Use:   "hzc {cluster | help | map} [--address address | --cloud-token token | --cluster-name name | --config config]",
+		Use:   "hzc {cluster | map | sql | help} [--address address | --cloud-token token | --cluster-name name | --config config]",
 		Short: "Hazelcast command-line client",
 		Long:  "Hazelcast command-line client connects your command-line to a Hazelcast cluster",
 		Example: "`hzc map --name my-map put --key hello --value world` - put entry into map directly\n" +
@@ -140,7 +141,7 @@ func decorateRootCommand(cmd *cobra.Command) {
 
 func initRootCommand(rootCmd *cobra.Command) {
 	decorateRootCommand(rootCmd)
-	rootCmd.AddCommand(clustercmd.ClusterCmd, mapcmd.MapCmd)
+	rootCmd.AddCommand(clustercmd.ClusterCmd, mapcmd.MapCmd, sql.SqlCmd)
 }
 
 func init() {
