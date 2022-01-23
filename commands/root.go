@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
 	"strings"
 
 	"github.com/c-bata/go-prompt"
@@ -91,13 +92,23 @@ func IsInteractiveCall() bool {
 	return false
 }
 
-func Execute() {
-	if err := RootCmd.Execute(); err != nil {
+func Execute(ctx context.Context) {
+	cmdCtx, cmdCancel := context.WithCancel(ctx)
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, os.Kill)
+	go func() {
+		select {
+		case s := <-c:
+			fmt.Println("signal received", s)
+			cmdCancel()
+		}
+	}()
+	if err := RootCmd.ExecuteContext(cmdCtx); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func ExecuteInteractive() {
+func ExecuteInteractive(ctx context.Context) {
 	cobraprompt.RegisterPersistFlag(RootCmd)
 	// parse global persistent flags
 	if err := RootCmd.ParseFlags(os.Args); err != nil {
@@ -109,7 +120,6 @@ func ExecuteInteractive() {
 		log.Fatal(err)
 	}
 	fmt.Println("Connecting to the cluster ...")
-	ctx := context.Background()
 	if _, err = internal.ConnectToCluster(ctx, conf); err != nil {
 		fmt.Printf("Error: %s\n", err)
 		return

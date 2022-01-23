@@ -16,14 +16,17 @@
 package main
 
 import (
+	"context"
+
 	"github.com/hazelcast/hazelcast-commandline-client/commands"
 )
 
 func main() {
+	ctx := context.Background()
 	isInteractive := commands.IsInteractiveCall()
 	if isInteractive {
-		commands.ExecuteInteractive()
+		commands.ExecuteInteractive(ctx)
 	} else {
-		commands.Execute()
+		commands.Execute(ctx)
 	}
 }

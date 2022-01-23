@@ -17,41 +17,42 @@
 package sql
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
+	"io"
+	"os/exec"
 	"strings"
 
-	"github.com/alexeyco/simpletable"
 	_ "github.com/hazelcast/hazelcast-go-client/sql/driver"
 	"github.com/spf13/cobra"
 
 	isql "github.com/hazelcast/hazelcast-commandline-client/internal/sql"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/table"
 )
 
 var queryCmd = &cobra.Command{
 	Use:   `query string`,
 	Short: "executes query",
 	Run: func(cmd *cobra.Command, args []string) {
+		arg := strings.Join(args, " ")
 		var queries []string
-		for _, arg := range args {
-			for _, q := range strings.Split(arg, ";") {
-				tmp := strings.TrimSpace(q)
-				if len(tmp) == 0 {
-					continue
-				}
-				queries = append(queries, tmp)
+		for _, q := range strings.Split(arg, ";") {
+			tmp := strings.TrimSpace(q)
+			if len(tmp) == 0 {
+				continue
 			}
+			queries = append(queries, tmp)
 		}
 		db := isql.Get()
 		for _, q := range queries {
-			fmt.Println(">>>", q)
 			lt := strings.ToLower(q)
 			if strings.HasPrefix(lt, "select") || strings.HasPrefix(lt, "show") {
-				if err := query(db, q); err != nil {
+				if err := query(cmd.Context(), db, q, cmd.OutOrStdout()); err != nil {
 					fmt.Println(err)
 				}
 			} else {
-				if err := exec(db, q); err != nil {
+				if err := execute(cmd.Context(), db, q); err != nil {
 					fmt.Println(err)
 				}
 			}
@@ -60,50 +61,42 @@ var queryCmd = &cobra.Command{
 	},
 }
 
-func query(db *sql.DB, text string) error {
-	rows, err := db.Query(text)
+func query(ctx context.Context, db *sql.DB, text string, out io.Writer) error {
+	rows, err := db.QueryContext(ctx, text)
 	if err != nil {
 		return fmt.Errorf("querying: %w", err)
 	}
 	defer rows.Close()
-	// Generate table from rows
-	table := simpletable.New()
-	var header []*simpletable.Cell
+	var w = out
+	// command that can be used as a pager exists
+	if pagerCmd != "" {
+		cmd := exec.Command(pagerCmd)
+		cmd.Stdout = out
+		cmd.Stderr = out
+		cmdBuf, err := cmd.StdinPipe()
+		if err != nil {
+			return err
+		}
+		if err := cmd.Start(); err != nil {
+			return err
+		}
+		defer func() {
+			cmdBuf.Close()
+			cmd.Wait()
+		}()
+		w = cmdBuf
+	}
+	tWriter := table.NewTableWriter(w)
 	err = rowsHandler(rows, func(cols []string) error {
-		for _, col := range cols {
-			header = append(header, &simpletable.Cell{
-				Align: simpletable.AlignCenter,
-				Text:  col,
-			})
+		icols := make([]interface{}, len(cols))
+		for i, v := range cols {
+			icols[i] = v
 		}
-		return nil
+		return tWriter.WriteHeader(icols...)
 	}, func(row []interface{}) error {
-		cells := make([]*simpletable.Cell, len(row))
-		for i, e := range row {
-			cells[i] = &simpletable.Cell{
-				Align: simpletable.AlignLeft,
-				// TODO we can create formatters for each sql type
-				Text: fmt.Sprintf("%v", e),
-			}
-		}
-		table.Body.Cells = append(table.Body.Cells, cells)
-		return nil
+		return tWriter.Write(row...)
 	})
-	if err != nil {
-		fmt.Println("could not generate table: ", err)
-		return nil
-	}
-	table.Header = &simpletable.Header{Cells: header}
-	table.Footer = &simpletable.Footer{}
-	table.Footer.Cells = make([]*simpletable.Cell, len(table.Header.Cells))
-	footer := table.Footer.Cells
-	for i := range footer {
-		footer[i] = &simpletable.Cell{}
-	}
-	footer[0] = &simpletable.Cell{Align: simpletable.AlignRight, Text: fmt.Sprintf("#Rows:%d", len(table.Body.Cells))}
-	table.SetStyle(simpletable.StyleCompactLite)
-	table.Println()
-	return nil
+	return err
 }
 
 // Reads columns and rows calls handlers. rowHandler is called per row.
@@ -135,8 +128,8 @@ func rowsHandler(rows *sql.Rows, columnHandler func(cols []string) error, rowHan
 	return nil
 }
 
-func exec(db *sql.DB, text string) error {
-	r, err := db.Exec(text)
+func execute(ctx context.Context, db *sql.DB, text string) error {
+	r, err := db.ExecContext(ctx, text)
 	if err != nil {
 		return fmt.Errorf("executing: %w", err)
 	}
@@ -146,4 +139,19 @@ func exec(db *sql.DB, text string) error {
 	}
 	fmt.Printf("---\nAffected rows: %d\n\n", ra)
 	return nil
+}
+
+var pagerCmd string
+
+func init() {
+	if pagerCmd != "" {
+		return
+	}
+	for _, s := range []string{"less", "more"} {
+		if _, err := exec.LookPath(s); err != nil {
+			continue
+		}
+		pagerCmd = s
+		break
+	}
 }
