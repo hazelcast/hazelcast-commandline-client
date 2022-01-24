@@ -91,16 +91,21 @@ func (co CobraPrompt) Run(cntx context.Context) {
 		panic("RootCmd is not set. Please set RootCmd")
 	}
 	co.prepare()
+	var (
+		cobraCtx  CobraMutableCtx
+		cmdCancel context.CancelFunc
+	)
 	p := prompt.New(
 		func(in string) {
-			cmdCtx, cmdCancel := context.WithCancel(ctx)
+			cobraCtx.Internal, cmdCancel = context.WithCancel(ctx)
+			defer cmdCancel()
 			c := make(chan os.Signal, 1)
 			signal.Notify(c, os.Interrupt, os.Kill)
 			go func() {
 				select {
-				case s := <-c:
-					fmt.Println("signal received", s)
+				case <-c:
 					cmdCancel()
+				case <-cobraCtx.Done():
 				}
 			}()
 			// do not execute root command if no input given
@@ -114,7 +119,7 @@ func (co CobraPrompt) Run(cntx context.Context) {
 			}
 
 			os.Args = append([]string{os.Args[0]}, promptArgs...)
-			if err := co.RootCmd.ExecuteContext(cmdCtx); err != nil {
+			if err := co.RootCmd.ExecuteContext(&cobraCtx); err != nil {
 				if errors.Is(err, ErrExit) {
 					exitPromptSafely()
 					return
