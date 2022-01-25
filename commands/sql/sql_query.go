@@ -24,7 +24,6 @@ import (
 	"os/exec"
 	"strings"
 
-	_ "github.com/hazelcast/hazelcast-go-client/sql/driver"
 	"github.com/spf13/cobra"
 
 	isql "github.com/hazelcast/hazelcast-commandline-client/internal/sql"

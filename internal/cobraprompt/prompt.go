@@ -78,12 +78,12 @@ func handleExit() {
 // Run will also reset all given flags by default, see PersistFlagValues
 func (co CobraPrompt) Run(cntx context.Context) {
 	defer handleExit()
-	ctx, cancelFunc := context.WithCancel(cntx)
+	ctx, cancel := context.WithCancel(cntx)
 	// let ctrl+c exit prompt
 	co.GoPromptOptions = append(co.GoPromptOptions, prompt.OptionAddKeyBind(prompt.KeyBind{
 		Key: prompt.ControlC,
 		Fn: func(_ *prompt.Buffer) {
-			cancelFunc()
+			cancel()
 			exitPromptSafely()
 		},
 	}))
@@ -91,20 +91,18 @@ func (co CobraPrompt) Run(cntx context.Context) {
 		panic("RootCmd is not set. Please set RootCmd")
 	}
 	co.prepare()
-	var (
-		cobraCtx  CobraMutableCtx
-		cmdCancel context.CancelFunc
-	)
+	var cobraCtx CobraMutableCtx
 	p := prompt.New(
 		func(in string) {
-			cobraCtx.Internal, cmdCancel = context.WithCancel(ctx)
-			defer cmdCancel()
+			tmpCtx, cancel := context.WithCancel(ctx)
+			cobraCtx.Internal = tmpCtx
+			defer cancel()
 			c := make(chan os.Signal, 1)
 			signal.Notify(c, os.Interrupt, os.Kill)
 			go func() {
 				select {
 				case <-c:
-					cmdCancel()
+					cancel()
 				case <-cobraCtx.Done():
 				}
 			}()

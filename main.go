@@ -26,7 +26,7 @@ func main() {
 	isInteractive := commands.IsInteractiveCall()
 	if isInteractive {
 		commands.ExecuteInteractive(ctx)
-	} else {
-		commands.Execute(ctx)
+		return
 	}
+	commands.Execute(ctx)
 }
