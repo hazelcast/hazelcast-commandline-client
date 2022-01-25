@@ -1,0 +1,123 @@
+# github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d
+github.com/StackExchange/wmi
+# github.com/alecthomas/chroma v0.9.2
+## explicit
+github.com/alecthomas/chroma
+github.com/alecthomas/chroma/formatters
+github.com/alecthomas/chroma/formatters/html
+github.com/alecthomas/chroma/formatters/svg
+github.com/alecthomas/chroma/lexers
+github.com/alecthomas/chroma/lexers/a
+github.com/alecthomas/chroma/lexers/b
+github.com/alecthomas/chroma/lexers/c
+github.com/alecthomas/chroma/lexers/circular
+github.com/alecthomas/chroma/lexers/d
+github.com/alecthomas/chroma/lexers/e
+github.com/alecthomas/chroma/lexers/f
+github.com/alecthomas/chroma/lexers/g
+github.com/alecthomas/chroma/lexers/h
+github.com/alecthomas/chroma/lexers/i
+github.com/alecthomas/chroma/lexers/internal
+github.com/alecthomas/chroma/lexers/j
+github.com/alecthomas/chroma/lexers/k
+github.com/alecthomas/chroma/lexers/l
+github.com/alecthomas/chroma/lexers/m
+github.com/alecthomas/chroma/lexers/n
+github.com/alecthomas/chroma/lexers/o
+github.com/alecthomas/chroma/lexers/p
+github.com/alecthomas/chroma/lexers/q
+github.com/alecthomas/chroma/lexers/r
+github.com/alecthomas/chroma/lexers/s
+github.com/alecthomas/chroma/lexers/t
+github.com/alecthomas/chroma/lexers/v
+github.com/alecthomas/chroma/lexers/w
+github.com/alecthomas/chroma/lexers/x
+github.com/alecthomas/chroma/lexers/y
+github.com/alecthomas/chroma/lexers/z
+github.com/alecthomas/chroma/quick
+github.com/alecthomas/chroma/styles
+# github.com/c-bata/go-prompt v0.2.5
+## explicit
+github.com/c-bata/go-prompt
+github.com/c-bata/go-prompt/internal/bisect
+github.com/c-bata/go-prompt/internal/debug
+github.com/c-bata/go-prompt/internal/strings
+github.com/c-bata/go-prompt/internal/term
+# github.com/danwakefield/fnmatch v0.0.0-20160403171240-cbb64ac3d964
+github.com/danwakefield/fnmatch
+# github.com/dlclark/regexp2 v1.4.0
+github.com/dlclark/regexp2
+github.com/dlclark/regexp2/syntax
+# github.com/go-ole/go-ole v1.2.4
+github.com/go-ole/go-ole
+github.com/go-ole/go-ole/oleutil
+# github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
+## explicit
+github.com/google/shlex
+# github.com/hazelcast/hazelcast-go-client v1.1.1-0.20211013140338-f97b91075f8d
+## explicit
+github.com/hazelcast/hazelcast-go-client
+github.com/hazelcast/hazelcast-go-client/aggregate
+github.com/hazelcast/hazelcast-go-client/cluster
+github.com/hazelcast/hazelcast-go-client/hzerrors
+github.com/hazelcast/hazelcast-go-client/internal
+github.com/hazelcast/hazelcast-go-client/internal/cb
+github.com/hazelcast/hazelcast-go-client/internal/cloud
+github.com/hazelcast/hazelcast-go-client/internal/cluster
+github.com/hazelcast/hazelcast-go-client/internal/event
+github.com/hazelcast/hazelcast-go-client/internal/hzerrors
+github.com/hazelcast/hazelcast-go-client/internal/invocation
+github.com/hazelcast/hazelcast-go-client/internal/logger
+github.com/hazelcast/hazelcast-go-client/internal/proto
+github.com/hazelcast/hazelcast-go-client/internal/proto/codec
+github.com/hazelcast/hazelcast-go-client/internal/proxy
+github.com/hazelcast/hazelcast-go-client/internal/rest
+github.com/hazelcast/hazelcast-go-client/internal/security
+github.com/hazelcast/hazelcast-go-client/internal/serialization
+github.com/hazelcast/hazelcast-go-client/internal/stats
+github.com/hazelcast/hazelcast-go-client/internal/util
+github.com/hazelcast/hazelcast-go-client/internal/util/murmur
+github.com/hazelcast/hazelcast-go-client/internal/util/nilutil
+github.com/hazelcast/hazelcast-go-client/internal/util/validationutil
+github.com/hazelcast/hazelcast-go-client/internal/util/versionutil
+github.com/hazelcast/hazelcast-go-client/logger
+github.com/hazelcast/hazelcast-go-client/predicate
+github.com/hazelcast/hazelcast-go-client/serialization
+github.com/hazelcast/hazelcast-go-client/types
+# github.com/inconshreveable/mousetrap v1.0.0
+github.com/inconshreveable/mousetrap
+# github.com/mattn/go-colorable v0.1.7
+github.com/mattn/go-colorable
+# github.com/mattn/go-isatty v0.0.12
+github.com/mattn/go-isatty
+# github.com/mattn/go-runewidth v0.0.9
+github.com/mattn/go-runewidth
+# github.com/mattn/go-tty v0.0.3
+github.com/mattn/go-tty
+# github.com/pkg/term v1.1.0
+github.com/pkg/term/termios
+# github.com/shirou/gopsutil/v3 v3.21.5
+github.com/shirou/gopsutil/v3/cpu
+github.com/shirou/gopsutil/v3/host
+github.com/shirou/gopsutil/v3/internal/common
+github.com/shirou/gopsutil/v3/load
+github.com/shirou/gopsutil/v3/mem
+github.com/shirou/gopsutil/v3/net
+github.com/shirou/gopsutil/v3/process
+# github.com/spf13/cobra v1.2.1
+## explicit
+github.com/spf13/cobra
+# github.com/spf13/pflag v1.0.5
+## explicit
+github.com/spf13/pflag
+# github.com/tklauser/go-sysconf v0.3.4
+github.com/tklauser/go-sysconf
+# github.com/tklauser/numcpus v0.2.1
+github.com/tklauser/numcpus
+# golang.org/x/sys v0.0.0-20210510120138-977fb7262007
+golang.org/x/sys/internal/unsafeheader
+golang.org/x/sys/unix
+golang.org/x/sys/windows
+# gopkg.in/yaml.v2 v2.4.0
+## explicit
+gopkg.in/yaml.v2
