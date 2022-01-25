@@ -24,9 +24,10 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 
-	isql "github.com/hazelcast/hazelcast-commandline-client/internal/sql"
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/table"
 )
 
@@ -43,15 +44,20 @@ var queryCmd = &cobra.Command{
 			}
 			queries = append(queries, tmp)
 		}
-		db := isql.Get()
+		ctx := cmd.Context()
+		c, err := internal.ConnectToCluster(ctx)
+		if err != nil {
+			fmt.Println("Error:", err)
+			return
+		}
 		for _, q := range queries {
 			lt := strings.ToLower(q)
 			if strings.HasPrefix(lt, "select") || strings.HasPrefix(lt, "show") {
-				if err := query(cmd.Context(), db, q, cmd.OutOrStdout()); err != nil {
+				if err := query(ctx, c, q, cmd.OutOrStdout()); err != nil {
 					fmt.Println(err)
 				}
 			} else {
-				if err := execute(cmd.Context(), db, q); err != nil {
+				if err := execute(ctx, c, q); err != nil {
 					fmt.Println(err)
 				}
 			}
@@ -60,8 +66,8 @@ var queryCmd = &cobra.Command{
 	},
 }
 
-func query(ctx context.Context, db *sql.DB, text string, out io.Writer) error {
-	rows, err := db.QueryContext(ctx, text)
+func query(ctx context.Context, c *hazelcast.Client, text string, out io.Writer) error {
+	rows, err := c.QuerySQL(ctx, text)
 	if err != nil {
 		return fmt.Errorf("querying: %w", err)
 	}
@@ -127,8 +133,8 @@ func rowsHandler(rows *sql.Rows, columnHandler func(cols []string) error, rowHan
 	return nil
 }
 
-func execute(ctx context.Context, db *sql.DB, text string) error {
-	r, err := db.ExecContext(ctx, text)
+func execute(ctx context.Context, c *hazelcast.Client, text string) error {
+	r, err := c.ExecSQL(ctx, text)
 	if err != nil {
 		return fmt.Errorf("executing: %w", err)
 	}

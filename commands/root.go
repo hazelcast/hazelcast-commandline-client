@@ -114,13 +114,8 @@ func ExecuteInteractive(ctx context.Context) {
 	if err := RootCmd.ParseFlags(os.Args); err != nil {
 		log.Fatal(err)
 	}
-	// initialize global config
-	conf, err := internal.MakeConfig()
-	if err != nil {
-		log.Fatal(err)
-	}
 	fmt.Println("Connecting to the cluster ...")
-	if _, err = internal.ConnectToCluster(ctx, conf); err != nil {
+	if _, err := internal.ConnectToCluster(ctx); err != nil {
 		fmt.Printf("Error: %s\n", err)
 		return
 	}

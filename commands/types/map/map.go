@@ -49,7 +49,7 @@ func getMap(ctx context.Context, clientConfig *hazelcast.Config, mapName string)
 	if clientConfig == nil {
 		clientConfig = &hazelcast.Config{}
 	}
-	hzcClient, err := internal.ConnectToCluster(ctx, clientConfig)
+	hzcClient, err := internal.ConnectToCluster(ctx)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return nil, fmt.Errorf("error creating the client: %w", err)
