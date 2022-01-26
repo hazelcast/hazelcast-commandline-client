@@ -121,6 +121,10 @@ func (p *Prompt) feed(b []byte) (shouldExit bool, exec *Exec) {
 
 	switch key {
 	case Enter, ControlJ, ControlM:
+		if completing {
+			p.insertSuggestion()
+			return
+		}
 		p.renderer.BreakLine(p.buf)
 
 		exec = &Exec{input: p.buf.Text()}
@@ -176,13 +180,17 @@ func (p *Prompt) handleCompletionKeyBinding(key Key, completing bool) {
 	case BackTab:
 		p.completion.Previous()
 	default:
-		if s, ok := p.completion.GetSelectedSuggestion(); ok {
-			w := p.buf.Document().GetWordBeforeCursorUntilSeparator(p.completion.wordSeparator)
-			if w != "" {
-				p.buf.DeleteBeforeCursor(len([]rune(w)))
-			}
-			p.buf.InsertText(s.Text, false, true)
+		p.insertSuggestion()
+	}
+}
+
+func (p *Prompt) insertSuggestion() {
+	if s, ok := p.completion.GetSelectedSuggestion(); ok {
+		w := p.buf.Document().GetWordBeforeCursorUntilSeparator(p.completion.wordSeparator)
+		if w != "" {
+			p.buf.DeleteBeforeCursor(len([]rune(w)))
 		}
+		p.buf.InsertText(s.Text + " ", false, true)
 		p.completion.Reset()
 	}
 }
