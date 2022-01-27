@@ -153,12 +153,16 @@ func RegisterPersistFlag(co *cobra.Command) {
 }
 
 func findSuggestions(co *CobraPrompt, d *prompt.Document) []prompt.Suggest {
-	command := co.RootCmd
-	args := strings.Fields(d.CurrentLine())
-	if found, _, err := command.Find(args); err == nil {
-		command = found
+	upToCursor := d.CurrentLineBeforeCursor()
+	// use line before cursor for command suggestion
+	bArgs := strings.Fields(upToCursor)
+	command, _, err := co.RootCmd.Find(bArgs)
+	if err != nil && strings.Contains(upToCursor, " ") {
+		return nil
 	}
 	wordBeforeCursor := d.GetWordBeforeCursor()
+	// use whole line for flag suggestions
+	args := strings.Fields(d.CurrentLine())
 	suggestions := traverseForFlagSuggestions(wordBeforeCursor, args, co, command)
 	if command.HasAvailableSubCommands() {
 		for _, c := range command.Commands() {
