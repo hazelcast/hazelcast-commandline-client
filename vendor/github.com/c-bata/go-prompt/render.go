@@ -140,7 +140,7 @@ func (r *Render) renderCompletion(buf *Buffer, completions *CompletionManager) {
 		r.out.WriteStr(formatted[i].Text)
 
 		if i == selected {
-			r.out.SetColor(r.selectedDescriptionTextColor, r.selectedDescriptionBGColor, false)
+			r.out.SetColor(r.selectedDescriptionTextColor, r.selectedDescriptionBGColor, true)
 		} else {
 			r.out.SetColor(r.descriptionTextColor, r.descriptionBGColor, false)
 		}

@@ -73,6 +73,13 @@ func handleExit() {
 	}
 }
 
+var SuggestionColorOptions = []prompt.Option{
+	prompt.OptionSelectedSuggestionTextColor(prompt.White), prompt.OptionSuggestionTextColor(prompt.White),
+	prompt.OptionSelectedDescriptionTextColor(prompt.LightGray), prompt.OptionDescriptionTextColor(prompt.LightGray),
+	prompt.OptionSelectedSuggestionBGColor(prompt.Blue), prompt.OptionSuggestionBGColor(prompt.DarkGray),
+	prompt.OptionSelectedDescriptionBGColor(prompt.Blue), prompt.OptionDescriptionBGColor(prompt.DarkGray),
+}
+
 // Run will automatically generate suggestions for all cobra commands and flags defined by RootCmd and execute the selected commands.
 // Run will also reset all given flags by default, see PersistFlagValues
 func (co CobraPrompt) Run(ctx context.Context) {
@@ -84,6 +91,7 @@ func (co CobraPrompt) Run(ctx context.Context) {
 			exitPromptSafely()
 		},
 	}))
+	co.GoPromptOptions = append(co.GoPromptOptions, SuggestionColorOptions...)
 	if co.RootCmd == nil {
 		panic("RootCmd is not set. Please set RootCmd")
 	}
