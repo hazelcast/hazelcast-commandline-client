@@ -25,7 +25,6 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
 var InvalidStateErr = errors.New("invalid new state")
@@ -148,7 +147,7 @@ func ConnectToCluster(ctx context.Context, clientConfig *hazelcast.Config) (cli 
 	defer cancel()
 	configCopy := clientConfig.Clone()
 	// prevent internal event loop to print error logs
-	configCopy.Logger.Level = logger.OffLevel
+	//configCopy.Logger.Level = logger.OffLevel
 	cli, err = hazelcast.StartNewClientWithConfig(ctx, configCopy)
 	if client == nil {
 		client = cli

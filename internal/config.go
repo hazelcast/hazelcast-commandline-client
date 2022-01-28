@@ -16,6 +16,7 @@
 package internal
 
 import (
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -36,6 +37,22 @@ const (
 	DefaultClusterName    = "dev"
 )
 
+type SSLConfig struct {
+	ServerName         string
+	InsecureSkipVerify bool
+	CAPath             string
+	CertPath           string
+	KeyPath            string
+	KeyPassword        string
+}
+
+type Config struct {
+	Hazelcast hazelcast.Config
+	SSL       SSLConfig
+}
+
+// TODO: remove global Configuration
+
 var (
 	Configuration *hazelcast.Config
 	CfgFile       string
@@ -44,14 +61,14 @@ var (
 	Address       string
 )
 
-func DefaultConfig() *hazelcast.Config {
-	config := hazelcast.NewConfig()
-	config.Cluster.Unisocket = true
-	config.Logger.Level = logger.ErrorLevel
-	return &config
+func DefaultConfig() *Config {
+	hz := hazelcast.Config{}
+	hz.Cluster.Unisocket = true
+	hz.Logger.Level = logger.ErrorLevel
+	return &Config{Hazelcast: hz}
 }
 
-func registerConfig(config *hazelcast.Config, confPath string) error {
+func registerConfig(config *Config, confPath string) error {
 	var err error
 	var out []byte
 	if out, err = yaml.Marshal(config); err != nil {
@@ -70,7 +87,7 @@ func registerConfig(config *hazelcast.Config, confPath string) error {
 	return nil
 }
 
-func validateConfig(config *hazelcast.Config, confPath string) error {
+func validateConfig(config *Config, confPath string) error {
 	if _, err := os.Stat(confPath); err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
 			return err
@@ -113,27 +130,28 @@ func MakeConfig() (*hazelcast.Config, error) {
 		return nil, fmt.Errorf("error reading Configuration at %s: %w", confPath, err)
 	}
 	if Token != "" {
-		config.Cluster.Cloud.Token = strings.TrimSpace(Token)
-		config.Cluster.Cloud.Enabled = true
+		config.Hazelcast.Cluster.Cloud.Token = strings.TrimSpace(Token)
+		config.Hazelcast.Cluster.Cloud.Enabled = true
+	}
+	if err := UpdateConfigWithSSL(&config.Hazelcast, &config.SSL); err != nil {
+		return nil, err
 	}
 	addrRaw := Address
 	if addrRaw != "" {
 		addresses := strings.Split(strings.TrimSpace(addrRaw), ",")
-		config.Cluster.Network.Addresses = addresses
-	} else if len(config.Cluster.Network.Addresses) == 0 {
+		config.Hazelcast.Cluster.Network.Addresses = addresses
+	} else if len(config.Hazelcast.Cluster.Network.Addresses) == 0 {
 		addresses := []string{DefaultClusterAddress}
-		if config.Cluster.Cloud.Enabled {
+		if config.Hazelcast.Cluster.Cloud.Enabled {
 			addresses = []string{"hazelcast-cloud"}
 		}
-		config.Cluster.Network.Addresses = addresses
+		config.Hazelcast.Cluster.Network.Addresses = addresses
 	}
 	if Cluster != "" {
-		config.Cluster.Name = strings.TrimSpace(Cluster)
-	} else if config.Cluster.Name == "" {
-		config.Cluster.Name = DefaultClusterName
+		config.Hazelcast.Cluster.Name = strings.TrimSpace(Cluster)
 	}
-	Configuration = config
-	return config, nil
+	Configuration = &config.Hazelcast
+	return Configuration, nil
 }
 
 func DefautConfigPath() string {
@@ -142,4 +160,21 @@ func DefautConfigPath() string {
 		panic(fmt.Errorf("retrieving home directory: %w", err))
 	}
 	return filepath.Join(homeDirectoryPath, ".local/share/hz-cli", defaultConfigFilename)
+}
+
+func UpdateConfigWithSSL(config *hazelcast.Config, sslc *SSLConfig) error {
+	if sslc.ServerName != "" && sslc.InsecureSkipVerify {
+		return fmt.Errorf("SSL.ServerName and SSL.InsecureSkipVerify are mutually exclusive")
+	}
+	var tlsc *tls.Config
+	if sslc.ServerName != "" {
+		tlsc = &tls.Config{ServerName: sslc.ServerName}
+	} else if sslc.InsecureSkipVerify {
+		tlsc = &tls.Config{InsecureSkipVerify: true}
+	}
+	csslc := &config.Cluster.Network.SSL
+	if tlsc != nil {
+		csslc.SetTLSConfig(tlsc)
+	}
+	return nil
 }
