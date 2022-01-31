@@ -177,5 +177,25 @@ func UpdateConfigWithSSL(config *hazelcast.Config, sslc *SSLConfig) error {
 		csslc.SetTLSConfig(tlsc)
 		csslc.Enabled = true
 	}
+	if sslc.CAPath != "" {
+		if err := csslc.SetCAPath(sslc.CAPath); err != nil {
+			return err
+		}
+	}
+	if sslc.CertPath != "" || sslc.KeyPath != "" {
+		if sslc.CertPath == "" {
+			return fmt.Errorf("CertPath should not be blank")
+		}
+		if sslc.KeyPath == "" {
+			return fmt.Errorf("KeyPath should not be blank")
+		}
+		if sslc.KeyPassword == "" {
+			if err := csslc.AddClientCertAndKeyPath(sslc.CertPath, sslc.KeyPath); err != nil {
+				return err
+			}
+		} else if err := csslc.AddClientCertAndEncryptedKeyPath(sslc.CertPath, sslc.KeyPath, sslc.KeyPassword); err != nil {
+			return err
+		}
+	}
 	return nil
 }
