@@ -57,11 +57,15 @@ func CallClusterOperationWithState(config *hazelcast.Config, operation string, s
 	urlStr := obj.url
 	pr := strings.NewReader(params)
 	var resp *http.Response
+	tr := &http.Transport{
+		TLSClientConfig: config.Cluster.Network.SSL.TLSConfig(),
+	}
+	client := &http.Client{Transport: tr}
 	switch operation {
 	case ClusterGetState, ClusterChangeState, ClusterShutdown:
-		resp, err = http.Post(urlStr, "application/x-www-form-urlencoded", pr)
+		resp, err = client.Post(urlStr, "application/x-www-form-urlencoded", pr)
 	case ClusterVersion:
-		resp, err = http.Get(urlStr)
+		resp, err = client.Get(urlStr)
 	}
 	if err != nil {
 		if msg, handled := TranslateError(err, config.Cluster.Cloud.Enabled, operation); handled {
