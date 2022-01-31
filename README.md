@@ -135,6 +135,24 @@ The cluster creation and retrieving connection info can be done directly in comm
   hzc --cluster-name <CLUSTER NAME> --cloud-token <DISCOVERY TOKEN>
   ```
 
+## SSL Configuration
+
+You can use the following configuration file to enable SSL:
+```
+ssl:
+    servername: "HOSTNAME-FOR-SERVER"
+    # or: insecureskipverify: true
+hazelcast:
+  cluster:
+    security:
+      credentials:
+        username: "OPTIONAL USERNAME"
+        password: "OPTIONAL PASSWORD"
+    name: "CLUSTER-NAME"
+    network:
+      addresses:
+        - "localhost:5701"
+```
 
 ## More examples
 

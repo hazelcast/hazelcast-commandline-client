@@ -175,6 +175,7 @@ func UpdateConfigWithSSL(config *hazelcast.Config, sslc *SSLConfig) error {
 	csslc := &config.Cluster.Network.SSL
 	if tlsc != nil {
 		csslc.SetTLSConfig(tlsc)
+		csslc.Enabled = true
 	}
 	return nil
 }
