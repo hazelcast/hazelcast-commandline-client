@@ -137,7 +137,7 @@ The cluster creation and retrieving connection info can be done directly in comm
 
 ## SSL Configuration
 
-You can use the following configuration file to enable SSL:
+You can use the following configuration file to enable SSL support:
 ```
 ssl:
     servername: "HOSTNAME-FOR-SERVER"
@@ -152,6 +152,34 @@ hazelcast:
     network:
       addresses:
         - "localhost:5701"
+```
+
+Mutual authentication is also supported:
+```
+ssl:
+    servername: "HOSTNAME-FOR-SERVER"
+    # insecureskipverify: true
+    capath: "/tmp/ca.pem"
+    certpath: "/tmp/cert.pem"
+    keypath: "/tmp/key.pem"
+    keypassword: "PASSWORD FOR THE KEY"
+hazelcast: #
+```
+
+Cloud SSL configuration:
+```
+ssl:
+    servername: "hazelcast.cloud"
+    capath: "/tmp/ca.pem"
+    certpath: "/tmp/cert.pem"
+    keypath: "/tmp/key.pem"
+    keypassword: "PASSWORD FOR THE KEY"
+hazelcast: #
+  cluster:
+    name: "pr-2970"
+    cloud:
+      token: "HAZELCAST CLOUD TOKEN"
+      enabled: true
 ```
 
 ## More examples
