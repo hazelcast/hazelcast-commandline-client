@@ -134,6 +134,9 @@ func MakeConfig() (*hazelcast.Config, error) {
 		config.Hazelcast.Cluster.Cloud.Enabled = true
 	}
 	if err := UpdateConfigWithSSL(&config.Hazelcast, &config.SSL); err != nil {
+		// TODO: Caller of MakeConfig should handle the errors or at least we should pass them to a function like ShowError, instead of printing them directly.
+		// TODO: The following error does not conform to idiomatic Go, let's refactor these.
+		fmt.Println(fmt.Errorf("Error configuring SSL: %W", err).Error())
 		return nil, err
 	}
 	addrRaw := Address
