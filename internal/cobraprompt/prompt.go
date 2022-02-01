@@ -13,7 +13,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/hazelcast/hazelcast-commandline-client/internal"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 )
 
 // DynamicSuggestionsAnnotation for dynamic suggestions.
@@ -198,8 +198,8 @@ func traverseForFlagSuggestions(wordBeforeCursor string, words []string, co *Cob
 		}
 		flagUsage := "--" + flag.Name
 		// Check if flag is already used in the command
-		if (flag.Shorthand != "" && internal.IsOneOf(words, "-"+flag.Shorthand, true)) ||
-			internal.IsOneOf(words, flagUsage, true) {
+		if (flag.Shorthand != "" && check.ContainsString(words, "-"+flag.Shorthand)) ||
+			check.ContainsString(words, flagUsage) {
 			return
 		}
 		if strings.HasPrefix(wordBeforeCursor, "--") {
