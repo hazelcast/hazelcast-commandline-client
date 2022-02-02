@@ -145,6 +145,7 @@ func MakeConfig() (*hazelcast.Config, error) {
 		config.Hazelcast.Cluster.Network.Addresses = addresses
 	} else if len(config.Hazelcast.Cluster.Network.Addresses) == 0 {
 		addresses := []string{DefaultClusterAddress}
+		// TODO: remove this
 		if config.Hazelcast.Cluster.Cloud.Enabled {
 			addresses = []string{"hazelcast-cloud"}
 		}
@@ -152,6 +153,10 @@ func MakeConfig() (*hazelcast.Config, error) {
 	}
 	if Cluster != "" {
 		config.Hazelcast.Cluster.Name = strings.TrimSpace(Cluster)
+	}
+	if config.Hazelcast.Cluster.Cloud.Enabled {
+		config.SSL.ServerName = "hazelcast.cloud"
+		config.SSL.InsecureSkipVerify = false
 	}
 	Configuration = &config.Hazelcast
 	return Configuration, nil

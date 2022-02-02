@@ -163,20 +163,28 @@ ssl:
     certpath: "/tmp/cert.pem"
     keypath: "/tmp/key.pem"
     keypassword: "PASSWORD FOR THE KEY"
-hazelcast: #
+hazelcast:
+  cluster:
+    security:
+      credentials:
+        username: "OPTIONAL USERNAME"
+        password: "OPTIONAL PASSWORD"
+    name: "CLUSTER-NAME"
+    network:
+      addresses:
+        - "localhost:5701"
 ```
 
 Cloud SSL configuration:
 ```
 ssl:
-    servername: "hazelcast.cloud"
     capath: "/tmp/ca.pem"
     certpath: "/tmp/cert.pem"
     keypath: "/tmp/key.pem"
     keypassword: "PASSWORD FOR THE KEY"
-hazelcast: #
+hazelcast:
   cluster:
-    name: "pr-2970"
+    name: "CLUSTER NAME"
     cloud:
       token: "HAZELCAST CLOUD TOKEN"
       enabled: true
