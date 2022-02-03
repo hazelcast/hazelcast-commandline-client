@@ -83,6 +83,18 @@ func (co CobraPrompt) Run(ctx context.Context) {
 		Fn: func(_ *prompt.Buffer) {
 			exitPromptSafely()
 		},
+	}), prompt.OptionAddKeyBind(prompt.KeyBind{
+		Key: prompt.Key(86),
+		Fn: func(b *prompt.Buffer) {
+			to := b.Document().FindEndOfCurrentWordWithSpace()
+			b.CursorRight(to)
+		},
+	}), prompt.OptionAddKeyBind(prompt.KeyBind{
+		Key: prompt.ControlRight,
+		Fn: func(b *prompt.Buffer) {
+			to := b.Document().FindEndOfCurrentWordWithSpace()
+			b.CursorRight(to)
+		},
 	}))
 	if co.RootCmd == nil {
 		panic("RootCmd is not set. Please set RootCmd")
