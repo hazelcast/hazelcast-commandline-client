@@ -63,7 +63,6 @@ hzc --help
 hzc map --name myMap put --key myKey --value myValue
 ```
 ### Keyboard Shortcuts
-Hazelcast CLC inherits following shortcuts from [c-bata/go-prompt](https://github.com/c-bata/go-prompt)
 
 Emacs-like keyboard shortcuts are available by default (these also are the default shortcuts in Bash shell).
 
@@ -81,13 +80,14 @@ Key Binding          | Description
 <kbd>Ctrl + K</kbd>  | Cut the line after the cursor to the clipboard
 <kbd>Ctrl + U</kbd>  | Cut the line before the cursor to the clipboard
 <kbd>Ctrl + L</kbd>  | Clear the screen
+\
 With few additions:
 
 Key Binding          | Description
 ---------------------|---------------------------------------------------------
 <kbd>Ctrl + C</kbd>  | Cancel running command or close the app
-<kbd>Ctrl + →</kbd>  | Go to the end of to next word
-<kbd>Ctrl + ←</kbd>  | Go to the start of the previous word
+<kbd>Ctrl + -></kbd>  | Go to the end of to next word
+<kbd>Ctrl + <-</kbd>  | Go to the start of the previous word
 
 
 ## Connecting to Hazelcast Cloud
