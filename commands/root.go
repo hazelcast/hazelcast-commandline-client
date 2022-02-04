@@ -26,8 +26,14 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	clustercmd "github.com/hazelcast/hazelcast-commandline-client/commands/cluster"
-	mapcmd "github.com/hazelcast/hazelcast-commandline-client/commands/types/map"
+	clusterCmd "github.com/hazelcast/hazelcast-commandline-client/commands/cluster"
+	listCmd "github.com/hazelcast/hazelcast-commandline-client/commands/types/list"
+	mapCmd "github.com/hazelcast/hazelcast-commandline-client/commands/types/map"
+	multimapCmd "github.com/hazelcast/hazelcast-commandline-client/commands/types/multimap"
+	queueCmd "github.com/hazelcast/hazelcast-commandline-client/commands/types/queue"
+	rmapCmd "github.com/hazelcast/hazelcast-commandline-client/commands/types/replicatedmap"
+	setCmd "github.com/hazelcast/hazelcast-commandline-client/commands/types/set"
+	topicCmd "github.com/hazelcast/hazelcast-commandline-client/commands/types/topic"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/cobraprompt"
 )
@@ -127,7 +133,7 @@ func ExecuteInteractive() {
 }
 
 func decorateRootCommand(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVarP(&internal.CfgFile, "config", "c", internal.DefautConfigPath(), fmt.Sprintf("config file, only supports yaml for now"))
+	cmd.PersistentFlags().StringVarP(&internal.CfgFile, "config", "c", internal.DefaultConfigPath(), fmt.Sprintf("config file, only supports yaml for now"))
 	cmd.PersistentFlags().StringVarP(&internal.Address, "address", "a", "", fmt.Sprintf("addresses of the instances in the cluster (default is %s).", internal.DefaultClusterAddress))
 	cmd.PersistentFlags().StringVarP(&internal.Cluster, "cluster-name", "", "", fmt.Sprintf("name of the cluster that contains the instances (default is %s).", internal.DefaultClusterName))
 	cmd.PersistentFlags().StringVar(&internal.Token, "cloud-token", "", "your Hazelcast Cloud token.")
@@ -138,9 +144,22 @@ func decorateRootCommand(cmd *cobra.Command) {
 	}
 }
 
+func subCommandsOfTheRoot() []*cobra.Command {
+	return []*cobra.Command{
+		clusterCmd.ClusterCmd,
+		mapCmd.MapCmd,
+		queueCmd.QueueCmd,
+		multimapCmd.MultiMapCmd,
+		listCmd.ListCmd,
+		setCmd.SetCmd,
+		topicCmd.TopicCmd,
+		rmapCmd.ReplicatedMapCmd,
+	}
+}
+
 func initRootCommand(rootCmd *cobra.Command) {
 	decorateRootCommand(rootCmd)
-	rootCmd.AddCommand(clustercmd.ClusterCmd, mapcmd.MapCmd)
+	rootCmd.AddCommand(subCommandsOfTheRoot()...)
 }
 
 func init() {
