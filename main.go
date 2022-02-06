@@ -16,14 +16,30 @@
 package main
 
 import (
+	"context"
+	"log"
+	"os"
+
 	"github.com/hazelcast/hazelcast-commandline-client/commands"
+	"github.com/hazelcast/hazelcast-commandline-client/config"
 )
 
 func main() {
-	isInteractive := commands.IsInteractiveCall()
-	if isInteractive {
-		commands.ExecuteInteractive()
-	} else {
-		commands.Execute()
+	rootCmd, persistentFlags := commands.NewRoot()
+	// parse global persistent flags
+	if err := rootCmd.ParseFlags(os.Args); err != nil {
+		log.Fatal(err)
 	}
+	// initialize config from file
+	conf, err := config.MakeConfig(*persistentFlags)
+	if err != nil {
+		log.Fatal(err)
+	}
+	ctx := config.ToContext(context.Background(), conf)
+	isInteractive := commands.IsInteractiveCall(rootCmd, os.Args[1:])
+	if isInteractive {
+		commands.RunCmdInteractively(ctx, rootCmd, conf)
+		return
+	}
+	commands.RunCmd(ctx, rootCmd, conf)
 }

@@ -16,36 +16,146 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 
+	"github.com/hazelcast/hazelcast-commandline-client/config"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
 const invocationOnCloudErrorMessage = "Cluster operations on cloud are not supported. Checkout https://github.com/hazelcast/hazelcast-cloud-cli for cluster management on cloud."
 
-var ClusterCmd = &cobra.Command{
-	Use:   "cluster {get-state | change-state | shutdown | query} [--state new-state]",
-	Short: "administrative cluster operations",
-	Long:  `administrative cluster operations which controls a Hazelcast cluster by manipulating its state and other features`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		hzConf, err := internal.MakeConfig()
-		if err != nil {
-			return err
-		}
-		// check if it is cloud invocation
-		if hzConf.Cluster.Cloud.Token != "" {
-			fmt.Println(invocationOnCloudErrorMessage)
-			return nil
-		}
-		return cmd.Help()
-	},
+func New() *cobra.Command {
+	cmd := cobra.Command{
+		Use:   "cluster {get-state | change-state | shutdown | query} [--state new-state]",
+		Short: "administrative cluster operations",
+		Long:  `administrative cluster operations which controls a Hazelcast cluster by manipulating its state and other features`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			conf := config.FromContext(cmd.Context())
+			if conf == nil {
+				return errors.New("missing configuration")
+			}
+			// check if it is cloud invocation
+			if conf.Cluster.Cloud.Token != "" {
+				fmt.Println(invocationOnCloudErrorMessage)
+				return nil
+			}
+			return cmd.Help()
+		},
+	}
+	cmd.AddCommand(
+		NewGetState(),
+		NewChangeState(),
+		NewShutdown(),
+		NewVersion())
+	return &cmd
 }
 
-func init() {
-	ClusterCmd.AddCommand(clusterGetStateCmd)
-	ClusterCmd.AddCommand(clusterChangeStateCmd)
-	ClusterCmd.AddCommand(clusterShutdownCmd)
-	ClusterCmd.AddCommand(clusterVersionCmd)
+func NewGetState() *cobra.Command {
+	return &cobra.Command{
+		Use:   "get-state",
+		Short: "get state of the cluster",
+		Run: func(cmd *cobra.Command, args []string) {
+			defer internal.ErrorRecover()
+			conf := config.FromContext(cmd.Context())
+			if conf == nil {
+				return
+			}
+			// check if it is cloud invocation
+			if conf.Cluster.Cloud.Token != "" {
+				fmt.Println(invocationOnCloudErrorMessage)
+				return
+			}
+			result, err := internal.CallClusterOperation(conf, "get-state")
+			if err != nil {
+				return
+			}
+			fmt.Println(*result)
+		},
+	}
+}
+
+var states = []string{"active", "no_migration", "frozen", "passive"}
+
+func NewChangeState() *cobra.Command {
+	// monitored flag variable
+	var newState string
+	cmd := &cobra.Command{
+		Use:   fmt.Sprintf("change-state [--state [%s]]", strings.Join(states, ",")),
+		Short: "change state of the cluster",
+		Run: func(cmd *cobra.Command, args []string) {
+			defer internal.ErrorRecover()
+			conf := config.FromContext(cmd.Context())
+			if conf == nil {
+				return
+			}
+			// check if it is cloud invocation
+			if conf.Cluster.Cloud.Token != "" {
+				fmt.Println(invocationOnCloudErrorMessage)
+				return
+			}
+			result, err := internal.CallClusterOperationWithState(conf, "change-state", &newState)
+			if err != nil {
+				return
+			}
+			fmt.Println(*result)
+		},
+	}
+	cmd.Flags().StringVarP(&newState, "state", "s", "", fmt.Sprintf("new state of the cluster: %s", strings.Join(states, ",")))
+	cmd.MarkFlagRequired("state")
+	cmd.RegisterFlagCompletionFunc("state", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return states, cobra.ShellCompDirectiveDefault
+	})
+	return cmd
+}
+
+func NewShutdown() *cobra.Command {
+	return &cobra.Command{
+		Use:   "shutdown",
+		Short: "shuts down the cluster",
+		Run: func(cmd *cobra.Command, args []string) {
+			defer internal.ErrorRecover()
+			conf := config.FromContext(cmd.Context())
+			if conf == nil {
+				return
+			}
+			// check if it is cloud invocation
+			if conf.Cluster.Cloud.Token != "" {
+				fmt.Println(invocationOnCloudErrorMessage)
+				return
+			}
+			result, err := internal.CallClusterOperation(conf, "shutdown")
+			if err != nil {
+				return
+			}
+			fmt.Println(*result)
+		},
+	}
+}
+
+func NewVersion() *cobra.Command {
+	return &cobra.Command{
+		Use:   "version",
+		Short: "retrieve information from the cluster",
+		Run: func(cmd *cobra.Command, args []string) {
+			defer internal.ErrorRecover()
+			conf := config.FromContext(cmd.Context())
+			if conf == nil {
+				return
+			}
+			// check if it is cloud invocation
+			if conf.Cluster.Cloud.Token != "" {
+				fmt.Println(invocationOnCloudErrorMessage)
+				return
+			}
+			result, err := internal.CallClusterOperation(conf, "version")
+			if err != nil {
+				return
+			}
+			fmt.Println(*result)
+		},
+	}
 }

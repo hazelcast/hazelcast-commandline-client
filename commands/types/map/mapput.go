@@ -23,56 +23,71 @@ import (
 	"os"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/spf13/cobra"
 
+	"github.com/hazelcast/hazelcast-commandline-client/config"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
-var mapPutCmd = &cobra.Command{
-	Use:   "put [--name mapname | --key keyname | --value-type type | --value-file file | --value value]",
-	Short: "put to map",
-	Run: func(cmd *cobra.Command, args []string) {
-		ctx, cancel := context.WithTimeout(cmd.Context(), time.Second*3)
-		defer cancel()
-		var err error
-		var normalizedValue interface{}
-		config, err := internal.MakeConfig()
-		// TODO error look like unhandled although it is handled in MakeConfig. Find a better approach
-		if err != nil {
-			return
-		}
-		m, err := getMap(ctx, config, mapName)
-		if err != nil {
-			return
-		}
-		if normalizedValue, err = normalizeMapValue(); err != nil {
-			return
-		}
-		_, err = m.Put(ctx, mapKey, normalizedValue)
-		if err != nil {
-			fmt.Printf("Cannot put value for key %s to map %s\n", mapKey, mapName)
-			isCloudCluster := config.Cluster.Cloud.Enabled
-			if networkErrMsg, handled := internal.TranslateNetworkError(err, isCloudCluster); handled {
-				fmt.Println("Error: ", networkErrMsg)
+func NewPut() *cobra.Command {
+	// flags
+	var (
+		mapName,
+		mapKey,
+		mapValue,
+		mapValueType,
+		mapValueFile string
+	)
+	cmd := &cobra.Command{
+		Use:   "put [--name mapname | --key keyname | --value-type type | --value-file file | --value value]",
+		Short: "put to map",
+		Run: func(cmd *cobra.Command, args []string) {
+			ctx, cancel := context.WithTimeout(cmd.Context(), time.Second*3)
+			defer cancel()
+			var err error
+			conf := cmd.Context().Value(config.HZCConfKey).(*hazelcast.Config)
+			if conf == nil {
 				return
 			}
-			fmt.Printf("Unknown cause: %s\n", err)
-			return
-		}
-	},
+			m, err := getMap(ctx, conf, mapName)
+			if err != nil {
+				return
+			}
+			var normalizedValue interface{}
+			if normalizedValue, err = normalizeMapValue(mapValue, mapValueFile, mapValueType); err != nil {
+				return
+			}
+			_, err = m.Put(ctx, mapKey, normalizedValue)
+			if err != nil {
+				fmt.Printf("Cannot put value for key %s to map %s\n", mapKey, mapName)
+				isCloudCluster := conf.Cluster.Cloud.Enabled
+				if networkErrMsg, handled := internal.TranslateNetworkError(err, isCloudCluster); handled {
+					fmt.Println("Error: ", networkErrMsg)
+					return
+				}
+				fmt.Printf("Unknown cause: %s\n", err)
+				return
+			}
+		},
+	}
+	decorateCommandWithMapNameFlags(cmd, &mapName)
+	decorateCommandWithKeyFlags(cmd, &mapKey)
+	decorateCommandWithValueFlags(cmd, &mapValue, &mapValueFile, &mapValueType)
+	return cmd
 }
 
-func normalizeMapValue() (interface{}, error) {
+func normalizeMapValue(v, vFile, vType string) (interface{}, error) {
 	var valueStr string
 	var err error
-	if mapValue != "" && mapValueFile != "" {
+	if v != "" && vFile != "" {
 		fmt.Println("Error: Only one of --value and --value-file must be specified")
 		return nil, errors.New("only one of --value and --value-file must be specified")
-	} else if mapValue != "" {
-		valueStr = mapValue
-	} else if mapValueFile != "" {
-		if valueStr, err = loadValueFile(mapValueFile); err != nil {
+	} else if v != "" {
+		valueStr = v
+	} else if vFile != "" {
+		if valueStr, err = loadValueFile(vFile); err != nil {
 			fmt.Println("Error: Cannot load the value file. Make sure file exists and process has correct access rights")
 			return nil, fmt.Errorf("error loading value: %w", err)
 		}
@@ -80,14 +95,14 @@ func normalizeMapValue() (interface{}, error) {
 		fmt.Println("Error: One of the value flag must be set")
 		return nil, errors.New("map value is required")
 	}
-	switch mapValueType {
+	switch vType {
 	case internal.TypeString:
 		return valueStr, nil
 	case internal.TypeJSON:
 		return serialization.JSON(valueStr), nil
 	}
 	fmt.Println("Error: Provided value type parameter is not a known type. Provide either 'string' or 'json'")
-	return nil, fmt.Errorf("%s is not a known value type", mapValueType)
+	return nil, fmt.Errorf("%s is not a known value type", vType)
 }
 
 func loadValueFile(path string) (string, error) {
@@ -106,10 +121,4 @@ func loadValueFile(path string) (string, error) {
 	} else {
 		return string(value), nil
 	}
-}
-
-func init() {
-	decorateCommandWithMapNameFlags(mapPutCmd)
-	decorateCommandWithKeyFlags(mapPutCmd)
-	decorateCommandWithValueFlags(mapPutCmd)
 }

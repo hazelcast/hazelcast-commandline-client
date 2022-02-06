@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package internal
+package config
 
 import (
+	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -31,11 +32,19 @@ import (
 )
 
 const defaultConfigFilename = "config.yaml"
-
 const (
 	DefaultClusterAddress = "localhost:5701"
 	DefaultClusterName    = "dev"
 )
+const HZCConfKey = "hzc-config"
+
+func ToContext(ctx context.Context, conf *hazelcast.Config) context.Context {
+	return context.WithValue(ctx, HZCConfKey, conf)
+}
+
+func FromContext(ctx context.Context) *hazelcast.Config {
+	return ctx.Value(HZCConfKey).(*hazelcast.Config)
+}
 
 type SSLConfig struct {
 	ServerName         string
@@ -55,16 +64,13 @@ type Config struct {
 
 var (
 	Configuration *hazelcast.Config
-	CfgFile       string
-	Cluster       string
-	Token         string
-	Address       string
 )
 
 func DefaultConfig() *Config {
 	hz := hazelcast.Config{}
 	hz.Cluster.Unisocket = true
 	hz.Logger.Level = logger.ErrorLevel
+	hz.Cluster.Name = DefaultClusterName
 	return &Config{Hazelcast: hz}
 }
 
@@ -99,23 +105,23 @@ func validateConfig(config *Config, confPath string) error {
 	return nil
 }
 
-func MakeConfig() (*hazelcast.Config, error) {
+func MakeConfig(flags PersistentFlags) (*hazelcast.Config, error) {
 	if Configuration != nil {
 		return Configuration, nil
 	}
 	config := DefaultConfig()
 	var confBytes []byte
-	confPath := CfgFile
+	confPath := flags.CfgFile
 	var err error
 
-	if confPath != DefautConfigPath() {
+	if confPath != DefaultConfigPath() {
 		confBytes, err = ioutil.ReadFile(confPath)
 		if err != nil {
 			fmt.Printf("Error: Cannot read Configuration file on %s. Make sure Configuration path is correct and process have sufficient permission.\n", confPath)
 			return nil, fmt.Errorf("reading Configuration at %s: %w", confPath, err)
 		}
 	} else {
-		confPath = DefautConfigPath()
+		confPath = DefaultConfigPath()
 		if err := validateConfig(config, confPath); err != nil {
 			fmt.Printf("Error: Cannot create default Configuration file on default config path %s. Check that process has necessary permissions to write to default config path or provide a custom config path\n", confPath)
 			return nil, err
@@ -129,8 +135,8 @@ func MakeConfig() (*hazelcast.Config, error) {
 		fmt.Println("Error: Configuration file is not a valid yaml file, configuration read from", confPath)
 		return nil, fmt.Errorf("error reading Configuration at %s: %w", confPath, err)
 	}
-	if Token != "" {
-		config.Hazelcast.Cluster.Cloud.Token = strings.TrimSpace(Token)
+	if flags.Token != "" {
+		config.Hazelcast.Cluster.Cloud.Token = strings.TrimSpace(flags.Token)
 		config.Hazelcast.Cluster.Cloud.Enabled = true
 	}
 	if err := UpdateConfigWithSSL(&config.Hazelcast, &config.SSL); err != nil {
@@ -139,7 +145,7 @@ func MakeConfig() (*hazelcast.Config, error) {
 		fmt.Println(fmt.Errorf("Error configuring SSL: %W", err).Error())
 		return nil, err
 	}
-	addrRaw := Address
+	addrRaw := flags.Address
 	if addrRaw != "" {
 		addresses := strings.Split(strings.TrimSpace(addrRaw), ",")
 		config.Hazelcast.Cluster.Network.Addresses = addresses
@@ -151,8 +157,8 @@ func MakeConfig() (*hazelcast.Config, error) {
 		}
 		config.Hazelcast.Cluster.Network.Addresses = addresses
 	}
-	if Cluster != "" {
-		config.Hazelcast.Cluster.Name = strings.TrimSpace(Cluster)
+	if flags.Cluster != "" {
+		config.Hazelcast.Cluster.Name = strings.TrimSpace(flags.Cluster)
 	}
 	if config.Hazelcast.Cluster.Cloud.Enabled {
 		config.SSL.ServerName = "hazelcast.cloud"
@@ -162,7 +168,7 @@ func MakeConfig() (*hazelcast.Config, error) {
 	return Configuration, nil
 }
 
-func DefautConfigPath() string {
+func DefaultConfigPath() string {
 	homeDirectoryPath, err := os.UserHomeDir()
 	if err != nil {
 		panic(fmt.Errorf("retrieving home directory: %w", err))
@@ -206,4 +212,11 @@ func UpdateConfigWithSSL(config *hazelcast.Config, sslc *SSLConfig) error {
 		}
 	}
 	return nil
+}
+
+type PersistentFlags struct {
+	CfgFile string
+	Cluster string
+	Token   string
+	Address string
 }

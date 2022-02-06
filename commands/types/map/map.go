@@ -25,30 +25,19 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
-var mapName string
-var mapKey string
-var mapValue string
-
-var mapValueType string
-var mapValueFile string
-
-var MapCmd = &cobra.Command{
-	Use:   "map {get | put} --name mapname --key keyname [--value-type type | --value-file file | --value value]",
-	Short: "map operations",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return cmd.Help()
-	},
-}
-
-func init() {
-	MapCmd.AddCommand(mapGetCmd)
-	MapCmd.AddCommand(mapPutCmd)
+func New() *cobra.Command {
+	var cmd = &cobra.Command{
+		Use:   "map {get | put} --name mapname --key keyname [--value-type type | --value-file file | --value value]",
+		Short: "map operations",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmd.Help()
+		},
+	}
+	cmd.AddCommand(NewGet(), NewPut())
+	return cmd
 }
 
 func getMap(ctx context.Context, clientConfig *hazelcast.Config, mapName string) (result *hazelcast.Map, err error) {
-	if clientConfig == nil {
-		clientConfig = &hazelcast.Config{}
-	}
 	hzcClient, err := internal.ConnectToCluster(ctx, clientConfig)
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -65,21 +54,22 @@ func getMap(ctx context.Context, clientConfig *hazelcast.Config, mapName string)
 	return
 }
 
-func decorateCommandWithMapNameFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&mapName, "name", "n", "", "specify the map name")
+func decorateCommandWithMapNameFlags(cmd *cobra.Command, mapName *string) {
+	cmd.Flags().StringVarP(mapName, "name", "n", "", "specify the map name")
 	cmd.MarkFlagRequired("name")
 }
 
-func decorateCommandWithKeyFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&mapKey, "key", "k", "", "key of the map")
+func decorateCommandWithKeyFlags(cmd *cobra.Command, mapKey *string) {
+	cmd.Flags().StringVarP(mapKey, "key", "k", "", "key of the map")
 	cmd.MarkFlagRequired("key")
+	cmd.RemoveCommand()
 }
 
-func decorateCommandWithValueFlags(cmd *cobra.Command) {
+func decorateCommandWithValueFlags(cmd *cobra.Command, mapValue, mapValueFile, mapValueType *string) {
 	flags := cmd.Flags()
-	flags.StringVarP(&mapValue, "value", "v", "", "value of the map")
-	flags.StringVarP(&mapValueType, "value-type", "t", "string", "type of the value, one of: string, json")
-	flags.StringVarP(&mapValueFile, "value-file", "f", "", `path to the file that contains the value. Use "-" (dash) to read from stdin`)
+	flags.StringVarP(mapValue, "value", "v", "", "value of the map")
+	flags.StringVarP(mapValueFile, "value-file", "f", "", `path to the file that contains the value. Use "-" (dash) to read from stdin`)
+	flags.StringVarP(mapValueType, "value-type", "t", "string", "type of the value, one of: string, json")
 	cmd.RegisterFlagCompletionFunc("value-type", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"json", "string"}, cobra.ShellCompDirectiveDefault
 	})
