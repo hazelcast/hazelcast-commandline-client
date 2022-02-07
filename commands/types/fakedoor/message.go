@@ -1,42 +1,44 @@
-package types
+/*
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License")
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package commands
 
 import (
 	"fmt"
-	"log"
 
-	"github.com/fatih/color"
+	"github.com/spf13/cobra"
 )
 
-var message = "The support for %s hasn't been implemented yet.\nIf you would like us to implement it, please attend a poll by at:\n%v and give a feedback.\nWe're happy to implement it quickly based on demand!\n"
-var IssueURL = "https://docs.google.com/forms/d/e/1FAIpQLSfraK3Mu0u96rAau_OO-heoHE_z7gCZwX8Dw034RlzYf27M1Q/viewform?usp=sf_link"
+var messageFmt = "The support for %s hasn't been implemented yet.\nIf you would like us to implement it, please drop by at:\n%v and add thumbs up.\nWe're happy to implement it quickly based on demand!"
+var IssueURLFmt = "https://github.com/hazelcast/hazelcast-commandline-client/issues/%d"
 
-type ColoredString struct {
-	Word  string
-	Color *color.Color
+type FakeDoor struct {
+	Name     string
+	IssueNum int
 }
 
-func (p ColoredString) String() string {
-	if p.Word == "" {
-		log.Panicln("word cannot be empty")
-	}
-	return p.Color.Sprint(p.Word)
-}
-
-func DecorateStringColorFgCyanWithUnderline(str string) *ColoredString {
-	if str == "" {
-		log.Panicln("given string cannot be empty")
-	}
-	return &ColoredString{
-		Word:  str,
-		Color: color.New(color.FgCyan).Add(color.Underline),
+func MakeFakeCommand(fd FakeDoor) *cobra.Command {
+	return &cobra.Command{
+		Use: fd.Name,
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println(makeFakeDoorMessage(fd))
+		},
 	}
 }
 
-type DsFakeDoorMessage struct {
-	Name ColoredString
-	Link ColoredString
-}
-
-func FakeDoorMessage(m DsFakeDoorMessage) string {
-	return fmt.Sprintf(message, m.Name, m.Link)
+func makeFakeDoorMessage(m FakeDoor) string {
+	issueNum := fmt.Sprintf(IssueURLFmt, m.IssueNum)
+	return fmt.Sprintf(messageFmt, m.Name, issueNum)
 }

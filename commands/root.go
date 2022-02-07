@@ -27,13 +27,8 @@ import (
 	"github.com/spf13/pflag"
 
 	clusterCmd "github.com/hazelcast/hazelcast-commandline-client/commands/cluster"
-	listCmd "github.com/hazelcast/hazelcast-commandline-client/commands/types/list"
+	fakeDoor "github.com/hazelcast/hazelcast-commandline-client/commands/types/fakedoor"
 	mapCmd "github.com/hazelcast/hazelcast-commandline-client/commands/types/map"
-	multimapCmd "github.com/hazelcast/hazelcast-commandline-client/commands/types/multimap"
-	queueCmd "github.com/hazelcast/hazelcast-commandline-client/commands/types/queue"
-	rmapCmd "github.com/hazelcast/hazelcast-commandline-client/commands/types/replicatedmap"
-	setCmd "github.com/hazelcast/hazelcast-commandline-client/commands/types/set"
-	topicCmd "github.com/hazelcast/hazelcast-commandline-client/commands/types/topic"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/cobraprompt"
 )
@@ -144,22 +139,28 @@ func decorateRootCommand(cmd *cobra.Command) {
 	}
 }
 
-func subCommandsOfTheRoot() []*cobra.Command {
-	return []*cobra.Command{
+func subCommands() []*cobra.Command {
+	cmds := []*cobra.Command{
 		clusterCmd.ClusterCmd,
 		mapCmd.MapCmd,
-		queueCmd.QueueCmd,
-		multimapCmd.MultiMapCmd,
-		listCmd.ListCmd,
-		setCmd.SetCmd,
-		topicCmd.TopicCmd,
-		rmapCmd.ReplicatedMapCmd,
 	}
+	fds := []fakeDoor.FakeDoor{
+		{Name: "list", IssueNum: 42},
+		{Name: "queue", IssueNum: 43},
+		{Name: "multimap", IssueNum: 44},
+		{Name: "replicatedmap", IssueNum: 45},
+		{Name: "set", IssueNum: 46},
+		{Name: "topic", IssueNum: 47},
+	}
+	for _, fd := range fds {
+		cmds = append(cmds, fakeDoor.MakeFakeCommand(fd))
+	}
+	return cmds
 }
 
 func initRootCommand(rootCmd *cobra.Command) {
 	decorateRootCommand(rootCmd)
-	rootCmd.AddCommand(subCommandsOfTheRoot()...)
+	rootCmd.AddCommand(subCommands()...)
 }
 
 func init() {
