@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	messageFmt   = "The support for %s hasn't been implemented yet.\n\nIf you would like us to implement it, please drop by at:\n%v and add a thumbs up.\nWe're happy to implement it quickly based on demand! %s"
+	messageFmt   = "The support for %s hasn't been implemented yet.\n\nIf you would like us to implement it, please drop by at:\n%v and add a thumbs up %s.\nWe're happy to implement it quickly based on demand!"
 	IssueURLFmt  = "https://github.com/hazelcast/hazelcast-commandline-client/issues/%d"
 	thumbsUpSign = "\U0001F44D"
 )
