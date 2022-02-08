@@ -25,6 +25,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	"github.com/hazelcast/hazelcast-commandline-client/config"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/cobraprompt"
 )
@@ -66,7 +67,7 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, conf *haze
 		GoPromptOptions: []prompt.Option{
 			prompt.OptionTitle("Hazelcast Client"),
 			prompt.OptionLivePrefix(func() (prefix string, useLivePrefix bool) {
-				return fmt.Sprintf("hzc %s@%s> ", conf.Cluster.Network.Addresses[0], conf.Cluster.Name), true
+				return fmt.Sprintf("hzc %s@%s> ", config.GetClusterAddress(conf), conf.Cluster.Name), true
 			}),
 			prompt.OptionMaxSuggestion(10),
 			prompt.OptionCompletionOnDown(),

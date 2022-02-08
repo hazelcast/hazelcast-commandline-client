@@ -29,6 +29,8 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/logger"
+
+	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
 )
 
 const defaultConfigFilename = "config.yaml"
@@ -60,11 +62,12 @@ type Config struct {
 	SSL       SSLConfig
 }
 
-// TODO: remove global Configuration
-
-var (
-	Configuration *hazelcast.Config
-)
+type PersistentFlags struct {
+	CfgFile string
+	Cluster string
+	Token   string
+	Address string
+}
 
 func DefaultConfig() *Config {
 	hz := hazelcast.Config{}
@@ -74,87 +77,58 @@ func DefaultConfig() *Config {
 	return &Config{Hazelcast: hz}
 }
 
-func registerConfig(config *Config, confPath string) error {
+func fileExists(path string) (bool, error) {
+	var err error
+	if _, err = os.Stat(path); err == nil {
+		// conf file exists
+		return true, nil
+	}
+	if errors.Is(err, os.ErrNotExist) {
+		return false, nil
+	}
+	// unexpected error
+	return false, err
+}
+
+func writeToFile(config *Config, confPath string) error {
 	var err error
 	var out []byte
 	if out, err = yaml.Marshal(config); err != nil {
 		return err
 	}
-
 	filePath, _ := filepath.Split(confPath)
 	if err = os.MkdirAll(filePath, os.ModePerm); err != nil {
-		return fmt.Errorf("cannot create parent directories for Configuration file: %w", err)
+		return fmt.Errorf("can not create parent directories for file: %w", err)
 	}
-
 	if err = ioutil.WriteFile(confPath, out, 0600); err != nil {
-		return fmt.Errorf("writing default Configuration: %w", err)
-	}
-	fmt.Printf("Default Configuration file for command line client is created at `%s`\n", confPath)
-	return nil
-}
-
-func validateConfig(config *Config, confPath string) error {
-	if _, err := os.Stat(confPath); err != nil {
-		if !errors.Is(err, os.ErrNotExist) {
-			return err
-		}
-		if err = registerConfig(config, confPath); err != nil {
-			return err
-		}
+		return fmt.Errorf("can not write to %s: %w", confPath, err)
 	}
 	return nil
 }
 
-func MakeConfig(flags PersistentFlags) (*hazelcast.Config, error) {
-	if Configuration != nil {
-		return Configuration, nil
+func Get(flags PersistentFlags) (*hazelcast.Config, error) {
+	c := DefaultConfig()
+	p := DefaultConfigPath()
+	if err := readConfig(flags.CfgFile, c, p); err != nil {
+		return nil, err
 	}
-	config := DefaultConfig()
-	var confBytes []byte
-	confPath := flags.CfgFile
-	var err error
+	if err := mergeFlagsWithConfig(flags, c); err != nil {
+		return nil, err
+	}
+	return &c.Hazelcast, nil
+}
 
-	if confPath != DefaultConfigPath() {
-		confBytes, err = ioutil.ReadFile(confPath)
-		if err != nil {
-			fmt.Printf("Error: Cannot read Configuration file on %s. Make sure Configuration path is correct and process have sufficient permission.\n", confPath)
-			return nil, fmt.Errorf("reading Configuration at %s: %w", confPath, err)
-		}
-	} else {
-		confPath = DefaultConfigPath()
-		if err := validateConfig(config, confPath); err != nil {
-			fmt.Printf("Error: Cannot create default Configuration file on default config path %s. Check that process has necessary permissions to write to default config path or provide a custom config path\n", confPath)
-			return nil, err
-		}
-		if confBytes, err = ioutil.ReadFile(confPath); err != nil {
-			fmt.Printf("Error: Cannot read Configuration file on default config path %s. Make sure process have sufficient permission to access Configuration path", confPath)
-			return nil, fmt.Errorf("reading Configuration at %s: %w", confPath, err)
-		}
-	}
-	if err = yaml.Unmarshal(confBytes, config); err != nil {
-		fmt.Println("Error: Configuration file is not a valid yaml file, configuration read from", confPath)
-		return nil, fmt.Errorf("error reading Configuration at %s: %w", confPath, err)
-	}
+func mergeFlagsWithConfig(flags PersistentFlags, config *Config) error {
 	if flags.Token != "" {
 		config.Hazelcast.Cluster.Cloud.Token = strings.TrimSpace(flags.Token)
 		config.Hazelcast.Cluster.Cloud.Enabled = true
 	}
-	if err := UpdateConfigWithSSL(&config.Hazelcast, &config.SSL); err != nil {
-		// TODO: Caller of MakeConfig should handle the errors or at least we should pass them to a function like ShowError, instead of printing them directly.
-		// TODO: The following error does not conform to idiomatic Go, let's refactor these.
-		fmt.Println(fmt.Errorf("Error configuring SSL: %W", err).Error())
-		return nil, err
+	if err := updateConfigWithSSL(&config.Hazelcast, &config.SSL); err != nil {
+		return hzcerror.NewLoggableError(err, "can not configure ssl")
 	}
 	addrRaw := flags.Address
 	if addrRaw != "" {
 		addresses := strings.Split(strings.TrimSpace(addrRaw), ",")
-		config.Hazelcast.Cluster.Network.Addresses = addresses
-	} else if len(config.Hazelcast.Cluster.Network.Addresses) == 0 {
-		addresses := []string{DefaultClusterAddress}
-		// TODO: remove this
-		if config.Hazelcast.Cluster.Cloud.Enabled {
-			addresses = []string{"hazelcast-cloud"}
-		}
 		config.Hazelcast.Cluster.Network.Addresses = addresses
 	}
 	if flags.Cluster != "" {
@@ -164,8 +138,34 @@ func MakeConfig(flags PersistentFlags) (*hazelcast.Config, error) {
 		config.SSL.ServerName = "hazelcast.cloud"
 		config.SSL.InsecureSkipVerify = false
 	}
-	Configuration = &config.Hazelcast
-	return Configuration, nil
+	return nil
+}
+
+func readConfig(path string, config *Config, defaultConfPath string) error {
+	isDefaultConfigPath := path == defaultConfPath
+	var confBytes []byte
+	var err error
+	exists, err := fileExists(path)
+	if err != nil {
+		return hzcerror.NewLoggableError(err, "can not access configuration path %s", path)
+	}
+	if !exists && !isDefaultConfigPath {
+		// file should exist if custom path is used
+		return hzcerror.NewLoggableError(os.ErrNotExist, "configuration file can not be found on configuration path %s", path)
+	}
+	if !exists && isDefaultConfigPath {
+		if err = writeToFile(config, path); err != nil {
+			return hzcerror.NewLoggableError(err, "Cannot create configuration file on default configuration path %s. Make sure that process has necessary permissions to write default path.\n", path)
+		}
+	}
+	confBytes, err = ioutil.ReadFile(path)
+	if err != nil {
+		return hzcerror.NewLoggableError(err, "cannot read configuration file on %s. Make sure Configuration path is correct and process has required permission.\n", path)
+	}
+	if err = yaml.Unmarshal(confBytes, config); err != nil {
+		return hzcerror.NewLoggableError(err, "configuration file(%s) is not in yaml format", path)
+	}
+	return nil
 }
 
 func DefaultConfigPath() string {
@@ -176,7 +176,7 @@ func DefaultConfigPath() string {
 	return filepath.Join(homeDirectoryPath, ".local/share/hz-cli", defaultConfigFilename)
 }
 
-func UpdateConfigWithSSL(config *hazelcast.Config, sslc *SSLConfig) error {
+func updateConfigWithSSL(config *hazelcast.Config, sslc *SSLConfig) error {
 	if sslc.ServerName != "" && sslc.InsecureSkipVerify {
 		return fmt.Errorf("SSL.ServerName and SSL.InsecureSkipVerify are mutually exclusive")
 	}
@@ -214,9 +214,15 @@ func UpdateConfigWithSSL(config *hazelcast.Config, sslc *SSLConfig) error {
 	return nil
 }
 
-type PersistentFlags struct {
-	CfgFile string
-	Cluster string
-	Token   string
-	Address string
+func GetClusterAddress(c *hazelcast.Config) string {
+	var address string
+	switch {
+	case c.Cluster.Cloud.Enabled:
+		address = "hazelcast-cloud"
+	case len(c.Cluster.Network.Addresses) > 0:
+		address = c.Cluster.Network.Addresses[0]
+	default:
+		address = DefaultClusterAddress
+	}
+	return address
 }

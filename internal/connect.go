@@ -25,6 +25,8 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
+
+	"github.com/hazelcast/hazelcast-commandline-client/config"
 )
 
 var InvalidStateErr = errors.New("invalid new state")
@@ -85,13 +87,13 @@ func CallClusterOperationWithState(config *hazelcast.Config, operation string, s
 	return &sb, nil
 }
 
-func NewRESTCall(config *hazelcast.Config, operation string, state string) (*RESTCall, error) {
+func NewRESTCall(conf *hazelcast.Config, operation string, state string) (*RESTCall, error) {
 	var member, url string
 	var params string
-	var addresses = config.Cluster.Network.Addresses
-	member = addresses[0]
+	//todo iterate over all addresses
+	member = config.GetClusterAddress(conf)
 	scheme := "http"
-	if config.Cluster.Network.SSL.Enabled == true {
+	if conf.Cluster.Network.SSL.Enabled == true {
 		scheme = "https"
 	}
 	switch operation {
@@ -109,7 +111,7 @@ func NewRESTCall(config *hazelcast.Config, operation string, state string) (*RES
 	default:
 		panic("Invalid operation to set connection obj.")
 	}
-	params = NewParams(config, operation, state)
+	params = NewParams(conf, operation, state)
 	return &RESTCall{url: url, params: params}, nil
 }
 

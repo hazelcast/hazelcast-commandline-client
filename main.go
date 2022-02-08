@@ -31,7 +31,7 @@ func main() {
 		log.Fatal(err)
 	}
 	// initialize config from file
-	conf, err := config.MakeConfig(*persistentFlags)
+	conf, err := config.Get(*persistentFlags)
 	if err != nil {
 		log.Fatal(err)
 	}

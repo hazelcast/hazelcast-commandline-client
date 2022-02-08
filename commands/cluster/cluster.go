@@ -66,6 +66,7 @@ func NewGetState() *cobra.Command {
 			}
 			// check if it is cloud invocation
 			if conf.Cluster.Cloud.Token != "" {
+				// todo replace fmt
 				fmt.Println(invocationOnCloudErrorMessage)
 				return
 			}
