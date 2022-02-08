@@ -21,8 +21,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var messageFmt = "The support for %s hasn't been implemented yet.\nIf you would like us to implement it, please drop by at:\n%v and add thumbs up.\nWe're happy to implement it quickly based on demand!"
-var IssueURLFmt = "https://github.com/hazelcast/hazelcast-commandline-client/issues/%d"
+const (
+	messageFmt   = "The support for %s hasn't been implemented yet.\n\nIf you would like us to implement it, please drop by at:\n%v and add a thumbs up.\nWe're happy to implement it quickly based on demand! %s"
+	IssueURLFmt  = "https://github.com/hazelcast/hazelcast-commandline-client/issues/%d"
+	thumbsUpSign = "\U0001F44D"
+)
 
 type FakeDoor struct {
 	Name     string
@@ -31,7 +34,8 @@ type FakeDoor struct {
 
 func MakeFakeCommand(fd FakeDoor) *cobra.Command {
 	return &cobra.Command{
-		Use: fd.Name,
+		Use:   fd.Name,
+		Short: fmt.Sprintf("%s operations", fd.Name),
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Println(makeFakeDoorMessage(fd))
 		},
@@ -40,5 +44,5 @@ func MakeFakeCommand(fd FakeDoor) *cobra.Command {
 
 func makeFakeDoorMessage(m FakeDoor) string {
 	issueNum := fmt.Sprintf(IssueURLFmt, m.IssueNum)
-	return fmt.Sprintf(messageFmt, m.Name, issueNum)
+	return fmt.Sprintf(messageFmt, m.Name, issueNum, thumbsUpSign)
 }
