@@ -24,10 +24,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"gopkg.in/yaml.v2"
-
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/logger"
+	"gopkg.in/yaml.v2"
 )
 
 const defaultConfigFilename = "config.yaml"
@@ -59,12 +58,18 @@ var (
 	Cluster       string
 	Token         string
 	Address       string
+	Verbose       bool
 )
 
 func DefaultConfig() *Config {
 	hz := hazelcast.Config{}
 	hz.Cluster.Unisocket = true
-	hz.Logger.Level = logger.ErrorLevel
+	switch Verbose {
+	case true:
+		hz.Logger.Level = logger.DebugLevel
+	case false:
+		hz.Logger.Level = logger.ErrorLevel
+	}
 	return &Config{Hazelcast: hz}
 }
 
