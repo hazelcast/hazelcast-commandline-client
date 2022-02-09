@@ -25,8 +25,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"gopkg.in/yaml.v2"
-
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 
@@ -67,6 +65,7 @@ type PersistentFlags struct {
 	Cluster string
 	Token   string
 	Address string
+	Verbose bool
 }
 
 func DefaultConfig() *Config {
