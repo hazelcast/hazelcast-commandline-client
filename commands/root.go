@@ -145,12 +145,12 @@ func subCommands() []*cobra.Command {
 		mapCmd.MapCmd,
 	}
 	fds := []fakeDoor.FakeDoor{
-		{Name: "list", IssueNum: 42},
-		{Name: "queue", IssueNum: 43},
-		{Name: "multimap", IssueNum: 44},
-		{Name: "replicatedmap", IssueNum: 45},
-		{Name: "set", IssueNum: 46},
-		{Name: "topic", IssueNum: 47},
+		{Name: "list", IssueNum: 48},
+		{Name: "queue", IssueNum: 49},
+		{Name: "multimap", IssueNum: 50},
+		{Name: "replicatedmap", IssueNum: 51},
+		{Name: "set", IssueNum: 52},
+		{Name: "topic", IssueNum: 53},
 	}
 	for _, fd := range fds {
 		cmds = append(cmds, fakeDoor.MakeFakeCommand(fd))
