@@ -43,8 +43,27 @@ func NewRoot() (*cobra.Command, *config.PersistentFlags) {
 		root.CompletionOptions.DisableDefaultCmd = false
 	}
 	assignPersistentFlags(root, &flags)
-	root.AddCommand(clustercmd.New(), mapcmd.New())
+	root.AddCommand(subCommands()...)
 	return root, &flags
+}
+
+func subCommands() []*cobra.Command {
+	cmds := []*cobra.Command{
+		clusterCmd.New(),
+		mapCmd.New(),
+	}
+	fds := []fakeDoor.FakeDoor{
+		{Name: "list", IssueNum: 48},
+		{Name: "queue", IssueNum: 49},
+		{Name: "multimap", IssueNum: 50},
+		{Name: "replicatedmap", IssueNum: 51},
+		{Name: "set", IssueNum: 52},
+		{Name: "topic", IssueNum: 53},
+	}
+	for _, fd := range fds {
+		cmds = append(cmds, fakeDoor.MakeFakeCommand(fd))
+	}
+	return cmds
 }
 
 // assignPersistentFlags assigns top level flags to command

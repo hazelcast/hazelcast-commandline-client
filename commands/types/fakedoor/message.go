@@ -37,7 +37,7 @@ func MakeFakeCommand(fd FakeDoor) *cobra.Command {
 		Use:   fd.Name,
 		Short: fmt.Sprintf("%s operations", fd.Name),
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println(makeFakeDoorMessage(fd))
+			cmd.Println(makeFakeDoorMessage(fd))
 		},
 	}
 }
