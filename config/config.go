@@ -27,6 +27,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/logger"
+	"gopkg.in/yaml.v2"
 
 	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
 )
@@ -136,6 +137,17 @@ func mergeFlagsWithConfig(flags PersistentFlags, config *Config) error {
 	if config.Hazelcast.Cluster.Cloud.Enabled {
 		config.SSL.ServerName = "hazelcast.cloud"
 		config.SSL.InsecureSkipVerify = false
+	}
+	// must return nil err
+	verboseWeight, _ := logger.WeightForLogLevel(logger.DebugLevel)
+	confLevel := config.Hazelcast.Logger.Level
+	confWeight, err := logger.WeightForLogLevel(confLevel)
+	if err != nil {
+		validLogLevels := []logger.Level{logger.OffLevel, logger.FatalLevel, logger.ErrorLevel, logger.WarnLevel, logger.InfoLevel, logger.DebugLevel, logger.TraceLevel}
+		return hzcerror.NewLoggableError(err, "Invalid log level (%s) on configuration file, should be one of %s", confLevel, validLogLevels)
+	}
+	if flags.Verbose && verboseWeight > confWeight {
+		config.Hazelcast.Logger.Level = logger.DebugLevel
 	}
 	return nil
 }

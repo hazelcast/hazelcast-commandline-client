@@ -87,4 +87,5 @@ func assignPersistentFlags(cmd *cobra.Command, flags *config.PersistentFlags) {
 	cmd.PersistentFlags().StringVarP(&flags.Address, "address", "a", "", fmt.Sprintf("addresses of the instances in the cluster (default is %s).", config.DefaultClusterAddress))
 	cmd.PersistentFlags().StringVarP(&flags.Cluster, "cluster-name", "", "", fmt.Sprintf("name of the cluster that contains the instances (default is %s).", config.DefaultClusterName))
 	cmd.PersistentFlags().StringVar(&flags.Token, "cloud-token", "", "your Hazelcast Cloud token.")
+	cmd.PersistentFlags().BoolVarP(&flags.Verbose, "verbose", "", false, "verbose output.")
 }

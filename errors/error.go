@@ -34,6 +34,9 @@ func (e LoggableError) Error() string {
 }
 
 func (e LoggableError) VerboseError() string {
+	if e.err == nil {
+		return fmt.Sprintln(e.msg)
+	}
 	return fmt.Sprintf("%s\nDetails: %s", e.msg, e.err)
 }
 
