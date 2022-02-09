@@ -132,6 +132,7 @@ func decorateRootCommand(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVarP(&internal.Address, "address", "a", "", fmt.Sprintf("addresses of the instances in the cluster (default is %s).", internal.DefaultClusterAddress))
 	cmd.PersistentFlags().StringVarP(&internal.Cluster, "cluster-name", "", "", fmt.Sprintf("name of the cluster that contains the instances (default is %s).", internal.DefaultClusterName))
 	cmd.PersistentFlags().StringVar(&internal.Token, "cloud-token", "", "your Hazelcast Cloud token.")
+	cmd.PersistentFlags().BoolVarP(&internal.Verbose, "verbose", "v", false, "verbose output.")
 	cmd.CompletionOptions.DisableDefaultCmd = true
 	// This is used to generate completion scripts
 	if mode := os.Getenv("MODE"); strings.EqualFold(mode, "dev") {
