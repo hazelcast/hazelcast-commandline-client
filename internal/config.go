@@ -64,10 +64,9 @@ var (
 func DefaultConfig() *Config {
 	hz := hazelcast.Config{}
 	hz.Cluster.Unisocket = true
-	switch Verbose {
-	case true:
+	if Verbose {
 		hz.Logger.Level = logger.DebugLevel
-	case false:
+	} else {
 		hz.Logger.Level = logger.ErrorLevel
 	}
 	return &Config{Hazelcast: hz}
