@@ -8,8 +8,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	clustercmd "github.com/hazelcast/hazelcast-commandline-client/commands/cluster"
-	mapcmd "github.com/hazelcast/hazelcast-commandline-client/commands/types/map"
+	clusterCmd "github.com/hazelcast/hazelcast-commandline-client/commands/cluster"
+	fakeDoor "github.com/hazelcast/hazelcast-commandline-client/commands/types/fakedoor"
+	mapCmd "github.com/hazelcast/hazelcast-commandline-client/commands/types/map"
 	"github.com/hazelcast/hazelcast-commandline-client/config"
 )
 
