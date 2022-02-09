@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package commands
+package main
 
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/hazelcast/hazelcast-go-client"
@@ -49,13 +48,6 @@ func IsInteractiveCall(rootCmd *cobra.Command, args []string) bool {
 	return false
 }
 
-func RunCmd(ctx context.Context, rootCmd *cobra.Command, _ *hazelcast.Config) {
-	if err := rootCmd.ExecuteContext(ctx); err != nil {
-		// todo
-		log.Fatal(err)
-	}
-}
-
 func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, conf *hazelcast.Config) {
 	var p = &cobraprompt.CobraPrompt{
 		RootCmd:                  rootCmd,
@@ -73,13 +65,13 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, conf *haze
 			prompt.OptionCompletionOnDown(),
 		},
 		OnErrorFunc: func(err error) {
-			// handle error noop to prevent application from crashing
+			HandleError(rootCmd, err)
 			return
 		},
 	}
-	fmt.Println("Connecting to the cluster ...")
+	rootCmd.Println("Connecting to the cluster ...")
 	if _, err := internal.ConnectToCluster(ctx, conf); err != nil {
-		fmt.Printf("Error: %s\n", err)
+		rootCmd.Printf("Error: %s\n", err)
 		return
 	}
 	var flagsToExclude []string

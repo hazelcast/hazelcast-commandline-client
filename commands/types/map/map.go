@@ -17,11 +17,11 @@ package commands
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 
+	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
@@ -29,9 +29,6 @@ func New() *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:   "map {get | put} --name mapname --key keyname [--value-type type | --value-file file | --value value]",
 		Short: "map operations",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return cmd.Help()
-		},
 	}
 	cmd.AddCommand(NewGet(), NewPut())
 	return cmd
@@ -40,15 +37,12 @@ func New() *cobra.Command {
 func getMap(ctx context.Context, clientConfig *hazelcast.Config, mapName string) (result *hazelcast.Map, err error) {
 	hzcClient, err := internal.ConnectToCluster(ctx, clientConfig)
 	if err != nil {
-		fmt.Println("Error:", err)
-		return nil, fmt.Errorf("error creating the client: %w", err)
+		return nil, err
 	}
 	if result, err = hzcClient.GetMap(ctx, mapName); err != nil {
-		errorMsg := err.Error()
 		if msg, isHandled := internal.TranslateNetworkError(err, clientConfig.Cluster.Cloud.Enabled); isHandled {
-			errorMsg = msg
+			err = hzcerror.NewLoggableError(err, msg)
 		}
-		fmt.Println("Error:", errorMsg)
 		return nil, err
 	}
 	return
@@ -62,7 +56,6 @@ func decorateCommandWithMapNameFlags(cmd *cobra.Command, mapName *string) {
 func decorateCommandWithKeyFlags(cmd *cobra.Command, mapKey *string) {
 	cmd.Flags().StringVarP(mapKey, "key", "k", "", "key of the map")
 	cmd.MarkFlagRequired("key")
-	cmd.RemoveCommand()
 }
 
 func decorateCommandWithValueFlags(cmd *cobra.Command, mapValue, mapValueFile, mapValueType *string) {

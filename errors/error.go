@@ -19,7 +19,7 @@ func (e LoggableError) Error() string {
 }
 
 func (e LoggableError) VerboseError() string {
-	return fmt.Sprintf("%s\n%s", e.msg, e.err)
+	return fmt.Sprintf("%s\nDetails: %s", e.msg, e.err)
 }
 
 func (e LoggableError) Unwrap() error {

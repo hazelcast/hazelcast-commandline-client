@@ -17,8 +17,6 @@ package commands
 
 import (
 	"context"
-	"fmt"
-	"os"
 	"time"
 
 	"github.com/alecthomas/chroma/quick"
@@ -27,6 +25,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/hazelcast/hazelcast-commandline-client/config"
+	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
@@ -35,42 +34,36 @@ func NewGet() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "get [--name mapname | --key keyname]",
 		Short: "get from map",
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(cmd.Context(), time.Second*3)
 			defer cancel()
 			conf := cmd.Context().Value(config.HZCConfKey).(*hazelcast.Config)
-			if conf == nil {
-				return
-			}
 			m, err := getMap(ctx, conf, mapName)
 			if err != nil {
-				return
+				return err
 			}
 			value, err := m.Get(ctx, mapKey)
 			if err != nil {
-				fmt.Printf("Cannot get value for key %s from map %s\n", mapKey, mapName)
 				isCloudCluster := conf.Cluster.Cloud.Enabled
 				if networkErrMsg, handled := internal.TranslateNetworkError(err, isCloudCluster); handled {
-					fmt.Println("Error: ", networkErrMsg)
-					return
+					return hzcerror.NewLoggableError(err, networkErrMsg)
 				}
-				fmt.Printf("Unknown cause: %s\n", err)
-				return
+				return hzcerror.NewLoggableError(err, "Cannot get value for key %s from map %s", mapKey, mapName)
 			}
-			if value != nil {
-				switch v := value.(type) {
-				case serialization.JSON:
-					if err := quick.Highlight(os.Stdout, v.String(),
-						"json", "terminal", "tango"); err != nil {
-						fmt.Println(v.String())
-					}
-				default:
-					fmt.Println(value)
+			if value == nil {
+				cmd.Println("There is no value corresponding to the provided key")
+				return nil
+			}
+			switch v := value.(type) {
+			case serialization.JSON:
+				if err := quick.Highlight(cmd.OutOrStdout(), v.String(),
+					"json", "terminal", "tango"); err != nil {
+					cmd.Println(v.String())
 				}
-				return
+			default:
+				cmd.Println(value)
 			}
-			fmt.Println("There is no value corresponding to the provided key")
-			return
+			return nil
 		},
 	}
 	decorateCommandWithMapNameFlags(cmd, &mapName)

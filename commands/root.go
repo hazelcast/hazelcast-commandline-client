@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -21,6 +22,16 @@ func NewRoot() (*cobra.Command, *config.PersistentFlags) {
 		Long:  "Hazelcast command-line client connects your command-line to a Hazelcast cluster",
 		Example: "`hzc map --name my-map put --key hello --value world` - put entry into map directly\n" +
 			"`hzc help` - print help",
+		// Handle errors explicitly
+		SilenceErrors: true,
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			// Make sure command receive non-nil configuration
+			conf := config.FromContext(cmd.Context())
+			if conf == nil {
+				return errors.New("missing configuration")
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Help()
 		},

@@ -17,9 +17,6 @@ import (
 // DynamicSuggestionsAnnotation for dynamic suggestions.
 const DynamicSuggestionsAnnotation = "cobra-prompt-dynamic-suggestions"
 
-// PersistFlagValuesFlag the flag that will be available when PersistFlagValues is true
-const PersistFlagValuesFlag = "persist-flag-values"
-
 // CobraPrompt given a Cobra command it will make every flag and sub commands available as suggestions.
 // Command.Short will be used as description for the suggestion.
 type CobraPrompt struct {
@@ -108,7 +105,7 @@ func (co CobraPrompt) Run(ctx context.Context) {
 			}
 			promptArgs, err := shlex.Split(in)
 			if err != nil {
-				fmt.Println("unable to parse commands")
+				co.RootCmd.Println("unable to parse commands")
 				return
 			}
 			os.Args = append([]string{os.Args[0]}, promptArgs...)

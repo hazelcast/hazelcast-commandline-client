@@ -18,7 +18,6 @@ package commands
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"time"
@@ -28,6 +27,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/hazelcast/hazelcast-commandline-client/config"
+	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
@@ -43,33 +43,29 @@ func NewPut() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "put [--name mapname | --key keyname | --value-type type | --value-file file | --value value]",
 		Short: "put to map",
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(cmd.Context(), time.Second*3)
 			defer cancel()
 			var err error
 			conf := cmd.Context().Value(config.HZCConfKey).(*hazelcast.Config)
-			if conf == nil {
-				return
-			}
 			m, err := getMap(ctx, conf, mapName)
 			if err != nil {
-				return
+				return err
 			}
 			var normalizedValue interface{}
 			if normalizedValue, err = normalizeMapValue(mapValue, mapValueFile, mapValueType); err != nil {
-				return
+				return err
 			}
 			_, err = m.Put(ctx, mapKey, normalizedValue)
-			if err != nil {
-				fmt.Printf("Cannot put value for key %s to map %s\n", mapKey, mapName)
-				isCloudCluster := conf.Cluster.Cloud.Enabled
-				if networkErrMsg, handled := internal.TranslateNetworkError(err, isCloudCluster); handled {
-					fmt.Println("Error: ", networkErrMsg)
-					return
-				}
-				fmt.Printf("Unknown cause: %s\n", err)
-				return
+			if err == nil {
+				return err
 			}
+			cmd.Printf("Cannot put value for key %s to map %s\n", mapKey, mapName)
+			isCloudCluster := conf.Cluster.Cloud.Enabled
+			if networkErrMsg, handled := internal.TranslateNetworkError(err, isCloudCluster); handled {
+				err = hzcerror.NewLoggableError(err, networkErrMsg)
+			}
+			return err
 		},
 	}
 	decorateCommandWithMapNameFlags(cmd, &mapName)
@@ -81,19 +77,20 @@ func NewPut() *cobra.Command {
 func normalizeMapValue(v, vFile, vType string) (interface{}, error) {
 	var valueStr string
 	var err error
-	if v != "" && vFile != "" {
-		fmt.Println("Error: Only one of --value and --value-file must be specified")
-		return nil, errors.New("only one of --value and --value-file must be specified")
-	} else if v != "" {
+	switch {
+	case v != "" && vFile != "":
+		return nil, hzcerror.NewLoggableError(nil, "Only one of --value and --value-file must be specified")
+	case v != "":
 		valueStr = v
-	} else if vFile != "" {
+	case vFile != "":
 		if valueStr, err = loadValueFile(vFile); err != nil {
-			fmt.Println("Error: Cannot load the value file. Make sure file exists and process has correct access rights")
-			return nil, fmt.Errorf("error loading value: %w", err)
+			err = hzcerror.NewLoggableError(err, "Cannot load the value file. Make sure file exists and process has correct access rights")
 		}
-	} else {
-		fmt.Println("Error: One of the value flag must be set")
-		return nil, errors.New("map value is required")
+	default:
+		err = hzcerror.NewLoggableError(nil, "One of the value flags must be set")
+	}
+	if err != nil {
+		return nil, err
 	}
 	switch vType {
 	case internal.TypeString:
@@ -101,8 +98,7 @@ func normalizeMapValue(v, vFile, vType string) (interface{}, error) {
 	case internal.TypeJSON:
 		return serialization.JSON(valueStr), nil
 	}
-	fmt.Println("Error: Provided value type parameter is not a known type. Provide either 'string' or 'json'")
-	return nil, fmt.Errorf("%s is not a known value type", vType)
+	return nil, hzcerror.NewLoggableError(nil, "Provided value type parameter (%s) is not a known type. Provide either 'string' or 'json'", vType)
 }
 
 func loadValueFile(path string) (string, error) {
