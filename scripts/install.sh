@@ -5,7 +5,7 @@ HZCLI_HOME="$HOME/.local/share/hz-cli"
 
 ghExtractTag() {
   tagUrl=$(curl "https://github.com/$1/releases/latest" -s -L -I -o /dev/null -w '%{url_effective}')
-  printf "%s\n" "${tagUrl##*v}"
+  printf "%s\n" "${tagUrl##*tag/v}"
 }
 
 bin_id=""
