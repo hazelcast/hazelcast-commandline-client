@@ -24,10 +24,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"gopkg.in/yaml.v2"
-
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/logger"
+	"gopkg.in/yaml.v2"
 )
 
 const defaultConfigFilename = "config.yaml"
@@ -59,12 +58,17 @@ var (
 	Cluster       string
 	Token         string
 	Address       string
+	Verbose       bool
 )
 
 func DefaultConfig() *Config {
 	hz := hazelcast.Config{}
 	hz.Cluster.Unisocket = true
-	hz.Logger.Level = logger.ErrorLevel
+	if Verbose {
+		hz.Logger.Level = logger.DebugLevel
+	} else {
+		hz.Logger.Level = logger.ErrorLevel
+	}
 	return &Config{Hazelcast: hz}
 }
 
@@ -108,14 +112,14 @@ func MakeConfig() (*hazelcast.Config, error) {
 	confPath := CfgFile
 	var err error
 
-	if confPath != DefautConfigPath() {
+	if confPath != DefaultConfigPath() {
 		confBytes, err = ioutil.ReadFile(confPath)
 		if err != nil {
 			fmt.Printf("Error: Cannot read Configuration file on %s. Make sure Configuration path is correct and process have sufficient permission.\n", confPath)
 			return nil, fmt.Errorf("reading Configuration at %s: %w", confPath, err)
 		}
 	} else {
-		confPath = DefautConfigPath()
+		confPath = DefaultConfigPath()
 		if err := validateConfig(config, confPath); err != nil {
 			fmt.Printf("Error: Cannot create default Configuration file on default config path %s. Check that process has necessary permissions to write to default config path or provide a custom config path\n", confPath)
 			return nil, err
@@ -162,7 +166,7 @@ func MakeConfig() (*hazelcast.Config, error) {
 	return Configuration, nil
 }
 
-func DefautConfigPath() string {
+func DefaultConfigPath() string {
 	homeDirectoryPath, err := os.UserHomeDir()
 	if err != nil {
 		panic(fmt.Errorf("retrieving home directory: %w", err))

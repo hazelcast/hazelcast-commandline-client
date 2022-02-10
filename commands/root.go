@@ -27,9 +27,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	clustercmd "github.com/hazelcast/hazelcast-commandline-client/commands/cluster"
-	"github.com/hazelcast/hazelcast-commandline-client/commands/sql"
-	mapcmd "github.com/hazelcast/hazelcast-commandline-client/commands/types/map"
+	clusterCmd "github.com/hazelcast/hazelcast-commandline-client/commands/cluster"
+	fakeDoor "github.com/hazelcast/hazelcast-commandline-client/commands/types/fakedoor"
+	mapCmd "github.com/hazelcast/hazelcast-commandline-client/commands/types/map"
+	sqlCmd "github.com/hazelcast/hazelcast-commandline-client/commands/sql"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/cobraprompt"
 )
@@ -133,10 +134,11 @@ func ExecuteInteractive(ctx context.Context) {
 }
 
 func decorateRootCommand(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVarP(&internal.CfgFile, "config", "c", internal.DefautConfigPath(), fmt.Sprintf("config file, only supports yaml for now"))
+	cmd.PersistentFlags().StringVarP(&internal.CfgFile, "config", "c", internal.DefaultConfigPath(), fmt.Sprintf("config file, only supports yaml for now"))
 	cmd.PersistentFlags().StringVarP(&internal.Address, "address", "a", "", fmt.Sprintf("addresses of the instances in the cluster (default is %s).", internal.DefaultClusterAddress))
 	cmd.PersistentFlags().StringVarP(&internal.Cluster, "cluster-name", "", "", fmt.Sprintf("name of the cluster that contains the instances (default is %s).", internal.DefaultClusterName))
 	cmd.PersistentFlags().StringVar(&internal.Token, "cloud-token", "", "your Hazelcast Cloud token.")
+	cmd.PersistentFlags().BoolVarP(&internal.Verbose, "verbose", "v", false, "verbose output.")
 	cmd.CompletionOptions.DisableDefaultCmd = true
 	// This is used to generate completion scripts
 	if mode := os.Getenv("MODE"); strings.EqualFold(mode, "dev") {
@@ -144,9 +146,29 @@ func decorateRootCommand(cmd *cobra.Command) {
 	}
 }
 
+func subCommands() []*cobra.Command {
+	cmds := []*cobra.Command{
+		clusterCmd.ClusterCmd,
+		mapCmd.MapCmd,
+		sqlCmd.SqlCmd,
+	}
+	fds := []fakeDoor.FakeDoor{
+		{Name: "list", IssueNum: 48},
+		{Name: "queue", IssueNum: 49},
+		{Name: "multimap", IssueNum: 50},
+		{Name: "replicatedmap", IssueNum: 51},
+		{Name: "set", IssueNum: 52},
+		{Name: "topic", IssueNum: 53},
+	}
+	for _, fd := range fds {
+		cmds = append(cmds, fakeDoor.MakeFakeCommand(fd))
+	}
+	return cmds
+}
+
 func initRootCommand(rootCmd *cobra.Command) {
 	decorateRootCommand(rootCmd)
-	rootCmd.AddCommand(clustercmd.ClusterCmd, mapcmd.MapCmd, sql.SqlCmd)
+	rootCmd.AddCommand(subCommands()...)
 }
 
 func init() {
