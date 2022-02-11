@@ -21,6 +21,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 
+	"github.com/hazelcast/hazelcast-commandline-client/commands/common"
 	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
@@ -29,6 +30,20 @@ func New() *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:   "map {get | put} --name mapname --key keyname [--value-type type | --value-file file | --value value]",
 		Short: "map operations",
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			persister := cmd.Context().Value("persister").(common.NamePersister)
+			val, isSet := persister.Get("map")
+			if !isSet {
+				return
+			}
+			if cmd.Flag("name").Changed {
+				// flag is set explicitly
+				return
+			}
+			if err := cmd.Flags().Set("name", val); err != nil {
+				cmd.PrintErrln("cannot set persistent err", err)
+			}
+		},
 	}
 	cmd.AddCommand(NewGet(), NewPut())
 	return cmd

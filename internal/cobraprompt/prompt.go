@@ -27,6 +27,8 @@ import (
 	"github.com/google/shlex"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+
+	"github.com/hazelcast/hazelcast-commandline-client/commands/common"
 )
 
 // DynamicSuggestionsAnnotation for dynamic suggestions.
@@ -61,6 +63,7 @@ type CobraPrompt struct {
 	AddDefaultExitCommand bool
 	// OnErrorFunc handle error for command.Execute, if not set print error and exit
 	OnErrorFunc func(err error)
+	Persister   common.NamePersister
 }
 
 var ErrExit = errors.New("exit prompt")
@@ -124,6 +127,7 @@ func (co CobraPrompt) Run(ctx context.Context) {
 				return
 			}
 			os.Args = append([]string{os.Args[0]}, promptArgs...)
+			co.Persister.Set("map", "m1")
 			if err := co.RootCmd.ExecuteContext(ctx); err != nil {
 				if errors.Is(err, ErrExit) {
 					exitPromptSafely()
