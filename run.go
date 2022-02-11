@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
@@ -31,6 +32,8 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/cobraprompt"
 	goprompt "github.com/hazelcast/hazelcast-commandline-client/internal/go-prompt"
+	persister "github.com/hazelcast/hazelcast-commandline-client/internal/persistence"
+	"github.com/hazelcast/hazelcast-commandline-client/types/mapcmd"
 )
 
 func IsInteractiveCall(rootCmd *cobra.Command, args []string) bool {
@@ -53,6 +56,7 @@ func IsInteractiveCall(rootCmd *cobra.Command, args []string) bool {
 }
 
 func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *hazelcast.Config) {
+	namePersister := persister.NewNamePersister()
 	var p = &cobraprompt.CobraPrompt{
 		ShowHelpCommandAndFlags:  true,
 		ShowHiddenFlags:          true,
@@ -62,7 +66,11 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *haze
 		GoPromptOptions: []goprompt.Option{
 			goprompt.OptionTitle("Hazelcast Client"),
 			goprompt.OptionLivePrefix(func() (prefix string, useLivePrefix bool) {
-				return fmt.Sprintf("hzc %s@%s> ", config.GetClusterAddress(cnfg), cnfg.Cluster.Name), true
+				var b strings.Builder
+				for k, v := range namePersister.PersistenceInfo() {
+					b.WriteString(fmt.Sprintf("&%c:%s", k[0], v))
+				}
+				return fmt.Sprintf("hzc %s@%s%s> ", config.GetClusterAddress(cnfg), cnfg.Cluster.Name, b.String()), true
 			}),
 			goprompt.OptionMaxSuggestion(10),
 			goprompt.OptionCompletionOnDown(),
@@ -72,6 +80,7 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *haze
 			rootCmd.Println(errStr)
 			return
 		},
+		Persister: namePersister,
 	}
 	rootCmd.Println("Connecting to the cluster ...")
 	if _, err := internal.ConnectToCluster(ctx, cnfg); err != nil {
@@ -86,6 +95,8 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *haze
 	})
 	flagsToExclude = append(flagsToExclude, "help")
 	p.FlagsToExclude = flagsToExclude
+	rootCmd.Example = fmt.Sprintf("> %s\n> %s", mapcmd.MapPutExample, mapcmd.MapGetExample) + "\n> cluster version"
+	rootCmd.Use = ""
 	p.Run(ctx, rootCmd, cnfg)
 }
 
@@ -103,13 +114,18 @@ func HandleError(err error) string {
 	errStr := fmt.Sprintf("Unknown Error: %s\n"+
 		"Use \"hzc [command] --help\" for more information about a command.", err.Error())
 	var loggable hzcerror.LoggableError
+	var flagErr hzcerror.FlagError
 	if errors.As(err, &loggable) {
 		errStr = fmt.Sprintf("Error: %s\n", loggable.VerboseError())
+	} else if errors.As(err, &flagErr) {
+		errStr = fmt.Sprintf("Flag Error: %s\n", err.Error())
 	}
 	return errStr
 }
 
 func RunCmd(ctx context.Context, root *cobra.Command) error {
+	p := persister.NewNamePersister()
+	ctx = internal.SetContext(ctx, p)
 	ctx, cancel := context.WithCancel(ctx)
 	handleInterrupt(ctx, cancel)
 	return root.ExecuteContext(ctx)

@@ -39,7 +39,7 @@ func New(cnfg *hazelcast.Config) (*cobra.Command, *config.GlobalFlagValues) {
 		Short: "Hazelcast command-line client",
 		Long:  "Hazelcast command-line client connects your command-line to a Hazelcast cluster",
 		Example: "`hzc` - starts an interactive shell 🚀\n" +
-			"`hzc map --name my-map put --key hello --value world` - put entry into map directly\n" +
+			"`hzc map put --key hello --value world --name my-map` - put entry into map directly\n" +
 			"`hzc sql` - starts the SQL Browser\n" +
 			"`hzc help` - print help",
 		// Handle errors explicitly

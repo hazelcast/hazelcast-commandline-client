@@ -17,6 +17,7 @@ package mapcmd
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
@@ -27,10 +28,36 @@ import (
 
 func New(config *hazelcast.Config) *cobra.Command {
 	var cmd = &cobra.Command{
-		Use:   "map {get | put} --name mapname --key keyname [--value-type type | --value-file file | --value value]",
-		Short: "Map operations",
+		Use:     "map {get | put} --name mapname --key keyname [--value-type type | --value-file file | --value value]",
+		Short:   "Map operations",
+		Example: fmt.Sprintf("%s\n%s", MapPutExample, MapGetExample),
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			// All the following lines are to set map name if it is set by "use" command.
+			// If the map name is given explicitly, do not set the one given with "use" command.
+			// Missing flag errors are not handled here.
+			// They are expected to be handled by the actual command.
+			persister := internal.PersisterFromContext(cmd.Context())
+			val, isSet := persister.Get("map")
+			if !isSet {
+				return nil
+			}
+			nameFlag := cmd.Flag("name")
+			if nameFlag == nil {
+				// flag is absent
+				return nil
+			}
+			if nameFlag.Changed {
+				// flag value is set explicitly
+				return nil
+			}
+			if err := cmd.Flags().Set("name", val); err != nil {
+				cmd.PrintErrln("cannot set persistent err", err)
+				return hzcerror.NewLoggableError(err, "Default name for map cannot be set")
+			}
+			return nil
+		},
 	}
-	cmd.AddCommand(NewGet(config), NewPut(config))
+	cmd.AddCommand(NewGet(config), NewPut(config), NewUse())
 	return cmd
 }
 
@@ -46,6 +73,35 @@ func getMap(ctx context.Context, clientConfig *hazelcast.Config, mapName string)
 		return nil, err
 	}
 	return
+}
+
+func NewUse() *cobra.Command {
+	//var mapName, mapKey string
+	cmd := &cobra.Command{
+		Use:   "use map-name",
+		Short: "sets default map name",
+		Example: "map use m1		# sets the default map name to m1 unless set explicitly\n" +
+			"map get --key k1	# \"--name m1\" is inferred\n" +
+			"map use --reset		# resets the behaviour",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			persister := internal.PersisterFromContext(cmd.Context())
+			if cmd.Flags().Changed("reset") {
+				persister.Reset("map")
+				return nil
+			}
+			if len(args) == 0 {
+				return cmd.Help()
+			}
+			if len(args) > 1 {
+				cmd.Println("Provide map name between \"\" quotes if it contains white space")
+				return nil
+			}
+			persister.Set("map", args[0])
+			return nil
+		},
+	}
+	_ = cmd.Flags().BoolP("reset", "", false, "unset default name for map")
+	return cmd
 }
 
 func decorateCommandWithMapNameFlags(cmd *cobra.Command, mapName *string) {

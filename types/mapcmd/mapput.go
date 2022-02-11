@@ -30,6 +30,8 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
+const MapPutExample = "map put --key hello --value world --name myMap\t#puts entry into map directly"
+
 func NewPut(config *hazelcast.Config) *cobra.Command {
 	// flags
 	var (
@@ -40,8 +42,9 @@ func NewPut(config *hazelcast.Config) *cobra.Command {
 		mapValueFile string
 	)
 	cmd := &cobra.Command{
-		Use:   "put [--name mapname | --key keyname | --value-type type | --value-file file | --value value]",
-		Short: "Put value to map",
+		Use:     "put [--name mapname | --key keyname | --value-type type | --value-file file | --value value]",
+		Short:   "Put value to map",
+		Example: MapPutExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(cmd.Context(), time.Second*3)
 			defer cancel()

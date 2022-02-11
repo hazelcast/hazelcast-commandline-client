@@ -29,6 +29,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	goprompt "github.com/hazelcast/hazelcast-commandline-client/internal/go-prompt"
 	"github.com/hazelcast/hazelcast-commandline-client/rootcmd"
@@ -64,6 +66,8 @@ type CobraPrompt struct {
 	AddDefaultExitCommand bool
 	// OnErrorFunc handle error for command.Execute, if not set print error and exit
 	OnErrorFunc func(err error)
+	// Persister is used to interact with name persistence mechanism.
+	Persister internal.NamePersister
 }
 
 var ErrExit = errors.New("exit prompt")
@@ -119,6 +123,7 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 		},
 	}))
 	co.GoPromptOptions = append(co.GoPromptOptions, SuggestionColorOptions...)
+	ctx = internal.SetContext(ctx, co.Persister)
 	var p *goprompt.Prompt
 	p = goprompt.New(
 		func(in string) {
@@ -147,10 +152,17 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 			root, _ = rootcmd.New(cnfg)
 			prepareRootCmdForPrompt(co, root)
 			root.SetArgs(promptArgs)
+			root.SetFlagErrorFunc(func(_ *cobra.Command, err error) error {
+				return hzcerror.FlagError(err)
+			})
 			if err := root.ExecuteContext(ctx); err != nil {
 				if errors.Is(err, ErrExit) {
 					exitPromptSafely()
 					return
+				}
+				if err.Error() == `required flag(s) "name" not set` {
+					// todo make this applicable for all data types
+					err = fmt.Errorf(`%s. Add it or consider "map use <name>"`, err.Error())
 				}
 				if co.OnErrorFunc != nil {
 					co.OnErrorFunc(err)
@@ -159,6 +171,8 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 					exitPromptSafely()
 				}
 			}
+			// clear all flag values after each command in interactive mode
+			clearAllFlags(root, co.FlagsToExclude)
 			// clear screen only after sql browser command executed successfully
 			if strings.Trim(in, " ") == "sql" {
 				// lets us invoke ctrl+L shortcut which clears the screen
@@ -175,6 +189,20 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 		co.GoPromptOptions...,
 	)
 	p.Run()
+}
+
+func clearAllFlags(p *cobra.Command, exclude []string) {
+	p.Flags().Visit(func(flag *pflag.Flag) {
+		if stringInSlice(exclude, flag.Name) {
+			return
+		}
+		// ignore err since we are setting default value
+		_ = flag.Value.Set(flag.DefValue)
+		flag.Changed = false
+	})
+	for _, cmd := range p.Commands() {
+		clearAllFlags(cmd, exclude)
+	}
 }
 
 func prepareRootCmdForPrompt(co CobraPrompt, root *cobra.Command) {
