@@ -48,7 +48,25 @@ func New() *cobra.Command {
 				return nil
 			}
 			if err := cmd.Flags().Set("name", val); err != nil {
-				cmd.PrintErrln("cannot set persistent err", err)
+				return hzcerror.NewLoggableError(err, "Default name for map cannot be set")
+			}
+			return nil
+		},
+	}
+	cmd.AddCommand(NewGet(), NewPut(), NewUse())
+	return cmd
+}
+
+func NewUse() *cobra.Command {
+	//var mapName, mapKey string
+	cmd := &cobra.Command{
+		Use:   "use map-name",
+		Short: "set default map name",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			persister := common.PersisterFromContext(cmd.Context())
+			if cmd.Flags().Changed("reset") {
+				persister.Reset("map")
+				return nil
 			}
 			if len(args) == 0 {
 				cmd.Println("Default map name is not provided")
@@ -62,7 +80,7 @@ func New() *cobra.Command {
 			return nil
 		},
 	}
-	cmd.AddCommand(NewGet(), NewPut())
+	_ = cmd.Flags().BoolP("reset", "", false, "unset default name for map")
 	return cmd
 }
 
