@@ -114,6 +114,7 @@ func (co CobraPrompt) Run(ctx context.Context) {
 	if co.RootCmd == nil {
 		panic("RootCmd is not set. Please set RootCmd")
 	}
+	ctx = common.SetContext(ctx, co.Persister)
 	co.prepare()
 	p := prompt.New(
 		func(in string) {
@@ -127,7 +128,6 @@ func (co CobraPrompt) Run(ctx context.Context) {
 				return
 			}
 			os.Args = append([]string{os.Args[0]}, promptArgs...)
-			co.Persister.Set("map", "m1")
 			if err := co.RootCmd.ExecuteContext(ctx); err != nil {
 				if errors.Is(err, ErrExit) {
 					exitPromptSafely()
@@ -140,6 +140,8 @@ func (co CobraPrompt) Run(ctx context.Context) {
 					exitPromptSafely()
 				}
 			}
+			// clear all flag values after each command in interactive mode
+			clearAllFlags(co.RootCmd, co.FlagsToExclude)
 		},
 		func(d prompt.Document) []prompt.Suggest {
 			// no suggestion on new line
@@ -151,6 +153,20 @@ func (co CobraPrompt) Run(ctx context.Context) {
 		co.GoPromptOptions...,
 	)
 	p.Run()
+}
+
+func clearAllFlags(p *cobra.Command, exclude []string) {
+	p.Flags().Visit(func(flag *pflag.Flag) {
+		if stringInSlice(exclude, flag.Name) {
+			return
+		}
+		// ignore err since we are setting default value
+		_ = flag.Value.Set(flag.DefValue)
+		flag.Changed = false
+	})
+	for _, cmd := range p.Commands() {
+		clearAllFlags(cmd, exclude)
+	}
 }
 
 func (co CobraPrompt) prepare() {

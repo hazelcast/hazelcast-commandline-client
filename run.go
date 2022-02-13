@@ -50,8 +50,6 @@ func IsInteractiveCall(rootCmd *cobra.Command, args []string) bool {
 }
 
 func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, conf *hazelcast.Config) {
-	namePersister := persister.NewNamePersister()
-	ctx = context.WithValue(ctx, "persister", namePersister)
 	var p = &cobraprompt.CobraPrompt{
 		RootCmd:                  rootCmd,
 		ShowHelpCommandAndFlags:  true,
@@ -71,7 +69,7 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, conf *haze
 			HandleError(rootCmd, err)
 			return
 		},
-		Persister: namePersister,
+		Persister: persister.NewNamePersister(),
 	}
 	rootCmd.Println("Connecting to the cluster ...")
 	if _, err := internal.ConnectToCluster(ctx, conf); err != nil {

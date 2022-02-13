@@ -30,19 +30,34 @@ func New() *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:   "map {get | put} --name mapname --key keyname [--value-type type | --value-file file | --value value]",
 		Short: "map operations",
-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			persister := cmd.Context().Value("persister").(common.NamePersister)
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			persister := common.PersisterFromContext(cmd.Context())
 			val, isSet := persister.Get("map")
 			if !isSet {
-				return
+				return nil
 			}
-			if cmd.Flag("name").Changed {
-				// flag is set explicitly
-				return
+			nameFlag := cmd.Flag("name")
+			if nameFlag == nil {
+				// flag is absent
+				return nil
+			}
+			if nameFlag.Changed {
+				// flag value is set explicitly
+				return nil
 			}
 			if err := cmd.Flags().Set("name", val); err != nil {
 				cmd.PrintErrln("cannot set persistent err", err)
 			}
+			if len(args) == 0 {
+				cmd.Println("Default map name is not provided")
+				return nil
+			}
+			if len(args) > 1 {
+				cmd.Println("Provide map name between \"\" quotes if it contains white space")
+				return nil
+			}
+			persister.Set("map", args[0])
+			return nil
 		},
 	}
 	cmd.AddCommand(NewGet(), NewPut())
