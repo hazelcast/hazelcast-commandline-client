@@ -61,7 +61,10 @@ func NewUse() *cobra.Command {
 	//var mapName, mapKey string
 	cmd := &cobra.Command{
 		Use:   "use map-name",
-		Short: "set default map name",
+		Short: "sets default map name",
+		Example: "map use m1		# sets the default map name to m1 unless set explicitly\n" +
+			"map get --key k1	# \"--name m1\" is inferred\n" +
+			"map use --reset		# resets the behaviour",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			persister := common.PersisterFromContext(cmd.Context())
 			if cmd.Flags().Changed("reset") {
@@ -69,8 +72,7 @@ func NewUse() *cobra.Command {
 				return nil
 			}
 			if len(args) == 0 {
-				cmd.Println("Default map name is not provided")
-				return nil
+				return cmd.Help()
 			}
 			if len(args) > 1 {
 				cmd.Println("Provide map name between \"\" quotes if it contains white space")
