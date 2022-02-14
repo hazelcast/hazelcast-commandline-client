@@ -17,14 +17,18 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"os"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	"github.com/hazelcast/hazelcast-commandline-client/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/config"
+	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/cobraprompt"
 )
@@ -65,7 +69,8 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, conf *haze
 			prompt.OptionCompletionOnDown(),
 		},
 		OnErrorFunc: func(err error) {
-			HandleError(rootCmd, err)
+			errStr := HandleError(err)
+			rootCmd.Println(errStr)
 			return
 		},
 	}
@@ -85,4 +90,31 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, conf *haze
 > cluster version`
 	rootCmd.Use = ""
 	p.Run(ctx)
+}
+
+func InitRootCmd() (*cobra.Command, *config.GlobalFlagValues) {
+	rootCmd, persistentFlags := commands.NewRoot()
+	rootCmd.SetErr(os.Stderr)
+	rootCmd.SetOut(os.Stdout)
+	return rootCmd, persistentFlags
+}
+
+func getConfigWithFlags(rootCmd *cobra.Command, programArgs []string, globalFlagValues *config.GlobalFlagValues) (*hazelcast.Config, error) {
+	// parse global persistent flags
+	subCmd, flags, _ := rootCmd.Find(programArgs)
+	// fall back to cmd.Help, even if there is error
+	_ = subCmd.ParseFlags(flags)
+	// initialize config from file
+	conf, err := config.Get(*globalFlagValues)
+	return conf, err
+}
+
+func HandleError(err error) string {
+	errStr := fmt.Sprintf("Unknown Error: %s\n"+
+		"Use \"hzc [command] --help\" for more information about a command.", err.Error())
+	var loggable hzcerror.LoggableError
+	if errors.As(err, &loggable) {
+		errStr = fmt.Sprintf("Error: %s\n", loggable.VerboseError())
+	}
+	return errStr
 }

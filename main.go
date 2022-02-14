@@ -17,15 +17,10 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 
-	"github.com/spf13/cobra"
-
-	"github.com/hazelcast/hazelcast-commandline-client/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/config"
-	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
 )
 
 const (
@@ -34,39 +29,26 @@ const (
 )
 
 func main() {
-	rootCmd, persistentFlags := commands.NewRoot()
-	rootCmd.SetErr(os.Stderr)
-	rootCmd.SetOut(os.Stdout)
+	rootCmd, globalFlagValues := InitRootCmd()
 	programArgs := os.Args[1:]
-	// parse global persistent flags
-	subcmd, flags, _ := rootCmd.Find(programArgs)
-	// fall back to cmd.Help, even if there is error
-	_ = subcmd.ParseFlags(flags)
-	// initialize config from file
-	conf, err := config.Get(*persistentFlags)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(exitError)
-	}
+	conf, err := getConfigWithFlags(rootCmd, programArgs, globalFlagValues)
+	ExitOnError(err)
 	ctx := config.ToContext(context.Background(), conf)
 	isInteractive := IsInteractiveCall(rootCmd, programArgs)
 	if isInteractive {
 		RunCmdInteractively(ctx, rootCmd, conf)
-		os.Exit(exitOK)
+	} else {
+		err = rootCmd.ExecuteContext(ctx)
+		ExitOnError(err)
 	}
-	if err := rootCmd.ExecuteContext(ctx); err != nil {
-		HandleError(rootCmd, err)
-		os.Exit(exitError)
-	}
-	os.Exit(exitOK)
+	return
 }
 
-func HandleError(cmd *cobra.Command, err error) {
-	errStr := fmt.Sprintf("Unknown Error: %s\n"+
-		"Use \"hzc [command] --help\" for more information about a command.", err.Error())
-	var loggable hzcerror.LoggableError
-	if errors.As(err, &loggable) {
-		errStr = fmt.Sprintf("Error: %s\n", loggable.VerboseError())
+func ExitOnError(err error) {
+	if err == nil {
+		return
 	}
-	cmd.PrintErrln(errStr)
+	errStr := HandleError(err)
+	fmt.Println(errStr)
+	os.Exit(exitError)
 }
