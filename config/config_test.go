@@ -107,7 +107,7 @@ func TestReadConfig(t *testing.T) {
 
 func TestMergeFlagsWithConfig(t *testing.T) {
 	tests := []struct {
-		flags          PersistentFlags
+		flags          GlobalFlagValues
 		expectedConfig *Config
 		wantErr        bool
 	}{
@@ -116,7 +116,7 @@ func TestMergeFlagsWithConfig(t *testing.T) {
 			expectedConfig: DefaultConfig(),
 		},
 		{
-			flags: PersistentFlags{
+			flags: GlobalFlagValues{
 				Token: "test-token",
 			},
 			expectedConfig: func() *Config {
@@ -128,7 +128,7 @@ func TestMergeFlagsWithConfig(t *testing.T) {
 			}(),
 		},
 		{
-			flags: PersistentFlags{
+			flags: GlobalFlagValues{
 				Cluster: "test-cluster",
 			},
 			expectedConfig: func() *Config {
@@ -138,7 +138,7 @@ func TestMergeFlagsWithConfig(t *testing.T) {
 			}(),
 		},
 		{
-			flags: PersistentFlags{
+			flags: GlobalFlagValues{
 				Address: "localhost:8904,myserver:4343",
 			},
 			expectedConfig: func() *Config {

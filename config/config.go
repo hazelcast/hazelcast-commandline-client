@@ -61,7 +61,7 @@ type Config struct {
 	SSL       SSLConfig
 }
 
-type PersistentFlags struct {
+type GlobalFlagValues struct {
 	CfgFile string
 	Cluster string
 	Token   string
@@ -106,7 +106,7 @@ func writeToFile(config *Config, confPath string) error {
 	return nil
 }
 
-func Get(flags PersistentFlags) (*hazelcast.Config, error) {
+func Get(flags GlobalFlagValues) (*hazelcast.Config, error) {
 	c := DefaultConfig()
 	p := DefaultConfigPath()
 	if err := readConfig(flags.CfgFile, c, p); err != nil {
@@ -118,7 +118,7 @@ func Get(flags PersistentFlags) (*hazelcast.Config, error) {
 	return &c.Hazelcast, nil
 }
 
-func mergeFlagsWithConfig(flags PersistentFlags, config *Config) error {
+func mergeFlagsWithConfig(flags GlobalFlagValues, config *Config) error {
 	if flags.Token != "" {
 		config.Hazelcast.Cluster.Cloud.Token = strings.TrimSpace(flags.Token)
 		config.Hazelcast.Cluster.Cloud.Enabled = true

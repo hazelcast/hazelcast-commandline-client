@@ -37,13 +37,11 @@ func main() {
 	rootCmd, persistentFlags := commands.NewRoot()
 	rootCmd.SetErr(os.Stderr)
 	rootCmd.SetOut(os.Stdout)
+	programArgs := os.Args[1:]
 	// parse global persistent flags
-	subcmd, flags, err := rootCmd.Find(os.Args[1:])
-	err = subcmd.ParseFlags(flags)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(exitError)
-	}
+	subcmd, flags, _ := rootCmd.Find(programArgs)
+	// fall back to cmd.Help, even if there is error
+	_ = subcmd.ParseFlags(flags)
 	// initialize config from file
 	conf, err := config.Get(*persistentFlags)
 	if err != nil {
@@ -51,7 +49,7 @@ func main() {
 		os.Exit(exitError)
 	}
 	ctx := config.ToContext(context.Background(), conf)
-	isInteractive := IsInteractiveCall(rootCmd, os.Args[1:])
+	isInteractive := IsInteractiveCall(rootCmd, programArgs)
 	if isInteractive {
 		RunCmdInteractively(ctx, rootCmd, conf)
 		os.Exit(exitOK)
@@ -64,7 +62,8 @@ func main() {
 }
 
 func HandleError(cmd *cobra.Command, err error) {
-	errStr := fmt.Sprintf("Unknown Error: %s\n", err.Error())
+	errStr := fmt.Sprintf("Unknown Error: %s\n"+
+		"Use \"hzc [command] --help\" for more information about a command.", err.Error())
 	var loggable hzcerror.LoggableError
 	if errors.As(err, &loggable) {
 		errStr = fmt.Sprintf("Error: %s\n", loggable.VerboseError())

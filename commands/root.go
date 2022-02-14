@@ -30,8 +30,8 @@ import (
 )
 
 // NewRoot initializes root command for non-interactive mode
-func NewRoot() (*cobra.Command, *config.PersistentFlags) {
-	var flags config.PersistentFlags
+func NewRoot() (*cobra.Command, *config.GlobalFlagValues) {
+	var flags config.GlobalFlagValues
 	root := &cobra.Command{
 		Use:   "hzc {cluster | help | map} [--address address | --cloud-token token | --cluster-name name | --config config]",
 		Short: "Hazelcast command-line client",
@@ -82,7 +82,7 @@ func subCommands() []*cobra.Command {
 }
 
 // assignPersistentFlags assigns top level flags to command
-func assignPersistentFlags(cmd *cobra.Command, flags *config.PersistentFlags) {
+func assignPersistentFlags(cmd *cobra.Command, flags *config.GlobalFlagValues) {
 	cmd.PersistentFlags().StringVarP(&flags.CfgFile, "config", "c", config.DefaultConfigPath(), fmt.Sprintf("config file, only supports yaml for now"))
 	cmd.PersistentFlags().StringVarP(&flags.Address, "address", "a", "", fmt.Sprintf("addresses of the instances in the cluster (default is %s).", config.DefaultClusterAddress))
 	cmd.PersistentFlags().StringVarP(&flags.Cluster, "cluster-name", "", "", fmt.Sprintf("name of the cluster that contains the instances (default is %s).", config.DefaultClusterName))
