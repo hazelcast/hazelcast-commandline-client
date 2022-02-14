@@ -12,6 +12,8 @@ import (
 	"github.com/google/shlex"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 )
 
 // DynamicSuggestionsAnnotation for dynamic suggestions.
@@ -163,39 +165,17 @@ func RegisterPersistFlag(co *cobra.Command) {
 }
 
 func findSuggestions(co *CobraPrompt, d *prompt.Document) []prompt.Suggest {
-	command := co.RootCmd
+	upToCursor := d.CurrentLineBeforeCursor()
+	// use line before cursor for command suggestion
+	bArgs := strings.Fields(upToCursor)
+	command, _, err := co.RootCmd.Find(bArgs)
+	if err != nil && strings.Contains(upToCursor, " ") {
+		return nil
+	}
+	wordBeforeCursor := d.GetWordBeforeCursor()
+	// use whole line for flag suggestions
 	args := strings.Fields(d.CurrentLine())
-	if found, _, err := command.Find(args); err == nil {
-		command = found
-	}
-	var suggestions []prompt.Suggest
-	persistFlagValues, err := command.Flags().GetBool(PersistFlagValuesFlag)
-	if err != nil {
-		fmt.Println("cannot parse persist flag err: ", err)
-	}
-	addFlags := func(flag *pflag.Flag) {
-		if flag.Changed && !persistFlagValues {
-			flag.Value.Set(flag.DefValue)
-		}
-		if flag.Hidden && !co.ShowHiddenFlags {
-			return
-		}
-		if stringInSlice(co.FlagsToExclude, flag.Name) {
-			return
-		}
-		flagUsage := "--" + flag.Name
-		if strings.HasPrefix(d.GetWordBeforeCursor(), "--") {
-			suggestions = append(suggestions, prompt.Suggest{Text: flagUsage, Description: flag.Usage})
-		} else if (co.SuggestFlagsWithoutDash && d.GetWordBeforeCursor() == "") || strings.HasPrefix(d.GetWordBeforeCursor(), "-") {
-			if flag.Shorthand != "" {
-				suggestions = append(suggestions, prompt.Suggest{Text: fmt.Sprintf("-%s", flag.Shorthand), Description: fmt.Sprintf("or %s %s", flagUsage, flag.Usage)})
-				return
-			}
-			suggestions = append(suggestions, prompt.Suggest{Text: flagUsage, Description: flag.Usage})
-		}
-	}
-	command.LocalFlags().VisitAll(addFlags)
-	command.InheritedFlags().VisitAll(addFlags)
+	suggestions := traverseForFlagSuggestions(wordBeforeCursor, args, co, command)
 	if command.HasAvailableSubCommands() {
 		for _, c := range command.Commands() {
 			if !c.Hidden && !co.ShowHiddenCommands {
@@ -210,7 +190,42 @@ func findSuggestions(co *CobraPrompt, d *prompt.Document) []prompt.Suggest {
 	if co.DynamicSuggestionsFunc != nil && annotation != "" {
 		suggestions = append(suggestions, co.DynamicSuggestionsFunc(annotation, d)...)
 	}
-	return prompt.FilterHasPrefix(suggestions, d.GetWordBeforeCursor(), true)
+	return prompt.FilterHasPrefix(suggestions, wordBeforeCursor, true)
+}
+
+func traverseForFlagSuggestions(wordBeforeCursor string, words []string, co *CobraPrompt, command *cobra.Command) []prompt.Suggest {
+	var suggestions []prompt.Suggest
+	noWordTyped := wordBeforeCursor == ""
+	dashPrefix := strings.HasPrefix(wordBeforeCursor, "-")
+	if !noWordTyped && !dashPrefix {
+		// no flag prefix
+		return suggestions
+	}
+	addFlags := func(flag *pflag.Flag) {
+		if flag.Hidden && !co.ShowHiddenFlags {
+			return
+		}
+		if stringInSlice(co.FlagsToExclude, flag.Name) {
+			return
+		}
+		flagUsage := "--" + flag.Name
+		// Check if flag is already used in the command
+		if (flag.Shorthand != "" && check.ContainsString(words, "-"+flag.Shorthand)) ||
+			check.ContainsString(words, flagUsage) {
+			return
+		}
+		if strings.HasPrefix(wordBeforeCursor, "--") {
+			suggestions = append(suggestions, prompt.Suggest{Text: flagUsage, Description: flag.Usage})
+		} else if (noWordTyped || dashPrefix) && flag.Shorthand != "" {
+			flagShort := fmt.Sprintf("-%s", flag.Shorthand)
+			suggestions = append(suggestions, prompt.Suggest{Text: flagShort, Description: fmt.Sprintf("or %s %s", flagUsage, flag.Usage)})
+		} else {
+			suggestions = append(suggestions, prompt.Suggest{Text: flagUsage, Description: flag.Usage})
+		}
+	}
+	command.LocalFlags().VisitAll(addFlags)
+	command.InheritedFlags().VisitAll(addFlags)
+	return suggestions
 }
 
 func stringInSlice(slice []string, str string) bool {

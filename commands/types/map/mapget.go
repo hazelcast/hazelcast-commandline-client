@@ -57,7 +57,7 @@ var mapGetCmd = &cobra.Command{
 		if value != nil {
 			switch v := value.(type) {
 			case serialization.JSON:
-				if err := quick.Highlight(os.Stdout, v.String(),
+				if err := quick.Highlight(os.Stdout, fmt.Sprintln(v.String()),
 					"json", "terminal", "tango"); err != nil {
 					fmt.Println(v.String())
 				}
