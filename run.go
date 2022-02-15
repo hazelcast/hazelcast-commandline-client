@@ -82,6 +82,8 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, conf *haze
 	var flagsToExclude []string
 	rootCmd.PersistentFlags().VisitAll(func(flag *pflag.Flag) {
 		flagsToExclude = append(flagsToExclude, flag.Name)
+		// Mark hidden to exclude from help text in interactive mode.
+		flag.Hidden = true
 	})
 	flagsToExclude = append(flagsToExclude, "help")
 	p.FlagsToExclude = flagsToExclude

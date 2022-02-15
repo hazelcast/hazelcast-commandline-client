@@ -17,6 +17,7 @@ package commands
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/alecthomas/chroma/quick"
