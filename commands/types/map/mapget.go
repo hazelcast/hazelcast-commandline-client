@@ -56,7 +56,7 @@ func NewGet() *cobra.Command {
 			}
 			switch v := value.(type) {
 			case serialization.JSON:
-				if err := quick.Highlight(cmd.OutOrStdout(), v.String(),
+				if err := quick.Highlight(cmd.OutOrStdout(), fmt.Sprintln(v.String()),
 					"json", "terminal", "tango"); err != nil {
 					cmd.Println(v.String())
 				}

@@ -36,7 +36,8 @@ func NewRoot() (*cobra.Command, *config.GlobalFlagValues) {
 		Use:   "hzc {cluster | help | map} [--address address | --cloud-token token | --cluster-name name | --config config]",
 		Short: "Hazelcast command-line client",
 		Long:  "Hazelcast command-line client connects your command-line to a Hazelcast cluster",
-		Example: "`hzc map --name my-map put --key hello --value world` - put entry into map directly\n" +
+		Example: "`hzc` - starts an interactive shell 🚀\n" +
+			"`hzc map --name my-map put --key hello --value world` - put entry into map directly\n" +
 			"`hzc help` - print help",
 		// Handle errors explicitly
 		SilenceErrors: true,
