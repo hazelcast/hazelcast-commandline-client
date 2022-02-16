@@ -31,7 +31,10 @@ var InvalidStateErr = errors.New("invalid new state")
 
 const goClientConnectionTimeout = 5 * time.Second
 
-var client *hazelcast.Client
+var (
+	hzCli  *hazelcast.Client
+	hzConf *hazelcast.Config
+)
 
 type RESTCall struct {
 	url    string
@@ -136,9 +139,15 @@ func EnsureState(state string) bool {
 	return false
 }
 
-func ConnectToCluster(ctx context.Context, clientConfig *hazelcast.Config) (cli *hazelcast.Client, err error) {
-	if client != nil {
-		return client, nil
+func ConnectToCluster(ctx context.Context) (cli *hazelcast.Client, err error) {
+	if hzCli != nil {
+		return hzCli, nil
+	}
+	if hzConf == nil {
+		hzConf, err = MakeConfig()
+		if err != nil {
+			return nil, err
+		}
 	}
 	defer func() {
 		obj := recover()
@@ -146,17 +155,17 @@ func ConnectToCluster(ctx context.Context, clientConfig *hazelcast.Config) (cli 
 			err = panicErr
 		}
 		if err != nil {
-			if msg, handled := TranslateError(err, clientConfig.Cluster.Cloud.Enabled); handled {
+			if msg, handled := TranslateError(err, hzConf.Cluster.Cloud.Enabled); handled {
 				err = fmt.Errorf(msg)
 			}
 		}
 	}()
 	ctx, cancel := context.WithTimeout(ctx, goClientConnectionTimeout)
 	defer cancel()
-	configCopy := clientConfig.Clone()
+	configCopy := hzConf.Clone()
 	cli, err = hazelcast.StartNewClientWithConfig(ctx, configCopy)
-	if client == nil {
-		client = cli
+	if hzCli == nil {
+		hzCli = cli
 	}
-	return
+	return hzCli, nil
 }

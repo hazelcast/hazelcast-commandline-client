@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
 	"strings"
 
 	"github.com/c-bata/go-prompt"
@@ -29,13 +30,14 @@ import (
 	clusterCmd "github.com/hazelcast/hazelcast-commandline-client/commands/cluster"
 	fakeDoor "github.com/hazelcast/hazelcast-commandline-client/commands/types/fakedoor"
 	mapCmd "github.com/hazelcast/hazelcast-commandline-client/commands/types/map"
+	sqlCmd "github.com/hazelcast/hazelcast-commandline-client/commands/sql"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/cobraprompt"
 )
 
 var (
 	RootCmd = &cobra.Command{
-		Use:   "hzc {cluster | help | map} [--address address | --cloud-token token | --cluster-name name | --config config]",
+		Use:   "hzc {cluster | map | sql | help} [--address address | --cloud-token token | --cluster-name name | --config config]",
 		Short: "Hazelcast command-line client",
 		Long:  "Hazelcast command-line client connects your command-line to a Hazelcast cluster",
 		Example: "`hzc` - starts an interactive shell 🚀\n" +
@@ -92,26 +94,30 @@ func IsInteractiveCall() bool {
 	return false
 }
 
-func Execute() {
-	if err := RootCmd.Execute(); err != nil {
+func Execute(ctx context.Context) {
+	cmdCtx, cmdCancel := context.WithCancel(ctx)
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, os.Kill)
+	go func() {
+		select {
+		case s := <-c:
+			fmt.Println("signal received", s)
+			cmdCancel()
+		}
+	}()
+	if err := RootCmd.ExecuteContext(cmdCtx); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func ExecuteInteractive() {
+func ExecuteInteractive(ctx context.Context) {
 	cobraprompt.RegisterPersistFlag(RootCmd)
 	// parse global persistent flags
 	if err := RootCmd.ParseFlags(os.Args); err != nil {
 		log.Fatal(err)
 	}
-	// initialize global config
-	conf, err := internal.MakeConfig()
-	if err != nil {
-		log.Fatal(err)
-	}
 	fmt.Println("Connecting to the cluster ...")
-	ctx := context.Background()
-	if _, err = internal.ConnectToCluster(ctx, conf); err != nil {
+	if _, err := internal.ConnectToCluster(ctx); err != nil {
 		fmt.Printf("Error: %s\n", err)
 		return
 	}
@@ -147,6 +153,7 @@ func subCommands() []*cobra.Command {
 	cmds := []*cobra.Command{
 		clusterCmd.ClusterCmd,
 		mapCmd.MapCmd,
+		sqlCmd.SqlCmd,
 	}
 	fds := []fakeDoor.FakeDoor{
 		{Name: "list", IssueNum: 48},

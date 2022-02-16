@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/signal"
 	"runtime/debug"
 	"strings"
 
@@ -77,12 +78,14 @@ func handleExit() {
 
 // Run will automatically generate suggestions for all cobra commands and flags defined by RootCmd and execute the selected commands.
 // Run will also reset all given flags by default, see PersistFlagValues
-func (co CobraPrompt) Run(ctx context.Context) {
+func (co CobraPrompt) Run(cntx context.Context) {
 	defer handleExit()
+	ctx, cancel := context.WithCancel(cntx)
 	// let ctrl+c exit prompt
 	co.GoPromptOptions = append(co.GoPromptOptions, prompt.OptionAddKeyBind(prompt.KeyBind{
 		Key: prompt.ControlC,
 		Fn: func(_ *prompt.Buffer) {
+			cancel()
 			exitPromptSafely()
 		},
 	}), prompt.OptionAddKeyBind(prompt.KeyBind{
@@ -102,8 +105,21 @@ func (co CobraPrompt) Run(ctx context.Context) {
 		panic("RootCmd is not set. Please set RootCmd")
 	}
 	co.prepare()
+	var cobraCtx CobraMutableCtx
 	p := prompt.New(
 		func(in string) {
+			tmpCtx, cancel := context.WithCancel(ctx)
+			cobraCtx.Internal = tmpCtx
+			defer cancel()
+			c := make(chan os.Signal, 1)
+			signal.Notify(c, os.Interrupt, os.Kill)
+			go func() {
+				select {
+				case <-c:
+					cancel()
+				case <-cobraCtx.Done():
+				}
+			}()
 			// do not execute root command if no input given
 			if in == "" {
 				return
@@ -113,8 +129,9 @@ func (co CobraPrompt) Run(ctx context.Context) {
 				fmt.Println("unable to parse commands")
 				return
 			}
+
 			os.Args = append([]string{os.Args[0]}, promptArgs...)
-			if err := co.RootCmd.ExecuteContext(ctx); err != nil {
+			if err := co.RootCmd.ExecuteContext(&cobraCtx); err != nil {
 				if errors.Is(err, ErrExit) {
 					exitPromptSafely()
 					return
