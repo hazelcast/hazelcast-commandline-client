@@ -37,7 +37,7 @@ func New() *cobra.Command {
 func getMap(ctx context.Context, clientConfig *hazelcast.Config, mapName string) (result *hazelcast.Map, err error) {
 	hzcClient, err := internal.ConnectToCluster(ctx, clientConfig)
 	if err != nil {
-		return nil, err
+		return nil, hzcerror.NewLoggableError(err, "Cannot get initialize client")
 	}
 	if result, err = hzcClient.GetMap(ctx, mapName); err != nil {
 		if msg, isHandled := internal.TranslateNetworkError(err, clientConfig.Cluster.Cloud.Enabled); isHandled {

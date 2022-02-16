@@ -20,7 +20,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/signal"
 	"runtime/debug"
 	"strings"
 
@@ -120,18 +119,17 @@ func (co CobraPrompt) Run(cntx context.Context) {
 	var cobraCtx CobraMutableCtx
 	p := prompt.New(
 		func(in string) {
-			tmpCtx, cancel := context.WithCancel(ctx)
-			cobraCtx.Internal = tmpCtx
-			defer cancel()
-			c := make(chan os.Signal, 1)
-			signal.Notify(c, os.Interrupt, os.Kill)
-			go func() {
-				select {
-				case <-c:
-					cancel()
-				case <-cobraCtx.Done():
-				}
-			}()
+			cobraCtx.Internal = ctx
+			//defer cancel()
+			//c := make(chan os.Signal, 1)
+			//signal.Notify(c, os.Interrupt, os.Kill)
+			//go func() {
+			//	select {
+			//	case <-c:
+			//		cancel()
+			//	case <-cobraCtx.Done():
+			//	}
+			//}()
 			// do not execute root command if no input given
 			if in == "" {
 				return
@@ -141,7 +139,6 @@ func (co CobraPrompt) Run(cntx context.Context) {
 				co.RootCmd.Println("unable to parse commands")
 				return
 			}
-
 			os.Args = append([]string{os.Args[0]}, promptArgs...)
 			if err := co.RootCmd.ExecuteContext(&cobraCtx); err != nil {
 				if errors.Is(err, ErrExit) {

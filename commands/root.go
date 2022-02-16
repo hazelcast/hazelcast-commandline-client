@@ -19,15 +19,14 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/signal"
 	"strings"
 
 	"github.com/spf13/cobra"
 
 	clusterCmd "github.com/hazelcast/hazelcast-commandline-client/commands/cluster"
+	sqlCmd "github.com/hazelcast/hazelcast-commandline-client/commands/sql"
 	fakeDoor "github.com/hazelcast/hazelcast-commandline-client/commands/types/fakedoor"
 	mapCmd "github.com/hazelcast/hazelcast-commandline-client/commands/types/map"
-	sqlCmd "github.com/hazelcast/hazelcast-commandline-client/commands/sql"
 	"github.com/hazelcast/hazelcast-commandline-client/config"
 )
 
@@ -69,7 +68,7 @@ func subCommands() []*cobra.Command {
 	cmds := []*cobra.Command{
 		clusterCmd.New(),
 		mapCmd.New(),
-		sqlCmd.SqlCmd,
+		sqlCmd.New(),
 	}
 	fds := []fakeDoor.FakeDoor{
 		{Name: "list", IssueNum: 48},
