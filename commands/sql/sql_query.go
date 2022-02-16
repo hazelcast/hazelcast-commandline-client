@@ -19,10 +19,12 @@ package sql
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"io"
 	"os/exec"
 	"strings"
+	"syscall"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
@@ -59,7 +61,11 @@ func NewQuery() *cobra.Command {
 			for _, q := range queries {
 				lt := strings.ToLower(q)
 				if strings.HasPrefix(lt, "select") || strings.HasPrefix(lt, "show") {
-					if err := query(ctx, c, q, cmd.OutOrStdout(), false); err != nil {
+					if err := query(ctx, c, q, cmd.OutOrStdout(), true); err != nil {
+						if errors.Is(err, syscall.EPIPE) {
+							// pager may be closed, expected error
+							return nil
+						}
 						return hzcerror.NewLoggableError(err, "Cannot execute the query")
 					}
 				} else {
@@ -91,7 +97,7 @@ func query(ctx context.Context, c *hazelcast.Client, text string, out io.Writer,
 			break
 		}
 		if pagerCmd != "" {
-			cmd := exec.Command(pagerCmd)
+			cmd := exec.CommandContext(ctx, pagerCmd)
 			cmd.Stdout = out
 			cmd.Stderr = out
 			cmdBuf, err := cmd.StdinPipe()

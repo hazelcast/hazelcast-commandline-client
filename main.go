@@ -19,7 +19,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/signal"
 
 	"github.com/hazelcast/hazelcast-commandline-client/config"
 )
@@ -36,21 +35,12 @@ func main() {
 	ExitOnError(err)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, os.Kill)
-	go func() {
-		select {
-		case <-c:
-			cancel()
-		case <-ctx.Done():
-		}
-	}()
 	ctx = config.ToContext(ctx, conf)
 	isInteractive := IsInteractiveCall(rootCmd, programArgs)
 	if isInteractive {
 		RunCmdInteractively(ctx, rootCmd, conf)
 	} else {
-		err = rootCmd.ExecuteContext(ctx)
+		err = RunCmd(ctx, rootCmd)
 		ExitOnError(err)
 	}
 	return

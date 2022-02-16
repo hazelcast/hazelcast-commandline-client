@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/signal"
 	"runtime/debug"
 	"strings"
 
@@ -91,12 +92,10 @@ func handleExit() {
 // Run will also reset all given flags by default, see PersistFlagValues
 func (co CobraPrompt) Run(cntx context.Context) {
 	defer handleExit()
-	ctx, cancel := context.WithCancel(cntx)
 	// let ctrl+c exit prompt
 	co.GoPromptOptions = append(co.GoPromptOptions, prompt.OptionAddKeyBind(prompt.KeyBind{
 		Key: prompt.ControlC,
 		Fn: func(_ *prompt.Buffer) {
-			cancel()
 			exitPromptSafely()
 		},
 	}), prompt.OptionAddKeyBind(prompt.KeyBind{
@@ -119,17 +118,18 @@ func (co CobraPrompt) Run(cntx context.Context) {
 	var cobraCtx CobraMutableCtx
 	p := prompt.New(
 		func(in string) {
+			ctx, cancel := context.WithCancel(cntx)
 			cobraCtx.Internal = ctx
-			//defer cancel()
-			//c := make(chan os.Signal, 1)
-			//signal.Notify(c, os.Interrupt, os.Kill)
-			//go func() {
-			//	select {
-			//	case <-c:
-			//		cancel()
-			//	case <-cobraCtx.Done():
-			//	}
-			//}()
+			defer cancel()
+			c := make(chan os.Signal, 1)
+			signal.Notify(c, os.Interrupt, os.Kill)
+			go func() {
+				select {
+				case <-c:
+					cancel()
+				case <-cobraCtx.Done():
+				}
+			}()
 			// do not execute root command if no input given
 			if in == "" {
 				return

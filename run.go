@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/signal"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/hazelcast/hazelcast-go-client"
@@ -119,4 +120,22 @@ func HandleError(err error) string {
 		errStr = fmt.Sprintf("Error: %s\n", loggable.VerboseError())
 	}
 	return errStr
+}
+
+func RunCmd(ctx context.Context, root *cobra.Command) error {
+	ctx, cancel := context.WithCancel(ctx)
+	handleInterrupt(ctx, cancel)
+	return root.ExecuteContext(ctx)
+}
+
+func handleInterrupt(ctx context.Context, cancel context.CancelFunc) {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, os.Kill)
+	go func() {
+		select {
+		case <-c:
+			cancel()
+		case <-ctx.Done():
+		}
+	}()
 }
