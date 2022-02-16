@@ -22,6 +22,8 @@ type LoggableError struct {
 	err error
 }
 
+type FlagError error
+
 func NewLoggableError(err error, format string, a ...interface{}) LoggableError {
 	return LoggableError{
 		msg: fmt.Sprintf(format, a...),

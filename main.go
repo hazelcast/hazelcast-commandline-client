@@ -66,8 +66,11 @@ func main() {
 func HandleError(cmd *cobra.Command, err error) {
 	errStr := fmt.Sprintf("Unknown Error: %s\n", err.Error())
 	var loggable hzcerror.LoggableError
+	var flagErr hzcerror.FlagError
 	if errors.As(err, &loggable) {
 		errStr = fmt.Sprintf("Error: %s\n", loggable.VerboseError())
+	} else if errors.As(err, &flagErr) {
+		errStr = fmt.Sprintf("Flag Error: %s\n", err.Error())
 	}
 	cmd.PrintErrln(errStr)
 }
