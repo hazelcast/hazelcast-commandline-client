@@ -28,7 +28,7 @@ import (
 func New() *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:   "map {get | put} --name mapname --key keyname [--value-type type | --value-file file | --value value]",
-		Short: "map operations",
+		Short: "Map operations",
 	}
 	cmd.AddCommand(NewGet(), NewPut())
 	return cmd

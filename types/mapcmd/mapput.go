@@ -42,7 +42,7 @@ func NewPut() *cobra.Command {
 	)
 	cmd := &cobra.Command{
 		Use:   "put [--name mapname | --key keyname | --value-type type | --value-file file | --value value]",
-		Short: "put to map",
+		Short: "Put value to map",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(cmd.Context(), time.Second*3)
 			defer cancel()
@@ -87,7 +87,7 @@ func normalizeMapValue(v, vFile, vType string) (interface{}, error) {
 			err = hzcerror.NewLoggableError(err, "Cannot load the value file. Make sure file exists and process has correct access rights")
 		}
 	default:
-		err = hzcerror.NewLoggableError(nil, "One of the value flags must be set. Either --value or --value-file")
+		err = hzcerror.NewLoggableError(nil, "One of the value flags (--value or --value-file) must be set")
 	}
 	if err != nil {
 		return nil, err

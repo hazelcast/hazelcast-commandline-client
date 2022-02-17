@@ -31,8 +31,8 @@ const invocationOnCloudInfoMessage = "Cluster operations on cloud are not suppor
 func New() *cobra.Command {
 	cmd := cobra.Command{
 		Use:   "cluster {get-state | change-state | shutdown | query} [--state new-state]",
-		Short: "administrative cluster operations",
-		Long:  `administrative cluster operations which controls a Hazelcast cluster by manipulating its state and other features`,
+		Short: "Administrative cluster operations",
+		Long:  `Administrative cluster operations which controls a Hazelcast cluster by manipulating its state and other features`,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			conf := config.FromContext(cmd.Context())
 			// check if it is a cloud invocation
@@ -87,7 +87,7 @@ func NewChangeState() *cobra.Command {
 	var newState string
 	cmd := &cobra.Command{
 		Use:   fmt.Sprintf("change-state [--state [%s]]", strings.Join(states, ",")),
-		Short: "change state of the cluster",
+		Short: "Change state of the cluster",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			defer internal.ErrorRecover()
 			conf := config.FromContext(cmd.Context())

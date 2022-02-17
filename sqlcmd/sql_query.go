@@ -38,7 +38,7 @@ import (
 func NewQuery() *cobra.Command {
 	return &cobra.Command{
 		Use:   `query statement-string`,
-		Short: "executes query",
+		Short: "Executes SQL query",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			arg := strings.Join(args, " ")
 			var queries []string

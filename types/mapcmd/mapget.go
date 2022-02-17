@@ -34,7 +34,7 @@ func NewGet() *cobra.Command {
 	var mapName, mapKey string
 	cmd := &cobra.Command{
 		Use:   "get [--name mapname | --key keyname]",
-		Short: "get from map",
+		Short: "Get from map",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(cmd.Context(), time.Second*3)
 			defer cancel()

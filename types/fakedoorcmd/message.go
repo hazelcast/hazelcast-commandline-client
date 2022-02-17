@@ -17,6 +17,7 @@ package commands
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -34,7 +35,7 @@ type FakeDoor struct {
 
 func MakeFakeCommand(fd FakeDoor) *cobra.Command {
 	return &cobra.Command{
-		Use:   fd.Name,
+		Use:   strings.ToLower(fd.Name),
 		Short: fmt.Sprintf("%s operations", fd.Name),
 		Run: func(cmd *cobra.Command, args []string) {
 			cmd.Println(makeFakeDoorMessage(fd))

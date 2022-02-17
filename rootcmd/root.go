@@ -71,12 +71,12 @@ func subCommands() []*cobra.Command {
 		sqlcmd.New(),
 	}
 	fds := []fakeDoor.FakeDoor{
-		{Name: "list", IssueNum: 48},
-		{Name: "queue", IssueNum: 49},
-		{Name: "multimap", IssueNum: 50},
-		{Name: "replicatedmap", IssueNum: 51},
-		{Name: "set", IssueNum: 52},
-		{Name: "topic", IssueNum: 53},
+		{Name: "List", IssueNum: 48},
+		{Name: "Queue", IssueNum: 49},
+		{Name: "MultiMap", IssueNum: 50},
+		{Name: "ReplicatedMap", IssueNum: 51},
+		{Name: "Set", IssueNum: 52},
+		{Name: "Topic", IssueNum: 53},
 	}
 	for _, fd := range fds {
 		cmds = append(cmds, fakeDoor.MakeFakeCommand(fd))
@@ -87,8 +87,8 @@ func subCommands() []*cobra.Command {
 // assignPersistentFlags assigns top level flags to command
 func assignPersistentFlags(cmd *cobra.Command, flags *config.GlobalFlagValues) {
 	cmd.PersistentFlags().StringVarP(&flags.CfgFile, "config", "c", config.DefaultConfigPath(), fmt.Sprintf("config file, only supports yaml for now"))
-	cmd.PersistentFlags().StringVarP(&flags.Address, "address", "a", "", fmt.Sprintf("addresses of the instances in the cluster (default is %s).", config.DefaultClusterAddress))
-	cmd.PersistentFlags().StringVarP(&flags.Cluster, "cluster-name", "", "", fmt.Sprintf("name of the cluster that contains the instances (default is %s).", config.DefaultClusterName))
-	cmd.PersistentFlags().StringVar(&flags.Token, "cloud-token", "", "your Hazelcast Cloud token.")
-	cmd.PersistentFlags().BoolVarP(&flags.Verbose, "verbose", "", false, "verbose output.")
+	cmd.PersistentFlags().StringVarP(&flags.Address, "address", "a", "", fmt.Sprintf("addresses of the instances in the cluster (default is %s)", config.DefaultClusterAddress))
+	cmd.PersistentFlags().StringVarP(&flags.Cluster, "cluster-name", "", "", fmt.Sprintf("name of the cluster that contains the instances (default is %s)", config.DefaultClusterName))
+	cmd.PersistentFlags().StringVar(&flags.Token, "cloud-token", "", "your Hazelcast Cloud token")
+	cmd.PersistentFlags().BoolVarP(&flags.Verbose, "verbose", "", false, "verbose output")
 }

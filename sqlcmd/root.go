@@ -22,7 +22,7 @@ import (
 func New() *cobra.Command {
 	cmd := cobra.Command{
 		Use:   "sql {query}",
-		Short: "sql operations",
+		Short: "SQL operations",
 		Example: `sql query "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR,val VARCHAR) TYPE IMAP OPTIONS ( 'keyFormat' = 'varchar', 'valueFormat' = 'varchar')"
 sql query "select * from myMap"`,
 		RunE: func(cmd *cobra.Command, args []string) error {
