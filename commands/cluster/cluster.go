@@ -36,7 +36,7 @@ func New() *cobra.Command {
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			conf := config.FromContext(cmd.Context())
 			// check if it is a cloud invocation
-			if conf.Cluster.Cloud.Token != "" {
+			if conf.Cluster.Cloud.Enabled {
 				return hzcerror.NewLoggableError(nil, invocationOnCloudInfoMessage)
 			}
 			return nil

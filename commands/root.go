@@ -43,7 +43,7 @@ func NewRoot() (*cobra.Command, *config.GlobalFlagValues) {
 		// Handle errors explicitly
 		SilenceErrors: true,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			// Make sure command receive non-nil configuration
+			// Make sure the command receives non-nil configuration
 			conf := config.FromContext(cmd.Context())
 			if conf == nil {
 				return errors.New("missing configuration")
