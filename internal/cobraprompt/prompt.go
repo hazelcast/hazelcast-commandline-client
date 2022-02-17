@@ -29,8 +29,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/hazelcast/hazelcast-commandline-client/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/rootcmd"
 )
 
 // DynamicSuggestionsAnnotation for dynamic suggestions.
@@ -133,7 +133,8 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command) {
 				return
 			}
 			// re-init command chain every iteration
-			root, _ = commands.InitRootCmd()
+			// ignore global flags, they are already parsed
+			root, _ = rootcmd.New()
 			prepareRootCmdForPrompt(co, root)
 			root.SetArgs(promptArgs)
 			if err := root.ExecuteContext(ctx); err != nil {

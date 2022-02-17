@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package commands
+package rootcmd
 
 import (
 	"errors"
@@ -23,15 +23,15 @@ import (
 
 	"github.com/spf13/cobra"
 
-	clusterCmd "github.com/hazelcast/hazelcast-commandline-client/commands/cluster"
-	sqlCmd "github.com/hazelcast/hazelcast-commandline-client/commands/sql"
-	fakeDoor "github.com/hazelcast/hazelcast-commandline-client/commands/types/fakedoor"
-	mapCmd "github.com/hazelcast/hazelcast-commandline-client/commands/types/map"
+	"github.com/hazelcast/hazelcast-commandline-client/clustercmd"
 	"github.com/hazelcast/hazelcast-commandline-client/config"
+	"github.com/hazelcast/hazelcast-commandline-client/sqlcmd"
+	fakeDoor "github.com/hazelcast/hazelcast-commandline-client/types/fakedoorcmd"
+	"github.com/hazelcast/hazelcast-commandline-client/types/mapcmd"
 )
 
-// NewRoot initializes root command for non-interactive mode
-func NewRoot() (*cobra.Command, *config.GlobalFlagValues) {
+// New initializes root command for non-interactive mode
+func New() (*cobra.Command, *config.GlobalFlagValues) {
 	var flags config.GlobalFlagValues
 	root := &cobra.Command{
 		Use:   "hzc {cluster | map | sql | help} [--address address | --cloud-token token | --cluster-name name | --config config]",
@@ -64,18 +64,11 @@ func NewRoot() (*cobra.Command, *config.GlobalFlagValues) {
 	return root, &flags
 }
 
-func InitRootCmd() (*cobra.Command, *config.GlobalFlagValues) {
-	rootCmd, persistentFlags := NewRoot()
-	rootCmd.SetErr(os.Stderr)
-	rootCmd.SetOut(os.Stdout)
-	return rootCmd, persistentFlags
-}
-
 func subCommands() []*cobra.Command {
 	cmds := []*cobra.Command{
-		clusterCmd.New(),
-		mapCmd.New(),
-		sqlCmd.New(),
+		clustercmd.New(),
+		mapcmd.New(),
+		sqlcmd.New(),
 	}
 	fds := []fakeDoor.FakeDoor{
 		{Name: "list", IssueNum: 48},

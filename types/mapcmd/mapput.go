@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package commands
+package mapcmd
 
 import (
 	"context"
@@ -87,7 +87,7 @@ func normalizeMapValue(v, vFile, vType string) (interface{}, error) {
 			err = hzcerror.NewLoggableError(err, "Cannot load the value file. Make sure file exists and process has correct access rights")
 		}
 	default:
-		err = hzcerror.NewLoggableError(nil, "One of the value flags must be set")
+		err = hzcerror.NewLoggableError(nil, "One of the value flags must be set. Either --value or --value-file")
 	}
 	if err != nil {
 		return nil, err
