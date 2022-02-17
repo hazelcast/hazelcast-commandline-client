@@ -64,6 +64,13 @@ func NewRoot() (*cobra.Command, *config.GlobalFlagValues) {
 	return root, &flags
 }
 
+func InitRootCmd() (*cobra.Command, *config.GlobalFlagValues) {
+	rootCmd, persistentFlags := NewRoot()
+	rootCmd.SetErr(os.Stderr)
+	rootCmd.SetOut(os.Stdout)
+	return rootCmd, persistentFlags
+}
+
 func subCommands() []*cobra.Command {
 	cmds := []*cobra.Command{
 		clusterCmd.New(),

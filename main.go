@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/hazelcast/hazelcast-commandline-client/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/config"
 )
 
@@ -29,7 +30,7 @@ const (
 )
 
 func main() {
-	rootCmd, globalFlagValues := InitRootCmd()
+	rootCmd, globalFlagValues := commands.InitRootCmd()
 	programArgs := os.Args[1:]
 	conf, err := getConfigWithFlags(rootCmd, programArgs, globalFlagValues)
 	ExitOnError(err)

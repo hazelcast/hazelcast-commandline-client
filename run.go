@@ -27,7 +27,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/hazelcast/hazelcast-commandline-client/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/config"
 	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
@@ -55,7 +54,6 @@ func IsInteractiveCall(rootCmd *cobra.Command, args []string) bool {
 
 func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, conf *hazelcast.Config) {
 	var p = &cobraprompt.CobraPrompt{
-		RootCmd:                  rootCmd,
 		ShowHelpCommandAndFlags:  true,
 		ShowHiddenFlags:          true,
 		SuggestFlagsWithoutDash:  true,
@@ -88,18 +86,7 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, conf *haze
 	})
 	flagsToExclude = append(flagsToExclude, "help")
 	p.FlagsToExclude = flagsToExclude
-	rootCmd.Example = `> map put -k key -n myMap -v someValue
-> map get -k key -m myMap
-> cluster version`
-	rootCmd.Use = ""
-	p.Run(ctx)
-}
-
-func InitRootCmd() (*cobra.Command, *config.GlobalFlagValues) {
-	rootCmd, persistentFlags := commands.NewRoot()
-	rootCmd.SetErr(os.Stderr)
-	rootCmd.SetOut(os.Stdout)
-	return rootCmd, persistentFlags
+	p.Run(ctx, rootCmd)
 }
 
 func getConfigWithFlags(rootCmd *cobra.Command, programArgs []string, globalFlagValues *config.GlobalFlagValues) (*hazelcast.Config, error) {
