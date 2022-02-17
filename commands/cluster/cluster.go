@@ -42,29 +42,42 @@ func New() *cobra.Command {
 			return nil
 		},
 	}
-	cmd.AddCommand(
-		NewGetState(),
-		NewChangeState(),
-		NewShutdown(),
-		NewVersion())
-	return &cmd
-}
-
-func NewGetState() *cobra.Command {
-	return &cobra.Command{
-		Use:   "get-state",
-		Short: "get state of the cluster",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			defer internal.ErrorRecover()
-			conf := config.FromContext(cmd.Context())
-			result, err := internal.CallClusterOperation(conf, "get-state")
-			if err != nil {
-				return err
-			}
-			cmd.Println(*result)
-			return nil
+	subCmds := []struct {
+		command string
+		info    string
+	}{
+		{
+			command: "shutdown",
+			info:    "shuts down the cluster",
+		},
+		{
+			command: "version",
+			info:    "retrieve information from the cluster",
+		},
+		{
+			command: "get-state",
+			info:    "get state of the cluster",
 		},
 	}
+	for _, sc := range subCmds {
+		cmd.AddCommand(&cobra.Command{
+			Use:   sc.command,
+			Short: sc.info,
+			RunE: func(cmd *cobra.Command, args []string) error {
+				defer internal.ErrorRecover()
+				conf := config.FromContext(cmd.Context())
+				result, err := internal.CallClusterOperation(conf, sc.command)
+				if err != nil {
+					return err
+				}
+				cmd.Println(*result)
+				return nil
+			},
+		})
+	}
+	// adding this explicitly, since it is a bit different from the rest
+	cmd.AddCommand(NewChangeState())
+	return &cmd
 }
 
 var states = []string{"active", "no_migration", "frozen", "passive"}
@@ -92,38 +105,4 @@ func NewChangeState() *cobra.Command {
 		return states, cobra.ShellCompDirectiveDefault
 	})
 	return cmd
-}
-
-func NewShutdown() *cobra.Command {
-	return &cobra.Command{
-		Use:   "shutdown",
-		Short: "shuts down the cluster",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			defer internal.ErrorRecover()
-			conf := config.FromContext(cmd.Context())
-			result, err := internal.CallClusterOperation(conf, "shutdown")
-			if err != nil {
-				return err
-			}
-			cmd.Println(*result)
-			return nil
-		},
-	}
-}
-
-func NewVersion() *cobra.Command {
-	return &cobra.Command{
-		Use:   "version",
-		Short: "retrieve information from the cluster",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			defer internal.ErrorRecover()
-			conf := config.FromContext(cmd.Context())
-			result, err := internal.CallClusterOperation(conf, "version")
-			if err != nil {
-				return err
-			}
-			cmd.Println(*result)
-			return nil
-		},
-	}
 }
