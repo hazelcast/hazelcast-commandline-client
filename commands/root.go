@@ -23,14 +23,15 @@ import (
 	"os/signal"
 	"strings"
 
-	"github.com/hazelcast/hazelcast-commandline-client/go-prompt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	"github.com/hazelcast/hazelcast-commandline-client/go-prompt"
+
 	clusterCmd "github.com/hazelcast/hazelcast-commandline-client/commands/cluster"
+	sqlCmd "github.com/hazelcast/hazelcast-commandline-client/commands/sql"
 	fakeDoor "github.com/hazelcast/hazelcast-commandline-client/commands/types/fakedoor"
 	mapCmd "github.com/hazelcast/hazelcast-commandline-client/commands/types/map"
-	sqlCmd "github.com/hazelcast/hazelcast-commandline-client/commands/sql"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/cobraprompt"
 )
