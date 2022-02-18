@@ -6,8 +6,9 @@ package prompt
 import (
 	"syscall"
 
-	"github.com/hazelcast/hazelcast-commandline-client/go-prompt/internal/term"
 	"golang.org/x/sys/unix"
+
+	"github.com/hazelcast/hazelcast-commandline-client/go-prompt/internal/term"
 )
 
 const maxReadBytes = 1024

@@ -4,9 +4,10 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/mattn/go-runewidth"
+
 	"github.com/hazelcast/hazelcast-commandline-client/go-prompt/internal/bisect"
 	istrings "github.com/hazelcast/hazelcast-commandline-client/go-prompt/internal/strings"
-	runewidth "github.com/mattn/go-runewidth"
 )
 
 // Document has text displayed in terminal and cursor position.

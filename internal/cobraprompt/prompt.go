@@ -14,7 +14,6 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/hazelcast/hazelcast-commandline-client/go-prompt"
-
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 )
 
