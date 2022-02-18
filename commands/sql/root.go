@@ -13,20 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package main
+package sql
 
 import (
-	"context"
-
-	"github.com/hazelcast/hazelcast-commandline-client/commands"
+	"github.com/spf13/cobra"
 )
 
-func main() {
-	ctx := context.Background()
-	isInteractive := commands.IsInteractiveCall()
-	if isInteractive {
-		commands.ExecuteInteractive(ctx)
-		return
-	}
-	commands.Execute(ctx)
+var SqlCmd = &cobra.Command{
+	Use:   "sql {query}",
+	Short: "sql operations",
+	Example: `sql query "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR,val VARCHAR) TYPE IMAP OPTIONS ( 'keyFormat' = 'varchar', 'valueFormat' = 'varchar')"
+sql query "select * from myMap"`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return cmd.Help()
+	},
+}
+
+func init() {
+	SqlCmd.AddCommand(queryCmd)
 }

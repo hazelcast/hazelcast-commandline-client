@@ -25,14 +25,16 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
 var InvalidStateErr = errors.New("invalid new state")
 
 const goClientConnectionTimeout = 5 * time.Second
 
-var client *hazelcast.Client
+var (
+	hzCli  *hazelcast.Client
+	hzConf *hazelcast.Config
+)
 
 type RESTCall struct {
 	url    string
@@ -58,11 +60,15 @@ func CallClusterOperationWithState(config *hazelcast.Config, operation string, s
 	urlStr := obj.url
 	pr := strings.NewReader(params)
 	var resp *http.Response
+	tr := &http.Transport{
+		TLSClientConfig: config.Cluster.Network.SSL.TLSConfig(),
+	}
+	client := &http.Client{Transport: tr}
 	switch operation {
 	case ClusterGetState, ClusterChangeState, ClusterShutdown:
-		resp, err = http.Post(urlStr, "application/x-www-form-urlencoded", pr)
+		resp, err = client.Post(urlStr, "application/x-www-form-urlencoded", pr)
 	case ClusterVersion:
-		resp, err = http.Get(urlStr)
+		resp, err = client.Get(urlStr)
 	}
 	if err != nil {
 		if msg, handled := TranslateError(err, config.Cluster.Cloud.Enabled, operation); handled {
@@ -85,20 +91,24 @@ func CallClusterOperationWithState(config *hazelcast.Config, operation string, s
 func NewRESTCall(config *hazelcast.Config, operation string, state string) (*RESTCall, error) {
 	var member, url string
 	var params string
-	var addresses []string = config.Cluster.Network.Addresses
+	var addresses = config.Cluster.Network.Addresses
 	member = addresses[0]
+	scheme := "http"
+	if config.Cluster.Network.SSL.Enabled == true {
+		scheme = "https"
+	}
 	switch operation {
 	case ClusterGetState:
-		url = fmt.Sprintf("http://%s%s", member, ClusterGetStateEndpoint)
+		url = fmt.Sprintf("%s://%s%s", scheme, member, ClusterGetStateEndpoint)
 	case ClusterChangeState:
 		if !EnsureState(state) {
 			return nil, InvalidStateErr
 		}
-		url = fmt.Sprintf("http://%s%s", member, ClusterChangeStateEndpoint)
+		url = fmt.Sprintf("%s://%s%s", scheme, member, ClusterChangeStateEndpoint)
 	case ClusterShutdown:
-		url = fmt.Sprintf("http://%s%s", member, ClusterShutdownEndpoint)
+		url = fmt.Sprintf("%s://%s%s", scheme, member, ClusterShutdownEndpoint)
 	case ClusterVersion:
-		url = fmt.Sprintf("http://%s%s", member, ClusterVersionEndpoint)
+		url = fmt.Sprintf("%s://%s%s", scheme, member, ClusterVersionEndpoint)
 	default:
 		panic("Invalid operation to set connection obj.")
 	}
@@ -129,9 +139,15 @@ func EnsureState(state string) bool {
 	return false
 }
 
-func ConnectToCluster(ctx context.Context, clientConfig *hazelcast.Config) (cli *hazelcast.Client, err error) {
-	if client != nil {
-		return client, nil
+func ConnectToCluster(ctx context.Context) (cli *hazelcast.Client, err error) {
+	if hzCli != nil {
+		return hzCli, nil
+	}
+	if hzConf == nil {
+		hzConf, err = MakeConfig()
+		if err != nil {
+			return nil, err
+		}
 	}
 	defer func() {
 		obj := recover()
@@ -139,19 +155,17 @@ func ConnectToCluster(ctx context.Context, clientConfig *hazelcast.Config) (cli 
 			err = panicErr
 		}
 		if err != nil {
-			if msg, handled := TranslateError(err, clientConfig.Cluster.Cloud.Enabled); handled {
+			if msg, handled := TranslateError(err, hzConf.Cluster.Cloud.Enabled); handled {
 				err = fmt.Errorf(msg)
 			}
 		}
 	}()
 	ctx, cancel := context.WithTimeout(ctx, goClientConnectionTimeout)
 	defer cancel()
-	configCopy := clientConfig.Clone()
-	// prevent internal event loop to print error logs
-	configCopy.Logger.Level = logger.OffLevel
+	configCopy := hzConf.Clone()
 	cli, err = hazelcast.StartNewClientWithConfig(ctx, configCopy)
-	if client == nil {
-		client = cli
+	if hzCli == nil {
+		hzCli = cli
 	}
-	return
+	return hzCli, nil
 }

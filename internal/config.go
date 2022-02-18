@@ -16,6 +16,7 @@
 package internal
 
 import (
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -23,10 +24,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"gopkg.in/yaml.v2"
-
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/logger"
+	"gopkg.in/yaml.v2"
 )
 
 const defaultConfigFilename = "config.yaml"
@@ -36,22 +36,43 @@ const (
 	DefaultClusterName    = "dev"
 )
 
+type SSLConfig struct {
+	ServerName         string
+	InsecureSkipVerify bool
+	CAPath             string
+	CertPath           string
+	KeyPath            string
+	KeyPassword        string
+}
+
+type Config struct {
+	Hazelcast hazelcast.Config
+	SSL       SSLConfig
+}
+
+// TODO: remove global Configuration
+
 var (
 	Configuration *hazelcast.Config
 	CfgFile       string
 	Cluster       string
 	Token         string
 	Address       string
+	Verbose       bool
 )
 
-func DefaultConfig() *hazelcast.Config {
-	config := hazelcast.NewConfig()
-	config.Cluster.Unisocket = true
-	config.Logger.Level = logger.ErrorLevel
-	return &config
+func DefaultConfig() *Config {
+	hz := hazelcast.Config{}
+	hz.Cluster.Unisocket = true
+	if Verbose {
+		hz.Logger.Level = logger.DebugLevel
+	} else {
+		hz.Logger.Level = logger.ErrorLevel
+	}
+	return &Config{Hazelcast: hz}
 }
 
-func registerConfig(config *hazelcast.Config, confPath string) error {
+func registerConfig(config *Config, confPath string) error {
 	var err error
 	var out []byte
 	if out, err = yaml.Marshal(config); err != nil {
@@ -70,7 +91,7 @@ func registerConfig(config *hazelcast.Config, confPath string) error {
 	return nil
 }
 
-func validateConfig(config *hazelcast.Config, confPath string) error {
+func validateConfig(config *Config, confPath string) error {
 	if _, err := os.Stat(confPath); err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
 			return err
@@ -91,14 +112,14 @@ func MakeConfig() (*hazelcast.Config, error) {
 	confPath := CfgFile
 	var err error
 
-	if confPath != DefautConfigPath() {
+	if confPath != DefaultConfigPath() {
 		confBytes, err = ioutil.ReadFile(confPath)
 		if err != nil {
 			fmt.Printf("Error: Cannot read Configuration file on %s. Make sure Configuration path is correct and process have sufficient permission.\n", confPath)
 			return nil, fmt.Errorf("reading Configuration at %s: %w", confPath, err)
 		}
 	} else {
-		confPath = DefautConfigPath()
+		confPath = DefaultConfigPath()
 		if err := validateConfig(config, confPath); err != nil {
 			fmt.Printf("Error: Cannot create default Configuration file on default config path %s. Check that process has necessary permissions to write to default config path or provide a custom config path\n", confPath)
 			return nil, err
@@ -113,33 +134,80 @@ func MakeConfig() (*hazelcast.Config, error) {
 		return nil, fmt.Errorf("error reading Configuration at %s: %w", confPath, err)
 	}
 	if Token != "" {
-		config.Cluster.Cloud.Token = strings.TrimSpace(Token)
-		config.Cluster.Cloud.Enabled = true
+		config.Hazelcast.Cluster.Cloud.Token = strings.TrimSpace(Token)
+		config.Hazelcast.Cluster.Cloud.Enabled = true
+	}
+	if err := UpdateConfigWithSSL(&config.Hazelcast, &config.SSL); err != nil {
+		// TODO: Caller of MakeConfig should handle the errors or at least we should pass them to a function like ShowError, instead of printing them directly.
+		// TODO: The following error does not conform to idiomatic Go, let's refactor these.
+		fmt.Println(fmt.Errorf("Error configuring SSL: %W", err).Error())
+		return nil, err
 	}
 	addrRaw := Address
 	if addrRaw != "" {
 		addresses := strings.Split(strings.TrimSpace(addrRaw), ",")
-		config.Cluster.Network.Addresses = addresses
-	} else if len(config.Cluster.Network.Addresses) == 0 {
+		config.Hazelcast.Cluster.Network.Addresses = addresses
+	} else if len(config.Hazelcast.Cluster.Network.Addresses) == 0 {
 		addresses := []string{DefaultClusterAddress}
-		if config.Cluster.Cloud.Enabled {
+		// TODO: remove this
+		if config.Hazelcast.Cluster.Cloud.Enabled {
 			addresses = []string{"hazelcast-cloud"}
 		}
-		config.Cluster.Network.Addresses = addresses
+		config.Hazelcast.Cluster.Network.Addresses = addresses
 	}
 	if Cluster != "" {
-		config.Cluster.Name = strings.TrimSpace(Cluster)
-	} else if config.Cluster.Name == "" {
-		config.Cluster.Name = DefaultClusterName
+		config.Hazelcast.Cluster.Name = strings.TrimSpace(Cluster)
 	}
-	Configuration = config
-	return config, nil
+	if config.Hazelcast.Cluster.Cloud.Enabled {
+		config.SSL.ServerName = "hazelcast.cloud"
+		config.SSL.InsecureSkipVerify = false
+	}
+	Configuration = &config.Hazelcast
+	return Configuration, nil
 }
 
-func DefautConfigPath() string {
+func DefaultConfigPath() string {
 	homeDirectoryPath, err := os.UserHomeDir()
 	if err != nil {
 		panic(fmt.Errorf("retrieving home directory: %w", err))
 	}
 	return filepath.Join(homeDirectoryPath, ".local/share/hz-cli", defaultConfigFilename)
+}
+
+func UpdateConfigWithSSL(config *hazelcast.Config, sslc *SSLConfig) error {
+	if sslc.ServerName != "" && sslc.InsecureSkipVerify {
+		return fmt.Errorf("SSL.ServerName and SSL.InsecureSkipVerify are mutually exclusive")
+	}
+	var tlsc *tls.Config
+	if sslc.ServerName != "" {
+		tlsc = &tls.Config{ServerName: sslc.ServerName}
+	} else if sslc.InsecureSkipVerify {
+		tlsc = &tls.Config{InsecureSkipVerify: true}
+	}
+	csslc := &config.Cluster.Network.SSL
+	if tlsc != nil {
+		csslc.SetTLSConfig(tlsc)
+		csslc.Enabled = true
+	}
+	if sslc.CAPath != "" {
+		if err := csslc.SetCAPath(sslc.CAPath); err != nil {
+			return err
+		}
+	}
+	if sslc.CertPath != "" || sslc.KeyPath != "" {
+		if sslc.CertPath == "" {
+			return fmt.Errorf("CertPath should not be blank")
+		}
+		if sslc.KeyPath == "" {
+			return fmt.Errorf("KeyPath should not be blank")
+		}
+		if sslc.KeyPassword == "" {
+			if err := csslc.AddClientCertAndKeyPath(sslc.CertPath, sslc.KeyPath); err != nil {
+				return err
+			}
+		} else if err := csslc.AddClientCertAndEncryptedKeyPath(sslc.CertPath, sslc.KeyPath, sslc.KeyPassword); err != nil {
+			return err
+		}
+	}
+	return nil
 }

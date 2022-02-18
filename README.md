@@ -62,6 +62,33 @@ hzc --help
 # Non-interactive mode
 hzc map --name myMap put --key myKey --value myValue
 ```
+### Keyboard Shortcuts
+
+Emacs-like keyboard shortcuts are available by default (these also are the default shortcuts in Bash shell).
+
+Key Binding          | Description
+---------------------|---------------------------------------------------------
+<kbd>Ctrl + A</kbd>  | Go to the beginning of the line (Home)
+<kbd>Ctrl + E</kbd>  | Go to the end of the line (End)
+<kbd>Ctrl + P</kbd>  | Previous command (Up arrow)
+<kbd>Ctrl + N</kbd>  | Next command (Down arrow)
+<kbd>Ctrl + F</kbd>  | Forward one character
+<kbd>Ctrl + B</kbd>  | Backward one character
+<kbd>Ctrl + D</kbd>  | Delete character under the cursor
+<kbd>Ctrl + H</kbd>  | Delete character before the cursor (Backspace)
+<kbd>Ctrl + W</kbd>  | Cut the word before the cursor to the clipboard
+<kbd>Ctrl + K</kbd>  | Cut the line after the cursor to the clipboard
+<kbd>Ctrl + U</kbd>  | Cut the line before the cursor to the clipboard
+<kbd>Ctrl + L</kbd>  | Clear the screen
+\
+With few additions:
+
+Key Binding          | Description
+---------------------|---------------------------------------------------------
+<kbd>Ctrl + C</kbd>  | Cancel running command or close the app
+<kbd>Ctrl + -></kbd>  | Go to the end of to next word
+<kbd>Ctrl + <-</kbd>  | Go to the start of the previous word
+
 
 ## Connecting to Hazelcast Cloud
 
@@ -135,6 +162,60 @@ The cluster creation and retrieving connection info can be done directly in comm
   hzc --cluster-name <CLUSTER NAME> --cloud-token <DISCOVERY TOKEN>
   ```
 
+## SSL Configuration
+
+You can use the following configuration file to enable SSL support:
+```
+ssl:
+    servername: "HOSTNAME-FOR-SERVER"
+    # or: insecureskipverify: true
+hazelcast:
+  cluster:
+    security:
+      credentials:
+        username: "OPTIONAL USERNAME"
+        password: "OPTIONAL PASSWORD"
+    name: "CLUSTER-NAME"
+    network:
+      addresses:
+        - "localhost:5701"
+```
+
+Mutual authentication is also supported:
+```
+ssl:
+    servername: "HOSTNAME-FOR-SERVER"
+    # insecureskipverify: true
+    capath: "/tmp/ca.pem"
+    certpath: "/tmp/cert.pem"
+    keypath: "/tmp/key.pem"
+    keypassword: "PASSWORD FOR THE KEY"
+hazelcast:
+  cluster:
+    security:
+      credentials:
+        username: "OPTIONAL USERNAME"
+        password: "OPTIONAL PASSWORD"
+    name: "CLUSTER-NAME"
+    network:
+      addresses:
+        - "localhost:5701"
+```
+
+Cloud SSL configuration:
+```
+ssl:
+    capath: "/tmp/ca.pem"
+    certpath: "/tmp/cert.pem"
+    keypath: "/tmp/key.pem"
+    keypassword: "PASSWORD FOR THE KEY"
+hazelcast:
+  cluster:
+    name: "CLUSTER NAME"
+    cloud:
+      token: "HAZELCAST CLOUD TOKEN"
+      enabled: true
+```
 
 ## More examples
 
