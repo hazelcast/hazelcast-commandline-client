@@ -19,24 +19,23 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 
-	"github.com/hazelcast/hazelcast-commandline-client/config"
 	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
 const invocationOnCloudInfoMessage = "Cluster operations on cloud are not supported. Checkout https://github.com/hazelcast/hazelcast-cloud-cli for cluster management on cloud."
 
-func New() *cobra.Command {
+func New(config *hazelcast.Config) *cobra.Command {
 	cmd := cobra.Command{
 		Use:   "cluster {get-state | change-state | shutdown | query} [--state new-state]",
 		Short: "Administrative cluster operations",
 		Long:  `Administrative cluster operations which controls a Hazelcast cluster by manipulating its state and other features`,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			conf := config.FromContext(cmd.Context())
 			// check if it is a cloud invocation
-			if conf.Cluster.Cloud.Enabled {
+			if config.Cluster.Cloud.Enabled {
 				return hzcerror.NewLoggableError(nil, invocationOnCloudInfoMessage)
 			}
 			return nil
@@ -65,8 +64,7 @@ func New() *cobra.Command {
 			Short: sc.info,
 			RunE: func(cmd *cobra.Command, args []string) error {
 				defer internal.ErrorRecover()
-				conf := config.FromContext(cmd.Context())
-				result, err := internal.CallClusterOperation(conf, sc.command)
+				result, err := internal.CallClusterOperation(config, sc.command)
 				if err != nil {
 					return err
 				}
@@ -76,13 +74,13 @@ func New() *cobra.Command {
 		})
 	}
 	// adding this explicitly, since it is a bit different from the rest
-	cmd.AddCommand(NewChangeState())
+	cmd.AddCommand(NewChangeState(config))
 	return &cmd
 }
 
 var states = []string{"active", "no_migration", "frozen", "passive"}
 
-func NewChangeState() *cobra.Command {
+func NewChangeState(config *hazelcast.Config) *cobra.Command {
 	// monitored flag variable
 	var newState string
 	cmd := &cobra.Command{
@@ -90,8 +88,7 @@ func NewChangeState() *cobra.Command {
 		Short: "Change state of the cluster",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			defer internal.ErrorRecover()
-			conf := config.FromContext(cmd.Context())
-			result, err := internal.CallClusterOperationWithState(conf, "change-state", &newState)
+			result, err := internal.CallClusterOperationWithState(config, "change-state", &newState)
 			if err != nil {
 				return err
 			}

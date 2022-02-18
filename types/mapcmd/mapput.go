@@ -26,12 +26,11 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/spf13/cobra"
 
-	"github.com/hazelcast/hazelcast-commandline-client/config"
 	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
-func NewPut() *cobra.Command {
+func NewPut(config *hazelcast.Config) *cobra.Command {
 	// flags
 	var (
 		mapName,
@@ -47,8 +46,7 @@ func NewPut() *cobra.Command {
 			ctx, cancel := context.WithTimeout(cmd.Context(), time.Second*3)
 			defer cancel()
 			var err error
-			conf := cmd.Context().Value(config.HZCConfKey).(*hazelcast.Config)
-			m, err := getMap(ctx, conf, mapName)
+			m, err := getMap(ctx, config, mapName)
 			if err != nil {
 				return err
 			}
@@ -61,7 +59,7 @@ func NewPut() *cobra.Command {
 				return err
 			}
 			cmd.Printf("Cannot put value for key %s to map %s\n", mapKey, mapName)
-			isCloudCluster := conf.Cluster.Cloud.Enabled
+			isCloudCluster := config.Cluster.Cloud.Enabled
 			if networkErrMsg, handled := internal.TranslateNetworkError(err, isCloudCluster); handled {
 				err = hzcerror.NewLoggableError(err, networkErrMsg)
 			}

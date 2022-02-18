@@ -26,6 +26,7 @@ import (
 
 	"github.com/c-bata/go-prompt"
 	"github.com/google/shlex"
+	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
@@ -89,7 +90,7 @@ func handleExit() {
 
 // Run will automatically generate suggestions for all cobra commands and flags defined by RootCmd and execute the selected commands.
 // Run will also reset all given flags by default, see PersistFlagValues
-func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command) {
+func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelcast.Config) {
 	defer handleExit()
 	// let ctrl+c exit prompt
 	co.GoPromptOptions = append(co.GoPromptOptions, prompt.OptionAddKeyBind(prompt.KeyBind{
@@ -134,7 +135,7 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command) {
 			}
 			// re-init command chain every iteration
 			// ignore global flags, they are already parsed
-			root, _ = rootcmd.New()
+			root, _ = rootcmd.New(cnfg)
 			prepareRootCmdForPrompt(co, root)
 			root.SetArgs(promptArgs)
 			if err := root.ExecuteContext(ctx); err != nil {

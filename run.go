@@ -52,7 +52,7 @@ func IsInteractiveCall(rootCmd *cobra.Command, args []string) bool {
 	return false
 }
 
-func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, conf *hazelcast.Config) {
+func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *hazelcast.Config) {
 	var p = &cobraprompt.CobraPrompt{
 		ShowHelpCommandAndFlags:  true,
 		ShowHiddenFlags:          true,
@@ -62,7 +62,7 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, conf *haze
 		GoPromptOptions: []prompt.Option{
 			prompt.OptionTitle("Hazelcast Client"),
 			prompt.OptionLivePrefix(func() (prefix string, useLivePrefix bool) {
-				return fmt.Sprintf("hzc %s@%s> ", config.GetClusterAddress(conf), conf.Cluster.Name), true
+				return fmt.Sprintf("hzc %s@%s> ", config.GetClusterAddress(cnfg), cnfg.Cluster.Name), true
 			}),
 			prompt.OptionMaxSuggestion(10),
 			prompt.OptionCompletionOnDown(),
@@ -74,7 +74,7 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, conf *haze
 		},
 	}
 	rootCmd.Println("Connecting to the cluster ...")
-	if _, err := internal.ConnectToCluster(ctx, conf); err != nil {
+	if _, err := internal.ConnectToCluster(ctx, cnfg); err != nil {
 		rootCmd.Printf("Error: %s\n", err)
 		return
 	}
@@ -86,17 +86,17 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, conf *haze
 	})
 	flagsToExclude = append(flagsToExclude, "help")
 	p.FlagsToExclude = flagsToExclude
-	p.Run(ctx, rootCmd)
+	p.Run(ctx, rootCmd, cnfg)
 }
 
-func getConfigWithFlags(rootCmd *cobra.Command, programArgs []string, globalFlagValues *config.GlobalFlagValues) (*hazelcast.Config, error) {
+func updateConfigWithFlags(rootCmd *cobra.Command, cnfg *config.Config, programArgs []string, globalFlagValues *config.GlobalFlagValues) error {
 	// parse global persistent flags
 	subCmd, flags, _ := rootCmd.Find(programArgs)
 	// fall back to cmd.Help, even if there is error
 	_ = subCmd.ParseFlags(flags)
 	// initialize config from file
-	conf, err := config.Get(*globalFlagValues)
-	return conf, err
+	err := config.ReadAndMergeWithFlags(globalFlagValues, cnfg)
+	return err
 }
 
 func HandleError(err error) string {

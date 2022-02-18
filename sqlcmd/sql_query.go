@@ -29,13 +29,12 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 
-	"github.com/hazelcast/hazelcast-commandline-client/config"
 	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/table"
 )
 
-func NewQuery() *cobra.Command {
+func NewQuery(config *hazelcast.Config) *cobra.Command {
 	return &cobra.Command{
 		Use:   `query statement-string`,
 		Short: "Executes SQL query",
@@ -53,8 +52,7 @@ func NewQuery() *cobra.Command {
 				return cmd.Help()
 			}
 			ctx := cmd.Context()
-			conf := config.FromContext(ctx)
-			c, err := internal.ConnectToCluster(ctx, conf)
+			c, err := internal.ConnectToCluster(ctx, config)
 			if err != nil {
 				return hzcerror.NewLoggableError(err, "Cannot get initialize client")
 			}

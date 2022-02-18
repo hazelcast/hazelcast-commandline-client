@@ -21,6 +21,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clustercmd"
@@ -31,7 +32,7 @@ import (
 )
 
 // New initializes root command for non-interactive mode
-func New() (*cobra.Command, *config.GlobalFlagValues) {
+func New(cnfg *hazelcast.Config) (*cobra.Command, *config.GlobalFlagValues) {
 	var flags config.GlobalFlagValues
 	root := &cobra.Command{
 		Use:   "hzc {cluster | map | sql | help} [--address address | --cloud-token token | --cluster-name name | --config config]",
@@ -44,8 +45,7 @@ func New() (*cobra.Command, *config.GlobalFlagValues) {
 		SilenceErrors: true,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			// Make sure the command receives non-nil configuration
-			conf := config.FromContext(cmd.Context())
-			if conf == nil {
+			if cnfg == nil {
 				return errors.New("missing configuration")
 			}
 			return nil
@@ -60,15 +60,15 @@ func New() (*cobra.Command, *config.GlobalFlagValues) {
 		root.CompletionOptions.DisableDefaultCmd = false
 	}
 	assignPersistentFlags(root, &flags)
-	root.AddCommand(subCommands()...)
+	root.AddCommand(subCommands(cnfg)...)
 	return root, &flags
 }
 
-func subCommands() []*cobra.Command {
+func subCommands(config *hazelcast.Config) []*cobra.Command {
 	cmds := []*cobra.Command{
-		clustercmd.New(),
-		mapcmd.New(),
-		sqlcmd.New(),
+		clustercmd.New(config),
+		mapcmd.New(config),
+		sqlcmd.New(config),
 	}
 	fds := []fakeDoor.FakeDoor{
 		{Name: "List", IssueNum: 48},

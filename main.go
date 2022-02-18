@@ -30,16 +30,17 @@ const (
 )
 
 func main() {
-	rootCmd, globalFlagValues := rootcmd.New()
+	cnfg := config.DefaultConfig()
+	rootCmd, globalFlagValues := rootcmd.New(&cnfg.Hazelcast)
 	programArgs := os.Args[1:]
-	conf, err := getConfigWithFlags(rootCmd, programArgs, globalFlagValues)
+	// update config before running root command to make sure flags are processed
+	err := updateConfigWithFlags(rootCmd, cnfg, programArgs, globalFlagValues)
 	ExitOnError(err)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	ctx = config.ToContext(ctx, conf)
 	isInteractive := IsInteractiveCall(rootCmd, programArgs)
 	if isInteractive {
-		RunCmdInteractively(ctx, rootCmd, conf)
+		RunCmdInteractively(ctx, rootCmd, &cnfg.Hazelcast)
 	} else {
 		err = RunCmd(ctx, rootCmd)
 		ExitOnError(err)

@@ -25,12 +25,12 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
-func New() *cobra.Command {
+func New(config *hazelcast.Config) *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:   "map {get | put} --name mapname --key keyname [--value-type type | --value-file file | --value value]",
 		Short: "Map operations",
 	}
-	cmd.AddCommand(NewGet(), NewPut())
+	cmd.AddCommand(NewGet(config), NewPut(config))
 	return cmd
 }
 

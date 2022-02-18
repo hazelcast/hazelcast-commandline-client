@@ -16,7 +16,6 @@
 package config
 
 import (
-	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -37,15 +36,6 @@ const (
 	DefaultClusterAddress = "localhost:5701"
 	DefaultClusterName    = "dev"
 )
-const HZCConfKey = "hzc-config"
-
-func ToContext(ctx context.Context, conf *hazelcast.Config) context.Context {
-	return context.WithValue(ctx, HZCConfKey, conf)
-}
-
-func FromContext(ctx context.Context) *hazelcast.Config {
-	return ctx.Value(HZCConfKey).(*hazelcast.Config)
-}
 
 type SSLConfig struct {
 	ServerName         string
@@ -106,19 +96,18 @@ func writeToFile(config *Config, confPath string) error {
 	return nil
 }
 
-func Get(flags GlobalFlagValues) (*hazelcast.Config, error) {
-	c := DefaultConfig()
+func ReadAndMergeWithFlags(flags *GlobalFlagValues, c *Config) error {
 	p := DefaultConfigPath()
 	if err := readConfig(flags.CfgFile, c, p); err != nil {
-		return nil, err
+		return err
 	}
 	if err := mergeFlagsWithConfig(flags, c); err != nil {
-		return nil, err
+		return err
 	}
-	return &c.Hazelcast, nil
+	return nil
 }
 
-func mergeFlagsWithConfig(flags GlobalFlagValues, config *Config) error {
+func mergeFlagsWithConfig(flags *GlobalFlagValues, config *Config) error {
 	if flags.Token != "" {
 		config.Hazelcast.Cluster.Cloud.Token = strings.TrimSpace(flags.Token)
 		config.Hazelcast.Cluster.Cloud.Enabled = true

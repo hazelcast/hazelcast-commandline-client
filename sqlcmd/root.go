@@ -16,10 +16,11 @@
 package sqlcmd
 
 import (
+	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 )
 
-func New() *cobra.Command {
+func New(config *hazelcast.Config) *cobra.Command {
 	cmd := cobra.Command{
 		Use:   "sql {query}",
 		Short: "SQL operations",
@@ -29,6 +30,6 @@ sql query "select * from myMap"`,
 			return cmd.Help()
 		},
 	}
-	cmd.AddCommand(NewQuery())
+	cmd.AddCommand(NewQuery(config))
 	return &cmd
 }

@@ -25,12 +25,11 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/spf13/cobra"
 
-	"github.com/hazelcast/hazelcast-commandline-client/config"
 	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
-func NewGet() *cobra.Command {
+func NewGet(config *hazelcast.Config) *cobra.Command {
 	var mapName, mapKey string
 	cmd := &cobra.Command{
 		Use:   "get [--name mapname | --key keyname]",
@@ -38,14 +37,13 @@ func NewGet() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(cmd.Context(), time.Second*3)
 			defer cancel()
-			conf := cmd.Context().Value(config.HZCConfKey).(*hazelcast.Config)
-			m, err := getMap(ctx, conf, mapName)
+			m, err := getMap(ctx, config, mapName)
 			if err != nil {
 				return err
 			}
 			value, err := m.Get(ctx, mapKey)
 			if err != nil {
-				isCloudCluster := conf.Cluster.Cloud.Enabled
+				isCloudCluster := config.Cluster.Cloud.Enabled
 				if networkErrMsg, handled := internal.TranslateNetworkError(err, isCloudCluster); handled {
 					return hzcerror.NewLoggableError(err, networkErrMsg)
 				}
