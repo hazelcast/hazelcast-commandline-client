@@ -22,7 +22,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/c-bata/go-prompt"
+	"github.com/hazelcast/hazelcast-commandline-client/go-prompt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 

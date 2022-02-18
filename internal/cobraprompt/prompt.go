@@ -8,10 +8,11 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/c-bata/go-prompt"
 	"github.com/google/shlex"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+
+	"github.com/hazelcast/hazelcast-commandline-client/go-prompt"
 )
 
 // DynamicSuggestionsAnnotation for dynamic suggestions.
