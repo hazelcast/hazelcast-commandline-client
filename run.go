@@ -18,6 +18,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/hazelcast/hazelcast-go-client"
@@ -50,6 +51,7 @@ func IsInteractiveCall(rootCmd *cobra.Command, args []string) bool {
 }
 
 func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, conf *hazelcast.Config) {
+	namePersister := persister.NewNamePersister()
 	var p = &cobraprompt.CobraPrompt{
 		RootCmd:                  rootCmd,
 		ShowHelpCommandAndFlags:  true,
@@ -60,7 +62,11 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, conf *haze
 		GoPromptOptions: []prompt.Option{
 			prompt.OptionTitle("Hazelcast Client"),
 			prompt.OptionLivePrefix(func() (prefix string, useLivePrefix bool) {
-				return fmt.Sprintf("hzc %s@%s> ", config.GetClusterAddress(conf), conf.Cluster.Name), true
+				var b strings.Builder
+				for k, v := range namePersister.PersistenceInfo() {
+					b.WriteString(fmt.Sprintf("&%s:%s", k, v))
+				}
+				return fmt.Sprintf("hzc %s@%s%s> ", config.GetClusterAddress(conf), conf.Cluster.Name, b.String()), true
 			}),
 			prompt.OptionMaxSuggestion(10),
 			prompt.OptionCompletionOnDown(),
@@ -69,7 +75,7 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, conf *haze
 			HandleError(rootCmd, err)
 			return
 		},
-		Persister: persister.NewNamePersister(),
+		Persister: namePersister,
 	}
 	rootCmd.Println("Connecting to the cluster ...")
 	if _, err := internal.ConnectToCluster(ctx, conf); err != nil {
