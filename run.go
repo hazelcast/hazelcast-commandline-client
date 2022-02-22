@@ -25,6 +25,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	mapcmd "github.com/hazelcast/hazelcast-commandline-client/commands/types/map"
 	"github.com/hazelcast/hazelcast-commandline-client/config"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/cobraprompt"
@@ -88,9 +89,7 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, conf *haze
 	})
 	flagsToExclude = append(flagsToExclude, "help")
 	p.FlagsToExclude = flagsToExclude
-	rootCmd.Example = `> map put -k key -n myMap -v someValue
-> map get -k key -m myMap
-> cluster version`
+	rootCmd.Example = fmt.Sprintf("> %s\n> %s", mapcmd.MapPutExample, mapcmd.MapGetExample) + "\n> cluster version"
 	rootCmd.Use = ""
 	p.Run(ctx)
 }

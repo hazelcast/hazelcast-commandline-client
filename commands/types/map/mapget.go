@@ -29,11 +29,14 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
+const MapGetExample = `map get --key hello --name myMap`
+
 func NewGet() *cobra.Command {
 	var mapName, mapKey string
 	cmd := &cobra.Command{
-		Use:   "get [--name mapname | --key keyname]",
-		Short: "get from map",
+		Use:     "get [--name mapname | --key keyname]",
+		Short:   "get from map",
+		Example: MapGetExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(cmd.Context(), time.Second*3)
 			defer cancel()

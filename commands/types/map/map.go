@@ -17,6 +17,7 @@ package commands
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
@@ -28,8 +29,9 @@ import (
 
 func New() *cobra.Command {
 	var cmd = &cobra.Command{
-		Use:   "map {get | put} --name mapname --key keyname [--value-type type | --value-file file | --value value]",
-		Short: "map operations",
+		Use:     "map {get | put} --name mapname --key keyname [--value-type type | --value-file file | --value value]",
+		Short:   "map operations",
+		Example: fmt.Sprintf("%s\n%s", MapPutExample, MapGetExample),
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			persister := common.PersisterFromContext(cmd.Context())
 			val, isSet := persister.Get("map")

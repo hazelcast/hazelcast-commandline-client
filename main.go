@@ -24,8 +24,10 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/hazelcast/hazelcast-commandline-client/commands"
+	"github.com/hazelcast/hazelcast-commandline-client/commands/common"
 	"github.com/hazelcast/hazelcast-commandline-client/config"
 	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
+	persister "github.com/hazelcast/hazelcast-commandline-client/internal/persistency"
 )
 
 const (
@@ -56,6 +58,8 @@ func main() {
 		RunCmdInteractively(ctx, rootCmd, conf)
 		os.Exit(exitOK)
 	}
+	p := persister.NewNamePersister()
+	ctx = common.SetContext(ctx, p)
 	if err := rootCmd.ExecuteContext(ctx); err != nil {
 		HandleError(rootCmd, err)
 		os.Exit(exitError)
