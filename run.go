@@ -64,7 +64,7 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, conf *haze
 			prompt.OptionLivePrefix(func() (prefix string, useLivePrefix bool) {
 				var b strings.Builder
 				for k, v := range namePersister.PersistenceInfo() {
-					b.WriteString(fmt.Sprintf("&%s:%s", k, v))
+					b.WriteString(fmt.Sprintf("&%c:%s", k[0], v))
 				}
 				return fmt.Sprintf("hzc %s@%s%s> ", config.GetClusterAddress(conf), conf.Cluster.Name, b.String()), true
 			}),
