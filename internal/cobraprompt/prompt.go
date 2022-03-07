@@ -13,8 +13,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/hazelcast/hazelcast-commandline-client/go-prompt"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	goprompt "github.com/hazelcast/hazelcast-commandline-client/internal/go-prompt"
 )
 
 // DynamicSuggestionsAnnotation for dynamic suggestions.
@@ -28,12 +28,12 @@ const PersistFlagValuesFlag = "persist-flag-values"
 type CobraPrompt struct {
 	// RootCmd is the start point, all its sub commands and flags will be available as suggestions
 	RootCmd *cobra.Command
-	// GoPromptOptions is for customize go-prompt
+	// GoPromptOptions is for customize go-goprompt
 	// see https://github.com/c-bata/go-prompt/blob/master/option.go
-	GoPromptOptions []prompt.Option
+	GoPromptOptions []goprompt.Option
 	// DynamicSuggestionsFunc will be executed if a command has CallbackAnnotation as an annotation. If it's included
 	// the value will be provided to the DynamicSuggestionsFunc function.
-	DynamicSuggestionsFunc func(annotationValue string, document *prompt.Document) []prompt.Suggest
+	DynamicSuggestionsFunc func(annotationValue string, document *goprompt.Document) []goprompt.Suggest
 	// PersistFlagValues will persist flags. For example have verbose turned on every command.
 	PersistFlagValues bool
 	// FlagsToExclude is a list of flag names to specify flags to exclude from suggestions
@@ -48,7 +48,7 @@ type CobraPrompt struct {
 	ShowHiddenCommands bool
 	// ShowHiddenFlags makes hidden flags available
 	ShowHiddenFlags bool
-	// AddDefaultExitCommand adds a command for exiting prompt loop
+	// AddDefaultExitCommand adds a command for exiting goprompt loop
 	AddDefaultExitCommand bool
 	// OnErrorFunc handle error for command.Execute, if not set print error and exit
 	OnErrorFunc func(err error)
@@ -56,7 +56,7 @@ type CobraPrompt struct {
 
 var ErrExit = errors.New("exit prompt")
 
-// Terminal breaks on os.Exit for go-prompt https://github.com/c-bata/go-prompt/issues/59#issuecomment-376002177
+// Terminal breaks on os.Exit for go-goprompt https://github.com/c-bata/go-prompt/issues/59#issuecomment-376002177
 func exitPromptSafely() {
 	panic(ErrExit)
 }
@@ -76,11 +76,11 @@ func handleExit() {
 	}
 }
 
-var SuggestionColorOptions = []prompt.Option{
-	prompt.OptionSelectedSuggestionTextColor(prompt.White), prompt.OptionSuggestionTextColor(prompt.White),
-	prompt.OptionSelectedDescriptionTextColor(prompt.LightGray), prompt.OptionDescriptionTextColor(prompt.LightGray),
-	prompt.OptionSelectedSuggestionBGColor(prompt.Blue), prompt.OptionSuggestionBGColor(prompt.DarkGray),
-	prompt.OptionSelectedDescriptionBGColor(prompt.Blue), prompt.OptionDescriptionBGColor(prompt.DarkGray),
+var SuggestionColorOptions = []goprompt.Option{
+	goprompt.OptionSelectedSuggestionTextColor(goprompt.White), goprompt.OptionSuggestionTextColor(goprompt.White),
+	goprompt.OptionSelectedDescriptionTextColor(goprompt.LightGray), goprompt.OptionDescriptionTextColor(goprompt.LightGray),
+	goprompt.OptionSelectedSuggestionBGColor(goprompt.Blue), goprompt.OptionSuggestionBGColor(goprompt.DarkGray),
+	goprompt.OptionSelectedDescriptionBGColor(goprompt.Blue), goprompt.OptionDescriptionBGColor(goprompt.DarkGray),
 }
 
 // Run will automatically generate suggestions for all cobra commands and flags defined by RootCmd and execute the selected commands.
@@ -88,22 +88,22 @@ var SuggestionColorOptions = []prompt.Option{
 func (co CobraPrompt) Run(cntx context.Context) {
 	defer handleExit()
 	ctx, cancel := context.WithCancel(cntx)
-	// let ctrl+c exit prompt
-	co.GoPromptOptions = append(co.GoPromptOptions, prompt.OptionAddKeyBind(prompt.KeyBind{
-		Key: prompt.ControlC,
-		Fn: func(_ *prompt.Buffer) {
+	// let ctrl+c exit goprompt
+	co.GoPromptOptions = append(co.GoPromptOptions, goprompt.OptionAddKeyBind(goprompt.KeyBind{
+		Key: goprompt.ControlC,
+		Fn: func(_ *goprompt.Buffer) {
 			cancel()
 			exitPromptSafely()
 		},
-	}), prompt.OptionAddKeyBind(prompt.KeyBind{
-		Key: prompt.Key(86),
-		Fn: func(b *prompt.Buffer) {
+	}), goprompt.OptionAddKeyBind(goprompt.KeyBind{
+		Key: goprompt.Key(86),
+		Fn: func(b *goprompt.Buffer) {
 			to := b.Document().FindEndOfCurrentWordWithSpace()
 			b.CursorRight(to)
 		},
-	}), prompt.OptionAddKeyBind(prompt.KeyBind{
-		Key: prompt.ControlRight,
-		Fn: func(b *prompt.Buffer) {
+	}), goprompt.OptionAddKeyBind(goprompt.KeyBind{
+		Key: goprompt.ControlRight,
+		Fn: func(b *goprompt.Buffer) {
 			to := b.Document().FindEndOfCurrentWordWithSpace()
 			b.CursorRight(to)
 		},
@@ -114,7 +114,7 @@ func (co CobraPrompt) Run(cntx context.Context) {
 	}
 	co.prepare()
 	var cobraCtx CobraMutableCtx
-	p := prompt.New(
+	p := goprompt.New(
 		func(in string) {
 			tmpCtx, cancel := context.WithCancel(ctx)
 			cobraCtx.Internal = tmpCtx
@@ -152,7 +152,7 @@ func (co CobraPrompt) Run(cntx context.Context) {
 				}
 			}
 		},
-		func(d prompt.Document) []prompt.Suggest {
+		func(d goprompt.Document) []goprompt.Suggest {
 			// no suggestion on new line
 			if d.Text == "" {
 				return nil
@@ -174,7 +174,7 @@ func (co CobraPrompt) prepare() {
 	if co.AddDefaultExitCommand {
 		co.RootCmd.AddCommand(&cobra.Command{
 			Use:           "exit",
-			Short:         "Exit prompt",
+			Short:         "Exit goprompt",
 			SilenceErrors: true,
 			SilenceUsage:  true,
 			RunE: func(cmd *cobra.Command, args []string) error {
@@ -189,7 +189,7 @@ func RegisterPersistFlag(co *cobra.Command) {
 		false, "Persist last given value for flags")
 }
 
-func findSuggestions(co *CobraPrompt, d *prompt.Document) []prompt.Suggest {
+func findSuggestions(co *CobraPrompt, d *goprompt.Document) []goprompt.Suggest {
 	upToCursor := d.CurrentLineBeforeCursor()
 	// use line before cursor for command suggestion
 	bArgs := strings.Fields(upToCursor)
@@ -204,7 +204,7 @@ func findSuggestions(co *CobraPrompt, d *prompt.Document) []prompt.Suggest {
 	if command.HasAvailableSubCommands() {
 		for _, c := range command.Commands() {
 			if !c.Hidden && !co.ShowHiddenCommands {
-				suggestions = append(suggestions, prompt.Suggest{Text: c.Name(), Description: c.Short})
+				suggestions = append(suggestions, goprompt.Suggest{Text: c.Name(), Description: c.Short})
 			}
 			if co.ShowHelpCommandAndFlags {
 				c.InitDefaultHelpFlag()
@@ -215,11 +215,11 @@ func findSuggestions(co *CobraPrompt, d *prompt.Document) []prompt.Suggest {
 	if co.DynamicSuggestionsFunc != nil && annotation != "" {
 		suggestions = append(suggestions, co.DynamicSuggestionsFunc(annotation, d)...)
 	}
-	return prompt.FilterHasPrefix(suggestions, wordBeforeCursor, true)
+	return goprompt.FilterHasPrefix(suggestions, wordBeforeCursor, true)
 }
 
-func traverseForFlagSuggestions(wordBeforeCursor string, words []string, co *CobraPrompt, command *cobra.Command) []prompt.Suggest {
-	var suggestions []prompt.Suggest
+func traverseForFlagSuggestions(wordBeforeCursor string, words []string, co *CobraPrompt, command *cobra.Command) []goprompt.Suggest {
+	var suggestions []goprompt.Suggest
 	noWordTyped := wordBeforeCursor == ""
 	dashPrefix := strings.HasPrefix(wordBeforeCursor, "-")
 	if !noWordTyped && !dashPrefix {
@@ -240,12 +240,12 @@ func traverseForFlagSuggestions(wordBeforeCursor string, words []string, co *Cob
 			return
 		}
 		if strings.HasPrefix(wordBeforeCursor, "--") {
-			suggestions = append(suggestions, prompt.Suggest{Text: flagUsage, Description: flag.Usage})
+			suggestions = append(suggestions, goprompt.Suggest{Text: flagUsage, Description: flag.Usage})
 		} else if (noWordTyped || dashPrefix) && flag.Shorthand != "" {
 			flagShort := fmt.Sprintf("-%s", flag.Shorthand)
-			suggestions = append(suggestions, prompt.Suggest{Text: flagShort, Description: fmt.Sprintf("or %s %s", flagUsage, flag.Usage)})
+			suggestions = append(suggestions, goprompt.Suggest{Text: flagShort, Description: fmt.Sprintf("or %s %s", flagUsage, flag.Usage)})
 		} else {
-			suggestions = append(suggestions, prompt.Suggest{Text: flagUsage, Description: flag.Usage})
+			suggestions = append(suggestions, goprompt.Suggest{Text: flagUsage, Description: flag.Usage})
 		}
 	}
 	command.LocalFlags().VisitAll(addFlags)

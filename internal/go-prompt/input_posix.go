@@ -8,7 +8,7 @@ import (
 
 	"golang.org/x/sys/unix"
 
-	"github.com/hazelcast/hazelcast-commandline-client/go-prompt/internal/term"
+	term2 "github.com/hazelcast/hazelcast-commandline-client/internal/go-prompt/internal/term"
 )
 
 const maxReadBytes = 1024
@@ -25,7 +25,7 @@ func (t *PosixParser) Setup() error {
 	if err := syscall.SetNonblock(t.fd, true); err != nil {
 		return err
 	}
-	if err := term.SetRaw(t.fd); err != nil {
+	if err := term2.SetRaw(t.fd); err != nil {
 		return err
 	}
 	return nil
@@ -36,7 +36,7 @@ func (t *PosixParser) TearDown() error {
 	if err := syscall.SetNonblock(t.fd, false); err != nil {
 		return err
 	}
-	if err := term.Restore(); err != nil {
+	if err := term2.Restore(); err != nil {
 		return err
 	}
 	return nil

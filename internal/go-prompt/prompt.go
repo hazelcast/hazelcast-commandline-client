@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/hazelcast/hazelcast-commandline-client/go-prompt/internal/debug"
+	debug2 "github.com/hazelcast/hazelcast-commandline-client/internal/go-prompt/internal/debug"
 )
 
 // Executor is called when user input something text.
@@ -45,8 +45,8 @@ type Exec struct {
 // Run starts prompt.
 func (p *Prompt) Run() {
 	p.skipTearDown = false
-	defer debug.Teardown()
-	debug.Log("start prompt")
+	defer debug2.Teardown()
+	debug2.Log("start prompt")
 	p.setUp()
 	defer p.tearDown()
 
@@ -80,7 +80,7 @@ func (p *Prompt) Run() {
 
 				// Unset raw mode
 				// Reset to Blocking mode because returned EAGAIN when still set non-blocking mode.
-				debug.AssertNoError(p.in.TearDown())
+				debug2.AssertNoError(p.in.TearDown())
 				p.executor(e.input)
 
 				p.completion.Update(*p.buf.Document())
@@ -92,7 +92,7 @@ func (p *Prompt) Run() {
 					return
 				}
 				// Set raw mode
-				debug.AssertNoError(p.in.Setup())
+				debug2.AssertNoError(p.in.Setup())
 				go p.readBuffer(bufCh, stopReadBufCh)
 				go p.handleSignals(exitCh, winSizeCh, stopHandleSignalCh)
 			} else {
@@ -239,8 +239,8 @@ func (p *Prompt) handleASCIICodeBinding(b []byte) bool {
 
 // Input just returns user input text.
 func (p *Prompt) Input() string {
-	defer debug.Teardown()
-	debug.Log("start prompt")
+	defer debug2.Teardown()
+	debug2.Log("start prompt")
 	p.setUp()
 	defer p.tearDown()
 
@@ -275,11 +275,11 @@ func (p *Prompt) Input() string {
 }
 
 func (p *Prompt) readBuffer(bufCh chan []byte, stopCh chan struct{}) {
-	debug.Log("start reading buffer")
+	debug2.Log("start reading buffer")
 	for {
 		select {
 		case <-stopCh:
-			debug.Log("stop reading buffer")
+			debug2.Log("stop reading buffer")
 			return
 		default:
 			if b, err := p.in.Read(); err == nil && !(len(b) == 1 && b[0] == 0) {
@@ -291,14 +291,14 @@ func (p *Prompt) readBuffer(bufCh chan []byte, stopCh chan struct{}) {
 }
 
 func (p *Prompt) setUp() {
-	debug.AssertNoError(p.in.Setup())
+	debug2.AssertNoError(p.in.Setup())
 	p.renderer.Setup()
 	p.renderer.UpdateWinSize(p.in.GetWinSize())
 }
 
 func (p *Prompt) tearDown() {
 	if !p.skipTearDown {
-		debug.AssertNoError(p.in.TearDown())
+		debug2.AssertNoError(p.in.TearDown())
 	}
 	p.renderer.TearDown()
 }

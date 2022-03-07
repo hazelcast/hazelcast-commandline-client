@@ -1,6 +1,8 @@
 package prompt
 
-import "github.com/hazelcast/hazelcast-commandline-client/go-prompt/internal/debug"
+import (
+	"github.com/hazelcast/hazelcast-commandline-client/internal/go-prompt/internal/debug"
+)
 
 /*
 

@@ -3,8 +3,9 @@ package prompt
 import (
 	"runtime"
 
-	"github.com/hazelcast/hazelcast-commandline-client/go-prompt/internal/debug"
 	runewidth "github.com/mattn/go-runewidth"
+
+	"github.com/hazelcast/hazelcast-commandline-client/internal/go-prompt/internal/debug"
 )
 
 // Render to render prompt information from state of Buffer.

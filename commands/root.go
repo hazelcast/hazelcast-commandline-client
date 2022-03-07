@@ -26,14 +26,13 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/hazelcast/hazelcast-commandline-client/go-prompt"
-
-	clusterCmd "github.com/hazelcast/hazelcast-commandline-client/commands/cluster"
-	sqlCmd "github.com/hazelcast/hazelcast-commandline-client/commands/sql"
+	clustercmd "github.com/hazelcast/hazelcast-commandline-client/commands/cluster"
+	sqlcmd "github.com/hazelcast/hazelcast-commandline-client/commands/sql"
 	fakeDoor "github.com/hazelcast/hazelcast-commandline-client/commands/types/fakedoor"
-	mapCmd "github.com/hazelcast/hazelcast-commandline-client/commands/types/map"
+	mapcmd "github.com/hazelcast/hazelcast-commandline-client/commands/types/map"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/cobraprompt"
+	goprompt "github.com/hazelcast/hazelcast-commandline-client/internal/go-prompt"
 )
 
 var (
@@ -64,11 +63,11 @@ var advancedPrompt = &cobraprompt.CobraPrompt{
 	SuggestFlagsWithoutDash:  true,
 	DisableCompletionCommand: true,
 	AddDefaultExitCommand:    true,
-	GoPromptOptions: []prompt.Option{
-		prompt.OptionTitle("Hazelcast Client"),
-		prompt.OptionLivePrefix(addressAndClusterNamePrefix),
-		prompt.OptionMaxSuggestion(10),
-		prompt.OptionCompletionOnDown(),
+	GoPromptOptions: []goprompt.Option{
+		goprompt.OptionTitle("Hazelcast Client"),
+		goprompt.OptionLivePrefix(addressAndClusterNamePrefix),
+		goprompt.OptionMaxSuggestion(10),
+		goprompt.OptionCompletionOnDown(),
 	},
 	OnErrorFunc: func(err error) {
 		// handle error noop to prevent application from crashing
@@ -152,9 +151,9 @@ func decorateRootCommand(cmd *cobra.Command) {
 
 func subCommands() []*cobra.Command {
 	cmds := []*cobra.Command{
-		clusterCmd.ClusterCmd,
-		mapCmd.MapCmd,
-		sqlCmd.SqlCmd,
+		clustercmd.ClusterCmd,
+		mapcmd.MapCmd,
+		sqlcmd.SqlCmd,
 	}
 	fds := []fakeDoor.FakeDoor{
 		{Name: "list", IssueNum: 48},

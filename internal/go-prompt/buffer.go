@@ -3,7 +3,7 @@ package prompt
 import (
 	"strings"
 
-	"github.com/hazelcast/hazelcast-commandline-client/go-prompt/internal/debug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/go-prompt/internal/debug"
 )
 
 // Buffer emulates the console buffer.

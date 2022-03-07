@@ -6,8 +6,8 @@ import (
 
 	"github.com/mattn/go-runewidth"
 
-	"github.com/hazelcast/hazelcast-commandline-client/go-prompt/internal/bisect"
-	istrings "github.com/hazelcast/hazelcast-commandline-client/go-prompt/internal/strings"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/go-prompt/internal/bisect"
+	istrings "github.com/hazelcast/hazelcast-commandline-client/internal/go-prompt/internal/strings"
 )
 
 // Document has text displayed in terminal and cursor position.
