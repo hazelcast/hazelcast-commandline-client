@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License")
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package cobraprompt
 
 import (
@@ -11,23 +26,20 @@ import (
 
 	"github.com/c-bata/go-prompt"
 	"github.com/google/shlex"
+	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/rootcmd"
 )
 
 // DynamicSuggestionsAnnotation for dynamic suggestions.
 const DynamicSuggestionsAnnotation = "cobra-prompt-dynamic-suggestions"
 
-// PersistFlagValuesFlag the flag that will be available when PersistFlagValues is true
-const PersistFlagValuesFlag = "persist-flag-values"
-
 // CobraPrompt given a Cobra command it will make every flag and sub commands available as suggestions.
 // Command.Short will be used as description for the suggestion.
 type CobraPrompt struct {
-	// RootCmd is the start point, all its sub commands and flags will be available as suggestions
-	RootCmd *cobra.Command
 	// GoPromptOptions is for customize go-prompt
 	// see https://github.com/c-bata/go-prompt/blob/master/option.go
 	GoPromptOptions []prompt.Option
@@ -78,14 +90,12 @@ func handleExit() {
 
 // Run will automatically generate suggestions for all cobra commands and flags defined by RootCmd and execute the selected commands.
 // Run will also reset all given flags by default, see PersistFlagValues
-func (co CobraPrompt) Run(cntx context.Context) {
+func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelcast.Config) {
 	defer handleExit()
-	ctx, cancel := context.WithCancel(cntx)
 	// let ctrl+c exit prompt
 	co.GoPromptOptions = append(co.GoPromptOptions, prompt.OptionAddKeyBind(prompt.KeyBind{
 		Key: prompt.ControlC,
 		Fn: func(_ *prompt.Buffer) {
-			cancel()
 			exitPromptSafely()
 		},
 	}), prompt.OptionAddKeyBind(prompt.KeyBind{
@@ -101,15 +111,9 @@ func (co CobraPrompt) Run(cntx context.Context) {
 			b.CursorRight(to)
 		},
 	}))
-	if co.RootCmd == nil {
-		panic("RootCmd is not set. Please set RootCmd")
-	}
-	co.prepare()
-	var cobraCtx CobraMutableCtx
 	p := prompt.New(
 		func(in string) {
-			tmpCtx, cancel := context.WithCancel(ctx)
-			cobraCtx.Internal = tmpCtx
+			ctx, cancel := context.WithCancel(ctx)
 			defer cancel()
 			c := make(chan os.Signal, 1)
 			signal.Notify(c, os.Interrupt, os.Kill)
@@ -117,7 +121,7 @@ func (co CobraPrompt) Run(cntx context.Context) {
 				select {
 				case <-c:
 					cancel()
-				case <-cobraCtx.Done():
+				case <-ctx.Done():
 				}
 			}()
 			// do not execute root command if no input given
@@ -129,9 +133,12 @@ func (co CobraPrompt) Run(cntx context.Context) {
 				fmt.Println("unable to parse commands")
 				return
 			}
-
-			os.Args = append([]string{os.Args[0]}, promptArgs...)
-			if err := co.RootCmd.ExecuteContext(&cobraCtx); err != nil {
+			// re-init command chain every iteration
+			// ignore global flags, they are already parsed
+			root, _ = rootcmd.New(cnfg)
+			prepareRootCmdForPrompt(co, root)
+			root.SetArgs(promptArgs)
+			if err := root.ExecuteContext(ctx); err != nil {
 				if errors.Is(err, ErrExit) {
 					exitPromptSafely()
 					return
@@ -139,7 +146,7 @@ func (co CobraPrompt) Run(cntx context.Context) {
 				if co.OnErrorFunc != nil {
 					co.OnErrorFunc(err)
 				} else {
-					co.RootCmd.PrintErrln(err)
+					root.PrintErrln(err)
 					exitPromptSafely()
 				}
 			}
@@ -149,22 +156,22 @@ func (co CobraPrompt) Run(cntx context.Context) {
 			if d.Text == "" {
 				return nil
 			}
-			return findSuggestions(&co, &d)
+			return findSuggestions(&co, root, &d)
 		},
 		co.GoPromptOptions...,
 	)
 	p.Run()
 }
 
-func (co CobraPrompt) prepare() {
+func prepareRootCmdForPrompt(co CobraPrompt, root *cobra.Command) {
 	if co.ShowHelpCommandAndFlags {
-		co.RootCmd.InitDefaultHelpCmd()
+		root.InitDefaultHelpCmd()
 	}
 	if co.DisableCompletionCommand {
-		co.RootCmd.CompletionOptions.DisableDefaultCmd = true
+		root.CompletionOptions.DisableDefaultCmd = true
 	}
 	if co.AddDefaultExitCommand {
-		co.RootCmd.AddCommand(&cobra.Command{
+		root.AddCommand(&cobra.Command{
 			Use:           "exit",
 			Short:         "Exit prompt",
 			SilenceErrors: true,
@@ -174,18 +181,17 @@ func (co CobraPrompt) prepare() {
 			},
 		})
 	}
+	root.Example = `> map put -k key -n myMap -v someValue
+> map get -k key -m myMap
+> cluster version`
+	root.Use = ""
 }
 
-func RegisterPersistFlag(co *cobra.Command) {
-	co.PersistentFlags().BoolP(PersistFlagValuesFlag, "",
-		false, "Persist last given value for flags")
-}
-
-func findSuggestions(co *CobraPrompt, d *prompt.Document) []prompt.Suggest {
+func findSuggestions(co *CobraPrompt, cmd *cobra.Command, d *prompt.Document) []prompt.Suggest {
 	upToCursor := d.CurrentLineBeforeCursor()
 	// use line before cursor for command suggestion
 	bArgs := strings.Fields(upToCursor)
-	command, _, err := co.RootCmd.Find(bArgs)
+	command, _, err := cmd.Find(bArgs)
 	if err != nil && strings.Contains(upToCursor, " ") {
 		return nil
 	}

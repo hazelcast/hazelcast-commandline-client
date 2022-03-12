@@ -13,11 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package internal
+package sqlcmd
 
-const (
-	ClusterStateActive      = "active"
-	ClusterStateNoMigration = "no_migration"
-	ClusterStatePassive     = "passive"
-	ClusterStateFrozen      = "frozen"
+import (
+	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/spf13/cobra"
 )
+
+func New(config *hazelcast.Config) *cobra.Command {
+	cmd := cobra.Command{
+		Use:   "sql {query}",
+		Short: "SQL operations",
+		Example: `sql query "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR,val VARCHAR) TYPE IMAP OPTIONS ( 'keyFormat' = 'varchar', 'valueFormat' = 'varchar')"
+sql query "select * from myMap"`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmd.Help()
+		},
+	}
+	cmd.AddCommand(NewQuery(config))
+	return &cmd
+}

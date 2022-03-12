@@ -13,22 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sql
+package errors
 
-import (
-	"github.com/spf13/cobra"
-)
+import "fmt"
 
-var SqlCmd = &cobra.Command{
-	Use:   "sql {query}",
-	Short: "sql operations",
-	Example: `sql query "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR,val VARCHAR) TYPE IMAP OPTIONS ( 'keyFormat' = 'varchar', 'valueFormat' = 'varchar')"
-sql query "select * from myMap"`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return cmd.Help()
-	},
+type LoggableError struct {
+	msg string
+	err error
 }
 
-func init() {
-	SqlCmd.AddCommand(queryCmd)
+func NewLoggableError(err error, format string, a ...interface{}) LoggableError {
+	return LoggableError{
+		msg: fmt.Sprintf(format, a...),
+		err: err,
+	}
+}
+
+func (e LoggableError) Error() string {
+	return e.msg
+}
+
+func (e LoggableError) VerboseError() string {
+	if e.err == nil {
+		return fmt.Sprintln(e.msg)
+	}
+	return fmt.Sprintf("%s\nDetails: %s", e.msg, e.err)
+}
+
+func (e LoggableError) Unwrap() error {
+	return e.err
 }

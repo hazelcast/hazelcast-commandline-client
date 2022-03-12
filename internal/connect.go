@@ -25,16 +25,16 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
+
+	"github.com/hazelcast/hazelcast-commandline-client/config"
+	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
 )
 
 var InvalidStateErr = errors.New("invalid new state")
 
 const goClientConnectionTimeout = 5 * time.Second
 
-var (
-	hzCli  *hazelcast.Client
-	hzConf *hazelcast.Config
-)
+var client *hazelcast.Client
 
 type RESTCall struct {
 	url    string
@@ -50,9 +50,7 @@ func CallClusterOperationWithState(config *hazelcast.Config, operation string, s
 	obj, err := NewRESTCall(config, operation, *state)
 	if err != nil {
 		if errors.Is(err, InvalidStateErr) {
-			fmt.Printf("Error: invalid new state. It should be one the following: %s, %s, %s, %s\n", ClusterStateActive, ClusterStateFrozen, ClusterStateNoMigration, ClusterStatePassive)
-		} else {
-			fmt.Println("Error:", err)
+			err = hzcerror.NewLoggableError(err, "Invalid new state. It should be one the following: %s, %s, %s, %s\n", ClusterStateActive, ClusterStateFrozen, ClusterStateNoMigration, ClusterStatePassive)
 		}
 		return nil, err
 	}
@@ -72,29 +70,26 @@ func CallClusterOperationWithState(config *hazelcast.Config, operation string, s
 	}
 	if err != nil {
 		if msg, handled := TranslateError(err, config.Cluster.Cloud.Enabled, operation); handled {
-			fmt.Println("Error:", msg)
-			return nil, err
+			return nil, hzcerror.NewLoggableError(err, msg)
 		}
-		fmt.Println("Error:", err)
 		return nil, err
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("Error: Could not read the response from the cluster")
-		return nil, err
+		return nil, hzcerror.NewLoggableError(err, "Could not read the response from the cluster")
 	}
 	sb := string(body)
 	return &sb, nil
 }
 
-func NewRESTCall(config *hazelcast.Config, operation string, state string) (*RESTCall, error) {
+func NewRESTCall(conf *hazelcast.Config, operation string, state string) (*RESTCall, error) {
 	var member, url string
 	var params string
-	var addresses = config.Cluster.Network.Addresses
-	member = addresses[0]
+	//todo iterate over all addresses
+	member = config.GetClusterAddress(conf)
 	scheme := "http"
-	if config.Cluster.Network.SSL.Enabled == true {
+	if conf.Cluster.Network.SSL.Enabled == true {
 		scheme = "https"
 	}
 	switch operation {
@@ -112,7 +107,7 @@ func NewRESTCall(config *hazelcast.Config, operation string, state string) (*RES
 	default:
 		panic("Invalid operation to set connection obj.")
 	}
-	params = NewParams(config, operation, state)
+	params = NewParams(conf, operation, state)
 	return &RESTCall{url: url, params: params}, nil
 }
 
@@ -139,15 +134,9 @@ func EnsureState(state string) bool {
 	return false
 }
 
-func ConnectToCluster(ctx context.Context) (cli *hazelcast.Client, err error) {
-	if hzCli != nil {
-		return hzCli, nil
-	}
-	if hzConf == nil {
-		hzConf, err = MakeConfig()
-		if err != nil {
-			return nil, err
-		}
+func ConnectToCluster(ctx context.Context, clientConfig *hazelcast.Config) (cli *hazelcast.Client, err error) {
+	if client != nil {
+		return client, nil
 	}
 	defer func() {
 		obj := recover()
@@ -155,17 +144,14 @@ func ConnectToCluster(ctx context.Context) (cli *hazelcast.Client, err error) {
 			err = panicErr
 		}
 		if err != nil {
-			if msg, handled := TranslateError(err, hzConf.Cluster.Cloud.Enabled); handled {
-				err = fmt.Errorf(msg)
+			if msg, handled := TranslateError(err, clientConfig.Cluster.Cloud.Enabled); handled {
+				err = hzcerror.NewLoggableError(err, msg)
 			}
 		}
 	}()
 	ctx, cancel := context.WithTimeout(ctx, goClientConnectionTimeout)
 	defer cancel()
-	configCopy := hzConf.Clone()
+	configCopy := clientConfig.Clone()
 	cli, err = hazelcast.StartNewClientWithConfig(ctx, configCopy)
-	if hzCli == nil {
-		hzCli = cli
-	}
-	return hzCli, nil
+	return
 }
