@@ -22,7 +22,6 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/c-bata/go-prompt"
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -31,6 +30,7 @@ import (
 	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/cobraprompt"
+	goprompt "github.com/hazelcast/hazelcast-commandline-client/internal/go-prompt"
 )
 
 func IsInteractiveCall(rootCmd *cobra.Command, args []string) bool {
@@ -59,13 +59,13 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *haze
 		SuggestFlagsWithoutDash:  true,
 		DisableCompletionCommand: true,
 		AddDefaultExitCommand:    true,
-		GoPromptOptions: []prompt.Option{
-			prompt.OptionTitle("Hazelcast Client"),
-			prompt.OptionLivePrefix(func() (prefix string, useLivePrefix bool) {
+		GoPromptOptions: []goprompt.Option{
+			goprompt.OptionTitle("Hazelcast Client"),
+			goprompt.OptionLivePrefix(func() (prefix string, useLivePrefix bool) {
 				return fmt.Sprintf("hzc %s@%s> ", config.GetClusterAddress(cnfg), cnfg.Cluster.Name), true
 			}),
-			prompt.OptionMaxSuggestion(10),
-			prompt.OptionCompletionOnDown(),
+			goprompt.OptionMaxSuggestion(10),
+			goprompt.OptionCompletionOnDown(),
 		},
 		OnErrorFunc: func(err error) {
 			errStr := HandleError(err)
