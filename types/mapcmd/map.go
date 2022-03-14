@@ -13,73 +13,56 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package commands
+package mapcmd
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 
+	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
-var mapName string
-var mapKey string
-var mapValue string
-
-var mapValueType string
-var mapValueFile string
-
-var MapCmd = &cobra.Command{
-	Use:   "map {get | put} --name mapname --key keyname [--value-type type | --value-file file | --value value]",
-	Short: "map operations",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return cmd.Help()
-	},
-}
-
-func init() {
-	MapCmd.AddCommand(mapGetCmd)
-	MapCmd.AddCommand(mapPutCmd)
+func New(config *hazelcast.Config) *cobra.Command {
+	var cmd = &cobra.Command{
+		Use:   "map {get | put} --name mapname --key keyname [--value-type type | --value-file file | --value value]",
+		Short: "Map operations",
+	}
+	cmd.AddCommand(NewGet(config), NewPut(config))
+	return cmd
 }
 
 func getMap(ctx context.Context, clientConfig *hazelcast.Config, mapName string) (result *hazelcast.Map, err error) {
-	if clientConfig == nil {
-		clientConfig = &hazelcast.Config{}
-	}
-	hzcClient, err := internal.ConnectToCluster(ctx)
+	hzcClient, err := internal.ConnectToCluster(ctx, clientConfig)
 	if err != nil {
-		fmt.Println("Error:", err)
-		return nil, fmt.Errorf("error creating the client: %w", err)
+		return nil, hzcerror.NewLoggableError(err, "Cannot get initialize client")
 	}
 	if result, err = hzcClient.GetMap(ctx, mapName); err != nil {
-		errorMsg := err.Error()
 		if msg, isHandled := internal.TranslateNetworkError(err, clientConfig.Cluster.Cloud.Enabled); isHandled {
-			errorMsg = msg
+			err = hzcerror.NewLoggableError(err, msg)
 		}
-		fmt.Println("Error:", errorMsg)
 		return nil, err
 	}
 	return
 }
 
-func decorateCommandWithMapNameFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&mapName, "name", "n", "", "specify the map name")
+func decorateCommandWithMapNameFlags(cmd *cobra.Command, mapName *string) {
+	cmd.Flags().StringVarP(mapName, "name", "n", "", "specify the map name")
 	cmd.MarkFlagRequired("name")
 }
 
-func decorateCommandWithKeyFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&mapKey, "key", "k", "", "key of the map")
+func decorateCommandWithKeyFlags(cmd *cobra.Command, mapKey *string) {
+	cmd.Flags().StringVarP(mapKey, "key", "k", "", "key of the map")
 	cmd.MarkFlagRequired("key")
 }
 
-func decorateCommandWithValueFlags(cmd *cobra.Command) {
+func decorateCommandWithValueFlags(cmd *cobra.Command, mapValue, mapValueFile, mapValueType *string) {
 	flags := cmd.Flags()
-	flags.StringVarP(&mapValue, "value", "v", "", "value of the map")
-	flags.StringVarP(&mapValueType, "value-type", "t", "string", "type of the value, one of: string, json")
-	flags.StringVarP(&mapValueFile, "value-file", "f", "", `path to the file that contains the value. Use "-" (dash) to read from stdin`)
+	flags.StringVarP(mapValue, "value", "v", "", "value of the map")
+	flags.StringVarP(mapValueFile, "value-file", "f", "", `path to the file that contains the value. Use "-" (dash) to read from stdin`)
+	flags.StringVarP(mapValueType, "value-type", "t", "string", "type of the value, one of: string, json")
 	cmd.RegisterFlagCompletionFunc("value-type", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"json", "string"}, cobra.ShellCompDirectiveDefault
 	})

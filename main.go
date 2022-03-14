@@ -17,16 +17,42 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"os"
 
-	"github.com/hazelcast/hazelcast-commandline-client/commands"
+	"github.com/hazelcast/hazelcast-commandline-client/config"
+	"github.com/hazelcast/hazelcast-commandline-client/rootcmd"
+)
+
+const (
+	exitOK    = 0
+	exitError = 1
 )
 
 func main() {
-	ctx := context.Background()
-	isInteractive := commands.IsInteractiveCall()
+	cnfg := config.DefaultConfig()
+	rootCmd, globalFlagValues := rootcmd.New(&cnfg.Hazelcast)
+	programArgs := os.Args[1:]
+	// update config before running root command to make sure flags are processed
+	err := updateConfigWithFlags(rootCmd, cnfg, programArgs, globalFlagValues)
+	ExitOnError(err)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	isInteractive := IsInteractiveCall(rootCmd, programArgs)
 	if isInteractive {
-		commands.ExecuteInteractive(ctx)
+		RunCmdInteractively(ctx, rootCmd, &cnfg.Hazelcast)
+	} else {
+		err = RunCmd(ctx, rootCmd)
+		ExitOnError(err)
+	}
+	return
+}
+
+func ExitOnError(err error) {
+	if err == nil {
 		return
 	}
-	commands.Execute(ctx)
+	errStr := HandleError(err)
+	fmt.Println(errStr)
+	os.Exit(exitError)
 }

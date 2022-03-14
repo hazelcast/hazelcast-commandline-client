@@ -14,59 +14,70 @@
  * limitations under the License.
  */
 
-package sql
+package sqlcmd
 
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"io"
 	"os/exec"
 	"strings"
+	"syscall"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 
+	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/table"
 )
 
-var queryCmd = &cobra.Command{
-	Use:   `query string`,
-	Short: "executes query",
-	Run: func(cmd *cobra.Command, args []string) {
-		arg := strings.Join(args, " ")
-		var queries []string
-		for _, q := range strings.Split(arg, ";") {
-			tmp := strings.TrimSpace(q)
-			if len(tmp) == 0 {
-				continue
-			}
-			queries = append(queries, tmp)
-		}
-		ctx := cmd.Context()
-		c, err := internal.ConnectToCluster(ctx)
-		if err != nil {
-			fmt.Println("Error:", err)
-			return
-		}
-		for _, q := range queries {
-			lt := strings.ToLower(q)
-			if strings.HasPrefix(lt, "select") || strings.HasPrefix(lt, "show") {
-				if err := query(ctx, c, q, cmd.OutOrStdout()); err != nil {
-					fmt.Println(err)
+func NewQuery(config *hazelcast.Config) *cobra.Command {
+	return &cobra.Command{
+		Use:   `query statement-string`,
+		Short: "Executes SQL query",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			arg := strings.Join(args, " ")
+			var queries []string
+			for _, q := range strings.Split(arg, ";") {
+				tmp := strings.TrimSpace(q)
+				if len(tmp) == 0 {
+					continue
 				}
-			} else {
-				if err := execute(ctx, c, q); err != nil {
-					fmt.Println(err)
+				queries = append(queries, tmp)
+			}
+			if len(queries) == 0 {
+				return cmd.Help()
+			}
+			ctx := cmd.Context()
+			c, err := internal.ConnectToCluster(ctx, config)
+			if err != nil {
+				return hzcerror.NewLoggableError(err, "Cannot get initialize client")
+			}
+			for _, q := range queries {
+				lt := strings.ToLower(q)
+				if strings.HasPrefix(lt, "select") || strings.HasPrefix(lt, "show") {
+					if err := query(ctx, c, q, cmd.OutOrStdout(), true); err != nil {
+						if errors.Is(err, syscall.EPIPE) {
+							// pager may be closed, expected error
+							return nil
+						}
+						return hzcerror.NewLoggableError(err, "Cannot execute the query")
+					}
+				} else {
+					if err := execute(ctx, c, q); err != nil {
+						return hzcerror.NewLoggableError(err, "Cannot execute the query")
+					}
 				}
 			}
-		}
-		return
-	},
+			return nil
+		},
+	}
 }
 
-func query(ctx context.Context, c *hazelcast.Client, text string, out io.Writer) error {
+func query(ctx context.Context, c *hazelcast.Client, text string, out io.Writer, usePager bool) error {
 	rows, err := c.QuerySQL(ctx, text)
 	if err != nil {
 		return fmt.Errorf("querying: %w", err)
@@ -74,22 +85,32 @@ func query(ctx context.Context, c *hazelcast.Client, text string, out io.Writer)
 	defer rows.Close()
 	var w = out
 	// command that can be used as a pager exists
-	if pagerCmd != "" {
-		cmd := exec.Command(pagerCmd)
-		cmd.Stdout = out
-		cmd.Stderr = out
-		cmdBuf, err := cmd.StdinPipe()
-		if err != nil {
-			return err
+	if usePager {
+		var pagerCmd string
+		for _, s := range []string{"less", "more"} {
+			if _, err := exec.LookPath(s); err != nil {
+				continue
+			}
+			pagerCmd = s
+			break
 		}
-		if err := cmd.Start(); err != nil {
-			return err
+		if pagerCmd != "" {
+			cmd := exec.CommandContext(ctx, pagerCmd)
+			cmd.Stdout = out
+			cmd.Stderr = out
+			cmdBuf, err := cmd.StdinPipe()
+			if err != nil {
+				return err
+			}
+			if err := cmd.Start(); err != nil {
+				return err
+			}
+			defer func() {
+				cmdBuf.Close()
+				cmd.Wait()
+			}()
+			w = cmdBuf
 		}
-		defer func() {
-			cmdBuf.Close()
-			cmd.Wait()
-		}()
-		w = cmdBuf
 	}
 	tWriter := table.NewTableWriter(w)
 	err = rowsHandler(rows, func(cols []string) error {
@@ -144,19 +165,4 @@ func execute(ctx context.Context, c *hazelcast.Client, text string) error {
 	}
 	fmt.Printf("---\nAffected rows: %d\n\n", ra)
 	return nil
-}
-
-var pagerCmd string
-
-func init() {
-	if pagerCmd != "" {
-		return
-	}
-	for _, s := range []string{"less", "more"} {
-		if _, err := exec.LookPath(s); err != nil {
-			continue
-		}
-		pagerCmd = s
-		break
-	}
 }
