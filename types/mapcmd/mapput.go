@@ -46,12 +46,12 @@ func NewPut(config *hazelcast.Config) *cobra.Command {
 			ctx, cancel := context.WithTimeout(cmd.Context(), time.Second*3)
 			defer cancel()
 			var err error
-			m, err := getMap(ctx, config, mapName)
-			if err != nil {
-				return err
-			}
 			var normalizedValue interface{}
 			if normalizedValue, err = normalizeMapValue(mapValue, mapValueFile, mapValueType); err != nil {
+				return err
+			}
+			m, err := getMap(ctx, config, mapName)
+			if err != nil {
 				return err
 			}
 			_, err = m.Put(ctx, mapKey, normalizedValue)
