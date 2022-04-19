@@ -24,7 +24,7 @@ func New(config *hazelcast.Config) *cobra.Command {
 	cmd := cobra.Command{
 		Use:   "sql {query}",
 		Short: "SQL operations",
-		Example: `sql query "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR,val VARCHAR) TYPE IMAP OPTIONS ( 'keyFormat' = 'varchar', 'valueFormat' = 'varchar')"
+		Example: `sql query "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR, this VARCHAR) TYPE IMAP OPTIONS ( 'keyFormat' = 'varchar', 'valueFormat' = 'varchar')"
 sql query "select * from myMap"`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Help()
