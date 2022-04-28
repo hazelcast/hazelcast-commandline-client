@@ -2,6 +2,7 @@ package prompt
 
 import (
 	"strings"
+	"unicode"
 	"unicode/utf8"
 
 	"github.com/mattn/go-runewidth"
@@ -196,6 +197,23 @@ func (d *Document) FindEndOfCurrentWord() int {
 		return i
 	}
 	return len(x)
+}
+
+func (d *Document) FindPreviousWordStart() int {
+	x := d.TextBeforeCursor()
+	var i int
+	for i = len(x) - 1; i > 0; i-- {
+		if !unicode.IsSpace(rune(x[i])) {
+			break
+		}
+	}
+	for ; i > 0; i-- {
+		if unicode.IsSpace(rune(x[i])) {
+			i++
+			break
+		}
+	}
+	return d.cursorPosition - i
 }
 
 // FindEndOfCurrentWordWithSpace is almost the same as FindEndOfCurrentWord.
