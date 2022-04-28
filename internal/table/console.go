@@ -31,7 +31,7 @@ func NewTableWriter(out io.Writer) *TabularWriter {
 func (t *TabularWriter) Write(cells ...interface{}) error {
 	t.initSize(cells)
 	// colWidth = (totalWidth - numOfSeparators) / numOfColumns
-	colWidth := (t.columnCount - (len(cells)+1)*2) / len(cells)
+	colWidth := (t.columnCount - len(cells) - 2) / len(cells)
 	line := makeTabularLine(colWidth, alignLeft, cells...)
 	if _, err := fmt.Fprintln(t.out, line); err != nil {
 		return err
@@ -69,9 +69,9 @@ WriteHeader outputs header for the table with the form:
 func (t *TabularWriter) WriteHeader(cells ...interface{}) error {
 	t.initSize(cells)
 	// colWidth = (totalWidth - numOfSeparators) / numOfColumns
-	colWidth := (t.columnCount - (len(cells)+1)*2) / len(cells)
-	unusedCellCount := (t.columnCount - (len(cells)+1)*2) % len(cells)
-	headerBorder := fmt.Sprintf("+%s+\n", strings.Repeat("-", t.columnCount-unusedCellCount-2))
+	colWidth := (t.columnCount - (len(cells) + 2)) / len(cells)
+	effectiveLineWidth := colWidth*len(cells) + len(cells) + 1 - 2
+	headerBorder := fmt.Sprintf("+%s+\n", strings.Repeat("-", effectiveLineWidth))
 	// write upper border
 	if _, err := fmt.Fprintf(t.out, headerBorder); err != nil {
 		return err
@@ -86,19 +86,18 @@ func (t *TabularWriter) WriteHeader(cells ...interface{}) error {
 	return err
 }
 
-func makeTabularLine(cellWidth int, alignment int, cells ...interface{}) string {
+func makeTabularLine(cellWidth, alignment int, cells ...interface{}) string {
 	var b strings.Builder
-	b.WriteString("| ")
 	for _, c := range cells {
 		s := fmt.Sprint(c)
-		td := runewidth.Truncate(s, cellWidth, "...")
+		td := fmt.Sprintf(" %s ", runewidth.Truncate(s, cellWidth-2, "..."))
 		switch alignment {
 		case alignLeft:
-			b.WriteString(fmt.Sprintf("%-"+strconv.Itoa(cellWidth)+"s |", td))
+			b.WriteString(fmt.Sprintf("|%-"+strconv.Itoa(cellWidth)+"s", td))
 		case alignCenter:
-			b.WriteString(fmt.Sprintf("%"+strconv.Itoa(cellWidth)+"s |", td+strings.Repeat(" ", int((cellWidth-len(td))/2))))
+			b.WriteString(fmt.Sprintf("|%"+strconv.Itoa(cellWidth)+"s", td+strings.Repeat(" ", (cellWidth-len(td))/2)))
 		}
-
 	}
+	b.WriteString("|")
 	return b.String()
 }

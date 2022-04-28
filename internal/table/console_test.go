@@ -3,6 +3,7 @@ package table
 import (
 	"bufio"
 	"bytes"
+	"strings"
 	"testing"
 	"time"
 
@@ -10,11 +11,6 @@ import (
 )
 
 func TestTabularWriter_Write(t *testing.T) {
-	consoleSize = func() (int, int) {
-		return 50, 3
-	}
-	exampleCells := []interface{}{"someValue", 5.0, time.Date(1994, 8, 30, 0, 0, 0, 0, time.UTC)}
-	exampleLine := "|someValue      |5              |1994-08-30 0...|"
 	buffer := bytes.NewBuffer(nil)
 	reader, writer := bufio.NewReader(buffer), buffer
 	w := NewTableWriter(writer)
@@ -26,9 +22,17 @@ func TestTabularWriter_Write(t *testing.T) {
 		expectedErr        error
 	}{
 		{
+			desc: "set initial console size",
+			changeTerminalSize: func() {
+				consoleSize = func() (int, int) {
+					return 50, 3
+				}
+			},
+		},
+		{
 			desc:         "first line",
-			cells:        exampleCells,
-			expectedLine: exampleLine,
+			cells:        []interface{}{"someValue", 5.0, time.Date(1994, 8, 30, 0, 0, 0, 0, time.UTC)},
+			expectedLine: "| someValue     | 5             | 1994-08-30... |",
 		},
 	}
 	for _, s := range steps {
@@ -56,8 +60,15 @@ func TestTabularWriter_WriteHeader(t *testing.T) {
 	if err := w.WriteHeader("vegetables", "fruit", "rank"); err != nil {
 		t.Fatal(err)
 	}
-	expected := "+------------------------------------------------+\n" +
-		"|   vegetables   |     fruit     |     rank      |\n" +
-		"+------------------------------------------------+\n"
-	assert.Equal(t, expected, buffer.String())
+	expected := "+-----------------------------------------------+\n" +
+		"|   vegetables  |     fruit     |      rank     |\n" +
+		"+-----------------------------------------------+\n"
+	out := buffer.String()
+	assert.Equal(t, expected, out)
+	lines := strings.Split(strings.TrimRight(out, "\n"), "\n")
+	for _, l := range lines {
+		expectedWidth, _ := consoleSize()
+		// -1 for the newline
+		assert.Equal(t, expectedWidth-1, len(l))
+	}
 }
