@@ -123,6 +123,7 @@ func handleInterrupt(ctx context.Context, cancel context.CancelFunc) {
 		case <-c:
 			cancel()
 		case <-ctx.Done():
+			close(c)
 		}
 	}()
 }

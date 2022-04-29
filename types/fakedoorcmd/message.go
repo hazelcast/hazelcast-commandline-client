@@ -33,17 +33,17 @@ type FakeDoor struct {
 	IssueNum int
 }
 
-func MakeFakeCommand(fd FakeDoor) *cobra.Command {
+func NewFakeCommand(fd FakeDoor) *cobra.Command {
 	return &cobra.Command{
 		Use:   strings.ToLower(fd.Name),
 		Short: fmt.Sprintf("%s operations", fd.Name),
 		Run: func(cmd *cobra.Command, args []string) {
-			cmd.Println(makeFakeDoorMessage(fd))
+			cmd.Println(newFakeDoorMessage(fd))
 		},
 	}
 }
 
-func makeFakeDoorMessage(m FakeDoor) string {
+func newFakeDoorMessage(m FakeDoor) string {
 	issueNum := fmt.Sprintf(IssueURLFmt, m.IssueNum)
 	return fmt.Sprintf(messageFmt, m.Name, issueNum, thumbsUpSign)
 }

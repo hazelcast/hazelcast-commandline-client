@@ -26,11 +26,15 @@ import (
 )
 
 func New(config *hazelcast.Config) *cobra.Command {
+	// context timeout for each map operation can be configurable
 	var cmd = &cobra.Command{
-		Use:   "map {get | put} --name mapname --key keyname [--value-type type | --value-file file | --value value]",
+		Use:   "map {get | put | remove} --name mapname --key keyname [--value-type type | --value-file file | --value value]",
 		Short: "Map operations",
 	}
-	cmd.AddCommand(NewGet(config), NewPut(config))
+	cmd.AddCommand(
+		NewGet(config),
+		NewPut(config),
+		NewRemove(config))
 	return cmd
 }
 
@@ -56,6 +60,18 @@ func decorateCommandWithMapNameFlags(cmd *cobra.Command, mapName *string) {
 func decorateCommandWithKeyFlags(cmd *cobra.Command, mapKey *string) {
 	cmd.Flags().StringVarP(mapKey, "key", "k", "", "key of the map")
 	cmd.MarkFlagRequired("key")
+}
+
+func decorateCommandWithKeyFlagsNotRequired(cmd *cobra.Command, mapKey *string) {
+	cmd.Flags().StringVarP(mapKey, "key", "k", "", "key of the map")
+}
+
+func decorateCommandWithKeySliceFlagsRequired(cmd *cobra.Command, mapKeys []string) {
+	//cmd.Flags().StringSliceVarP()
+}
+
+func decorateCommandWithValueSliceFlagsRequired(cmd *cobra.Command, mapValues []string) {
+	//cmd.Flags().StringSliceVarP()
 }
 
 func decorateCommandWithValueFlags(cmd *cobra.Command, mapValue, mapValueFile, mapValueType *string) {
