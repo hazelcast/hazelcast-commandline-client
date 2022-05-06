@@ -35,7 +35,7 @@ func NewRemove(config *hazelcast.Config) *cobra.Command {
 		return err
 	}
 	cmd := &cobra.Command{
-		Use:   "remove --name mapname {--key keyname, --all}",
+		Use:   "remove --name mapname {--key keyname | --all}",
 		Short: "Remove key(s)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var err error

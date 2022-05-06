@@ -16,7 +16,6 @@
 package rootcmd
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -43,13 +42,13 @@ func New(cnfg *hazelcast.Config) (*cobra.Command, *config.GlobalFlagValues) {
 			"`hzc help` - print help",
 		// Handle errors explicitly
 		SilenceErrors: true,
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			// Make sure the command receives non-nil configuration
-			if cnfg == nil {
-				return errors.New("missing configuration")
-			}
-			return nil
-		},
+		//PreRunE: func(cmd *cobra.Command, args []string) error {
+		//	// Make sure the command receives non-nil configuration
+		//	if cnfg == nil {
+		//		return errors.New("missing configuration")
+		//	}
+		//	return nil
+		//},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Help()
 		},

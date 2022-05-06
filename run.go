@@ -91,10 +91,10 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *haze
 
 func updateConfigWithFlags(rootCmd *cobra.Command, cnfg *config.Config, programArgs []string, globalFlagValues *config.GlobalFlagValues) error {
 	// parse global persistent flags
-	subCmd, flags, _ := rootCmd.Find(programArgs)
+	//subCmd, flags, _ := rootCmd.Find(programArgs)
 	// fall back to cmd.Help, even if there is error
-	_ = subCmd.ParseFlags(flags)
-	// initialize config from file
+	//_ = subCmd.ParseFlags(flags)
+	//initialize config from file
 	err := config.ReadAndMergeWithFlags(globalFlagValues, cnfg)
 	return err
 }
