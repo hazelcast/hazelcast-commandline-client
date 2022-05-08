@@ -69,7 +69,7 @@ func NewPut(config *hazelcast.Config) *cobra.Command {
 		}
 		return vOrder, tOrder, nil
 	}
-	makePutAll := func(ctx context.Context, cmd *cobra.Command, m *hazelcast.Map, entries []types.Entry) error {
+	executePutAll := func(ctx context.Context, cmd *cobra.Command, m *hazelcast.Map, entries []types.Entry) error {
 		var err error
 		err = m.PutAll(ctx, entries...)
 		if err != nil {
@@ -99,29 +99,30 @@ func NewPut(config *hazelcast.Config) *cobra.Command {
 				if err = json.Unmarshal(data, &jsonEntries); err != nil {
 					return hzcerror.NewLoggableError(err, "given json map entry file contains invalid entry")
 				}
-				for key := range jsonEntries {
-					jv := jsonEntries[key]
-					// ignore null values in json
-					if jv == nil {
+				for key, jsv := range jsonEntries {
+					switch jsv.(type) {
+					case nil:
+						// ignore null json values
 						continue
-					}
-					if IsJsonObject(jv) {
+					case string, float64, bool, []interface{}:
+						entries = append(entries, types.Entry{Key: key, Value: jsv})
+					case map[string]interface{}:
 						var nJson interface{}
-						mj, _ := json.Marshal(jv)
+						mj, _ := json.Marshal(jsv)
 						nJson, err = normalizeMapValue(string(mj), "", internal.TypeJSON)
 						if err != nil {
 							return hzcerror.NewLoggableError(err, "unknown entry value")
 						}
 						entries = append(entries, types.Entry{Key: key, Value: nJson})
-						continue
+					default:
+						return hzcerror.NewLoggableError(nil, "Unknown data type in json file")
 					}
-					entries = append(entries, types.Entry{Key: key, Value: jv})
 				}
 				m, err := getMap(ctx, config, mapName)
 				if err != nil {
 					return err
 				}
-				return makePutAll(ctx, cmd, m, entries)
+				return executePutAll(ctx, cmd, m, entries)
 			}
 			vOrder, tOrder, err := validateValuesFlag()
 			if err != nil {
@@ -176,7 +177,7 @@ func NewPut(config *hazelcast.Config) *cobra.Command {
 				vOrder = vOrder[1:]
 				vC++
 			}
-			return makePutAll(ctx, cmd, m, entries)
+			return executePutAll(ctx, cmd, m, entries)
 		},
 	}
 	decorateCommandWithMapNameFlags(cmd, &mapName)

@@ -74,14 +74,6 @@ func New(config *hazelcast.Config) *cobra.Command {
 	return cmd
 }
 
-func IsJsonObject(value interface{}) bool {
-	_, ok := value.(map[string]interface{})
-	if ok {
-		return true
-	}
-	return false
-}
-
 func withDashPrefix(flag string, short bool) string {
 	if flag == "" {
 		return ""
