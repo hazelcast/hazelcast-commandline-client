@@ -199,8 +199,12 @@ func (d *Document) FindEndOfCurrentWord() int {
 	return len(x)
 }
 
+// FindPreviousWordStart returns the distance to first end of word or start of word
 func (d *Document) FindPreviousWordStart() int {
 	x := d.TextBeforeCursor()
+	if x == "" {
+		return 0
+	}
 	var i int
 	for i = len(x) - 1; i > 0; i-- {
 		if !unicode.IsSpace(rune(x[i])) {
