@@ -68,7 +68,7 @@ func (p *Prompt) Run() {
 	for {
 		select {
 		case b := <-bufCh:
-			if shouldExit, e := p.feed(b); shouldExit {
+			if shouldExit, e := p.Feed(b); shouldExit {
 				p.renderer.BreakLine(p.buf)
 				stopReadBufCh <- struct{}{}
 				stopHandleSignalCh <- struct{}{}
@@ -112,7 +112,7 @@ func (p *Prompt) Run() {
 	}
 }
 
-func (p *Prompt) feed(b []byte) (shouldExit bool, exec *Exec) {
+func (p *Prompt) Feed(b []byte) (shouldExit bool, exec *Exec) {
 	key := GetKey(b)
 	p.buf.lastKeyStroke = key
 	// completion
@@ -256,7 +256,7 @@ func (p *Prompt) Input() string {
 	for {
 		select {
 		case b := <-bufCh:
-			if shouldExit, e := p.feed(b); shouldExit {
+			if shouldExit, e := p.Feed(b); shouldExit {
 				p.renderer.BreakLine(p.buf)
 				stopReadBufCh <- struct{}{}
 				return ""

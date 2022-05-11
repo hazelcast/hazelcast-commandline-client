@@ -119,7 +119,8 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 		},
 	}))
 	co.GoPromptOptions = append(co.GoPromptOptions, SuggestionColorOptions...)
-	p := goprompt.New(
+	var p *goprompt.Prompt
+	p = goprompt.New(
 		func(in string) {
 			ctx, cancel := context.WithCancel(ctx)
 			defer cancel()
@@ -158,6 +159,11 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 					exitPromptSafely()
 				}
 			}
+			// clear screen only after sql browser command executed successfully
+			if strings.Trim(in, " ") == "sql" {
+				// lets us invoke ctrl+L shortcut which clears the screen
+				p.Feed([]byte{0xc})
+			}
 		},
 		func(d goprompt.Document) []goprompt.Suggest {
 			// no suggestion on new line
@@ -191,7 +197,8 @@ func prepareRootCmdForPrompt(co CobraPrompt, root *cobra.Command) {
 	}
 	root.Example = `> map put -k key -n myMap -v someValue
 > map get -k key -m myMap
-> cluster version`
+> cluster version
+> sql`
 	root.Use = ""
 }
 
