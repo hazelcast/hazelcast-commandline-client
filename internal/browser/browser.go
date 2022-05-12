@@ -273,7 +273,7 @@ func (h Help) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (h Help) View() string {
-	base := lipgloss.NewStyle() //.BorderStyle(lipgloss.NormalBorder())
+	base := lipgloss.NewStyle()
 	sh := base.Copy().Background(lipgloss.Color(tuiutil.Highlight())).Foreground(lipgloss.Color("#000000"))
 	def := base.Copy()
 	var b strings.Builder

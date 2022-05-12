@@ -102,19 +102,10 @@ func DisplayTable(m *TuiModel) string {
 	// go through all columns
 	slice := m.Data().TableHeadersSlice
 	for _, columnName := range slice {
-		//if m.UI.ExpandColumn > -1 && m.UI.ExpandColumn != c {
-		//	continue
-		//}
-
-		var (
-			rowBuilder []string
-		)
-
+		var rowBuilder []string
 		columnValues := m.Data().TableSlices[columnName]
 		base := m.GetBaseStyle().
-			//Background(lipgloss.Color(tuiutil.HeaderBackground())).
 			Background(lipgloss.Color("#000000"))
-			//BorderBackground(lipgloss.Color(tuiutil.HeaderBackground()))
 		for r, val := range columnValues {
 			s := GetStringRepresentationOfInterface(val)
 			s = " " + s
