@@ -106,10 +106,10 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 			exitPromptSafely()
 		},
 	}), goprompt.OptionAddKeyBind(goprompt.KeyBind{
-		Key: goprompt.Key(86),
+		Key: goprompt.ControlLeft,
 		Fn: func(b *goprompt.Buffer) {
-			to := b.Document().FindEndOfCurrentWordWithSpace()
-			b.CursorRight(to)
+			to := b.Document().FindPreviousWordStart()
+			b.CursorLeft(to)
 		},
 	}), goprompt.OptionAddKeyBind(goprompt.KeyBind{
 		Key: goprompt.ControlRight,
