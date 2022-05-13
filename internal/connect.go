@@ -149,8 +149,6 @@ func ConnectToCluster(ctx context.Context, clientConfig *hazelcast.Config) (cli 
 			}
 		}
 	}()
-	ctx, cancel := context.WithTimeout(ctx, goClientConnectionTimeout)
-	defer cancel()
 	configCopy := clientConfig.Clone()
 	cli, err = hazelcast.StartNewClientWithConfig(ctx, configCopy)
 	return

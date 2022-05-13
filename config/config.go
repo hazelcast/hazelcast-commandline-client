@@ -17,7 +17,6 @@ package config
 
 import (
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -29,6 +28,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/file"
 )
 
 const defaultConfigFilename = "config.yaml"
@@ -67,33 +67,13 @@ func DefaultConfig() *Config {
 	return &Config{Hazelcast: hz}
 }
 
-func fileExists(path string) (bool, error) {
-	var err error
-	if _, err = os.Stat(path); err == nil {
-		// conf file exists
-		return true, nil
-	}
-	if errors.Is(err, os.ErrNotExist) {
-		return false, nil
-	}
-	// unexpected error
-	return false, err
-}
-
 func writeToFile(config *Config, confPath string) error {
 	var err error
 	var out []byte
 	if out, err = yaml.Marshal(config); err != nil {
 		return err
 	}
-	filePath, _ := filepath.Split(confPath)
-	if err = os.MkdirAll(filePath, os.ModePerm); err != nil {
-		return fmt.Errorf("can not create parent directories for file: %w", err)
-	}
-	if err = ioutil.WriteFile(confPath, out, 0600); err != nil {
-		return fmt.Errorf("can not write to %s: %w", confPath, err)
-	}
-	return nil
+	return file.CreateMissingDirsAndFileWithRWPerms(confPath, out)
 }
 
 func ReadAndMergeWithFlags(flags *GlobalFlagValues, c *Config) error {
@@ -145,7 +125,7 @@ func readConfig(path string, config *Config, defaultConfPath string) error {
 	isDefaultConfigPath := path == defaultConfPath
 	var confBytes []byte
 	var err error
-	exists, err := fileExists(path)
+	exists, err := file.FileExists(path)
 	if err != nil {
 		return hzcerror.NewLoggableError(err, "can not access configuration path %s", path)
 	}
@@ -169,11 +149,7 @@ func readConfig(path string, config *Config, defaultConfPath string) error {
 }
 
 func DefaultConfigPath() string {
-	homeDirectoryPath, err := os.UserHomeDir()
-	if err != nil {
-		panic(fmt.Errorf("retrieving home directory: %w", err))
-	}
-	return filepath.Join(homeDirectoryPath, ".local/share/hz-cli", defaultConfigFilename)
+	return filepath.Join(file.HZCHomePath(), defaultConfigFilename)
 }
 
 func updateConfigWithSSL(config *hazelcast.Config, sslc *SSLConfig) error {

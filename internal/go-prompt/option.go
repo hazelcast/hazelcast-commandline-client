@@ -197,11 +197,11 @@ func OptionMaxSuggestion(x uint16) Option {
 	}
 }
 
-// OptionHistory to set history expressed by string array.
+// OptionHistory to set History expressed by string array.
 func OptionHistory(x []string) Option {
 	return func(p *Prompt) error {
-		p.history.histories = x
-		p.history.Clear()
+		p.History.Histories = x
+		p.History.Clear()
 		return nil
 	}
 }
@@ -296,7 +296,7 @@ func New(executor Executor, completer Completer, opts ...Option) *Prompt {
 		},
 		buf:         NewBuffer(),
 		executor:    executor,
-		history:     NewHistory(),
+		History:     NewHistory(),
 		completion:  NewCompletionManager(completer, 6),
 		keyBindMode: EmacsKeyBind, // All the above assume that bash is running in the default Emacs setting
 	}

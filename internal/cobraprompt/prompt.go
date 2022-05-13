@@ -97,7 +97,7 @@ var SuggestionColorOptions = []goprompt.Option{
 
 // Run will automatically generate suggestions for all cobra commands and flags defined by RootCmd and execute the selected commands.
 // Run will also reset all given flags by default, see PersistFlagValues
-func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelcast.Config) {
+func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelcast.Config, history *goprompt.History) {
 	defer handleExit()
 	// let ctrl+c exit goprompt
 	co.GoPromptOptions = append(co.GoPromptOptions, goprompt.OptionAddKeyBind(goprompt.KeyBind{
@@ -168,6 +168,7 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 		},
 		co.GoPromptOptions...,
 	)
+	p.History = history
 	p.Run()
 }
 
