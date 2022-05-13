@@ -19,12 +19,10 @@ package sqlcmd
 import (
 	"context"
 	"database/sql"
-	"errors"
+	"encoding/csv"
 	"fmt"
 	"io"
-	"os/exec"
 	"strings"
-	"syscall"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
@@ -35,7 +33,8 @@ import (
 )
 
 func NewQuery(config *hazelcast.Config) *cobra.Command {
-	return &cobra.Command{
+	var outputType string
+	cmd := &cobra.Command{
 		Use:   `query statement-string`,
 		Short: "Executes SQL query",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -51,6 +50,9 @@ func NewQuery(config *hazelcast.Config) *cobra.Command {
 			if len(queries) == 0 {
 				return cmd.Help()
 			}
+			if outputType != "pretty" && outputType != "csv" {
+				return hzcerror.NewLoggableError(nil, "Provided output type parameter (%s) is not a known type. Provide either 'pretty' or 'csv'", outputType)
+			}
 			ctx := cmd.Context()
 			c, err := internal.ConnectToCluster(ctx, config)
 			if err != nil {
@@ -59,11 +61,7 @@ func NewQuery(config *hazelcast.Config) *cobra.Command {
 			for _, q := range queries {
 				lt := strings.ToLower(q)
 				if strings.HasPrefix(lt, "select") || strings.HasPrefix(lt, "show") {
-					if err := query(ctx, c, q, cmd.OutOrStdout(), true); err != nil {
-						if errors.Is(err, syscall.EPIPE) {
-							// pager may be closed, expected error
-							return nil
-						}
+					if err := query(ctx, c, q, cmd.OutOrStdout(), outputType); err != nil {
 						return hzcerror.NewLoggableError(err, "Cannot execute the query")
 					}
 				} else {
@@ -75,54 +73,57 @@ func NewQuery(config *hazelcast.Config) *cobra.Command {
 			return nil
 		},
 	}
+	decorateCommandWithOutputFlag(&outputType, cmd)
+	return cmd
 }
 
-func query(ctx context.Context, c *hazelcast.Client, text string, out io.Writer, usePager bool) error {
+func decorateCommandWithOutputFlag(outputType *string, cmd *cobra.Command) {
+	flags := cmd.Flags()
+	flags.StringVarP(outputType, "output-type", "o", "pretty", "pretty or csv")
+	cmd.RegisterFlagCompletionFunc("output-type", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return []string{"pretty", "csv"}, cobra.ShellCompDirectiveDefault
+	})
+}
+
+func query(ctx context.Context, c *hazelcast.Client, text string, out io.Writer, outputType string) error {
 	rows, err := c.QuerySQL(ctx, text)
 	if err != nil {
 		return fmt.Errorf("querying: %w", err)
 	}
 	defer rows.Close()
-	var w = out
-	// command that can be used as a pager exists
-	if usePager {
-		var pagerCmd string
-		for _, s := range []string{"less", "more"} {
-			if _, err := exec.LookPath(s); err != nil {
-				continue
+	switch outputType {
+	case "pretty":
+		tWriter := table.NewTableWriter(out)
+		return rowsHandler(rows, func(cols []string) error {
+			icols := make([]interface{}, len(cols))
+			for i, v := range cols {
+				icols[i] = v
 			}
-			pagerCmd = s
-			break
-		}
-		if pagerCmd != "" {
-			cmd := exec.CommandContext(ctx, pagerCmd)
-			cmd.Stdout = out
-			cmd.Stderr = out
-			cmdBuf, err := cmd.StdinPipe()
-			if err != nil {
+			return tWriter.WriteHeader(icols...)
+		}, func(row []interface{}) error {
+			return tWriter.Write(row...)
+		})
+	case "csv":
+		csvWriter := csv.NewWriter(out)
+		return rowsHandler(rows, func(cols []string) error {
+			if err := csvWriter.Write(cols); err != nil {
 				return err
 			}
-			if err := cmd.Start(); err != nil {
+			csvWriter.Flush()
+			return nil
+		}, func(iValues []interface{}) error {
+			sValues := make([]string, len(iValues))
+			for i, v := range iValues {
+				sValues[i] = fmt.Sprint(v)
+			}
+			if err := csvWriter.Write(sValues); err != nil {
 				return err
 			}
-			defer func() {
-				cmdBuf.Close()
-				cmd.Wait()
-			}()
-			w = cmdBuf
-		}
+			csvWriter.Flush()
+			return nil
+		})
 	}
-	tWriter := table.NewTableWriter(w)
-	err = rowsHandler(rows, func(cols []string) error {
-		icols := make([]interface{}, len(cols))
-		for i, v := range cols {
-			icols[i] = v
-		}
-		return tWriter.WriteHeader(icols...)
-	}, func(row []interface{}) error {
-		return tWriter.Write(row...)
-	})
-	return err
+	return nil
 }
 
 // Reads columns and rows calls handlers. rowHandler is called per row.
