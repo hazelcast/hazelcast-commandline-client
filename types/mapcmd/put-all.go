@@ -18,14 +18,12 @@ package mapcmd
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 	"github.com/spf13/cobra"
 
@@ -34,7 +32,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/types/flagdecorators"
 )
 
-func NewPut(config *hazelcast.Config) *cobra.Command {
+func NewPutAll(config *hazelcast.Config) (*cobra.Command, error) {
 	var (
 		entries []types.Entry
 	)
@@ -83,8 +81,8 @@ func NewPut(config *hazelcast.Config) *cobra.Command {
 		return nil
 	}
 	cmd := &cobra.Command{
-		Use:   "put --name mapname [--key keyname]... [--value-type type | --value-file file | --value value]...",
-		Short: "Put value to map",
+		Use:   "put-all --name mapname [--key keyname]... [[--value-file file | --value value][--value-type type]]...",
+		Short: "Put values to map",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(cmd.Context(), time.Second*3)
 			defer cancel()
@@ -97,13 +95,12 @@ func NewPut(config *hazelcast.Config) *cobra.Command {
 					return err
 				}
 				if err = json.Unmarshal(data, &jsonEntries); err != nil {
-					return hzcerror.NewLoggableError(err, "given json map entry file contains invalid entry")
+					return hzcerror.NewLoggableError(err, "given json map entry file is in invalid format")
 				}
 				for key, jsv := range jsonEntries {
 					switch jsv.(type) {
 					case nil:
 						// ignore null json values
-						continue
 					case string, float64, bool, []interface{}:
 						entries = append(entries, types.Entry{Key: key, Value: jsv})
 					case map[string]interface{}:
@@ -180,56 +177,23 @@ func NewPut(config *hazelcast.Config) *cobra.Command {
 			return executePutAll(ctx, cmd, m, entries)
 		},
 	}
-	decorateCommandWithMapNameFlags(cmd, &mapName)
-	decorateCommandWithMapKeySliceFlags(cmd, &mapKeys, false, "key(s) of the map")
-	decorateCommandWithMapValueSliceFlags(cmd, &mapValues, false, "value(s) of the map")
-	decorateCommandWithMapValueFileSliceFlags(cmd, &mapValueFiles, false, "`path to the file that contains the value. Use \"-\" (dash) to read from stdin`")
-	decorateCommandWithMapValueTypeSliceFlags(cmd, &mapValueTypes, false, "type of the value, one of: string, json")
-	flagdecorators.DecorateCommandWithJsonEntryFlag(cmd, &jsonEntryPath, false, "`path to json file that contains entries`")
-	return cmd
-}
-
-func normalizeMapValue(v, vFile, vType string) (interface{}, error) {
-	var valueStr string
-	var err error
-	switch {
-	case v != "" && vFile != "":
-		return nil, hzcerror.NewLoggableError(nil, fmt.Sprintf("Only one of --%s and --%s must be specified", MapValueFlag, MapValueFileFlag))
-	case v != "":
-		valueStr = v
-	case vFile != "":
-		if valueStr, err = loadValueFile(vFile); err != nil {
-			err = hzcerror.NewLoggableError(err, "Cannot load the value file. Make sure file exists and process has correct access rights")
-		}
-	default:
-		err = hzcerror.NewLoggableError(nil, fmt.Sprintf("One of the value flags (--%s or --%s) must be set", MapValueFlag, MapValueFileFlag))
-	}
-	if err != nil {
+	if err := decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name"); err != nil {
 		return nil, err
 	}
-	switch vType {
-	case internal.TypeString:
-		return valueStr, nil
-	case internal.TypeJSON:
-		return serialization.JSON(valueStr), nil
+	if err := decorateCommandWithMapKeySliceFlags(cmd, &mapKeys, false, "key(s) of the map"); err != nil {
+		return nil, err
 	}
-	return nil, hzcerror.NewLoggableError(nil, "Provided value type parameter (%s) is not a known type. Provide either 'string' or 'json'", vType)
-}
-
-func loadValueFile(path string) (string, error) {
-	if path == "" {
-		return "", errors.New("path cannot be empty")
+	if err := decorateCommandWithMapValueSliceFlags(cmd, &mapValues, false, "value(s) of the map"); err != nil {
+		return nil, err
 	}
-	if path == "-" {
-		if value, err := ioutil.ReadAll(os.Stdin); err != nil {
-			return "", err
-		} else {
-			return string(value), nil
-		}
+	if err := decorateCommandWithMapValueFileSliceFlags(cmd, &mapValueFiles, false, "`path to the file that contains the value. Use \"-\" (dash) to read from stdin`"); err != nil {
+		return nil, err
 	}
-	if value, err := ioutil.ReadFile(path); err != nil {
-		return "", err
-	} else {
-		return string(value), nil
+	if err := decorateCommandWithMapValueTypeSliceFlags(cmd, &mapValueTypes, false, "type of the value, one of: string, json"); err != nil {
+		return nil, err
 	}
+	if err := flagdecorators.DecorateCommandWithJsonEntryFlag(cmd, &jsonEntryPath, false, "`path to json file that contains entries`"); err != nil {
+		return nil, err
+	}
+	return cmd, nil
 }

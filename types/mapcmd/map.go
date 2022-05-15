@@ -17,9 +17,13 @@ package mapcmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/spf13/cobra"
 
 	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
@@ -37,41 +41,113 @@ const (
 	MapValueFileFlag      = "value-file"
 	MapValueTypeFlagShort = "t"
 	MapValueTypeFlag      = "value-type"
-	MapOutputFlag         = "output"
 )
 
-type MapRequestedOutput int
-
-const (
-	MapOutputEntries MapRequestedOutput = 1 << iota
-	MapOutputKeys
-	MapOutputValues
-)
-
-func (m MapRequestedOutput) String() string {
-	switch m {
-	case MapOutputEntries:
-		return "entries"
-	case MapOutputKeys:
-		return "keys"
-	case MapOutputValues:
-		return "values"
-	default:
-		return ""
-	}
-}
-
-func New(config *hazelcast.Config) *cobra.Command {
+func New(config *hazelcast.Config) (*cobra.Command, error) {
 	// context timeout for each map operation can be configurable
 	var cmd = &cobra.Command{
 		Use:   "map {get | put | remove} --name mapname --key keyname [--value-type type | --value-file file | --value value]",
 		Short: "Map operations",
 	}
-	cmd.AddCommand(
-		NewGet(config),
-		NewPut(config),
-		NewRemove(config))
-	return cmd
+	if err := registerToMap(cmd, config); err != nil {
+		return nil, err
+	}
+	return cmd, nil
+}
+
+func registerToMap(cmd *cobra.Command, config *hazelcast.Config) error {
+	var err error
+	// add clear command
+	var clear *cobra.Command
+	if clear, err = NewClear(config); err != nil {
+		return hzcerror.NewLoggableError(err, "cannot add command clear, internal error")
+	}
+	cmd.AddCommand(clear)
+	// add get command
+	var get *cobra.Command
+	if get, err = NewGet(config); err != nil {
+		return hzcerror.NewLoggableError(err, "cannot add command get, internal error")
+	}
+	cmd.AddCommand(get)
+	// add get-all command
+	var getAll *cobra.Command
+	if getAll, err = NewGetAll(config); err != nil {
+		return hzcerror.NewLoggableError(err, "cannot add command get-all, internal error")
+	}
+	cmd.AddCommand(getAll)
+	// add put command
+	var put *cobra.Command
+	if put, err = NewPut(config); err != nil {
+		return hzcerror.NewLoggableError(err, "cannot add command put, internal error")
+	}
+	cmd.AddCommand(put)
+	// add put-all command
+	var putAll *cobra.Command
+	if putAll, err = NewPutAll(config); err != nil {
+		return hzcerror.NewLoggableError(err, "cannot add command put-all, internal error")
+	}
+	cmd.AddCommand(putAll)
+	// add remove command
+	var remove *cobra.Command
+	if remove, err = NewRemove(config); err != nil {
+		return hzcerror.NewLoggableError(err, "cannot add command remove, internal error")
+	}
+	cmd.AddCommand(remove)
+	return nil
+}
+
+func normalizeMapValue(v, vFile, vType string) (interface{}, error) {
+	var valueStr string
+	var err error
+	switch {
+	case v != "" && vFile != "":
+		return nil, hzcerror.NewLoggableError(nil, "Only one of --value and --value-file must be specified")
+	case v != "":
+		valueStr = v
+	case vFile != "":
+		if valueStr, err = loadValueFile(vFile); err != nil {
+			err = hzcerror.NewLoggableError(err, "Cannot load the value file. Make sure file exists and process has correct access rights")
+		}
+	default:
+		err = hzcerror.NewLoggableError(nil, "One of the value flags (--value or --value-file) must be set")
+	}
+	if err != nil {
+		return nil, err
+	}
+	switch vType {
+	case internal.TypeString:
+		return valueStr, nil
+	case internal.TypeJSON:
+		return serialization.JSON(valueStr), nil
+	}
+	return nil, hzcerror.NewLoggableError(nil, "Provided value type parameter (%s) is not a known type. Provide either 'string' or 'json'", vType)
+}
+
+func loadValueFile(path string) (string, error) {
+	if path == "" {
+		return "", errors.New("path cannot be empty")
+	}
+	if path == "-" {
+		if value, err := ioutil.ReadAll(os.Stdin); err != nil {
+			return "", err
+		} else {
+			return string(value), nil
+		}
+	}
+	if value, err := ioutil.ReadFile(path); err != nil {
+		return "", err
+	} else {
+		return string(value), nil
+	}
+}
+
+func cloudcb(err error, config *hazelcast.Config) (bool, error) {
+	isCloudCluster := config.Cluster.Cloud.Enabled
+	if networkErrMsg, handled := internal.TranslateNetworkError(err, isCloudCluster); handled {
+		err = hzcerror.NewLoggableError(err, networkErrMsg)
+		return true, err
+	}
+	return false, err
 }
 
 func withDashPrefix(flag string, short bool) string {
@@ -124,63 +200,83 @@ func getMap(ctx context.Context, clientConfig *hazelcast.Config, mapName string)
 	return
 }
 
-func decorateCommandWithMapNameFlags(cmd *cobra.Command, mapName *string) {
-	cmd.Flags().StringVarP(mapName, MapNameFlag, MapNameFlagShort, "", "specify the map name")
-	cmd.MarkFlagRequired("name")
-}
-
-func decorateCommandWithKeyFlags(cmd *cobra.Command, mapKey *string) {
-	cmd.Flags().StringVarP(mapKey, MapKeyFlag, MapKeyFlagShort, "", "key of the map")
-	cmd.MarkFlagRequired("key")
-}
-
-func decorateCommandWithValueFlags(cmd *cobra.Command, mapValue, mapValueFile, mapValueType *string) {
+func decorateCommandWithValueFlags(cmd *cobra.Command, mapValue, mapValueFile, mapValueType *string) error {
 	flags := cmd.Flags()
-	flags.StringVarP(mapValueFile, MapValueFileFlag, MapValueFileFlagShort, "", `path to the file that contains the value. Use "-" (dash) to read from stdin`)
-	flags.StringVarP(mapValueType, MapValueTypeFlag, MapValueTypeFlagShort, "string", "type of the value, one of: string, json")
-	cmd.RegisterFlagCompletionFunc(MapValueTypeFlag, func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	flags.StringVarP(mapValue, "value", "v", "", "value of the map")
+	flags.StringVarP(mapValueFile, "value-file", "f", "", `path to the file that contains the value. Use "-" (dash) to read from stdin`)
+	flags.StringVarP(mapValueType, "value-type", "t", "string", "type of the value, one of: string, json")
+	err := cmd.RegisterFlagCompletionFunc("value-type", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"json", "string"}, cobra.ShellCompDirectiveDefault
 	})
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func decorateCommandWithKeyFlagsNotRequired(cmd *cobra.Command, mapKey *string) {
-	cmd.Flags().StringVarP(mapKey, MapKeyFlag, MapKeyFlagShort, "", "key of the map")
+func decorateCommandWithMapNameFlags(cmd *cobra.Command, mapName *string, required bool, usage string) error {
+	cmd.Flags().StringVarP(mapName, MapNameFlag, MapNameFlagShort, "", usage)
+	if required {
+		if err := cmd.MarkFlagRequired(MapNameFlag); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
-func decorateCommandWithMapKeySliceFlags(cmd *cobra.Command, mapKeys *[]string, required bool, usage string) {
+func decorateCommandWithMapKeyFlags(cmd *cobra.Command, mapKey *string, required bool, usage string) error {
+	cmd.Flags().StringVarP(mapKey, MapKeyFlag, MapKeyFlagShort, "", usage)
+	if required {
+		if err := cmd.MarkFlagRequired(MapKeyFlag); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func decorateCommandWithMapKeySliceFlags(cmd *cobra.Command, mapKeys *[]string, required bool, usage string) error {
 	cmd.Flags().StringSliceVarP(mapKeys, MapKeyFlag, MapKeyFlagShort, []string{}, usage)
 	if required {
-		cmd.MarkFlagRequired("keySlice")
+		if err := cmd.MarkFlagRequired(fmt.Sprintf("%s-slice", MapKeyFlag)); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
-func decorateCommandWithMapValueSliceFlags(cmd *cobra.Command, mapValues *[]string, required bool, usage string) {
+func decorateCommandWithMapValueSliceFlags(cmd *cobra.Command, mapValues *[]string, required bool, usage string) error {
 	cmd.Flags().StringSliceVarP(mapValues, MapValueFlag, MapValueFlagShort, []string{}, usage)
 	if required {
-		cmd.MarkFlagRequired("valueSlice")
+		if err := cmd.MarkFlagRequired(fmt.Sprintf("%s-slice", MapValueFlag)); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
-func decorateCommandWithMapValueFileSliceFlags(cmd *cobra.Command, mapValueFiles *[]string, required bool, usage string) {
+func decorateCommandWithMapValueFileSliceFlags(cmd *cobra.Command, mapValueFiles *[]string, required bool, usage string) error {
 	cmd.Flags().StringSliceVarP(mapValueFiles, MapValueFileFlag, MapValueFileFlagShort, []string{}, usage)
 	if required {
-		cmd.MarkFlagRequired("valueFileSlice")
+		if err := cmd.MarkFlagRequired(fmt.Sprintf("%s-slice", MapValueFileFlag)); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
-func decorateCommandWithMapValueTypeSliceFlags(cmd *cobra.Command, mapValueTypes *[]string, required bool, usage string) {
+func decorateCommandWithMapValueTypeSliceFlags(cmd *cobra.Command, mapValueTypes *[]string, required bool, usage string) error {
+	var err error
 	cmd.Flags().StringSliceVarP(mapValueTypes, MapValueTypeFlag, MapValueTypeFlagShort, []string{}, usage)
-	cmd.RegisterFlagCompletionFunc(MapValueTypeFlag, func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err = cmd.RegisterFlagCompletionFunc(MapValueTypeFlag, func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"json", "string"}, cobra.ShellCompDirectiveDefault
 	})
-	if required {
-		cmd.MarkFlagRequired("valueTypeSlice")
+	if err != nil {
+		return err
 	}
-}
-
-func decorateCommandWithMapOutputFlag(cmd *cobra.Command, output *string, required bool, usage string) {
-	cmd.Flags().StringVar(output, MapOutputFlag, MapOutputEntries.String(), usage)
 	if required {
-		cmd.MarkFlagRequired(MapOutputFlag)
+		if err = cmd.MarkFlagRequired(fmt.Sprintf("%s-slice", MapValueTypeFlag)); err != nil {
+			return err
+		}
 	}
+	return nil
 }

@@ -4,9 +4,9 @@ go 1.15
 
 require (
 	github.com/alecthomas/assert v0.0.0-20170929043011-405dbfeb8e38
+	github.com/alecthomas/chroma v0.10.0
 	github.com/alecthomas/colour v0.0.0-20160524082231-60882d9e2721 // indirect
 	github.com/alecthomas/repr v0.0.0-20180818092828-117648cd9897 // indirect
-	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/hazelcast/hazelcast-go-client v1.2.0
 	github.com/mattn/go-colorable v0.1.7
