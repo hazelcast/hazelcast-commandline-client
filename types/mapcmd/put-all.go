@@ -29,7 +29,7 @@ import (
 
 	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
-	"github.com/hazelcast/hazelcast-commandline-client/types/flagdecorators"
+	fds "github.com/hazelcast/hazelcast-commandline-client/types/flagdecorators"
 )
 
 func NewPutAll(config *hazelcast.Config) (*cobra.Command, error) {
@@ -52,7 +52,7 @@ func NewPutAll(config *hazelcast.Config) (*cobra.Command, error) {
 			len(mapValues) |
 			len(mapValueTypes) |
 			len(mapValueFiles)) != 0 {
-			return hzcerror.NewLoggableError(nil, fmt.Sprintf("%s is already set, there cannot be additional flags", flagdecorators.JsonEntryFlag))
+			return hzcerror.NewLoggableError(nil, fmt.Sprintf("%s is already set, there cannot be additional flags", fds.JsonEntryFlag))
 		}
 		return nil
 	}
@@ -192,7 +192,7 @@ func NewPutAll(config *hazelcast.Config) (*cobra.Command, error) {
 	if err := decorateCommandWithMapValueTypeSliceFlags(cmd, &mapValueTypes, false, "type of the value, one of: string, json"); err != nil {
 		return nil, err
 	}
-	if err := flagdecorators.DecorateCommandWithJsonEntryFlag(cmd, &jsonEntryPath, false, "`path to json file that contains entries`"); err != nil {
+	if err := fds.DecorateCommandWithJsonEntryFlag(cmd, &jsonEntryPath, false, "`path to json file that contains entries`"); err != nil {
 		return nil, err
 	}
 	return cmd, nil

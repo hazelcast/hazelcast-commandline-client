@@ -24,7 +24,7 @@ import (
 
 	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
-	"github.com/hazelcast/hazelcast-commandline-client/types/flagdecorators"
+	fds "github.com/hazelcast/hazelcast-commandline-client/types/flagdecorators"
 )
 
 func NewPut(config *hazelcast.Config) (*cobra.Command, error) {
@@ -100,10 +100,10 @@ func NewPut(config *hazelcast.Config) (*cobra.Command, error) {
 	if err := decorateCommandWithValueFlags(cmd, &mapValue, &mapValueFile, &mapValueType); err != nil {
 		return nil, err
 	}
-	if err := flagdecorators.DecorateCommandWithTTL(cmd, &ttl, false, "ttl value of the entry"); err != nil {
+	if err := fds.DecorateCommandWithTTL(cmd, &ttl, false, "ttl value of the entry"); err != nil {
 		return nil, err
 	}
-	if err := flagdecorators.DecorateCommandWithMaxIdle(cmd, &maxIdle, false, "max-idle value of the entry"); err != nil {
+	if err := fds.DecorateCommandWithMaxIdle(cmd, &maxIdle, false, "max-idle value of the entry"); err != nil {
 		return nil, err
 	}
 	return cmd, nil
