@@ -76,13 +76,12 @@ func getMap(ctx context.Context, clientConfig *hazelcast.Config, mapName string)
 }
 
 func NewUse() *cobra.Command {
-	//var mapName, mapKey string
 	cmd := &cobra.Command{
-		Use:   "use map-name",
+		Use:   `use [map-name | --reset]`,
 		Short: "sets default map name",
-		Example: "map use m1		# sets the default map name to m1 unless set explicitly\n" +
-			"map get --key k1	# \"--name m1\" is inferred\n" +
-			"map use --reset		# resets the behaviour",
+		Example: `map use m1          # sets the default map name to m1 unless set explicitly
+map get --key k1    # --name m1\" is inferred
+map use --reset	    # resets the behaviour`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			persister := internal.PersisterFromContext(cmd.Context())
 			if cmd.Flags().Changed("reset") {

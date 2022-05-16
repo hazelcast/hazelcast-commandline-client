@@ -38,10 +38,10 @@ func New(cnfg *hazelcast.Config) (*cobra.Command, *config.GlobalFlagValues) {
 		Use:   "hzc {cluster | map | sql | help} [--address address | --cloud-token token | --cluster-name name | --config config]",
 		Short: "Hazelcast command-line client",
 		Long:  "Hazelcast command-line client connects your command-line to a Hazelcast cluster",
-		Example: "`hzc` - starts an interactive shell 🚀\n" +
-			"`hzc map put --key hello --value world --name my-map` - put entry into map directly\n" +
-			"`hzc sql` - starts the SQL Browser\n" +
-			"`hzc help` - print help",
+		Example: `hzc # starts an interactive shell 🚀
+hzc map put --name my-map --key hello --value world # put entry into map directly
+hzc sql` - starts the SQL Browser\n" +
+			"`hzc help # print help`,
 		// Handle errors explicitly
 		SilenceErrors: true,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
