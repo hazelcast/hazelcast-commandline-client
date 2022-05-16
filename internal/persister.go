@@ -21,7 +21,7 @@ func PersisterFromContext(ctx context.Context) NamePersister {
 	return ctx.Value("persister").(NamePersister)
 }
 
-func SetContext(ctx context.Context, persister NamePersister) context.Context {
+func ContextWithPersister(ctx context.Context, persister NamePersister) context.Context {
 	return context.WithValue(ctx, "persister", persister)
 }
 

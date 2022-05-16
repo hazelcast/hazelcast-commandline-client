@@ -124,7 +124,7 @@ func HandleError(err error) string {
 
 func RunCmd(ctx context.Context, root *cobra.Command) error {
 	p := internal.NewNamePersister()
-	ctx = internal.SetContext(ctx, p)
+	ctx = internal.ContextWithPersister(ctx, p)
 	ctx, cancel := context.WithCancel(ctx)
 	handleInterrupt(ctx, cancel)
 	return root.ExecuteContext(ctx)
