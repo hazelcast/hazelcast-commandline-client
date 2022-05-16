@@ -59,8 +59,12 @@ func NewGetAll(config *hazelcast.Config) (*cobra.Command, error) {
 			if err != nil {
 				return err
 			}
+			keys := make([]interface{}, len(mapKeys))
+			for i := range mapKeys {
+				keys[i] = mapKeys[i]
+			}
 			var entries []types.Entry
-			entries, err = m.GetAll(ctx, mapKeys)
+			entries, err = m.GetAll(ctx, keys...)
 			if err != nil {
 				var handled bool
 				handled, err = cloudcb(err, config)
@@ -84,7 +88,7 @@ func NewGetAll(config *hazelcast.Config) (*cobra.Command, error) {
 			return nil
 		},
 	}
-	if err := decorateCommandWithMapNameFlags(cmd, &mapName, false, "specify the map name"); err != nil {
+	if err := decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name"); err != nil {
 		return nil, err
 	}
 	if err := decorateCommandWithMapKeySliceFlags(cmd, &mapKeys, false, "key(s) of the entry"); err != nil {
