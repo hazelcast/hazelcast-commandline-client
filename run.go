@@ -28,7 +28,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/hazelcast/hazelcast-commandline-client/config"
-	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
+	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/cobraprompt"
 	goprompt "github.com/hazelcast/hazelcast-commandline-client/internal/go-prompt"
@@ -113,8 +113,8 @@ func updateConfigWithFlags(rootCmd *cobra.Command, cnfg *config.Config, programA
 func HandleError(err error) string {
 	errStr := fmt.Sprintf("Unknown Error: %s\n"+
 		"Use \"hzc [command] --help\" for more information about a command.", err.Error())
-	var loggable hzcerror.LoggableError
-	var flagErr hzcerror.FlagError
+	var loggable hzcerrors.LoggableError
+	var flagErr hzcerrors.FlagError
 	if errors.As(err, &loggable) {
 		errStr = fmt.Sprintf("Error: %s\n", loggable.VerboseError())
 	} else if errors.As(err, &flagErr) {

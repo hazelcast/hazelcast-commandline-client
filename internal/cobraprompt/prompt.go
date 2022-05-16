@@ -29,7 +29,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
+	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	goprompt "github.com/hazelcast/hazelcast-commandline-client/internal/go-prompt"
@@ -153,7 +153,7 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 			prepareRootCmdForPrompt(co, root)
 			root.SetArgs(promptArgs)
 			root.SetFlagErrorFunc(func(_ *cobra.Command, err error) error {
-				return hzcerror.FlagError(err)
+				return hzcerrors.FlagError(err)
 			})
 			if err := root.ExecuteContext(ctx); err != nil {
 				if errors.Is(err, ErrExit) {

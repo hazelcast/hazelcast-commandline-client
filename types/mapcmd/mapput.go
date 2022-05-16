@@ -26,7 +26,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/spf13/cobra"
 
-	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
+	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
@@ -64,7 +64,7 @@ func NewPut(config *hazelcast.Config) *cobra.Command {
 			cmd.Printf("Cannot put value for key %s to map %s\n", mapKey, mapName)
 			isCloudCluster := config.Cluster.Cloud.Enabled
 			if networkErrMsg, handled := internal.TranslateNetworkError(err, isCloudCluster); handled {
-				err = hzcerror.NewLoggableError(err, networkErrMsg)
+				err = hzcerrors.NewLoggableError(err, networkErrMsg)
 			}
 			return err
 		},
@@ -80,15 +80,15 @@ func normalizeMapValue(v, vFile, vType string) (interface{}, error) {
 	var err error
 	switch {
 	case v != "" && vFile != "":
-		return nil, hzcerror.NewLoggableError(nil, "Only one of --value and --value-file must be specified")
+		return nil, hzcerrors.NewLoggableError(nil, "Only one of --value and --value-file must be specified")
 	case v != "":
 		valueStr = v
 	case vFile != "":
 		if valueStr, err = loadValueFile(vFile); err != nil {
-			err = hzcerror.NewLoggableError(err, "Cannot load the value file. Make sure file exists and process has correct access rights")
+			err = hzcerrors.NewLoggableError(err, "Cannot load the value file. Make sure file exists and process has correct access rights")
 		}
 	default:
-		err = hzcerror.NewLoggableError(nil, "One of the value flags (--value or --value-file) must be set")
+		err = hzcerrors.NewLoggableError(nil, "One of the value flags (--value or --value-file) must be set")
 	}
 	if err != nil {
 		return nil, err
@@ -99,7 +99,7 @@ func normalizeMapValue(v, vFile, vType string) (interface{}, error) {
 	case internal.TypeJSON:
 		return serialization.JSON(valueStr), nil
 	}
-	return nil, hzcerror.NewLoggableError(nil, "Provided value type parameter (%s) is not a known type. Provide either 'string' or 'json'", vType)
+	return nil, hzcerrors.NewLoggableError(nil, "Provided value type parameter (%s) is not a known type. Provide either 'string' or 'json'", vType)
 }
 
 func loadValueFile(path string) (string, error) {

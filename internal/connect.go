@@ -27,7 +27,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 
 	"github.com/hazelcast/hazelcast-commandline-client/config"
-	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
+	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 )
 
 var InvalidStateErr = errors.New("invalid new state")
@@ -50,7 +50,7 @@ func CallClusterOperationWithState(config *hazelcast.Config, operation string, s
 	obj, err := NewRESTCall(config, operation, *state)
 	if err != nil {
 		if errors.Is(err, InvalidStateErr) {
-			err = hzcerror.NewLoggableError(err, "Invalid new state. It should be one the following: %s, %s, %s, %s\n", ClusterStateActive, ClusterStateFrozen, ClusterStateNoMigration, ClusterStatePassive)
+			err = hzcerrors.NewLoggableError(err, "Invalid new state. It should be one the following: %s, %s, %s, %s\n", ClusterStateActive, ClusterStateFrozen, ClusterStateNoMigration, ClusterStatePassive)
 		}
 		return nil, err
 	}
@@ -70,14 +70,14 @@ func CallClusterOperationWithState(config *hazelcast.Config, operation string, s
 	}
 	if err != nil {
 		if msg, handled := TranslateError(err, config.Cluster.Cloud.Enabled, operation); handled {
-			return nil, hzcerror.NewLoggableError(err, msg)
+			return nil, hzcerrors.NewLoggableError(err, msg)
 		}
 		return nil, err
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, hzcerror.NewLoggableError(err, "Could not read the response from the cluster")
+		return nil, hzcerrors.NewLoggableError(err, "Could not read the response from the cluster")
 	}
 	sb := string(body)
 	return &sb, nil
@@ -145,7 +145,7 @@ func ConnectToCluster(ctx context.Context, clientConfig *hazelcast.Config) (cli 
 		}
 		if err != nil {
 			if msg, handled := TranslateError(err, clientConfig.Cluster.Cloud.Enabled); handled {
-				err = hzcerror.NewLoggableError(err, msg)
+				err = hzcerrors.NewLoggableError(err, msg)
 			}
 		}
 	}()

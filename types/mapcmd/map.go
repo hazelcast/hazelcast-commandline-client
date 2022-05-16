@@ -22,7 +22,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 
-	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
+	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
@@ -52,7 +52,7 @@ func New(config *hazelcast.Config) *cobra.Command {
 			}
 			if err := cmd.Flags().Set("name", val); err != nil {
 				cmd.PrintErrln("cannot set persistent err", err)
-				return hzcerror.NewLoggableError(err, "Default name for map cannot be set")
+				return hzcerrors.NewLoggableError(err, "Default name for map cannot be set")
 			}
 			return nil
 		},
@@ -64,11 +64,11 @@ func New(config *hazelcast.Config) *cobra.Command {
 func getMap(ctx context.Context, clientConfig *hazelcast.Config, mapName string) (result *hazelcast.Map, err error) {
 	hzcClient, err := internal.ConnectToCluster(ctx, clientConfig)
 	if err != nil {
-		return nil, hzcerror.NewLoggableError(err, "Cannot get initialize client")
+		return nil, hzcerrors.NewLoggableError(err, "Cannot get initialize client")
 	}
 	if result, err = hzcClient.GetMap(ctx, mapName); err != nil {
 		if msg, isHandled := internal.TranslateNetworkError(err, clientConfig.Cluster.Cloud.Enabled); isHandled {
-			err = hzcerror.NewLoggableError(err, msg)
+			err = hzcerrors.NewLoggableError(err, msg)
 		}
 		return nil, err
 	}

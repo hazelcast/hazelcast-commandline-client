@@ -25,7 +25,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/spf13/cobra"
 
-	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
+	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
@@ -48,9 +48,9 @@ func NewGet(config *hazelcast.Config) *cobra.Command {
 			if err != nil {
 				isCloudCluster := config.Cluster.Cloud.Enabled
 				if networkErrMsg, handled := internal.TranslateNetworkError(err, isCloudCluster); handled {
-					return hzcerror.NewLoggableError(err, networkErrMsg)
+					return hzcerrors.NewLoggableError(err, networkErrMsg)
 				}
-				return hzcerror.NewLoggableError(err, "Cannot get value for key %s from map %s", mapKey, mapName)
+				return hzcerrors.NewLoggableError(err, "Cannot get value for key %s from map %s", mapKey, mapName)
 			}
 			if value == nil {
 				cmd.Println("There is no value corresponding to the provided key")
