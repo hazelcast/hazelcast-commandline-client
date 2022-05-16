@@ -16,7 +16,6 @@
 package config
 
 import (
-	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -28,14 +27,14 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func TestContextUtil(t *testing.T) {
-	ctx := context.Background()
-	conf := DefaultConfig()
-	conf.Hazelcast.ClientName = "test-client"
-	ctx = ToContext(ctx, &conf.Hazelcast)
-	from := FromContext(ctx)
-	assert.Equal(t, &conf.Hazelcast, from)
-}
+//func TestContextUtil(t *testing.T) {
+//	ctx := context.Background()
+//	conf := DefaultConfig()
+//	conf.Hazelcast.ClientName = "test-client"
+//	ctx = ToContext(ctx, &conf.Hazelcast)
+//	from := FromContext(ctx)
+//	assert.Equal(t, &conf.Hazelcast, from)
+//}
 
 func TestDefaultConfig(t *testing.T) {
 	conf := DefaultConfig()
