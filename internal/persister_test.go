@@ -1,4 +1,4 @@
-package persister
+package internal
 
 import (
 	"testing"

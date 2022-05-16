@@ -17,17 +17,39 @@ package internal
 
 import "context"
 
-type NamePersister interface {
-	Set(name string, value string)
-	Get(name string) (string, bool)
-	Reset(name string)
-	PersistenceInfo() map[string]string
-}
-
 func PersisterFromContext(ctx context.Context) NamePersister {
 	return ctx.Value("persister").(NamePersister)
 }
 
 func SetContext(ctx context.Context, persister NamePersister) context.Context {
 	return context.WithValue(ctx, "persister", persister)
+}
+
+func NewNamePersister() NamePersister {
+	var nm NamePersister
+	nm = make(map[string]string)
+	return nm
+}
+
+type NamePersister map[string]string
+
+// Set sets the value to persist
+func (nm NamePersister) Set(name string, value string) {
+	nm[name] = value
+}
+
+// Get returns the set value for the name. Second argument returns false if there is no value set.
+func (nm NamePersister) Get(name string) (string, bool) {
+	val, ok := nm[name]
+	return val, ok
+}
+
+// Reset clears the set value for the name
+func (nm NamePersister) Reset(name string) {
+	delete(nm, name)
+}
+
+// PersistenceInfo returns stored values
+func (nm NamePersister) PersistenceInfo() map[string]string {
+	return nm
 }

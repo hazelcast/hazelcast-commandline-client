@@ -32,7 +32,6 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/cobraprompt"
 	goprompt "github.com/hazelcast/hazelcast-commandline-client/internal/go-prompt"
-	persister "github.com/hazelcast/hazelcast-commandline-client/internal/persistence"
 	"github.com/hazelcast/hazelcast-commandline-client/types/mapcmd"
 )
 
@@ -56,7 +55,7 @@ func IsInteractiveCall(rootCmd *cobra.Command, args []string) bool {
 }
 
 func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *hazelcast.Config) {
-	namePersister := persister.NewNamePersister()
+	namePersister := internal.NewNamePersister()
 	var p = &cobraprompt.CobraPrompt{
 		ShowHelpCommandAndFlags:  true,
 		ShowHiddenFlags:          true,
@@ -124,7 +123,7 @@ func HandleError(err error) string {
 }
 
 func RunCmd(ctx context.Context, root *cobra.Command) error {
-	p := persister.NewNamePersister()
+	p := internal.NewNamePersister()
 	ctx = internal.SetContext(ctx, p)
 	ctx, cancel := context.WithCancel(ctx)
 	handleInterrupt(ctx, cancel)

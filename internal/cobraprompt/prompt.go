@@ -162,7 +162,7 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 				}
 				if err.Error() == `required flag(s) "name" not set` {
 					// todo make this applicable for all data types
-					err = fmt.Errorf(`%s. Add it or consider "map use <name>"`, err.Error())
+					err = fmt.Errorf(`%w. Add it or consider "map use <name>"`, err)
 				}
 				if co.OnErrorFunc != nil {
 					co.OnErrorFunc(err)
