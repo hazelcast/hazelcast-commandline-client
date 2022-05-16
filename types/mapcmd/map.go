@@ -202,10 +202,10 @@ func getMap(ctx context.Context, clientConfig *hazelcast.Config, mapName string)
 
 func decorateCommandWithValueFlags(cmd *cobra.Command, mapValue, mapValueFile, mapValueType *string) error {
 	flags := cmd.Flags()
-	flags.StringVarP(mapValue, "value", "v", "", "value of the map")
-	flags.StringVarP(mapValueFile, "value-file", "f", "", `path to the file that contains the value. Use "-" (dash) to read from stdin`)
-	flags.StringVarP(mapValueType, "value-type", "t", "string", "type of the value, one of: string, json")
-	err := cmd.RegisterFlagCompletionFunc("value-type", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	flags.StringVarP(mapValue, MapValueFlag, MapValueFlagShort, "", "value of the map")
+	flags.StringVarP(mapValueFile, MapValueFileFlag, MapValueFileFlagShort, "", `path to the file that contains the value. Use "-" (dash) to read from stdin`)
+	flags.StringVarP(mapValueType, MapValueTypeFlag, MapValueTypeFlagShort, "string", "type of the value, one of: string, json")
+	err := cmd.RegisterFlagCompletionFunc(MapValueTypeFlag, func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"json", "string"}, cobra.ShellCompDirectiveDefault
 	})
 	if err != nil {
@@ -234,39 +234,39 @@ func decorateCommandWithMapKeyFlags(cmd *cobra.Command, mapKey *string, required
 	return nil
 }
 
-func decorateCommandWithMapKeySliceFlags(cmd *cobra.Command, mapKeys *[]string, required bool, usage string) error {
-	cmd.Flags().StringSliceVarP(mapKeys, MapKeyFlag, MapKeyFlagShort, []string{}, usage)
+func decorateCommandWithMapKeyArrayFlags(cmd *cobra.Command, mapKeys *[]string, required bool, usage string) error {
+	cmd.Flags().StringArrayVarP(mapKeys, MapKeyFlag, MapKeyFlagShort, []string{}, usage)
 	if required {
-		if err := cmd.MarkFlagRequired(fmt.Sprintf("%s-slice", MapKeyFlag)); err != nil {
+		if err := cmd.MarkFlagRequired(fmt.Sprintf("%s-array", MapKeyFlag)); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func decorateCommandWithMapValueSliceFlags(cmd *cobra.Command, mapValues *[]string, required bool, usage string) error {
-	cmd.Flags().StringSliceVarP(mapValues, MapValueFlag, MapValueFlagShort, []string{}, usage)
+func decorateCommandWithMapValueArrayFlags(cmd *cobra.Command, mapValues *[]string, required bool, usage string) error {
+	cmd.Flags().StringArrayVarP(mapValues, MapValueFlag, MapValueFlagShort, []string{}, usage)
 	if required {
-		if err := cmd.MarkFlagRequired(fmt.Sprintf("%s-slice", MapValueFlag)); err != nil {
+		if err := cmd.MarkFlagRequired(fmt.Sprintf("%s-array", MapValueFlag)); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func decorateCommandWithMapValueFileSliceFlags(cmd *cobra.Command, mapValueFiles *[]string, required bool, usage string) error {
-	cmd.Flags().StringSliceVarP(mapValueFiles, MapValueFileFlag, MapValueFileFlagShort, []string{}, usage)
+func decorateCommandWithMapValueFileArrayFlags(cmd *cobra.Command, mapValueFiles *[]string, required bool, usage string) error {
+	cmd.Flags().StringArrayVarP(mapValueFiles, MapValueFileFlag, MapValueFileFlagShort, []string{}, usage)
 	if required {
-		if err := cmd.MarkFlagRequired(fmt.Sprintf("%s-slice", MapValueFileFlag)); err != nil {
+		if err := cmd.MarkFlagRequired(fmt.Sprintf("%s-array", MapValueFileFlag)); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func decorateCommandWithMapValueTypeSliceFlags(cmd *cobra.Command, mapValueTypes *[]string, required bool, usage string) error {
+func decorateCommandWithMapValueTypeArrayFlags(cmd *cobra.Command, mapValueTypes *[]string, required bool, usage string) error {
 	var err error
-	cmd.Flags().StringSliceVarP(mapValueTypes, MapValueTypeFlag, MapValueTypeFlagShort, []string{}, usage)
+	cmd.Flags().StringArrayVarP(mapValueTypes, MapValueTypeFlag, MapValueTypeFlagShort, []string{}, usage)
 	err = cmd.RegisterFlagCompletionFunc(MapValueTypeFlag, func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"json", "string"}, cobra.ShellCompDirectiveDefault
 	})
@@ -274,7 +274,7 @@ func decorateCommandWithMapValueTypeSliceFlags(cmd *cobra.Command, mapValueTypes
 		return err
 	}
 	if required {
-		if err = cmd.MarkFlagRequired(fmt.Sprintf("%s-slice", MapValueTypeFlag)); err != nil {
+		if err = cmd.MarkFlagRequired(fmt.Sprintf("%s-array", MapValueTypeFlag)); err != nil {
 			return err
 		}
 	}

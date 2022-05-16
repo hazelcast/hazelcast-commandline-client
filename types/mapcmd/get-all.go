@@ -91,7 +91,7 @@ func NewGetAll(config *hazelcast.Config) (*cobra.Command, error) {
 	if err := decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name"); err != nil {
 		return nil, err
 	}
-	if err := decorateCommandWithMapKeySliceFlags(cmd, &mapKeys, false, "key(s) of the entry"); err != nil {
+	if err := decorateCommandWithMapKeyArrayFlags(cmd, &mapKeys, false, "key(s) of the entry"); err != nil {
 		return nil, err
 	}
 	if err := fds.DecorateCommandWithDelimiter(cmd, &delim, false, "delimiter of printed key, value pairs"); err != nil {

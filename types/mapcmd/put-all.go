@@ -180,16 +180,16 @@ func NewPutAll(config *hazelcast.Config) (*cobra.Command, error) {
 	if err := decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name"); err != nil {
 		return nil, err
 	}
-	if err := decorateCommandWithMapKeySliceFlags(cmd, &mapKeys, false, "key(s) of the map"); err != nil {
+	if err := decorateCommandWithMapKeyArrayFlags(cmd, &mapKeys, false, "key(s) of the map"); err != nil {
 		return nil, err
 	}
-	if err := decorateCommandWithMapValueSliceFlags(cmd, &mapValues, false, "value(s) of the map"); err != nil {
+	if err := decorateCommandWithMapValueArrayFlags(cmd, &mapValues, false, "value(s) of the map"); err != nil {
 		return nil, err
 	}
-	if err := decorateCommandWithMapValueFileSliceFlags(cmd, &mapValueFiles, false, "`path to the file that contains the value. Use \"-\" (dash) to read from stdin`"); err != nil {
+	if err := decorateCommandWithMapValueFileArrayFlags(cmd, &mapValueFiles, false, "`path to the file that contains the value. Use \"-\" (dash) to read from stdin`"); err != nil {
 		return nil, err
 	}
-	if err := decorateCommandWithMapValueTypeSliceFlags(cmd, &mapValueTypes, false, "type of the value, one of: string, json"); err != nil {
+	if err := decorateCommandWithMapValueTypeArrayFlags(cmd, &mapValueTypes, false, "type of the value, one of: string, json"); err != nil {
 		return nil, err
 	}
 	if err := fds.DecorateCommandWithJsonEntryFlag(cmd, &jsonEntryPath, false, "`path to json file that contains entries`"); err != nil {
