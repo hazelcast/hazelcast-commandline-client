@@ -30,7 +30,7 @@ func New(config *hazelcast.Config) *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:     "map {get | put} --name mapname --key keyname [--value-type type | --value-file file | --value value]",
 		Short:   "Map operations",
-		Example: fmt.Sprintf("%s\n%s", MapPutExample, MapGetExample),
+		Example: fmt.Sprintf("%s\n%s\n%s", MapPutExample, MapGetExample, MapUseExample),
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			// All the following lines are to set map name if it is set by "use" command.
 			// If the map name is given explicitly, do not set the one given with "use" command.
@@ -75,11 +75,13 @@ func getMap(ctx context.Context, clientConfig *hazelcast.Config, mapName string)
 	return
 }
 
+const MapUseExample = "map use m1          # sets the default map name to m1 unless set explicitly"
+
 func NewUse() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   `use [map-name | --reset]`,
 		Short: "sets default map name",
-		Example: `map use m1          # sets the default map name to m1 unless set explicitly
+		Example: MapUseExample + `
 map get --key k1    # --name m1\" is inferred
 map use --reset	    # resets the behaviour`,
 		RunE: func(cmd *cobra.Command, args []string) error {
