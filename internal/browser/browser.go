@@ -69,7 +69,7 @@ func (t *table) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			TableSlices:       make(map[string][]interface{}),
 			TableIndexMap:     make(map[int]string),
 		}
-		t.termdbmsTable.QueryResult = &viewer.TableState{ // perform query
+		t.termdbmsTable.QueryResult = &viewer.TableState{
 			Database: t.termdbmsTable.Table().Database,
 			Data:     make(map[string]interface{}),
 		}
