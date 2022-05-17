@@ -339,10 +339,6 @@ func (c controller) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func InitSQLBrowser(client *hazelcast.Client) *tea.Program {
 	var s Separator
 	textArea := multiline.InitTextArea()
-	keys := make(map[string]string)
-	keys["^-x"] = "execute"
-	keys["^-c"] = "quit"
-	keys["tab"] = "toggle focus"
 	c := &controller{vertical.InitialModel([]tea.Model{
 		&table{},
 		s,
@@ -379,7 +375,6 @@ func InitSQLBrowser(client *hazelcast.Client) *tea.Program {
 	}, []int{3, -1, 1, -1}), client}
 	p := tea.NewProgram(
 		c,
-		tea.WithMouseCellMotion(), // turn on mouse support, so we can track the mouse wheel
 	)
 	return p
 }
