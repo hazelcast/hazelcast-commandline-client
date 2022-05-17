@@ -46,24 +46,17 @@ func init() {
 		{
 			// schema name
 			var headerTop string
-			if m.UI.EditModeEnabled || m.UI.FormatModeEnabled {
-				headerTop = m.TextInput.Model.View()
-				if !m.TextInput.Model.Focused() {
-					headerTop = HeaderStyle.Copy().Faint(true).Render(headerTop)
-				}
-			} else {
-				headerTop = fmt.Sprintf(" %s (%d/%d) - %d record(s) + %d column(s)",
-					m.GetSchemaName(),
-					m.UI.CurrentTable,
-					len(m.Data().TableHeaders), // look at how headers get rendered to get accurate record number
-					len(m.GetColumnData()),
-					len(m.GetHeaders())) // this will need to be refactored when filters get added
-				navigationArrowL := lipgloss.Width("  <<<")
-				titleWidth := m.Viewport.Width - navigationArrowL*2
-				headerTop = "  <<<" + fmt.Sprintf("%*s", -titleWidth, fmt.Sprintf("%*s", (titleWidth+len(headerTop))/2, headerTop)) + ">>>  "
-				headerStyle := HeaderStyle.Copy().Foreground(lipgloss.Color(tuiutil.Highlight())).Reverse(true)
-				headerTop = headerStyle.Copy().Render(headerTop)
-			}
+			headerTop = fmt.Sprintf(" %s (%d/%d) - %d record(s) + %d column(s)",
+				m.GetSchemaName(),
+				m.UI.CurrentTable,
+				len(m.Data().TableHeaders), // look at how headers get rendered to get accurate record number
+				len(m.GetColumnData()),
+				len(m.GetHeaders())) // this will need to be refactored when filters get added
+			navigationArrowL := lipgloss.Width("  <<<")
+			titleWidth := m.Viewport.Width - navigationArrowL*2
+			headerTop = "  <<<" + fmt.Sprintf("%*s", -titleWidth, fmt.Sprintf("%*s", (titleWidth+len(headerTop))/2, headerTop)) + ">>>  "
+			headerStyle := HeaderStyle.Copy().Foreground(lipgloss.Color(tuiutil.Highlight())).Reverse(true)
+			headerTop = headerStyle.Copy().Render(headerTop)
 			headerMid := lipgloss.JoinHorizontal(lipgloss.Left, builder...)
 			if m.UI.RenderSelection {
 				headerMid = ""

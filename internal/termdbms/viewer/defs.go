@@ -70,8 +70,6 @@ type TuiModel struct {
 	Clipboard       []list.Item
 	TableStyle      lipgloss.Style
 	MouseData       tea.MouseEvent
-	TextInput       LineEdit
-	FormatInput     LineEdit
 	UndoStack       []TableState
 	RedoStack       []TableState
 }

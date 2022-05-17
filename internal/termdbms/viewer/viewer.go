@@ -17,7 +17,6 @@ var (
 	HeaderStyle        lipgloss.Style
 	FooterStyle        lipgloss.Style
 	HeaderDividerStyle lipgloss.Style
-	InitialModel       *TuiModel
 )
 
 func (m *TuiModel) Data() *UIData {
@@ -90,12 +89,6 @@ func (m TuiModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		break
 	case tea.KeyMsg:
-		str := msg.String()
-		if m.UI.ShowClipboard {
-			HandleClipboardEvents(&m, str, &command, msg)
-			break
-		}
-
 		// when fullscreen selection viewing is in session, don't allow UI manipulation other than quit or exit
 		s := msg.String()
 		invalidRenderCommand := m.UI.RenderSelection &&

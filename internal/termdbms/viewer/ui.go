@@ -36,7 +36,6 @@ func SelectOption(m *TuiModel) {
 	}
 	l := len(col)
 	row := m.Viewport.YOffset + m.MouseData.Y - HeaderHeight
-
 	if row <= l && l > 0 &&
 		m.MouseData.Y >= HeaderHeight &&
 		m.MouseData.Y < m.Viewport.Height+HeaderHeight &&
@@ -57,14 +56,11 @@ func ScrollDown(m *TuiModel) {
 		m.Viewport.YOffset++
 		return
 	}
-
 	max := GetScrollDownMaximumForSelection(m)
-
 	if m.Viewport.YOffset < max-m.Viewport.Height {
 		m.Viewport.YOffset++
 		m.MouseData.Y = Min(m.MouseData.Y, m.Viewport.YOffset)
 	}
-
 	if !m.UI.RenderSelection {
 		m.Scroll.PreScrollYPosition = m.MouseData.Y
 		m.Scroll.PreScrollYOffset = m.Viewport.YOffset
@@ -77,14 +73,12 @@ func ScrollUp(m *TuiModel) {
 		m.Viewport.YOffset--
 		return
 	}
-
 	if m.Viewport.YOffset > 0 {
 		m.Viewport.YOffset--
 		m.MouseData.Y = Min(m.MouseData.Y, m.Viewport.YOffset)
 	} else {
 		m.MouseData.Y = HeaderHeight
 	}
-
 	if !m.UI.RenderSelection {
 		m.Scroll.PreScrollYPosition = m.MouseData.Y
 		m.Scroll.PreScrollYOffset = m.Viewport.YOffset
@@ -98,7 +92,6 @@ func DisplayTable(m *TuiModel) string {
 	var (
 		builder []string
 	)
-
 	// go through all columns
 	slice := m.Data().TableHeadersSlice
 	for _, columnName := range slice {
@@ -127,59 +120,15 @@ func DisplayTable(m *TuiModel) string {
 			// display text based on type
 			rowBuilder = append(rowBuilder, tmpStyle.Render(TruncateIfApplicable(m, s)))
 		}
-
 		for len(rowBuilder) < m.Viewport.Height { // fix spacing issues
 			rowBuilder = append(rowBuilder, base.Render(""))
 		}
-
 		column := lipgloss.JoinVertical(lipgloss.Left, rowBuilder...)
 		// get a list of columns
 		builder = append(builder, column)
 	}
-
 	// join them into rows
 	return lipgloss.JoinHorizontal(lipgloss.Left, builder...)
-}
-
-func GetFormattedTextBuffer(m *TuiModel) []string {
-	v := m.Data().EditTextBuffer
-
-	lines := SplitLines(v)
-	FormatModeOffset = len(strconv.Itoa(len(lines))) + 1 // number of characters in the numeric string
-
-	var ret []string
-	m.Format.RunningOffsets = []int{}
-
-	total := 0
-	strlen := 0
-	for i, v := range lines {
-		xOffset := len(strconv.Itoa(i))
-		totalOffset := Max(FormatModeOffset-xOffset, 0)
-		//wrap := wordwrap.String(v, m.Viewport.Width-totalOffset)
-
-		right := tuiutil.Indent(
-			v,
-			fmt.Sprintf("%d%s", i, strings.Repeat(" ", totalOffset)),
-			false)
-		ret = append(ret, right)
-		m.Format.RunningOffsets = append(m.Format.RunningOffsets, total)
-
-		strlen = len(v)
-
-		total += strlen + 1
-	}
-
-	lineLength := len(ret)
-	// need to add this so that the last line can be edited
-	m.Format.RunningOffsets = append(m.Format.RunningOffsets,
-		m.Format.RunningOffsets[lineLength-1]+
-			len(ret[len(ret)-1][FormatModeOffset:]))
-
-	for i := len(ret); i < m.Viewport.Height; i++ {
-		ret = append(ret, "")
-	}
-
-	return ret
 }
 
 func DisplayFormatText(m *TuiModel) string {
@@ -199,9 +148,7 @@ func DisplayFormatText(m *TuiModel) string {
 		}
 		x++
 	}
-
 	*line += " " // space at the end
-
 	highlight := string((*line)[x])
 	if tuiutil.Ascii {
 		highlight = "|" + highlight
@@ -209,14 +156,11 @@ func DisplayFormatText(m *TuiModel) string {
 	} else {
 		newY += lipgloss.NewStyle().Background(lipgloss.Color("#ffffff")).Render(highlight)
 	}
-
 	newY += (*line)[x+1:]
 	*line = newY
-
 	ret := strings.Join(
 		cpy,
 		"\n")
-
 	return wordwrap.String(ret, m.Viewport.Width)
 }
 
@@ -233,9 +177,7 @@ func DisplaySelection(m *TuiModel) string {
 		!m.UI.RenderSelection { // this is for when the selection is outside the bounds
 		return DisplayTable(m)
 	}
-
 	base := m.GetBaseStyle().UnsetBorderStyle().Width(m.Viewport.Width - 1)
-
 	if m.Data().EditTextBuffer != "" { // this is basically just if its a string follow these rules
 		conv := m.Data().EditTextBuffer
 		if c, err := FormatJson(m.Data().EditTextBuffer); err == nil {
@@ -254,10 +196,8 @@ func DisplaySelection(m *TuiModel) string {
 		}
 		return base.Render(lipgloss.JoinVertical(lipgloss.Left, rows...))
 	}
-
 	var prettyPrint string
 	raw := col[row]
-
 	if conv, ok := raw.(int64); ok {
 		prettyPrint = strconv.Itoa(int(conv))
 	} else if i, ok := raw.(float64); ok {
@@ -268,13 +208,10 @@ func DisplaySelection(m *TuiModel) string {
 	} else if raw == nil {
 		prettyPrint = base.Render("NULL")
 	}
-
 	lines := SplitLines(prettyPrint)
 	for len(lines) < m.Viewport.Height {
 		lines = append(lines, "")
 	}
-
 	prettyPrint = " " + base.Render(lipgloss.JoinVertical(lipgloss.Left, lines...))
-
 	return wordwrap.String(prettyPrint, m.Viewport.Width)
 }

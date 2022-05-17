@@ -10,7 +10,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 
 	"github.com/hazelcast/hazelcast-commandline-client/internal/termdbms/list"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/termdbms/tuiutil"
 )
 
 func (m *TuiModel) WriteMessage(s string) {
@@ -54,7 +53,7 @@ func (m *TuiModel) CopyMap() (to map[string]interface{}) {
 }
 
 // GetNewModel returns a TuiModel struct with some fields set
-func GetNewModel(baseFileName string, db *sql.DB) TuiModel {
+func GetNewModel(_ string, _ *sql.DB) TuiModel {
 	m := TuiModel{
 		DefaultTable: TableState{
 			Data: make(map[string]interface{}),
@@ -82,18 +81,9 @@ func GetNewModel(baseFileName string, db *sql.DB) TuiModel {
 			TableSlices:       make(map[string][]interface{}),
 			TableIndexMap:     make(map[int]string),
 		},
-		TextInput: LineEdit{
-			Model: tuiutil.NewModel(),
-		},
-		FormatInput: LineEdit{
-			Model: tuiutil.NewModel(),
-		},
 		Clipboard: []list.Item{},
 	}
-	m.FormatInput.Model.Prompt = ""
-
 	snippetsFile := fmt.Sprintf("%s/%s", HiddenTmpDirectoryName, SQLSnippetsFile)
-
 	exists, _ := Exists(snippetsFile)
 	if exists {
 		contents, _ := os.ReadFile(snippetsFile)
@@ -103,43 +93,34 @@ func GetNewModel(baseFileName string, db *sql.DB) TuiModel {
 			m.Clipboard = append(m.Clipboard, v)
 		}
 	}
-
 	m.ClipboardList = list.NewModel(m.Clipboard, itemDelegate{}, 0, 0)
-
 	m.ClipboardList.Title = "SQL Snippets"
 	m.ClipboardList.SetFilteringEnabled(true)
 	m.ClipboardList.SetShowPagination(true)
 	m.ClipboardList.SetShowTitle(true)
-
 	return m
 }
 
 // SetModel creates a model to be used by bubbletea using some golang wizardry
 func (m *TuiModel) SetModel(c *sql.Rows, db *sql.DB) error {
 	var err error
-
 	indexMap := 0
-
 	// gets all the schema names of the database
 	tableNamesQuery := m.Table().Database.GetTableNamesQuery()
 	rows, err := db.Query(tableNamesQuery)
 	if err != nil {
 		return err
 	}
-
 	defer rows.Close()
-
 	// for each schema
 	for rows.Next() {
 		var schemaName string
 		rows.Scan(&schemaName)
-
 		// couldn't get prepared statements working and gave up because it was very simple
 		var statement strings.Builder
 		statement.WriteString("select * from ")
 		statement.WriteString(schemaName)
 		getAll := statement.String()
-
 		if c != nil {
 			c.Close()
 			c = nil
@@ -148,20 +129,16 @@ func (m *TuiModel) SetModel(c *sql.Rows, db *sql.DB) error {
 		if err != nil {
 			panic(err)
 		}
-
 		m.PopulateDataForResult(c, &indexMap, schemaName)
 	}
-
 	// set the first table to be initial view
 	m.UI.CurrentTable = 1
-
 	return nil
 }
 
 func (m *TuiModel) PopulateDataForResult(c *sql.Rows, indexMap *int, schemaName string) {
 	columnNames, _ := c.Columns()
 	columnValues := make(map[string][]interface{})
-
 	for c.Next() { // each row of the table
 		// golang wizardry
 		columns := make([]interface{}, len(columnNames))
@@ -170,15 +147,12 @@ func (m *TuiModel) PopulateDataForResult(c *sql.Rows, indexMap *int, schemaName 
 		for i := range columns {
 			columnPointers[i] = &columns[i]
 		}
-
 		c.Scan(columnPointers...)
-
 		for i, colName := range columnNames {
 			val := columnPointers[i].(*interface{})
 			columnValues[colName] = append(columnValues[colName], *val)
 		}
 	}
-
 	// onto the next schema
 	*indexMap++
 	if m.QueryResult != nil && m.QueryData != nil {
@@ -202,15 +176,12 @@ func (m *TuiModel) SwapTableValues(f, t *TableState) {
 			columnValues := make(map[string][]interface{})
 			// golang wizardry
 			columns := make([]interface{}, len(columnNames))
-
 			for i := range columns {
 				columns[i] = copyValues[columnNames[i]][0]
 			}
-
 			for i, colName := range columnNames {
 				columnValues[colName] = columns[i].([]interface{})
 			}
-
 			(*to)[k] = columnValues // data for schema, organized by column
 		}
 	}

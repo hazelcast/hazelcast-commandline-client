@@ -23,24 +23,20 @@ func init() {
 		for i := 0; i < m.Viewport.Height; i++ {
 			ScrollDown(m)
 		}
-
 		return nil
 	}
 	GlobalCommands["pgup"] = func(m *TuiModel) tea.Cmd {
 		for i := 0; i < m.Viewport.Height; i++ {
 			ScrollUp(m)
 		}
-
 		return nil
 	}
 	GlobalCommands["c"] = func(m *TuiModel) tea.Cmd {
 		ToggleColumn(m)
-
 		return nil
 	}
 	GlobalCommands["b"] = func(m *TuiModel) tea.Cmd {
 		m.UI.BorderToggle = !m.UI.BorderToggle
-
 		return nil
 	}
 	GlobalCommands["up"] = func(m *TuiModel) tea.Cmd {
@@ -49,7 +45,6 @@ func init() {
 		} else {
 			m.UI.CurrentTable++
 		}
-
 		// fix spacing and whatnot
 		m.TableStyle = m.TableStyle.Width(m.CellWidth())
 		m.MouseData.Y = HeaderHeight
@@ -65,14 +60,12 @@ func init() {
 		} else {
 			m.UI.CurrentTable--
 		}
-
 		// fix spacing and whatnot
 		m.TableStyle = m.TableStyle.Width(m.CellWidth())
 		m.MouseData.Y = HeaderHeight
 		m.MouseData.X = 0
 		m.Viewport.YOffset = 0
 		m.Scroll.ScrollXOffset = 0
-
 		return nil
 	}
 	GlobalCommands["right"] = func(m *TuiModel) tea.Cmd {
@@ -81,14 +74,12 @@ func init() {
 		if headersLen > maxHeaders && m.Scroll.ScrollXOffset <= headersLen-maxHeaders {
 			m.Scroll.ScrollXOffset++
 		}
-
 		return nil
 	}
 	GlobalCommands["left"] = func(m *TuiModel) tea.Cmd {
 		if m.Scroll.ScrollXOffset > 0 {
 			m.Scroll.ScrollXOffset--
 		}
-
 		return nil
 	}
 	GlobalCommands["s"] = func(m *TuiModel) tea.Cmd {
@@ -97,7 +88,6 @@ func init() {
 			return nil
 		}
 		max := len(m.GetSchemaData()[m.GetHeaders()[m.GetColumn()]])
-
 		if m.MouseData.Y-HeaderHeight+m.Viewport.YOffset < max-1 {
 			m.MouseData.Y++
 			ceiling := m.Viewport.Height + HeaderHeight - 1
@@ -107,7 +97,6 @@ func init() {
 				m.MouseData.Y = ceiling
 			}
 		}
-
 		return nil
 	}
 	GlobalCommands["w"] = func(m *TuiModel) tea.Cmd {
@@ -118,7 +107,6 @@ func init() {
 		} else if m.MouseData.Y > HeaderHeight {
 			m.MouseData.Y--
 		}
-
 		return nil
 	}
 	GlobalCommands["d"] = func(m *TuiModel) tea.Cmd {
@@ -135,7 +123,6 @@ func init() {
 				}
 			}
 		}
-
 		return nil
 	}
 	GlobalCommands["a"] = func(m *TuiModel) tea.Cmd {

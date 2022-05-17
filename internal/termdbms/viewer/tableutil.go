@@ -221,14 +221,6 @@ func (m *TuiModel) DisplayMessage(msg string) {
 	m.UI.RenderSelection = true
 }
 
-func (m *TuiModel) GetSelectedLineEdit() *LineEdit {
-	if m.TextInput.Model.Focused() {
-		return &m.TextInput
-	}
-
-	return &m.FormatInput
-}
-
 func ToggleColumn(m *TuiModel) {
 	if m.UI.ExpandColumn > -1 {
 		m.UI.ExpandColumn = -1
