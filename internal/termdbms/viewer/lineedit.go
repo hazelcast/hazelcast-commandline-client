@@ -305,28 +305,5 @@ func populateUndo(m *TuiModel) (old string, new string) {
 		}
 		m.UndoStack = m.UndoStack[1:] // need some more complicated logic to handle dereferencing?
 	}
-
-	switch m.DefaultTable.Database.(type) {
-	case *database.SQLite:
-		deepCopy := m.CopyMap()
-		// THE GLOBALIST TAKEOVER
-		deepState := TableState{
-			Database: &database.SQLite{
-				FileName: m.DefaultTable.Database.GetFileName(),
-				Database: nil,
-			},
-			Data: deepCopy,
-		}
-		m.UndoStack = append(m.UndoStack, deepState)
-		old = m.DefaultTable.Database.GetFileName()
-		dst, _, _ := CopyFile(old)
-		new = dst
-		m.DefaultTable.Database.CloseDatabaseReference()
-		m.DefaultTable.Database.SetDatabaseReference(dst)
-		break
-	default:
-		break
-	}
-
 	return old, new
 }

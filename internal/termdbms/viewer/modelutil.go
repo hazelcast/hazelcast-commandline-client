@@ -9,7 +9,6 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/hazelcast/hazelcast-commandline-client/internal/termdbms/database"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/termdbms/list"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/termdbms/tuiutil"
 )
@@ -58,10 +57,6 @@ func (m *TuiModel) CopyMap() (to map[string]interface{}) {
 func GetNewModel(baseFileName string, db *sql.DB) TuiModel {
 	m := TuiModel{
 		DefaultTable: TableState{
-			Database: &database.SQLite{
-				FileName: baseFileName,
-				Database: db,
-			},
 			Data: make(map[string]interface{}),
 		},
 		Format: FormatState{

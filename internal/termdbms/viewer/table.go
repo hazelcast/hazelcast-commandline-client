@@ -8,14 +8,13 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/hazelcast/hazelcast-commandline-client/internal/termdbms/database"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/termdbms/tuiutil"
 )
 
 type TableAssembly func(m *TuiModel, s *string, c *chan bool)
 
 var (
-	HeaderAssembly TableAssembly
+	HeaderAssembly func(m *TuiModel, s *string)
 	FooterAssembly TableAssembly
 	Message        string
 	mid            *string
@@ -26,9 +25,8 @@ func init() {
 	tmp := ""
 	MIP = false
 	mid = &tmp
-	HeaderAssembly = func(m *TuiModel, s *string, done *chan bool) {
+	HeaderAssembly = func(m *TuiModel, s *string) {
 		if m.UI.ShowClipboard {
-			*done <- true
 			return
 		}
 
@@ -39,20 +37,15 @@ func init() {
 		bs := m.GetBaseStyle()
 		style := bs.UnsetForeground().UnsetFaint().Underline(true).Bold(true)
 		headers := m.Data().TableHeadersSlice
-		for _, d := range headers { // write all headers
-			//if m.UI.ExpandColumn != -1 && i != m.UI.ExpandColumn {
-			//	continue
-			//}
-
+		for _, d := range headers {
+			// write all headers
 			text := " " + TruncateIfApplicable(m, d)
 			builder = append(builder, style.
 				Render(text))
 		}
-
 		{
 			// schema name
 			var headerTop string
-
 			if m.UI.EditModeEnabled || m.UI.FormatModeEnabled {
 				headerTop = m.TextInput.Model.View()
 				if !m.TextInput.Model.Focused() {
@@ -71,7 +64,6 @@ func init() {
 				headerStyle := HeaderStyle.Copy().Foreground(lipgloss.Color(tuiutil.Highlight())).Reverse(true)
 				headerTop = headerStyle.Copy().Render(headerTop)
 			}
-
 			headerMid := lipgloss.JoinHorizontal(lipgloss.Left, builder...)
 			if m.UI.RenderSelection {
 				headerMid = ""
@@ -79,8 +71,6 @@ func init() {
 			x := HeaderStyle.Copy().Foreground(lipgloss.Color(tuiutil.Highlight())).Reverse(true).Width(m.Viewport.Width).Render(" ")
 			*s = lipgloss.JoinVertical(lipgloss.Left, x, headerTop, x, headerMid)
 		}
-
-		*done <- true
 	}
 	FooterAssembly = func(m *TuiModel, s *string, done *chan bool) {
 		if m.UI.ShowClipboard {
@@ -102,17 +92,8 @@ func init() {
 		if m.UI.RenderSelection {
 			footer = ""
 		}
-		undoRedoInfo := fmt.Sprintf(" undo(%d) / redo(%d) ", len(m.UndoStack), len(m.RedoStack))
-		switch m.Table().Database.(type) {
-		case *database.SQLite:
-			break
-		default:
-			undoRedoInfo = ""
-			break
-		}
-
+		undoRedoInfo := ""
 		gapSize := m.Viewport.Width - lipgloss.Width(footer) - lipgloss.Width(undoRedoInfo) - 2
-
 		if MIP {
 			MIP = false
 			if !tuiutil.Ascii {
