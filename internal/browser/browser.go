@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -28,7 +29,7 @@ type controller struct {
 type table struct {
 	termdbmsTable viewer.TuiModel
 	keyboardFocus bool
-	lastIteration *SqlIterator
+	lastIteration *SQLIterator
 }
 
 func (t *table) Init() tea.Cmd {
@@ -72,8 +73,11 @@ func (t *table) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			Data:     make(map[string]interface{}),
 		}
 		t.termdbmsTable.MouseData = tea.MouseEvent{}
-		t.lastIteration = NewSqlIterator(50, m)
-		return t, t.lastIteration.IterateCmd(50 * time.Millisecond)
+		var err error
+		if t.lastIteration, err = NewSqlIterator(50, m); err != nil {
+			return t, nil
+		}
+		return t, t.lastIteration.ConsumeRowsCmd(50 * time.Millisecond)
 	case NewRowsMessage:
 		t.PopulateDataForResult(m)
 		t.termdbmsTable.UI.CurrentTable = 1
@@ -81,18 +85,15 @@ func (t *table) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		t.termdbmsTable.SetViewSlices()
 		var cmd tea.Cmd
 		if !t.lastIteration.rowsFinished {
-			cmd = t.lastIteration.IterateCmd(50 * time.Millisecond)
+			cmd = t.lastIteration.ConsumeRowsCmd(50 * time.Millisecond)
 		}
 		return t, cmd
 	case FetchMoreRowsMsg:
-		if t.lastIteration.rowsFinished {
-			return t, nil
-		}
-		if t.lastIteration.Iterating {
+		if t.lastIteration.rowsFinished || atomic.LoadInt32(&t.lastIteration.iterating) == set {
 			return t, nil
 		}
 		go t.lastIteration.Iterate(50)
-		return t, t.lastIteration.IterateCmd(50 * time.Millisecond)
+		return t, t.lastIteration.ConsumeRowsCmd(50 * time.Millisecond)
 	case tea.KeyMsg:
 		switch m.Type {
 		case tea.KeyTab:
@@ -112,52 +113,63 @@ func (t *table) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// disable all mouse events
 		return t, nil
 	case tea.WindowSizeMsg:
-		if m.Height > 0 {
-			m.Height += -2 // footer, header height offset
+		if m.Height >= 2 {
+			m.Height -= 2 // footer, header height offset
 		}
 		msg = m
 	}
 	oldYOffset := t.termdbmsTable.Viewport.YOffset + t.termdbmsTable.GetRow()
-	tmp, cmd := t.termdbmsTable.Update(msg)
-	t.termdbmsTable = tmp.(viewer.TuiModel)
+	updatedTable, cmd := t.termdbmsTable.Update(msg)
+	t.termdbmsTable = updatedTable.(viewer.TuiModel)
 	newYOffset := t.termdbmsTable.Viewport.YOffset + t.termdbmsTable.GetRow()
 	if t.lastIteration != nil {
 		userOnLastPage := newYOffset > t.lastIteration.totalProcessedLines-t.termdbmsTable.Viewport.Height
-		if newYOffset > oldYOffset {
-			if userOnLastPage {
-				cmd = tea.Batch(cmd, func() tea.Msg {
-					return FetchMoreRowsMsg{}
-				})
-			}
+		if newYOffset > oldYOffset && userOnLastPage {
+			cmd = tea.Batch(cmd, func() tea.Msg {
+				return FetchMoreRowsMsg{}
+			})
 		}
 
 	}
 	return t, cmd
 }
 
-type SqlIterator struct {
+type NewRowsMessage [][]interface{}
+
+const (
+	set   = 1
+	unset = 0
+)
+
+type SQLIterator struct {
 	rows                *sql.Rows
 	resultPipe          chan []interface{}
 	rowsFinished        bool
 	totalProcessedLines int
 	columnNames         []string // cannot access these after rows.Close(), hence save them
-	Iterating           bool
+	iterating           int32
+	consumingRows       int32
 }
 
-func NewSqlIterator(maxIterationCount int, rows *sql.Rows) *SqlIterator {
-	var si SqlIterator
+func NewSqlIterator(maxIterationCount int, rows *sql.Rows) (*SQLIterator, error) {
+	var si SQLIterator
 	si.rows = rows
-	si.columnNames, _ = rows.Columns()
+	var err error
+	if si.columnNames, err = rows.Columns(); err != nil {
+		// todo: log "query cancelled unexpectedly" once we have a logging solution
+		return nil, err
+	}
 	si.resultPipe = make(chan []interface{}, maxIterationCount+1)
 	go si.Iterate(maxIterationCount)
-	return &si
+	return &si, nil
 }
 
-func (si *SqlIterator) Iterate(maxIterationCount int) {
-	si.Iterating = true
+func (si *SQLIterator) Iterate(maxIterationCount int) {
+	atomic.StoreInt32(&si.iterating, set)
+	defer atomic.StoreInt32(&si.iterating, unset)
 	var i int
-	for i = 0; si.rows.Next() && i < maxIterationCount; i++ { // each row of the table
-		// golang wizardry
+	for i = 0; si.rows.Next() && i < maxIterationCount; i++ {
+		// each row of the table
 		columns := make([]interface{}, len(si.columnNames))
 		columnPointers := make([]interface{}, len(si.columnNames))
 		// init interface array
@@ -169,16 +181,19 @@ func (si *SqlIterator) Iterate(maxIterationCount int) {
 		}
 		si.resultPipe <- columnPointers
 	}
-	if i != maxIterationCount { // means query finished and there will be no more results
+	if i < maxIterationCount {
+		// means query finished and there will be no more results
 		close(si.resultPipe)
 	}
-	si.Iterating = false
 }
 
-type NewRowsMessage [][]interface{}
-
-func (si *SqlIterator) IterateCmd(timeline time.Duration) func() tea.Msg {
+func (si *SQLIterator) ConsumeRowsCmd(timeline time.Duration) func() tea.Msg {
 	return func() tea.Msg {
+		if !atomic.CompareAndSwapInt32(&si.consumingRows, 0, 1) {
+			// already iterating
+			return nil
+		}
+		defer atomic.CompareAndSwapInt32(&si.consumingRows, 1, 0)
 		var newRows [][]interface{}
 		var timeout bool
 		for {
