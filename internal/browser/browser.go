@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -218,10 +219,8 @@ func (si *SQLIterator) ConsumeRowsCmd(deadline time.Duration) func() tea.Msg {
 func (m *table) PopulateDataForResult(rows [][]interface{}) {
 	columnNames := m.lastIteration.columnNames
 	columnValues := make(map[string][]interface{})
-	if m.termdbmsTable.QueryResult != nil && m.termdbmsTable.QueryData != nil {
-		if m.termdbmsTable.QueryResult.Data["0"] != nil {
-			columnValues = m.termdbmsTable.QueryResult.Data["0"].(map[string][]interface{})
-		}
+	if m.termdbmsTable.QueryResult != nil && m.termdbmsTable.QueryData != nil && m.termdbmsTable.QueryResult.Data["0"] != nil {
+		columnValues = m.termdbmsTable.QueryResult.Data["0"].(map[string][]interface{})
 	}
 
 	for _, row := range rows {
@@ -245,18 +244,20 @@ func (m *table) PopulateDataForResult(rows [][]interface{}) {
 }
 
 func (t *table) View() string {
-	done := make(chan bool, 2)
-	defer close(done) // close
+	var wg sync.WaitGroup
+	wg.Add(2)
 	var header, content string
 	// body
 	go func(c *string) {
 		*c = viewer.AssembleTable(&t.termdbmsTable)
-		done <- true
+		wg.Done()
 	}(&content)
 	// header
-	go viewer.HeaderAssembly(&t.termdbmsTable, &header, &done)
-	<-done
-	<-done
+	go func() {
+		viewer.HeaderAssembly(&t.termdbmsTable, &header)
+		wg.Done()
+	}()
+	wg.Wait()
 	if content == "" {
 		content = strings.Repeat("\n", t.termdbmsTable.Viewport.Height)
 	}
@@ -280,14 +281,16 @@ func (h Help) Init() tea.Cmd {
 
 func (h Help) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if msg, ok := msg.(tea.WindowSizeMsg); ok {
-		h.width = msg.Width - 2
+		h.width = msg.Width
 	}
 	return h, nil
 }
 
 func (h Help) View() string {
 	base := lipgloss.NewStyle()
-	sh := base.Copy().Background(lipgloss.Color(tuiutil.Highlight())).Foreground(lipgloss.Color("#000000"))
+	sh := base.Copy().
+		Background(lipgloss.Color(tuiutil.Highlight())).
+		Foreground(lipgloss.Color("#000000"))
 	def := base.Copy()
 	var b strings.Builder
 	for _, v := range h.values {

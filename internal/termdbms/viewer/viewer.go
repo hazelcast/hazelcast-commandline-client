@@ -2,8 +2,10 @@ package viewer
 
 import (
 	"fmt"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+
 	"github.com/hazelcast/hazelcast-commandline-client/internal/termdbms/list"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/termdbms/tuiutil"
 )
@@ -158,7 +160,7 @@ func (m TuiModel) View() string {
 	}
 
 	// header
-	go HeaderAssembly(&m, &header, &done)
+	go HeaderAssembly(&m, &header)
 	// footer (shows row/col for now)
 	go FooterAssembly(&m, &footer, &done)
 
