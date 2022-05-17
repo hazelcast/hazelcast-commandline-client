@@ -187,30 +187,28 @@ func (si *SQLIterator) Iterate(maxIterationCount int) {
 	}
 }
 
-func (si *SQLIterator) ConsumeRowsCmd(timeline time.Duration) func() tea.Msg {
+func (si *SQLIterator) ConsumeRowsCmd(deadline time.Duration) func() tea.Msg {
 	return func() tea.Msg {
 		if !atomic.CompareAndSwapInt32(&si.consumingRows, 0, 1) {
 			// already iterating
 			return nil
 		}
 		defer atomic.CompareAndSwapInt32(&si.consumingRows, 1, 0)
+		timer := time.NewTimer(deadline)
+		defer timer.Stop()
 		var newRows [][]interface{}
-		var timeout bool
+	loop:
 		for {
 			select {
-			case row := <-si.resultPipe:
-				if row == nil {
+			case row, ok := <-si.resultPipe:
+				if !ok {
 					si.rowsFinished = true
 					return NewRowsMessage(newRows)
 				}
 				si.totalProcessedLines++
 				newRows = append(newRows, row)
-			case <-time.After(timeline):
-				timeout = true
-				break
-			}
-			if timeout {
-				break
+			case <-timer.C:
+				break loop
 			}
 		}
 		return NewRowsMessage(newRows)
