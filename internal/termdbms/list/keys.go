@@ -34,9 +34,7 @@ type KeyMap struct {
 // DefaultKeyMap returns a default set of keybindings.
 func DefaultKeyMap() KeyMap {
 	return KeyMap{
-		DeleteSelection: key.NewBinding(
-			key.WithKeys("r"),
-			key.WithHelp("r", "remove selection")),
+		DeleteSelection: key.NewBinding(),
 		// Browsing.
 		CursorUp: key.NewBinding(
 			key.WithKeys("up", "k", "w"),
@@ -47,11 +45,11 @@ func DefaultKeyMap() KeyMap {
 			key.WithHelp("↓/j", "down"),
 		),
 		PrevPage: key.NewBinding(
-			key.WithKeys("left", "h", "pgup", "b", "u", "a"),
+			key.WithKeys("left", "h", "pgup", "a"),
 			key.WithHelp("←/h/pgup", "prev page"),
 		),
 		NextPage: key.NewBinding(
-			key.WithKeys("right", "l", "pgdown", "f", "d"),
+			key.WithKeys("right", "l", "pgdown", "d"),
 			key.WithHelp("→/l/pgdn", "next page"),
 		),
 		GoToStart: key.NewBinding(
@@ -62,40 +60,19 @@ func DefaultKeyMap() KeyMap {
 			key.WithKeys("end", "G"),
 			key.WithHelp("G/end", "go to end"),
 		),
-		Filter: key.NewBinding(
-			key.WithKeys("/"),
-			key.WithHelp("/", "filter"),
-		),
-		ClearFilter: key.NewBinding(
-			key.WithKeys("esc"),
-			key.WithHelp("esc", "clear filter"),
-		),
+		Filter:      key.NewBinding(),
+		ClearFilter: key.NewBinding(),
 
 		// Filtering.
-		CancelWhileFiltering: key.NewBinding(
-			key.WithKeys("esc"),
-			key.WithHelp("esc", "cancel"),
-		),
-		AcceptWhileFiltering: key.NewBinding(
-			key.WithKeys("enter", "tab", "shift+tab", "ctrl+k", "up", "ctrl+j", "down"),
-			key.WithHelp("enter", "apply filter"),
-		),
+		CancelWhileFiltering: key.NewBinding(),
+		AcceptWhileFiltering: key.NewBinding(),
 
 		// Toggle help.
-		ShowFullHelp: key.NewBinding(
-			key.WithKeys("?"),
-			key.WithHelp("?", "more"),
-		),
-		CloseFullHelp: key.NewBinding(
-			key.WithKeys("?"),
-			key.WithHelp("?", "close help"),
-		),
+		ShowFullHelp:  key.NewBinding(),
+		CloseFullHelp: key.NewBinding(),
 
 		// Quitting.
-		Quit: key.NewBinding(
-			key.WithKeys("q", "esc"),
-			key.WithHelp("q", "back"),
-		),
-		ForceQuit: key.NewBinding(key.WithKeys("ctrl+c")),
+		Quit:      key.NewBinding(),
+		ForceQuit: key.NewBinding(),
 	}
 }
