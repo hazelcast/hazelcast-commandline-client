@@ -258,7 +258,7 @@ func (t *table) View() string {
 		wg.Done()
 	}()
 	wg.Wait()
-	if content == "" {
+	if content == "" && t.termdbmsTable.Viewport.Height > 0 {
 		content = strings.Repeat("\n", t.termdbmsTable.Viewport.Height)
 	}
 	return fmt.Sprintf("%s\n%s", header, content)

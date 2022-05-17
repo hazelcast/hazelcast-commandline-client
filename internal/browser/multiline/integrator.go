@@ -1,6 +1,8 @@
 package multiline
 
 import (
+	"strings"
+
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -49,7 +51,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch tmsg.Type {
 		case tea.KeyCtrlE:
 			return m, func() tea.Msg {
-				return SubmitMsg(m.textInput.Value())
+				if statement := m.textInput.Value(); strings.Trim(statement, " ") != "" {
+					return SubmitMsg(statement)
+				}
+				return nil
 			}
 		}
 	case tea.WindowSizeMsg:
