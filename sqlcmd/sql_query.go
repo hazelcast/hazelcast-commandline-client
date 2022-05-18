@@ -111,12 +111,12 @@ func query(ctx context.Context, c *hazelcast.Client, text string, out io.Writer,
 			}
 			csvWriter.Flush()
 			return nil
-		}, func(iValues []interface{}) error {
-			sValues := make([]string, len(iValues))
-			for i, v := range iValues {
-				sValues[i] = fmt.Sprint(v)
+		}, func(values []interface{}) error {
+			strValues := make([]string, len(values))
+			for i, v := range values {
+				strValues[i] = fmt.Sprint(v)
 			}
-			if err := csvWriter.Write(sValues); err != nil {
+			if err := csvWriter.Write(strValues); err != nil {
 				return err
 			}
 			csvWriter.Flush()

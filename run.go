@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -103,8 +102,7 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *haze
 	p.FlagsToExclude = flagsToExclude
 	history, err := ReadCmdHistory(cmdHistoryPath)
 	if err != nil {
-		rootCmd.Printf("Error: Something went wrong reading command history file on %s:\n%s\n", cmdHistoryPath, err)
-		return
+		rootCmd.Printf("Cannot load command history, will proceed without one\nhistory file on %s:%s...\n", cmdHistoryPath, err)
 	}
 	p.Run(ctx, rootCmd, cnfg, history)
 	if err := saveCommandHistory(cmdHistoryPath, history.Histories, 100); err != nil {
@@ -132,14 +130,13 @@ func saveCommandHistory(cmdHistoryPath string, commands []string, numberOfComman
 }
 
 func ReadCmdHistory(path string) (*goprompt.History, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
-
 	history := goprompt.NewHistory()
-	scanner := bufio.NewScanner(file)
+	f, err := os.Open(path)
+	if err != nil {
+		return history, err
+	}
+	defer f.Close()
+	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		history.Add(scanner.Text())
 	}

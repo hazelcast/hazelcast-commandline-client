@@ -22,7 +22,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
 
@@ -31,8 +30,6 @@ import (
 )
 
 var InvalidStateErr = errors.New("invalid new state")
-
-const goClientConnectionTimeout = 5 * time.Second
 
 var client *hazelcast.Client
 
