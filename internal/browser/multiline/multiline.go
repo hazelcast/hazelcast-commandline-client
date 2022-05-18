@@ -24,6 +24,7 @@ var (
 
 // Return the next ID we should use on the Model.
 func nextID() int {
+	// todo refactor this with atomic.AddInt64
 	idMtx.Lock()
 	defer idMtx.Unlock()
 	lastID++

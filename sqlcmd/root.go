@@ -34,7 +34,8 @@ func New(config *hazelcast.Config) *cobra.Command {
 		Use:   "sql [query]",
 		Short: "Start SQL Browser or execute given SQL query",
 		Example: `sql 	# starts the SQL Browser
-sql "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR, this VARCHAR) TYPE IMAP OPTIONS ( 'keyFormat' = 'varchar', 'valueFormat' = 'varchar')" 	# executes the query`,
+sql "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR, this VARCHAR) TYPE IMAP OPTIONS ( 'keyFormat' = 'varchar', 'valueFormat' = 'varchar')" 	# executes the query
+sql 'select 1; select 2' # execute multiple queries`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 			c, err := internal.ConnectToCluster(ctx, config)
