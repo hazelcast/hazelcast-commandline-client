@@ -17,39 +17,10 @@ package internal
 
 import "context"
 
-func PersisterFromContext(ctx context.Context) NamePersister {
-	return ctx.Value("persister").(NamePersister)
+func PersistedNamesFromContext(ctx context.Context) map[string]string {
+	return ctx.Value("persister").(map[string]string)
 }
 
-func ContextWithPersister(ctx context.Context, persister NamePersister) context.Context {
+func ContextWithPersistedNames(ctx context.Context, persister map[string]string) context.Context {
 	return context.WithValue(ctx, "persister", persister)
-}
-
-func NewNamePersister() NamePersister {
-	var nm NamePersister
-	nm = make(map[string]string)
-	return nm
-}
-
-type NamePersister map[string]string
-
-// Set sets the value to persist
-func (nm NamePersister) Set(name string, value string) {
-	nm[name] = value
-}
-
-// Get returns the set value for the name. Second argument returns false if there is no value set.
-func (nm NamePersister) Get(name string) (string, bool) {
-	val, ok := nm[name]
-	return val, ok
-}
-
-// Reset clears the set value for the name
-func (nm NamePersister) Reset(name string) {
-	delete(nm, name)
-}
-
-// PersistenceInfo returns stored values
-func (nm NamePersister) PersistenceInfo() map[string]string {
-	return nm
 }

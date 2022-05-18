@@ -67,7 +67,7 @@ type CobraPrompt struct {
 	// OnErrorFunc handle error for command.Execute, if not set print error and exit
 	OnErrorFunc func(err error)
 	// Persister is used to interact with name persistence mechanism.
-	Persister internal.NamePersister
+	Persister map[string]string
 }
 
 var ErrExit = errors.New("exit prompt")
@@ -123,7 +123,7 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 		},
 	}))
 	co.GoPromptOptions = append(co.GoPromptOptions, SuggestionColorOptions...)
-	ctx = internal.ContextWithPersister(ctx, co.Persister)
+	ctx = internal.ContextWithPersistedNames(ctx, co.Persister)
 	var p *goprompt.Prompt
 	p = goprompt.New(
 		func(in string) {

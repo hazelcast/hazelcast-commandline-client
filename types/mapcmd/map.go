@@ -36,8 +36,8 @@ func New(config *hazelcast.Config) *cobra.Command {
 			// If the map name is given explicitly, do not set the one given with "use" command.
 			// Missing flag errors are not handled here.
 			// They are expected to be handled by the actual command.
-			persister := internal.PersisterFromContext(cmd.Context())
-			val, isSet := persister.Get("map")
+			persister := internal.PersistedNamesFromContext(cmd.Context())
+			val, isSet := persister["map"]
 			if !isSet {
 				return nil
 			}
@@ -85,9 +85,9 @@ func NewUse() *cobra.Command {
 map get --key k1    # --name m1\" is inferred
 map use --reset	    # resets the behaviour`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			persister := internal.PersisterFromContext(cmd.Context())
+			persister := internal.PersistedNamesFromContext(cmd.Context())
 			if cmd.Flags().Changed("reset") {
-				persister.Reset("map")
+				delete(persister, "map")
 				return nil
 			}
 			if len(args) == 0 {
@@ -97,7 +97,7 @@ map use --reset	    # resets the behaviour`,
 				cmd.Println("Provide map name between \"\" quotes if it contains white space")
 				return nil
 			}
-			persister.Set("map", args[0])
+			persister["map"] = args[0]
 			return nil
 		},
 	}

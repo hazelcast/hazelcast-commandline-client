@@ -55,7 +55,7 @@ func IsInteractiveCall(rootCmd *cobra.Command, args []string) bool {
 }
 
 func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *hazelcast.Config) {
-	namePersister := internal.NewNamePersister()
+	namePersister := make(map[string]string)
 	var p = &cobraprompt.CobraPrompt{
 		ShowHelpCommandAndFlags:  true,
 		ShowHiddenFlags:          true,
@@ -66,7 +66,7 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *haze
 			goprompt.OptionTitle("Hazelcast Client"),
 			goprompt.OptionLivePrefix(func() (prefix string, useLivePrefix bool) {
 				var b strings.Builder
-				for k, v := range namePersister.PersistenceInfo() {
+				for k, v := range namePersister {
 					b.WriteString(fmt.Sprintf("&%c:%s", k[0], v))
 				}
 				return fmt.Sprintf("hzc %s@%s%s> ", config.GetClusterAddress(cnfg), cnfg.Cluster.Name, b.String()), true
@@ -123,8 +123,8 @@ func HandleError(err error) string {
 }
 
 func RunCmd(ctx context.Context, root *cobra.Command) error {
-	p := internal.NewNamePersister()
-	ctx = internal.ContextWithPersister(ctx, p)
+	p := make(map[string]string)
+	ctx = internal.ContextWithPersistedNames(ctx, p)
 	ctx, cancel := context.WithCancel(ctx)
 	handleInterrupt(ctx, cancel)
 	return root.ExecuteContext(ctx)
