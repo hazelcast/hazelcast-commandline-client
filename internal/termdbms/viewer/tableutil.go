@@ -145,7 +145,6 @@ func (m *TuiModel) SetViewSlices() {
 			interfaceValues := m.GetSchemaData()[columnName]
 			if len(interfaceValues) >= m.Viewport.Height {
 				min := Min(m.Viewport.YOffset, len(interfaceValues)-m.Viewport.Height)
-
 				d.TableSlices[columnName] = interfaceValues[min : m.Viewport.Height+min]
 			} else {
 				d.TableSlices[columnName] = interfaceValues
@@ -154,7 +153,6 @@ func (m *TuiModel) SetViewSlices() {
 
 		d.TableHeadersSlice = headers
 	}
-	// format slices
 }
 
 // GetSchemaData is a helper function to get the data of the current schema
