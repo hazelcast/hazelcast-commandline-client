@@ -51,7 +51,7 @@ sql "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR, this VARCHAR) TYPE IMAP 
 					return err
 				}
 			}
-			// If queries are given, run them in non-interactive mode
+			// If a statement is provided, run it in non-interactive mode
 			lt := strings.ToLower(q)
 			if strings.HasPrefix(lt, "select") || strings.HasPrefix(lt, "show") {
 				if err := query(ctx, c, q, cmd.OutOrStdout(), true); err != nil {
