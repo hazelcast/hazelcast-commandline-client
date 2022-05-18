@@ -22,25 +22,11 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
-	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client"
 
 	"github.com/hazelcast/hazelcast-commandline-client/internal/table"
 )
-
-func argsToQueries(args []string) []string {
-	arg := strings.Join(args, " ")
-	var queries []string
-	for _, q := range strings.Split(arg, ";") {
-		tmp := strings.TrimSpace(q)
-		if len(tmp) == 0 {
-			continue
-		}
-		queries = append(queries, tmp)
-	}
-	return queries
-}
 
 func query(ctx context.Context, c *hazelcast.Client, text string, out io.Writer, usePager bool) error {
 	rows, err := c.QuerySQL(ctx, text)

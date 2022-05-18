@@ -34,16 +34,16 @@ func New(config *hazelcast.Config) *cobra.Command {
 		Use:   "sql [query]",
 		Short: "Start SQL Browser or execute given SQL query",
 		Example: `sql 	# starts the SQL Browser
-sql "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR, this VARCHAR) TYPE IMAP OPTIONS ( 'keyFormat' = 'varchar', 'valueFormat' = 'varchar')" 	# executes the query
-sql 'select 1; select 2' # execute multiple queries`,
+sql "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR, this VARCHAR) TYPE IMAP OPTIONS ( 'keyFormat' = 'varchar', 'valueFormat' = 'varchar')" 	# executes the query`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 			c, err := internal.ConnectToCluster(ctx, config)
 			if err != nil {
 				return hzcerror.NewLoggableError(err, "Cannot get initialize client")
 			}
-			queries := argsToQueries(args)
-			if len(queries) == 0 {
+			q := strings.Join(args, " ")
+			q = strings.TrimSpace(q)
+			if len(q) == 0 {
 				// If no queries given, run sql browser
 				p := browser.InitSQLBrowser(c)
 				if err := p.Start(); err != nil {
@@ -52,24 +52,21 @@ sql 'select 1; select 2' # execute multiple queries`,
 				}
 			}
 			// If queries are given, run them in non-interactive mode
-			for _, q := range queries {
-				lt := strings.ToLower(q)
-				if strings.HasPrefix(lt, "select") || strings.HasPrefix(lt, "show") {
-					if err := query(ctx, c, q, cmd.OutOrStdout(), true); err != nil {
-						if errors.Is(err, syscall.EPIPE) {
-							// pager may be closed, expected error
-							return nil
-						}
-						return hzcerror.NewLoggableError(err, "Cannot execute the query")
+			lt := strings.ToLower(q)
+			if strings.HasPrefix(lt, "select") || strings.HasPrefix(lt, "show") {
+				if err := query(ctx, c, q, cmd.OutOrStdout(), true); err != nil {
+					if errors.Is(err, syscall.EPIPE) {
+						// pager may be closed, expected error
+						return nil
 					}
-				} else {
-					if err := execute(ctx, c, q); err != nil {
-						return hzcerror.NewLoggableError(err, "Cannot execute the query")
-					}
+					return hzcerror.NewLoggableError(err, "Cannot execute the query")
+				}
+			} else {
+				if err := execute(ctx, c, q); err != nil {
+					return hzcerror.NewLoggableError(err, "Cannot execute the query")
 				}
 			}
 			return nil
-
 		},
 	}
 	return &cmd

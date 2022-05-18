@@ -3,7 +3,7 @@ package viewer
 func MoveCursorWithinBounds(m *TuiModel) {
 	defer func() {
 		if recover() != nil {
-			println("whoopsy")
+			// todo this should not happen, and if does we should log it
 		}
 	}()
 	offset := GetOffsetForLineNumber(m.Format.CursorY)

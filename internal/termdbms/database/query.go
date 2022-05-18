@@ -48,29 +48,3 @@ func (u *Update) GetValues() map[string]interface{} {
 func (u *Update) SetValues(v map[string]interface{}) {
 	u.v = v
 }
-
-// GetDatabaseForFile does what you think it does
-func GetDatabaseForFile(database string) *sql.DB {
-	DBMutex.Lock()
-	defer DBMutex.Unlock()
-	if db, ok := Databases[database]; ok {
-		return db
-	}
-	db, err := sql.Open(DriverString, database)
-	if err != nil {
-		panic(err)
-	}
-	Databases[database] = db
-	return db
-}
-
-func ProcessSqlQueryForDatabaseType(q Query, rowData map[string]interface{}, schemaName, columnName string, db *Database) {
-	switch conv := q.(type) {
-	case *Update:
-		conv.SetValues(rowData)
-		conv.TableName = schemaName
-		conv.Column = columnName
-		(*db).Update(conv)
-		break
-	}
-}
