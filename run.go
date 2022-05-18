@@ -16,7 +16,6 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"errors"
 	"fmt"
@@ -100,47 +99,8 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *haze
 	})
 	flagsToExclude = append(flagsToExclude, "help")
 	p.FlagsToExclude = flagsToExclude
-	history, err := ReadCmdHistory(cmdHistoryPath)
-	if err != nil {
-		rootCmd.Printf("Cannot load command history, will proceed without one\nhistory file on %s:%s...\n", cmdHistoryPath, err)
-	}
-	p.Run(ctx, rootCmd, cnfg, history)
-	if err := saveCommandHistory(cmdHistoryPath, history.Histories, 100); err != nil {
-		rootCmd.Printf("Error: Can not save command history to %s:\n%s\n", cmdHistoryPath, err)
-	}
+	p.Run(ctx, rootCmd, cnfg, cmdHistoryPath)
 	return
-}
-
-func saveCommandHistory(cmdHistoryPath string, commands []string, numberOfCommandsToSave int) error {
-	if len(commands) > numberOfCommandsToSave {
-		commands = commands[len(commands)-numberOfCommandsToSave:]
-	}
-	// automatically truncates the file, removing older commands
-	f, err := os.Create(cmdHistoryPath)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	for _, c := range commands {
-		if _, err := f.WriteString(fmt.Sprintln(c)); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func ReadCmdHistory(path string) (*goprompt.History, error) {
-	history := goprompt.NewHistory()
-	f, err := os.Open(path)
-	if err != nil {
-		return history, err
-	}
-	defer f.Close()
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		history.Add(scanner.Text())
-	}
-	return history, scanner.Err()
 }
 
 func updateConfigWithFlags(rootCmd *cobra.Command, cnfg *config.Config, programArgs []string, globalFlagValues *config.GlobalFlagValues) error {
