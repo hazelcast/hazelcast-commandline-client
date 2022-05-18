@@ -178,6 +178,7 @@ func (si *SQLIterator) Iterate(maxIterationCount int) {
 			columnPointers[i] = &columns[i]
 		}
 		if err := si.rows.Scan(columnPointers...); err != nil {
+			// todo: log the cause once we have a logging solution
 			break
 		}
 		si.resultPipe <- columnPointers
