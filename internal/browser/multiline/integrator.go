@@ -10,6 +10,9 @@ import (
 
 type SubmitMsg string
 
+// to create a distance between right most border of text box and terminal border
+const multilineTextBoxRightPadding = 5
+
 type model struct {
 	textInput     Model
 	err           error
@@ -36,30 +39,31 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch tmsg := msg.(type) {
 	case tea.KeyMsg:
 		if tmsg.Type == tea.KeyTab {
-			var tmp tea.Cmd
+			var teaCmd tea.Cmd
 			if m.keyboardFocus {
 				m.textInput.Blur()
 			} else {
-				tmp = m.textInput.Focus()
+				teaCmd = m.textInput.Focus()
 			}
 			m.keyboardFocus = !m.keyboardFocus
-			return m, tmp
+			return m, teaCmd
 		}
 		if !m.keyboardFocus {
 			return m, nil
 		}
 		switch tmsg.Type {
 		case tea.KeyCtrlE:
-			return m, func() tea.Msg {
+			submitQueryCmd := func() tea.Msg {
 				if statement := m.textInput.Value(); strings.Trim(statement, " ") != "" {
 					return SubmitMsg(statement)
 				}
 				return nil
 			}
+			return m, submitQueryCmd
 		}
 	case tea.WindowSizeMsg:
-		m.textInput.Width = tmsg.Width - 5
-		m.textInput.Height = tmsg.Height + 1
+		m.textInput.Width = tmsg.Width - multilineTextBoxRightPadding
+		m.textInput.Height = tmsg.Height
 	}
 	var cmd1 tea.Cmd
 	m.textInput, cmd1 = m.textInput.Update(msg)

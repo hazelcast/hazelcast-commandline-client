@@ -50,6 +50,7 @@ sql "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR, this VARCHAR) TYPE IMAP 
 					fmt.Println("could not run sql browser:", err)
 					return err
 				}
+				return nil
 			}
 			// If a statement is provided, run it in non-interactive mode
 			lt := strings.ToLower(q)
