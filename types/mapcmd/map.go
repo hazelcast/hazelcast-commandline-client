@@ -67,7 +67,7 @@ func getMap(ctx context.Context, clientConfig *hazelcast.Config, mapName string)
 		return nil, hzcerrors.NewLoggableError(err, "Cannot get initialize client")
 	}
 	if result, err = hzcClient.GetMap(ctx, mapName); err != nil {
-		if msg, isHandled := internal.TranslateNetworkError(err, clientConfig.Cluster.Cloud.Enabled); isHandled {
+		if msg, isHandled := hzcerrors.TranslateNetworkError(err, clientConfig.Cluster.Cloud.Enabled); isHandled {
 			err = hzcerrors.NewLoggableError(err, msg)
 		}
 		return nil, err

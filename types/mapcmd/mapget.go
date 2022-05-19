@@ -26,7 +26,6 @@ import (
 	"github.com/spf13/cobra"
 
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
-	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
 const MapGetExample = `map get --key hello --name myMap`
@@ -47,7 +46,7 @@ func NewGet(config *hazelcast.Config) *cobra.Command {
 			value, err := m.Get(ctx, mapKey)
 			if err != nil {
 				isCloudCluster := config.Cluster.Cloud.Enabled
-				if networkErrMsg, handled := internal.TranslateNetworkError(err, isCloudCluster); handled {
+				if networkErrMsg, handled := hzcerrors.TranslateNetworkError(err, isCloudCluster); handled {
 					return hzcerrors.NewLoggableError(err, networkErrMsg)
 				}
 				return hzcerrors.NewLoggableError(err, "Cannot get value for key %s from map %s", mapKey, mapName)

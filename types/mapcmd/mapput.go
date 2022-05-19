@@ -27,7 +27,7 @@ import (
 	"github.com/spf13/cobra"
 
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
-	"github.com/hazelcast/hazelcast-commandline-client/internal"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/constants"
 )
 
 const MapPutExample = "map put --key hello --value world --name myMap\t#puts entry into map directly"
@@ -63,7 +63,7 @@ func NewPut(config *hazelcast.Config) *cobra.Command {
 			}
 			cmd.Printf("Cannot put value for key %s to map %s\n", mapKey, mapName)
 			isCloudCluster := config.Cluster.Cloud.Enabled
-			if networkErrMsg, handled := internal.TranslateNetworkError(err, isCloudCluster); handled {
+			if networkErrMsg, handled := hzcerrors.TranslateNetworkError(err, isCloudCluster); handled {
 				err = hzcerrors.NewLoggableError(err, networkErrMsg)
 			}
 			return err
@@ -94,9 +94,9 @@ func normalizeMapValue(v, vFile, vType string) (interface{}, error) {
 		return nil, err
 	}
 	switch vType {
-	case internal.TypeString:
+	case constants.TypeString:
 		return valueStr, nil
-	case internal.TypeJSON:
+	case constants.TypeJSON:
 		return serialization.JSON(valueStr), nil
 	}
 	return nil, hzcerrors.NewLoggableError(nil, "Provided value type parameter (%s) is not a known type. Provide either 'string' or 'json'", vType)
