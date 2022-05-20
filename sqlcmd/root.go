@@ -16,20 +16,59 @@
 package sqlcmd
 
 import (
+	"errors"
+	"fmt"
+	"strings"
+	"syscall"
+
+	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/browser"
+
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 )
 
 func New(config *hazelcast.Config) *cobra.Command {
 	cmd := cobra.Command{
-		Use:   "sql {query}",
-		Short: "SQL operations",
-		Example: `sql query "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR, this VARCHAR) TYPE IMAP OPTIONS ( 'keyFormat' = 'varchar', 'valueFormat' = 'varchar')"
-sql query "select * from myMap"`,
+		Use:   "sql [query]",
+		Short: "Start SQL Browser or execute given SQL query",
+		Example: `sql 	# starts the SQL Browser
+sql "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR, this VARCHAR) TYPE IMAP OPTIONS ( 'keyFormat' = 'varchar', 'valueFormat' = 'varchar')" 	# executes the query`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return cmd.Help()
+			ctx := cmd.Context()
+			c, err := internal.ConnectToCluster(ctx, config)
+			if err != nil {
+				return hzcerrors.NewLoggableError(err, "Cannot get initialize client")
+			}
+			q := strings.Join(args, " ")
+			q = strings.TrimSpace(q)
+			if len(q) == 0 {
+				// If no queries given, run sql browser
+				p := browser.InitSQLBrowser(c)
+				if err := p.Start(); err != nil {
+					fmt.Println("could not run sql browser:", err)
+					return err
+				}
+				return nil
+			}
+			// If a statement is provided, run it in non-interactive mode
+			lt := strings.ToLower(q)
+			if strings.HasPrefix(lt, "select") || strings.HasPrefix(lt, "show") {
+				if err := query(ctx, c, q, cmd.OutOrStdout(), true); err != nil {
+					if errors.Is(err, syscall.EPIPE) {
+						// pager may be closed, expected error
+						return nil
+					}
+					return hzcerrors.NewLoggableError(err, "Cannot execute the query")
+				}
+			} else {
+				if err := execute(ctx, c, q); err != nil {
+					return hzcerrors.NewLoggableError(err, "Cannot execute the query")
+				}
+			}
+			return nil
 		},
 	}
-	cmd.AddCommand(NewQuery(config))
 	return &cmd
 }

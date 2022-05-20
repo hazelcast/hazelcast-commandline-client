@@ -25,15 +25,17 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/spf13/cobra"
 
-	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
-	"github.com/hazelcast/hazelcast-commandline-client/internal"
+	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 )
+
+const MapGetExample = `map get --key hello --name myMap`
 
 func NewGet(config *hazelcast.Config) *cobra.Command {
 	var mapName, mapKey string
 	cmd := &cobra.Command{
-		Use:   "get [--name mapname | --key keyname]",
-		Short: "Get from map",
+		Use:     "get [--name mapname | --key keyname]",
+		Short:   "Get from map",
+		Example: MapGetExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(cmd.Context(), time.Second*3)
 			defer cancel()
@@ -44,10 +46,10 @@ func NewGet(config *hazelcast.Config) *cobra.Command {
 			value, err := m.Get(ctx, mapKey)
 			if err != nil {
 				isCloudCluster := config.Cluster.Cloud.Enabled
-				if networkErrMsg, handled := internal.TranslateNetworkError(err, isCloudCluster); handled {
-					return hzcerror.NewLoggableError(err, networkErrMsg)
+				if networkErrMsg, handled := hzcerrors.TranslateNetworkError(err, isCloudCluster); handled {
+					return hzcerrors.NewLoggableError(err, networkErrMsg)
 				}
-				return hzcerror.NewLoggableError(err, "Cannot get value for key %s from map %s", mapKey, mapName)
+				return hzcerrors.NewLoggableError(err, "Cannot get value for key %s from map %s", mapKey, mapName)
 			}
 			if value == nil {
 				cmd.Println("There is no value corresponding to the provided key")

@@ -25,10 +25,7 @@ import (
 	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/spf13/cobra"
 
-	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
-	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/table"
 )
 

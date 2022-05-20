@@ -30,6 +30,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	goprompt "github.com/hazelcast/hazelcast-commandline-client/internal/go-prompt"
 	"github.com/hazelcast/hazelcast-commandline-client/rootcmd"
 )
@@ -64,6 +66,8 @@ type CobraPrompt struct {
 	AddDefaultExitCommand bool
 	// OnErrorFunc handle error for command.Execute, if not set print error and exit
 	OnErrorFunc func(err error)
+	// Persister is used to interact with name persistence mechanism.
+	Persister map[string]string
 }
 
 var ErrExit = errors.New("exit prompt")
@@ -136,7 +140,9 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 			history.Clear()
 		}
 	}
-	p := goprompt.New(
+	ctx = internal.ContextWithPersistedNames(ctx, co.Persister)
+	var p *goprompt.Prompt
+	p = goprompt.New(
 		func(in string) {
 			ctx, cancel := context.WithCancel(ctx)
 			defer cancel()
@@ -163,14 +169,23 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 			root, _ = rootcmd.New(cnfg)
 			prepareRootCmdForPrompt(co, root)
 			root.SetArgs(promptArgs)
+			root.SetFlagErrorFunc(func(_ *cobra.Command, err error) error {
+				return hzcerrors.FlagError(err)
+			})
 			err = root.ExecuteContext(ctx)
 			if _, writeErr := f.WriteString(fmt.Sprintln(in)); writeErr != nil {
 				// todo log this once we have a logging solution
 			}
 			if err != nil {
+			if err := root.ExecuteContext(ctx); err != nil {
 				if errors.Is(err, ErrExit) {
 					exitPromptSafely()
 					return
+				}
+				// todo find a better approach than string comparison, this is fragile
+				if err.Error() == `required flag(s) "name" not set` {
+					// todo make this applicable for all data types
+					err = fmt.Errorf(`%w. Add it or consider "map use <name>"`, err)
 				}
 				if co.OnErrorFunc != nil {
 					co.OnErrorFunc(err)
@@ -178,6 +193,11 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 					root.PrintErrln(err)
 					exitPromptSafely()
 				}
+			}
+			// clear screen only after sql browser command executed successfully
+			if strings.Trim(in, " ") == "sql" {
+				// lets us invoke ctrl+L shortcut which clears the screen
+				p.Feed([]byte{0xc})
 			}
 		},
 		func(d goprompt.Document) []goprompt.Suggest {
@@ -213,7 +233,8 @@ func prepareRootCmdForPrompt(co CobraPrompt, root *cobra.Command) {
 	}
 	root.Example = `> map put -k key -n myMap -v someValue
 > map get -k key -m myMap
-> cluster version`
+> cluster version
+> sql`
 	root.Use = ""
 }
 
