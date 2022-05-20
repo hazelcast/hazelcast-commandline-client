@@ -22,72 +22,11 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
-	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client"
 
 	"github.com/hazelcast/hazelcast-commandline-client/internal/table"
 )
-
-const (
-	outputPretty = "pretty"
-	outputCSV    = "csv"
-)
-
-func NewQuery(config *hazelcast.Config) *cobra.Command {
-	var outputType string
-	cmd := &cobra.Command{
-		Use:   `query statement-string`,
-		Short: "Executes SQL query",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			arg := strings.Join(args, " ")
-			var queries []string
-			for _, q := range strings.Split(arg, ";") {
-				tmp := strings.TrimSpace(q)
-				if len(tmp) == 0 {
-					continue
-				}
-				queries = append(queries, tmp)
-			}
-			if len(queries) == 0 {
-				return cmd.Help()
-			}
-			if outputType != outputPretty && outputType != outputCSV {
-				return hzcerror.NewLoggableError(nil,
-					"Provided output type parameter (%s) is not a known type. Provide either '%s' or '%s'",
-					outputType, outputPretty, outputCSV)
-			}
-			ctx := cmd.Context()
-			c, err := internal.ConnectToCluster(ctx, config)
-			if err != nil {
-				return hzcerror.NewLoggableError(err, "Cannot get initialize client")
-			}
-			for _, q := range queries {
-				lt := strings.ToLower(q)
-				if strings.HasPrefix(lt, "select") || strings.HasPrefix(lt, "show") {
-					if err := query(ctx, c, q, cmd.OutOrStdout(), outputType); err != nil {
-						return hzcerror.NewLoggableError(err, "Cannot execute the query")
-					}
-				} else {
-					if err := execute(ctx, c, q); err != nil {
-						return hzcerror.NewLoggableError(err, "Cannot execute the query")
-					}
-				}
-			}
-			return nil
-		},
-	}
-	decorateCommandWithOutputFlag(&outputType, cmd)
-	return cmd
-}
-
-func decorateCommandWithOutputFlag(outputType *string, cmd *cobra.Command) {
-	flags := cmd.Flags()
-	flags.StringVarP(outputType, "output-type", "o", outputPretty, fmt.Sprintf("%s or %s", outputPretty, outputCSV))
-	cmd.RegisterFlagCompletionFunc("output-type", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{outputPretty, outputCSV}, cobra.ShellCompDirectiveDefault
-	})
-}
 
 func query(ctx context.Context, c *hazelcast.Client, text string, out io.Writer, outputType string) error {
 	rows, err := c.QuerySQL(ctx, text)

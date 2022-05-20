@@ -177,7 +177,6 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 				// todo log this once we have a logging solution
 			}
 			if err != nil {
-			if err := root.ExecuteContext(ctx); err != nil {
 				if errors.Is(err, ErrExit) {
 					exitPromptSafely()
 					return
