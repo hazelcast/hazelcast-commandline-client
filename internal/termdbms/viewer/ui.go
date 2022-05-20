@@ -1,0 +1,217 @@
+package viewer
+
+import (
+	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/reflow/wordwrap"
+
+	"github.com/hazelcast/hazelcast-commandline-client/internal/termdbms/tuiutil"
+)
+
+var (
+	Program          *tea.Program
+	FormatModeOffset int
+	TUIWidth         int
+	TUIHeight        int
+)
+
+func GetOffsetForLineNumber(a int) int {
+	return FormatModeOffset - len(strconv.Itoa(a))
+}
+
+func SelectOption(m *TuiModel) {
+	if m.UI.RenderSelection {
+		return
+	}
+
+	m.UI.RenderSelection = true
+	raw, _, col := m.GetSelectedOption()
+	if raw == nil {
+		return
+	}
+	l := len(col)
+	row := m.Viewport.YOffset + m.MouseData.Y - HeaderHeight
+	if row <= l && l > 0 &&
+		m.MouseData.Y >= HeaderHeight &&
+		m.MouseData.Y < m.Viewport.Height+HeaderHeight &&
+		m.MouseData.X < m.CellWidth()*(len(m.Data().TableHeadersSlice)) {
+		if conv, ok := (*raw).(string); ok {
+			m.Data().EditTextBuffer = conv
+		} else {
+			m.Data().EditTextBuffer = ""
+		}
+	} else {
+		m.UI.RenderSelection = false
+	}
+}
+
+// ScrollDown is a simple function to move the Viewport down
+func ScrollDown(m *TuiModel) {
+	if m.UI.FormatModeEnabled && m.UI.CanFormatScroll && m.Viewport.YPosition != 0 {
+		m.Viewport.YOffset++
+		return
+	}
+	max := GetScrollDownMaximumForSelection(m)
+	if m.Viewport.YOffset < max-m.Viewport.Height {
+		m.Viewport.YOffset++
+		m.MouseData.Y = Min(m.MouseData.Y, m.Viewport.YOffset)
+	}
+	if !m.UI.RenderSelection {
+		m.Scroll.PreScrollYPosition = m.MouseData.Y
+		m.Scroll.PreScrollYOffset = m.Viewport.YOffset
+	}
+}
+
+// ScrollUp is a simple function to move the Viewport up
+func ScrollUp(m *TuiModel) {
+	if m.UI.FormatModeEnabled && m.UI.CanFormatScroll && m.Viewport.YOffset > 0 && m.Viewport.YPosition != 0 {
+		m.Viewport.YOffset--
+		return
+	}
+	if m.Viewport.YOffset > 0 {
+		m.Viewport.YOffset--
+		m.MouseData.Y = Min(m.MouseData.Y, m.Viewport.YOffset)
+	} else {
+		m.MouseData.Y = HeaderHeight
+	}
+	if !m.UI.RenderSelection {
+		m.Scroll.PreScrollYPosition = m.MouseData.Y
+		m.Scroll.PreScrollYOffset = m.Viewport.YOffset
+	}
+}
+
+// TABLE STUFF
+
+// DisplayTable does some fancy stuff to get a table rendered in text
+func DisplayTable(m *TuiModel) string {
+	var (
+		builder []string
+	)
+	// go through all columns
+	slice := m.Data().TableHeadersSlice
+	for _, columnName := range slice {
+		var rowBuilder []string
+		columnValues := m.Data().TableSlices[columnName]
+		base := m.GetBaseStyle().
+			Background(lipgloss.Color("#000000"))
+		for r, val := range columnValues {
+			s := GetStringRepresentationOfInterface(val)
+			s = " " + s
+			tmpStyle := base.Copy()
+			// handle highlighting
+			if r == m.GetRow() {
+				if !tuiutil.Ascii {
+					tmpStyle = tmpStyle.Background(lipgloss.Color(tuiutil.Highlight())).
+						UnsetBorderLeft().
+						UnsetBorderStyle().
+						UnsetBorderForeground().
+						PaddingLeft(1).                 // to make up for lost border
+						Width(tmpStyle.GetWidth() + 1). // to make up for lost border
+						Foreground(lipgloss.Color("#000000")).Bold(true)
+				} else if tuiutil.Ascii {
+					s = "|" + s
+				}
+			}
+			// display text based on type
+			rowBuilder = append(rowBuilder, tmpStyle.Render(TruncateIfApplicable(m, s)))
+		}
+		for len(rowBuilder) < m.Viewport.Height { // fix spacing issues
+			rowBuilder = append(rowBuilder, base.Render(""))
+		}
+		column := lipgloss.JoinVertical(lipgloss.Left, rowBuilder...)
+		// get a list of columns
+		builder = append(builder, column)
+	}
+	// join them into rows
+	return lipgloss.JoinHorizontal(lipgloss.Left, builder...)
+}
+
+func DisplayFormatText(m *TuiModel) string {
+	cpy := make([]string, len(m.Format.EditSlices))
+	for i, v := range m.Format.EditSlices {
+		cpy[i] = *v
+	}
+	newY := ""
+	line := &cpy[Min(m.Format.CursorY, len(cpy)-1)]
+	x := 0
+	offset := FormatModeOffset - 1
+	for _, r := range *line {
+		newY += string(r)
+		if x == m.Format.CursorX+offset {
+			x++
+			break
+		}
+		x++
+	}
+	*line += " " // space at the end
+	highlight := string((*line)[x])
+	if tuiutil.Ascii {
+		highlight = "|" + highlight
+		newY += highlight
+	} else {
+		newY += lipgloss.NewStyle().Background(lipgloss.Color("#ffffff")).Render(highlight)
+	}
+	newY += (*line)[x+1:]
+	*line = newY
+	ret := strings.Join(
+		cpy,
+		"\n")
+	return wordwrap.String(ret, m.Viewport.Width)
+}
+
+func ShowClipboard(m *TuiModel) string {
+	return m.ClipboardList.View()
+}
+
+// DisplaySelection does that or writes it to a file if the selection is over a limit
+func DisplaySelection(m *TuiModel) string {
+	col := m.GetColumnData()
+	row := m.GetRow()
+	m.UI.ExpandColumn = m.GetColumn()
+	if m.MouseData.Y >= m.Viewport.Height+HeaderHeight &&
+		!m.UI.RenderSelection { // this is for when the selection is outside the bounds
+		return DisplayTable(m)
+	}
+	base := m.GetBaseStyle().UnsetBorderStyle().Width(m.Viewport.Width - 1)
+	if m.Data().EditTextBuffer != "" { // this is basically just if its a string follow these rules
+		conv := m.Data().EditTextBuffer
+		if c, err := FormatJson(m.Data().EditTextBuffer); err == nil {
+			conv = c
+		}
+		rows := SplitLines(wordwrap.String(conv, m.Viewport.Width))
+		min := 0
+		if len(rows) > m.Viewport.Height {
+			min = m.Viewport.YOffset
+		}
+		max := min + m.Viewport.Height
+		rows = rows[min:Min(len(rows), max)]
+
+		for len(rows) < m.Viewport.Height {
+			rows = append(rows, "")
+		}
+		return base.Render(lipgloss.JoinVertical(lipgloss.Left, rows...))
+	}
+	var prettyPrint string
+	raw := col[row]
+	if conv, ok := raw.(int64); ok {
+		prettyPrint = strconv.Itoa(int(conv))
+	} else if i, ok := raw.(float64); ok {
+		prettyPrint = base.Render(fmt.Sprintf("%.2f", i))
+	} else if t, ok := raw.(time.Time); ok {
+		str := t.String()
+		prettyPrint = base.Render(str)
+	} else if raw == nil {
+		prettyPrint = base.Render("NULL")
+	}
+	lines := SplitLines(prettyPrint)
+	for len(lines) < m.Viewport.Height {
+		lines = append(lines, "")
+	}
+	prettyPrint = " " + base.Render(lipgloss.JoinVertical(lipgloss.Left, lines...))
+	return wordwrap.String(prettyPrint, m.Viewport.Width)
+}

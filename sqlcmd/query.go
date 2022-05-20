@@ -19,63 +19,14 @@ package sqlcmd
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"io"
 	"os/exec"
-	"strings"
-	"syscall"
 
 	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/spf13/cobra"
 
-	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
-	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/table"
 )
-
-func NewQuery(config *hazelcast.Config) *cobra.Command {
-	return &cobra.Command{
-		Use:   `query statement-string`,
-		Short: "Executes SQL query",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			arg := strings.Join(args, " ")
-			var queries []string
-			for _, q := range strings.Split(arg, ";") {
-				tmp := strings.TrimSpace(q)
-				if len(tmp) == 0 {
-					continue
-				}
-				queries = append(queries, tmp)
-			}
-			if len(queries) == 0 {
-				return cmd.Help()
-			}
-			ctx := cmd.Context()
-			c, err := internal.ConnectToCluster(ctx, config)
-			if err != nil {
-				return hzcerror.NewLoggableError(err, "Cannot get initialize client")
-			}
-			for _, q := range queries {
-				lt := strings.ToLower(q)
-				if strings.HasPrefix(lt, "select") || strings.HasPrefix(lt, "show") {
-					if err := query(ctx, c, q, cmd.OutOrStdout(), true); err != nil {
-						if errors.Is(err, syscall.EPIPE) {
-							// pager may be closed, expected error
-							return nil
-						}
-						return hzcerror.NewLoggableError(err, "Cannot execute the query")
-					}
-				} else {
-					if err := execute(ctx, c, q); err != nil {
-						return hzcerror.NewLoggableError(err, "Cannot execute the query")
-					}
-				}
-			}
-			return nil
-		},
-	}
-}
 
 func query(ctx context.Context, c *hazelcast.Client, text string, out io.Writer, usePager bool) error {
 	rows, err := c.QuerySQL(ctx, text)
