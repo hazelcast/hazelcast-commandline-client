@@ -21,7 +21,7 @@ type TabularWriter struct {
 	out         io.Writer
 	rowsWritten int
 	rowCount    int
-	columnCount int
+	width       int
 }
 
 func NewTableWriter(out io.Writer) *TabularWriter {
@@ -31,7 +31,7 @@ func NewTableWriter(out io.Writer) *TabularWriter {
 func (t *TabularWriter) Write(cells ...interface{}) error {
 	t.initSize(cells)
 	// colWidth = (totalWidth - numOfSeparators) / numOfColumns
-	colWidth := (t.columnCount - (len(cells)+1)*2) / len(cells)
+	colWidth := (t.width - len(cells) - 1) / len(cells)
 	line := makeTabularLine(colWidth, alignLeft, cells...)
 	if _, err := fmt.Fprintln(t.out, line); err != nil {
 		return err
@@ -50,10 +50,11 @@ func (t *TabularWriter) initSize(cells []interface{}) {
 		return
 	}
 	// start state
-	t.columnCount, t.rowCount = consoleSize()
+	t.width, t.rowCount = consoleSize()
 	// minimum space required for => | ... | ... | ... |
-	if t.columnCount < (len(cells)+1)*2+len(cells)*3 {
-		t.columnCount = (len(cells)+1)*2 + len(cells)*3
+	minWidth := (len(cells)+1)*2 + len(cells)*3
+	if t.width < minWidth {
+		t.width = minWidth
 	}
 	if t.rowCount < 4 {
 		t.rowCount = 4
@@ -66,12 +67,18 @@ WriteHeader outputs header for the table with the form:
 | vegetables | fruit      | rank       |
 +--------------------------------------+
 */
+const cornersWithPlusSign = 2
+
 func (t *TabularWriter) WriteHeader(cells ...interface{}) error {
 	t.initSize(cells)
-	// colWidth = (totalWidth - numOfSeparators) / numOfColumns
-	colWidth := (t.columnCount - (len(cells)+1)*2) / len(cells)
-	unusedCellCount := (t.columnCount - (len(cells)+1)*2) % len(cells)
-	headerBorder := fmt.Sprintf("+%s+\n", strings.Repeat("-", t.columnCount-unusedCellCount-2))
+	var (
+		sepCnt       = len(cells) + 1
+		totalWidth   = t.width
+		numOfColumns = len(cells)
+	)
+	colWidth := (totalWidth - sepCnt) / numOfColumns
+	effectiveLineWidth := colWidth*len(cells) + sepCnt - cornersWithPlusSign
+	headerBorder := fmt.Sprintf("+%s+\n", strings.Repeat("-", effectiveLineWidth))
 	// write upper border
 	if _, err := fmt.Fprintf(t.out, headerBorder); err != nil {
 		return err
@@ -86,19 +93,20 @@ func (t *TabularWriter) WriteHeader(cells ...interface{}) error {
 	return err
 }
 
-func makeTabularLine(cellWidth int, alignment int, cells ...interface{}) string {
+const paddingFromSeparators = 2
+
+func makeTabularLine(cellWidth, alignment int, cells ...interface{}) string {
 	var b strings.Builder
-	b.WriteString("| ")
 	for _, c := range cells {
 		s := fmt.Sprint(c)
-		td := runewidth.Truncate(s, cellWidth, "...")
+		td := fmt.Sprintf(" %s ", runewidth.Truncate(s, cellWidth-paddingFromSeparators, "..."))
 		switch alignment {
 		case alignLeft:
-			b.WriteString(fmt.Sprintf("%-"+strconv.Itoa(cellWidth)+"s |", td))
+			b.WriteString(fmt.Sprintf("|%-"+strconv.Itoa(cellWidth)+"s", td))
 		case alignCenter:
-			b.WriteString(fmt.Sprintf("%"+strconv.Itoa(cellWidth)+"s |", td+strings.Repeat(" ", int((cellWidth-len(td))/2))))
+			b.WriteString(fmt.Sprintf("|%"+strconv.Itoa(cellWidth)+"s", td+strings.Repeat(" ", (cellWidth-len(td))/2)))
 		}
-
 	}
+	b.WriteString("|")
 	return b.String()
 }

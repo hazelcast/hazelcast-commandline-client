@@ -29,6 +29,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	goprompt "github.com/hazelcast/hazelcast-commandline-client/internal/go-prompt"
 	"github.com/hazelcast/hazelcast-commandline-client/rootcmd"
@@ -64,6 +66,8 @@ type CobraPrompt struct {
 	AddDefaultExitCommand bool
 	// OnErrorFunc handle error for command.Execute, if not set print error and exit
 	OnErrorFunc func(err error)
+	// Persister is used to interact with name persistence mechanism.
+	Persister map[string]string
 }
 
 var ErrExit = errors.New("exit prompt")
@@ -119,6 +123,7 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 		},
 	}))
 	co.GoPromptOptions = append(co.GoPromptOptions, SuggestionColorOptions...)
+	ctx = internal.ContextWithPersistedNames(ctx, co.Persister)
 	var p *goprompt.Prompt
 	p = goprompt.New(
 		func(in string) {
@@ -147,10 +152,18 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 			root, _ = rootcmd.New(cnfg)
 			prepareRootCmdForPrompt(co, root)
 			root.SetArgs(promptArgs)
+			root.SetFlagErrorFunc(func(_ *cobra.Command, err error) error {
+				return hzcerrors.FlagError(err)
+			})
 			if err := root.ExecuteContext(ctx); err != nil {
 				if errors.Is(err, ErrExit) {
 					exitPromptSafely()
 					return
+				}
+				// todo find a better approach than string comparison, this is fragile
+				if err.Error() == `required flag(s) "name" not set` {
+					// todo make this applicable for all data types
+					err = fmt.Errorf(`%w. Add it or consider "map use <name>"`, err)
 				}
 				if co.OnErrorFunc != nil {
 					co.OnErrorFunc(err)

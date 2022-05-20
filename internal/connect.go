@@ -27,7 +27,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 
 	"github.com/hazelcast/hazelcast-commandline-client/config"
-	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
+	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/constants"
 )
 
 var InvalidStateErr = errors.New("invalid new state")
@@ -50,7 +51,7 @@ func CallClusterOperationWithState(config *hazelcast.Config, operation string, s
 	obj, err := NewRESTCall(config, operation, *state)
 	if err != nil {
 		if errors.Is(err, InvalidStateErr) {
-			err = hzcerror.NewLoggableError(err, "Invalid new state. It should be one the following: %s, %s, %s, %s\n", ClusterStateActive, ClusterStateFrozen, ClusterStateNoMigration, ClusterStatePassive)
+			err = hzcerrors.NewLoggableError(err, "Invalid new state. It should be one the following: %s, %s, %s, %s\n", constants.ClusterStateActive, constants.ClusterStateFrozen, constants.ClusterStateNoMigration, constants.ClusterStatePassive)
 		}
 		return nil, err
 	}
@@ -63,21 +64,21 @@ func CallClusterOperationWithState(config *hazelcast.Config, operation string, s
 	}
 	client := &http.Client{Transport: tr}
 	switch operation {
-	case ClusterGetState, ClusterChangeState, ClusterShutdown:
+	case constants.ClusterGetState, constants.ClusterChangeState, constants.ClusterShutdown:
 		resp, err = client.Post(urlStr, "application/x-www-form-urlencoded", pr)
-	case ClusterVersion:
+	case constants.ClusterVersion:
 		resp, err = client.Get(urlStr)
 	}
 	if err != nil {
-		if msg, handled := TranslateError(err, config.Cluster.Cloud.Enabled, operation); handled {
-			return nil, hzcerror.NewLoggableError(err, msg)
+		if msg, handled := hzcerrors.TranslateError(err, config.Cluster.Cloud.Enabled, operation); handled {
+			return nil, hzcerrors.NewLoggableError(err, msg)
 		}
 		return nil, err
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, hzcerror.NewLoggableError(err, "Could not read the response from the cluster")
+		return nil, hzcerrors.NewLoggableError(err, "Could not read the response from the cluster")
 	}
 	sb := string(body)
 	return &sb, nil
@@ -93,17 +94,17 @@ func NewRESTCall(conf *hazelcast.Config, operation string, state string) (*RESTC
 		scheme = "https"
 	}
 	switch operation {
-	case ClusterGetState:
-		url = fmt.Sprintf("%s://%s%s", scheme, member, ClusterGetStateEndpoint)
-	case ClusterChangeState:
+	case constants.ClusterGetState:
+		url = fmt.Sprintf("%s://%s%s", scheme, member, constants.ClusterGetStateEndpoint)
+	case constants.ClusterChangeState:
 		if !EnsureState(state) {
 			return nil, InvalidStateErr
 		}
-		url = fmt.Sprintf("%s://%s%s", scheme, member, ClusterChangeStateEndpoint)
-	case ClusterShutdown:
-		url = fmt.Sprintf("%s://%s%s", scheme, member, ClusterShutdownEndpoint)
-	case ClusterVersion:
-		url = fmt.Sprintf("%s://%s%s", scheme, member, ClusterVersionEndpoint)
+		url = fmt.Sprintf("%s://%s%s", scheme, member, constants.ClusterChangeStateEndpoint)
+	case constants.ClusterShutdown:
+		url = fmt.Sprintf("%s://%s%s", scheme, member, constants.ClusterShutdownEndpoint)
+	case constants.ClusterVersion:
+		url = fmt.Sprintf("%s://%s%s", scheme, member, constants.ClusterVersionEndpoint)
 	default:
 		panic("Invalid operation to set connection obj.")
 	}
@@ -114,11 +115,11 @@ func NewRESTCall(conf *hazelcast.Config, operation string, state string) (*RESTC
 func NewParams(config *hazelcast.Config, operation string, state string) string {
 	var params string
 	switch operation {
-	case ClusterGetState, ClusterShutdown:
+	case constants.ClusterGetState, constants.ClusterShutdown:
 		params = fmt.Sprintf("%s&%s", config.Cluster.Name, config.Cluster.Security.Credentials.Password)
-	case ClusterChangeState:
+	case constants.ClusterChangeState:
 		params = fmt.Sprintf("%s&%s&%s", config.Cluster.Name, config.Cluster.Security.Credentials.Password, state)
-	case ClusterVersion:
+	case constants.ClusterVersion:
 		params = ""
 	default:
 		panic("invalid operation to set params.")
@@ -128,7 +129,7 @@ func NewParams(config *hazelcast.Config, operation string, state string) string 
 
 func EnsureState(state string) bool {
 	switch strings.ToLower(state) {
-	case ClusterStateActive, ClusterStateFrozen, ClusterStateNoMigration, ClusterStatePassive:
+	case constants.ClusterStateActive, constants.ClusterStateFrozen, constants.ClusterStateNoMigration, constants.ClusterStatePassive:
 		return true
 	}
 	return false
@@ -144,8 +145,8 @@ func ConnectToCluster(ctx context.Context, clientConfig *hazelcast.Config) (cli 
 			err = panicErr
 		}
 		if err != nil {
-			if msg, handled := TranslateError(err, clientConfig.Cluster.Cloud.Enabled); handled {
-				err = hzcerror.NewLoggableError(err, msg)
+			if msg, handled := hzcerrors.TranslateError(err, clientConfig.Cluster.Cloud.Enabled); handled {
+				err = hzcerrors.NewLoggableError(err, msg)
 			}
 		}
 	}()

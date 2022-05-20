@@ -26,9 +26,11 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/spf13/cobra"
 
-	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
-	"github.com/hazelcast/hazelcast-commandline-client/internal"
+	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/constants"
 )
+
+const MapPutExample = "map put --key hello --value world --name myMap\t#puts entry into map directly"
 
 func NewPut(config *hazelcast.Config) *cobra.Command {
 	// flags
@@ -40,8 +42,9 @@ func NewPut(config *hazelcast.Config) *cobra.Command {
 		mapValueFile string
 	)
 	cmd := &cobra.Command{
-		Use:   "put [--name mapname | --key keyname | --value-type type | --value-file file | --value value]",
-		Short: "Put value to map",
+		Use:     "put [--name mapname | --key keyname | --value-type type | --value-file file | --value value]",
+		Short:   "Put value to map",
+		Example: MapPutExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(cmd.Context(), time.Second*3)
 			defer cancel()
@@ -60,8 +63,8 @@ func NewPut(config *hazelcast.Config) *cobra.Command {
 			}
 			cmd.Printf("Cannot put value for key %s to map %s\n", mapKey, mapName)
 			isCloudCluster := config.Cluster.Cloud.Enabled
-			if networkErrMsg, handled := internal.TranslateNetworkError(err, isCloudCluster); handled {
-				err = hzcerror.NewLoggableError(err, networkErrMsg)
+			if networkErrMsg, handled := hzcerrors.TranslateNetworkError(err, isCloudCluster); handled {
+				err = hzcerrors.NewLoggableError(err, networkErrMsg)
 			}
 			return err
 		},
@@ -77,26 +80,26 @@ func normalizeMapValue(v, vFile, vType string) (interface{}, error) {
 	var err error
 	switch {
 	case v != "" && vFile != "":
-		return nil, hzcerror.NewLoggableError(nil, "Only one of --value and --value-file must be specified")
+		return nil, hzcerrors.NewLoggableError(nil, "Only one of --value and --value-file must be specified")
 	case v != "":
 		valueStr = v
 	case vFile != "":
 		if valueStr, err = loadValueFile(vFile); err != nil {
-			err = hzcerror.NewLoggableError(err, "Cannot load the value file. Make sure file exists and process has correct access rights")
+			err = hzcerrors.NewLoggableError(err, "Cannot load the value file. Make sure file exists and process has correct access rights")
 		}
 	default:
-		err = hzcerror.NewLoggableError(nil, "One of the value flags (--value or --value-file) must be set")
+		err = hzcerrors.NewLoggableError(nil, "One of the value flags (--value or --value-file) must be set")
 	}
 	if err != nil {
 		return nil, err
 	}
 	switch vType {
-	case internal.TypeString:
+	case constants.TypeString:
 		return valueStr, nil
-	case internal.TypeJSON:
+	case constants.TypeJSON:
 		return serialization.JSON(valueStr), nil
 	}
-	return nil, hzcerror.NewLoggableError(nil, "Provided value type parameter (%s) is not a known type. Provide either 'string' or 'json'", vType)
+	return nil, hzcerrors.NewLoggableError(nil, "Provided value type parameter (%s) is not a known type. Provide either 'string' or 'json'", vType)
 }
 
 func loadValueFile(path string) (string, error) {

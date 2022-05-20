@@ -21,7 +21,7 @@ import (
 	"strings"
 	"syscall"
 
-	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
+	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/browser"
 
@@ -39,7 +39,7 @@ sql "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR, this VARCHAR) TYPE IMAP 
 			ctx := cmd.Context()
 			c, err := internal.ConnectToCluster(ctx, config)
 			if err != nil {
-				return hzcerror.NewLoggableError(err, "Cannot get initialize client")
+				return hzcerrors.NewLoggableError(err, "Cannot get initialize client")
 			}
 			q := strings.Join(args, " ")
 			q = strings.TrimSpace(q)
@@ -60,11 +60,11 @@ sql "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR, this VARCHAR) TYPE IMAP 
 						// pager may be closed, expected error
 						return nil
 					}
-					return hzcerror.NewLoggableError(err, "Cannot execute the query")
+					return hzcerrors.NewLoggableError(err, "Cannot execute the query")
 				}
 			} else {
 				if err := execute(ctx, c, q); err != nil {
-					return hzcerror.NewLoggableError(err, "Cannot execute the query")
+					return hzcerrors.NewLoggableError(err, "Cannot execute the query")
 				}
 			}
 			return nil

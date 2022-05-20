@@ -141,7 +141,9 @@ func TestMergeFlagsWithConfig(t *testing.T) {
 	for i, tt := range tests {
 		t.Run(fmt.Sprintf("testcase-%d", i+1), func(t *testing.T) {
 			c := DefaultConfig()
-			if err := mergeFlagsWithConfig(&tt.flags, c); (err != nil) != tt.wantErr {
+			err := mergeFlagsWithConfig(&tt.flags, c)
+			isErr := err != nil
+			if isErr != tt.wantErr {
 				t.Errorf("mergeFlagsWithConfig() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			assert.Equal(t, c, tt.expectedConfig)

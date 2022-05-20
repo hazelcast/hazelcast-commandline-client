@@ -22,7 +22,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 
-	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
+	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
@@ -36,7 +36,7 @@ func New(config *hazelcast.Config) *cobra.Command {
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			// check if it is a cloud invocation
 			if config.Cluster.Cloud.Enabled {
-				return hzcerror.NewLoggableError(nil, invocationOnCloudInfoMessage)
+				return hzcerrors.NewLoggableError(nil, invocationOnCloudInfoMessage)
 			}
 			return nil
 		},
@@ -63,7 +63,7 @@ func New(config *hazelcast.Config) *cobra.Command {
 			Use:   sc.command,
 			Short: sc.info,
 			RunE: func(cmd *cobra.Command, args []string) error {
-				defer internal.ErrorRecover()
+				defer hzcerrors.ErrorRecover()
 				result, err := internal.CallClusterOperation(config, sc.command)
 				if err != nil {
 					return err
@@ -87,7 +87,7 @@ func NewChangeState(config *hazelcast.Config) *cobra.Command {
 		Use:   fmt.Sprintf("change-state [--state [%s]]", strings.Join(states, ",")),
 		Short: "Change state of the cluster",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			defer internal.ErrorRecover()
+			defer hzcerrors.ErrorRecover()
 			result, err := internal.CallClusterOperationWithState(config, "change-state", &newState)
 			if err != nil {
 				return err
