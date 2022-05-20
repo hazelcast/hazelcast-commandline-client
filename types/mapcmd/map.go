@@ -51,7 +51,6 @@ func New(config *hazelcast.Config) *cobra.Command {
 				return nil
 			}
 			if err := cmd.Flags().Set("name", val); err != nil {
-				cmd.PrintErrln("cannot set persistent err", err)
 				return hzcerrors.NewLoggableError(err, "Default name for map cannot be set")
 			}
 			return nil
