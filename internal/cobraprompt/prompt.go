@@ -160,6 +160,7 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 					exitPromptSafely()
 					return
 				}
+				// todo find a better approach than string comparison, this is fragile
 				if err.Error() == `required flag(s) "name" not set` {
 					// todo make this applicable for all data types
 					err = fmt.Errorf(`%w. Add it or consider "map use <name>"`, err)

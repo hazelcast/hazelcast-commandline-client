@@ -52,8 +52,9 @@ func (t *TabularWriter) initSize(cells []interface{}) {
 	// start state
 	t.width, t.rowCount = consoleSize()
 	// minimum space required for => | ... | ... | ... |
-	if t.width < (len(cells)+1)*2+len(cells)*3 {
-		t.width = (len(cells)+1)*2 + len(cells)*3
+	minWidth := (len(cells)+1)*2 + len(cells)*3
+	if t.width < minWidth {
+		t.width = minWidth
 	}
 	if t.rowCount < 4 {
 		t.rowCount = 4
@@ -70,9 +71,13 @@ const cornersWithPlusSign = 2
 
 func (t *TabularWriter) WriteHeader(cells ...interface{}) error {
 	t.initSize(cells)
-	// colWidth = (totalWidth - numOfSeparators) / numOfColumns
-	colWidth := (t.width - (len(cells) + 1)) / len(cells)
-	effectiveLineWidth := colWidth*len(cells) + len(cells) + 1 - cornersWithPlusSign
+	var (
+		sepCnt       = len(cells) + 1
+		totalWidth   = t.width
+		numOfColumns = len(cells)
+	)
+	colWidth := (totalWidth - sepCnt) / numOfColumns
+	effectiveLineWidth := colWidth*len(cells) + sepCnt - cornersWithPlusSign
 	headerBorder := fmt.Sprintf("+%s+\n", strings.Repeat("-", effectiveLineWidth))
 	// write upper border
 	if _, err := fmt.Fprintf(t.out, headerBorder); err != nil {
