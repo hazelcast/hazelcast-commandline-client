@@ -30,7 +30,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	goprompt "github.com/hazelcast/hazelcast-commandline-client/internal/go-prompt"
 	"github.com/hazelcast/hazelcast-commandline-client/rootcmd"
 )
@@ -121,12 +120,12 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 	}))
 	co.GoPromptOptions = append(co.GoPromptOptions, SuggestionColorOptions...)
 	history := goprompt.NewHistory()
-	f, err := os.OpenFile(cmdHistoryPath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
+	f, err := os.OpenFile(cmdHistoryPath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0600)
 	defer func() {
 		f.Close()
 	}()
 	if err != nil {
-		root.Printf("Cannot load command history, will proceed without one\nhistory file on %s:%s...\n", cmdHistoryPath, err)
+		// todo log this once we have a logging solution
 	} else {
 		scanner := bufio.NewScanner(f)
 		for scanner.Scan() {
@@ -166,7 +165,7 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 			root.SetArgs(promptArgs)
 			err = root.ExecuteContext(ctx)
 			if _, writeErr := f.WriteString(fmt.Sprintln(in)); writeErr != nil {
-				root.Printf("Could not persist command to history:%s\nErr:%s\n", in, writeErr)
+				// todo log this once we have a logging solution
 			}
 			if err != nil {
 				if errors.Is(err, ErrExit) {
@@ -259,13 +258,13 @@ func traverseForFlagSuggestions(wordBeforeCursor string, words []string, co *Cob
 		if flag.Hidden && !co.ShowHiddenFlags {
 			return
 		}
-		if stringInSlice(co.FlagsToExclude, flag.Name) {
+		if stringInSlice(co.FlagsToExclude, flag.Name, true) {
 			return
 		}
 		flagUsage := "--" + flag.Name
 		// Check if flag is already used in the command
-		if (flag.Shorthand != "" && check.ContainsString(words, "-"+flag.Shorthand)) ||
-			check.ContainsString(words, flagUsage) {
+		if (flag.Shorthand != "" && stringInSlice(words, "-"+flag.Shorthand, false)) ||
+			stringInSlice(words, flagUsage, false) {
 			return
 		}
 		if strings.HasPrefix(wordBeforeCursor, "--") {
@@ -282,8 +281,14 @@ func traverseForFlagSuggestions(wordBeforeCursor string, words []string, co *Cob
 	return suggestions
 }
 
-func stringInSlice(slice []string, str string) bool {
+func stringInSlice(slice []string, str string, caseSensitive bool) bool {
+	if !caseSensitive {
+		str = strings.ToLower(str)
+	}
 	for _, s := range slice {
+		if !caseSensitive {
+			s = strings.ToLower(s)
+		}
 		if str == s {
 			return true
 		}

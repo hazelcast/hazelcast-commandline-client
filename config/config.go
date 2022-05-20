@@ -125,7 +125,7 @@ func readConfig(path string, config *Config, defaultConfPath string) error {
 	isDefaultConfigPath := path == defaultConfPath
 	var confBytes []byte
 	var err error
-	exists, err := file.FileExists(path)
+	exists, err := file.Exists(path)
 	if err != nil {
 		return hzcerror.NewLoggableError(err, "can not access configuration path %s", path)
 	}

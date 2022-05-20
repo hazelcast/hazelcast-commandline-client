@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 )
 
-func FileExists(path string) (bool, error) {
+func Exists(path string) (bool, error) {
 	var err error
 	if _, err = os.Stat(path); err == nil {
 		// conf file exists

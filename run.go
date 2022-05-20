@@ -55,15 +55,14 @@ func IsInteractiveCall(rootCmd *cobra.Command, args []string) bool {
 }
 
 func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *hazelcast.Config) {
-	cmdHistoryPath := filepath.Join(file.HZCHomePath(), ".hzc_history")
-	exists, err := file.FileExists(cmdHistoryPath)
+	cmdHistoryPath := filepath.Join(file.HZCHomePath(), "history")
+	exists, err := file.Exists(cmdHistoryPath)
 	if err != nil {
-		rootCmd.Printf("Error: Can not read command history file on %s, may be missing permissions:\n%s\n", cmdHistoryPath, err)
-		return
+		// todo log err once we have logging solution
 	}
 	if !exists {
 		if err := file.CreateMissingDirsAndFileWithRWPerms(cmdHistoryPath, []byte{}); err != nil {
-			rootCmd.Printf("Error: Can not create command history file on %s, may be missing permissions:\n%s\n", cmdHistoryPath, err)
+			// todo log err once we have logging solution
 		}
 	}
 	var p = &cobraprompt.CobraPrompt{

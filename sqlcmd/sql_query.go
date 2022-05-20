@@ -32,6 +32,11 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/table"
 )
 
+const (
+	outputPretty = "pretty"
+	outputCSV    = "csv"
+)
+
 func NewQuery(config *hazelcast.Config) *cobra.Command {
 	var outputType string
 	cmd := &cobra.Command{
@@ -50,8 +55,10 @@ func NewQuery(config *hazelcast.Config) *cobra.Command {
 			if len(queries) == 0 {
 				return cmd.Help()
 			}
-			if outputType != "pretty" && outputType != "csv" {
-				return hzcerror.NewLoggableError(nil, "Provided output type parameter (%s) is not a known type. Provide either 'pretty' or 'csv'", outputType)
+			if outputType != outputPretty && outputType != outputCSV {
+				return hzcerror.NewLoggableError(nil,
+					"Provided output type parameter (%s) is not a known type. Provide either '%s' or '%s'",
+					outputType, outputPretty, outputCSV)
 			}
 			ctx := cmd.Context()
 			c, err := internal.ConnectToCluster(ctx, config)
@@ -79,9 +86,9 @@ func NewQuery(config *hazelcast.Config) *cobra.Command {
 
 func decorateCommandWithOutputFlag(outputType *string, cmd *cobra.Command) {
 	flags := cmd.Flags()
-	flags.StringVarP(outputType, "output-type", "o", "pretty", "pretty or csv")
+	flags.StringVarP(outputType, "output-type", "o", outputPretty, fmt.Sprintf("%s or %s", outputPretty, outputCSV))
 	cmd.RegisterFlagCompletionFunc("output-type", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"pretty", "csv"}, cobra.ShellCompDirectiveDefault
+		return []string{outputPretty, outputCSV}, cobra.ShellCompDirectiveDefault
 	})
 }
 
@@ -92,7 +99,7 @@ func query(ctx context.Context, c *hazelcast.Client, text string, out io.Writer,
 	}
 	defer rows.Close()
 	switch outputType {
-	case "pretty":
+	case outputPretty:
 		tWriter := table.NewTableWriter(out)
 		return rowsHandler(rows, func(cols []string) error {
 			icols := make([]interface{}, len(cols))
@@ -103,7 +110,7 @@ func query(ctx context.Context, c *hazelcast.Client, text string, out io.Writer,
 		}, func(row []interface{}) error {
 			return tWriter.Write(row...)
 		})
-	case "csv":
+	case outputCSV:
 		csvWriter := csv.NewWriter(out)
 		return rowsHandler(rows, func(cols []string) error {
 			if err := csvWriter.Write(cols); err != nil {

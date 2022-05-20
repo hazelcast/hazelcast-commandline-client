@@ -137,13 +137,15 @@ func (p *Prompt) feed(b []byte) (shouldExit bool, exec *Exec) {
 		p.buf = NewBuffer()
 		p.History.Clear()
 	case Up, ControlP:
-		if !completing { // Don't use p.completion.Completing() because it takes double operation when switch to selected=-1.
+		if !completing {
+			// Don't use p.completion.Completing() because it takes double operation when switch to selected=-1.
 			if newBuf, changed := p.History.Older(p.buf); changed {
 				p.buf = newBuf
 			}
 		}
 	case Down, ControlN:
-		if !completing { // Don't use p.completion.Completing() because it takes double operation when switch to selected=-1.
+		if !completing {
+			// Don't use p.completion.Completing() because it takes double operation when switch to selected=-1.
 			if newBuf, changed := p.History.Newer(p.buf); changed {
 				p.buf = newBuf
 			}
