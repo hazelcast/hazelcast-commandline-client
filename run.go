@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client"
@@ -31,6 +32,7 @@ import (
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/cobraprompt"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/file"
 	goprompt "github.com/hazelcast/hazelcast-commandline-client/internal/go-prompt"
 	"github.com/hazelcast/hazelcast-commandline-client/types/mapcmd"
 )
@@ -55,6 +57,16 @@ func IsInteractiveCall(rootCmd *cobra.Command, args []string) bool {
 }
 
 func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *hazelcast.Config) {
+	cmdHistoryPath := filepath.Join(file.HZCHomePath(), "history")
+	exists, err := file.Exists(cmdHistoryPath)
+	if err != nil {
+		// todo log err once we have logging solution
+	}
+	if !exists {
+		if err := file.CreateMissingDirsAndFileWithRWPerms(cmdHistoryPath, []byte{}); err != nil {
+			// todo log err once we have logging solution
+		}
+	}
 	namePersister := make(map[string]string)
 	var p = &cobraprompt.CobraPrompt{
 		ShowHelpCommandAndFlags:  true,
@@ -96,7 +108,8 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *haze
 	p.FlagsToExclude = flagsToExclude
 	rootCmd.Example = fmt.Sprintf("> %s\n> %s", mapcmd.MapPutExample, mapcmd.MapGetExample) + "\n> cluster version"
 	rootCmd.Use = ""
-	p.Run(ctx, rootCmd, cnfg)
+	p.Run(ctx, rootCmd, cnfg, cmdHistoryPath)
+	return
 }
 
 func updateConfigWithFlags(rootCmd *cobra.Command, cnfg *config.Config, programArgs []string, globalFlagValues *config.GlobalFlagValues) error {

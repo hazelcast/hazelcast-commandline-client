@@ -27,7 +27,7 @@ type Prompt struct {
 	buf               *Buffer
 	renderer          *Render
 	executor          Executor
-	history           *History
+	History           *History
 	completion        *CompletionManager
 	keyBindings       []KeyBind
 	ASCIICodeBindings []ASCIICodeBind
@@ -130,21 +130,23 @@ func (p *Prompt) Feed(b []byte) (shouldExit bool, exec *Exec) {
 		exec = &Exec{input: p.buf.Text()}
 		p.buf = NewBuffer()
 		if exec.input != "" {
-			p.history.Add(exec.input)
+			p.History.Add(exec.input)
 		}
 	case ControlC:
 		p.renderer.BreakLine(p.buf)
 		p.buf = NewBuffer()
-		p.history.Clear()
+		p.History.Clear()
 	case Up, ControlP:
-		if !completing { // Don't use p.completion.Completing() because it takes double operation when switch to selected=-1.
-			if newBuf, changed := p.history.Older(p.buf); changed {
+		if !completing {
+			// Don't use p.completion.Completing() because it takes double operation when switch to selected=-1.
+			if newBuf, changed := p.History.Older(p.buf); changed {
 				p.buf = newBuf
 			}
 		}
 	case Down, ControlN:
-		if !completing { // Don't use p.completion.Completing() because it takes double operation when switch to selected=-1.
-			if newBuf, changed := p.history.Newer(p.buf); changed {
+		if !completing {
+			// Don't use p.completion.Completing() because it takes double operation when switch to selected=-1.
+			if newBuf, changed := p.History.Newer(p.buf); changed {
 				p.buf = newBuf
 			}
 			return

@@ -19,61 +19,54 @@ package sqlcmd
 import (
 	"context"
 	"database/sql"
+	"encoding/csv"
 	"fmt"
 	"io"
-	"os/exec"
 
 	"github.com/hazelcast/hazelcast-go-client"
 
 	"github.com/hazelcast/hazelcast-commandline-client/internal/table"
 )
 
-func query(ctx context.Context, c *hazelcast.Client, text string, out io.Writer, usePager bool) error {
+func query(ctx context.Context, c *hazelcast.Client, text string, out io.Writer, outputType string) error {
 	rows, err := c.QuerySQL(ctx, text)
 	if err != nil {
 		return fmt.Errorf("querying: %w", err)
 	}
 	defer rows.Close()
-	var w = out
-	// command that can be used as a pager exists
-	if usePager {
-		var pagerCmd string
-		for _, s := range []string{"less", "more"} {
-			if _, err := exec.LookPath(s); err != nil {
-				continue
+	switch outputType {
+	case outputPretty:
+		tWriter := table.NewTableWriter(out)
+		return rowsHandler(rows, func(cols []string) error {
+			icols := make([]interface{}, len(cols))
+			for i, v := range cols {
+				icols[i] = v
 			}
-			pagerCmd = s
-			break
-		}
-		if pagerCmd != "" {
-			cmd := exec.CommandContext(ctx, pagerCmd)
-			cmd.Stdout = out
-			cmd.Stderr = out
-			cmdBuf, err := cmd.StdinPipe()
-			if err != nil {
+			return tWriter.WriteHeader(icols...)
+		}, func(row []interface{}) error {
+			return tWriter.Write(row...)
+		})
+	case outputCSV:
+		csvWriter := csv.NewWriter(out)
+		return rowsHandler(rows, func(cols []string) error {
+			if err := csvWriter.Write(cols); err != nil {
 				return err
 			}
-			if err := cmd.Start(); err != nil {
+			csvWriter.Flush()
+			return nil
+		}, func(values []interface{}) error {
+			strValues := make([]string, len(values))
+			for i, v := range values {
+				strValues[i] = fmt.Sprint(v)
+			}
+			if err := csvWriter.Write(strValues); err != nil {
 				return err
 			}
-			defer func() {
-				cmdBuf.Close()
-				cmd.Wait()
-			}()
-			w = cmdBuf
-		}
+			csvWriter.Flush()
+			return nil
+		})
 	}
-	tWriter := table.NewTableWriter(w)
-	err = rowsHandler(rows, func(cols []string) error {
-		icols := make([]interface{}, len(cols))
-		for i, v := range cols {
-			icols[i] = v
-		}
-		return tWriter.WriteHeader(icols...)
-	}, func(row []interface{}) error {
-		return tWriter.Write(row...)
-	})
-	return err
+	return nil
 }
 
 // Reads columns and rows calls handlers. rowHandler is called per row.

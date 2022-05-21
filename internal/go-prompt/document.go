@@ -368,7 +368,8 @@ func (d *Document) GetCursorRightPosition(count int) int {
 // if the user pressed the arrow-up button.
 func (d *Document) GetCursorUpPosition(count int, preferredColumn int) int {
 	var col int
-	if preferredColumn == -1 { // -1 means nil
+	if preferredColumn == -1 {
+		// -1 means nil
 		col = d.CursorPositionCol()
 	} else {
 		col = preferredColumn
@@ -385,7 +386,8 @@ func (d *Document) GetCursorUpPosition(count int, preferredColumn int) int {
 // user pressed the arrow-down button.
 func (d *Document) GetCursorDownPosition(count int, preferredColumn int) int {
 	var col int
-	if preferredColumn == -1 { // -1 means nil
+	if preferredColumn == -1 {
+		// -1 means nil
 		col = d.CursorPositionCol()
 	} else {
 		col = preferredColumn

@@ -311,6 +311,8 @@ func (m *Model) Reset() bool {
 // handle a clipboard paste event, if supported. Returns whether or not the
 // cursor blink should reset.
 func (m *Model) handlePaste(v string) bool {
+	v = strings.Replace(v, "\r\n", "\n", -1)
+	v = strings.Replace(v, "\r", "\n", -1)
 	lines := strings.Split(v, "\n")
 	runes := make([][]rune, len(lines))
 	for i, l := range lines {

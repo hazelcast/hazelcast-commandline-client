@@ -30,7 +30,6 @@ func NewTableWriter(out io.Writer) *TabularWriter {
 
 func (t *TabularWriter) Write(cells ...interface{}) error {
 	t.initSize(cells)
-	// colWidth = (totalWidth - numOfSeparators) / numOfColumns
 	colWidth := (t.width - len(cells) - 1) / len(cells)
 	line := makeTabularLine(colWidth, alignLeft, cells...)
 	if _, err := fmt.Fprintln(t.out, line); err != nil {

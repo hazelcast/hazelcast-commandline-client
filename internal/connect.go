@@ -22,7 +22,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
 
@@ -32,8 +31,6 @@ import (
 )
 
 var InvalidStateErr = errors.New("invalid new state")
-
-const goClientConnectionTimeout = 5 * time.Second
 
 var client *hazelcast.Client
 
@@ -150,8 +147,6 @@ func ConnectToCluster(ctx context.Context, clientConfig *hazelcast.Config) (cli 
 			}
 		}
 	}()
-	ctx, cancel := context.WithTimeout(ctx, goClientConnectionTimeout)
-	defer cancel()
 	configCopy := clientConfig.Clone()
 	cli, err = hazelcast.StartNewClientWithConfig(ctx, configCopy)
 	return

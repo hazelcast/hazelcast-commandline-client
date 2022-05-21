@@ -16,6 +16,7 @@
 package cobraprompt
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
@@ -31,7 +32,6 @@ import (
 
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	goprompt "github.com/hazelcast/hazelcast-commandline-client/internal/go-prompt"
 	"github.com/hazelcast/hazelcast-commandline-client/rootcmd"
 )
@@ -101,7 +101,7 @@ var SuggestionColorOptions = []goprompt.Option{
 
 // Run will automatically generate suggestions for all cobra commands and flags defined by RootCmd and execute the selected commands.
 // Run will also reset all given flags by default, see PersistFlagValues
-func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelcast.Config) {
+func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelcast.Config, cmdHistoryPath string) {
 	defer handleExit()
 	// let ctrl+c exit goprompt
 	co.GoPromptOptions = append(co.GoPromptOptions, goprompt.OptionAddKeyBind(goprompt.KeyBind{
@@ -123,6 +123,23 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 		},
 	}))
 	co.GoPromptOptions = append(co.GoPromptOptions, SuggestionColorOptions...)
+	history := goprompt.NewHistory()
+	f, err := os.OpenFile(cmdHistoryPath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0600)
+	defer func() {
+		f.Close()
+	}()
+	if err != nil {
+		// todo log this once we have a logging solution
+	} else {
+		scanner := bufio.NewScanner(f)
+		for scanner.Scan() {
+			history.Add(scanner.Text())
+		}
+		if scanner.Err() != nil {
+			root.Printf("Cannot load command history, will proceed without one\nhistory file on %s:%s...\n", cmdHistoryPath, err)
+			history.Clear()
+		}
+	}
 	ctx = internal.ContextWithPersistedNames(ctx, co.Persister)
 	var p *goprompt.Prompt
 	p = goprompt.New(
@@ -155,7 +172,11 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 			root.SetFlagErrorFunc(func(_ *cobra.Command, err error) error {
 				return hzcerrors.FlagError(err)
 			})
-			if err := root.ExecuteContext(ctx); err != nil {
+			err = root.ExecuteContext(ctx)
+			if _, writeErr := f.WriteString(fmt.Sprintln(in)); writeErr != nil {
+				// todo log this once we have a logging solution
+			}
+			if err != nil {
 				if errors.Is(err, ErrExit) {
 					exitPromptSafely()
 					return
@@ -187,6 +208,7 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 		},
 		co.GoPromptOptions...,
 	)
+	p.History = history
 	p.Run()
 }
 
@@ -256,13 +278,13 @@ func traverseForFlagSuggestions(wordBeforeCursor string, words []string, co *Cob
 		if flag.Hidden && !co.ShowHiddenFlags {
 			return
 		}
-		if stringInSlice(co.FlagsToExclude, flag.Name) {
+		if stringInSlice(co.FlagsToExclude, flag.Name, true) {
 			return
 		}
 		flagUsage := "--" + flag.Name
 		// Check if flag is already used in the command
-		if (flag.Shorthand != "" && check.ContainsString(words, "-"+flag.Shorthand)) ||
-			check.ContainsString(words, flagUsage) {
+		if (flag.Shorthand != "" && stringInSlice(words, "-"+flag.Shorthand, false)) ||
+			stringInSlice(words, flagUsage, false) {
 			return
 		}
 		if strings.HasPrefix(wordBeforeCursor, "--") {
@@ -279,8 +301,14 @@ func traverseForFlagSuggestions(wordBeforeCursor string, words []string, co *Cob
 	return suggestions
 }
 
-func stringInSlice(slice []string, str string) bool {
+func stringInSlice(slice []string, str string, caseSensitive bool) bool {
+	if !caseSensitive {
+		str = strings.ToLower(str)
+	}
 	for _, s := range slice {
+		if !caseSensitive {
+			s = strings.ToLower(s)
+		}
 		if str == s {
 			return true
 		}

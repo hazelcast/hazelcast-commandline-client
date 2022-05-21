@@ -2,60 +2,60 @@ package prompt
 
 // History stores the texts that are entered.
 type History struct {
-	histories []string
-	tmp       []string
-	selected  int
+	Commands         []string
+	editableCommands []string
+	selected         int
 }
 
-// Add to add text in history.
+// Add to add text in History.
 func (h *History) Add(input string) {
-	h.histories = append(h.histories, input)
+	h.Commands = append(h.Commands, input)
 	h.Clear()
 }
 
-// Clear to clear the history.
+// Clear to clear the History.
 func (h *History) Clear() {
-	h.tmp = make([]string, len(h.histories))
-	for i := range h.histories {
-		h.tmp[i] = h.histories[i]
+	h.editableCommands = make([]string, len(h.Commands))
+	for i := range h.Commands {
+		h.editableCommands[i] = h.Commands[i]
 	}
-	h.tmp = append(h.tmp, "")
-	h.selected = len(h.tmp) - 1
+	h.editableCommands = append(h.editableCommands, "")
+	h.selected = len(h.editableCommands) - 1
 }
 
 // Older saves a buffer of current line and get a buffer of previous line by up-arrow.
-// The changes of line buffers are stored until new history is created.
+// The changes of line buffers are stored until new History is created.
 func (h *History) Older(buf *Buffer) (new *Buffer, changed bool) {
-	if len(h.tmp) == 1 || h.selected == 0 {
+	if len(h.editableCommands) == 1 || h.selected == 0 {
 		return buf, false
 	}
-	h.tmp[h.selected] = buf.Text()
+	h.editableCommands[h.selected] = buf.Text()
 
 	h.selected--
 	new = NewBuffer()
-	new.InsertText(h.tmp[h.selected], false, true)
+	new.InsertText(h.editableCommands[h.selected], false, true)
 	return new, true
 }
 
 // Newer saves a buffer of current line and get a buffer of next line by up-arrow.
-// The changes of line buffers are stored until new history is created.
+// The changes of line buffers are stored until new History is created.
 func (h *History) Newer(buf *Buffer) (new *Buffer, changed bool) {
-	if h.selected >= len(h.tmp)-1 {
+	if h.selected >= len(h.editableCommands)-1 {
 		return buf, false
 	}
-	h.tmp[h.selected] = buf.Text()
+	h.editableCommands[h.selected] = buf.Text()
 
 	h.selected++
 	new = NewBuffer()
-	new.InsertText(h.tmp[h.selected], false, true)
+	new.InsertText(h.editableCommands[h.selected], false, true)
 	return new, true
 }
 
-// NewHistory returns new history object.
+// NewHistory returns new History object.
 func NewHistory() *History {
 	return &History{
-		histories: []string{},
-		tmp:       []string{""},
-		selected:  0,
+		Commands:         []string{},
+		editableCommands: []string{""},
+		selected:         0,
 	}
 }
