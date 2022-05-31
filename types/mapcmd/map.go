@@ -74,7 +74,7 @@ func getMap(ctx context.Context, clientConfig *hazelcast.Config, mapName string)
 	return
 }
 
-const MapUseExample = "map use m1          # sets the default map name to m1 unless set explicitly"
+const MapUseExample = "map use m1    # sets the default map name to m1 unless set explicitly"
 
 func NewUse() *cobra.Command {
 	cmd := &cobra.Command{
@@ -109,17 +109,22 @@ func decorateCommandWithMapNameFlags(cmd *cobra.Command, mapName *string) {
 	cmd.MarkFlagRequired("name")
 }
 
-func decorateCommandWithKeyFlags(cmd *cobra.Command, mapKey *string) {
-	cmd.Flags().StringVarP(mapKey, "key", "k", "", "key of the map")
+func decorateCommandWithKeyFlags(cmd *cobra.Command, mapKey, mapKeyType *string) {
+	flags := cmd.Flags()
+	flags.StringVarP(mapKey, "key", "k", "", "key of the map")
+	flags.StringVarP(mapKeyType, "key-type", "", "string", "type of the key, one of: string, json, int(8,16,32,64), float(32,64)")
 	cmd.MarkFlagRequired("key")
+	cmd.RegisterFlagCompletionFunc("key-type", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return internal.SupportedTypes, cobra.ShellCompDirectiveDefault
+	})
 }
 
 func decorateCommandWithValueFlags(cmd *cobra.Command, mapValue, mapValueFile, mapValueType *string) {
 	flags := cmd.Flags()
 	flags.StringVarP(mapValue, "value", "v", "", "value of the map")
 	flags.StringVarP(mapValueFile, "value-file", "f", "", `path to the file that contains the value. Use "-" (dash) to read from stdin`)
-	flags.StringVarP(mapValueType, "value-type", "t", "string", "type of the value, one of: string, json")
+	flags.StringVarP(mapValueType, "value-type", "t", "string", "type of the value, one of: string, json, int(8,16,32,64), float(32,64)")
 	cmd.RegisterFlagCompletionFunc("value-type", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"json", "string"}, cobra.ShellCompDirectiveDefault
+		return internal.SupportedTypes, cobra.ShellCompDirectiveDefault
 	})
 }
