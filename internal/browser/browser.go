@@ -10,7 +10,6 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/muesli/termenv"
 
 	"github.com/hazelcast/hazelcast-commandline-client/internal/browser/layout/vertical"
@@ -24,7 +23,7 @@ type TableResultMsg *sql.Rows
 
 type controller struct {
 	tea.Model
-	client *hazelcast.Client
+	driver *sql.DB
 }
 
 type table struct {
@@ -325,7 +324,7 @@ func (c controller) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case multiline.SubmitMsg:
 		return c, func() tea.Msg {
 			lt := strings.TrimSpace(string(m))
-			rows, err := execSQL(c.client, lt)
+			rows, err := execSQL(c.driver, lt)
 			if err != nil {
 				return StringResultMsg(err.Error())
 			}
@@ -337,7 +336,7 @@ func (c controller) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return c, cmd
 }
 
-func InitSQLBrowser(client *hazelcast.Client) *tea.Program {
+func InitSQLBrowser(driver *sql.DB) *tea.Program {
 	var s Separator
 	textArea := multiline.InitTextArea()
 	c := &controller{vertical.InitialModel([]tea.Model{
@@ -373,7 +372,7 @@ func InitSQLBrowser(client *hazelcast.Client) *tea.Program {
 			},
 			align: lipgloss.Left,
 		},
-	}, []int{3, -1, 1, -1}), client}
+	}, []int{3, -1, 1, -1}), driver}
 	p := tea.NewProgram(
 		c,
 	)

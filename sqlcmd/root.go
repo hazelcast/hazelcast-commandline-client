@@ -46,15 +46,16 @@ sql "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR, this VARCHAR) TYPE IMAP 
 					outputType, outputPretty, outputCSV)
 			}
 			ctx := cmd.Context()
-			c, err := internal.ConnectToCluster(ctx, config)
+			//todo create driver from existing client
+			driver, err := internal.SQLDriver(config)
 			if err != nil {
-				return hzcerrors.NewLoggableError(err, "Cannot get initialize client")
+				return hzcerrors.NewLoggableError(err, "Cannot get initialize SQL driver")
 			}
 			q := strings.Join(args, " ")
 			q = strings.TrimSpace(q)
 			if len(q) == 0 {
 				// If no queries given, run sql browser
-				p := browser.InitSQLBrowser(c)
+				p := browser.InitSQLBrowser(driver)
 				if err := p.Start(); err != nil {
 					fmt.Println("could not run sql browser:", err)
 					return err
@@ -64,11 +65,11 @@ sql "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR, this VARCHAR) TYPE IMAP 
 			// If a statement is provided, run it in non-interactive mode
 			lt := strings.ToLower(q)
 			if strings.HasPrefix(lt, "select") || strings.HasPrefix(lt, "show") {
-				if err := query(ctx, c, q, cmd.OutOrStdout(), outputType); err != nil {
+				if err := query(ctx, driver, q, cmd.OutOrStdout(), outputType); err != nil {
 					return hzcerrors.NewLoggableError(err, "Cannot execute the query")
 				}
 			} else {
-				if err := execute(ctx, c, q); err != nil {
+				if err := execute(ctx, driver, q); err != nil {
 					return hzcerrors.NewLoggableError(err, "Cannot execute the query")
 				}
 			}
