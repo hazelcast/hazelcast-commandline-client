@@ -23,18 +23,19 @@ import (
 	"github.com/spf13/cobra"
 
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
-const MapGetExample = `map get --key hello --name myMap
-map get --key-type int16 --key 2012 --name yearbook`
+const MapGetExample = `  # Get value of the given key from the map.
+  hzc map get -n mapname -k k1
+  hzc map get --key hello --name myMap
+  hzc map get --key-type int16 --key 2012 --name yearbook`
 
 func NewGet(config *hazelcast.Config) *cobra.Command {
 	var mapName, mapKey, mapKeyType string
 	cmd := &cobra.Command{
 		Use:     "get [--name mapname | --key keyname]",
 		Short:   "Get single entry from the map",
-		Example: `  # Get value of the given key from the map.
-  hzc map get -n mapname -k k1`,
 		Example: MapGetExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			key, err := internal.ConvertString(mapKey, mapKeyType)
@@ -61,6 +62,6 @@ func NewGet(config *hazelcast.Config) *cobra.Command {
 		},
 	}
 	decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name")
-	decorateCommandWithMapKeyFlags(cmd, &mapKey, &mapKeyFlags, true, "key of the entry")
+	decorateCommandWithMapKeyFlags(cmd, &mapKey, &mapKeyType, true, "key of the entry")
 	return cmd
 }

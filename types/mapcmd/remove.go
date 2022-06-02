@@ -22,12 +22,14 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 
-	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
+	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
 func NewRemove(config *hazelcast.Config) *cobra.Command {
 	var (
 		mapName,
+		mapKeyType,
 		mapKey string
 	)
 	cmd := &cobra.Command{
@@ -39,24 +41,27 @@ func NewRemove(config *hazelcast.Config) *cobra.Command {
 			// same context timeout for both single entry removal and map cleanup
 			ctx, cancel := context.WithTimeout(cmd.Context(), time.Second*3)
 			defer cancel()
-			var err error
+			key, err := internal.ConvertString(mapKey, mapKeyType)
+			if err != nil {
+				return hzcerrors.NewLoggableError(err, "Conversion error on key %s to type %s", mapKey, mapKeyType)
+			}
 			m, err := getMap(ctx, config, mapName)
 			if err != nil {
 				return err
 			}
-			_, err = m.Remove(ctx, mapKey)
+			_, err = m.Remove(ctx, key)
 			if err != nil {
 				var handled bool
 				handled, err = cloudcb(err, config)
 				if handled {
 					return err
 				}
-				return hzcerror.NewLoggableError(err, "Cannot remove given key from map %s", mapName)
+				return hzcerrors.NewLoggableError(err, "Cannot remove given key from map %s", mapName)
 			}
 			return nil
 		},
 	}
 	decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name")
-	decorateCommandWithMapKeyFlags(cmd, &mapKey, true, "key of the entry")
+	decorateCommandWithMapKeyFlags(cmd, &mapKey, &mapKeyType, true, "key of the entry")
 	return cmd
 }

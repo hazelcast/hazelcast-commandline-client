@@ -22,27 +22,13 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 
-	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
+	fds "github.com/hazelcast/hazelcast-commandline-client/internal/flagdecorators"
+
+	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
-	fds "github.com/hazelcast/hazelcast-commandline-client/types/flagdecorators"
 )
 
-func NewPut(config *hazelcast.Config) *cobra.Command {
-	var (
-		mapName,
-		mapKey,
-		mapValue,
-		mapValueType,
-		mapValueFile string
-	)
-	var (
-		ttl,
-		maxIdle time.Duration
-	)
-	cmd := &cobra.Command{
-		Use:   "put [--name mapname | --key keyname | --value-type type | {--value-file file | --value value} | --ttl ttl | --max-idle max-idle]",
-		Short: "Put value to map",
-		Example: `  # Put key, value pair to map.
+const MapPutExample = `  # Put key, value pair to map.
   hzc put -n mapname -k k1 -v v1
 
   # Put key, value pair to map but type of the value is accepted as json data.
@@ -60,6 +46,9 @@ func NewPut(config *hazelcast.Config) *cobra.Command {
   # Put key, value pair to map with given ttl and maxidle values
   hzc map put -n mapname -k k1 -v v1 --ttl 3ms --max-idle 4ms
   
+  # Put custom type key and value to map
+  map put --key-type string --key hello --value-type float32 --value 19.94 --name myMap
+
   # TTL and Maxidle:
   ttl and maxidle values cannot be less than a second when it is converted to second from any time unit. Supported units are;
     - Nanosecond  (ns)
@@ -67,11 +56,32 @@ func NewPut(config *hazelcast.Config) *cobra.Command {
     - Millisecond (ms)
     - Second      (s)
     - Minute      (m)
-    - Hour        (h)`,
+    - Hour        (h)`
+
+func NewPut(config *hazelcast.Config) *cobra.Command {
+	var (
+		mapName,
+		mapKey,
+		mapKeyType,
+		mapValue,
+		mapValueType,
+		mapValueFile string
+	)
+	var (
+		ttl,
+		maxIdle time.Duration
+	)
+	cmd := &cobra.Command{
+		Use:     "put [--name mapname | --key keyname | --value-type type | {--value-file file | --value value} | --ttl ttl | --max-idle max-idle]",
+		Short:   "Put value to map",
+		Example: MapPutExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(cmd.Context(), time.Second*3)
 			defer cancel()
-			var err error
+			key, err := internal.ConvertString(mapKey, mapKeyType)
+			if err != nil {
+				return hzcerrors.NewLoggableError(err, "Conversion error on key %s to type %s", mapKey, mapKeyType)
+			}
 			var (
 				uTTL,
 				uMaxIdle *internal.UserDuration
@@ -79,13 +89,13 @@ func NewPut(config *hazelcast.Config) *cobra.Command {
 			if ttl.Seconds() != 0 {
 				uTTL = &internal.UserDuration{Duration: ttl, DurType: internal.TTL}
 				if err = uTTL.Validate(); err != nil {
-					return hzcerror.NewLoggableError(err, "ttl is invalid")
+					return hzcerrors.NewLoggableError(err, "ttl is invalid")
 				}
 			}
 			if maxIdle.Seconds() != 0 {
 				uMaxIdle = &internal.UserDuration{Duration: maxIdle, DurType: internal.MaxIdle}
 				if err = uMaxIdle.Validate(); err != nil {
-					return hzcerror.NewLoggableError(err, "max-idle is invalid")
+					return hzcerrors.NewLoggableError(err, "max-idle is invalid")
 				}
 			}
 			var normalizedValue interface{}
@@ -98,13 +108,13 @@ func NewPut(config *hazelcast.Config) *cobra.Command {
 			}
 			switch {
 			case uTTL != nil && uMaxIdle != nil:
-				_, err = m.PutWithTTLAndMaxIdle(ctx, mapKey, normalizedValue, uTTL.Duration, uMaxIdle.Duration)
+				_, err = m.PutWithTTLAndMaxIdle(ctx, key, normalizedValue, uTTL.Duration, uMaxIdle.Duration)
 			case uTTL != nil:
-				_, err = m.PutWithTTL(ctx, mapKey, normalizedValue, uTTL.Duration)
+				_, err = m.PutWithTTL(ctx, key, normalizedValue, uTTL.Duration)
 			case uMaxIdle != nil:
-				_, err = m.PutWithMaxIdle(ctx, mapKey, normalizedValue, uMaxIdle.Duration)
+				_, err = m.PutWithMaxIdle(ctx, key, normalizedValue, uMaxIdle.Duration)
 			default:
-				_, err = m.Put(ctx, mapKey, normalizedValue)
+				_, err = m.Put(ctx, key, normalizedValue)
 			}
 			if err != nil {
 				var handled bool
@@ -112,13 +122,13 @@ func NewPut(config *hazelcast.Config) *cobra.Command {
 				if handled {
 					return err
 				}
-				return hzcerror.NewLoggableError(err, "Cannot put given entry to the map %s", mapName)
+				return hzcerrors.NewLoggableError(err, "Cannot put given entry to the map %s", mapName)
 			}
 			return nil
 		},
 	}
 	decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name")
-	decorateCommandWithMapKeyFlags(cmd, &mapKey, true, "key of the entry")
+	decorateCommandWithMapKeyFlags(cmd, &mapKey, &mapKeyType, true, "key of the entry")
 	decorateCommandWithValueFlags(cmd, &mapValue, &mapValueFile, &mapValueType)
 	fds.DecorateCommandWithTTL(cmd, &ttl, false, "ttl value of the entry")
 	fds.DecorateCommandWithMaxIdle(cmd, &maxIdle, false, "max-idle value of the entry")

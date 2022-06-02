@@ -172,6 +172,7 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 			root.SetFlagErrorFunc(func(_ *cobra.Command, err error) error {
 				return hzcerrors.FlagError(err)
 			})
+			os.Args = promptArgs
 			err = root.ExecuteContext(ctx)
 			if _, writeErr := f.WriteString(fmt.Sprintln(in)); writeErr != nil {
 				// todo log this once we have a logging solution

@@ -21,7 +21,6 @@ require (
 
 // sql browser
 require (
-	github.com/alecthomas/assert v0.0.0-20170929043011-405dbfeb8e38
 	github.com/atotto/clipboard v0.1.4
 	github.com/charmbracelet/bubbles v0.10.3
 	github.com/charmbracelet/bubbletea v0.20.0

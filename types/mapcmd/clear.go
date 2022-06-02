@@ -25,13 +25,15 @@ import (
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 )
 
+const MapClearExample = `  # Clear all entries of given map.
+  hzc map clear -n mapname`
+
 func NewClear(config *hazelcast.Config) *cobra.Command {
 	var mapName string
 	cmd := &cobra.Command{
-		Use:   "clear [--name mapname]",
-		Short: "Clear entries of the map",
-		Example: `  # Clear all entries of given map.
-  hzc map clear -n mapname`,
+		Use:     "clear [--name mapname]",
+		Short:   "Clear entries of the map",
+		Example: MapClearExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// context timeout can be given according to bulk size of operation
 			// we assume that current payload is same for all hazelcast operations

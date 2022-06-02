@@ -28,66 +28,12 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/types"
 	"github.com/spf13/cobra"
 
-	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
+	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
-	fds "github.com/hazelcast/hazelcast-commandline-client/types/flagdecorators"
+	fds "github.com/hazelcast/hazelcast-commandline-client/internal/flagdecorators"
 )
 
-func NewPutAll(config *hazelcast.Config) *cobra.Command {
-	var (
-		entries []types.Entry
-	)
-	var (
-		jsonEntryPath string
-		jsonEntries   map[string]interface{}
-	)
-	var (
-		mapName string
-		mapKeys,
-		mapValues,
-		mapValueTypes,
-		mapValueFiles []string
-	)
-	validateJsonEntryFlag := func() error {
-		if (len(mapKeys) |
-			len(mapValues) |
-			len(mapValueTypes) |
-			len(mapValueFiles)) != 0 {
-			return hzcerror.NewLoggableError(nil, fmt.Sprintf("%s is already set, there cannot be additional flags", fds.JsonEntryFlag))
-		}
-		return nil
-	}
-	validateValuesFlag := func() ([]byte, []int, error) {
-		valueCount := len(mapValues) + len(mapValueFiles)
-		if valueCount != len(mapKeys) {
-			return nil, nil, hzcerror.NewLoggableError(nil, "number of keys and values does not match")
-		}
-		vOrder, tOrder := ObtainOrderingOfValueFlags(os.Args)
-		if vOrder == nil {
-			return nil, nil, hzcerror.NewLoggableError(nil, "correct order of values cannot be taken")
-		}
-		return vOrder, tOrder, nil
-	}
-	executePutAll := func(ctx context.Context, cmd *cobra.Command, m *hazelcast.Map, entries []types.Entry) error {
-		var err error
-		err = m.PutAll(ctx, entries...)
-		if err != nil {
-			cmd.Println("Cannot put given entries")
-			isCloudCluster := config.Cluster.Cloud.Enabled
-			if networkErrMsg, handled := internal.TranslateNetworkError(err, isCloudCluster); handled {
-				err = hzcerror.NewLoggableError(err, networkErrMsg)
-			}
-			return err
-		}
-		return nil
-	}
-	cmd := &cobra.Command{
-		Use:        "put-all [--name mapname | {[[--key keyname]... | [[--value-file file | --value value][--value-type type]]...] | [--json-entry jsonEntryFile]}]",
-		Aliases:    nil,
-		SuggestFor: nil,
-		Short:      "Put values to map",
-		Long:       "",
-		Example: `  # Put key, value pairs to map.
+const MapPutAllExample = `  # Put key, value pairs to map.
   hzc map put-all -n mapname -k k1 -v v1 -k k2 -v v2
   
   # Put key, value pairs to map in another order.
@@ -112,10 +58,66 @@ func NewPutAll(config *hazelcast.Config) *cobra.Command {
   - Entries with "null" values are being ignored.
   
   # Coupling rule of keys and values given in different order
-  - Keys and values are being coupled according to first given first matched manner. That means given first key will be matched with given first 
-  value from left to right. Therefore, total number of keys and total number of values (given through file or directly from the command line) must be in equal amount.
-  - BUT, for "--type" flag, this rule is not applied. Type of the value is needed to be given just after where it typed.
-`,
+  - Keys and values are coupled according to the order they are provided. That means the first given key will be matched with the first given 
+  value from left to right. Therefore, keys and values (given through file or directly from the command line) must be equal in number.
+  - BUT, for "--type" flag, this rule is not applied. Type of the value flag is given just after the actual value flag.
+`
+
+func NewPutAll(config *hazelcast.Config) *cobra.Command {
+	var (
+		entries []types.Entry
+	)
+	var (
+		jsonEntryPath string
+		jsonEntries   map[string]interface{}
+	)
+	var (
+		mapName string
+		mapKeys,
+		mapValues,
+		mapValueTypes,
+		mapValueFiles []string
+	)
+	validateJsonEntryFlag := func() error {
+		if len(mapKeys) != 0 ||
+			len(mapValues) != 0 ||
+			len(mapValueTypes) != 0 ||
+			len(mapValueFiles) != 0 {
+			return hzcerrors.NewLoggableError(nil, fmt.Sprintf("%s is already set, there cannot be additional flags", fds.JsonEntryFlag))
+		}
+		return nil
+	}
+	validateValuesFlag := func() ([]byte, []int, error) {
+		valueCount := len(mapValues) + len(mapValueFiles)
+		if valueCount != len(mapKeys) {
+			return nil, nil, hzcerrors.NewLoggableError(nil, "number of keys and values does not match")
+		}
+		vOrder, tOrder := ObtainOrderingOfValueFlags(os.Args)
+		if vOrder == nil {
+			return nil, nil, hzcerrors.NewLoggableError(nil, "correct order of values cannot be taken")
+		}
+		return vOrder, tOrder, nil
+	}
+	executePutAll := func(ctx context.Context, cmd *cobra.Command, m *hazelcast.Map, entries []types.Entry) error {
+		var err error
+		err = m.PutAll(ctx, entries...)
+		if err != nil {
+			cmd.Println("Cannot put given entries")
+			isCloudCluster := config.Cluster.Cloud.Enabled
+			if networkErrMsg, handled := hzcerrors.TranslateNetworkError(err, isCloudCluster); handled {
+				err = hzcerrors.NewLoggableError(err, networkErrMsg)
+			}
+			return err
+		}
+		return nil
+	}
+	cmd := &cobra.Command{
+		Use:        "put-all [--name mapname | {[[--key keyname]... | [[--value-file file | --value value][--value-type type]]...] | [--json-entry jsonEntryFile]}]",
+		Aliases:    nil,
+		SuggestFor: nil,
+		Short:      "Put values to map",
+		Long:       "",
+		Example:    MapPutAllExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(cmd.Context(), time.Second*3)
 			defer cancel()
@@ -128,7 +130,7 @@ func NewPutAll(config *hazelcast.Config) *cobra.Command {
 					return err
 				}
 				if err = json.Unmarshal(data, &jsonEntries); err != nil {
-					return hzcerror.NewLoggableError(err, "given json map entry file is in invalid format")
+					return hzcerrors.NewLoggableError(err, "given json map entry file is in invalid format")
 				}
 				for key, jsv := range jsonEntries {
 					switch jsv.(type) {
@@ -152,7 +154,7 @@ func NewPutAll(config *hazelcast.Config) *cobra.Command {
 						nJson = serialization.JSON(mj)
 						entries = append(entries, types.Entry{Key: key, Value: nJson})
 					default:
-						return hzcerror.NewLoggableError(nil, "Unknown data type in json file")
+						return hzcerrors.NewLoggableError(nil, "Unknown data type in json file")
 					}
 				}
 				m, err := getMap(ctx, config, mapName)
@@ -189,7 +191,7 @@ func NewPutAll(config *hazelcast.Config) *cobra.Command {
 						mapValueTypes = mapValueTypes[1:]
 						tOrder = tOrder[1:]
 					} else {
-						if normalizedValue, err = normalizeMapValue(v, "", internal.TypeString); err != nil {
+						if normalizedValue, err = normalizeMapValue(v, "", internal.TypeNameString); err != nil {
 							return err
 						}
 					}
@@ -204,7 +206,7 @@ func NewPutAll(config *hazelcast.Config) *cobra.Command {
 						mapValueTypes = mapValueTypes[1:]
 						tOrder = tOrder[1:]
 					} else {
-						if normalizedValue, err = normalizeMapValue(v, "", internal.TypeString); err != nil {
+						if normalizedValue, err = normalizeMapValue(v, "", internal.TypeNameString); err != nil {
 							return err
 						}
 					}

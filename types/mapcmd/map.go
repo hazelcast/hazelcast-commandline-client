@@ -19,9 +19,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/alecthomas/chroma/quick"
 	"github.com/hazelcast/hazelcast-go-client"
@@ -43,7 +43,8 @@ const (
 	MapValueFileFlag      = "value-file"
 	MapValueTypeFlagShort = "t"
 	MapValueTypeFlag      = "value-type"
-	MapKeyTypeFlag		  = "key-type"
+	MapKeyTypeFlag        = "key-type"
+	MapResetFlag          = "reset"
 )
 
 func New(config *hazelcast.Config) *cobra.Command {
@@ -77,12 +78,14 @@ func New(config *hazelcast.Config) *cobra.Command {
 			return nil
 		},
 	}
-	cmd.AddCommand(NewPut(config))
-	cmd.AddCommand(NewPutAll(config))
-	cmd.AddCommand(NewGet(config))
-	cmd.AddCommand(NewGetAll(config))
-	cmd.AddCommand(NewRemove(config))
-	cmd.AddCommand(NewClear(config), NewUse())
+	cmd.AddCommand(
+		NewPut(config),
+		NewPutAll(config),
+		NewGet(config),
+		NewGetAll(config),
+		NewRemove(config),
+		NewClear(config),
+		NewUse())
 	return cmd
 }
 
@@ -121,13 +124,11 @@ func normalizeMapValue(v, vFile, vType string) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	switch vType {
-	case internal.TypeString:
-		return valueStr, nil
-	case internal.TypeJSON:
-		return serialization.JSON(valueStr), nil
+	mapValue, err := internal.ConvertString(valueStr, vType)
+	if err != nil {
+		err = hzcerrors.NewLoggableError(err, "Conversion error on value %s to value-type %s", valueStr, vType)
 	}
-	return nil, hzcerrors.NewLoggableError(nil, "Provided value type parameter (%s) is not a known type. Provide either 'string' or 'json'", vType)
+	return mapValue, err
 }
 
 func loadValueFile(path string) (string, error) {
@@ -150,7 +151,7 @@ func loadValueFile(path string) (string, error) {
 
 func cloudcb(err error, config *hazelcast.Config) (bool, error) {
 	isCloudCluster := config.Cluster.Cloud.Enabled
-	if networkErrMsg, handled := internal.TranslateNetworkError(err, isCloudCluster); handled {
+	if networkErrMsg, handled := hzcerrors.TranslateNetworkError(err, isCloudCluster); handled {
 		err = hzcerrors.NewLoggableError(err, networkErrMsg)
 		return true, err
 	}
@@ -207,36 +208,6 @@ func getMap(ctx context.Context, clientConfig *hazelcast.Config, mapName string)
 	return
 }
 
-const MapUseExample = "map use m1    # sets the default map name to m1 unless set explicitly"
-
-func NewUse() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   `use [map-name | --reset]`,
-		Short: "sets default map name",
-		Example: MapUseExample + `
-map get --key k1    # --name m1\" is inferred
-map use --reset	    # resets the behaviour`,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			persister := internal.PersistedNamesFromContext(cmd.Context())
-			if cmd.Flags().Changed("reset") {
-				delete(persister, "map")
-				return nil
-			}
-			if len(args) == 0 {
-				return cmd.Help()
-			}
-			if len(args) > 1 {
-				cmd.Println("Provide map name between \"\" quotes if it contains white space")
-				return nil
-			}
-			persister["map"] = args[0]
-			return nil
-		},
-	}
-	_ = cmd.Flags().BoolP("reset", "", false, "unset default name for map")
-	return cmd
-}
-
 func decorateCommandWithValueFlags(cmd *cobra.Command, mapValue, mapValueFile, mapValueType *string) {
 	flags := cmd.Flags()
 	flags.StringVarP(mapValue, MapValueFlag, MapValueFlagShort, "", "value of the map")
@@ -259,14 +230,11 @@ func decorateCommandWithMapNameFlags(cmd *cobra.Command, mapName *string, requir
 	}
 }
 
-func decorateCommandWithMapKeyFlags(cmd *cobra.Command, mapKey *string, required bool, usage string) {
+func decorateCommandWithMapKeyFlags(cmd *cobra.Command, mapKey, mapKeyType *string, required bool, usage string) {
 	flags := cmd.Flags()
 	cmd.Flags().StringVarP(mapKey, MapKeyFlag, MapKeyFlagShort, "", usage)
 	flags.StringVarP(mapKeyType, MapKeyTypeFlag, "", "string", fmt.Sprintf("type of the key, one of: %s", strings.Join(internal.SupportedTypeNames, ",")))
 	if required {
-		if err := cmd.MarkFlagRequired(MapKeyTypeFlag); err != nil {
-			panic(err)
-		}
 		if err := cmd.MarkFlagRequired(MapKeyFlag); err != nil {
 			panic(err)
 		}

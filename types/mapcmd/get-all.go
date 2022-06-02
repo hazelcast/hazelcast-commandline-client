@@ -23,9 +23,16 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/types"
 	"github.com/spf13/cobra"
 
+	fds "github.com/hazelcast/hazelcast-commandline-client/internal/flagdecorators"
+
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
-	fds "github.com/hazelcast/hazelcast-commandline-client/types/flagdecorators"
 )
+
+const MapGetAllExample = `  # Get matched entries from the map with default delimiter. Default delimiter is single tab value.
+  hzc get-all -n mapname -k k1 -k k2
+
+  # Get matched entries from the map with custom delimiter.
+  hzc get-all -n mapname -k k1 -k k2 --delim ":"`
 
 func NewGetAll(config *hazelcast.Config) *cobra.Command {
 	var (
@@ -42,13 +49,9 @@ func NewGetAll(config *hazelcast.Config) *cobra.Command {
 		return nil
 	}
 	cmd := &cobra.Command{
-		Use:   "get-all [--name mapname | [--key keyname]... [--delim delimiter]]",
-		Short: "Get all matched entries from the map",
-		Example: `  # Get matched entries from the map with default delimiter. Default delimiter is single tab value.
-  hzc get-all -n mapname -k k1 -k k2
-
-  # Get matched entries from the map with custom delimiter.
-  hzc get-all -n mapname -k k1 -k k2 --delim ":"`,
+		Use:     "get-all [--name mapname | [--key keyname]... [--delim delimiter]]",
+		Short:   "Get all matched entries from the map",
+		Example: MapGetAllExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(cmd.Context(), time.Second*3)
 			defer cancel()
