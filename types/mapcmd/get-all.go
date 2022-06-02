@@ -26,11 +26,11 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/types"
 	"github.com/spf13/cobra"
 
-	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
+	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	fds "github.com/hazelcast/hazelcast-commandline-client/types/flagdecorators"
 )
 
-func NewGetAll(config *hazelcast.Config) (*cobra.Command, error) {
+func NewGetAll(config *hazelcast.Config) *cobra.Command {
 	var (
 		delim string
 	)
@@ -40,13 +40,18 @@ func NewGetAll(config *hazelcast.Config) (*cobra.Command, error) {
 	)
 	validateFlags := func() error {
 		if len(mapKeys) == 0 {
-			return hzcerror.NewLoggableError(nil, "At least one key must be given")
+			return hzcerrors.NewLoggableError(nil, "At least one key must be given")
 		}
 		return nil
 	}
 	cmd := &cobra.Command{
 		Use:   "get-all [--name mapname | [--key keyname]... [--delim delimiter]]",
-		Short: "Get all matched entries from specified map",
+		Short: "Get all matched entries from the map",
+		Example: `  # Get matched entries from the map with default delimiter. Default delimiter is single tab value.
+  hzc get-all -n mapname -k k1 -k k2
+
+  # Get matched entries from the map with custom delimiter.
+  hzc get-all -n mapname -k k1 -k k2 -delim ":"`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(cmd.Context(), time.Second*3)
 			defer cancel()
@@ -71,7 +76,7 @@ func NewGetAll(config *hazelcast.Config) (*cobra.Command, error) {
 				if handled {
 					return err
 				}
-				return hzcerror.NewLoggableError(err, "Cannot get entries for the given keys for map %s", mapName)
+				return hzcerrors.NewLoggableError(err, "Cannot get entries for the given keys for map %s", mapName)
 			}
 			for _, entry := range entries {
 				cmd.Print(entry.Key, delim)
@@ -88,14 +93,8 @@ func NewGetAll(config *hazelcast.Config) (*cobra.Command, error) {
 			return nil
 		},
 	}
-	if err := decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name"); err != nil {
-		return nil, err
-	}
-	if err := decorateCommandWithMapKeyArrayFlags(cmd, &mapKeys, false, "key(s) of the entry"); err != nil {
-		return nil, err
-	}
-	if err := fds.DecorateCommandWithDelimiter(cmd, &delim, false, "delimiter of printed key, value pairs"); err != nil {
-		return nil, err
-	}
-	return cmd, nil
+	decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name")
+	decorateCommandWithMapKeyArrayFlags(cmd, &mapKeys, false, "key(s) of the entry")
+	fds.DecorateCommandWithDelimiter(cmd, &delim, false, "delimiter of printed key, value pairs")
+	return cmd
 }

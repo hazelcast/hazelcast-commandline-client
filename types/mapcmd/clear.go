@@ -22,14 +22,16 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 
-	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
+	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 )
 
-func NewClear(config *hazelcast.Config) (*cobra.Command, error) {
+func NewClear(config *hazelcast.Config) *cobra.Command {
 	var mapName string
 	cmd := &cobra.Command{
 		Use:   "clear [--name mapname]",
-		Short: "Clear entries of specified map",
+		Short: "Clear entries of the map",
+		Example: `  # Clear all entries of given map.
+  hzc map clear -n mapname`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// context timeout can be given according to bulk size of operation
 			// we assume that current payload is same for all hazelcast operations
@@ -47,13 +49,11 @@ func NewClear(config *hazelcast.Config) (*cobra.Command, error) {
 				if handled {
 					return err
 				}
-				return hzcerror.NewLoggableError(err, "Cannot clear map %s", mapName)
+				return hzcerrors.NewLoggableError(err, "Cannot clear map %s", mapName)
 			}
 			return nil
 		},
 	}
-	if err := decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name"); err != nil {
-		return nil, err
-	}
-	return cmd, nil
+	decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name")
+	return cmd
 }

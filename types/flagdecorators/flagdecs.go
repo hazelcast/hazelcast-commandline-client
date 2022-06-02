@@ -29,42 +29,38 @@ const (
 	DelimiterFlag = "delim"
 )
 
-func DecorateCommandWithJsonEntryFlag(cmd *cobra.Command, jsonEntry *string, required bool, usage string) error {
+func DecorateCommandWithJsonEntryFlag(cmd *cobra.Command, jsonEntry *string, required bool, usage string) {
 	cmd.Flags().StringVar(jsonEntry, JsonEntryFlag, "", usage)
 	if required {
 		if err := cmd.MarkFlagRequired(JsonEntryFlag); err != nil {
-			return err
+			panic(err)
 		}
 	}
-	return nil
 }
 
-func DecorateCommandWithTTL(cmd *cobra.Command, ttl *time.Duration, required bool, usage string) error {
+func DecorateCommandWithTTL(cmd *cobra.Command, ttl *time.Duration, required bool, usage string) {
 	cmd.Flags().DurationVar(ttl, TTLFlag, 0, usage)
 	if required {
 		if err := cmd.MarkFlagRequired(TTLFlag); err != nil {
-			return err
+			panic(err)
 		}
 	}
-	return nil
 }
 
-func DecorateCommandWithMaxIdle(cmd *cobra.Command, maxIdle *time.Duration, required bool, usage string) error {
+func DecorateCommandWithMaxIdle(cmd *cobra.Command, maxIdle *time.Duration, required bool, usage string) {
 	cmd.Flags().DurationVar(maxIdle, MaxIdleFlag, 0, usage)
 	if required {
 		if err := cmd.MarkFlagRequired(MaxIdleFlag); err != nil {
-			return err
+			panic(err)
 		}
 	}
-	return nil
 }
 
-func DecorateCommandWithDelimiter(cmd *cobra.Command, delimiter *string, required bool, usage string) error {
+func DecorateCommandWithDelimiter(cmd *cobra.Command, delimiter *string, required bool, usage string) {
 	cmd.Flags().StringVar(delimiter, DelimiterFlag, "\t", usage)
 	if required {
 		if err := cmd.MarkFlagRequired(DelimiterFlag); err != nil {
-			return err
+			panic(err)
 		}
 	}
-	return nil
 }

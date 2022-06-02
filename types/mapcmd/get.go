@@ -28,11 +28,13 @@ import (
 	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
 )
 
-func NewGet(config *hazelcast.Config) (*cobra.Command, error) {
+func NewGet(config *hazelcast.Config) *cobra.Command {
 	var mapName, mapKey string
 	cmd := &cobra.Command{
 		Use:   "get [--name mapname | --key keyname]",
-		Short: "Get single entry from specified map",
+		Short: "Get single entry from the map",
+		Example: `  # Get value of the given key from the map.
+  hzc map get -n mapname -k k1`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(cmd.Context(), time.Second*3)
 			defer cancel()
@@ -61,11 +63,7 @@ func NewGet(config *hazelcast.Config) (*cobra.Command, error) {
 			return nil
 		},
 	}
-	if err := decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name"); err != nil {
-		return nil, err
-	}
-	if err := decorateCommandWithMapKeyFlags(cmd, &mapKey, true, "key of the entry"); err != nil {
-		return nil, err
-	}
-	return cmd, nil
+	decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name")
+	decorateCommandWithMapKeyFlags(cmd, &mapKey, true, "key of the entry")
+	return cmd
 }

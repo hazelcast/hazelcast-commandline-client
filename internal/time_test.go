@@ -22,31 +22,22 @@ import (
 
 func TestUserDuration_Validate(t *testing.T) {
 	for _, tc := range []struct {
-		msg      string
-		isNotErr func(err error) bool
-		in       time.Duration
+		msg   string
+		isErr bool
+		in    time.Duration
 	}{
-		{msg: "zero", in: 0, isNotErr: func(err error) bool {
-			return err != nil
-		}},
-		{msg: "equal to a second", in: time.Second, isNotErr: func(err error) bool {
-			return err == nil
-		}},
-		{msg: "greater than a second", in: 2 * time.Second, isNotErr: func(err error) bool {
-			return err == nil
-		}},
-		{msg: "less than a second as millisecond", in: 500 * time.Millisecond, isNotErr: func(err error) bool {
-			return err != nil
-		}},
-		{msg: "greater than a second as minute", in: time.Minute, isNotErr: func(err error) bool {
-			return err == nil
-		}},
+		{msg: "zero", in: 0, isErr: true},
+		{msg: "equal to a second", in: time.Second, isErr: false},
+		{msg: "greater than a second", in: 2 * time.Second, isErr: false},
+		{msg: "less than a second as millisecond", in: 500 * time.Millisecond, isErr: true},
+		{msg: "greater than a second as minute", in: time.Minute, isErr: false},
 	} {
 		t.Run(tc.msg, func(t *testing.T) {
 			var err error
 			d := &UserDuration{Duration: tc.in, DurType: TTL}
 			err = d.Validate()
-			if !tc.isNotErr(err) {
+			if err != nil && tc.isErr == false ||
+				err == nil && tc.isErr == true {
 				t.Fatalf("error state is not satisfied")
 			}
 		})

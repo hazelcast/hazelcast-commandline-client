@@ -43,7 +43,7 @@ func (d *UserDuration) Validate() error {
 		return nil
 	}
 	if d.DurType == TTL {
-		if d.Seconds() >= time.Second.Seconds() {
+		if d.Seconds() >= 1.0 {
 			return nil
 		}
 		return errors.New("ttl duration cannot be less than a second")

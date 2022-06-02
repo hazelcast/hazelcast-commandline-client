@@ -65,14 +65,9 @@ func New(cnfg *hazelcast.Config) (*cobra.Command, *config.GlobalFlagValues) {
 }
 
 func subCommands(config *hazelcast.Config) []*cobra.Command {
-	// cluster and sql commands ignores some errors
-	// such as MarkFlagRequired, RegisterFlagCompletionFunc
-	// those errors are propagated until that point in map but
-	// on purpose of not ruining design ignored for now
-	mapCmd, _ := mapcmd.New(config)
 	cmds := []*cobra.Command{
 		clustercmd.New(config),
-		mapCmd,
+		mapcmd.New(config),
 		sqlcmd.New(config),
 	}
 	fds := []fakeDoor.FakeDoor{

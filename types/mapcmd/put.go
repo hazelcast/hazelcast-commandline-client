@@ -27,7 +27,7 @@ import (
 	fds "github.com/hazelcast/hazelcast-commandline-client/types/flagdecorators"
 )
 
-func NewPut(config *hazelcast.Config) (*cobra.Command, error) {
+func NewPut(config *hazelcast.Config) *cobra.Command {
 	var (
 		mapName,
 		mapKey,
@@ -40,8 +40,34 @@ func NewPut(config *hazelcast.Config) (*cobra.Command, error) {
 		maxIdle time.Duration
 	)
 	cmd := &cobra.Command{
-		Use:   "put [--name mapname | --key keyname | --value-type type | --value-file file | --value value | --ttl ttl | --max-idle max-idle]",
-		Short: "Put value to specified map",
+		Use:   "put [--name mapname | --key keyname | --value-type type | {--value-file file | --value value} | --ttl ttl | --max-idle max-idle]",
+		Short: "Put value to map",
+		Example: `  # Put key, value pair to map.
+  hzc put -n mapname -k k1 -v v1
+
+  # Put key, value pair to map but type of the value is accepted as json data.
+  hzc map put -n mapname -k k2 -v v2 -t json
+  
+  # Put key, value pair to map but the value is given through external file.
+  hzc map put -n mapname -k k3 -f v3.txt
+  
+  # Put key, value pair to map but the value is given through external json file.
+  hzc map put -n mapname -k k4 -f v4.json -t json
+  
+  # Put key, value pair to map with given ttl value
+  hzc map put -n mapname -k k5 -v v5 --ttl 3ms
+  
+  # Put key, value pair to map with given ttl and maxidle values
+  hzc map put -n mapname -k k1 -v v1 --ttl 3ms --max-idle 4ms
+  
+  # TTL and Maxidle:
+  ttl and maxidle values cannot be less than a second when it is converted to second from any time unit. Supported units are;
+    - Nanosecond  (ns)
+    - Microsecond (μs)
+    - Millisecond (ms)
+    - Second      (s)
+    - Minute      (m)
+    - Hour        (h)`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(cmd.Context(), time.Second*3)
 			defer cancel()
@@ -91,20 +117,10 @@ func NewPut(config *hazelcast.Config) (*cobra.Command, error) {
 			return nil
 		},
 	}
-	if err := decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name"); err != nil {
-		return nil, err
-	}
-	if err := decorateCommandWithMapKeyFlags(cmd, &mapKey, true, "key of the entry"); err != nil {
-		return nil, err
-	}
-	if err := decorateCommandWithValueFlags(cmd, &mapValue, &mapValueFile, &mapValueType); err != nil {
-		return nil, err
-	}
-	if err := fds.DecorateCommandWithTTL(cmd, &ttl, false, "ttl value of the entry"); err != nil {
-		return nil, err
-	}
-	if err := fds.DecorateCommandWithMaxIdle(cmd, &maxIdle, false, "max-idle value of the entry"); err != nil {
-		return nil, err
-	}
-	return cmd, nil
+	decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name")
+	decorateCommandWithMapKeyFlags(cmd, &mapKey, true, "key of the entry")
+	decorateCommandWithValueFlags(cmd, &mapValue, &mapValueFile, &mapValueType)
+	fds.DecorateCommandWithTTL(cmd, &ttl, false, "ttl value of the entry")
+	fds.DecorateCommandWithMaxIdle(cmd, &maxIdle, false, "max-idle value of the entry")
+	return cmd
 }

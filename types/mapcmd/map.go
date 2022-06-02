@@ -43,57 +43,19 @@ const (
 	MapValueTypeFlag      = "value-type"
 )
 
-func New(config *hazelcast.Config) (*cobra.Command, error) {
+func New(config *hazelcast.Config) *cobra.Command {
 	// context timeout for each map operation can be configurable
 	var cmd = &cobra.Command{
 		Use:   "map {get | put | remove} --name mapname --key keyname [--value-type type | --value-file file | --value value]",
 		Short: "Map operations",
 	}
-	if err := registerToMap(cmd, config); err != nil {
-		return nil, err
-	}
-	return cmd, nil
-}
-
-func registerToMap(cmd *cobra.Command, config *hazelcast.Config) error {
-	var err error
-	// add clear command
-	var clear *cobra.Command
-	if clear, err = NewClear(config); err != nil {
-		return hzcerror.NewLoggableError(err, "cannot add command clear, internal error")
-	}
-	cmd.AddCommand(clear)
-	// add get command
-	var get *cobra.Command
-	if get, err = NewGet(config); err != nil {
-		return hzcerror.NewLoggableError(err, "cannot add command get, internal error")
-	}
-	cmd.AddCommand(get)
-	// add get-all command
-	var getAll *cobra.Command
-	if getAll, err = NewGetAll(config); err != nil {
-		return hzcerror.NewLoggableError(err, "cannot add command get-all, internal error")
-	}
-	cmd.AddCommand(getAll)
-	// add put command
-	var put *cobra.Command
-	if put, err = NewPut(config); err != nil {
-		return hzcerror.NewLoggableError(err, "cannot add command put, internal error")
-	}
-	cmd.AddCommand(put)
-	// add put-all command
-	var putAll *cobra.Command
-	if putAll, err = NewPutAll(config); err != nil {
-		return hzcerror.NewLoggableError(err, "cannot add command put-all, internal error")
-	}
-	cmd.AddCommand(putAll)
-	// add remove command
-	var remove *cobra.Command
-	if remove, err = NewRemove(config); err != nil {
-		return hzcerror.NewLoggableError(err, "cannot add command remove, internal error")
-	}
-	cmd.AddCommand(remove)
-	return nil
+	cmd.AddCommand(NewPut(config))
+	cmd.AddCommand(NewPutAll(config))
+	cmd.AddCommand(NewGet(config))
+	cmd.AddCommand(NewGetAll(config))
+	cmd.AddCommand(NewRemove(config))
+	cmd.AddCommand(NewClear(config))
+	return cmd
 }
 
 func normalizeMapValue(v, vFile, vType string) (interface{}, error) {
@@ -200,7 +162,7 @@ func getMap(ctx context.Context, clientConfig *hazelcast.Config, mapName string)
 	return
 }
 
-func decorateCommandWithValueFlags(cmd *cobra.Command, mapValue, mapValueFile, mapValueType *string) error {
+func decorateCommandWithValueFlags(cmd *cobra.Command, mapValue, mapValueFile, mapValueType *string) {
 	flags := cmd.Flags()
 	flags.StringVarP(mapValue, MapValueFlag, MapValueFlagShort, "", "value of the map")
 	flags.StringVarP(mapValueFile, MapValueFileFlag, MapValueFileFlagShort, "", `path to the file that contains the value. Use "-" (dash) to read from stdin`)
@@ -209,74 +171,67 @@ func decorateCommandWithValueFlags(cmd *cobra.Command, mapValue, mapValueFile, m
 		return []string{"json", "string"}, cobra.ShellCompDirectiveDefault
 	})
 	if err != nil {
-		return err
+		panic(err)
 	}
-	return nil
 }
 
-func decorateCommandWithMapNameFlags(cmd *cobra.Command, mapName *string, required bool, usage string) error {
+func decorateCommandWithMapNameFlags(cmd *cobra.Command, mapName *string, required bool, usage string) {
 	cmd.Flags().StringVarP(mapName, MapNameFlag, MapNameFlagShort, "", usage)
 	if required {
 		if err := cmd.MarkFlagRequired(MapNameFlag); err != nil {
-			return err
+			panic(err)
 		}
 	}
-	return nil
 }
 
-func decorateCommandWithMapKeyFlags(cmd *cobra.Command, mapKey *string, required bool, usage string) error {
+func decorateCommandWithMapKeyFlags(cmd *cobra.Command, mapKey *string, required bool, usage string) {
 	cmd.Flags().StringVarP(mapKey, MapKeyFlag, MapKeyFlagShort, "", usage)
 	if required {
 		if err := cmd.MarkFlagRequired(MapKeyFlag); err != nil {
-			return err
+			panic(err)
 		}
 	}
-	return nil
 }
 
-func decorateCommandWithMapKeyArrayFlags(cmd *cobra.Command, mapKeys *[]string, required bool, usage string) error {
+func decorateCommandWithMapKeyArrayFlags(cmd *cobra.Command, mapKeys *[]string, required bool, usage string) {
 	cmd.Flags().StringArrayVarP(mapKeys, MapKeyFlag, MapKeyFlagShort, []string{}, usage)
 	if required {
 		if err := cmd.MarkFlagRequired(fmt.Sprintf("%s-array", MapKeyFlag)); err != nil {
-			return err
+			panic(err)
 		}
 	}
-	return nil
 }
 
-func decorateCommandWithMapValueArrayFlags(cmd *cobra.Command, mapValues *[]string, required bool, usage string) error {
+func decorateCommandWithMapValueArrayFlags(cmd *cobra.Command, mapValues *[]string, required bool, usage string) {
 	cmd.Flags().StringArrayVarP(mapValues, MapValueFlag, MapValueFlagShort, []string{}, usage)
 	if required {
 		if err := cmd.MarkFlagRequired(fmt.Sprintf("%s-array", MapValueFlag)); err != nil {
-			return err
+			panic(err)
 		}
 	}
-	return nil
 }
 
-func decorateCommandWithMapValueFileArrayFlags(cmd *cobra.Command, mapValueFiles *[]string, required bool, usage string) error {
+func decorateCommandWithMapValueFileArrayFlags(cmd *cobra.Command, mapValueFiles *[]string, required bool, usage string) {
 	cmd.Flags().StringArrayVarP(mapValueFiles, MapValueFileFlag, MapValueFileFlagShort, []string{}, usage)
 	if required {
 		if err := cmd.MarkFlagRequired(fmt.Sprintf("%s-array", MapValueFileFlag)); err != nil {
-			return err
+			panic(err)
 		}
 	}
-	return nil
 }
 
-func decorateCommandWithMapValueTypeArrayFlags(cmd *cobra.Command, mapValueTypes *[]string, required bool, usage string) error {
+func decorateCommandWithMapValueTypeArrayFlags(cmd *cobra.Command, mapValueTypes *[]string, required bool, usage string) {
 	var err error
 	cmd.Flags().StringArrayVarP(mapValueTypes, MapValueTypeFlag, MapValueTypeFlagShort, []string{}, usage)
 	err = cmd.RegisterFlagCompletionFunc(MapValueTypeFlag, func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"json", "string"}, cobra.ShellCompDirectiveDefault
 	})
 	if err != nil {
-		return err
+		panic(err)
 	}
 	if required {
 		if err = cmd.MarkFlagRequired(fmt.Sprintf("%s-array", MapValueTypeFlag)); err != nil {
-			return err
+			panic(err)
 		}
 	}
-	return nil
 }

@@ -32,7 +32,7 @@ import (
 	fds "github.com/hazelcast/hazelcast-commandline-client/types/flagdecorators"
 )
 
-func NewPutAll(config *hazelcast.Config) (*cobra.Command, error) {
+func NewPutAll(config *hazelcast.Config) *cobra.Command {
 	var (
 		entries []types.Entry
 	)
@@ -81,8 +81,37 @@ func NewPutAll(config *hazelcast.Config) (*cobra.Command, error) {
 		return nil
 	}
 	cmd := &cobra.Command{
-		Use:   "put-all --name mapname [--key keyname]... [[--value-file file | --value value][--value-type type]]...",
+		Use:   "put-all [--name mapname | {[[--key keyname]... | [[--value-file file | --value value][--value-type type]]...] | [--json-entry jsonEntryFile]}]",
 		Short: "Put values to map",
+		Example: `  # Put key, value pairs to map.
+  hzc map put-all -n mapname -k k1 -v v1 -k k2 -v v2
+  
+  # Put key, value pairs to map in another order.
+  hzc map put-all -n mapname -k k1 -k k2 -v v1 -v v2
+  
+  # Put key, value pairs to map but one of the value type is json file.
+  hzc map put-all -n mapname -k k1 -f valueFile.json -t json -k k2 -v v2
+
+  # Put all key, value pairs to map from the entry json file .
+  hzc map put-all -n mapname --json-entry entries.json
+
+  # Example json entry file
+  {
+    "key1": "value1",
+    "key2": {
+      "innerData": "data",
+      "anotherInnerData": 5.0
+    },
+    "key3": true,
+    "key4": [1, 2, 3, 4, 5]
+  }
+  - Entries with "null" values are being ignored.
+  
+  # Coupling rule of keys and values given in different order
+  - Keys and values are being coupled according to first given first matched manner. That means given first key will be matched with given first 
+  value from left to right. Therefore, total number of keys and total number of values (given through file or directly from the command line) must be in equal amount.
+  - BUT, for "--type" flag, this rule is not applied. Type of the value is needed to be given just after where it typed.
+`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(cmd.Context(), time.Second*3)
 			defer cancel()
@@ -177,23 +206,12 @@ func NewPutAll(config *hazelcast.Config) (*cobra.Command, error) {
 			return executePutAll(ctx, cmd, m, entries)
 		},
 	}
-	if err := decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name"); err != nil {
-		return nil, err
-	}
-	if err := decorateCommandWithMapKeyArrayFlags(cmd, &mapKeys, false, "key(s) of the map"); err != nil {
-		return nil, err
-	}
-	if err := decorateCommandWithMapValueArrayFlags(cmd, &mapValues, false, "value(s) of the map"); err != nil {
-		return nil, err
-	}
-	if err := decorateCommandWithMapValueFileArrayFlags(cmd, &mapValueFiles, false, "`path to the file that contains the value. Use \"-\" (dash) to read from stdin`"); err != nil {
-		return nil, err
-	}
-	if err := decorateCommandWithMapValueTypeArrayFlags(cmd, &mapValueTypes, false, "type of the value, one of: string, json"); err != nil {
-		return nil, err
-	}
-	if err := fds.DecorateCommandWithJsonEntryFlag(cmd, &jsonEntryPath, false, "`path to json file that contains entries`"); err != nil {
-		return nil, err
-	}
-	return cmd, nil
+	decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name")
+	decorateCommandWithMapKeyArrayFlags(cmd, &mapKeys, false, "key(s) of the map")
+	decorateCommandWithMapValueArrayFlags(cmd, &mapValues, false, "value(s) of the map")
+	decorateCommandWithMapValueFileArrayFlags(cmd, &mapValueFiles, false,
+		"`path to the file that contains the value. Use \"-\" (dash) to read from stdin`")
+	decorateCommandWithMapValueTypeArrayFlags(cmd, &mapValueTypes, false, "type of the value, one of: string, json")
+	fds.DecorateCommandWithJsonEntryFlag(cmd, &jsonEntryPath, false, "`path to json file that contains entries`")
+	return cmd
 }
