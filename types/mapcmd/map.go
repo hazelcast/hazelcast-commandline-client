@@ -22,11 +22,12 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/alecthomas/chroma/quick"
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/spf13/cobra"
 
-	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
+	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
@@ -46,7 +47,7 @@ const (
 func New(config *hazelcast.Config) *cobra.Command {
 	// context timeout for each map operation can be configurable
 	var cmd = &cobra.Command{
-		Use:   "map {get | put | remove} --name mapname --key keyname [--value-type type | --value-file file | --value value]",
+		Use:   "map {get | put | remove | clear | get-all | put-all | remove} --name mapname --key keyname [--value-type type | --value-file file | --value value]",
 		Short: "Map operations",
 	}
 	cmd.AddCommand(NewPut(config))
@@ -58,20 +59,37 @@ func New(config *hazelcast.Config) *cobra.Command {
 	return cmd
 }
 
+func printValueBasedOnType(cmd *cobra.Command, value interface{}) {
+	var err error
+	switch v := value.(type) {
+	case serialization.JSON:
+		if err = quick.Highlight(cmd.OutOrStdout(), fmt.Sprintln(v.String()),
+			"json", "terminal", "tango"); err != nil {
+			cmd.Println(v.String())
+		}
+	default:
+		if v == nil {
+			cmd.Println("There is no value corresponding to the provided key")
+			break
+		}
+		cmd.Println(v)
+	}
+}
+
 func normalizeMapValue(v, vFile, vType string) (interface{}, error) {
 	var valueStr string
 	var err error
 	switch {
 	case v != "" && vFile != "":
-		return nil, hzcerror.NewLoggableError(nil, "Only one of --value and --value-file must be specified")
+		return nil, hzcerrors.NewLoggableError(nil, "Only one of --value and --value-file must be specified")
 	case v != "":
 		valueStr = v
 	case vFile != "":
 		if valueStr, err = loadValueFile(vFile); err != nil {
-			err = hzcerror.NewLoggableError(err, "Cannot load the value file. Make sure file exists and process has correct access rights")
+			err = hzcerrors.NewLoggableError(err, "Cannot load the value file. Make sure file exists and process has correct access rights")
 		}
 	default:
-		err = hzcerror.NewLoggableError(nil, "One of the value flags (--value or --value-file) must be set")
+		err = hzcerrors.NewLoggableError(nil, "One of the value flags (--value or --value-file) must be set")
 	}
 	if err != nil {
 		return nil, err
@@ -82,7 +100,7 @@ func normalizeMapValue(v, vFile, vType string) (interface{}, error) {
 	case internal.TypeJSON:
 		return serialization.JSON(valueStr), nil
 	}
-	return nil, hzcerror.NewLoggableError(nil, "Provided value type parameter (%s) is not a known type. Provide either 'string' or 'json'", vType)
+	return nil, hzcerrors.NewLoggableError(nil, "Provided value type parameter (%s) is not a known type. Provide either 'string' or 'json'", vType)
 }
 
 func loadValueFile(path string) (string, error) {
@@ -106,7 +124,7 @@ func loadValueFile(path string) (string, error) {
 func cloudcb(err error, config *hazelcast.Config) (bool, error) {
 	isCloudCluster := config.Cluster.Cloud.Enabled
 	if networkErrMsg, handled := internal.TranslateNetworkError(err, isCloudCluster); handled {
-		err = hzcerror.NewLoggableError(err, networkErrMsg)
+		err = hzcerrors.NewLoggableError(err, networkErrMsg)
 		return true, err
 	}
 	return false, err
@@ -151,11 +169,11 @@ func ObtainOrderingOfValueFlags(args []string) (vOrder []byte, tOrder []int) {
 func getMap(ctx context.Context, clientConfig *hazelcast.Config, mapName string) (result *hazelcast.Map, err error) {
 	hzcClient, err := internal.ConnectToCluster(ctx, clientConfig)
 	if err != nil {
-		return nil, hzcerror.NewLoggableError(err, "Cannot get initialize client")
+		return nil, hzcerrors.NewLoggableError(err, "Cannot get initialize client")
 	}
 	if result, err = hzcClient.GetMap(ctx, mapName); err != nil {
 		if msg, isHandled := internal.TranslateNetworkError(err, clientConfig.Cluster.Cloud.Enabled); isHandled {
-			err = hzcerror.NewLoggableError(err, msg)
+			err = hzcerrors.NewLoggableError(err, msg)
 		}
 		return nil, err
 	}
@@ -196,7 +214,7 @@ func decorateCommandWithMapKeyFlags(cmd *cobra.Command, mapKey *string, required
 func decorateCommandWithMapKeyArrayFlags(cmd *cobra.Command, mapKeys *[]string, required bool, usage string) {
 	cmd.Flags().StringArrayVarP(mapKeys, MapKeyFlag, MapKeyFlagShort, []string{}, usage)
 	if required {
-		if err := cmd.MarkFlagRequired(fmt.Sprintf("%s-array", MapKeyFlag)); err != nil {
+		if err := cmd.MarkFlagRequired(MapKeyFlag); err != nil {
 			panic(err)
 		}
 	}
@@ -205,7 +223,7 @@ func decorateCommandWithMapKeyArrayFlags(cmd *cobra.Command, mapKeys *[]string, 
 func decorateCommandWithMapValueArrayFlags(cmd *cobra.Command, mapValues *[]string, required bool, usage string) {
 	cmd.Flags().StringArrayVarP(mapValues, MapValueFlag, MapValueFlagShort, []string{}, usage)
 	if required {
-		if err := cmd.MarkFlagRequired(fmt.Sprintf("%s-array", MapValueFlag)); err != nil {
+		if err := cmd.MarkFlagRequired(MapValueFlag); err != nil {
 			panic(err)
 		}
 	}
@@ -214,7 +232,7 @@ func decorateCommandWithMapValueArrayFlags(cmd *cobra.Command, mapValues *[]stri
 func decorateCommandWithMapValueFileArrayFlags(cmd *cobra.Command, mapValueFiles *[]string, required bool, usage string) {
 	cmd.Flags().StringArrayVarP(mapValueFiles, MapValueFileFlag, MapValueFileFlagShort, []string{}, usage)
 	if required {
-		if err := cmd.MarkFlagRequired(fmt.Sprintf("%s-array", MapValueFileFlag)); err != nil {
+		if err := cmd.MarkFlagRequired(MapValueFileFlag); err != nil {
 			panic(err)
 		}
 	}
@@ -230,7 +248,7 @@ func decorateCommandWithMapValueTypeArrayFlags(cmd *cobra.Command, mapValueTypes
 		panic(err)
 	}
 	if required {
-		if err = cmd.MarkFlagRequired(fmt.Sprintf("%s-array", MapValueTypeFlag)); err != nil {
+		if err = cmd.MarkFlagRequired(MapValueTypeFlag); err != nil {
 			panic(err)
 		}
 	}

@@ -17,12 +17,9 @@ package mapcmd
 
 import (
 	"context"
-	"fmt"
 	"time"
 
-	"github.com/alecthomas/chroma/quick"
 	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 	"github.com/spf13/cobra"
 
@@ -51,7 +48,7 @@ func NewGetAll(config *hazelcast.Config) *cobra.Command {
   hzc get-all -n mapname -k k1 -k k2
 
   # Get matched entries from the map with custom delimiter.
-  hzc get-all -n mapname -k k1 -k k2 -delim ":"`,
+  hzc get-all -n mapname -k k1 -k k2 --delim ":"`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(cmd.Context(), time.Second*3)
 			defer cancel()
@@ -80,21 +77,13 @@ func NewGetAll(config *hazelcast.Config) *cobra.Command {
 			}
 			for _, entry := range entries {
 				cmd.Print(entry.Key, delim)
-				switch v := entry.Value.(type) {
-				case serialization.JSON:
-					if err = quick.Highlight(cmd.OutOrStdout(), fmt.Sprintln(v.String()),
-						"json", "terminal", "tango"); err != nil {
-						cmd.Println(v.String())
-					}
-				default:
-					cmd.Println(v)
-				}
+				printValueBasedOnType(cmd, entry.Value)
 			}
 			return nil
 		},
 	}
 	decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name")
-	decorateCommandWithMapKeyArrayFlags(cmd, &mapKeys, false, "key(s) of the entry")
+	decorateCommandWithMapKeyArrayFlags(cmd, &mapKeys, true, "key(s) of the entry")
 	fds.DecorateCommandWithDelimiter(cmd, &delim, false, "delimiter of printed key, value pairs")
 	return cmd
 }

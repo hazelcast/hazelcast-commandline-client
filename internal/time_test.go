@@ -36,8 +36,7 @@ func TestUserDuration_Validate(t *testing.T) {
 			var err error
 			d := &UserDuration{Duration: tc.in, DurType: TTL}
 			err = d.Validate()
-			if err != nil && tc.isErr == false ||
-				err == nil && tc.isErr == true {
+			if (err != nil) != tc.isErr {
 				t.Fatalf("error state is not satisfied")
 			}
 		})

@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 	"github.com/spf13/cobra"
 
@@ -81,8 +82,11 @@ func NewPutAll(config *hazelcast.Config) *cobra.Command {
 		return nil
 	}
 	cmd := &cobra.Command{
-		Use:   "put-all [--name mapname | {[[--key keyname]... | [[--value-file file | --value value][--value-type type]]...] | [--json-entry jsonEntryFile]}]",
-		Short: "Put values to map",
+		Use:        "put-all [--name mapname | {[[--key keyname]... | [[--value-file file | --value value][--value-type type]]...] | [--json-entry jsonEntryFile]}]",
+		Aliases:    nil,
+		SuggestFor: nil,
+		Short:      "Put values to map",
+		Long:       "",
 		Example: `  # Put key, value pairs to map.
   hzc map put-all -n mapname -k k1 -v v1 -k k2 -v v2
   
@@ -130,15 +134,22 @@ func NewPutAll(config *hazelcast.Config) *cobra.Command {
 					switch jsv.(type) {
 					case nil:
 						// ignore null json values
-					case string, float64, bool, []interface{}:
+					case []interface{}:
+						result, _ := jsv.([]interface{})
+						for i, item := range result {
+							if e, ok := item.(map[string]interface{}); ok {
+								mj, _ := json.Marshal(e)
+								nJson := serialization.JSON(mj)
+								result[i] = nJson
+							}
+						}
+						entries = append(entries, types.Entry{Key: key, Value: result})
+					case string, float64, bool:
 						entries = append(entries, types.Entry{Key: key, Value: jsv})
 					case map[string]interface{}:
 						var nJson interface{}
 						mj, _ := json.Marshal(jsv)
-						nJson, err = normalizeMapValue(string(mj), "", internal.TypeJSON)
-						if err != nil {
-							return hzcerror.NewLoggableError(err, "unknown entry value")
-						}
+						nJson = serialization.JSON(mj)
 						entries = append(entries, types.Entry{Key: key, Value: nJson})
 					default:
 						return hzcerror.NewLoggableError(nil, "Unknown data type in json file")
