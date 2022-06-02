@@ -34,6 +34,7 @@ import (
 
 var InvalidStateErr = errors.New("invalid new state")
 
+//todo add protection for concurrent access
 var (
 	client    *hazelcast.Client
 	sqlDriver *sql.DB
