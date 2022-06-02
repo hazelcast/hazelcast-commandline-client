@@ -13,16 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package check
+package internal
 
-import "strings"
+import "context"
 
-func ContainsString(list []string, s string) bool {
-	s = strings.ToLower(s)
-	for _, e := range list {
-		if s == strings.ToLower(e) {
-			return true
-		}
-	}
-	return false
+func PersistedNamesFromContext(ctx context.Context) map[string]string {
+	return ctx.Value("persister").(map[string]string)
+}
+
+func ContextWithPersistedNames(ctx context.Context, persister map[string]string) context.Context {
+	return context.WithValue(ctx, "persister", persister)
 }

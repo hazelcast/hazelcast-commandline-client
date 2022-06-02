@@ -101,7 +101,8 @@ func (b *Buffer) CursorRight(count int) {
 // (for multi-line edit).
 func (b *Buffer) CursorUp(count int) {
 	orig := b.preferredColumn
-	if b.preferredColumn == -1 { // -1 means nil
+	if b.preferredColumn == -1 {
+		// -1 means nil
 		orig = b.Document().CursorPositionCol()
 	}
 	b.cursorPosition += b.Document().GetCursorUpPosition(count, orig)
@@ -114,7 +115,8 @@ func (b *Buffer) CursorUp(count int) {
 // (for multi-line edit).
 func (b *Buffer) CursorDown(count int) {
 	orig := b.preferredColumn
-	if b.preferredColumn == -1 { // -1 means nil
+	if b.preferredColumn == -1 {
+		// -1 means nil
 		orig = b.Document().CursorPositionCol()
 	}
 	b.cursorPosition += b.Document().GetCursorDownPosition(count, orig)

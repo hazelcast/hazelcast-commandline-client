@@ -2,6 +2,7 @@ package prompt
 
 import (
 	"strings"
+	"unicode"
 	"unicode/utf8"
 
 	"github.com/mattn/go-runewidth"
@@ -198,6 +199,27 @@ func (d *Document) FindEndOfCurrentWord() int {
 	return len(x)
 }
 
+// FindPreviousWordStart returns the distance to first end of word or start of word
+func (d *Document) FindPreviousWordStart() int {
+	x := d.TextBeforeCursor()
+	if x == "" {
+		return 0
+	}
+	var i int
+	for i = len(x) - 1; i > 0; i-- {
+		if !unicode.IsSpace(rune(x[i])) {
+			break
+		}
+	}
+	for ; i > 0; i-- {
+		if unicode.IsSpace(rune(x[i])) {
+			i++
+			break
+		}
+	}
+	return d.cursorPosition - i
+}
+
 // FindEndOfCurrentWordWithSpace is almost the same as FindEndOfCurrentWord.
 // The only difference is to ignore contiguous spaces.
 func (d *Document) FindEndOfCurrentWordWithSpace() int {
@@ -346,7 +368,8 @@ func (d *Document) GetCursorRightPosition(count int) int {
 // if the user pressed the arrow-up button.
 func (d *Document) GetCursorUpPosition(count int, preferredColumn int) int {
 	var col int
-	if preferredColumn == -1 { // -1 means nil
+	if preferredColumn == -1 {
+		// -1 means nil
 		col = d.CursorPositionCol()
 	} else {
 		col = preferredColumn
@@ -363,7 +386,8 @@ func (d *Document) GetCursorUpPosition(count int, preferredColumn int) int {
 // user pressed the arrow-down button.
 func (d *Document) GetCursorDownPosition(count int, preferredColumn int) int {
 	var col int
-	if preferredColumn == -1 { // -1 means nil
+	if preferredColumn == -1 {
+		// -1 means nil
 		col = d.CursorPositionCol()
 	} else {
 		col = preferredColumn

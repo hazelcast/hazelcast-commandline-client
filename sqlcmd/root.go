@@ -16,20 +16,73 @@
 package sqlcmd
 
 import (
+	"fmt"
+	"strings"
+
+	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/browser"
+
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 )
 
+const (
+	outputPretty = "pretty"
+	outputCSV    = "csv"
+)
+
 func New(config *hazelcast.Config) *cobra.Command {
-	cmd := cobra.Command{
-		Use:   "sql {query}",
-		Short: "SQL operations",
-		Example: `sql query "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR, this VARCHAR) TYPE IMAP OPTIONS ( 'keyFormat' = 'varchar', 'valueFormat' = 'varchar')"
-sql query "select * from myMap"`,
+	var outputType string
+	cmd := &cobra.Command{
+		Use:   "sql [query]",
+		Short: "Start SQL Browser or execute given SQL query",
+		Example: `sql 	# starts the SQL Browser
+sql "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR, this VARCHAR) TYPE IMAP OPTIONS ( 'keyFormat' = 'varchar', 'valueFormat' = 'varchar')" 	# executes the query`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return cmd.Help()
+			if outputType != outputPretty && outputType != outputCSV {
+				return hzcerrors.NewLoggableError(nil,
+					"Provided output type parameter (%s) is not a known type. Provide either '%s' or '%s'",
+					outputType, outputPretty, outputCSV)
+			}
+			ctx := cmd.Context()
+			c, err := internal.ConnectToCluster(ctx, config)
+			if err != nil {
+				return hzcerrors.NewLoggableError(err, "Cannot get initialize client")
+			}
+			q := strings.Join(args, " ")
+			q = strings.TrimSpace(q)
+			if len(q) == 0 {
+				// If no queries given, run sql browser
+				p := browser.InitSQLBrowser(c)
+				if err := p.Start(); err != nil {
+					fmt.Println("could not run sql browser:", err)
+					return err
+				}
+				return nil
+			}
+			// If a statement is provided, run it in non-interactive mode
+			lt := strings.ToLower(q)
+			if strings.HasPrefix(lt, "select") || strings.HasPrefix(lt, "show") {
+				if err := query(ctx, c, q, cmd.OutOrStdout(), outputType); err != nil {
+					return hzcerrors.NewLoggableError(err, "Cannot execute the query")
+				}
+			} else {
+				if err := execute(ctx, c, q); err != nil {
+					return hzcerrors.NewLoggableError(err, "Cannot execute the query")
+				}
+			}
+			return nil
 		},
 	}
-	cmd.AddCommand(NewQuery(config))
-	return &cmd
+	decorateCommandWithOutputFlag(&outputType, cmd)
+	return cmd
+}
+
+func decorateCommandWithOutputFlag(outputType *string, cmd *cobra.Command) {
+	flags := cmd.Flags()
+	flags.StringVarP(outputType, "output-type", "o", outputPretty, fmt.Sprintf("%s or %s", outputPretty, outputCSV))
+	cmd.RegisterFlagCompletionFunc("output-type", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return []string{outputPretty, outputCSV}, cobra.ShellCompDirectiveDefault
+	})
 }

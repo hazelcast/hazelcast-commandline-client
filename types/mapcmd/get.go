@@ -22,37 +22,45 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 
-	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
+	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 )
 
+const MapGetExample = `map get --key hello --name myMap
+map get --key-type int16 --key 2012 --name yearbook`
+
 func NewGet(config *hazelcast.Config) *cobra.Command {
-	var mapName, mapKey string
+	var mapName, mapKey, mapKeyType string
 	cmd := &cobra.Command{
-		Use:   "get [--name mapname | --key keyname]",
-		Short: "Get single entry from the map",
+		Use:     "get [--name mapname | --key keyname]",
+		Short:   "Get single entry from the map",
 		Example: `  # Get value of the given key from the map.
   hzc map get -n mapname -k k1`,
+		Example: MapGetExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			key, err := internal.ConvertString(mapKey, mapKeyType)
+			if err != nil {
+				return hzcerrors.NewLoggableError(err, "Conversion error on key %s to type %s", mapKey, mapKeyType)
+			}
 			ctx, cancel := context.WithTimeout(cmd.Context(), time.Second*3)
 			defer cancel()
 			m, err := getMap(ctx, config, mapName)
 			if err != nil {
 				return err
 			}
-			value, err := m.Get(ctx, mapKey)
+			value, err := m.Get(ctx, key)
 			if err != nil {
 				var handled bool
 				handled, err = cloudcb(err, config)
 				if handled {
 					return err
 				}
-				return hzcerror.NewLoggableError(err, "Cannot get value for key %s from map %s", mapKey, mapName)
+				return hzcerrors.NewLoggableError(err, "Cannot get value for key %s from map %s", mapKey, mapName)
 			}
 			printValueBasedOnType(cmd, value)
 			return nil
 		},
 	}
 	decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name")
-	decorateCommandWithMapKeyFlags(cmd, &mapKey, true, "key of the entry")
+	decorateCommandWithMapKeyFlags(cmd, &mapKey, &mapKeyFlags, true, "key of the entry")
 	return cmd
 }

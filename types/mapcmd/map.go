@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"io/ioutil"
 	"os"
 
@@ -42,20 +43,46 @@ const (
 	MapValueFileFlag      = "value-file"
 	MapValueTypeFlagShort = "t"
 	MapValueTypeFlag      = "value-type"
+	MapKeyTypeFlag		  = "key-type"
 )
 
 func New(config *hazelcast.Config) *cobra.Command {
 	// context timeout for each map operation can be configurable
 	var cmd = &cobra.Command{
-		Use:   "map {get | put | remove | clear | get-all | put-all | remove} --name mapname --key keyname [--value-type type | --value-file file | --value value]",
-		Short: "Map operations",
+		Use:     "map {get | put | remove | clear | get-all | put-all | remove} --name mapname --key keyname [--value-type type | --value-file file | --value value]",
+		Short:   "Map operations",
+		Example: fmt.Sprintf("%s\n%s\n%s", MapPutExample, MapGetExample, MapUseExample),
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			// All the following lines are to set map name if it is set by "use" command.
+			// If the map name is given explicitly, do not set the one given with "use" command.
+			// Missing flag errors are not handled here.
+			// They are expected to be handled by the actual command.
+			persister := internal.PersistedNamesFromContext(cmd.Context())
+			val, isSet := persister["map"]
+			if !isSet {
+				return nil
+			}
+			nameFlag := cmd.Flag("name")
+			if nameFlag == nil {
+				// flag is absent
+				return nil
+			}
+			if nameFlag.Changed {
+				// flag value is set explicitly
+				return nil
+			}
+			if err := cmd.Flags().Set("name", val); err != nil {
+				return hzcerrors.NewLoggableError(err, "Default name for map cannot be set")
+			}
+			return nil
+		},
 	}
 	cmd.AddCommand(NewPut(config))
 	cmd.AddCommand(NewPutAll(config))
 	cmd.AddCommand(NewGet(config))
 	cmd.AddCommand(NewGetAll(config))
 	cmd.AddCommand(NewRemove(config))
-	cmd.AddCommand(NewClear(config))
+	cmd.AddCommand(NewClear(config), NewUse())
 	return cmd
 }
 
@@ -172,7 +199,7 @@ func getMap(ctx context.Context, clientConfig *hazelcast.Config, mapName string)
 		return nil, hzcerrors.NewLoggableError(err, "Cannot get initialize client")
 	}
 	if result, err = hzcClient.GetMap(ctx, mapName); err != nil {
-		if msg, isHandled := internal.TranslateNetworkError(err, clientConfig.Cluster.Cloud.Enabled); isHandled {
+		if msg, isHandled := hzcerrors.TranslateNetworkError(err, clientConfig.Cluster.Cloud.Enabled); isHandled {
 			err = hzcerrors.NewLoggableError(err, msg)
 		}
 		return nil, err
@@ -180,11 +207,41 @@ func getMap(ctx context.Context, clientConfig *hazelcast.Config, mapName string)
 	return
 }
 
+const MapUseExample = "map use m1    # sets the default map name to m1 unless set explicitly"
+
+func NewUse() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   `use [map-name | --reset]`,
+		Short: "sets default map name",
+		Example: MapUseExample + `
+map get --key k1    # --name m1\" is inferred
+map use --reset	    # resets the behaviour`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			persister := internal.PersistedNamesFromContext(cmd.Context())
+			if cmd.Flags().Changed("reset") {
+				delete(persister, "map")
+				return nil
+			}
+			if len(args) == 0 {
+				return cmd.Help()
+			}
+			if len(args) > 1 {
+				cmd.Println("Provide map name between \"\" quotes if it contains white space")
+				return nil
+			}
+			persister["map"] = args[0]
+			return nil
+		},
+	}
+	_ = cmd.Flags().BoolP("reset", "", false, "unset default name for map")
+	return cmd
+}
+
 func decorateCommandWithValueFlags(cmd *cobra.Command, mapValue, mapValueFile, mapValueType *string) {
 	flags := cmd.Flags()
 	flags.StringVarP(mapValue, MapValueFlag, MapValueFlagShort, "", "value of the map")
 	flags.StringVarP(mapValueFile, MapValueFileFlag, MapValueFileFlagShort, "", `path to the file that contains the value. Use "-" (dash) to read from stdin`)
-	flags.StringVarP(mapValueType, MapValueTypeFlag, MapValueTypeFlagShort, "string", "type of the value, one of: string, json")
+	flags.StringVarP(mapValueType, MapValueTypeFlag, MapValueTypeFlagShort, "string", fmt.Sprintf("type of the value, one of: %s", strings.Join(internal.SupportedTypeNames, ",")))
 	err := cmd.RegisterFlagCompletionFunc(MapValueTypeFlag, func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"json", "string"}, cobra.ShellCompDirectiveDefault
 	})
@@ -203,12 +260,20 @@ func decorateCommandWithMapNameFlags(cmd *cobra.Command, mapName *string, requir
 }
 
 func decorateCommandWithMapKeyFlags(cmd *cobra.Command, mapKey *string, required bool, usage string) {
+	flags := cmd.Flags()
 	cmd.Flags().StringVarP(mapKey, MapKeyFlag, MapKeyFlagShort, "", usage)
+	flags.StringVarP(mapKeyType, MapKeyTypeFlag, "", "string", fmt.Sprintf("type of the key, one of: %s", strings.Join(internal.SupportedTypeNames, ",")))
 	if required {
+		if err := cmd.MarkFlagRequired(MapKeyTypeFlag); err != nil {
+			panic(err)
+		}
 		if err := cmd.MarkFlagRequired(MapKeyFlag); err != nil {
 			panic(err)
 		}
 	}
+	cmd.RegisterFlagCompletionFunc(MapKeyTypeFlag, func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return internal.SupportedTypeNames, cobra.ShellCompDirectiveDefault
+	})
 }
 
 func decorateCommandWithMapKeyArrayFlags(cmd *cobra.Command, mapKeys *[]string, required bool, usage string) {
@@ -242,7 +307,7 @@ func decorateCommandWithMapValueTypeArrayFlags(cmd *cobra.Command, mapValueTypes
 	var err error
 	cmd.Flags().StringArrayVarP(mapValueTypes, MapValueTypeFlag, MapValueTypeFlagShort, []string{}, usage)
 	err = cmd.RegisterFlagCompletionFunc(MapValueTypeFlag, func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"json", "string"}, cobra.ShellCompDirectiveDefault
+		return internal.SupportedTypeNames, cobra.ShellCompDirectiveDefault
 	})
 	if err != nil {
 		panic(err)
