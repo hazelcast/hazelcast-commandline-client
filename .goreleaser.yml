@@ -34,3 +34,79 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
+
+# .goreleaser.yaml
+brews:
+  -
+    # Name template of the recipe
+    # Default to project name
+    name: HazelcastCommandlineClient
+
+    tap:
+      owner: utku-caglayan
+      name: homebrew-trial
+
+      # Optionally a token can be provided, if it differs from the token provided to GoReleaser
+      #"{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+      token: "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"
+
+    # Template for the url which is determined by the given Token (github, gitlab or gitea)
+    #
+    # Default depends on the client.
+    url_template: "https://github.com/hazelcast/hazelcast-commandline-client/releases/{{ .Tag }}/{{ .ArtifactName }}"
+
+    # The project name and current git tag are used in the format string.
+    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
+
+    # Caveats for the user of your binary.
+    # Default is empty.
+    caveats: "How to use this binary"
+
+    # Your app's homepage.
+    # Default is empty.
+    homepage: "https://github.com/hazelcast/hazelcast-commandline-client"
+
+    # Template of your app's description.
+    # Default is empty.
+    description: "Hazelcast Command-line Client Project"
+
+    # SPDX identifier of your app's license.
+    # Default is empty.
+    license: "Apache-2.0"
+
+    # Setting this will prevent goreleaser to actually try to commit the updated
+    # formula - instead, the formula file will be stored on the dist folder only,
+    # leaving the responsibility of publishing it to the user.
+    # If set to auto, the release will not be uploaded to the homebrew tap
+    # in case there is an indicator for prerelease in the tag e.g. v1.0.0-rc1
+    # Default is false.
+    skip_upload: true
+
+    # Custom install script for brew.
+    # Default is 'bin.install "program"'.
+    install: |
+      system "make"
+      bin.install "hzc"
+      bash_completion.install "extras/bash_completion.sh"
+      zsh_completion.install "extras/zsh_completion.zsh" => "_hzc"
+
+    # Custom post_install script for brew.
+    # Could be used to do any additional work after the "install" script
+    # Default is empty.
+    post_install: |
+      ohai "Example usages:
+      * `hzc` - start an interactive shell 🚀
+      * `hzc map --name my-map put --key hello --value world` - put entry into map"
+          completion_warning = <<~EOS
+            ⚠️  To have superior experience, enable autocompletion on Brew. ⚠️
+            You need to enable autocompletion just once for Brew. If it is already enabled, you can skip this part.
+            ▪ For Bash users:
+              1) `brew install bash-completion` and follow the printed \"Caveats\" section. Example \"Caveats\" instructions:
+                 Add the following line to your ~/.bash_profile:
+                 # !! Note that paths may differ depending on your installation, so you should follow the Caveats section on your system.
+                 [[ -r \"/home/ubuntu/.linuxbrew/etc/profile.d/bash_completion.sh\" ]] && . \"/home/ubuntu/.linuxbrew/etc/profile.d/bash_completion.sh\"
+              2) `source ~/.bash_profile`
+            ▪ For Zsh users:
+            Follow https://docs.brew.sh/Shell-Completion#configuring-completions-in-zsh
+          EOS
+          print completion_warning
