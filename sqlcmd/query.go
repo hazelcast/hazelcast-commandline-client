@@ -23,13 +23,11 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/hazelcast/hazelcast-go-client"
-
 	"github.com/hazelcast/hazelcast-commandline-client/internal/table"
 )
 
-func query(ctx context.Context, c *hazelcast.Client, text string, out io.Writer, outputType string) error {
-	rows, err := c.QuerySQL(ctx, text)
+func query(ctx context.Context, d *sql.DB, text string, out io.Writer, outputType string) error {
+	rows, err := d.QueryContext(ctx, text)
 	if err != nil {
 		return fmt.Errorf("querying: %w", err)
 	}
@@ -98,8 +96,8 @@ func rowsHandler(rows *sql.Rows, columnHandler func(cols []string) error, rowHan
 	return nil
 }
 
-func execute(ctx context.Context, c *hazelcast.Client, text string) error {
-	r, err := c.ExecSQL(ctx, text)
+func execute(ctx context.Context, d *sql.DB, text string) error {
+	r, err := d.ExecContext(ctx, text)
 	if err != nil {
 		return fmt.Errorf("executing: %w", err)
 	}

@@ -34,4 +34,4 @@ require (
 	github.com/sahilm/fuzzy v0.1.0
 )
 
-replace github.com/hazelcast/hazelcast-go-client v1.2.0 => github.com/hazelcast/hazelcast-go-client v1.1.2-0.20220124142245-1906eb58ac78
+replace github.com/hazelcast/hazelcast-go-client v1.2.0 => github.com/yuce/hazelcast-go-client v1.2.1-0.20220601121519-5e9e508e2c40

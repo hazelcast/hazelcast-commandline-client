@@ -17,6 +17,7 @@ package internal
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -24,6 +25,7 @@ import (
 	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/sql/driver"
 
 	"github.com/hazelcast/hazelcast-commandline-client/config"
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
@@ -32,7 +34,11 @@ import (
 
 var InvalidStateErr = errors.New("invalid new state")
 
-var client *hazelcast.Client
+//todo add protection for concurrent access
+var (
+	client    *hazelcast.Client
+	sqlDriver *sql.DB
+)
 
 type RESTCall struct {
 	url    string
@@ -150,4 +156,13 @@ func ConnectToCluster(ctx context.Context, clientConfig *hazelcast.Config) (cli 
 	configCopy := clientConfig.Clone()
 	cli, err = hazelcast.StartNewClientWithConfig(ctx, configCopy)
 	return
+}
+
+func SQLDriver(config *hazelcast.Config) (*sql.DB, error) {
+	if sqlDriver != nil {
+		return sqlDriver, nil
+	}
+	sqlDriver = driver.Open(*config)
+	err := sqlDriver.Ping()
+	return sqlDriver, err
 }

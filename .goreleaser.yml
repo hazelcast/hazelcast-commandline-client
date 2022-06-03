@@ -1,11 +1,14 @@
 before:
   hooks:
+    - go install golang.org/x/tools/...@latest
     - go mod tidy
     - go generate ./...
 builds:
   - 
     env:
       - CGO_ENABLED=0
+    ldflags:
+      - "-X github.com/hazelcast/hazelcast-go-client/internal.ClientVersion={{.Version}} -X github.com/hazelcast/hazelcast-go-client/internal.ClientType=CLC"
     binary: hz-cli
     goos:
       - darwin

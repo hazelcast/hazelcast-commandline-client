@@ -1,36 +1,33 @@
 package browser
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 	"strings"
-
-	"github.com/hazelcast/hazelcast-go-client"
 )
 
-func execSQL(c *hazelcast.Client, text string) (*sql.Rows, error) {
+func execSQL(db *sql.DB, text string) (*sql.Rows, error) {
 	text = strings.TrimSpace(text)
 	if text == "" {
 		return nil, nil
 	}
 	lt := strings.ToLower(text)
 	if strings.HasPrefix(lt, "select") || strings.HasPrefix(lt, "show") {
-		return query(c, text)
+		return query(db, text)
 	}
-	return nil, exec(c, text)
+	return nil, exec(db, text)
 }
 
-func query(c *hazelcast.Client, text string) (*sql.Rows, error) {
-	rows, err := c.QuerySQL(context.Background(), text)
+func query(db *sql.DB, text string) (*sql.Rows, error) {
+	rows, err := db.Query(text)
 	if err != nil {
 		return rows, fmt.Errorf("querying: %w", err)
 	}
 	return rows, nil
 }
 
-func exec(db *hazelcast.Client, text string) error {
-	r, err := db.ExecSQL(context.Background(), text)
+func exec(db *sql.DB, text string) error {
+	r, err := db.Exec(text)
 	if err != nil {
 		return fmt.Errorf("executing: %w", err)
 	}
