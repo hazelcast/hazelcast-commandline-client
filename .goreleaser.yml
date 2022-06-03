@@ -9,7 +9,7 @@ builds:
       - CGO_ENABLED=0
     ldflags:
       - "-X github.com/hazelcast/hazelcast-go-client/internal.ClientVersion={{.Version}} -X github.com/hazelcast/hazelcast-go-client/internal.ClientType=CLC"
-    binary: hz-cli
+    binary: hzc
     goos:
       - darwin
       - linux
@@ -19,11 +19,12 @@ builds:
 archives:
   - 
     id: default
-    format: binary
     replacements:
       darwin: Darwin
       linux: Linux
       amd64: x86_64
+    files:
+      - extras/*
 checksum:
   name_template: 'checksums.txt'
 snapshot:
@@ -84,7 +85,6 @@ brews:
     # Custom install script for brew.
     # Default is 'bin.install "program"'.
     install: |
-      system "make"
       bin.install "hzc"
       bash_completion.install "extras/bash_completion.sh"
       zsh_completion.install "extras/zsh_completion.zsh" => "_hzc"
