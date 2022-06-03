@@ -40,7 +40,7 @@ brews:
   -
     # Name template of the recipe
     # Default to project name
-    name: HazelcastCommandlineClient
+    name: hazelcast-commandline-client
 
     tap:
       owner: utku-caglayan
