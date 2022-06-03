@@ -45,7 +45,7 @@ func TestObtainOrderingOfValues(t *testing.T) {
 	}
 }
 
-func TestUserDuration_Validate(t *testing.T) {
+func TestValidateTTL(t *testing.T) {
 	for _, tc := range []struct {
 		msg   string
 		isErr bool
@@ -58,8 +58,7 @@ func TestUserDuration_Validate(t *testing.T) {
 		{msg: "greater than a second as minute", in: time.Minute, isErr: false},
 	} {
 		t.Run(tc.msg, func(t *testing.T) {
-			var err error
-			err = Validate(tc.in, "TTL")
+			err := validateTTL(tc.in)
 			if (err != nil) != tc.isErr {
 				t.Fatalf("error state is not satisfied")
 			}

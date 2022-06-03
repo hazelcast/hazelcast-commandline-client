@@ -50,9 +50,8 @@ const (
 )
 
 func New(config *hazelcast.Config) *cobra.Command {
-	// context timeout for each map operation can be configurable
 	var cmd = &cobra.Command{
-		Use:     "map {get | put | remove | clear | get-all | put-all | remove} --name mapname --key keyname [--value-type type | --value-file file | --value value]",
+		Use:     "map {get | put | clear | put-all | get-all |  | remove} --name mapname --key keyname [--value-type type | --value-file file | --value value]",
 		Short:   "Map operations",
 		Example: fmt.Sprintf("%s\n%s\n%s", MapPutExample, MapGetExample, MapUseExample),
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
@@ -91,19 +90,23 @@ func New(config *hazelcast.Config) *cobra.Command {
 	return cmd
 }
 
-func ValidateDuration(d time.Duration, dType string) error {
-	if d.Seconds() < 0 {
-		return errors.New(fmt.Sprintf("duration %s must be positive", dType))
+func isNegativeSecond(d time.Duration) error {
+	if d.Seconds() <= 0 {
+		return errors.New(fmt.Sprintf("duration %s must be positive", d))
 	}
-	if dType == "MaxIdle" {
-		return nil
-	} else if dType == "TTL" {
-		if d.Seconds() >= 1.0 {
-			return nil
-		}
+	return nil
+}
+
+func validateTTL(d time.Duration) error {
+	if err := isNegativeSecond(d); err != nil {
+		return err
+	}
+	// server side time resolution is one second
+	fmt.Println(d.Seconds())
+	if d.Seconds() < 1.0 {
 		return errors.New("ttl duration cannot be less than a second")
 	}
-	return errors.New("undefined duration type")
+	return nil
 }
 
 func printValueBasedOnType(cmd *cobra.Command, value interface{}) {
@@ -175,12 +178,16 @@ func isCloudIssue(err error, config *hazelcast.Config) (bool, error) {
 	return false, err
 }
 
-func withDashPrefix(flag string, short bool) string {
+func withShortFlag(flag string) string {
 	if flag == "" {
-		return ""
+		panic("flag cannot be empty string")
 	}
-	if short {
-		return fmt.Sprintf("-%s", flag)
+	return fmt.Sprintf("-%s", flag)
+}
+
+func withLongFlag(flag string) string {
+	if flag == "" {
+		panic("flag cannot be empty string")
 	}
 	return fmt.Sprintf("--%s", flag)
 }
@@ -190,12 +197,12 @@ func ObtainOrderingOfValueFlags(args []string) (vOrder []byte, tOrder []int) {
 		return
 	}
 	for _, arg := range args {
-		vShort := withDashPrefix(MapValueFlagShort, true)
-		v := withDashPrefix(MapValueFlag, false)
-		fShort := withDashPrefix(MapValueFileFlagShort, true)
-		f := withDashPrefix(MapValueFileFlag, false)
-		tShort := withDashPrefix(MapValueTypeFlagShort, true)
-		t := withDashPrefix(MapValueTypeFlag, false)
+		vShort := withShortFlag(MapValueFlagShort)
+		v := withLongFlag(MapValueFlag)
+		fShort := withShortFlag(MapValueFileFlagShort)
+		f := withLongFlag(MapValueFileFlag)
+		tShort := withShortFlag(MapValueTypeFlagShort)
+		t := withLongFlag(MapValueTypeFlag)
 		switch arg {
 		case vShort, v:
 			vOrder = append(vOrder, 's')
