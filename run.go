@@ -117,7 +117,7 @@ func updateConfigWithFlags(rootCmd *cobra.Command, cnfg *config.Config, programA
 	subCmd, flags, _ := rootCmd.Find(programArgs)
 	// fall back to cmd.Help, even if there is error
 	_ = subCmd.ParseFlags(flags)
-	//initialize config from file
+	// initialize config from file
 	err := config.ReadAndMergeWithFlags(globalFlagValues, cnfg)
 	return err
 }

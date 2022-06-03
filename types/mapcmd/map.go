@@ -91,7 +91,7 @@ func New(config *hazelcast.Config) *cobra.Command {
 	return cmd
 }
 
-func Validate(d time.Duration, dType string) error {
+func ValidateDuration(d time.Duration, dType string) error {
 	if d.Seconds() < 0 {
 		return errors.New(fmt.Sprintf("duration %s must be positive", dType))
 	}

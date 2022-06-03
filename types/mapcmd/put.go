@@ -83,13 +83,13 @@ func NewPut(config *hazelcast.Config) *cobra.Command {
 				maxIdleE bool
 			)
 			if ttl.Seconds() != 0 {
-				if err = Validate(ttl, "TTL"); err != nil {
+				if err = ValidateDuration(ttl, "TTL"); err != nil {
 					return hzcerrors.NewLoggableError(err, "ttl is invalid")
 				}
 				ttlE = true
 			}
 			if maxIdle.Seconds() != 0 {
-				if err = Validate(maxIdle, "MaxIdle"); err != nil {
+				if err = ValidateDuration(maxIdle, "MaxIdle"); err != nil {
 					return hzcerrors.NewLoggableError(err, "max-idle is invalid")
 				}
 				maxIdleE = true
