@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package mapcmd
 
 import (
 	"bytes"
 	"testing"
+	"time"
 )
 
 func TestObtainOrderingOfValues(t *testing.T) {
@@ -38,6 +40,28 @@ func TestObtainOrderingOfValues(t *testing.T) {
 			gotvOrder, _ := ObtainOrderingOfValueFlags(tc.args)
 			if !bytes.Equal(tc.want, gotvOrder) {
 				t.Errorf("want %v got %v", tc.want, gotvOrder)
+			}
+		})
+	}
+}
+
+func TestUserDuration_Validate(t *testing.T) {
+	for _, tc := range []struct {
+		msg   string
+		isErr bool
+		in    time.Duration
+	}{
+		{msg: "zero", in: 0, isErr: true},
+		{msg: "equal to a second", in: time.Second, isErr: false},
+		{msg: "greater than a second", in: 2 * time.Second, isErr: false},
+		{msg: "less than a second as millisecond", in: 500 * time.Millisecond, isErr: true},
+		{msg: "greater than a second as minute", in: time.Minute, isErr: false},
+	} {
+		t.Run(tc.msg, func(t *testing.T) {
+			var err error
+			err = Validate(tc.in, "TTL")
+			if (err != nil) != tc.isErr {
+				t.Fatalf("error state is not satisfied")
 			}
 		})
 	}

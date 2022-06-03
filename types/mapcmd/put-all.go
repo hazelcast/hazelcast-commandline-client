@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package mapcmd
 
 import (
@@ -21,7 +22,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -30,7 +30,6 @@ import (
 
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
-	fds "github.com/hazelcast/hazelcast-commandline-client/internal/flagdecorators"
 )
 
 const MapPutAllExample = `  # Put key, value pairs to map.
@@ -83,7 +82,7 @@ func NewPutAll(config *hazelcast.Config) *cobra.Command {
 			len(mapValues) != 0 ||
 			len(mapValueTypes) != 0 ||
 			len(mapValueFiles) != 0 {
-			return hzcerrors.NewLoggableError(nil, fmt.Sprintf("%s is already set, there cannot be additional flags", fds.JsonEntryFlag))
+			return hzcerrors.NewLoggableError(nil, fmt.Sprintf("%s is already set, there cannot be additional flags", JSONEntryFlag))
 		}
 		return nil
 	}
@@ -119,8 +118,6 @@ func NewPutAll(config *hazelcast.Config) *cobra.Command {
 		Long:       "",
 		Example:    MapPutAllExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx, cancel := context.WithTimeout(cmd.Context(), time.Second*3)
-			defer cancel()
 			if jsonEntryPath != "" {
 				if err := validateJsonEntryFlag(); err != nil {
 					return err
@@ -157,17 +154,17 @@ func NewPutAll(config *hazelcast.Config) *cobra.Command {
 						return hzcerrors.NewLoggableError(nil, "Unknown data type in json file")
 					}
 				}
-				m, err := getMap(ctx, config, mapName)
+				m, err := getMap(cmd.Context(), config, mapName)
 				if err != nil {
 					return err
 				}
-				return executePutAll(ctx, cmd, m, entries)
+				return executePutAll(cmd.Context(), cmd, m, entries)
 			}
 			vOrder, tOrder, err := validateValuesFlag()
 			if err != nil {
 				return err
 			}
-			m, err := getMap(ctx, config, mapName)
+			m, err := getMap(cmd.Context(), config, mapName)
 			if err != nil {
 				return err
 			}
@@ -216,7 +213,7 @@ func NewPutAll(config *hazelcast.Config) *cobra.Command {
 				vOrder = vOrder[1:]
 				vC++
 			}
-			return executePutAll(ctx, cmd, m, entries)
+			return executePutAll(cmd.Context(), cmd, m, entries)
 		},
 	}
 	decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name")
@@ -225,6 +222,6 @@ func NewPutAll(config *hazelcast.Config) *cobra.Command {
 	decorateCommandWithMapValueFileArrayFlags(cmd, &mapValueFiles, false,
 		"`path to the file that contains the value. Use \"-\" (dash) to read from stdin`")
 	decorateCommandWithMapValueTypeArrayFlags(cmd, &mapValueTypes, false, "type of the value, one of: string, json")
-	fds.DecorateCommandWithJsonEntryFlag(cmd, &jsonEntryPath, false, "`path to json file that contains entries`")
+	decorateCommandWithJSONEntryFlag(cmd, &jsonEntryPath, false, "`path to json file that contains entries`")
 	return cmd
 }

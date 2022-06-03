@@ -147,7 +147,6 @@ func handleInterrupt(ctx context.Context, cancel context.CancelFunc) {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, os.Kill)
 	go func() {
-		defer close(c)
 		select {
 		case <-c:
 			cancel()

@@ -13,16 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package mapcmd
 
 import (
-	"context"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
-
-	fds "github.com/hazelcast/hazelcast-commandline-client/internal/flagdecorators"
 
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
@@ -76,49 +74,47 @@ func NewPut(config *hazelcast.Config) *cobra.Command {
 		Short:   "Put value to map",
 		Example: MapPutExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx, cancel := context.WithTimeout(cmd.Context(), time.Second*3)
-			defer cancel()
 			key, err := internal.ConvertString(mapKey, mapKeyType)
 			if err != nil {
 				return hzcerrors.NewLoggableError(err, "Conversion error on key %s to type %s", mapKey, mapKeyType)
 			}
 			var (
-				uTTL,
-				uMaxIdle *internal.UserDuration
+				ttlE,
+				maxIdleE bool
 			)
 			if ttl.Seconds() != 0 {
-				uTTL = &internal.UserDuration{Duration: ttl, DurType: internal.TTL}
-				if err = uTTL.Validate(); err != nil {
+				if err = Validate(ttl, "TTL"); err != nil {
 					return hzcerrors.NewLoggableError(err, "ttl is invalid")
 				}
+				ttlE = true
 			}
 			if maxIdle.Seconds() != 0 {
-				uMaxIdle = &internal.UserDuration{Duration: maxIdle, DurType: internal.MaxIdle}
-				if err = uMaxIdle.Validate(); err != nil {
+				if err = Validate(maxIdle, "MaxIdle"); err != nil {
 					return hzcerrors.NewLoggableError(err, "max-idle is invalid")
 				}
+				maxIdleE = true
 			}
 			var normalizedValue interface{}
 			if normalizedValue, err = normalizeMapValue(mapValue, mapValueFile, mapValueType); err != nil {
 				return err
 			}
-			m, err := getMap(ctx, config, mapName)
+			m, err := getMap(cmd.Context(), config, mapName)
 			if err != nil {
 				return err
 			}
 			switch {
-			case uTTL != nil && uMaxIdle != nil:
-				_, err = m.PutWithTTLAndMaxIdle(ctx, key, normalizedValue, uTTL.Duration, uMaxIdle.Duration)
-			case uTTL != nil:
-				_, err = m.PutWithTTL(ctx, key, normalizedValue, uTTL.Duration)
-			case uMaxIdle != nil:
-				_, err = m.PutWithMaxIdle(ctx, key, normalizedValue, uMaxIdle.Duration)
+			case ttlE && maxIdleE:
+				_, err = m.PutWithTTLAndMaxIdle(cmd.Context(), key, normalizedValue, ttl, maxIdle)
+			case ttlE:
+				_, err = m.PutWithTTL(cmd.Context(), key, normalizedValue, ttl)
+			case maxIdleE:
+				_, err = m.PutWithMaxIdle(cmd.Context(), key, normalizedValue, maxIdle)
 			default:
-				_, err = m.Put(ctx, key, normalizedValue)
+				_, err = m.Put(cmd.Context(), key, normalizedValue)
 			}
 			if err != nil {
 				var handled bool
-				handled, err = cloudcb(err, config)
+				handled, err = isCloudIssue(err, config)
 				if handled {
 					return err
 				}
@@ -130,7 +126,7 @@ func NewPut(config *hazelcast.Config) *cobra.Command {
 	decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name")
 	decorateCommandWithMapKeyFlags(cmd, &mapKey, &mapKeyType, true, "key of the entry")
 	decorateCommandWithValueFlags(cmd, &mapValue, &mapValueFile, &mapValueType)
-	fds.DecorateCommandWithTTL(cmd, &ttl, false, "ttl value of the entry")
-	fds.DecorateCommandWithMaxIdle(cmd, &maxIdle, false, "max-idle value of the entry")
+	decorateCommandWithTTL(cmd, &ttl, false, "ttl value of the entry")
+	decorateCommandWithMaxIdle(cmd, &maxIdle, false, "max-idle value of the entry")
 	return cmd
 }

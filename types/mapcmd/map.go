@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package mapcmd
 
 import (
@@ -22,6 +23,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/alecthomas/chroma/quick"
 	"github.com/hazelcast/hazelcast-go-client"
@@ -89,11 +91,26 @@ func New(config *hazelcast.Config) *cobra.Command {
 	return cmd
 }
 
+func Validate(d time.Duration, dType string) error {
+	if d.Seconds() < 0 {
+		return errors.New(fmt.Sprintf("duration %s must be positive", dType))
+	}
+	if dType == "MaxIdle" {
+		return nil
+	} else if dType == "TTL" {
+		if d.Seconds() >= 1.0 {
+			return nil
+		}
+		return errors.New("ttl duration cannot be less than a second")
+	}
+	return errors.New("undefined duration type")
+}
+
 func printValueBasedOnType(cmd *cobra.Command, value interface{}) {
 	var err error
 	switch v := value.(type) {
 	case serialization.JSON:
-		if err = quick.Highlight(cmd.OutOrStdout(), fmt.Sprintln(v.String()),
+		if err = quick.Highlight(cmd.OutOrStdout(), fmt.Sprintln(v),
 			"json", "terminal", "tango"); err != nil {
 			cmd.Println(v.String())
 		}
@@ -149,7 +166,7 @@ func loadValueFile(path string) (string, error) {
 	}
 }
 
-func cloudcb(err error, config *hazelcast.Config) (bool, error) {
+func isCloudIssue(err error, config *hazelcast.Config) (bool, error) {
 	isCloudCluster := config.Cluster.Cloud.Enabled
 	if networkErrMsg, handled := hzcerrors.TranslateNetworkError(err, isCloudCluster); handled {
 		err = hzcerrors.NewLoggableError(err, networkErrMsg)
@@ -231,6 +248,7 @@ func decorateCommandWithMapNameFlags(cmd *cobra.Command, mapName *string, requir
 }
 
 func decorateCommandWithMapKeyFlags(cmd *cobra.Command, mapKey, mapKeyType *string, required bool, usage string) {
+	var err error
 	flags := cmd.Flags()
 	cmd.Flags().StringVarP(mapKey, MapKeyFlag, MapKeyFlagShort, "", usage)
 	flags.StringVarP(mapKeyType, MapKeyTypeFlag, "", "string", fmt.Sprintf("type of the key, one of: %s", strings.Join(internal.SupportedTypeNames, ",")))
@@ -239,9 +257,12 @@ func decorateCommandWithMapKeyFlags(cmd *cobra.Command, mapKey, mapKeyType *stri
 			panic(err)
 		}
 	}
-	cmd.RegisterFlagCompletionFunc(MapKeyTypeFlag, func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err = cmd.RegisterFlagCompletionFunc(MapKeyTypeFlag, func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return internal.SupportedTypeNames, cobra.ShellCompDirectiveDefault
 	})
+	if err != nil {
+		panic(err)
+	}
 }
 
 func decorateCommandWithMapKeyArrayFlags(cmd *cobra.Command, mapKeys *[]string, required bool, usage string) {

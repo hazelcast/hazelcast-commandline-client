@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package internal
+
+package mapcmd
 
 import (
 	"time"
@@ -23,22 +24,22 @@ import (
 
 // common flags
 const (
-	JsonEntryFlag = "json-entry"
+	JSONEntryFlag = "json-entry"
 	TTLFlag       = "ttl"
 	MaxIdleFlag   = "max-idle"
 	DelimiterFlag = "delim"
 )
 
-func DecorateCommandWithJsonEntryFlag(cmd *cobra.Command, jsonEntry *string, required bool, usage string) {
-	cmd.Flags().StringVar(jsonEntry, JsonEntryFlag, "", usage)
+func decorateCommandWithJSONEntryFlag(cmd *cobra.Command, jsonEntry *string, required bool, usage string) {
+	cmd.Flags().StringVar(jsonEntry, JSONEntryFlag, "", usage)
 	if required {
-		if err := cmd.MarkFlagRequired(JsonEntryFlag); err != nil {
+		if err := cmd.MarkFlagRequired(JSONEntryFlag); err != nil {
 			panic(err)
 		}
 	}
 }
 
-func DecorateCommandWithTTL(cmd *cobra.Command, ttl *time.Duration, required bool, usage string) {
+func decorateCommandWithTTL(cmd *cobra.Command, ttl *time.Duration, required bool, usage string) {
 	cmd.Flags().DurationVar(ttl, TTLFlag, 0, usage)
 	if required {
 		if err := cmd.MarkFlagRequired(TTLFlag); err != nil {
@@ -47,7 +48,7 @@ func DecorateCommandWithTTL(cmd *cobra.Command, ttl *time.Duration, required boo
 	}
 }
 
-func DecorateCommandWithMaxIdle(cmd *cobra.Command, maxIdle *time.Duration, required bool, usage string) {
+func decorateCommandWithMaxIdle(cmd *cobra.Command, maxIdle *time.Duration, required bool, usage string) {
 	cmd.Flags().DurationVar(maxIdle, MaxIdleFlag, 0, usage)
 	if required {
 		if err := cmd.MarkFlagRequired(MaxIdleFlag); err != nil {
@@ -56,7 +57,7 @@ func DecorateCommandWithMaxIdle(cmd *cobra.Command, maxIdle *time.Duration, requ
 	}
 }
 
-func DecorateCommandWithDelimiter(cmd *cobra.Command, delimiter *string, required bool, usage string) {
+func decorateCommandWithDelimiter(cmd *cobra.Command, delimiter *string, required bool, usage string) {
 	cmd.Flags().StringVar(delimiter, DelimiterFlag, "\t", usage)
 	if required {
 		if err := cmd.MarkFlagRequired(DelimiterFlag); err != nil {

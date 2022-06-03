@@ -13,22 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package mapcmd
 
 import (
-	"context"
-	"time"
-
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/types"
 	"github.com/spf13/cobra"
 
-	fds "github.com/hazelcast/hazelcast-commandline-client/internal/flagdecorators"
-
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 )
 
-const MapGetAllExample = `  # Get matched entries from the map with default delimiter. Default delimiter is single tab value.
+const MapGetAllExample = `  # Get matched entries from the map with default delimiter. Default delimiter is the tab character.
   hzc get-all -n mapname -k k1 -k k2
 
   # Get matched entries from the map with custom delimiter.
@@ -36,9 +32,7 @@ const MapGetAllExample = `  # Get matched entries from the map with default deli
 
 func NewGetAll(config *hazelcast.Config) *cobra.Command {
 	var (
-		delim string
-	)
-	var (
+		delim   string
 		mapName string
 		mapKeys []string
 	)
@@ -53,14 +47,12 @@ func NewGetAll(config *hazelcast.Config) *cobra.Command {
 		Short:   "Get all matched entries from the map",
 		Example: MapGetAllExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx, cancel := context.WithTimeout(cmd.Context(), time.Second*3)
-			defer cancel()
 			var err error
 			if err = validateFlags(); err != nil {
 				return err
 			}
 			var m *hazelcast.Map
-			m, err = getMap(ctx, config, mapName)
+			m, err = getMap(cmd.Context(), config, mapName)
 			if err != nil {
 				return err
 			}
@@ -69,10 +61,10 @@ func NewGetAll(config *hazelcast.Config) *cobra.Command {
 				keys[i] = mapKeys[i]
 			}
 			var entries []types.Entry
-			entries, err = m.GetAll(ctx, keys...)
+			entries, err = m.GetAll(cmd.Context(), keys...)
 			if err != nil {
 				var handled bool
-				handled, err = cloudcb(err, config)
+				handled, err = isCloudIssue(err, config)
 				if handled {
 					return err
 				}
@@ -87,6 +79,6 @@ func NewGetAll(config *hazelcast.Config) *cobra.Command {
 	}
 	decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name")
 	decorateCommandWithMapKeyArrayFlags(cmd, &mapKeys, true, "key(s) of the entry")
-	fds.DecorateCommandWithDelimiter(cmd, &delim, false, "delimiter of printed key, value pairs")
+	decorateCommandWithDelimiter(cmd, &delim, false, "delimiter of printed key, value pairs")
 	return cmd
 }

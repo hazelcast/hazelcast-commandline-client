@@ -13,12 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package mapcmd
 
 import (
-	"context"
-	"time"
-
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 
@@ -42,16 +40,14 @@ func NewGet(config *hazelcast.Config) *cobra.Command {
 			if err != nil {
 				return hzcerrors.NewLoggableError(err, "Conversion error on key %s to type %s", mapKey, mapKeyType)
 			}
-			ctx, cancel := context.WithTimeout(cmd.Context(), time.Second*3)
-			defer cancel()
-			m, err := getMap(ctx, config, mapName)
+			m, err := getMap(cmd.Context(), config, mapName)
 			if err != nil {
 				return err
 			}
-			value, err := m.Get(ctx, key)
+			value, err := m.Get(cmd.Context(), key)
 			if err != nil {
 				var handled bool
-				handled, err = cloudcb(err, config)
+				handled, err = isCloudIssue(err, config)
 				if handled {
 					return err
 				}

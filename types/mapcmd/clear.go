@@ -13,12 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package mapcmd
 
 import (
-	"context"
-	"time"
-
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 
@@ -35,19 +33,15 @@ func NewClear(config *hazelcast.Config) *cobra.Command {
 		Short:   "Clear entries of the map",
 		Example: MapClearExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// context timeout can be given according to bulk size of operation
-			// we assume that current payload is same for all hazelcast operations
-			ctx, cancel := context.WithTimeout(cmd.Context(), time.Second*3)
 			var err error
-			defer cancel()
-			m, err := getMap(ctx, config, mapName)
+			m, err := getMap(cmd.Context(), config, mapName)
 			if err != nil {
 				return err
 			}
-			err = m.Clear(ctx)
+			err = m.Clear(cmd.Context())
 			if err != nil {
 				var handled bool
-				handled, err = cloudcb(err, config)
+				handled, err = isCloudIssue(err, config)
 				if handled {
 					return err
 				}

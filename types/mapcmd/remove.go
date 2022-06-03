@@ -13,12 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package mapcmd
 
 import (
-	"context"
-	"time"
-
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 
@@ -38,21 +36,18 @@ func NewRemove(config *hazelcast.Config) *cobra.Command {
 		Example: `  # Remove key from the map if it exists.
   hzc map remove -n mapname -k k1`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// same context timeout for both single entry removal and map cleanup
-			ctx, cancel := context.WithTimeout(cmd.Context(), time.Second*3)
-			defer cancel()
 			key, err := internal.ConvertString(mapKey, mapKeyType)
 			if err != nil {
 				return hzcerrors.NewLoggableError(err, "Conversion error on key %s to type %s", mapKey, mapKeyType)
 			}
-			m, err := getMap(ctx, config, mapName)
+			m, err := getMap(cmd.Context(), config, mapName)
 			if err != nil {
 				return err
 			}
-			_, err = m.Remove(ctx, key)
+			_, err = m.Remove(cmd.Context(), key)
 			if err != nil {
 				var handled bool
-				handled, err = cloudcb(err, config)
+				handled, err = isCloudIssue(err, config)
 				if handled {
 					return err
 				}
