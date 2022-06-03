@@ -52,7 +52,7 @@ brews:
     # Template for the url which is determined by the given Token (github, gitlab or gitea)
     #
     # Default depends on the client.
-    url_template: "https://github.com/hazelcast/hazelcast-commandline-client/releases/{{ .Tag }}/{{ .ArtifactName }}"
+    url_template: "https://github.com/hazelcast/hazelcast-commandline-client/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
 
     # The project name and current git tag are used in the format string.
     commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
