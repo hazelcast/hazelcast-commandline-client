@@ -23,20 +23,21 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/spf13/cobra"
 
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/constants"
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
-const MapPutExample = "map put --key hello --value world --name myMap\t#puts entry into map directly"
+const MapPutExample = `map put --key hello --value world --name myMap    #puts entry into map directly
+map put --key-type string --key hello --value-type float32 --value 19.94 --name myMap`
 
 func NewPut(config *hazelcast.Config) *cobra.Command {
 	// flags
 	var (
 		mapName,
 		mapKey,
+		mapKeyType,
 		mapValue,
 		mapValueType,
 		mapValueFile string
@@ -48,7 +49,10 @@ func NewPut(config *hazelcast.Config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(cmd.Context(), time.Second*3)
 			defer cancel()
-			var err error
+			key, err := internal.ConvertString(mapKey, mapKeyType)
+			if err != nil {
+				return hzcerrors.NewLoggableError(err, "Conversion error on key %s to type %s", mapKey, mapKeyType)
+			}
 			var normalizedValue interface{}
 			if normalizedValue, err = normalizeMapValue(mapValue, mapValueFile, mapValueType); err != nil {
 				return err
@@ -57,7 +61,7 @@ func NewPut(config *hazelcast.Config) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			_, err = m.Put(ctx, mapKey, normalizedValue)
+			_, err = m.Put(ctx, key, normalizedValue)
 			if err == nil {
 				return err
 			}
@@ -70,7 +74,7 @@ func NewPut(config *hazelcast.Config) *cobra.Command {
 		},
 	}
 	decorateCommandWithMapNameFlags(cmd, &mapName)
-	decorateCommandWithKeyFlags(cmd, &mapKey)
+	decorateCommandWithKeyFlags(cmd, &mapKey, &mapKeyType)
 	decorateCommandWithValueFlags(cmd, &mapValue, &mapValueFile, &mapValueType)
 	return cmd
 }
@@ -93,13 +97,11 @@ func normalizeMapValue(v, vFile, vType string) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	switch vType {
-	case constants.TypeString:
-		return valueStr, nil
-	case constants.TypeJSON:
-		return serialization.JSON(valueStr), nil
+	mapValue, err := internal.ConvertString(valueStr, vType)
+	if err != nil {
+		err = hzcerrors.NewLoggableError(err, "Conversion error on value %s to value-type %s", valueStr, vType)
 	}
-	return nil, hzcerrors.NewLoggableError(nil, "Provided value type parameter (%s) is not a known type. Provide either 'string' or 'json'", vType)
+	return mapValue, err
 }
 
 func loadValueFile(path string) (string, error) {
