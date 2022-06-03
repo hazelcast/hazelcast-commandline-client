@@ -47,8 +47,7 @@ brews:
       name: homebrew-trial
 
       # Optionally a token can be provided, if it differs from the token provided to GoReleaser
-      #"{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
-      token: "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"
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
 
     # Template for the url which is determined by the given Token (github, gitlab or gitea)
     #
