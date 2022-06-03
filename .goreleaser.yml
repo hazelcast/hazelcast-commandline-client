@@ -25,6 +25,7 @@ archives:
       amd64: x86_64
     files:
       - extras/*
+      - scripts/uninstall.sh
 checksum:
   name_template: 'checksums.txt'
 snapshot:
@@ -44,8 +45,8 @@ brews:
     name: hazelcast-commandline-client
 
     tap:
-      owner: utku-caglayan
-      name: homebrew-trial
+      owner: hazelcast
+      name: homebrew-hz
 
       # Optionally a token can be provided, if it differs from the token provided to GoReleaser
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
@@ -53,7 +54,7 @@ brews:
     # Template for the url which is determined by the given Token (github, gitlab or gitea)
     #
     # Default depends on the client.
-    url_template: "https://github.com/utku-caglayan/hazelcast-commandline-client/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    url_template: "https://github.com/hazelcast/hazelcast-commandline-client/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
 
     # The project name and current git tag are used in the format string.
     commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"

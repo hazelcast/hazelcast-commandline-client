@@ -26,14 +26,14 @@ case "$(uname -s | tr '[:upper:]' '[:lower:]')" in
     ;;
 esac
 
-tag=$(ghExtractTag hazelcast/hazelcast-commandline-client)
-releaseUrl=$(printf "https://github.com/hazelcast/hazelcast-commandline-client/releases/download/v%s/hz-cli_%s_%s" "$tag" "$tag" "$bin_id")
+tag=$(ghExtractTag "hazelcast/hazelcast-commandline-client")
+releaseUrl=$(printf "https://github.com/hazelcast/hazelcast-commandline-client/releases/download/v%s/hazelcast-commandline-client_%s_%s.tar.gz" "$tag" "$tag" "$bin_id")
 
-curl -L --silent "$releaseUrl" --output "$HOME/$PROGRAM_NAME"
-chmod +x $HOME/$PROGRAM_NAME
+mkdir -p $HOME/$PROGRAM_NAME && chmod +x $HOME/$PROGRAM_NAME
+curl -L --silent "$releaseUrl" | tar -xz -C "$HOME/$PROGRAM_NAME"
 
 mkdir -p $HOME/.local/bin
-mv $HOME/$PROGRAM_NAME $HOME/.local/bin
+mv $HOME/$PROGRAM_NAME/$PROGRAM_NAME $HOME/.local/bin
 echo "Hazelcast Commandline Client (CLC) is downloaded to \$HOME/.local/bin/$PROGRAM_NAME"
 echo
 
@@ -76,9 +76,8 @@ if [[ ! -r $HOME/.zshrc || ! "$(cat $HOME/.zshrc)" == *"$(echo "export PATH=$HOM
     echo "$addToPathDirectivesZSH"
     echo
 fi
-curl --silent "https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/zsh_completion.zsh" --output $HOME/.zsh_completion.sh
 mkdir -p $HZCLI_HOME/autocompletion/zsh
-mv $HOME/.zsh_completion.sh $HZCLI_HOME/autocompletion/zsh/$PROGRAM_NAME
+mv "${HOME}/${PROGRAM_NAME}/extras/zsh_completion.zsh" "${HZCLI_HOME}/autocompletion/zsh/${PROGRAM_NAME}"
 echo "$zshAutocompletionDirectives"
 
 echo
@@ -99,12 +98,13 @@ if [ -z "$bash_completion_dir" ]; then
 fi
 mkdir -p "${bash_completion_dir}/completions"
 mkdir -p "${HZCLI_HOME}/autocompletion/bash"
-curl --silent "https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/bash_completion.sh" --output "${HZCLI_HOME}/autocompletion/bash/hz-cli"
+mv "${HOME}/${PROGRAM_NAME}/extras/bash_completion.sh" "${HZCLI_HOME}/autocompletion/bash/hz-cli"
 ln -s $HZCLI_HOME/autocompletion/bash/hz-cli "${bash_completion_dir}/completions/$PROGRAM_NAME"
 echo "$bashAutocompletionDirectives"
 
 mkdir -p "${HZCLI_HOME}/bin/"
-curl --silent "https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/scripts/uninstall.sh" --output "${HZCLI_HOME}/bin/uninstall.sh"
+mv "${HOME}/${PROGRAM_NAME}/scripts/uninstall.sh" "${HZCLI_HOME}/bin"
 chmod +x ${HZCLI_HOME}/bin/uninstall.sh
+rm -rf "${HOME}/${PROGRAM_NAME}"
 echo "You can uninstall hz command line tools by running ${HZCLI_HOME}/bin/uninstall.sh"
 echo "Example usage: hzc --help"
