@@ -1,5 +1,6 @@
 before:
   hooks:
+    - go install golang.org/x/tools/...@latest
     - go mod tidy
     - go generate ./...
 builds:
