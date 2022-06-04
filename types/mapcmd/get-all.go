@@ -29,7 +29,10 @@ const MapGetAllExample = `  # Get matched entries from the map with default deli
   hzc get-all -n mapname -k k1 -k k2
 
   # Get matched entries from the map with custom delimiter.
-  hzc get-all -n mapname -k k1 -k k2 --delim ":"`
+  hzc get-all -n mapname -k k1 -k k2 --delim ":"
+
+  # Get matched entries with denoted type from the map with custom delimiter.
+  hzc get-all -n mapname -k 12 --key-type int16 -k true --key-type boolean --delim ":"`
 
 func NewGetAll(config *hazelcast.Config) *cobra.Command {
 	var (

@@ -59,7 +59,8 @@ const MapPutAllExample = `  # Put key, value pairs to map.
   # Coupling rule of keys and values given in different order
   - Keys and values are coupled according to the order they are provided. That means the first given key will be matched with the first given 
   value from left to right. Therefore, keys and values (given through file or directly from the command line) must be equal in number.
-  - BUT, for "--type" flag, this rule is not applied. Type of the value flag is given just after the actual value flag.
+  - BUT, for "--type" flag, this rule is not applied. Type of the type/value flag is given after the actual type/value flag. Otherwise,
+  default value string is used.
 `
 
 func NewPutAll(config *hazelcast.Config) *cobra.Command {
