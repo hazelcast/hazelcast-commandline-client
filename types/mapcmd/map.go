@@ -192,29 +192,7 @@ func withLongFlag(flag string) string {
 	return fmt.Sprintf("--%s", flag)
 }
 
-func ObtainOrderingOfKeyFlags(args []string) (ktOrder []int) {
-	if len(args) == 0 {
-		return
-	}
-	var lastIndex int
-	for _, arg := range args {
-		kShort := withShortFlag(MapKeyFlagShort)
-		k := withLongFlag(MapKeyFlag)
-		keyType := withLongFlag(MapKeyTypeFlag)
-		switch arg {
-		case kShort, k:
-			lastIndex++
-		case keyType:
-			if lastIndex == 0 {
-				return
-			}
-			ktOrder = append(ktOrder, lastIndex-1)
-		}
-	}
-	return
-}
-
-func ObtainOrderingOfValueFlags(args []string) (vOrder []byte, vtOrder []int) {
+func ObtainOrderingOfValueFlags(args []string) (vOrder []byte) {
 	if len(args) == 0 {
 		return
 	}
@@ -223,18 +201,11 @@ func ObtainOrderingOfValueFlags(args []string) (vOrder []byte, vtOrder []int) {
 		v := withLongFlag(MapValueFlag)
 		fShort := withShortFlag(MapValueFileFlagShort)
 		f := withLongFlag(MapValueFileFlag)
-		tShort := withShortFlag(MapValueTypeFlagShort)
-		t := withLongFlag(MapValueTypeFlag)
 		switch arg {
 		case vShort, v:
 			vOrder = append(vOrder, 's')
 		case fShort, f:
 			vOrder = append(vOrder, 'f')
-		case tShort, t:
-			if len(vOrder) == 0 {
-				return
-			}
-			vtOrder = append(vtOrder, len(vOrder)-1)
 		}
 	}
 	return
@@ -254,17 +225,10 @@ func getMap(ctx context.Context, clientConfig *hazelcast.Config, mapName string)
 	return
 }
 
-func decorateCommandWithValueFlags(cmd *cobra.Command, mapValue, mapValueFile, mapValueType *string) {
+func decorateCommandWithValueFlags(cmd *cobra.Command, mapValue, mapValueFile *string) {
 	flags := cmd.Flags()
 	flags.StringVarP(mapValue, MapValueFlag, MapValueFlagShort, "", "value of the map")
 	flags.StringVarP(mapValueFile, MapValueFileFlag, MapValueFileFlagShort, "", `path to the file that contains the value. Use "-" (dash) to read from stdin`)
-	flags.StringVarP(mapValueType, MapValueTypeFlag, MapValueTypeFlagShort, "string", fmt.Sprintf("type of the value, one of: %s", strings.Join(internal.SupportedTypeNames, ",")))
-	err := cmd.RegisterFlagCompletionFunc(MapValueTypeFlag, func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"json", "string"}, cobra.ShellCompDirectiveDefault
-	})
-	if err != nil {
-		panic(err)
-	}
 }
 
 func decorateCommandWithMapNameFlags(cmd *cobra.Command, mapName *string, required bool, usage string) {
@@ -276,21 +240,43 @@ func decorateCommandWithMapNameFlags(cmd *cobra.Command, mapName *string, requir
 	}
 }
 
-func decorateCommandWithMapKeyFlags(cmd *cobra.Command, mapKey, mapKeyType *string, required bool, usage string) {
-	var err error
-	flags := cmd.Flags()
-	cmd.Flags().StringVarP(mapKey, MapKeyFlag, MapKeyFlagShort, "", usage)
-	flags.StringVar(mapKeyType, MapKeyTypeFlag, "string", fmt.Sprintf("type of the key, one of: %s", strings.Join(internal.SupportedTypeNames, ",")))
+func decorateCommandWithMapKeyTypeFlags(cmd *cobra.Command, mapKeyType *string, required bool) {
+	cmd.Flags().StringVar(mapKeyType, MapKeyTypeFlag, "string", fmt.Sprintf("type of the key, one of: %s", strings.Join(internal.SupportedTypeNames, ",")))
 	if required {
-		if err := cmd.MarkFlagRequired(MapKeyFlag); err != nil {
+		if err := cmd.MarkFlagRequired(MapKeyTypeFlag); err != nil {
 			panic(err)
 		}
 	}
-	err = cmd.RegisterFlagCompletionFunc(MapKeyTypeFlag, func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err := cmd.RegisterFlagCompletionFunc(MapKeyTypeFlag, func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return internal.SupportedTypeNames, cobra.ShellCompDirectiveDefault
 	})
 	if err != nil {
 		panic(err)
+	}
+}
+
+func decorateCommandWithMapValueTypeFlags(cmd *cobra.Command, mapValueType *string, required bool) {
+	cmd.Flags().StringVarP(mapValueType, MapValueTypeFlag, MapValueTypeFlagShort, "string", fmt.Sprintf("type of the value, one of: %s", strings.Join(internal.SupportedTypeNames, ",")))
+	if required {
+		if err := cmd.MarkFlagRequired(MapValueTypeFlag); err != nil {
+			panic(err)
+		}
+	}
+	err := cmd.RegisterFlagCompletionFunc(MapValueTypeFlag, func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return internal.SupportedTypeNames, cobra.ShellCompDirectiveDefault
+	})
+	if err != nil {
+		panic(err)
+	}
+}
+
+func decorateCommandWithMapKeyFlags(cmd *cobra.Command, mapKey *string, required bool, usage string) {
+	cmd.Flags().StringVarP(mapKey, MapKeyFlag, MapKeyFlagShort, "", usage)
+	if required {
+		err := cmd.MarkFlagRequired(MapKeyFlag)
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 
@@ -316,37 +302,6 @@ func decorateCommandWithMapValueFileArrayFlags(cmd *cobra.Command, mapValueFiles
 	cmd.Flags().StringArrayVarP(mapValueFiles, MapValueFileFlag, MapValueFileFlagShort, []string{}, usage)
 	if required {
 		if err := cmd.MarkFlagRequired(MapValueFileFlag); err != nil {
-			panic(err)
-		}
-	}
-}
-
-func decorateCommandWithMapValueTypeArrayFlags(cmd *cobra.Command, mapValueTypes *[]string, required bool, usage string) {
-	var err error
-	cmd.Flags().StringArrayVarP(mapValueTypes, MapValueTypeFlag, MapValueTypeFlagShort, []string{}, usage)
-	err = cmd.RegisterFlagCompletionFunc(MapValueTypeFlag, func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return internal.SupportedTypeNames, cobra.ShellCompDirectiveDefault
-	})
-	if err != nil {
-		panic(err)
-	}
-	if required {
-		if err = cmd.MarkFlagRequired(MapValueTypeFlag); err != nil {
-			panic(err)
-		}
-	}
-}
-func decorateCommandWithMapKeyTypeArrayFlags(cmd *cobra.Command, mapKeyTypes *[]string, required bool, usage string) {
-	var err error
-	cmd.Flags().StringArrayVar(mapKeyTypes, MapKeyTypeFlag, []string{}, usage)
-	err = cmd.RegisterFlagCompletionFunc(MapKeyTypeFlag, func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return internal.SupportedTypeNames, cobra.ShellCompDirectiveDefault
-	})
-	if err != nil {
-		panic(err)
-	}
-	if required {
-		if err = cmd.MarkFlagRequired(MapKeyTypeFlag); err != nil {
 			panic(err)
 		}
 	}

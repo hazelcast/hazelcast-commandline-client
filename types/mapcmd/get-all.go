@@ -32,13 +32,13 @@ const MapGetAllExample = `  # Get matched entries from the map with default deli
   hzc get-all -n mapname -k k1 -k k2 --delim ":"
 
   # Get matched entries with denoted type from the map with custom delimiter.
-  hzc get-all -n mapname -k 12 --key-type int16 -k true --key-type boolean --delim ":"`
+  hzc get-all -n mapname -k 12 -k 25 --key-type int16 --delim ":"`
 
 func NewGetAll(config *hazelcast.Config) *cobra.Command {
 	var (
 		delim,
+		mapKeyType,
 		mapName string
-		mapKeyTypes,
 		mapKeys []string
 	)
 	validateFlags := func() error {
@@ -58,14 +58,9 @@ func NewGetAll(config *hazelcast.Config) *cobra.Command {
 			}
 			keys := make([]interface{}, len(mapKeys))
 			for i := range mapKeys {
-				if len(mapKeyTypes) != 0 {
-					keys[i], err = internal.ConvertString(mapKeys[i], mapKeyTypes[0])
-					if err != nil {
-						return hzcerrors.NewLoggableError(err, "key type does cannot be converted")
-					}
-					mapKeyTypes = mapKeyTypes[1:]
-				} else {
-					keys[i] = mapKeys[i]
+				keys[i], err = internal.ConvertString(mapKeys[i], mapKeyType)
+				if err != nil {
+					return hzcerrors.NewLoggableError(err, "key type does cannot be converted")
 				}
 			}
 			var entries []types.Entry
@@ -92,7 +87,7 @@ func NewGetAll(config *hazelcast.Config) *cobra.Command {
 	}
 	decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name")
 	decorateCommandWithMapKeyArrayFlags(cmd, &mapKeys, true, "key(s) of the entry")
-	decorateCommandWithMapKeyTypeArrayFlags(cmd, &mapKeyTypes, false, "type of the key")
+	decorateCommandWithMapKeyTypeFlags(cmd, &mapKeyType, false)
 	decorateCommandWithDelimiter(cmd, &delim, false, "delimiter of printed key, value pairs")
 	return cmd
 }

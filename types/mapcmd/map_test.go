@@ -37,7 +37,7 @@ func TestObtainOrderingOfValues(t *testing.T) {
 		{"empty", nil, []string{}},
 	} {
 		t.Run(tc.info, func(t *testing.T) {
-			gotvOrder, _ := ObtainOrderingOfValueFlags(tc.args)
+			gotvOrder := ObtainOrderingOfValueFlags(tc.args)
 			if !bytes.Equal(tc.want, gotvOrder) {
 				t.Errorf("want %v got %v", tc.want, gotvOrder)
 			}

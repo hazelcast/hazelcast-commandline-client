@@ -57,6 +57,7 @@ func NewRemove(config *hazelcast.Config) *cobra.Command {
 		},
 	}
 	decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name")
-	decorateCommandWithMapKeyFlags(cmd, &mapKey, &mapKeyType, true, "key of the entry")
+	decorateCommandWithMapKeyFlags(cmd, &mapKey, true, "key of the entry")
+	decorateCommandWithMapKeyTypeFlags(cmd, &mapKeyType, false)
 	return cmd
 }
