@@ -73,6 +73,7 @@ func NewPutAll(config *hazelcast.Config) *cobra.Command {
 	var (
 		mapName string
 		mapKeys,
+		mapKeyTypes,
 		mapValues,
 		mapValueTypes,
 		mapValueFiles []string
@@ -87,15 +88,15 @@ func NewPutAll(config *hazelcast.Config) *cobra.Command {
 		return nil
 	}
 	validateValuesFlag := func() ([]byte, []int, error) {
-		valueCount := len(mapValues) + len(mapValueFiles)
-		if valueCount != len(mapKeys) {
-			return nil, nil, hzcerrors.NewLoggableError(nil, "number of keys and values does not match")
-		}
 		vOrder, tOrder := ObtainOrderingOfValueFlags(os.Args)
-		if vOrder == nil {
+		if len(vOrder) == 0 {
 			return nil, nil, hzcerrors.NewLoggableError(nil, "correct order of values cannot be taken")
 		}
 		return vOrder, tOrder, nil
+	}
+	validateKeysFlag := func() ([]int, error) {
+		ktOrder := ObtainOrderingOfKeyFlags(os.Args)
+		return ktOrder, nil
 	}
 	executePutAll := func(ctx context.Context, cmd *cobra.Command, m *hazelcast.Map, entries []types.Entry) error {
 		var err error
@@ -160,33 +161,40 @@ func NewPutAll(config *hazelcast.Config) *cobra.Command {
 				}
 				return executePutAll(cmd.Context(), cmd, m, entries)
 			}
-			vOrder, tOrder, err := validateValuesFlag()
+			valueNumber := len(mapValues) + len(mapValueFiles)
+			if valueNumber != len(mapKeys) {
+				return hzcerrors.NewLoggableError(nil, "number of keys and values does not match")
+			}
+			vOrder, vtOrder, err := validateValuesFlag()
 			if err != nil {
 				return err
 			}
-			m, err := getMap(cmd.Context(), config, mapName)
+			ktOrder, err := validateKeysFlag()
 			if err != nil {
 				return err
 			}
 			var (
 				vC = 0
 			)
-			for _, key := range mapKeys {
-				var t int
+			for i, key := range mapKeys {
+				if len(ktOrder) != len(mapKeyTypes) {
+					panic("should not be happen")
+				}
+				var vTypeIndex int
 				curr := vOrder[0]
 				var normalizedValue interface{}
-				if len(tOrder) != 0 {
-					t = tOrder[0]
+				if len(vtOrder) != 0 {
+					vTypeIndex = vtOrder[0]
 				}
 				if curr == 's' {
 					v := mapValues[0]
-					if len(tOrder) != 0 && t == vC {
-						tv := mapValueTypes[0]
-						if normalizedValue, err = normalizeMapValue(v, "", tv); err != nil {
+					if len(vtOrder) != 0 && vTypeIndex == vC {
+						givenValueType := mapValueTypes[0]
+						if normalizedValue, err = normalizeMapValue(v, "", givenValueType); err != nil {
 							return err
 						}
 						mapValueTypes = mapValueTypes[1:]
-						tOrder = tOrder[1:]
+						vtOrder = vtOrder[1:]
 					} else {
 						if normalizedValue, err = normalizeMapValue(v, "", internal.TypeNameString); err != nil {
 							return err
@@ -195,13 +203,13 @@ func NewPutAll(config *hazelcast.Config) *cobra.Command {
 					mapValues = mapValues[1:]
 				} else {
 					v := mapValueFiles[0]
-					if len(tOrder) != 0 && t == vC {
-						tv := mapValueTypes[0]
-						if normalizedValue, err = normalizeMapValue("", v, tv); err != nil {
+					if len(vtOrder) != 0 && vTypeIndex == vC {
+						givenValueType := mapValueTypes[0]
+						if normalizedValue, err = normalizeMapValue("", v, givenValueType); err != nil {
 							return err
 						}
 						mapValueTypes = mapValueTypes[1:]
-						tOrder = tOrder[1:]
+						vtOrder = vtOrder[1:]
 					} else {
 						if normalizedValue, err = normalizeMapValue(v, "", internal.TypeNameString); err != nil {
 							return err
@@ -209,19 +217,38 @@ func NewPutAll(config *hazelcast.Config) *cobra.Command {
 					}
 					mapValueFiles = mapValueFiles[1:]
 				}
-				entries = append(entries, types.Entry{Key: key, Value: normalizedValue})
+				var normalizedKey interface{}
+				if len(ktOrder) != 0 && (i == ktOrder[0]) {
+					if i == ktOrder[0] {
+						normalizedKey, err = internal.ConvertString(key, mapKeyTypes[0])
+						if err != nil {
+							return hzcerrors.NewLoggableError(err, "key type does cannot be converted")
+						}
+						ktOrder = ktOrder[1:]
+						mapKeyTypes = mapKeyTypes[1:]
+					}
+				}
+				if normalizedKey == nil {
+					normalizedKey = key
+				}
+				entries = append(entries, types.Entry{Key: normalizedKey, Value: normalizedValue})
 				vOrder = vOrder[1:]
 				vC++
+			}
+			m, err := getMap(cmd.Context(), config, mapName)
+			if err != nil {
+				return err
 			}
 			return executePutAll(cmd.Context(), cmd, m, entries)
 		},
 	}
 	decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name")
 	decorateCommandWithMapKeyArrayFlags(cmd, &mapKeys, false, "key(s) of the map")
+	decorateCommandWithMapKeyTypeArrayFlags(cmd, &mapKeyTypes, false, "type of the key")
 	decorateCommandWithMapValueArrayFlags(cmd, &mapValues, false, "value(s) of the map")
 	decorateCommandWithMapValueFileArrayFlags(cmd, &mapValueFiles, false,
 		"`path to the file that contains the value. Use \"-\" (dash) to read from stdin`")
-	decorateCommandWithMapValueTypeArrayFlags(cmd, &mapValueTypes, false, "type of the value, one of: string, json")
+	decorateCommandWithMapValueTypeArrayFlags(cmd, &mapValueTypes, false, "type of the value")
 	decorateCommandWithJSONEntryFlag(cmd, &jsonEntryPath, false, "`path to json file that contains entries`")
 	return cmd
 }

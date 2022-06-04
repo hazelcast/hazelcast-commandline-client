@@ -22,6 +22,7 @@ import (
 	"github.com/spf13/cobra"
 
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
 const MapGetAllExample = `  # Get matched entries from the map with default delimiter. Default delimiter is the tab character.
@@ -32,8 +33,9 @@ const MapGetAllExample = `  # Get matched entries from the map with default deli
 
 func NewGetAll(config *hazelcast.Config) *cobra.Command {
 	var (
-		delim   string
+		delim,
 		mapName string
+		mapKeyTypes,
 		mapKeys []string
 	)
 	validateFlags := func() error {
@@ -51,16 +53,24 @@ func NewGetAll(config *hazelcast.Config) *cobra.Command {
 			if err = validateFlags(); err != nil {
 				return err
 			}
+			keys := make([]interface{}, len(mapKeys))
+			for i := range mapKeys {
+				if len(mapKeyTypes) != 0 {
+					keys[i], err = internal.ConvertString(mapKeys[i], mapKeyTypes[0])
+					if err != nil {
+						return hzcerrors.NewLoggableError(err, "key type does cannot be converted")
+					}
+					mapKeyTypes = mapKeyTypes[1:]
+				} else {
+					keys[i] = mapKeys[i]
+				}
+			}
+			var entries []types.Entry
 			var m *hazelcast.Map
 			m, err = getMap(cmd.Context(), config, mapName)
 			if err != nil {
 				return err
 			}
-			keys := make([]interface{}, len(mapKeys))
-			for i := range mapKeys {
-				keys[i] = mapKeys[i]
-			}
-			var entries []types.Entry
 			entries, err = m.GetAll(cmd.Context(), keys...)
 			if err != nil {
 				var handled bool
@@ -79,6 +89,7 @@ func NewGetAll(config *hazelcast.Config) *cobra.Command {
 	}
 	decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name")
 	decorateCommandWithMapKeyArrayFlags(cmd, &mapKeys, true, "key(s) of the entry")
+	decorateCommandWithMapKeyTypeArrayFlags(cmd, &mapKeyTypes, false, "type of the key")
 	decorateCommandWithDelimiter(cmd, &delim, false, "delimiter of printed key, value pairs")
 	return cmd
 }
