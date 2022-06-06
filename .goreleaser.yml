@@ -59,10 +59,6 @@ brews:
     # The project name and current git tag are used in the format string.
     commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
 
-    # Caveats for the user of your binary.
-    # Default is empty.
-    caveats: "How to use this binary"
-
     # Your app's homepage.
     # Default is empty.
     homepage: "https://github.com/hazelcast/hazelcast-commandline-client"
