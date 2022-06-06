@@ -38,8 +38,8 @@ const MapPutAllExample = `  # Put key, value pairs to map.
   # Put key, value pairs to map in another order.
   hzc map put-all -n mapname -k k1 -k k2 -v v1 -v v2
   
-  # Put key, value pairs to map but one of the value type is json file.
-  hzc map put-all -n mapname -k k1 -f valueFile.json -t json -k k2 -v v2
+  # Put key, value pairs to map with value types as JSON
+  hzc map put-all -n mapname -k k1 -f valueFile.json -k k2 -v '{"field":"tmp"}' -t json
 
   # Put all key, value pairs to map from the entry json file .
   hzc map put-all -n mapname --json-entry entries.json
