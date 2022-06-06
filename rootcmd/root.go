@@ -80,7 +80,7 @@ func subCommands(config *hazelcast.Config) []*cobra.Command {
 		{Name: "Topic", IssueNum: 53},
 	}
 	for _, fd := range fds {
-		cmds = append(cmds, fakeDoor.MakeFakeCommand(fd))
+		cmds = append(cmds, fakeDoor.NewFakeCommand(fd))
 	}
 	return cmds
 }
@@ -89,7 +89,7 @@ func subCommands(config *hazelcast.Config) []*cobra.Command {
 func assignPersistentFlags(cmd *cobra.Command, flags *config.GlobalFlagValues) {
 	cmd.PersistentFlags().StringVarP(&flags.CfgFile, "config", "c", config.DefaultConfigPath(), fmt.Sprintf("config file, only supports yaml for now"))
 	cmd.PersistentFlags().StringVarP(&flags.Address, "address", "a", "", fmt.Sprintf("addresses of the instances in the cluster (default is %s)", config.DefaultClusterAddress))
-	cmd.PersistentFlags().StringVarP(&flags.Cluster, "cluster-name", "", "", fmt.Sprintf("name of the cluster that contains the instances (default is %s)", config.DefaultClusterName))
+	cmd.PersistentFlags().StringVar(&flags.Cluster, "cluster-name", "", fmt.Sprintf("name of the cluster that contains the instances (default is %s)", config.DefaultClusterName))
 	cmd.PersistentFlags().StringVar(&flags.Token, "cloud-token", "", "your Hazelcast Cloud token")
-	cmd.PersistentFlags().BoolVarP(&flags.Verbose, "verbose", "", false, "verbose output")
+	cmd.PersistentFlags().BoolVar(&flags.Verbose, "verbose", false, "verbose output")
 }

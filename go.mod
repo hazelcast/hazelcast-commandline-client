@@ -3,6 +3,7 @@ module github.com/hazelcast/hazelcast-commandline-client
 go 1.15
 
 require (
+	github.com/alecthomas/assert v0.0.0-20170929043011-405dbfeb8e38
 	github.com/alecthomas/chroma v0.9.2
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/hazelcast/hazelcast-go-client v1.2.0
@@ -20,7 +21,6 @@ require (
 
 // sql browser
 require (
-	github.com/alecthomas/assert v0.0.0-20170929043011-405dbfeb8e38
 	github.com/atotto/clipboard v0.1.4
 	github.com/charmbracelet/bubbles v0.10.3
 	github.com/charmbracelet/bubbletea v0.20.0

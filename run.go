@@ -135,12 +135,12 @@ func HandleError(err error) string {
 	return errStr
 }
 
-func RunCmd(ctx context.Context, root *cobra.Command) error {
+func RunCmd(ctx context.Context, rootCmd *cobra.Command) error {
 	p := make(map[string]string)
 	ctx = internal.ContextWithPersistedNames(ctx, p)
 	ctx, cancel := context.WithCancel(ctx)
 	handleInterrupt(ctx, cancel)
-	return root.ExecuteContext(ctx)
+	return rootCmd.ExecuteContext(ctx)
 }
 
 func handleInterrupt(ctx context.Context, cancel context.CancelFunc) {
