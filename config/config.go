@@ -64,6 +64,7 @@ func DefaultConfig() *Config {
 	hz.Cluster.Unisocket = true
 	hz.Logger.Level = logger.ErrorLevel
 	hz.Cluster.Name = DefaultClusterName
+	hz.Stats.Enabled = true
 	return &Config{Hazelcast: hz}
 }
 
