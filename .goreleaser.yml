@@ -48,9 +48,6 @@ brews:
       owner: hazelcast
       name: homebrew-hz
 
-      # Optionally a token can be provided, if it differs from the token provided to GoReleaser
-      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
-
     # Template for the url which is determined by the given Token (github, gitlab or gitea)
     #
     # Default depends on the client.
