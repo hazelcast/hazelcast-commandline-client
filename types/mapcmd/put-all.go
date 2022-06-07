@@ -186,8 +186,8 @@ func NewPutAll(config *hazelcast.Config) *cobra.Command {
 	decorateCommandWithMapKeyTypeFlags(cmd, &mapKeyType, false)
 	decorateCommandWithMapValueArrayFlags(cmd, &mapValues, false, "value(s) of the map")
 	decorateCommandWithMapValueFileArrayFlags(cmd, &mapValueFiles, false,
-		"`path to the file that contains the value. Use \"-\" (dash) to read from stdin`")
+		`path to the file that contains the value. Use "-" (dash) to read from stdin`)
 	decorateCommandWithMapValueTypeFlags(cmd, &mapValueType, false)
-	decorateCommandWithJSONEntryFlag(cmd, &jsonEntryPath, false, "`path to json file that contains entries`")
+	decorateCommandWithJSONEntryFlag(cmd, &jsonEntryPath, false, `path to json file that contains entries`)
 	return cmd
 }

@@ -27,10 +27,7 @@ import (
 )
 
 const MapPutExample = `  # Put key, value pair to map. ttl/max-idle can be (ns,us,ms,s,m,h)
-  map put --key-type string --key hello --value-type float32 --value 19.94 --name myMap --ttl 3ms --max-idle 4ms
-
-  # Put key, value pair to map but type of the value is accepted as json data.
-  hzc map put -n mapname -k k2 -v v2 -t json`
+  map put --key-type string --key hello --value-type float32 --value 19.94 --name myMap --ttl 1300ms --max-idle 1400ms`
 
 func NewPut(config *hazelcast.Config) *cobra.Command {
 	var (
