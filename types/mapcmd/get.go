@@ -25,8 +25,7 @@ import (
 )
 
 const MapGetExample = `  # Get value of the given key from the map.
-  hzc map get -n mapname -k k1
-  hzc map get --key hello --name myMap
+  hzc map get --key hello --name myMap   # default key-type is string
   hzc map get --key-type int16 --key 2012 --name yearbook`
 
 func NewGet(config *hazelcast.Config) *cobra.Command {

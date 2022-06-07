@@ -26,12 +26,6 @@ import (
 )
 
 const MapGetAllExample = `  # Get matched entries from the map with default delimiter. Default delimiter is the tab character.
-  hzc get-all -n mapname -k k1 -k k2
-
-  # Get matched entries from the map with custom delimiter.
-  hzc get-all -n mapname -k k1 -k k2 --delim ":"
-
-  # Get matched entries with denoted type from the map with custom delimiter.
   hzc get-all -n mapname -k 12 -k 25 --key-type int16 --delim ":"`
 
 func NewGetAll(config *hazelcast.Config) *cobra.Command {
