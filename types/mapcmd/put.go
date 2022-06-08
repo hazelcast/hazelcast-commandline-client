@@ -26,7 +26,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
-const MapPutExample = `  # Put key, value pair to map. ttl/max-idle can be (ns,us,ms,s,m,h)
+const MapPutExample = `  # Put key, value pair to map. The unit for ttl/max-idle is one of (ns,us,ms,s,m,h)
   map put --key-type string --key hello --value-type float32 --value 19.94 --name myMap --ttl 1300ms --max-idle 1400ms`
 
 func NewPut(config *hazelcast.Config) *cobra.Command {
