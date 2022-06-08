@@ -4,3 +4,4 @@ hz-cli
 /dev_scripts/devcontainer.sh
 /dist/
 /hzc
+coverage.out
