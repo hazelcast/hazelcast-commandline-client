@@ -32,8 +32,8 @@ func NewRemove(config *hazelcast.Config) *cobra.Command {
 	)
 	cmd := &cobra.Command{
 		Use:   "remove [--name mapname | --key keyname]",
-		Short: "Remove key(s)",
-		Example: `  # Remove key from the map if it exists.
+		Short: "Remove key",
+		Example: `  # Remove key from the map
   hzc map remove -n mapname -k k1`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			key, err := internal.ConvertString(mapKey, mapKeyType)

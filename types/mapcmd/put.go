@@ -26,35 +26,8 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
-const MapPutExample = `  # Put key, value pair to map.
-  hzc put -n mapname -k k1 -v v1
-
-  # Put key, value pair to map but type of the value is accepted as json data.
-  hzc map put -n mapname -k k2 -v v2 -t json
-  
-  # Put key, value pair to map but the value is given through external file.
-  hzc map put -n mapname -k k3 -f v3.txt
-  
-  # Put key, value pair to map but the value is given through external json file.
-  hzc map put -n mapname -k k4 -f v4.json -t json
-  
-  # Put key, value pair to map with given ttl value
-  hzc map put -n mapname -k k5 -v v5 --ttl 3ms
-  
-  # Put key, value pair to map with given ttl and maxidle values
-  hzc map put -n mapname -k k1 -v v1 --ttl 3ms --max-idle 4ms
-  
-  # Put custom type key and value to map
-  map put --key-type string --key hello --value-type float32 --value 19.94 --name myMap
-
-  # TTL and Maxidle:
-  ttl and maxidle values cannot be less than a second when it is converted to second from any time unit. Supported units are;
-    - Nanosecond  (ns)
-    - Microsecond (μs)
-    - Millisecond (ms)
-    - Second      (s)
-    - Minute      (m)
-    - Hour        (h)`
+const MapPutExample = `  # Put key, value pair to map. The unit for ttl/max-idle is one of (ns,us,ms,s,m,h)
+  map put --key-type string --key hello --value-type float32 --value 19.94 --name myMap --ttl 1300ms --max-idle 1400ms`
 
 func NewPut(config *hazelcast.Config) *cobra.Command {
 	var (

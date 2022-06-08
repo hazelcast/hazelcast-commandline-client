@@ -32,37 +32,12 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
-const MapPutAllExample = `  # Put key, value pairs to map.
-  hzc map put-all -n mapname -k k1 -v v1 -k k2 -v v2
-  
-  # Put key, value pairs to map in another order.
-  hzc map put-all -n mapname -k k1 -k k2 -v v1 -v v2
-  
-  # Put key, value pairs to map with value types as JSON (default type string)
-  hzc map put-all -n mapname -k k1 -f valueFile.json -k k2 -v '{"field":"tmp"}' -t json
-
-  # Put key, value pairs while specifying types of both keys and values
+const MapPutAllExample = `  # Put key, value pairs while specifying types of both keys and values
+  # Keys and values are matched with the given order
   hzc map put-all -n mapname --key-type int16 -k 1 -k 2 --value-type json -f valueFile.json -v '{"field":"tmp"}' 
 
-  # Put all key, value pairs to map from the entry json file .
+  # Put all key, value pairs to map from the entry json file. Null values are ignored.
   hzc map put-all -n mapname --json-entry entries.json
-
-  # Example json entry file
-  {
-    "key1": "value1",
-    "key2": {
-      "innerData": "data",
-      "anotherInnerData": 5.0
-    },
-    "key3": true,
-    "key4": [1, 2, 3, 4, 5]
-  }
-  - Entries with "null" values are being ignored.
-  
-  # Coupling rule of keys and values given in different order
-  - Keys and values are coupled according to the order they are provided. That means the first given key will be matched with the first given 
-  value from left to right. Therefore, keys and values (given through file or directly from the command line) must be equal in number.
-  - Given key type or value type applied to all entries. For the missing type, string is accepted as a type.
 `
 
 func NewPutAll(config *hazelcast.Config) *cobra.Command {
@@ -211,8 +186,8 @@ func NewPutAll(config *hazelcast.Config) *cobra.Command {
 	decorateCommandWithMapKeyTypeFlags(cmd, &mapKeyType, false)
 	decorateCommandWithMapValueArrayFlags(cmd, &mapValues, false, "value(s) of the map")
 	decorateCommandWithMapValueFileArrayFlags(cmd, &mapValueFiles, false,
-		"`path to the file that contains the value. Use \"-\" (dash) to read from stdin`")
+		`path to the file that contains the value. Use "-" (dash) to read from stdin`)
 	decorateCommandWithMapValueTypeFlags(cmd, &mapValueType, false)
-	decorateCommandWithJSONEntryFlag(cmd, &jsonEntryPath, false, "`path to json file that contains entries`")
+	decorateCommandWithJSONEntryFlag(cmd, &jsonEntryPath, false, `path to json file that contains entries`)
 	return cmd
 }

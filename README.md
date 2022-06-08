@@ -262,6 +262,7 @@ hzc --address <ADDRESSES> --cluster-name <YOUR_CLUSTER_NAME>
 
 ### Requirements
 * Go 1.15 or better
+* Make
  
 ### Download the repository using Git
 ```
@@ -272,5 +273,5 @@ git clone https://github.com/hazelcast/hazelcast-commandline-client.git
 
 ```
 cd hazelcast-commandline-client
-go build -o hzc github.com/hazelcast/hazelcast-commandline-client
+make
 ```

@@ -23,13 +23,13 @@ import (
 )
 
 const MapUseExample = `  hzc map use m1    # sets the default map name to m1 unless set explicitly
-  hzc map get --key k1    # --name m1\" is inferred
+  hzc map get --key k1    # "--name m1" is inferred
   hzc map use --reset	  # resets the behaviour`
 
 func NewUse() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     `use [map-name | --reset]`,
-		Short:   "sets default map name",
+		Short:   "sets the default map name (interactive-mode only)",
 		Example: MapUseExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			persister := internal.PersistedNamesFromContext(cmd.Context())
