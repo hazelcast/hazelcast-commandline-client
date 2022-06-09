@@ -39,6 +39,7 @@ const (
 )
 
 type SSLConfig struct {
+	Enabled            bool
 	ServerName         string
 	InsecureSkipVerify bool
 	CAPath             string
@@ -151,24 +152,16 @@ func DefaultConfigPath() string {
 }
 
 func updateConfigWithSSL(config *hazelcast.Config, sslc *SSLConfig) error {
-	var emptySSLConfig SSLConfig
-	if *sslc == emptySSLConfig {
+	if !sslc.Enabled {
 		// SSL configuration is not set, skip
 		return nil
 	}
-	var tlsc *tls.Config
-	if sslc.ServerName != "" {
-		tlsc = &tls.Config{ServerName: sslc.ServerName}
-	} else if sslc.InsecureSkipVerify {
-		tlsc = &tls.Config{InsecureSkipVerify: true}
-	} else if config.Cluster.Cloud.Enabled {
-		tlsc = &tls.Config{ServerName: DefaultCloudServerName}
+	if config.Cluster.Cloud.Enabled && sslc.ServerName == "" {
+		sslc.ServerName = DefaultCloudServerName
 	}
 	csslc := &config.Cluster.Network.SSL
-	if tlsc != nil {
-		csslc.SetTLSConfig(tlsc)
-		csslc.Enabled = true
-	}
+	csslc.SetTLSConfig(&tls.Config{ServerName: sslc.ServerName, InsecureSkipVerify: sslc.InsecureSkipVerify})
+	csslc.Enabled = true
 	if sslc.CAPath != "" {
 		if err := csslc.SetCAPath(sslc.CAPath); err != nil {
 			return err
