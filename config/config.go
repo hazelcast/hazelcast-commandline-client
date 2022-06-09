@@ -156,9 +156,6 @@ func updateConfigWithSSL(config *hazelcast.Config, sslc *SSLConfig) error {
 		// SSL configuration is not set, skip
 		return nil
 	}
-	if sslc.ServerName != "" && sslc.InsecureSkipVerify {
-		return fmt.Errorf("SSL.ServerName and SSL.InsecureSkipVerify are mutually exclusive")
-	}
 	var tlsc *tls.Config
 	if sslc.ServerName != "" {
 		tlsc = &tls.Config{ServerName: sslc.ServerName}
