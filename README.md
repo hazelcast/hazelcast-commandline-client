@@ -205,7 +205,6 @@ hazelcast:
 Cloud SSL configuration:
 ```
 ssl:
-    servername: "hazelcast.cloud"
     capath: "/tmp/ca.pem"
     certpath: "/tmp/cert.pem"
     keypath: "/tmp/key.pem"

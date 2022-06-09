@@ -92,6 +92,9 @@ func mergeFlagsWithConfig(flags *GlobalFlagValues, config *Config) error {
 	if flags.Token != "" {
 		config.Hazelcast.Cluster.Cloud.Token = strings.TrimSpace(flags.Token)
 		config.Hazelcast.Cluster.Cloud.Enabled = true
+		if config.SSL.ServerName == "" && !config.SSL.InsecureSkipVerify {
+			config.SSL.ServerName = "hazelcast.cloud"
+		}
 	}
 	if err := updateConfigWithSSL(&config.Hazelcast, &config.SSL); err != nil {
 		return hzcerrors.NewLoggableError(err, "can not configure ssl")
@@ -103,10 +106,6 @@ func mergeFlagsWithConfig(flags *GlobalFlagValues, config *Config) error {
 	}
 	if flags.Cluster != "" {
 		config.Hazelcast.Cluster.Name = strings.TrimSpace(flags.Cluster)
-	}
-	if config.Hazelcast.Cluster.Cloud.Enabled {
-		config.SSL.ServerName = "hazelcast.cloud"
-		config.SSL.InsecureSkipVerify = false
 	}
 	// must return nil err
 	verboseWeight, _ := logger.WeightForLogLevel(logger.DebugLevel)
