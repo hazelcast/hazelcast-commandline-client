@@ -115,14 +115,14 @@ func printValueBasedOnType(cmd *cobra.Command, value interface{}) {
 	case serialization.JSON:
 		if err = quick.Highlight(cmd.OutOrStdout(), fmt.Sprintln(v),
 			"json", "terminal", "tango"); err != nil {
-			cmd.Println(v.String())
+			fmt.Println(v.String())
 		}
 	default:
 		if v == nil {
-			cmd.Println("There is no value corresponding to the provided key")
+			fmt.Println("There is no value corresponding to the provided key")
 			break
 		}
-		cmd.Println(v)
+		fmt.Println(v)
 	}
 }
 
