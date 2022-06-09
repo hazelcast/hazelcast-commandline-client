@@ -167,6 +167,7 @@ The cluster creation and retrieving connection info can be done directly in comm
 You can use the following configuration file to enable SSL support:
 ```
 ssl:
+    enabled: true
     servername: "HOSTNAME-FOR-SERVER"
     # or: insecureskipverify: true
 hazelcast:
@@ -184,6 +185,7 @@ hazelcast:
 Mutual authentication is also supported:
 ```
 ssl:
+    enabled: true
     servername: "HOSTNAME-FOR-SERVER"
     # insecureskipverify: true
     capath: "/tmp/ca.pem"
@@ -205,6 +207,7 @@ hazelcast:
 Cloud SSL configuration:
 ```
 ssl:
+    enabled: true
     capath: "/tmp/ca.pem"
     certpath: "/tmp/cert.pem"
     keypath: "/tmp/key.pem"
