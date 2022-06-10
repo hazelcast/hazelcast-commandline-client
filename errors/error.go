@@ -126,7 +126,7 @@ func (e LoggableError) VerboseError() string {
 	if e.err == nil {
 		return fmt.Sprintln(e.msg)
 	}
-	return fmt.Sprintf("%s\nDetails: %s", e.msg, e.err)
+	return fmt.Sprintf("%s\nDetails: %s", e.msg, e.err.Error())
 }
 
 func (e LoggableError) Unwrap() error {

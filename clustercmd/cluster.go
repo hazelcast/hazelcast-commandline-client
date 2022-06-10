@@ -68,7 +68,7 @@ func New(config *hazelcast.Config) *cobra.Command {
 				if err != nil {
 					return err
 				}
-				cmd.Println(*result)
+				fmt.Println(*result)
 				return nil
 			},
 		})
@@ -92,7 +92,7 @@ func NewChangeState(config *hazelcast.Config) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			cmd.Println(*result)
+			fmt.Println(*result)
 			return nil
 		},
 	}

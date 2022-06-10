@@ -33,11 +33,13 @@ import (
 
 const defaultConfigFilename = "config.yaml"
 const (
-	DefaultClusterAddress = "localhost:5701"
-	DefaultClusterName    = "dev"
+	DefaultClusterAddress  = "localhost:5701"
+	DefaultClusterName     = "dev"
+	DefaultCloudServerName = "hazelcast.cloud"
 )
 
 type SSLConfig struct {
+	Enabled            bool
 	ServerName         string
 	InsecureSkipVerify bool
 	CAPath             string
@@ -104,10 +106,6 @@ func mergeFlagsWithConfig(flags *GlobalFlagValues, config *Config) error {
 	if flags.Cluster != "" {
 		config.Hazelcast.Cluster.Name = strings.TrimSpace(flags.Cluster)
 	}
-	if config.Hazelcast.Cluster.Cloud.Enabled {
-		config.SSL.ServerName = "hazelcast.cloud"
-		config.SSL.InsecureSkipVerify = false
-	}
 	// must return nil err
 	verboseWeight, _ := logger.WeightForLogLevel(logger.DebugLevel)
 	confLevel := config.Hazelcast.Logger.Level
@@ -154,20 +152,16 @@ func DefaultConfigPath() string {
 }
 
 func updateConfigWithSSL(config *hazelcast.Config, sslc *SSLConfig) error {
-	if sslc.ServerName != "" && sslc.InsecureSkipVerify {
-		return fmt.Errorf("SSL.ServerName and SSL.InsecureSkipVerify are mutually exclusive")
+	if !sslc.Enabled {
+		// SSL configuration is not set, skip
+		return nil
 	}
-	var tlsc *tls.Config
-	if sslc.ServerName != "" {
-		tlsc = &tls.Config{ServerName: sslc.ServerName}
-	} else if sslc.InsecureSkipVerify {
-		tlsc = &tls.Config{InsecureSkipVerify: true}
+	if config.Cluster.Cloud.Enabled && sslc.ServerName == "" {
+		sslc.ServerName = DefaultCloudServerName
 	}
 	csslc := &config.Cluster.Network.SSL
-	if tlsc != nil {
-		csslc.SetTLSConfig(tlsc)
-		csslc.Enabled = true
-	}
+	csslc.SetTLSConfig(&tls.Config{ServerName: sslc.ServerName, InsecureSkipVerify: sslc.InsecureSkipVerify})
+	csslc.Enabled = true
 	if sslc.CAPath != "" {
 		if err := csslc.SetCAPath(sslc.CAPath); err != nil {
 			return err

@@ -17,6 +17,8 @@
 package mapcmd
 
 import (
+	"fmt"
+
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/types"
 	"github.com/spf13/cobra"
@@ -73,7 +75,7 @@ func NewGetAll(config *hazelcast.Config) *cobra.Command {
 				return hzcerrors.NewLoggableError(err, "Cannot get entries for the given keys for map %s", mapName)
 			}
 			for _, entry := range entries {
-				cmd.Print(entry.Key, delim)
+				fmt.Print(entry.Key, delim)
 				printValueBasedOnType(cmd, entry.Value)
 			}
 			return nil
