@@ -28,7 +28,7 @@ brew install hazelcast-commandline-client
 ### Installation with script
 
 ```
-curl https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/v1.0.0-beta1/scripts/install.sh | bash
+curl https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/scripts/install.sh | bash
 ```
   
 ## Uninstallation
