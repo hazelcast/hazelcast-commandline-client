@@ -9,7 +9,7 @@ There are two ways you can install the command line client:
 ### Installing with Brew [Recommended]
 
 ```
-brew tap utku-caglayan/hazelcast-clc
+brew tap hazelcast/homebrew-hz
 brew install hazelcast-commandline-client
 ```
 **To have a superior experience, enable autocompletion on Brew:**
@@ -39,7 +39,7 @@ Depending on how you install the command line client, choose the uninstallation 
 
 ```
 brew uninstall hazelcast-commandline-client
-brew untap utku-caglayan/hazelcast-clc
+brew untap hazelcast/homebrew-hz
 ```
 
 ### Uninstallation using script
