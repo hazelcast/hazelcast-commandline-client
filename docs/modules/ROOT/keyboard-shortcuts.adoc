@@ -7,7 +7,7 @@
 |===
 |Key Binding|Description
 
-kbd:[Ctrl + A]
+|kbd:[Ctrl + A]
 |Go to the beginning of the line.
 
 |kbd:[Ctrl + E]
