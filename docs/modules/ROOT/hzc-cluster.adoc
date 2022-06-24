@@ -1,0 +1,15 @@
+= hzc cluster
+
+// see https://docs.hazelcast.com/hazelcast/5.2-snapshot/clients/clc#cluster
+
+== Commands
+
+// table of all hzc cluster commands with descriptions and anchor links
+
+== hzc cluster change-state
+
+== hzc cluster get-state
+
+== hzc cluster shutdown
+
+== hzc cluster version

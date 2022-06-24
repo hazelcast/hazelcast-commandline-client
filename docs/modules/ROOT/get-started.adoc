@@ -1,0 +1,9 @@
+= Get Started with Hazelcast CLC
+
+You can use Hazelcast CLC to manage Hazelcast Cloud clusters or self-managed installations of Hazelcast Platform.
+
+Choose the Hazelcast product that you want to use:
+
+- Hazelcast Cloud
+- Hazelcast Platform
+

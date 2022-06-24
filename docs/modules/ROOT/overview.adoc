@@ -1,0 +1,9 @@
+= Hazelcast Command-Line Client (CLC)
+:description: Short description with main points
+
+What does the product do?
+what are some examples of where you’d use it?
+Who is it for?
+What problem does the product solve?
+What modes are available and what are they?
+How do you get started?

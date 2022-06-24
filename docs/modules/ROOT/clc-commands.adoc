@@ -1,0 +1,21 @@
+= hzc
+:description: The `hzc` command comes with subcommands for managing many aspects of a Hazelcast cluster.
+
+{description}
+
+== Commands
+
+[cols="1m,2a"]
+|===
+|Command|Description
+
+|xref:hzc-map.adoc[hzc map]
+|Manage map data structures.
+
+|xref:hzc-cluster.adoc[hzc cluster]
+|Manage a Hazelcast cluster.
+
+|xref:hzc-sql.adoc[hzc sql]
+|Execute SQL queries.
+
+|===
