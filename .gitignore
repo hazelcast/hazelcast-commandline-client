@@ -5,3 +5,7 @@ hz-cli
 /dist/
 /hzc
 coverage.out
+package-lock.json
+/docs/test/
+/docs/node_modules/
+.DS_Store

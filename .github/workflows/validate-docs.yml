@@ -1,0 +1,31 @@
+# This workflow will check if the incoming pull request includes any broken links
+
+name: Check for dead links
+
+on:
+  pull_request:
+    paths:
+      - 'docs/**'
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  check-links:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v1
+      with:
+        node-version: 10
+    - name: Check for broken internal links
+      run: |
+        npm i
+        npm run-script check-links-local
+    - name: Check for broken external links
+      run: |
+        sudo apt-get update && sudo apt-get install wget libtinfo5 -y
+        wget https://github.com/smallhadroncollider/brok/releases/download/1.1.0/brok-1.1.0_x86-64-linux.deb
+        sudo dpkg -i brok-1.1.0_x86-64-linux.deb
+        brok --only-failures --interval 500 --ignore $(cat .brok-ignore-links) $(find . -type f -name "*.adoc")
