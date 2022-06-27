@@ -1,0 +1,37 @@
+site:
+  title: Documentation
+  url: http:localhost:5000
+content:
+  sources: 
+  - url: ..
+    branches: HEAD
+    start_path: ./docs
+  - url: https://github.com/hazelcast/management-center-docs
+    branches: [main, v/*]
+    start_path: docs
+  - url: https://github.com/hazelcast/cloud-docs
+    branches: [main]
+    start_path: docs
+  - url: https://github.com/hazelcast/hazelcast-platform-operator-docs
+    branches: [main, v/*]
+    start_path: docs
+  - url: https://github.com/hazelcast/hz-docs
+    branches: [main, v/*]
+    start_path: docs
+ui: 
+  bundle:
+    url: https://github.com/hazelcast/hazelcast-docs-ui/releases/download/v2.2/ui-bundle.zip #../hazelcast-docs-ui/build/ui-bundle.zip
+    snapshot: true
+asciidoc:
+  attributes:
+    # Download images from kroki at build time (does not work for inline images)
+    kroki-fetch-diagram: true
+    # Inlude next and previous links on each page
+    page-pagination: true
+    idprefix: ''
+    # Separate anchor link names by dashes
+    idseparator: '-'
+    page-survey: https://www.surveymonkey.co.uk/r/NYGJNF9
+  extensions:
+    - ./tabs-block.js
+    - asciidoctor-kroki

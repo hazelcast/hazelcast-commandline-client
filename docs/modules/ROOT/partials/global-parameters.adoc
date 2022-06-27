@@ -1,4 +1,3 @@
-.Global parameters
 [cols="1m,2a,1m"]
 |===
 |Parameter|Description|Default

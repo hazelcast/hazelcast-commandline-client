@@ -1,0 +1,18 @@
+.Get Started
+* xref:overview.adoc[What is Hazelcast CLC?]
+* xref:get-started.adoc[Tutorial]
+
+.Manage
+* xref:install-clc.adoc[Installation]
+* xref:configure-clc.adoc[Configuration]
+* xref:upgrade-clc.adoc[Upgrade]
+
+.Reference
+* xref:clc-commands.adoc[]
+** xref:hzc-cluster.adoc[]
+** xref:hzc-map.adoc[]
+** xref:hzc-sql.adoc[]
+* xref:keyboard-shortcuts.adoc[]
+
+.Release Notes
+* xref:release-notes.adoc[]

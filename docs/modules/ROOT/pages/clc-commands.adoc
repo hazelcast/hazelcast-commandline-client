@@ -1,5 +1,5 @@
 = hzc
-:description: The `hzc` command comes with subcommands for managing many aspects of a Hazelcast cluster.
+:description: pass:q[The `hzc` command comes with subcommands for managing many aspects of a Hazelcast cluster.]
 
 {description}
 
