@@ -21,6 +21,7 @@ jobs:
         node-version: 10
     - name: Check for broken internal links
       run: |
+        cd docs
         npm i
         npm run-script check-links-local
     - name: Check for broken external links
