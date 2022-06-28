@@ -31,7 +31,7 @@ You can override the values in the configuration file by providing the following
 Platform:: 
 + 
 --
-include::partial$global-parameters.adoc[!*]
+include::partial$global-parameters.adoc[tag=!*]
 --
 Cloud:: 
 + 
