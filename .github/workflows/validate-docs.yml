@@ -21,11 +21,6 @@ jobs:
         node-version: 10
     - name: Check for broken internal links
       run: |
+        cd docs
         npm i
         npm run-script check-links-local
-    - name: Check for broken external links
-      run: |
-        sudo apt-get update && sudo apt-get install wget libtinfo5 -y
-        wget https://github.com/smallhadroncollider/brok/releases/download/1.1.0/brok-1.1.0_x86-64-linux.deb
-        sudo dpkg -i brok-1.1.0_x86-64-linux.deb
-        brok --only-failures --interval 500 --ignore $(cat .brok-ignore-links) $(find . -type f -name "*.adoc")
