@@ -64,7 +64,7 @@ To automate some elements of the build process, this repository includes the fol
 
 |build-site.yml
 |Builds the production documentation site by sending a build hook to Netlify (the hosting platform that we use)
-|On a push to the `main` branch and any `v/` maintenance branches
+|On a push to the `main` branch and any `.z` maintenance branches
 |===
 
 == Contributing
