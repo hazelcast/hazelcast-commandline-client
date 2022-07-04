@@ -1,18 +1,22 @@
 .Get Started
 * xref:overview.adoc[What is Hazelcast CLC?]
-* xref:get-started.adoc[Tutorial]
+* xref:get-started.adoc[Get Started]
+** xref:clc-viridian.adoc[Hazelcast Viridian]
+** xref:clc-platform.adoc[Hazelcast Platform]
 
 .Manage
-* xref:install-clc.adoc[Installation]
-* xref:configure-clc.adoc[Configuration]
+* xref:install-clc.adoc[Install]
+* xref:configuration.adoc[Configure]
+** xref:connect-to-viridian[Connect to Viridian]
+** xref:connect-to-platform[Connect to Platform]
 * xref:upgrade-clc.adoc[Upgrade]
 
 .Reference
-* xref:clc-commands.adoc[]
+* xref:clc-commands.adoc[Commands]
 ** xref:hzc-cluster.adoc[]
 ** xref:hzc-map.adoc[]
 ** xref:hzc-sql.adoc[]
 * xref:keyboard-shortcuts.adoc[]
 
 .Release Notes
-* xref:release-notes.adoc[]
+* xref:release-notes.adoc[0.1]

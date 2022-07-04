@@ -12,7 +12,7 @@
 
 // tag::cloud-token[]
 |--cloud-token
-|Hazelcast Cloud discovery token.
+|{hazelcast-cloud} discovery token.
 |-
 // end::cloud-token[]
 

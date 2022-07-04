@@ -6,4 +6,9 @@ what are some examples of where you’d use it?
 Who is it for?
 What problem does the product solve?
 What modes are available and what are they?
+What (if any) limitations does the product have?
 How do you get started?
+
+== Limitations
+
+- *Client Authentication:* Hazelcast CLC supports only simple authentication for Hazelcast Platform. Hazelcast CLC does not currently support any other client authentication.

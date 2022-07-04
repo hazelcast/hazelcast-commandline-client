@@ -32,6 +32,7 @@ asciidoc:
     # Separate anchor link names by dashes
     idseparator: '-'
     page-survey: https://www.surveymonkey.co.uk/r/NYGJNF9
+    hazelcast-cloud: Hazelcast Viridian
   extensions:
     - ./tabs-block.js
     - asciidoctor-kroki

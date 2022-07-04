@@ -2,6 +2,8 @@
 
 // see https://docs.hazelcast.com/hazelcast/5.2-snapshot/clients/clc#cluster
 
+NOTE: You cannot use these commands on {hazelcast-cloud} clusters. To manage these clusters, using the command-line, see link:https://github.com/hazelcast/hazelcast-cloud-cli[{hazelcast-cloud} CLI].
+
 == Commands
 
 // table of all hzc cluster commands with descriptions and anchor links
