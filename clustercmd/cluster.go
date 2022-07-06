@@ -59,6 +59,8 @@ func New(config *hazelcast.Config) *cobra.Command {
 		},
 	}
 	for _, sc := range subCmds {
+		// copy to use it in the inner func
+		sc := sc
 		cmd.AddCommand(&cobra.Command{
 			Use:   sc.command,
 			Short: sc.info,
