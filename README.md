@@ -169,7 +169,7 @@ You can use the following configuration file to enable SSL support:
 ssl:
     enabled: true
     servername: "HOSTNAME-FOR-SERVER"
-    # or: insecureskipverify: true
+    # [UNSAFE] or: insecureskipverify: true
 hazelcast:
   cluster:
     security:
