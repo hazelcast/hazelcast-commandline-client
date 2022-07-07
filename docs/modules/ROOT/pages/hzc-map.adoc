@@ -1,0 +1,22 @@
+= hzc map
+:description: 
+
+// see https://docs.hazelcast.com/hazelcast/5.2-snapshot/clients/clc#map
+
+== Commands
+
+// table of all hzc map commands with descriptions and anchor links
+
+== hzc map clear
+
+== hzc map get
+
+== hzc map get-all
+
+== hzc map put
+
+== hzc map put-all
+
+== hzc map remove
+
+== hzc map use

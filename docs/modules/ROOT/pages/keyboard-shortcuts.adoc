@@ -1,0 +1,55 @@
+= Keyboard Shortcuts
+:description: Hazelcast CLC supports the following keyboard shortcuts.
+
+{description}
+
+[cols="1a,2a"]
+|===
+|Key Binding|Description
+
+|kbd:[Ctrl + A]
+|Go to the beginning of the line.
+
+|kbd:[Ctrl + E]
+|Go to the end of the line.
+
+|kbd:[Ctrl + P]
+|Previous command.
+
+|kbd:[Ctrl + N]
+|Next command.
+
+|kbd:[Ctrl + F]
+|Forward one character.
+
+|kbd:[Ctrl + B]
+|Backward one character.
+
+|kbd:[Ctrl + D]
+|Delete character under the cursor.
+
+|kbd:[Ctrl + H]
+|Delete character before the cursor.
+
+|kbd:[Ctrl + W]
+|Cut the word before the cursor to the clipboard.
+
+|kbd:[Ctrl + K]
+|Cut the line after the cursor to the clipboard.
+
+|kbd:[Ctrl + U]
+|Cut the line before the cursor to the clipboard.
+
+|kbd:[Ctrl + L]
+|Clear the screen.
+
+|kbd:[Ctrl + C]
+|Cancel running command or close the app.
+
+|kbd:[Ctrl + ->]
+|Go to the end of to next word.
+
+|kbd:[Ctrl + <-]
+|Go to the start of the previous word.
+
+|===

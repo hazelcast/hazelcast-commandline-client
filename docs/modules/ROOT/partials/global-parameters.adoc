@@ -1,0 +1,19 @@
+[cols="1m,2a,1m"]
+|===
+|Parameter|Description|Default
+
+|--address -a
+|Addresses of one or more members in the cluster.
+|localhost:5701
+
+|--cluster-name
+|Name of the cluster to connect to.
+|dev
+
+// tag::cloud-token[]
+|--cloud-token
+|{hazelcast-cloud} discovery token.
+|-
+// end::cloud-token[]
+
+|===

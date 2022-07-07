@@ -1,0 +1,7 @@
+= Release Notes Hazelcast CLC {page-component-version}
+
+== Features
+
+== Fixes
+
+== Known issues

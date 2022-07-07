@@ -1,0 +1,78 @@
+= Hazelcast CLC Documentation
+// Settings:
+ifdef::env-github[]
+:warning-caption: :warning:
+endif::[]
+// URLs:
+:url-org: https://github.com/hazelcast
+:url-contribute: https://github.com/hazelcast/hazelcast-docs/blob/develop/.github/CONTRIBUTING.adoc
+:url-ui: {url-org}/hazelcast-docs-ui
+:url-playbook: {url-org}/hazelcast-docs
+:url-staging: 
+:url-cc: https://creativecommons.org/licenses/by-nc-sa/3.0/
+:url-hz-docs: {url-org}/hz-docs
+:url-mc-docs: {url-org}/management-center-docs
+
+image:https://img.shields.io/badge/Build-Staging-yellow[link="{url-staging}"]
+
+This directory contains the Antora components for the Hazelcast CLC documentation.
+
+The documentation source files are marked up with AsciiDoc.
+
+== Docs Structure
+
+This section describes some important information about how this repository is structured:
+
+- The component name, version, and start page are configured in each branch's `antora.yml` file.
+- The navigation for all modules is stored in the ROOT module's `nav.adoc` file.
+
+////
+== Release Workflow
+
+// Describe how versioning works for this project.
+
+=== Snapshot Releases
+
+// Describe the docs release process when a new snapshot version is released.
+
+=== Latest Releases
+
+// Describe the docs release process when a new major or minor version is released.
+
+=== Patch Releases
+
+// Describe the docs release process when a new patch version is released.
+
+=== Creating Release Branches
+
+// Describe the process for creating release branches.
+
+////
+
+== GitHub Actions
+
+To automate some elements of the build process, this repository includes the following GitHub Actions:
+
+.GitHub Actions
+[cols="m,a,a"]
+|===
+|File |Description |Triggers
+
+|validate-site.yml
+|Validates that all internal and external links are working
+|On a pull request to the `main`, and `.z` maintenance branches
+
+|build-site.yml
+|Builds the production documentation site by sending a build hook to Netlify (the hosting platform that we use)
+|On a push to the `main` branch and any `.z` maintenance branches
+|===
+
+== Contributing
+
+If you want to add a change or contribute new content, see our link:.github/CONTRIBUTING.adoc[contributing guide].
+
+To let us know about something that you'd like us to change, consider creating an issue.
+
+== License
+
+All documentation is available under the terms of a link:{url-cc}[Creative Commons License]
