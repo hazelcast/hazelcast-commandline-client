@@ -1,12 +1,13 @@
-# Hazelcast CLC
+# Hazelcast CLC (Command Line Client)
 
 ## Installation
 
 There are two ways you can install the command line client:
-* Using [Brew](https://brew.sh) [**Recommended**]
-* Using script installation
+* Using [Brew](https://brew.sh) (**Recommended for MacOS**)
+* Using script installation (Linux, MacOS)
+* Currently we don't provide automated Windows installation. See [Building from source](#building-from-source).
 
-### Installing with Brew [Recommended]
+### Installing with Brew
 
 ```
 brew tap hazelcast/homebrew-hz
@@ -66,29 +67,29 @@ hzc map --name myMap put --key myKey --value myValue
 
 Emacs-like keyboard shortcuts are available by default (these also are the default shortcuts in Bash shell).
 
-Key Binding          | Description
----------------------|---------------------------------------------------------
-<kbd>Ctrl + A</kbd>  | Go to the beginning of the line (Home)
-<kbd>Ctrl + E</kbd>  | Go to the end of the line (End)
-<kbd>Ctrl + P</kbd>  | Previous command (Up arrow)
-<kbd>Ctrl + N</kbd>  | Next command (Down arrow)
-<kbd>Ctrl + F</kbd>  | Forward one character
-<kbd>Ctrl + B</kbd>  | Backward one character
-<kbd>Ctrl + D</kbd>  | Delete character under the cursor
-<kbd>Ctrl + H</kbd>  | Delete character before the cursor (Backspace)
-<kbd>Ctrl + W</kbd>  | Cut the word before the cursor to the clipboard
-<kbd>Ctrl + K</kbd>  | Cut the line after the cursor to the clipboard
-<kbd>Ctrl + U</kbd>  | Cut the line before the cursor to the clipboard
-<kbd>Ctrl + L</kbd>  | Clear the screen
+| Key Binding         | Description                                     |
+|---------------------|-------------------------------------------------|
+| <kbd>Ctrl + A</kbd> | Go to the beginning of the line (Home)          |
+| <kbd>Ctrl + E</kbd> | Go to the end of the line (End)                 |
+| <kbd>Ctrl + P</kbd> | Previous command (Up arrow)                     |
+| <kbd>Ctrl + N</kbd> | Next command (Down arrow)                       |
+| <kbd>Ctrl + F</kbd> | Forward one character                           |
+| <kbd>Ctrl + B</kbd> | Backward one character                          |
+| <kbd>Ctrl + D</kbd> | Delete character under the cursor               |
+| <kbd>Ctrl + H</kbd> | Delete character before the cursor (Backspace)  |
+| <kbd>Ctrl + W</kbd> | Cut the word before the cursor to the clipboard |
+| <kbd>Ctrl + K</kbd> | Cut the line after the cursor to the clipboard  |
+| <kbd>Ctrl + U</kbd> | Cut the line before the cursor to the clipboard |
+| <kbd>Ctrl + L</kbd> | Clear the screen                                |
+
 \
 With few additions:
 
-Key Binding          | Description
----------------------|---------------------------------------------------------
-<kbd>Ctrl + C</kbd>  | Cancel running command or close the app
-<kbd>Ctrl + -></kbd>  | Go to the end of to next word
-<kbd>Ctrl + <-</kbd>  | Go to the start of the previous word
-
+| Key Binding          | Description                             |
+|----------------------|-----------------------------------------|
+| <kbd>Ctrl + C</kbd>  | Cancel running command or close the app |
+| <kbd>Ctrl + -></kbd> | Go to the end of to next word           |
+| <kbd>Ctrl + <-</kbd> | Go to the start of the previous word    |
 
 ## Connecting to Hazelcast Cloud
 
@@ -261,18 +262,35 @@ e.g. 192.168.1.1:5702,192.168.1.2:5703,192.168.1.3:5701
 hzc --address <ADDRESSES> --cluster-name <YOUR_CLUSTER_NAME>
 ```
 
-## Build from source
+## Building from source
+
+The following targets are tested and supported.
+The prior versions of the given targets would also work, but that's not tested. 
+
+* Ubuntu 18.04 or better.
+* MacOS 12 or better.
+* Windows 10 or better.
 
 ### Requirements
-* Go 1.15 or better
-* Make
+
+* Go 1.18 or better
+* GNU Make (on Linux and MacOS)
  
-### Download the repository using Git
+### 1. Download the source
+
+You can acquire the source using Git:
+
 ```
 git clone https://github.com/hazelcast/hazelcast-commandline-client.git
 ```
 
-### Then, build the project
+Or download the source archive and extract it:
+
+```
+https://github.com/hazelcast/hazelcast-commandline-client/archive/refs/heads/main.zip
+```
+
+### 2. Build the project
 
 ```
 cd hazelcast-commandline-client
