@@ -2,3 +2,65 @@
 :description: The Hazelcast Command-Line Client (CLC) is available to install in macOS and Linux environments.
 
 // See https://docs.hazelcast.com/hazelcast/5.2-snapshot/clients/clc#installing-the-hazelcast-clc
+
+{description}
+
+== Before You Begin
+
+There are two ways you can install the command-line client (CLC):
+
+* Using brew (recommended): Follow the instructions https://docs.brew.sh/Installation[here] if it is not installed on your macOS or Linux computer.
+* Using curl script: curl is readily available on macOS computers. For Linux, follow the instructions https://everything.curl.dev/get/linux[here]
+if it is not already installed.
+
+== Installing with Brew
+
+[source,bash]
+----
+brew tap hazelcast/homebrew-hz
+brew install hazelcast-commandline-client
+----
+
+To have a superior experience, you can enable autocompletion on Brew: ???WHY DO WE NEED AUTOCOMPLETION????
+
+* For Bash users:
++
+** Execute brew install bash-completion and follow the printed "Caveats" section. Example instruction: Add the following line to your `~/.bash_profile`:
++
+[source,plain]
+----
+[[ -r "/home/ubuntu/.linuxbrew/etc/profile.d/bash_completion.sh" ]] && . "/home/ubuntu/.linuxbrew/etc/profile.d/bash_completion.sh"
+----
++
+Note that paths may differ depending on your installation, so you should follow the Caveats section on your system.
+* For Zsh users
++
+** Follow the instructions https://docs.brew.sh/Shell-Completion#configuring-completions-in-zsh[here].
+
+== Installing with curl Script
+
+[source,plain]
+----
+curl https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/scripts/install.sh | bash
+----
+
+== Uninstalling
+
+Depending on how you've installed CLC, choose the appropriate uninstallation option.
+
+* Using brew (if you've installed with brew)
++
+[source,bash]
+----
+brew uninstall hazelcast-commandline-client
+brew untap hazelcast/homebrew-hz
+----
+* Using script (if you've installed with curl script):
++
+[source,shell]
+----
+~/.local/share/hz-cli/bin/uninstall.sh
+----
+
+
+
