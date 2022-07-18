@@ -1,4 +1,4 @@
-= Installing Hazelcast CLC
+= Installing/Uninstalling Hazelcast CLC
 :description: The Hazelcast Command-Line Client (CLC) is available to install in macOS and Linux environments.
 
 // See https://docs.hazelcast.com/hazelcast/5.2-snapshot/clients/clc#installing-the-hazelcast-clc
@@ -7,60 +7,94 @@
 
 == Before You Begin
 
-There are two ways you can install the command-line client (CLC):
+You can install the command-line client (CLC) using either of the following ways:
 
-* Using brew (recommended): Follow the instructions https://docs.brew.sh/Installation[here] if it is not installed on your macOS or Linux computer.
-* Using curl script: curl is readily available on macOS computers. For Linux, follow the instructions https://everything.curl.dev/get/linux[here]
+* **Using Homebrew** (_recommended_)
+** Follow the instructions https://docs.brew.sh/Installation[here] if it is not already installed on your macOS or Linux computer.
+* **Using the `curl` installer script**
+** `curl` is readily available on macOS computers. For Linux, follow the instructions https://everything.curl.dev/get/linux[here]
 if it is not already installed.
+* **Building from its source**: If you prefer to install CLC by building it from its source on GitHub, you need to have the following installed on your machine
+** https://www.atlassian.com/git/tutorials/install-git[Git]
+** The https://www.gnu.org/software/make/[`make`] utility
+** https://go.dev/doc/install[Go v1.18] or newer
 
-== Installing with Brew
+== Installing CLC
 
+You can install the Hazelcast CLC locally on Linux and macOS.
+
+[tabs] 
+==== 
+Installer Script:: 
++ 
+-- 
+[source,bash]
+----
+curl https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/scripts/install.sh | bash
+----
+--
+
+Homebrew::
++
 [source,bash]
 ----
 brew tap hazelcast/homebrew-hz
 brew install hazelcast-commandline-client
 ----
 
-To have a superior experience, you can enable autocompletion on Brew: ???WHY DO WE NEED AUTOCOMPLETION????
+Build from Source::
++
+[source,bash]
+----
+. Copy the CLC's GitHub repository using the following `git` command onto your machine.
++
+[source,shell]
+----
+git clone https://github.com/hazelcast/hazelcast-commandline-client.git
+----
+. Change to the copied repository directory.
++
+[source,shell]
+----
+cd hazelcast-commandline-client
+----
+. Run the following command to build CLC.
++
+[source,shell]
+----
+make
+----
+----
+====
 
-* For Bash users:
-+
-** Execute brew install bash-completion and follow the printed "Caveats" section. Example instruction: Add the following line to your `~/.bash_profile`:
-+
-[source,plain]
-----
-[[ -r "/home/ubuntu/.linuxbrew/etc/profile.d/bash_completion.sh" ]] && . "/home/ubuntu/.linuxbrew/etc/profile.d/bash_completion.sh"
-----
-+
-Note that paths may differ depending on your installation, so you should follow the Caveats section on your system.
-* For Zsh users
-+
-** Follow the instructions https://docs.brew.sh/Shell-Completion#configuring-completions-in-zsh[here].
-
-== Installing with curl Script
-
-[source,plain]
-----
-curl https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/scripts/install.sh | bash
-----
+NOTE: To take advantage of auto-completion support, follow the instructions that appear during installation.
 
 == Uninstalling
 
-Depending on how you've installed CLC, choose the appropriate uninstallation option.
+You can choose the uninstallation option that corresponds to the installation method.
 
-* Using brew (if you've installed with brew)
+[tabs] 
+==== 
+Installer Script:: 
++ 
+-- 
+[source,bash]
+----
+~/.local/share/hz-cli/bin/uninstall.sh
+----
+--
+
+Homebrew::
 +
 [source,bash]
 ----
 brew uninstall hazelcast-commandline-client
 brew untap hazelcast/homebrew-hz
 ----
-* Using script (if you've installed with curl script):
-+
-[source,shell]
-----
-~/.local/share/hz-cli/bin/uninstall.sh
-----
 
+If Built from Source::
++
+Simply remove the copied repository directory
+====
 
 
