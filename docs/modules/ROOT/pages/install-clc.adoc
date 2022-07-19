@@ -1,25 +1,41 @@
-= Installing/Uninstalling Hazelcast CLC
+= Installing Hazelcast CLC
 :description: The Hazelcast Command-Line Client (CLC) is available to install in macOS and Linux environments.
 
 // See https://docs.hazelcast.com/hazelcast/5.2-snapshot/clients/clc#installing-the-hazelcast-clc
 
-{description}
+{description} You can install CLC using either of the following ways:
+
+* Homebrew (recommended)
+* Installer script
+* Building from source
 
 == Before You Begin
 
-You can install the command-line client (CLC) using either of the following ways:
+See the following prerequisites for each installation option.
 
-* **Using Homebrew** (_recommended_)
-** Follow the instructions https://docs.brew.sh/Installation[here] if it is not already installed on your macOS or Linux computer.
-* **Using the `curl` installer script**
-** `curl` is readily available on macOS computers. For Linux, follow the instructions https://everything.curl.dev/get/linux[here]
-if it is not already installed.
-* **Building from its source**: If you prefer to install CLC by building it from its source on GitHub, you need to have the following installed on your machine
-** https://www.atlassian.com/git/tutorials/install-git[Git]
-** The https://www.gnu.org/software/make/[`make`] utility
-** https://go.dev/doc/install[Go v1.18] or newer
+[tabs] 
+==== 
+Installer Script:: 
++ 
+-- 
+Installer script uses `curl` which is readily available on macOS computers.
+For Linux, follow the instructions https://everything.curl.dev/get/linux[here] if it is not already installed.
+--
 
-== Installing CLC
+Homebrew::
++
+Follow the instructions https://docs.brew.sh/Installation[here] if it is not already installed on your macOS or Linux computer.
+
+Build from Source::
++
+If you prefer to install CLC by building it from its source on GitHub, you need to have the following installed on your machine:
+
+* https://www.atlassian.com/git/tutorials/install-git[Git]
+* The https://www.gnu.org/software/make/[`make`] utility
+* https://go.dev/doc/install[Go v1.18] or newer
+====
+
+== Installing Hazelcast CLC
 
 You can install the Hazelcast CLC locally on Linux and macOS.
 
@@ -69,7 +85,7 @@ make
 
 NOTE: To take advantage of auto-completion support, follow the instructions that appear during installation.
 
-== Uninstalling
+== Uninstalling Hazelcast CLC
 
 You can choose the uninstallation option that corresponds to the installation method.
 
@@ -92,7 +108,7 @@ brew uninstall hazelcast-commandline-client
 brew untap hazelcast/homebrew-hz
 ----
 
-If Built from Source::
+Source::
 +
 Simply remove the copied repository directory
 ====
