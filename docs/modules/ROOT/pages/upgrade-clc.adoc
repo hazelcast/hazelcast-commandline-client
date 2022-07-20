@@ -1,1 +1,5 @@
 = Upgrading Hazelcast CLC
+
+Reinstalling Hazelcast CLC after each new release will upgrade its version to the latest.
+
+See xref:install-clc.adoc#installing-hazelcast-clc[Installing Hazelcast CLC] to see the installation options suitable for your environment.
