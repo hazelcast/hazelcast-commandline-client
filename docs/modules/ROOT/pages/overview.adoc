@@ -1,20 +1,20 @@
 = Hazelcast Command-Line Client (CLC)
 :url-github-clc: https://github.com/hazelcast/hazelcast-cloud-cli/blob/master/README.md 
-:description: You can use Hazelcast Command Line Client (CLC) to connect to and interact with clusters on Hazelcast Platform and Hazelcast Viridian, direct from the command line or through scripts.
+:description: You can use the Hazelcast Command Line Client (CLC) to connect to and interact with clusters on Hazelcast Platform and {hazelcast-cloud}, direct from the command line or through scripts.
 
 {description}
 
-Hazelcast CLC simplifies the client setup process for Unix-like local environments. Within minutes of installation, you can start to perform common tasks on clusters.
+The Hazelcast CLC simplifies the client setup process for Unix-like local environments. Within minutes of installation, you can start to perform common tasks on clusters.
 
 == Use Cases
 
-Example use cases for Hazelcast CLC.
+Example use cases for the Hazelcast CLC.
 
 === Basic Cluster Management for Hazelcast Platform
 
 Perform xref:hzc-cluster.adoc[administration tasks] on multiple clusters without writing code. Instead, use <<interactive-mode, interactive mode>> to explore available commands.
 
-Check or change the state of a cluster, update a configuration option, then switch to another cluster direct from the command line. For maximum flexibility, you can set cluster connection details at the command line or using a xref:configuration.adoc[custom configuration file]. 
+Check or change the state of a cluster, update a configuration option, then switch to another cluster, all from the command line. For maximum flexibility, you can set cluster connection details at the command line or using a xref:configuration.adoc[custom configuration file]. 
 
 NOTE: {hazelcast-cloud} has a separate link:{url-github-clc}[CLI for cluster management].
 
@@ -28,18 +28,18 @@ Work in <<non-interactive-mode, non-interactive mode>> to script and execute rep
 
 == Modes
 
-Hazelcast CLC works in three modes:
-- Non-Interactive
+The Hazelcast CLC works in three modes:
+
+- Non-interactive
 - Interactive
 - SQL
 
 You can easily switch between modes to suit the context in which you're working.
-// Is this true, can you easily disable interactive mode? I couldn't. 
 
 [[non-interactive-mode]]
 === Non-Interactive Mode
 
-This is the default mode for Hazelcast CLC. You need to manually enter and execute commands at the command line. This mode is useful for scripting.
+This is the default mode for the Hazelcast CLC. You need to manually enter and execute commands at the command line. This mode is useful for scripting.
 
 [source,bash,subs="attributes+"]
 ----
@@ -72,13 +72,20 @@ You can xref:install-clc.adoc[enable interactive mode] for bash and zsh shells a
 hzc
 ----
 
+To return to non-interactive mode, use either of the following methods:
+
+- Press kbd:[Ctrl + C]
+- Type `exit`.
+
+To switch to SQL mode, just type `sql`.
+
 [[sql-mode]]
 === SQL Mode
 You can execute SQL statements in all modes, but SQL mode also gives you access to an interactive SQL browser to navigate query results.
 
 image:ROOT:hzc-sql-browser-screenshot.png[HZC interactive]
 
-To start Hazelcast CLC in SQL mode, do the following:
+To start the Hazelcast CLC in SQL mode, do the following:
 
 [source,bash,subs="attributes+"]
 ----
@@ -87,11 +94,11 @@ hzc sql
 
 == Limitations
 
-*Client authentication:* Hazelcast CLC supports only simple authentication for Hazelcast Platform. Hazelcast CLC does not currently support any other client authentication.
+- *Client authentication:* The Hazelcast CLC supports only simple authentication (username and password) for Hazelcast Platform. The Hazelcast CLC does not currently support any other client authentication. If your Hazelcast Platform cluster uses other methods of client authentication, you cannot use Hazelcast CLC to connect to it.
 
 == Next Steps
 Install, configure, and explore Hazelcast CLC:
 
 - xref:get-started.adoc[].
 - xref:configuration.adoc[].
-- xref:clc-commands.adoc[hzc Commands].
+- xref:clc-commands.adoc[hzc commands].
