@@ -1,5 +1,5 @@
 = Installing Hazelcast CLC
-:description: The Hazelcast Command-Line Client (CLC) is available to install in macOS and Linux environments.
+:description: The Hazelcast Command-Line Client (CLC) is available to install in macOS, Linux and Windows environments.
 
 // See https://docs.hazelcast.com/hazelcast/5.2-snapshot/clients/clc#installing-the-hazelcast-clc
 
@@ -37,11 +37,11 @@ If you prefer to install CLC by building it from its source on GitHub, you need 
 
 == Installing Hazelcast CLC
 
-You can install the Hazelcast CLC locally on Linux and macOS.
+You can install the Hazelcast CLC locally on macOS, Linux, and Windows environments.
 
 [tabs] 
 ==== 
-Installer Script:: 
+Installer Script (macOS, Linux):: 
 + 
 -- 
 [source,bash]
@@ -49,6 +49,12 @@ Installer Script::
 curl https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/scripts/install.sh | bash
 ----
 --
+
+Installer (Windows)::
++
+[source,bash]
+----
+----
 
 Homebrew::
 +
@@ -91,7 +97,7 @@ You can choose the uninstallation option that corresponds to the installation me
 
 [tabs] 
 ==== 
-Installer Script:: 
+Installer Script (macOS, Linux):: 
 + 
 -- 
 [source,bash]
@@ -99,6 +105,12 @@ Installer Script::
 ~/.local/share/hz-cli/bin/uninstall.sh
 ----
 --
+
+Installer (Windows)::
++
+[source,bash]
+----
+----
 
 Homebrew::
 +
