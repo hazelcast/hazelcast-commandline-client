@@ -11,10 +11,18 @@
 
 == Before You Begin
 
-See the following prerequisites for each installation option.
+See the following prerequisites for each installation option and operating system requirements.
 
 [tabs] 
 ==== 
+Supported Operating Systems:: 
++ 
+-- 
+* Ubuntu 18.04 or newer
+* MacOS 12 or newer
+* Windows 10 or newer
+--
+
 Installer Script:: 
 + 
 -- 
@@ -31,7 +39,7 @@ Build from Source::
 If you prefer to install CLC by building it from its source on GitHub, you need to have the following installed on your machine:
 
 * https://www.atlassian.com/git/tutorials/install-git[Git]
-* The https://www.gnu.org/software/make/[`make`] utility
+* The https://www.gnu.org/software/make/[GNU Make]
 * https://go.dev/doc/install[Go v1.18] or newer
 ====
 
@@ -52,9 +60,8 @@ curl https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/ma
 
 Installer (Windows)::
 +
-[source,bash]
-----
-----
+The installer for Windows is located https://github.com/hazelcast/hazelcast-commandline-client/releases[here].
+Download the `hazecast-clc.exe` file, run it and follow the instructions on the installation wizard.
 
 Homebrew::
 +
@@ -108,9 +115,10 @@ Installer Script (macOS, Linux)::
 
 Installer (Windows)::
 +
-[source,bash]
-----
-----
+. Go to **Start menu** -> **Windows Settings** -> **Apps**.
+. Find Hazelcast CLC in the list.
+. Right click on it and select **Uninstall**.
+. Follow the uninstallation wizard.
 
 Homebrew::
 +
