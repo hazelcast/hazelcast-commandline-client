@@ -79,7 +79,7 @@ Build from Source::
 ----
 git clone https://github.com/hazelcast/hazelcast-commandline-client.git
 ----
-. Change to the copied repository directory.
+. Change into the `hazelcast-commandline-client` directory.
 +
 [source,shell]
 ----
