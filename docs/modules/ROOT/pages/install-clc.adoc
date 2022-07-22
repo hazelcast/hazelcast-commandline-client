@@ -97,7 +97,7 @@ NOTE: To take advantage of auto-completion support, follow the instructions that
 
 == Uninstalling the Hazelcast CLC
 
-You can choose the uninstallation option that corresponds to the installation method.
+Choose the option that corresponds to your installation method.
 
 [tabs] 
 ==== 
