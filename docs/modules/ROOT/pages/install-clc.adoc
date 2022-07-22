@@ -73,7 +73,7 @@ brew install hazelcast-commandline-client
 
 Build from Source::
 +
-. Copy the CLC's GitHub repository using the following `git` command onto your machine.
+. Clone the GitHub repository.
 +
 [source,shell]
 ----
