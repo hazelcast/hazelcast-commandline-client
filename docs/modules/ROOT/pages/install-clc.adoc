@@ -127,7 +127,7 @@ brew untap hazelcast/homebrew-hz
 
 Source::
 +
-Simply remove the copied repository directory
+Delete the `hazelcast-commandline-client` directory.
 ====
 
 
