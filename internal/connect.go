@@ -155,6 +155,9 @@ func ConnectToCluster(ctx context.Context, clientConfig *hazelcast.Config) (cli 
 	}()
 	configCopy := clientConfig.Clone()
 	cli, err = hazelcast.StartNewClientWithConfig(ctx, configCopy)
+	if err == nil {
+		client = cli
+	}
 	return
 }
 
