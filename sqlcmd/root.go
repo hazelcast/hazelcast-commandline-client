@@ -47,7 +47,7 @@ sql "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR, this VARCHAR) TYPE IMAP 
 			}
 			ctx := cmd.Context()
 			//todo create driver from existing client
-			driver, err := internal.SQLDriver(config)
+			driver, err := internal.SQLDriver(ctx, config)
 			if err != nil {
 				return hzcerrors.NewLoggableError(err, "Cannot get initialize SQL driver")
 			}
