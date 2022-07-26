@@ -24,7 +24,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
@@ -56,7 +55,7 @@ func IsInteractiveCall(rootCmd *cobra.Command, args []string) bool {
 	return false
 }
 
-func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *hazelcast.Config) {
+func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *config.Config) {
 	cmdHistoryPath := filepath.Join(file.HZCHomePath(), "history")
 	exists, err := file.Exists(cmdHistoryPath)
 	if err != nil {
@@ -67,12 +66,14 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *haze
 			// todo log err once we have logging solution
 		}
 	}
+	hConfig := &cnfg.Hazelcast
 	namePersister := make(map[string]string)
 	var p = &cobraprompt.CobraPrompt{
 		ShowHelpCommandAndFlags:  true,
 		ShowHiddenFlags:          true,
 		SuggestFlagsWithoutDash:  true,
 		DisableCompletionCommand: true,
+		DisableSuggestions:       cnfg.DisableAutocompletion,
 		AddDefaultExitCommand:    true,
 		GoPromptOptions: []goprompt.Option{
 			goprompt.OptionTitle("Hazelcast Client"),
@@ -81,7 +82,7 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *haze
 				for k, v := range namePersister {
 					b.WriteString(fmt.Sprintf("&%c:%s", k[0], v))
 				}
-				return fmt.Sprintf("hzc %s@%s%s> ", config.GetClusterAddress(cnfg), cnfg.Cluster.Name, b.String()), true
+				return fmt.Sprintf("hzc %s@%s%s> ", config.GetClusterAddress(hConfig), hConfig.Cluster.Name, b.String()), true
 			}),
 			goprompt.OptionMaxSuggestion(10),
 			goprompt.OptionCompletionOnDown(),
@@ -94,7 +95,7 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *haze
 		Persister: namePersister,
 	}
 	rootCmd.Println("Connecting to the cluster ...")
-	if _, err := internal.ConnectToCluster(ctx, cnfg); err != nil {
+	if _, err := internal.ConnectToCluster(ctx, hConfig); err != nil {
 		rootCmd.Printf("Error: %s\n", err)
 		return
 	}
@@ -108,7 +109,7 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *haze
 	p.FlagsToExclude = flagsToExclude
 	rootCmd.Example = fmt.Sprintf("> %s\n> %s", mapcmd.MapPutExample, mapcmd.MapGetExample) + "\n> cluster version"
 	rootCmd.Use = ""
-	p.Run(ctx, rootCmd, cnfg, cmdHistoryPath)
+	p.Run(ctx, rootCmd, hConfig, cmdHistoryPath)
 	return
 }
 

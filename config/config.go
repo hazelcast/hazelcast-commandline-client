@@ -49,16 +49,18 @@ type SSLConfig struct {
 }
 
 type Config struct {
-	Hazelcast hazelcast.Config
-	SSL       SSLConfig
+	Hazelcast             hazelcast.Config
+	SSL                   SSLConfig
+	DisableAutocompletion bool
 }
 
 type GlobalFlagValues struct {
-	CfgFile string
-	Cluster string
-	Token   string
-	Address string
-	Verbose bool
+	CfgFile               string
+	Cluster               string
+	Token                 string
+	Address               string
+	Verbose               bool
+	DisableAutocompletion bool
 }
 
 func DefaultConfig() *Config {
@@ -116,6 +118,10 @@ func mergeFlagsWithConfig(flags *GlobalFlagValues, config *Config) error {
 	}
 	if flags.Verbose && verboseWeight > confWeight {
 		config.Hazelcast.Logger.Level = logger.DebugLevel
+	}
+	// overwrite config if flag is set
+	if flags.DisableAutocompletion {
+		config.DisableAutocompletion = true
 	}
 	return nil
 }
