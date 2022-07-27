@@ -104,6 +104,7 @@ func (t *table) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if t.lastIteration != nil {
 				t.lastIteration.rows.Close()
 			}
+			changeProgress(HideProgress)
 			return t, nil
 		}
 		if !t.keyboardFocus {
@@ -177,12 +178,14 @@ func (si *SQLIterator) Iterate(maxIterationCount int) {
 			columnPointers[i] = &columns[i]
 		}
 		if err := si.rows.Scan(columnPointers...); err != nil {
-			// todo: log the cause once we have a logging solution
+			// todo: log the cause, once we have a logging solution
+			changeProgress(HideProgress)
 			break
 		}
 		si.resultPipe <- columnPointers
 	}
 	if i < maxIterationCount {
+		changeProgress(HideProgress)
 		// means query finished and there will be no more results
 		close(si.resultPipe)
 	}
@@ -302,23 +305,6 @@ func (h Help) View() string {
 	return b.String()
 }
 
-type Separator int
-
-func (s Separator) Init() tea.Cmd {
-	return nil
-}
-
-func (s Separator) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	if msg, ok := msg.(tea.WindowSizeMsg); ok {
-		s = Separator(msg.Width - 2)
-	}
-	return s, nil
-}
-
-func (s Separator) View() string {
-	return strings.Repeat("─", max(0, int(s)))
-}
-
 func (c controller) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch m := msg.(type) {
 	case multiline.SubmitMsg:
@@ -328,6 +314,7 @@ func (c controller) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if err != nil {
 				return StringResultMsg(err.Error())
 			}
+			changeProgress(ShowProgress)
 			return TableResultMsg(rows)
 		}
 	}
@@ -337,11 +324,11 @@ func (c controller) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func InitSQLBrowser(driver *sql.DB) *tea.Program {
-	var s Separator
+	var s SeparatorWithProgress
 	textArea := multiline.InitTextArea()
 	c := &controller{vertical.InitialModel([]tea.Model{
 		&table{},
-		s,
+		&s,
 		textArea,
 		Help{
 			values: []Shortcut{
