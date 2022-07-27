@@ -86,10 +86,12 @@ const defaultUserConfig = `hazelcast:
     discovery:
       usepublicip: false
     unisocket: true
+  network:
+      addresses: []
+      connectiontimeout: 0s
 ssl:
   enabled: false
   servername: ""
-  insecureskipverify: false
   capath: ""
   certpath: ""
   keypath: ""
