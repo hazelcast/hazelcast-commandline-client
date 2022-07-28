@@ -73,7 +73,7 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *conf
 		ShowHiddenFlags:          true,
 		SuggestFlagsWithoutDash:  true,
 		DisableCompletionCommand: true,
-		DisableSuggestions:       cnfg.DisableAutocompletion,
+		DisableSuggestions:       cnfg.NoAutocompletion,
 		AddDefaultExitCommand:    true,
 		GoPromptOptions: []goprompt.Option{
 			goprompt.OptionTitle("Hazelcast Client"),

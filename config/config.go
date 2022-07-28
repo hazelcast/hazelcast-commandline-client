@@ -49,9 +49,9 @@ type SSLConfig struct {
 }
 
 type Config struct {
-	Hazelcast             hazelcast.Config
-	SSL                   SSLConfig
-	DisableAutocompletion bool
+	Hazelcast        hazelcast.Config
+	SSL              SSLConfig
+	NoAutocompletion bool
 }
 
 type GlobalFlagValues struct {
@@ -121,7 +121,7 @@ func mergeFlagsWithConfig(flags *GlobalFlagValues, config *Config) error {
 	}
 	// overwrite config if flag is set
 	if flags.DisableAutocompletion {
-		config.DisableAutocompletion = true
+		config.NoAutocompletion = true
 	}
 	return nil
 }
