@@ -13,6 +13,6 @@ asciidoc:
     # Allows us to use UI macros. See https://docs.asciidoctor.org/asciidoc/latest/macros/ui-macros/
     experimental: true
     snapshot: true
-    page-toclevels: 2@  
+    page-toclevels: 3@  
 nav:
   - modules/ROOT/nav.adoc
