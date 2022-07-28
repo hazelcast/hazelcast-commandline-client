@@ -87,8 +87,10 @@ const defaultUserConfig = `hazelcast:
       usepublicip: false
     unisocket: true
   network:
-      addresses: []
-      connectiontimeout: 0s
+    addresses:
+      - "localhost:5701"
+    # 0s means infinite timeout (no timeout)
+    connectiontimeout: 0s
 ssl:
   enabled: false
   servername: ""
