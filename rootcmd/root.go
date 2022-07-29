@@ -18,6 +18,7 @@ package rootcmd
 import (
 	"errors"
 	"fmt"
+	"github.com/hazelcast/hazelcast-commandline-client/versioncmd"
 	"os"
 	"strings"
 
@@ -35,7 +36,7 @@ import (
 func New(cnfg *hazelcast.Config) (*cobra.Command, *config.GlobalFlagValues) {
 	var flags config.GlobalFlagValues
 	root := &cobra.Command{
-		Use:   "hzc {cluster | map | sql | help} [--address address | --cloud-token token | --cluster-name name | --config config]",
+		Use:   "hzc {cluster | map | sql | version | help} [--address address | --cloud-token token | --cluster-name name | --config config]",
 		Short: "Hazelcast command-line client",
 		Long:  "Hazelcast command-line client connects your command-line to a Hazelcast cluster",
 		Example: `hzc # starts an interactive shell 🚀
@@ -70,6 +71,7 @@ func subCommands(config *hazelcast.Config) []*cobra.Command {
 		clustercmd.New(config),
 		mapcmd.New(config),
 		sqlcmd.New(config),
+		versioncmd.New(),
 	}
 	fds := []fakeDoor.FakeDoor{
 		{Name: "List", IssueNum: 48},

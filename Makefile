@@ -1,8 +1,9 @@
 .PHONY: build generate-completion test test-cover view-cover
 
 TAG=$(shell git describe --tags 2> /dev/null || echo unknown)
+GIT_COMMIT=$(shell git rev-parse HEAD 2> /dev/null || echo unknown)
 CLIENT_TYPE="CLC"
-LDFLAGS="-X 'github.com/hazelcast/hazelcast-go-client/internal.ClientType=$(CLIENT_TYPE)' -X 'github.com/hazelcast/hazelcast-go-client/internal.ClientVersion=$(TAG)'"
+LDFLAGS="-X 'github.com/hazelcast/hazelcast-go-client/internal.ClientType=$(CLIENT_TYPE)' -X 'github.com/hazelcast/hazelcast-commandline-client/internal.GitCommit=$(GIT_COMMIT)' -X 'github.com/hazelcast/hazelcast-go-client/internal.ClientVersion=$(TAG)'"
 TEST_FLAGS ?= -v -count 1
 COVERAGE_OUT = coverage.out
 
