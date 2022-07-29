@@ -70,13 +70,39 @@ func DefaultConfig() *Config {
 	return &Config{Hazelcast: hz}
 }
 
-func writeToFile(config *Config, confPath string) error {
-	var err error
-	var out []byte
-	if out, err = yaml.Marshal(config); err != nil {
-		return err
-	}
-	return file.CreateMissingDirsAndFileWithRWPerms(confPath, out)
+const defaultUserConfig = `hazelcast:
+  clientname: ""
+  logger:
+    level: error
+  cluster:
+    security:
+      credentials:
+        username: ""
+        password: ""
+    name: dev
+    cloud:
+      token: ""
+      enabled: false
+    discovery:
+      usepublicip: false
+    unisocket: true
+  network:
+    addresses:
+      - "localhost:5701"
+    # 0s means infinite timeout (no timeout)
+    connectiontimeout: 0s
+ssl:
+  enabled: false
+  servername: ""
+  capath: ""
+  certpath: ""
+  keypath: ""
+  keypassword: ""
+disableautocompletion: false
+`
+
+func writeToFile(config string, confPath string) error {
+	return file.CreateMissingDirsAndFileWithRWPerms(confPath, []byte(config))
 }
 
 func ReadAndMergeWithFlags(flags *GlobalFlagValues, c *Config) error {
@@ -133,7 +159,7 @@ func readConfig(path string, config *Config, defaultConfPath string) error {
 		return hzcerrors.NewLoggableError(os.ErrNotExist, "configuration file can not be found on configuration path %s", path)
 	}
 	if !exists && isDefaultConfigPath {
-		if err = writeToFile(config, path); err != nil {
+		if err = writeToFile(defaultUserConfig, path); err != nil {
 			return hzcerrors.NewLoggableError(err, "Cannot create configuration file on default configuration path %s. Make sure that process has necessary permissions to write default path.\n", path)
 		}
 	}
