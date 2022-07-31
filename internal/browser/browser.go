@@ -113,9 +113,6 @@ func (t *table) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// disable all mouse events
 		return t, nil
 	case tea.WindowSizeMsg:
-		if m.Height >= 2 {
-			m.Height -= 2 // footer, header height offset
-		}
 		msg = m
 	}
 	oldYOffset := t.termdbmsTable.Viewport.YOffset + t.termdbmsTable.GetRow()

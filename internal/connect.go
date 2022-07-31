@@ -155,14 +155,17 @@ func ConnectToCluster(ctx context.Context, clientConfig *hazelcast.Config) (cli 
 	}()
 	configCopy := clientConfig.Clone()
 	cli, err = hazelcast.StartNewClientWithConfig(ctx, configCopy)
+	if err == nil {
+		client = cli
+	}
 	return
 }
 
-func SQLDriver(config *hazelcast.Config) (*sql.DB, error) {
+func SQLDriver(ctx context.Context, config *hazelcast.Config) (*sql.DB, error) {
 	if sqlDriver != nil {
 		return sqlDriver, nil
 	}
 	sqlDriver = driver.Open(*config)
-	err := sqlDriver.Ping()
+	err := sqlDriver.PingContext(ctx)
 	return sqlDriver, err
 }
