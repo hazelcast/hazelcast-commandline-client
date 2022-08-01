@@ -278,3 +278,9 @@ git clone https://github.com/hazelcast/hazelcast-commandline-client.git
 cd hazelcast-commandline-client
 make
 ```
+
+### Finally, run the project
+
+```
+./hzc # starts the interactive mode
+```
