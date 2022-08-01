@@ -100,7 +100,8 @@ ssl:
   certpath: ""
   keypath: ""
   keypassword: ""
-disableautocompletion: false
+# disables auto completion on interactive mode
+noautocompletion: false
 `
 
 func writeToFile(config string, confPath string) error {
