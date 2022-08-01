@@ -113,7 +113,6 @@ func TestMergeFlagsWithConfig(t *testing.T) {
 				c := DefaultConfig()
 				c.Hazelcast.Cluster.Cloud.Token = "test-token"
 				c.Hazelcast.Cluster.Cloud.Enabled = true
-				c.SSL.ServerName = "hazelcast.cloud"
 				return c
 			}(),
 		},

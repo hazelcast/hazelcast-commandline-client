@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	HeaderHeight       = 2
+	HeaderHeight       = 3
 	FooterHeight       = 1
 	MaxInputLength     int
 	HeaderStyle        lipgloss.Style
