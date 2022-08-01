@@ -20,12 +20,12 @@ const (
 var spinnerWidget = spinner.New()
 
 func changeProgress(ps int32) {
-	switch {
-	case ps == HideProgress:
+	switch ps {
+	case HideProgress:
 		if atomic.CompareAndSwapInt32(&progressState, ShowProgress, HideProgress) {
 			return
 		}
-	case ps == ShowProgress:
+	case ShowProgress:
 		if atomic.CompareAndSwapInt32(&progressState, HideProgress, ShowProgress) {
 			return
 		}
@@ -41,9 +41,6 @@ func (s *SeparatorWithProgress) Init() tea.Cmd {
 }
 
 func (s *SeparatorWithProgress) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	if msg, ok := msg.(tea.WindowSizeMsg); ok {
-		s.length = msg.Width - 2
-	}
 	var cmd tea.Cmd
 	spinnerWidget, cmd = spinnerWidget.Update(msg)
 	return s, cmd
