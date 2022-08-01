@@ -92,5 +92,5 @@ func assignPersistentFlags(cmd *cobra.Command, flags *config.GlobalFlagValues) {
 	cmd.PersistentFlags().StringVar(&flags.Cluster, "cluster-name", "", fmt.Sprintf("name of the cluster that contains the instances (default is %s)", config.DefaultClusterName))
 	cmd.PersistentFlags().StringVar(&flags.Token, "cloud-token", "", "your Hazelcast Cloud token")
 	cmd.PersistentFlags().BoolVar(&flags.Verbose, "verbose", false, "verbose output")
-	cmd.PersistentFlags().BoolVar(&flags.DisableAutocompletion, "no-completion", false, "disable completion [interactive mode]")
+	cmd.PersistentFlags().BoolVar(&flags.NoAutocompletion, "no-completion", false, "disable completion [interactive mode]")
 }
