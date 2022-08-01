@@ -9,6 +9,7 @@ builds:
       - CGO_ENABLED=0
     ldflags:
       - "-X github.com/hazelcast/hazelcast-go-client/internal.ClientVersion={{.Version}} -X github.com/hazelcast/hazelcast-commandline-client/internal.GitCommit={{.Commit}} -X github.com/hazelcast/hazelcast-go-client/internal.ClientType=CLC"
+      - "-X github.com/hazelcast/hazelcast-commandline-client/internal.ClientVersion={{.Version}}"
     binary: hzc
     goos:
       - darwin

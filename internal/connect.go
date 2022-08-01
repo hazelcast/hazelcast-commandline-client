@@ -39,7 +39,7 @@ var (
 	client        *hazelcast.Client
 	sqlDriver     *sql.DB
 	GitCommit     string
-	ClientVersion = "v1.0.0-beta1"
+	ClientVersion string
 )
 
 type RESTCall struct {
