@@ -93,4 +93,5 @@ func assignPersistentFlags(cmd *cobra.Command, flags *config.GlobalFlagValues) {
 	cmd.PersistentFlags().StringVar(&flags.Token, "cloud-token", "", "your Hazelcast Cloud token")
 	cmd.PersistentFlags().BoolVar(&flags.Verbose, "verbose", false, "verbose output")
 	cmd.PersistentFlags().BoolVar(&flags.NoColor, "no-color", false, "disable colors")
+	cmd.PersistentFlags().BoolVar(&flags.NoAutocompletion, "no-completion", false, "disable completion [interactive mode]")
 }

@@ -52,6 +52,7 @@ type SSLConfig struct {
 type Config struct {
 	Hazelcast hazelcast.Config
 	SSL       SSLConfig
+	NoAutocompletion bool
 	Styling   Styling
 }
 
@@ -61,11 +62,12 @@ type Styling struct {
 }
 
 type GlobalFlagValues struct {
-	CfgFile string
-	Cluster string
-	Token   string
-	Address string
-	Verbose bool
+	CfgFile          string
+	Cluster          string
+	Token            string
+	Address          string
+	Verbose          bool
+	NoAutocompletion bool
 	NoColor bool
 }
 
@@ -106,6 +108,8 @@ ssl:
   certpath: ""
   keypath: ""
   keypassword: ""
+# disables auto completion on interactive mode
+noautocompletion: false
 styling:
   theme: "default" # default, no-color, nord, solarized
   colorpalette:
@@ -188,6 +192,10 @@ func mergeFlagsWithConfig(flags *GlobalFlagValues, config *Config) error {
 	}
 	if flags.Verbose && verboseWeight > confWeight {
 		config.Hazelcast.Logger.Level = logger.DebugLevel
+	}
+	// overwrite config if flag is set
+	if flags.NoAutocompletion {
+		config.NoAutocompletion = true
 	}
 	return nil
 }

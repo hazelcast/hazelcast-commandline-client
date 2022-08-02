@@ -40,7 +40,7 @@ func main() {
 	defer cancel()
 	isInteractive := IsInteractiveCall(rootCmd, programArgs)
 	if isInteractive {
-		RunCmdInteractively(ctx, rootCmd, &cnfg.Hazelcast, globalFlagValues.NoColor)
+		RunCmdInteractively(ctx, rootCmd, cnfg, globalFlagValues.NoColor)
 	} else {
 		// Since the cluster config related flags has already being parsed in previous steps,
 		// there is no need for second parameter anymore. The purpose is overwriting rootCmd as it is at the beginning.

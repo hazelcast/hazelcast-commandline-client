@@ -70,6 +70,8 @@ type CobraPrompt struct {
 	Persister map[string]string
 	// NoColor is used to disable colors
 	NoColor bool
+	// DisableSuggestions disables the suggestion prompt
+	DisableSuggestions bool
 }
 
 var ErrExit = errors.New("exit prompt")
@@ -217,6 +219,9 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 			}
 		},
 		func(d goprompt.Document) []goprompt.Suggest {
+			if co.DisableSuggestions {
+				return nil
+			}
 			// no suggestion on new line
 			if d.Text == "" {
 				return nil
