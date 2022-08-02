@@ -86,7 +86,7 @@ sql "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR, this VARCHAR) TYPE IMAP 
 func decorateCommandWithOutputFlag(outputType *string, noColor *bool, cmd *cobra.Command) {
 	flags := cmd.Flags()
 	flags.StringVarP(outputType, "output-type", "o", outputPretty, fmt.Sprintf("%s or %s", outputPretty, outputCSV))
-	flags.BoolVar(noColor, "no-color", false, "2 color option")
+	//flags.BoolVar(noColor, "no-color", false, "2 color option")
 	cmd.RegisterFlagCompletionFunc("output-type", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{outputPretty, outputCSV}, cobra.ShellCompDirectiveDefault
 	})

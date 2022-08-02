@@ -160,7 +160,7 @@ func TestSetStyling(t *testing.T) {
 		Theme:        &theme,
 		ColorPalette: tuiutil.ColorPalette{ResultText: tuiutil.NewColor(lipgloss.Color("#ffffaa"))},
 	}}
-	setStyling(&c)
+	setStyling(false, &c)
 	selectedTheme := tuiutil.GetTheme()
 	require.Equal(t, lipgloss.Color("#ffffaa"), selectedTheme.ResultText.TerminalColor)
 }

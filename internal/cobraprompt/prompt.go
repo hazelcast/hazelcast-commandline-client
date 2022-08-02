@@ -68,6 +68,8 @@ type CobraPrompt struct {
 	OnErrorFunc func(err error)
 	// Persister is used to interact with name persistence mechanism.
 	Persister map[string]string
+	// NoColor is used to disable colors
+	NoColor bool
 }
 
 var ErrExit = errors.New("exit prompt")
@@ -99,6 +101,15 @@ var SuggestionColorOptions = []goprompt.Option{
 	goprompt.OptionSelectedDescriptionBGColor(goprompt.Blue), goprompt.OptionDescriptionBGColor(goprompt.DarkGray),
 }
 
+var NoColorOptions = []goprompt.Option{
+	goprompt.OptionSelectedSuggestionTextColor(goprompt.NoColor), goprompt.OptionSuggestionTextColor(goprompt.NoColor),
+	goprompt.OptionSelectedDescriptionTextColor(goprompt.NoColor), goprompt.OptionDescriptionTextColor(goprompt.NoColor),
+	goprompt.OptionSelectedSuggestionBGColor(goprompt.NoColor), goprompt.OptionSuggestionBGColor(goprompt.NoColor),
+	goprompt.OptionPrefixTextColor(goprompt.NoColor), goprompt.OptionPrefixBackgroundColor(goprompt.NoColor),
+	goprompt.OptionInputTextColor(goprompt.NoColor), goprompt.OptionPreviewSuggestionTextColor(goprompt.NoColor),
+	goprompt.OptionSelectedDescriptionBGColor(goprompt.NoColor), goprompt.OptionDescriptionBGColor(goprompt.NoColor),
+}
+
 // Run will automatically generate suggestions for all cobra commands and flags defined by RootCmd and execute the selected commands.
 // Run will also reset all given flags by default, see PersistFlagValues
 func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelcast.Config, cmdHistoryPath string) {
@@ -122,7 +133,12 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 			b.CursorRight(to)
 		},
 	}))
-	co.GoPromptOptions = append(co.GoPromptOptions, SuggestionColorOptions...)
+	if co.NoColor {
+		co.GoPromptOptions = append(co.GoPromptOptions, NoColorOptions...)
+		//co.GoPromptOptions = append(co.GoPromptOptions, SuggestionColorOptions...)
+	} else {
+		co.GoPromptOptions = append(co.GoPromptOptions, SuggestionColorOptions...)
+	}
 	history := goprompt.NewHistory()
 	f, err := os.OpenFile(cmdHistoryPath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0600)
 	defer func() {

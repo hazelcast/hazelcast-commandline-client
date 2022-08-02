@@ -85,6 +85,8 @@ const (
 	Turquoise
 	// White represents a white.
 	White
+	// NoColor represents no-color.
+	NoColor
 )
 
 // ConsoleWriter is an interface to abstract output layer.

@@ -66,6 +66,7 @@ type GlobalFlagValues struct {
 	Token   string
 	Address string
 	Verbose bool
+	NoColor bool
 }
 
 func DefaultConfig() *Config {
@@ -127,14 +128,18 @@ func ReadAndMergeWithFlags(flags *GlobalFlagValues, c *Config) error {
 	if err := readConfig(flags.CfgFile, c, p); err != nil {
 		return err
 	}
-	setStyling(c)
+	setStyling(flags.NoColor, c)
 	if err := mergeFlagsWithConfig(flags, c); err != nil {
 		return err
 	}
 	return nil
 }
 
-func setStyling(c *Config) {
+func setStyling(noColorFlag bool, c *Config) {
+	if noColorFlag {
+		s := tuiutil.NoColor
+		c.Styling.Theme = &s
+	}
 	styling := c.Styling
 	if styling.Theme != nil {
 		// if not a valid theme, leave it as default
