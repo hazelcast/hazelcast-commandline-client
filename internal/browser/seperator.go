@@ -42,6 +42,9 @@ func (s *SeparatorWithProgress) Init() tea.Cmd {
 
 func (s *SeparatorWithProgress) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
+	if msg, ok := msg.(tea.WindowSizeMsg); ok {
+		s.length = msg.Width
+	}
 	spinnerWidget, cmd = spinnerWidget.Update(msg)
 	return s, cmd
 }
@@ -49,7 +52,7 @@ func (s *SeparatorWithProgress) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (s *SeparatorWithProgress) View() string {
 	var baseMsg string
 	if atomic.LoadInt32(&progressState) == ShowProgress {
-		baseMsg = fmt.Sprintf(" %s Executing query", spinnerWidget.View())
+		baseMsg = fmt.Sprintf(" %s Executing query ", spinnerWidget.View())
 	}
 	return strings.Repeat("─", max(0, s.length-len(baseMsg))) + baseMsg
 }
