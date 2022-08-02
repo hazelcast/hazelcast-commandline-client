@@ -14,8 +14,8 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/internal/browser/layout/vertical"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/browser/multiline"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/termdbms/tuiutil"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/termdbms/viewer"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/tuiutil"
 )
 
 type StringResultMsg string
@@ -30,13 +30,14 @@ type table struct {
 	termdbmsTable viewer.TuiModel
 	keyboardFocus bool
 	lastIteration *SQLIterator
+	noColor       bool
 }
 
 func (t *table) Init() tea.Cmd {
 	tuiutil.Faint = true
-	if lipgloss.ColorProfile() == termenv.Ascii {
+	if lipgloss.ColorProfile() == termenv.Ascii || t.noColor {
 		tuiutil.Ascii = true
-		lipgloss.SetColorProfile(termenv.Ascii)
+		tuiutil.SelectedTheme = tuiutil.NoColor
 	}
 	viewer.GlobalCommands["j"] = viewer.GlobalCommands["s"]
 	viewer.GlobalCommands["k"] = viewer.GlobalCommands["w"]
@@ -115,9 +116,9 @@ func (t *table) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		msg = m
 	}
+	var cmd tea.Cmd
 	oldYOffset := t.termdbmsTable.Viewport.YOffset + t.termdbmsTable.GetRow()
-	updatedTable, cmd := t.termdbmsTable.Update(msg)
-	t.termdbmsTable = updatedTable.(viewer.TuiModel)
+	t.termdbmsTable, cmd = t.termdbmsTable.Update(msg)
 	newYOffset := t.termdbmsTable.Viewport.YOffset + t.termdbmsTable.GetRow()
 	if t.lastIteration != nil {
 		userOnLastPage := newYOffset > t.lastIteration.totalProcessedLines-t.termdbmsTable.Viewport.Height
@@ -126,7 +127,6 @@ func (t *table) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return FetchMoreRowsMsg{}
 			})
 		}
-
 	}
 	return t, cmd
 }
@@ -219,14 +219,12 @@ func (m *table) PopulateDataForResult(rows [][]interface{}) {
 	if m.termdbmsTable.QueryResult != nil && m.termdbmsTable.QueryData != nil && m.termdbmsTable.QueryResult.Data["0"] != nil {
 		columnValues = m.termdbmsTable.QueryResult.Data["0"].(map[string][]interface{})
 	}
-
 	for _, row := range rows {
 		for i, colName := range columnNames {
 			val := row[i].(*interface{})
 			columnValues[colName] = append(columnValues[colName], *val)
 		}
 	}
-
 	// onto the next schema
 	if m.termdbmsTable.QueryResult != nil && m.termdbmsTable.QueryData != nil {
 		m.termdbmsTable.QueryResult.Data["0"] = columnValues
@@ -284,16 +282,13 @@ func (h Help) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (h Help) View() string {
-	base := lipgloss.NewStyle()
-	sh := base.Copy().
-		Background(lipgloss.Color(tuiutil.Highlight())).
-		Foreground(lipgloss.Color("#000000"))
-	def := base.Copy()
+	base := lipgloss.NewStyle().Foreground(tuiutil.FooterForeground())
+	reversed := base.Copy().Reverse(true)
 	var b strings.Builder
 	for _, v := range h.values {
-		b.WriteString(sh.Render(fmt.Sprintf(" %s ", v.key)))
+		b.WriteString(reversed.Render(fmt.Sprintf(" %s ", v.key)))
 		b.WriteString(" - ")
-		b.WriteString(def.Render(v.description))
+		b.WriteString(base.Render(v.description))
 		b.WriteString("      ")
 	}
 	return b.String()
@@ -333,11 +328,12 @@ func (c controller) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return c, cmd
 }
 
-func InitSQLBrowser(driver *sql.DB) *tea.Program {
+func InitSQLBrowser(driver *sql.DB, noColor bool) *tea.Program {
 	var s Separator
 	textArea := multiline.InitTextArea()
+	table := &table{noColor: noColor}
 	c := &controller{vertical.InitialModel([]tea.Model{
-		&table{},
+		table,
 		s,
 		textArea,
 		Help{

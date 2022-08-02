@@ -8,7 +8,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/hazelcast/hazelcast-commandline-client/internal/termdbms/tuiutil"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/tuiutil"
 )
 
 type TableAssembly func(m *TuiModel, s *string, c *chan bool)
@@ -26,14 +26,9 @@ func init() {
 	MIP = false
 	mid = &tmp
 	HeaderAssembly = func(m *TuiModel, s *string) {
-		if m.UI.ShowClipboard {
-			return
-		}
-
 		var (
 			builder []string
 		)
-
 		bs := m.GetBaseStyle()
 		style := bs.UnsetForeground().UnsetFaint().Underline(true).Bold(true)
 		headers := m.Data().TableHeadersSlice
@@ -55,21 +50,17 @@ func init() {
 			navigationArrowL := lipgloss.Width("  <<<")
 			titleWidth := m.Viewport.Width - navigationArrowL*2
 			headerTop = "  <<<" + fmt.Sprintf("%*s", -titleWidth, fmt.Sprintf("%*s", (titleWidth+len(headerTop))/2, headerTop)) + ">>>  "
-			headerStyle := HeaderStyle.Copy().Foreground(lipgloss.Color(tuiutil.Highlight())).Reverse(true)
+			headerStyle := HeaderStyle.Copy().Foreground(tuiutil.HeaderForeground()).Background(tuiutil.HeaderBackground())
 			headerTop = headerStyle.Copy().Render(headerTop)
 			headerMid := lipgloss.JoinHorizontal(lipgloss.Left, builder...)
 			if m.UI.RenderSelection {
 				headerMid = ""
 			}
-			x := HeaderStyle.Copy().Foreground(lipgloss.Color(tuiutil.Highlight())).Reverse(true).Width(m.Viewport.Width).Render(" ")
+			x := HeaderStyle.Copy().Foreground(tuiutil.HeaderBackground()).Reverse(true).Width(m.Viewport.Width).Render(" ")
 			*s = lipgloss.JoinVertical(lipgloss.Left, x, headerTop, x, headerMid)
 		}
 	}
 	FooterAssembly = func(m *TuiModel, s *string, done *chan bool) {
-		if m.UI.ShowClipboard {
-			*done <- true
-			return
-		}
 		var (
 			row int
 			col int

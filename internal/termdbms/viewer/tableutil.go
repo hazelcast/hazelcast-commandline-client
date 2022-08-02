@@ -5,16 +5,13 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/hazelcast/hazelcast-commandline-client/internal/termdbms/tuiutil"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/tuiutil"
 )
 
 var maxHeaders int
 
 // AssembleTable shows either the selection text or the table
 func AssembleTable(m *TuiModel) string {
-	if m.UI.ShowClipboard {
-		return ShowClipboard(m)
-	}
 	if m.UI.RenderSelection {
 		return DisplaySelection(m)
 	}
@@ -59,17 +56,21 @@ func (m *TuiModel) CellWidth() int {
 // GetBaseStyle returns a new style that is used everywhere
 func (m *TuiModel) GetBaseStyle() lipgloss.Style {
 	cw := m.CellWidth()
+	bc := tuiutil.BorderColor()
 	s := lipgloss.NewStyle().
-		Foreground(lipgloss.Color(tuiutil.TextColor())).
+		Foreground(tuiutil.TextColor()).
+		BorderForeground(bc).
 		Width(cw).
 		Align(lipgloss.Left)
 
 	if m.UI.BorderToggle && !tuiutil.Ascii {
 		s = s.BorderLeft(true).
 			BorderStyle(lipgloss.NormalBorder()).
-			BorderForeground(lipgloss.Color(tuiutil.BorderColor()))
+			BorderForeground(bc)
 	}
-	s = s.Faint(tuiutil.Faint)
+	if !tuiutil.Ascii {
+		s = s.Faint(tuiutil.Faint)
+	}
 	return s
 }
 

@@ -29,6 +29,7 @@ import (
 
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/file"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/tuiutil"
 )
 
 const defaultConfigFilename = "config.yaml"
@@ -51,6 +52,12 @@ type SSLConfig struct {
 type Config struct {
 	Hazelcast hazelcast.Config
 	SSL       SSLConfig
+	Styling   Styling
+}
+
+type Styling struct {
+	Theme *string
+	tuiutil.ColorPalette
 }
 
 type GlobalFlagValues struct {
@@ -98,6 +105,16 @@ ssl:
   certpath: ""
   keypath: ""
   keypassword: ""
+styling:
+  theme: "default" # default, no-color, nord, solarized
+  colorpalette:
+    # uncomment to override theme color. closest supported color will be used
+    #headerbackground: "#ff12aa"
+    #border: "#ff12aa"
+    #resulttext: "#ff12aa"
+    #headerforeground: "#000000"
+    #highlight: "#ff12aa"
+    #footerforeground: "#ff12aa"
 disableautocompletion: false
 `
 
@@ -110,10 +127,34 @@ func ReadAndMergeWithFlags(flags *GlobalFlagValues, c *Config) error {
 	if err := readConfig(flags.CfgFile, c, p); err != nil {
 		return err
 	}
+	setStyling(c)
 	if err := mergeFlagsWithConfig(flags, c); err != nil {
 		return err
 	}
 	return nil
+}
+
+func setStyling(c *Config) {
+	styling := c.Styling
+	if styling.Theme != nil {
+		// if not a valid theme, leave it as default
+		_ = tuiutil.SetTheme(*styling.Theme)
+	}
+	ifSetReplace := func(org *tuiutil.Color, replacement *tuiutil.Color) {
+		if replacement == nil {
+			return
+		}
+		*org = *replacement
+	}
+	// Override colors if specified
+	theme := tuiutil.GetTheme()
+	ifSetReplace(theme.HeaderBackground, styling.HeaderBackground)
+	ifSetReplace(theme.Border, styling.Border)
+	ifSetReplace(theme.ResultText, styling.ResultText)
+	ifSetReplace(theme.HeaderForeground, styling.HeaderForeground)
+	ifSetReplace(theme.Highlight, styling.Highlight)
+	ifSetReplace(theme.FooterForeground, styling.FooterForeground)
+	return
 }
 
 func mergeFlagsWithConfig(flags *GlobalFlagValues, config *Config) error {

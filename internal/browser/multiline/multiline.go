@@ -95,14 +95,12 @@ func (c CursorMode) String() string {
 // Model is the Bubble Tea model for this multiline text input element.
 type Model struct {
 	Err error
-
 	// General settings.
 	Prompt        string
 	Placeholder   string
 	BlinkSpeed    time.Duration
 	EchoMode      EchoMode
 	EchoCharacter rune
-
 	// Styles. These will be applied as inline styles.
 	//
 	// For an introduction to styling with Lip Gloss see:
@@ -112,50 +110,38 @@ type Model struct {
 	BackgroundStyle  lipgloss.Style
 	PlaceholderStyle lipgloss.Style
 	CursorStyle      lipgloss.Style
-
 	// CharLimit is the maximum amount of characters this input element will
 	// accept. If 0 or less, there's no limit.
 	CharLimit int
-
 	// Width is the maximum number of characters that can be displayed at once.
 	// It essentially treats the text field like a horizontally scrolling
 	// viewport. If 0 or less this setting is ignored.
 	Width  int
 	Height int
-
 	// The ID of this Model as it relates to other textinput Models.
 	id int
-
 	// The ID of the blink message we're expecting to receive.
 	blinkTag int
-
 	// Underlying text value. Each inner slice represents a line
 	value [][]rune
-
 	// focus indicates whether user input focus should be on this input
 	// component. When false, ignore keyboard input and hide the cursor.
 	focus bool
-
 	// Cursor blink state.
 	blink bool
-
 	// Cursor position.
 	pos  int
 	posY int
-
 	// Used to emulate a viewport when width is set and the content is
 	// overflowing.
 	offsetLeft  int
 	offsetRight int
-
 	// Used to emulate a viewport when height is set and the content is
 	// overflowing.
 	offsetTop    int
 	offsetBottom int
-
 	// Used to manage cursor blink
 	blinkCtx *blinkCtx
-
 	// cursorMode determines the behavior of the cursor
 	cursorMode CursorMode
 }
@@ -259,8 +245,7 @@ func (m Model) CursorMode() CursorMode {
 	return m.cursorMode
 }
 
-// CursorMode sets the model's cursor mode. This method returns a command.
-//
+// SetCursorMode sets the model's cursor mode. This method returns a command.
 // For available cursor modes, see type CursorMode.
 func (m *Model) SetCursorMode(mode CursorMode) tea.Cmd {
 	m.cursorMode = mode
@@ -318,24 +303,19 @@ func (m *Model) handlePaste(v string) bool {
 	for i, l := range lines {
 		runes[i] = []rune(l)
 	}
-
 	// Stuff before and after the cursor, copy them to avoid side effects.
 	headL := m.value[:m.posY]
 	head := append([]rune(nil), m.value[m.posY][:m.pos]...)
 	tailSrcL := m.value[m.posY+1:]
 	tailSrc := append([]rune(nil), m.value[m.posY][m.pos:]...)
-
 	// calculate horizontal cursor position based on new line
 	hCursorPos := len(head) + len(runes[0])
 	if len(runes) > 1 {
 		hCursorPos = len(runes[len(runes)-1])
 	}
-
 	runes[0] = append(head, runes[0]...)
 	runes[len(runes)-1] = append(runes[len(runes)-1], tailSrc...)
-
 	m.value = append(append(headL, runes...), tailSrcL...)
-
 	// Reset blink state if necessary and run overflow checks
 	return m.setCursor(hCursorPos, m.posY+len(runes)-1)
 }
@@ -346,13 +326,11 @@ func (m *Model) handleOverflowY() {
 		m.offsetBottom = len(m.value)
 		//return
 	}
-
 	// Correct right offsetLeft if we've deleted lines
 	if m.offsetBottom > len(m.value) {
 		m.offsetBottom = len(m.value)
 	}
 	//m.offsetBottom = min(m.offsetBottom, len(m.value))
-
 	if m.posY < m.offsetTop && m.posY >= 0 {
 		m.offsetTop = m.posY
 		m.offsetBottom = min(m.offsetTop+m.Height, len(m.value))
@@ -372,13 +350,10 @@ func (m *Model) handleOverflow() {
 		m.offsetRight = len(v)
 		return
 	}
-
 	// Correct right offsetLeft if we've deleted characters
 	m.offsetRight = min(m.offsetRight, len(v))
-
 	if m.pos < m.offsetLeft {
 		m.offsetLeft = m.pos
-
 		w := 0
 		i := 0
 		v = m.value[m.posY]
@@ -390,23 +365,19 @@ func (m *Model) handleOverflow() {
 				i++
 			}
 		}
-
 		m.offsetRight = m.offsetLeft + i
 	} else if m.pos >= m.offsetRight {
 		m.offsetRight = m.pos
-
 		w := 0
 		v = m.value[m.posY]
 		runes := v[:m.offsetRight]
 		i := len(runes) - 1
-
 		for i > 0 && w < m.Width {
 			w += rw.RuneWidth(runes[i])
 			if w <= m.Width {
 				i--
 			}
 		}
-
 		m.offsetLeft = m.offsetRight - (len(runes) - i)
 	}
 }
@@ -443,16 +414,13 @@ func (m *Model) deleteWordLeft() bool {
 	if m.pos == 0 || len(m.value) == 0 || len(m.value[m.posY]) == 0 {
 		return false
 	}
-
 	if m.EchoMode != EchoNormal {
 		return m.deleteBeforeCursor()
 	}
-
 	// Linter note: it's critical that we acquire the initial cursor position
 	// here prior to altering it via SetCursor() below. As such, moving this
 	// call into the corresponding if clause does not apply here.
 	oldPos := m.pos //nolint:ifshort
-
 	blink := m.setCursor(m.pos-1, m.posY)
 	for unicode.IsSpace(m.value[m.posY][m.pos]) {
 		if m.pos <= 0 {
@@ -461,7 +429,6 @@ func (m *Model) deleteWordLeft() bool {
 		// ignore series of whitespace before cursor
 		blink = m.setCursor(m.pos-1, m.posY)
 	}
-
 	for m.pos > 0 {
 		if !unicode.IsSpace(m.value[m.posY][m.pos]) {
 			blink = m.setCursor(m.pos-1, m.posY)
@@ -473,13 +440,11 @@ func (m *Model) deleteWordLeft() bool {
 			break
 		}
 	}
-
 	if oldPos > len(m.value[m.posY]) {
 		m.value[m.posY] = m.value[m.posY][:m.pos]
 	} else {
 		m.value[m.posY] = append(m.value[m.posY][:m.pos], m.value[m.posY][oldPos:]...)
 	}
-
 	return blink
 }
 
@@ -490,11 +455,9 @@ func (m *Model) deleteWordRight() bool {
 	if m.pos >= len(m.value) || len(m.value) == 0 {
 		return false
 	}
-
 	if m.EchoMode != EchoNormal {
 		return m.deleteAfterCursor()
 	}
-
 	oldPos := m.pos
 	m.setCursor(m.pos+1, m.posY)
 	for unicode.IsSpace(m.value[m.posY][m.pos]) {
@@ -505,7 +468,6 @@ func (m *Model) deleteWordRight() bool {
 			break
 		}
 	}
-
 	for m.pos < len(m.value) {
 		if !unicode.IsSpace(m.value[m.posY][m.pos]) {
 			m.setCursor(m.pos+1, m.posY)
@@ -513,13 +475,11 @@ func (m *Model) deleteWordRight() bool {
 			break
 		}
 	}
-
 	if m.pos > len(m.value[m.posY]) {
 		m.value[m.posY] = m.value[m.posY][:oldPos]
 	} else {
 		m.value[m.posY] = append(m.value[m.posY][:oldPos], m.value[m.posY][m.pos:]...)
 	}
-
 	return m.setCursor(oldPos, m.posY)
 }
 
@@ -565,11 +525,9 @@ func (m *Model) wordRight() bool {
 	if m.pos >= len(m.value[m.posY]) || len(m.value[m.posY]) == 0 {
 		return false
 	}
-
 	if m.EchoMode != EchoNormal {
 		return m.cursorEnd()
 	}
-
 	blink := false
 	i := m.pos
 	for i < len(m.value[m.posY]) {
@@ -580,7 +538,6 @@ func (m *Model) wordRight() bool {
 			break
 		}
 	}
-
 	for i < len(m.value[m.posY]) {
 		if !unicode.IsSpace(m.value[m.posY][i]) {
 			blink = m.setCursor(m.pos+1, m.posY)
@@ -589,7 +546,6 @@ func (m *Model) wordRight() bool {
 			break
 		}
 	}
-
 	return blink
 }
 
@@ -599,7 +555,6 @@ func (m Model) echoTransform(v string) string {
 		return strings.Repeat(string(m.EchoCharacter), rw.StringWidth(v))
 	case EchoNone:
 		return ""
-
 	default:
 		return v
 	}
@@ -611,9 +566,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.blink = true
 		return m, nil
 	}
-
 	var resetBlink bool
-
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.Type {
@@ -700,7 +653,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 					break
 				}
 			}
-
 			// Input a regular character
 			if m.CharLimit <= 0 || len(m.value) < m.CharLimit {
 				input := string(msg.Runes)
@@ -709,14 +661,11 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		}
 	case initialBlinkMsg:
 		// We accept all initialBlinkMsgs genrated by the Blink command.
-
 		if m.cursorMode != CursorBlink || !m.focus {
 			return m, nil
 		}
-
 		cmd := m.blinkCmd()
 		return m, cmd
-
 	case blinkMsg:
 		if m.cursorMode != CursorBlink || !m.focus {
 			return m, nil
@@ -730,22 +679,17 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			cmd = m.blinkCmd()
 		}
 		return m, cmd
-
 	case blinkCanceled: // no-op
 		return m, nil
-
 	case pasteMsg:
 		resetBlink = m.handlePaste(string(msg))
-
 	case pasteErrMsg:
 		m.Err = msg
 	}
-
 	var cmd tea.Cmd
 	if resetBlink {
 		cmd = m.blinkCmd()
 	}
-
 	m.handleOverflow()
 	return m, cmd
 }
@@ -756,9 +700,7 @@ func (m Model) View() string {
 	if len(m.value) == 0 && m.Placeholder != "" {
 		return m.placeholderView()
 	}
-
 	styleText := m.TextStyle.Inline(true).Render
-
 	var toPrint []string
 	for i, l := range m.value[m.offsetTop:m.offsetBottom] {
 		var (
@@ -794,7 +736,6 @@ func (m Model) View() string {
 		}
 		toPrint = append(toPrint, v)
 	}
-
 	// If a max height and background color were set fill the empty spaces with
 	// the background color.
 	valHeight := len(toPrint)
@@ -813,17 +754,14 @@ func (m Model) placeholderView() string {
 		p     = m.Placeholder
 		style = m.PlaceholderStyle.Inline(true).Render
 	)
-
 	// Cursor
 	if m.blink {
 		v += m.cursorView(style(p[:1]))
 	} else {
 		v += m.cursorView(p[:1])
 	}
-
 	// The rest of the placeholder text
 	v += style(p[1:])
-
 	return m.PromptStyle.Render(m.Prompt) + v
 }
 
@@ -840,16 +778,12 @@ func (m *Model) blinkCmd() tea.Cmd {
 	if m.cursorMode != CursorBlink {
 		return nil
 	}
-
 	if m.blinkCtx != nil && m.blinkCtx.cancel != nil {
 		m.blinkCtx.cancel()
 	}
-
 	ctx, cancel := context.WithTimeout(m.blinkCtx.ctx, m.BlinkSpeed)
 	m.blinkCtx.cancel = cancel
-
 	m.blinkTag++
-
 	return func() tea.Msg {
 		defer cancel()
 		<-ctx.Done()

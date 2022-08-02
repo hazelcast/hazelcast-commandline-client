@@ -7,6 +7,7 @@ require (
 	github.com/alecthomas/chroma v0.9.2
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/hazelcast/hazelcast-go-client v1.1.2-0.20220606144320-29ad107ad9cf
+	github.com/lucasb-eyer/go-colorful v1.2.0
 	github.com/mattn/go-colorable v0.1.7
 	github.com/mattn/go-runewidth v0.0.13
 	github.com/mattn/go-tty v0.0.3
@@ -29,7 +30,4 @@ require (
 )
 
 // termdbms
-require (
-	github.com/muesli/reflow v0.3.0
-	github.com/sahilm/fuzzy v0.1.0
-)
+require github.com/muesli/reflow v0.3.0
