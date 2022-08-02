@@ -17,6 +17,8 @@ type Color struct {
 	lipgloss.TerminalColor
 }
 
+var InvalidHexColorErr = fmt.Errorf(`color values should hex strings as in "#ffffff"`)
+
 func NewColor(color lipgloss.TerminalColor) *Color {
 	return &Color{color}
 }
@@ -24,10 +26,10 @@ func NewColor(color lipgloss.TerminalColor) *Color {
 func (c *Color) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var s string
 	if err := unmarshal(&s); err != nil {
-		return err
+		return InvalidHexColorErr
 	}
 	if _, err := colorful.Hex(s); err != nil {
-		return err
+		return InvalidHexColorErr
 	}
 	c.TerminalColor = lipgloss.Color(s)
 	return nil
