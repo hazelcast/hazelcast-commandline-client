@@ -16,4 +16,8 @@
 |-
 // end::cloud-token[]
 
+|--no-completion
+|Disables auto completion on for interactive mode
+|false
+
 |===

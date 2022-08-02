@@ -68,6 +68,8 @@ type CobraPrompt struct {
 	OnErrorFunc func(err error)
 	// Persister is used to interact with name persistence mechanism.
 	Persister map[string]string
+	// DisableSuggestions disables the suggestion prompt
+	DisableSuggestions bool
 }
 
 var ErrExit = errors.New("exit prompt")
@@ -201,6 +203,9 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 			}
 		},
 		func(d goprompt.Document) []goprompt.Suggest {
+			if co.DisableSuggestions {
+				return nil
+			}
 			// no suggestion on new line
 			if d.Text == "" {
 				return nil

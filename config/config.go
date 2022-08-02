@@ -49,16 +49,18 @@ type SSLConfig struct {
 }
 
 type Config struct {
-	Hazelcast hazelcast.Config
-	SSL       SSLConfig
+	Hazelcast        hazelcast.Config
+	SSL              SSLConfig
+	NoAutocompletion bool
 }
 
 type GlobalFlagValues struct {
-	CfgFile string
-	Cluster string
-	Token   string
-	Address string
-	Verbose bool
+	CfgFile          string
+	Cluster          string
+	Token            string
+	Address          string
+	Verbose          bool
+	NoAutocompletion bool
 }
 
 func DefaultConfig() *Config {
@@ -98,7 +100,8 @@ ssl:
   certpath: ""
   keypath: ""
   keypassword: ""
-disableautocompletion: false
+# disables auto completion on interactive mode
+noautocompletion: false
 `
 
 func writeToFile(config string, confPath string) error {
@@ -142,6 +145,10 @@ func mergeFlagsWithConfig(flags *GlobalFlagValues, config *Config) error {
 	}
 	if flags.Verbose && verboseWeight > confWeight {
 		config.Hazelcast.Logger.Level = logger.DebugLevel
+	}
+	// overwrite config if flag is set
+	if flags.NoAutocompletion {
+		config.NoAutocompletion = true
 	}
 	return nil
 }
