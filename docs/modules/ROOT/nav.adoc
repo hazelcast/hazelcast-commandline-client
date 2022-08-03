@@ -16,6 +16,7 @@
 ** xref:hzc-cluster.adoc[]
 ** xref:hzc-map.adoc[]
 ** xref:hzc-sql.adoc[]
+** xref:hzc-version.adoc[]
 * xref:keyboard-shortcuts.adoc[]
 
 .Release Notes
