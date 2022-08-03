@@ -55,7 +55,7 @@ func IsInteractiveCall(rootCmd *cobra.Command, args []string) bool {
 	return false
 }
 
-func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *config.Config) {
+func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *config.Config, noColor bool) {
 	cmdHistoryPath := filepath.Join(file.HZCHomePath(), "history")
 	exists, err := file.Exists(cmdHistoryPath)
 	if err != nil {
@@ -74,6 +74,7 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *conf
 		SuggestFlagsWithoutDash:  true,
 		DisableCompletionCommand: true,
 		DisableSuggestions:       cnfg.NoAutocompletion,
+		NoColor:                  noColor,
 		AddDefaultExitCommand:    true,
 		GoPromptOptions: []goprompt.Option{
 			goprompt.OptionTitle("Hazelcast Client"),

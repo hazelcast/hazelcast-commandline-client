@@ -6,7 +6,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/hazelcast/hazelcast-commandline-client/internal/termdbms/database"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/termdbms/list"
 )
 
 type SQLSnippet struct {
@@ -33,7 +32,6 @@ type UIState struct {
 	FormatModeEnabled bool
 	BorderToggle      bool
 	SQLEdit           bool
-	ShowClipboard     bool
 	ExpandColumn      int
 	CurrentTable      int
 }
@@ -66,8 +64,6 @@ type TuiModel struct {
 	Ready           bool
 	InitialFileName string // used if saving destructively
 	Viewport        viewport.Model
-	ClipboardList   list.Model
-	Clipboard       []list.Item
 	TableStyle      lipgloss.Style
 	MouseData       tea.MouseEvent
 	UndoStack       []TableState

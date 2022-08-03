@@ -33,6 +33,7 @@ import (
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	goprompt "github.com/hazelcast/hazelcast-commandline-client/internal/go-prompt"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/tuiutil"
 	"github.com/hazelcast/hazelcast-commandline-client/rootcmd"
 )
 
@@ -68,6 +69,8 @@ type CobraPrompt struct {
 	OnErrorFunc func(err error)
 	// Persister is used to interact with name persistence mechanism.
 	Persister map[string]string
+	// NoColor is used to disable colors
+	NoColor bool
 	// DisableSuggestions disables the suggestion prompt
 	DisableSuggestions bool
 }
@@ -94,11 +97,26 @@ func handleExit() {
 	}
 }
 
-var SuggestionColorOptions = []goprompt.Option{
-	goprompt.OptionSelectedSuggestionTextColor(goprompt.White), goprompt.OptionSuggestionTextColor(goprompt.White),
-	goprompt.OptionSelectedDescriptionTextColor(goprompt.LightGray), goprompt.OptionDescriptionTextColor(goprompt.LightGray),
-	goprompt.OptionSelectedSuggestionBGColor(goprompt.Blue), goprompt.OptionSuggestionBGColor(goprompt.DarkGray),
-	goprompt.OptionSelectedDescriptionBGColor(goprompt.Blue), goprompt.OptionDescriptionBGColor(goprompt.DarkGray),
+var Themes = map[string][]goprompt.Option{
+	tuiutil.Default: {
+		goprompt.OptionSelectedSuggestionTextColor(goprompt.White), goprompt.OptionSuggestionTextColor(goprompt.White),
+		goprompt.OptionSelectedDescriptionTextColor(goprompt.LightGray), goprompt.OptionDescriptionTextColor(goprompt.LightGray),
+		goprompt.OptionSelectedSuggestionBGColor(goprompt.Blue), goprompt.OptionSuggestionBGColor(goprompt.DarkGray),
+		goprompt.OptionSelectedDescriptionBGColor(goprompt.Blue), goprompt.OptionDescriptionBGColor(goprompt.DarkGray),
+	},
+	tuiutil.NoColor: {
+		goprompt.OptionSelectedSuggestionTextColor(goprompt.White), goprompt.OptionSuggestionTextColor(goprompt.White),
+		goprompt.OptionSelectedDescriptionTextColor(goprompt.LightGray), goprompt.OptionDescriptionTextColor(goprompt.LightGray),
+		goprompt.OptionSelectedSuggestionBGColor(goprompt.Blue), goprompt.OptionSuggestionBGColor(goprompt.DarkGray),
+		goprompt.OptionSelectedDescriptionBGColor(goprompt.Blue), goprompt.OptionDescriptionBGColor(goprompt.DarkGray),
+	},
+	tuiutil.Solarized: {
+		goprompt.OptionSelectedSuggestionTextColor(goprompt.White), goprompt.OptionSuggestionTextColor(goprompt.White),
+		goprompt.OptionSelectedDescriptionTextColor(goprompt.LightGray), goprompt.OptionDescriptionTextColor(goprompt.LightGray),
+		goprompt.OptionSelectedSuggestionBGColor(goprompt.Purple), goprompt.OptionSuggestionBGColor(goprompt.Blue),
+		goprompt.OptionSelectedDescriptionBGColor(goprompt.Purple), goprompt.OptionDescriptionBGColor(goprompt.Blue),
+		goprompt.OptionPreviewSuggestionTextColor(goprompt.DarkRed), goprompt.OptionPrefixTextColor(goprompt.Purple),
+	},
 }
 
 // Run will automatically generate suggestions for all cobra commands and flags defined by RootCmd and execute the selected commands.
@@ -124,7 +142,7 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 			b.CursorRight(to)
 		},
 	}))
-	co.GoPromptOptions = append(co.GoPromptOptions, SuggestionColorOptions...)
+	co.GoPromptOptions = append(co.GoPromptOptions, Themes[tuiutil.SelectedTheme]...)
 	history := goprompt.NewHistory()
 	f, err := os.OpenFile(cmdHistoryPath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0600)
 	defer func() {

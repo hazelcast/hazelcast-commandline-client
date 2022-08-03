@@ -9,11 +9,12 @@ import (
 )
 
 const (
-	shortenSuffix = "..."
-	leftPrefix    = " "
-	leftSuffix    = " "
-	rightPrefix   = " "
-	rightSuffix   = " "
+	shortenSuffix  = "..."
+	leftPrefix     = "  "
+	leftSuffix     = " "
+	rightPrefix    = " "
+	rightSuffix    = " "
+	selectedPrefix = ">"
 )
 
 var (

@@ -33,7 +33,10 @@ const (
 )
 
 func New(config *hazelcast.Config) *cobra.Command {
-	var outputType string
+	var (
+		outputType string
+		noColor    bool
+	)
 	cmd := &cobra.Command{
 		Use:   "sql [query]",
 		Short: "Start SQL Browser or execute given SQL query",
@@ -55,7 +58,7 @@ sql "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR, this VARCHAR) TYPE IMAP 
 			q = strings.TrimSpace(q)
 			if len(q) == 0 {
 				// If no queries given, run sql browser
-				p := browser.InitSQLBrowser(driver)
+				p := browser.InitSQLBrowser(driver, noColor)
 				if err := p.Start(); err != nil {
 					fmt.Println("could not run sql browser:", err)
 					return err
@@ -76,13 +79,14 @@ sql "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR, this VARCHAR) TYPE IMAP 
 			return nil
 		},
 	}
-	decorateCommandWithOutputFlag(&outputType, cmd)
+	decorateCommandWithOutputFlag(&outputType, &noColor, cmd)
 	return cmd
 }
 
-func decorateCommandWithOutputFlag(outputType *string, cmd *cobra.Command) {
+func decorateCommandWithOutputFlag(outputType *string, noColor *bool, cmd *cobra.Command) {
 	flags := cmd.Flags()
 	flags.StringVarP(outputType, "output-type", "o", outputPretty, fmt.Sprintf("%s or %s", outputPretty, outputCSV))
+	//flags.BoolVar(noColor, "no-color", false, "2 color option")
 	cmd.RegisterFlagCompletionFunc("output-type", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{outputPretty, outputCSV}, cobra.ShellCompDirectiveDefault
 	})

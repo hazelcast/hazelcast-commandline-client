@@ -3,7 +3,7 @@ package viewer
 import (
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/hazelcast/hazelcast-commandline-client/internal/termdbms/tuiutil"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/tuiutil"
 )
 
 type Command func(m *TuiModel) tea.Cmd
@@ -12,13 +12,10 @@ var (
 	GlobalCommands = make(map[string]Command)
 )
 
+var themeIndex int
+
 func init() {
 	// GLOBAL COMMANDS
-	GlobalCommands["t"] = func(m *TuiModel) tea.Cmd {
-		tuiutil.SelectedTheme = (tuiutil.SelectedTheme + 1) % len(tuiutil.ValidThemes)
-		SetStyles()
-		return nil
-	}
 	GlobalCommands["pgdown"] = func(m *TuiModel) tea.Cmd {
 		for i := 0; i < m.Viewport.Height; i++ {
 			ScrollDown(m)

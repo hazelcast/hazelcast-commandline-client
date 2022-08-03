@@ -23,8 +23,12 @@ import (
 	"testing"
 
 	"github.com/alecthomas/assert"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/hazelcast/hazelcast-go-client/logger"
+	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
+
+	"github.com/hazelcast/hazelcast-commandline-client/internal/tuiutil"
 )
 
 func TestDefaultConfig(t *testing.T) {
@@ -148,4 +152,15 @@ func TestMergeFlagsWithConfig(t *testing.T) {
 			assert.Equal(t, c, tt.expectedConfig)
 		})
 	}
+}
+
+func TestSetStyling(t *testing.T) {
+	theme := "solarized"
+	c := Config{Styling: Styling{
+		Theme:        &theme,
+		ColorPalette: tuiutil.ColorPalette{ResultText: tuiutil.NewColor(lipgloss.Color("#ffffaa"))},
+	}}
+	setStyling(false, &c)
+	selectedTheme := tuiutil.GetTheme()
+	require.Equal(t, lipgloss.Color("#ffffaa"), selectedTheme.ResultText.TerminalColor)
 }
