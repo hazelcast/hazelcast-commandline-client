@@ -50,10 +50,10 @@ type SSLConfig struct {
 }
 
 type Config struct {
-	Hazelcast hazelcast.Config
-	SSL       SSLConfig
+	Hazelcast        hazelcast.Config
+	SSL              SSLConfig
 	NoAutocompletion bool
-	Styling   Styling
+	Styling          Styling
 }
 
 type Styling struct {
@@ -68,7 +68,7 @@ type GlobalFlagValues struct {
 	Address          string
 	Verbose          bool
 	NoAutocompletion bool
-	NoColor bool
+	NoColor          bool
 }
 
 func DefaultConfig() *Config {
@@ -111,7 +111,7 @@ ssl:
 # disables auto completion on interactive mode
 noautocompletion: false
 styling:
-  theme: "default" # default, no-color, nord, solarized
+  theme: "default" # default, no-color, solarized
   colorpalette:
     # uncomment to override theme color. closest supported color will be used
     #headerbackground: "#ff12aa"

@@ -77,14 +77,12 @@ type Theme string
 const (
 	Default   = "default"
 	NoColor   = "no-color"
-	Nord      = "nord"
 	Solarized = "solarized"
 )
 
 var themeNames = []string{
 	"default",
 	"no-color",
-	"nord",
 	"solarized",
 }
 
@@ -103,7 +101,6 @@ var (
 	ValidThemes   = []string{
 		Default,
 		NoColor,
-		Nord,
 		Solarized,
 	}
 	ThemesMap = map[string]*ColorPalette{
@@ -114,14 +111,6 @@ var (
 			HeaderForeground: NewColor(lipgloss.Color("#eceff4")),
 			Highlight:        NewColor(lipgloss.Color("#88c0d0")),
 			FooterForeground: NewColor(lipgloss.Color("#b48ead")),
-		},
-		Nord: {
-			HeaderBackground: NewColor(lipgloss.Color("#383838")),
-			Border:           NewColor(lipgloss.Color("#FFFFFF")),
-			ResultText:       NewColor(lipgloss.Color("#FFFFFF")),
-			HeaderForeground: NewColor(lipgloss.Color("#FFFFFF")),
-			Highlight:        NewColor(lipgloss.Color("#A0A0A0")),
-			FooterForeground: NewColor(lipgloss.Color("#C2C2C2")),
 		},
 		NoColor: { // no color
 			HeaderBackground: NewColor(noColor),
