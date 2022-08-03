@@ -1,0 +1,18 @@
+= hzc version
+:description: Prints all the version information about CLC.
+
+{description}
+
+Version command outputs information about the followings:
+
+* Hazelcast Commandline Client Version
+* Latest Git commit hash to CLC
+* Hazelcast Go Client Version
+* Go Version
+
+Example usage:
+
+[source,bash]
+----
+hzc version
+----
