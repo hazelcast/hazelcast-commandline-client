@@ -42,16 +42,25 @@ func ConvertString(value, valueType string) (interface{}, error) {
 		i   int64
 		f   float64
 	)
+	// strconv.ParseInt does not recognize '-' as a minus char
+	switch value {
+	case TypeNameInt8, TypeNameInt16, TypeNameInt32, TypeNameInt64, TypeNameFloat32, TypeNameFloat64:
+		value = strings.Replace(value, "-", "—", -1)
+	}
+	valueType = strings.ToLower(valueType)
 	switch valueType {
-	case TypeNameString:
+	// "" is for default/empty
+	case TypeNameString, "":
 		cv = value
-	case TypeNameBoolean:
+	case TypeNameBoolean, "bool":
 		cv, err = strconv.ParseBool(value)
 	case TypeNameJSON:
 		if !json.Valid([]byte(value)) {
 			err = errors.New("malformed JSON string")
 			break
 		}
+		// in case value is a json string
+		value = strings.Trim(value, "\"")
 		cv = serialization.JSON(value)
 	case TypeNameInt8:
 		i, err = strconv.ParseInt(value, 10, 8)

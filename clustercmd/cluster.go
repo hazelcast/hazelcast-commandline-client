@@ -70,7 +70,7 @@ func New(config *hazelcast.Config) *cobra.Command {
 				if err != nil {
 					return err
 				}
-				fmt.Println(*result)
+				cmd.Println(*result)
 				return nil
 			},
 		})

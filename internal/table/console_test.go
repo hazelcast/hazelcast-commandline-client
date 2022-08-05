@@ -24,7 +24,7 @@ func TestTabularWriter_Write(t *testing.T) {
 		{
 			desc: "set initial console size",
 			changeTerminalSize: func() {
-				consoleSize = func() (int, int) {
+				ConsoleSize = func() (int, int) {
 					return 50, 3
 				}
 			},
@@ -52,7 +52,7 @@ func TestTabularWriter_Write(t *testing.T) {
 }
 
 func TestTabularWriter_WriteHeader(t *testing.T) {
-	consoleSize = func() (int, int) {
+	ConsoleSize = func() (int, int) {
 		return 50, 3
 	}
 	buffer := bytes.NewBuffer(nil)
@@ -67,7 +67,7 @@ func TestTabularWriter_WriteHeader(t *testing.T) {
 	assert.Equal(t, expected, out)
 	lines := strings.Split(strings.TrimRight(out, "\n"), "\n")
 	for _, l := range lines {
-		expectedWidth, _ := consoleSize()
+		expectedWidth, _ := ConsoleSize()
 		// -1 for the newline
 		assert.Equal(t, expectedWidth-1, len(l))
 	}

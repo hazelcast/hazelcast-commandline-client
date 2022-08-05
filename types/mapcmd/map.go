@@ -115,14 +115,14 @@ func printValueBasedOnType(cmd *cobra.Command, value interface{}) {
 	case serialization.JSON:
 		if err = quick.Highlight(cmd.OutOrStdout(), fmt.Sprintln(v),
 			"json", "terminal", "tango"); err != nil {
-			fmt.Println(v.String())
+			cmd.Println(v.String())
 		}
 	default:
 		if v == nil {
-			fmt.Println("There is no value corresponding to the provided key")
+			cmd.Println("There is no value corresponding to the provided key")
 			break
 		}
-		fmt.Println(v)
+		cmd.Println(v)
 	}
 }
 
@@ -241,7 +241,7 @@ func decorateCommandWithMapNameFlags(cmd *cobra.Command, mapName *string, requir
 }
 
 func decorateCommandWithMapKeyTypeFlags(cmd *cobra.Command, mapKeyType *string, required bool) {
-	cmd.Flags().StringVar(mapKeyType, MapKeyTypeFlag, "string", fmt.Sprintf("type of the key, one of: %s", strings.Join(internal.SupportedTypeNames, ",")))
+	cmd.Flags().StringVar(mapKeyType, MapKeyTypeFlag, "", fmt.Sprintf("type of the key, one of: %s", strings.Join(internal.SupportedTypeNames, ",")))
 	if required {
 		if err := cmd.MarkFlagRequired(MapKeyTypeFlag); err != nil {
 			panic(err)
@@ -256,7 +256,7 @@ func decorateCommandWithMapKeyTypeFlags(cmd *cobra.Command, mapKeyType *string, 
 }
 
 func decorateCommandWithMapValueTypeFlags(cmd *cobra.Command, mapValueType *string, required bool) {
-	cmd.Flags().StringVarP(mapValueType, MapValueTypeFlag, MapValueTypeFlagShort, "string", fmt.Sprintf("type of the value, one of: %s", strings.Join(internal.SupportedTypeNames, ",")))
+	cmd.Flags().StringVarP(mapValueType, MapValueTypeFlag, MapValueTypeFlagShort, "", fmt.Sprintf("type of the value, one of: %s", strings.Join(internal.SupportedTypeNames, ",")))
 	if required {
 		if err := cmd.MarkFlagRequired(MapValueTypeFlag); err != nil {
 			panic(err)

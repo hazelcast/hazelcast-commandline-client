@@ -6,7 +6,7 @@ require (
 	github.com/alecthomas/assert v0.0.0-20170929043011-405dbfeb8e38
 	github.com/alecthomas/chroma v0.9.2
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
-	github.com/hazelcast/hazelcast-go-client v1.1.2-0.20220606144320-29ad107ad9cf
+	github.com/hazelcast/hazelcast-go-client v1.3.0
 	github.com/lucasb-eyer/go-colorful v1.2.0
 	github.com/mattn/go-colorable v0.1.7
 	github.com/mattn/go-runewidth v0.0.13
@@ -29,5 +29,9 @@ require (
 	github.com/muesli/termenv v0.11.1-0.20220212125758-44cd13922739
 )
 
-// termdbms
-require github.com/muesli/reflow v0.3.0
+require (
+	github.com/apache/thrift v0.14.1
+	// termdbms
+	github.com/muesli/reflow v0.3.0
+	go.uber.org/goleak v1.1.10
+)
