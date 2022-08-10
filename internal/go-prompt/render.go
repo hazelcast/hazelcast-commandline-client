@@ -135,6 +135,9 @@ func (r *Render) renderCompletion(buf *Buffer, completions *CompletionManager) {
 		r.out.CursorDown(1)
 		if i == selected {
 			r.out.SetColor(r.selectedSuggestionTextColor, r.selectedSuggestionBGColor, true)
+			r := []rune(formatted[i].Text)
+			r[0] = '>'
+			formatted[i].Text = string(r)
 		} else {
 			r.out.SetColor(r.suggestionTextColor, r.suggestionBGColor, false)
 		}

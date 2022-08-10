@@ -3,7 +3,6 @@ site:
   url: 
   start_page: clc::overview.adoc
   robots: disallow
-  start_page: 
   keys:
     docsearch_id: 'QK2EAH8GB0'
     docsearch_api: 'ef7bd9485eafbd75d6e8425949eda1f5'

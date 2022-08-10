@@ -263,7 +263,6 @@ var displayAttributeParameters = map[DisplayAttribute][]byte{
 
 var foregroundANSIColors = map[Color][]byte{
 	DefaultColor: {'3', '9'},
-
 	// Low intensity.
 	Black:     {'3', '0'},
 	DarkRed:   {'3', '1'},
@@ -283,6 +282,8 @@ var foregroundANSIColors = map[Color][]byte{
 	Fuchsia:   {'9', '5'},
 	Turquoise: {'9', '6'},
 	White:     {'9', '7'},
+
+	NoColor: {},
 }
 
 var backgroundANSIColors = map[Color][]byte{

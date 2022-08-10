@@ -275,6 +275,7 @@ The prior versions of the given targets would also work, but that's not tested.
 
 * Go 1.18 or better
 * GNU Make (on Linux and MacOS)
+* Command Prompt (on Windows) 
  
 ### 1. Download the source
 
@@ -295,4 +296,10 @@ https://github.com/hazelcast/hazelcast-commandline-client/archive/refs/heads/mai
 ```
 cd hazelcast-commandline-client
 make
+```
+
+### Finally, run the project
+
+```
+./hzc # starts the interactive mode
 ```

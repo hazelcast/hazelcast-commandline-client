@@ -18,6 +18,7 @@ package rootcmd
 import (
 	"errors"
 	"fmt"
+	"github.com/hazelcast/hazelcast-commandline-client/versioncmd"
 	"os"
 	"strings"
 
@@ -35,7 +36,7 @@ import (
 func New(cnfg *hazelcast.Config) (*cobra.Command, *config.GlobalFlagValues) {
 	var flags config.GlobalFlagValues
 	root := &cobra.Command{
-		Use:   "hzc {cluster | map | sql | help} [--address address | --cloud-token token | --cluster-name name | --config config]",
+		Use:   "hzc {cluster | map | sql | version | help} [--address address | --cloud-token token | --cluster-name name | --config config]",
 		Short: "Hazelcast command-line client",
 		Long:  "Hazelcast command-line client connects your command-line to a Hazelcast cluster",
 		Example: `hzc # starts an interactive shell 🚀
@@ -70,6 +71,7 @@ func subCommands(config *hazelcast.Config) []*cobra.Command {
 		clustercmd.New(config),
 		mapcmd.New(config),
 		sqlcmd.New(config),
+		versioncmd.New(),
 	}
 	fds := []fakeDoor.FakeDoor{
 		{Name: "List", IssueNum: 48},
@@ -92,4 +94,6 @@ func assignPersistentFlags(cmd *cobra.Command, flags *config.GlobalFlagValues) {
 	cmd.PersistentFlags().StringVar(&flags.Cluster, "cluster-name", "", fmt.Sprintf("name of the cluster that contains the instances (default is %s)", config.DefaultClusterName))
 	cmd.PersistentFlags().StringVar(&flags.Token, "cloud-token", "", "your Hazelcast Cloud token")
 	cmd.PersistentFlags().BoolVar(&flags.Verbose, "verbose", false, "verbose output")
+	cmd.PersistentFlags().BoolVar(&flags.NoColor, "no-color", false, "disable colors")
+	cmd.PersistentFlags().BoolVar(&flags.NoAutocompletion, "no-completion", false, "disable completion [interactive mode]")
 }

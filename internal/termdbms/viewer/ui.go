@@ -10,7 +10,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/muesli/reflow/wordwrap"
 
-	"github.com/hazelcast/hazelcast-commandline-client/internal/termdbms/tuiutil"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/tuiutil"
 )
 
 var (
@@ -97,8 +97,7 @@ func DisplayTable(m *TuiModel) string {
 	for _, columnName := range slice {
 		var rowBuilder []string
 		columnValues := m.Data().TableSlices[columnName]
-		base := m.GetBaseStyle().
-			Background(lipgloss.Color("#000000"))
+		base := m.GetBaseStyle()
 		for r, val := range columnValues {
 			s := GetStringRepresentationOfInterface(val)
 			s = " " + s
@@ -106,13 +105,13 @@ func DisplayTable(m *TuiModel) string {
 			// handle highlighting
 			if r == m.GetRow() {
 				if !tuiutil.Ascii {
-					tmpStyle = tmpStyle.Background(lipgloss.Color(tuiutil.Highlight())).
+					tmpStyle = tmpStyle.Background(tuiutil.Highlight()).
 						UnsetBorderLeft().
 						UnsetBorderStyle().
 						UnsetBorderForeground().
 						PaddingLeft(1).                 // to make up for lost border
 						Width(tmpStyle.GetWidth() + 1). // to make up for lost border
-						Foreground(lipgloss.Color("#000000")).Bold(true)
+						Bold(true)
 				} else if tuiutil.Ascii {
 					s = "|" + s
 				}
@@ -162,10 +161,6 @@ func DisplayFormatText(m *TuiModel) string {
 		cpy,
 		"\n")
 	return wordwrap.String(ret, m.Viewport.Width)
-}
-
-func ShowClipboard(m *TuiModel) string {
-	return m.ClipboardList.View()
 }
 
 // DisplaySelection does that or writes it to a file if the selection is over a limit

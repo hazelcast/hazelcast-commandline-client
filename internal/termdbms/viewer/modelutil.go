@@ -2,14 +2,9 @@ package viewer
 
 import (
 	"database/sql"
-	"encoding/json"
-	"fmt"
-	"os"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
-
-	"github.com/hazelcast/hazelcast-commandline-client/internal/termdbms/list"
 )
 
 func (m *TuiModel) WriteMessage(s string) {
@@ -81,23 +76,7 @@ func GetNewModel(_ string, _ *sql.DB) TuiModel {
 			TableSlices:       make(map[string][]interface{}),
 			TableIndexMap:     make(map[int]string),
 		},
-		Clipboard: []list.Item{},
 	}
-	snippetsFile := fmt.Sprintf("%s/%s", HiddenTmpDirectoryName, SQLSnippetsFile)
-	exists, _ := Exists(snippetsFile)
-	if exists {
-		contents, _ := os.ReadFile(snippetsFile)
-		var c []SQLSnippet
-		json.Unmarshal(contents, &c)
-		for _, v := range c {
-			m.Clipboard = append(m.Clipboard, v)
-		}
-	}
-	m.ClipboardList = list.NewModel(m.Clipboard, itemDelegate{}, 0, 0)
-	m.ClipboardList.Title = "SQL Snippets"
-	m.ClipboardList.SetFilteringEnabled(true)
-	m.ClipboardList.SetShowPagination(true)
-	m.ClipboardList.SetShowTitle(true)
 	return m
 }
 

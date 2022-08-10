@@ -34,10 +34,12 @@ import (
 
 var InvalidStateErr = errors.New("invalid new state")
 
-//todo add protection for concurrent access
+// todo add protection for concurrent access
 var (
-	client    *hazelcast.Client
-	sqlDriver *sql.DB
+	client        *hazelcast.Client
+	sqlDriver     *sql.DB
+	GitCommit     string
+	ClientVersion string
 )
 
 type RESTCall struct {
@@ -155,14 +157,17 @@ func ConnectToCluster(ctx context.Context, clientConfig *hazelcast.Config) (cli 
 	}()
 	configCopy := clientConfig.Clone()
 	cli, err = hazelcast.StartNewClientWithConfig(ctx, configCopy)
+	if err == nil {
+		client = cli
+	}
 	return
 }
 
-func SQLDriver(config *hazelcast.Config) (*sql.DB, error) {
+func SQLDriver(ctx context.Context, config *hazelcast.Config) (*sql.DB, error) {
 	if sqlDriver != nil {
 		return sqlDriver, nil
 	}
 	sqlDriver = driver.Open(*config)
-	err := sqlDriver.Ping()
+	err := sqlDriver.PingContext(ctx)
 	return sqlDriver, err
 }
