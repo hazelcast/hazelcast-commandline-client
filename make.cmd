@@ -1,9 +1,13 @@
 @echo off
 
 setlocal
-set client_type=CLC
-set client_version=v5.2.0-beta2
-set ldflags="-X 'github.com/hazelcast/hazelcast-go-client/internal.ClientType=%client_type%' -X 'github.com/hazelcast/hazelcast-go-client/internal.ClientVersion=%client_version%'"
+FOR /F "tokens=* USEBACKQ" %%F IN (`git rev-list --tags --max-count=1`) DO (
+set GIT_COMMIT=%%F
+)
+FOR /F "tokens=* USEBACKQ" %%F IN (`git describe --tags %GIT_COMMIT%`) DO (
+set CLC_VERSION=%%F
+)
+set ldflags="-X 'github.com/hazelcast/hazelcast-go-client/internal.ClientType=CLC' -X 'github.com/hazelcast/hazelcast-commandline-client/internal.GitCommit=%GIT_COMMIT%' -X 'github.com/hazelcast/hazelcast-commandline-client/internal.ClientVersion=%CLC_VERSION%' -X 'github.com/hazelcast/hazelcast-go-client/internal.ClientVersion=%CLC_VERSION%'"
 
 REM default target is build
 if "%1" == "" (
