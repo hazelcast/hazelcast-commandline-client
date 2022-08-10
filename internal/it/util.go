@@ -24,8 +24,6 @@ import (
 	"math/rand"
 	"net"
 	"os"
-	"reflect"
-	"runtime/debug"
 	"sort"
 	"strconv"
 	"strings"
@@ -113,13 +111,6 @@ func TesterWithConfigBuilder(t *testing.T, cbCallback func(config *hz.Config), f
 		t.Run("Non-Smart Client", func(t *testing.T) {
 			runner(t, false)
 		})
-	}
-}
-
-func AssertEquals(t *testing.T, target, value interface{}) {
-	if !reflect.DeepEqual(target, value) {
-		t.Log(string(debug.Stack()))
-		t.Fatalf("target: %#v != %#v", target, value)
 	}
 }
 
