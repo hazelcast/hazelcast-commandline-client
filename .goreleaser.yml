@@ -44,7 +44,6 @@ changelog:
       - '^docs:'
       - '^test:'
 
- .goreleaser.yaml
 brews:
   -
     # Name template of the recipe
