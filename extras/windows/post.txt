@@ -1,0 +1,4 @@
+Hazelcast CLC was installed on your computer.
+You can launch the CLC from the Hazelcast group in the Start menu.
+Note that CLC tries to connect to a Hazelcast instance running on your computer.
+Check out https://docs.hazelcast.com/hazelcast/latest/getting-started/get-started-cli  about how to start a Hazelcast instance on your computer.
