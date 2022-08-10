@@ -60,8 +60,8 @@ func NewPutAll(config *hazelcast.Config) *cobra.Command {
 		if len(mapKeys) != 0 ||
 			len(mapValues) != 0 ||
 			len(mapValueFiles) != 0 ||
-			mapKeyType != "string" ||
-			mapValueType != "string" {
+			mapKeyType != "" ||
+			mapValueType != "" {
 			return hzcerrors.NewLoggableError(nil, fmt.Sprintf("%s is already set, there cannot be additional flags", JSONEntryFlag))
 		}
 		return nil
@@ -98,6 +98,13 @@ func NewPutAll(config *hazelcast.Config) *cobra.Command {
 			if jsonEntryPath != "" {
 				if err := validateJsonEntryFlag(); err != nil {
 					return err
+				}
+				// assign default values
+				if mapKeyType == "" {
+					mapKeyType = "string"
+				}
+				if mapValueType == "" {
+					mapKeyType = "string"
 				}
 				data, err := ioutil.ReadFile(jsonEntryPath)
 				if err != nil {
