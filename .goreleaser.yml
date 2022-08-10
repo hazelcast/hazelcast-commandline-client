@@ -2,6 +2,8 @@ before:
   hooks:
     - go install golang.org/x/tools/...@latest
     - go mod tidy
+    - go install github.com/tc-hib/go-winres@latest
+    - go-winres make --product-version=git-tag --file-version=git-tag
     - go generate ./...
 builds:
   - 
