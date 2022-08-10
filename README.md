@@ -301,6 +301,14 @@ make
 
 ### Finally, run the project
 
+CLC starts the interactive mode by default.
+
+On Linux and MacOS:
 ```
-./hzc # starts the interactive mode
+./hzc
+```
+
+On Windows:
+```
+hzc.exe
 ```
