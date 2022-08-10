@@ -82,11 +82,6 @@ func (r *Render) prepareArea(lines int) {
 func (r *Render) UpdateWinSize(ws *WinSize) {
 	r.row = ws.Row
 	r.col = ws.Col
-	// don't extend the prompt all the way to the right.
-	// this eliminates problems on terminals with big fonts
-	if r.col > 3 {
-		r.col -= 3
-	}
 }
 
 func (r *Render) renderWindowTooSmall() {

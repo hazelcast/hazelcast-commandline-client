@@ -34,17 +34,15 @@
       "0409": {
         "info": {
           "0409": {
-            "FileDescription": "Command line client for Hazelcast",
+            "FileDescription": "Hazelcast Command Line Client",
             "InternalName": "hzc",
-            "LegalCopyright": "©Hazelcast, Inc.",
+            "LegalCopyright": "© Hazelcast, Inc.",
             "OriginalFilename": "hzc.exe",
-            "ProductName": "hzc",
+            "ProductName": "Hazelcast CLC",
             "Comments": "",
             "CompanyName": "Hazelcast, Inc.",
-            "FileVersion": "",
             "LegalTrademarks": "",
             "PrivateBuild": "",
-            "ProductVersion": "",
             "SpecialBuild": ""
           }
         }
