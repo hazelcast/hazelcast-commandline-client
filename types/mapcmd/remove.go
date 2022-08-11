@@ -38,7 +38,7 @@ func NewRemove(config *hazelcast.Config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			key, err := internal.ConvertString(mapKey, mapKeyType)
 			if err != nil {
-				return hzcerrors.NewLoggableError(err, "Conversion error on key %s to type %s", mapKey, mapKeyType)
+				return hzcerrors.NewLoggableError(err, "Conversion error on key %s to type %s, %s", mapKey, mapKeyType, err)
 			}
 			m, err := getMap(cmd.Context(), config, mapName)
 			if err != nil {

@@ -61,8 +61,6 @@ func ConvertString(value, valueType string) (interface{}, error) {
 			err = errors.New("malformed JSON string")
 			break
 		}
-		// in case value is a json string
-		value = strings.Trim(value, "\"")
 		cv = serialization.JSON(value)
 	case TypeNameInt8:
 		i, err = strconv.ParseInt(value, 10, 8)

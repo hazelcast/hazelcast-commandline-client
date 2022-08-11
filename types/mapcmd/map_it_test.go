@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/shlex"
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -21,7 +22,7 @@ import (
 
 func TestMapPut(t *testing.T) {
 	it.MapTesterWithConfigAndMapName(t, func(t *testing.T, c *hazelcast.Config, m *hazelcast.Map, mn string) {
-		mapNameArg := fmt.Sprintf(` --name %s`, mn)
+		mapNameArg := fmt.Sprintf(` --name "%s"`, mn)
 		tcs := []struct {
 			name        string
 			args        string
@@ -36,10 +37,34 @@ func TestMapPut(t *testing.T) {
 				value: "v1",
 			},
 			{
+				name:        "valid put key(json), value(json)",
+				args:        `--key {"some":"key"} --key-type json --value {"some":"value"} --value-type json` + mapNameArg,
+				key:         serialization.JSON(`{"some":"key"}`),
+				errContains: `malformed JSON`,
+			},
+			{
 				name:  "valid put key(json), value(json)",
-				args:  `--key {"some":"key"} --key-type json --value {"some":"value"} --value-type json` + mapNameArg,
+				args:  `--key '{"some":"key"}' --key-type json --value '{"some":"value"}' --value-type json` + mapNameArg,
 				key:   serialization.JSON(`{"some":"key"}`),
 				value: serialization.JSON(`{"some":"value"}`),
+			},
+			{
+				name:  "valid put key(json) string, value(json) string",
+				args:  `--key '"some"' --key-type json --value '"value"' --value-type json` + mapNameArg,
+				key:   serialization.JSON(`"some"`),
+				value: serialization.JSON(`"value"`),
+			},
+			{
+				name:        "valid put json string key(string), value(json)",
+				args:        `--key bla --value "foo" --value-type json` + mapNameArg,
+				key:         "bla",
+				errContains: `malformed JSON`,
+			},
+			{
+				name:  "valid put json string key(string), value(json)",
+				args:  `--key bla --value '"foo"' --value-type json` + mapNameArg,
+				key:   "bla",
+				value: serialization.JSON(`"foo"`),
 			},
 			{
 				name:        "invalid put, missing key",
@@ -58,11 +83,13 @@ func TestMapPut(t *testing.T) {
 				var stdout, stderr bytes.Buffer
 				cmd.SetOut(&stdout)
 				cmd.SetErr(&stderr)
-				args := strings.Split(tc.args, " ")
+				args, err := shlex.Split(tc.args)
+				require.NoError(t, err)
 				cmd.SetArgs(args)
 				ctx := context.Background()
-				_, err := cmd.ExecuteContextC(ctx)
+				_, err = cmd.ExecuteContextC(ctx)
 				if tc.errContains != "" {
+					require.Error(t, err)
 					require.Contains(t, err.Error(), tc.errContains)
 					return
 				}
@@ -133,15 +160,15 @@ func TestMapPutAll(t *testing.T) {
 			},
 			{
 				name: "valid put-all key(json), value(json)",
-				args: `--key-type json --value-type json -k {"some":"key"} -v {"some":"value"} -k "test" -v "string"` + mapNameArg,
+				args: `--key-type json --value-type json -k '{"some":"key"}' -v '{"some":"value"}' -k '"test"' -v '"string"'` + mapNameArg,
 				entries: []types.Entry{
 					{
 						Key:   serialization.JSON(`{"some":"key"}`),
 						Value: serialization.JSON(`{"some":"value"}`),
 					},
 					{
-						Key:   serialization.JSON(`test`),
-						Value: serialization.JSON(`string`),
+						Key:   serialization.JSON(`"test"`),
+						Value: serialization.JSON(`"string"`),
 					},
 				},
 			},
@@ -162,13 +189,15 @@ func TestMapPutAll(t *testing.T) {
 				var stdout, stderr bytes.Buffer
 				cmd.SetOut(&stdout)
 				cmd.SetErr(&stderr)
-				args := strings.Split("./something "+tc.args, " ")
+				args, err := shlex.Split(tc.args)
+				require.NoError(t, err)
 				// no way other than this for put-all. validateJsonEntryFlag need the actual args to decide the order. Cobra don't pass the actual args
 				//cmd.SetArgs(args)
-				os.Args = args
+				os.Args = append([]string{"./something"}, args...)
 				ctx := context.Background()
-				_, err := cmd.ExecuteContextC(ctx)
+				_, err = cmd.ExecuteContextC(ctx)
 				if tc.errContains != "" {
+					require.Error(t, err)
 					require.Contains(t, err.Error(), tc.errContains)
 					return
 				}
@@ -207,7 +236,7 @@ func TestMapGet(t *testing.T) {
 			},
 			{
 				name:  "valid get key(json), value(json)",
-				args:  `--key {"some":"key"} --key-type json` + mapNameArg,
+				args:  `--key '{"some":"key"}' --key-type json` + mapNameArg,
 				key:   serialization.JSON(`{"some":"key"}`),
 				value: serialization.JSON(`{"some":"value"}`),
 				output: `[1m[30m{[0m[1m[36m"some"[0m[1m[30m:[0m[32m"value"[0m[1m[30m}[0m`,
@@ -229,13 +258,14 @@ func TestMapGet(t *testing.T) {
 				var stdout, stderr bytes.Buffer
 				cmd.SetOut(&stdout)
 				cmd.SetErr(&stderr)
-				args := strings.Split(tc.args, " ")
+				args, err := shlex.Split(tc.args)
+				require.NoError(t, err)
 				cmd.SetArgs(args)
 				ctx := context.Background()
 				if tc.key != nil && tc.value != nil {
 					require.NoError(t, m.Set(ctx, tc.key, tc.value))
 				}
-				_, err := cmd.ExecuteContextC(ctx)
+				_, err = cmd.ExecuteContextC(ctx)
 				if tc.errContains != "" {
 					require.Contains(t, err.Error(), tc.errContains)
 					return

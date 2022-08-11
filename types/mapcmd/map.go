@@ -146,7 +146,7 @@ func normalizeMapValue(v, vFile, vType string) (interface{}, error) {
 	}
 	mapValue, err := internal.ConvertString(valueStr, vType)
 	if err != nil {
-		err = hzcerrors.NewLoggableError(err, "Conversion error on value %s to value-type %s", valueStr, vType)
+		err = hzcerrors.NewLoggableError(err, "Conversion error on value %s to value-type %s, %s", valueStr, vType, err)
 	}
 	return mapValue, err
 }
