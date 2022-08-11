@@ -46,7 +46,6 @@ const (
 	EnvDisableNonsmart    = "DISABLE_NONSMART"
 	EnvEnableTraceLogging = "ENABLE_TRACE"
 	EnvMemberCount        = "MEMBER_COUNT"
-	EnvEnableLeakCheck    = "ENABLE_LEAKCHECK"
 	EnvEnableSSL          = "ENABLE_SSL"
 	EnvHzVersion          = "HZ_VERSION"
 )
@@ -68,10 +67,6 @@ var idGen = ReferenceIDGenerator{}
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
-}
-
-func Tester(t *testing.T, f func(t *testing.T, client *hz.Client)) {
-	TesterWithConfigBuilder(t, nil, f)
 }
 
 func TesterWithConfigBuilder(t *testing.T, cbCallback func(config *hz.Config), f func(t *testing.T, client *hz.Client)) {
@@ -214,10 +209,6 @@ func SmartEnabled() bool {
 
 func NonSmartEnabled() bool {
 	return os.Getenv(EnvDisableNonsmart) != "1"
-}
-
-func LeakCheckEnabled() bool {
-	return os.Getenv(EnvEnableLeakCheck) == "1"
 }
 
 func SSLEnabled() bool {
