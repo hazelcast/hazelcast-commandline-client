@@ -21,8 +21,7 @@ import (
 // todo add value-file test
 
 func TestMapPut(t *testing.T) {
-	it.MapTesterWithConfigAndMapName(t, func(t *testing.T, c *hazelcast.Config, m *hazelcast.Map, mn string) {
-		mapNameArg := fmt.Sprintf(` --name "%s"`, mn)
+	it.MapTesterWithNameFlag(t, func(t *testing.T, c *hazelcast.Config, m *hazelcast.Map, withNameFlag func(string) string) {
 		tcs := []struct {
 			name        string
 			args        string
@@ -32,43 +31,43 @@ func TestMapPut(t *testing.T) {
 		}{
 			{
 				name:  "valid put key(string), value(string)",
-				args:  "--key k1 --value v1" + mapNameArg,
+				args:  withNameFlag("--key k1 --value v1"),
 				key:   "k1",
 				value: "v1",
 			},
 			{
 				name:        "valid put key(json), value(json)",
-				args:        `--key {"some":"key"} --key-type json --value {"some":"value"} --value-type json` + mapNameArg,
+				args:        withNameFlag(`--key {"some":"key"} --key-type json --value {"some":"value"} --value-type json`),
 				key:         serialization.JSON(`{"some":"key"}`),
 				errContains: `malformed JSON`,
 			},
 			{
 				name:  "valid put key(json), value(json)",
-				args:  `--key '{"some":"key"}' --key-type json --value '{"some":"value"}' --value-type json` + mapNameArg,
+				args:  withNameFlag(`--key '{"some":"key"}' --key-type json --value '{"some":"value"}' --value-type json`),
 				key:   serialization.JSON(`{"some":"key"}`),
 				value: serialization.JSON(`{"some":"value"}`),
 			},
 			{
 				name:  "valid put key(json) string, value(json) string",
-				args:  `--key '"some"' --key-type json --value '"value"' --value-type json` + mapNameArg,
+				args:  withNameFlag(`--key '"some"' --key-type json --value '"value"' --value-type json`),
 				key:   serialization.JSON(`"some"`),
 				value: serialization.JSON(`"value"`),
 			},
 			{
 				name:        "valid put json string key(string), value(json)",
-				args:        `--key bla --value "foo" --value-type json` + mapNameArg,
+				args:        withNameFlag(`--key bla --value "foo" --value-type json`),
 				key:         "bla",
 				errContains: `malformed JSON`,
 			},
 			{
 				name:  "valid put json string key(string), value(json)",
-				args:  `--key bla --value '"foo"' --value-type json` + mapNameArg,
+				args:  withNameFlag(`--key bla --value '"foo"' --value-type json`),
 				key:   "bla",
 				value: serialization.JSON(`"foo"`),
 			},
 			{
 				name:        "invalid put, missing key",
-				args:        "--value v1" + mapNameArg,
+				args:        withNameFlag("--value v1"),
 				errContains: `"key" not set`,
 			},
 			{
@@ -106,7 +105,7 @@ func TestMapPut(t *testing.T) {
 }
 
 func TestMapPutAll_JSONEntries(t *testing.T) {
-	it.MapTesterWithConfigAndMapName(t, func(t *testing.T, c *hazelcast.Config, m *hazelcast.Map, mn string) {
+	it.MapTesterWithNameFlag(t, func(t *testing.T, c *hazelcast.Config, m *hazelcast.Map, withNameFlag func(string) string) {
 		f, err := os.Create(filepath.Join(t.TempDir(), "entries.json"))
 		t.TempDir()
 		require.NoError(t, err)
@@ -119,8 +118,8 @@ func TestMapPutAll_JSONEntries(t *testing.T) {
 		var stdout, stderr bytes.Buffer
 		cmd.SetOut(&stdout)
 		cmd.SetErr(&stderr)
-		args := []string{"--name", mn, "--json-entry", f.Name()}
-		cmd.SetArgs(args)
+		args := withNameFlag("--json-entry " + f.Name())
+		cmd.SetArgs(strings.Split(args, " "))
 		ctx := context.Background()
 		require.NoError(t, cmd.ExecuteContext(ctx))
 		v, err := m.Get(ctx, "test")
@@ -135,8 +134,7 @@ func TestMapPutAll_JSONEntries(t *testing.T) {
 }
 
 func TestMapPutAll(t *testing.T) {
-	it.MapTesterWithConfigAndMapName(t, func(t *testing.T, c *hazelcast.Config, m *hazelcast.Map, mn string) {
-		mapNameArg := fmt.Sprintf(` --name %s`, mn)
+	it.MapTesterWithNameFlag(t, func(t *testing.T, c *hazelcast.Config, m *hazelcast.Map, withNameFlag func(string) string) {
 		tcs := []struct {
 			name        string
 			args        string
@@ -146,7 +144,7 @@ func TestMapPutAll(t *testing.T) {
 		}{
 			{
 				name: "valid put-all key(string), value(string)",
-				args: "-k k1 -k k2 -v v1 -v v2" + mapNameArg,
+				args: withNameFlag("-k k1 -k k2 -v v1 -v v2"),
 				entries: []types.Entry{
 					{
 						Key:   "k1",
@@ -160,7 +158,7 @@ func TestMapPutAll(t *testing.T) {
 			},
 			{
 				name: "valid put-all key(json), value(json)",
-				args: `--key-type json --value-type json -k '{"some":"key"}' -v '{"some":"value"}' -k '"test"' -v '"string"'` + mapNameArg,
+				args: withNameFlag(`--key-type json --value-type json -k '{"some":"key"}' -v '{"some":"value"}' -k '"test"' -v '"string"'`),
 				entries: []types.Entry{
 					{
 						Key:   serialization.JSON(`{"some":"key"}`),
@@ -174,7 +172,7 @@ func TestMapPutAll(t *testing.T) {
 			},
 			{
 				name:        "invalid put-all, missing key",
-				args:        "--value v1" + mapNameArg,
+				args:        withNameFlag("--value v1"),
 				errContains: `keys and values do not match`,
 			},
 			{
@@ -217,8 +215,7 @@ func TestMapPutAll(t *testing.T) {
 }
 
 func TestMapGet(t *testing.T) {
-	it.MapTesterWithConfigAndMapName(t, func(t *testing.T, c *hazelcast.Config, m *hazelcast.Map, mn string) {
-		mapNameArg := fmt.Sprintf(` --name %s`, mn)
+	it.MapTesterWithNameFlag(t, func(t *testing.T, c *hazelcast.Config, m *hazelcast.Map, withNameFlag func(string) string) {
 		tcs := []struct {
 			name        string
 			args        string
@@ -229,21 +226,21 @@ func TestMapGet(t *testing.T) {
 		}{
 			{
 				name:   "valid get key(string), value(string)",
-				args:   "--key k1" + mapNameArg,
+				args:   withNameFlag("--key k1"),
 				key:    "k1",
 				value:  "v1",
 				output: "v1",
 			},
 			{
 				name:  "valid get key(json), value(json)",
-				args:  `--key '{"some":"key"}' --key-type json` + mapNameArg,
+				args:  withNameFlag(`--key '{"some":"key"}' --key-type json`),
 				key:   serialization.JSON(`{"some":"key"}`),
 				value: serialization.JSON(`{"some":"value"}`),
 				output: `[1m[30m{[0m[1m[36m"some"[0m[1m[30m:[0m[32m"value"[0m[1m[30m}[0m`,
 			},
 			{
 				name:        "invalid get, missing key",
-				args:        mapNameArg,
+				args:        withNameFlag(""),
 				errContains: `"key" not set`,
 			},
 			{
@@ -280,8 +277,7 @@ func TestMapGet(t *testing.T) {
 }
 
 func TestMapGetAll(t *testing.T) {
-	it.MapTesterWithConfigAndMapName(t, func(t *testing.T, c *hazelcast.Config, m *hazelcast.Map, mn string) {
-		mapNameArg := fmt.Sprintf(` --name %s`, mn)
+	it.MapTesterWithNameFlag(t, func(t *testing.T, c *hazelcast.Config, m *hazelcast.Map, withNameFlag func(string) string) {
 		tcs := []struct {
 			name        string
 			args        string
@@ -291,7 +287,7 @@ func TestMapGetAll(t *testing.T) {
 		}{
 			{
 				name: "valid get-all key(string), value(string)",
-				args: "--key k1 --key k2" + mapNameArg,
+				args: withNameFlag("--key k1 --key k2"),
 				entries: []types.Entry{
 					{
 						Key:   "k1",
@@ -306,7 +302,7 @@ func TestMapGetAll(t *testing.T) {
 			},
 			{
 				name: "valid get key(json), value(json)",
-				args: `--key {"some":"key"} --key "k2" --key-type json` + mapNameArg,
+				args: withNameFlag(`--key {"some":"key"} --key "k2" --key-type json`),
 				entries: []types.Entry{
 					{
 						Key:   serialization.JSON(`{"some":"key"}`),
@@ -317,12 +313,11 @@ func TestMapGetAll(t *testing.T) {
 						Value: serialization.JSON("v2"),
 					},
 				},
-				sout: `[1m[30m{[0m[1m[36m"some"[0m[1m[30m:[0m[32m"value"[0m[1m[30m}[0m
-[31mv[0m[1m[1m[34m2[0m`,
+				sout: `[1m[30m{[0m[1m[36m"some"[0m[1m[30m:[0m[32m"value"[0m[1m[30m}[0m`,
 			},
 			{
 				name:        "invalid get, missing key",
-				args:        "" + mapNameArg,
+				args:        withNameFlag(""),
 				errContains: `"key" not set`,
 			},
 			{

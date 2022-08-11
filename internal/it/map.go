@@ -125,6 +125,10 @@ func (tcx *MapTestContext) ExecuteScript(ctx context.Context, script string) {
 	}
 }
 
+func (tcx MapTestContext) WithNameFlag(args string) string {
+	return fmt.Sprintf(`%s --name %s`, args, tcx.MapName)
+}
+
 func MapTester(t *testing.T, f func(t *testing.T, m *hz.Map)) {
 	MapTesterWithConfig(t, nil, f)
 }
@@ -165,6 +169,15 @@ func MapTesterWithConfigAndName(t *testing.T, makeMapName func(...string) string
 	}
 	tcx.Tester(func(tcx MapTestContext) {
 		f(tcx.T, tcx.M)
+	})
+}
+
+func MapTesterWithNameFlag(t *testing.T, f func(t *testing.T, c *hz.Config, m *hz.Map, withNameFlag func(string) string)) {
+	tcx := &MapTestContext{
+		T: t,
+	}
+	tcx.Tester(func(tcx MapTestContext) {
+		f(tcx.T, tcx.Config, tcx.M, tcx.WithNameFlag)
 	})
 }
 
