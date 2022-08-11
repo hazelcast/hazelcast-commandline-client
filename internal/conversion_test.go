@@ -12,7 +12,7 @@ func TestConvertString(t *testing.T) {
 		value     string
 		valueType string
 	}
-	tests := []struct {
+	tcs := []struct {
 		name  string
 		args  args
 		want  interface{}
@@ -27,7 +27,7 @@ func TestConvertString(t *testing.T) {
 			want: "abc",
 		},
 		{
-			name: "valid Boolean",
+			name: "valid boolean",
 			args: args{
 				value:     "1",
 				valueType: TypeNameBoolean,
@@ -36,7 +36,7 @@ func TestConvertString(t *testing.T) {
 			isErr: false,
 		},
 		{
-			name: "valid Boolean",
+			name: "valid boolean",
 			args: args{
 				value:     "true",
 				valueType: TypeNameBoolean,
@@ -45,7 +45,7 @@ func TestConvertString(t *testing.T) {
 			isErr: false,
 		},
 		{
-			name: "valid Boolean",
+			name: "valid boolean",
 			args: args{
 				value:     "0",
 				valueType: TypeNameBoolean,
@@ -54,7 +54,7 @@ func TestConvertString(t *testing.T) {
 			isErr: false,
 		},
 		{
-			name: "valid Boolean",
+			name: "valid boolean",
 			args: args{
 				value:     "FALSE",
 				valueType: TypeNameBoolean,
@@ -63,7 +63,7 @@ func TestConvertString(t *testing.T) {
 			isErr: false,
 		},
 		{
-			name: "valid JSON",
+			name: "valid json",
 			args: args{
 				value:     `{"test":"data"}`,
 				valueType: TypeNameJSON,
@@ -71,7 +71,7 @@ func TestConvertString(t *testing.T) {
 			want: serialization.JSON(`{"test":"data"}`),
 		},
 		{
-			name: "valid JSON",
+			name: "valid json",
 			args: args{
 				value:     `"jsonString"`,
 				valueType: TypeNameJSON,
@@ -79,7 +79,7 @@ func TestConvertString(t *testing.T) {
 			want: serialization.JSON("jsonString"),
 		},
 		{
-			name: "valid JSON",
+			name: "valid json",
 			args: args{
 				value:     `[1,2,3,]`,
 				valueType: TypeNameJSON,
@@ -87,7 +87,7 @@ func TestConvertString(t *testing.T) {
 			isErr: true,
 		},
 		{
-			name: "valid Int8",
+			name: "valid int8",
 			args: args{
 				value:     "127",
 				valueType: TypeNameInt8,
@@ -95,7 +95,7 @@ func TestConvertString(t *testing.T) {
 			want: int8(127),
 		},
 		{
-			name: "valid Int8",
+			name: "valid int8",
 			args: args{
 				value:     "-128",
 				valueType: TypeNameInt8,
@@ -103,7 +103,7 @@ func TestConvertString(t *testing.T) {
 			want: int8(-128),
 		},
 		{
-			name: "invalid Int8, overflow",
+			name: "invalid int8, overflow",
 			args: args{
 				value:     "128",
 				valueType: TypeNameInt8,
@@ -111,7 +111,7 @@ func TestConvertString(t *testing.T) {
 			isErr: true,
 		},
 		{
-			name: "valid Int16",
+			name: "valid int16",
 			args: args{
 				value:     "12345",
 				valueType: TypeNameInt16,
@@ -119,7 +119,7 @@ func TestConvertString(t *testing.T) {
 			want: int16(12345),
 		},
 		{
-			name: "valid Int32",
+			name: "valid int32",
 			args: args{
 				value:     "12345",
 				valueType: TypeNameInt32,
@@ -127,7 +127,7 @@ func TestConvertString(t *testing.T) {
 			want: int32(12345),
 		},
 		{
-			name: "valid Int64",
+			name: "valid int64",
 			args: args{
 				value:     "12345",
 				valueType: TypeNameInt64,
@@ -135,7 +135,7 @@ func TestConvertString(t *testing.T) {
 			want: int64(12345),
 		},
 		{
-			name: "valid Float32",
+			name: "valid float32",
 			args: args{
 				value:     "0.34",
 				valueType: TypeNameFloat32,
@@ -143,7 +143,7 @@ func TestConvertString(t *testing.T) {
 			want: float32(0.34),
 		},
 		{
-			name: "valid Float64",
+			name: "valid float64",
 			args: args{
 				value:     "0.34",
 				valueType: TypeNameFloat64,
@@ -151,17 +151,17 @@ func TestConvertString(t *testing.T) {
 			want: float64(0.34),
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := ConvertString(tt.args.value, tt.args.valueType)
-			if (err != nil) != tt.isErr {
-				t.FailNow()
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := ConvertString(tc.args.value, tc.args.valueType)
+			if (err != nil) != tc.isErr {
+				t.Fatalf("expected and error")
 				return
 			}
 			if err != nil {
 				return
 			}
-			require.Equal(t, tt.want, got)
+			require.Equal(t, tc.want, got)
 		})
 	}
 }

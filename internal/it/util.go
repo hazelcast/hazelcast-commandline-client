@@ -34,7 +34,6 @@ import (
 
 	"github.com/apache/thrift/lib/go/thrift"
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/goleak"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
 
@@ -78,10 +77,6 @@ func Tester(t *testing.T, f func(t *testing.T, client *hz.Client)) {
 func TesterWithConfigBuilder(t *testing.T, cbCallback func(config *hz.Config), f func(t *testing.T, client *hz.Client)) {
 	ensureRemoteController(true)
 	runner := func(t *testing.T, smart bool) {
-		if LeakCheckEnabled() {
-			t.Logf("enabled leak check")
-			defer goleak.VerifyNone(t)
-		}
 		cls := defaultTestCluster.Launch(t)
 		config := cls.DefaultConfig()
 		if cbCallback != nil {

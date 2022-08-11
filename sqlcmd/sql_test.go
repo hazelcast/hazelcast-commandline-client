@@ -1,11 +1,12 @@
 package sqlcmd
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"testing"
-	"time"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
 	console "github.com/nathan-fiscaletti/consolesize-go"
@@ -25,14 +26,14 @@ func TestSQLCmd(t *testing.T) {
 	}()
 	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
 		var (
-			createMapping = fmt.Sprintf(`
+			mappingQry = fmt.Sprintf(`
 				CREATE MAPPING "%s" (
 					__key INT,
 					countries VARCHAR,
 					cities VARCHAR)
 				TYPE IMap
 				OPTIONS('keyFormat'='int', 'valueFormat'='json-flat');`, mapName)
-			insertInto = fmt.Sprintf(`
+			insertQry = fmt.Sprintf(`
 				INSERT INTO "%s" VALUES
 				(1, 'United Kingdom','London'),
 				(2, 'United Kingdom','Manchester'),
@@ -42,7 +43,7 @@ func TestSQLCmd(t *testing.T) {
 				(6, 'Turkey', 'Istanbul'),
 				(7, 'Brazil', 'Sao Paulo'),
 				(8, 'Brazil', 'Rio de Janeiro')`, mapName)
-			selectQeury = fmt.Sprintf(`SELECT __key, this from "%s" order by __key`, mapName)
+			selectQry = fmt.Sprintf(`SELECT __key, this from "%s" order by __key`, mapName)
 		)
 		// case order matters for this test
 		tcs := []struct {
@@ -53,17 +54,17 @@ func TestSQLCmd(t *testing.T) {
 		}{
 			{
 				name:   "valid create mapping query",
-				args:   []string{createMapping},
+				args:   []string{mappingQry},
 				output: "",
 			},
 			{
 				name:   "valid insert query",
-				args:   []string{insertInto},
+				args:   []string{insertQry},
 				output: "",
 			},
 			{
 				name: "valid select query",
-				args: []string{selectQeury},
+				args: []string{selectQry},
 				output: `+-------------------------------------------------------------------------------------------------+
 |                      __key                     |                      this                      |
 +-------------------------------------------------------------------------------------------------+
@@ -79,7 +80,7 @@ func TestSQLCmd(t *testing.T) {
 			},
 			{
 				name: "valid select query with csv output",
-				args: []string{selectQeury, "--output-type", "csv"},
+				args: []string{selectQry, "--output-type", "csv"},
 				output: `__key,this
 1,"{""countries"":""United Kingdom"",""cities"":""London""}"
 2,"{""countries"":""United Kingdom"",""cities"":""Manchester""}"
@@ -113,16 +114,28 @@ func TestSQLCmd(t *testing.T) {
 func TestSQL_CancelContext(t *testing.T) {
 	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
 		cmd := New(config)
-		var b bytes.Buffer
-		cmd.SetOut(&b)
+		//b := &strings.Builder{}
+		r, w := io.Pipe()
+		cmd.SetOut(w)
 		cmd.SetArgs([]string{"select * from table(generate_stream(1))"})
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
+		// read the first line to make sure SQL fetch page is called, and we do not
+		// cancel the call prematurely.
 		go func() {
-			time.Sleep(2 * time.Second)
+			s := bufio.NewScanner(r)
+			if !s.Scan() {
+				panic("can not read SQL command result")
+			}
+			t.Log(s.Text())
 			cancel()
+			// keep reading not to block the cmd
+			for s.Scan() {
+			}
 		}()
 		_, err := cmd.ExecuteContextC(ctx)
-		require.Nil(t, err)
+		require.NoError(t, err)
+		// release the go routine
+		require.NoError(t, w.Close())
 	})
 }

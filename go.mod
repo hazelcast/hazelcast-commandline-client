@@ -33,5 +33,4 @@ require (
 	github.com/apache/thrift v0.14.1
 	// termdbms
 	github.com/muesli/reflow v0.3.0
-	go.uber.org/goleak v1.1.10
 )

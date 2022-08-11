@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -18,6 +18,7 @@ import (
 )
 
 // todo add value-file test
+
 func TestMapPut(t *testing.T) {
 	it.MapTesterWithConfigAndMapName(t, func(t *testing.T, c *hazelcast.Config, m *hazelcast.Map, mn string) {
 		mapNameArg := fmt.Sprintf(` --name %s`, mn)
@@ -79,9 +80,10 @@ func TestMapPut(t *testing.T) {
 
 func TestMapPutAll_JSONEntries(t *testing.T) {
 	it.MapTesterWithConfigAndMapName(t, func(t *testing.T, c *hazelcast.Config, m *hazelcast.Map, mn string) {
-		f, err := ioutil.TempFile("", "entries.json")
-		defer f.Close()
+		f, err := os.Create(filepath.Join(t.TempDir(), "entries.json"))
+		t.TempDir()
 		require.NoError(t, err)
+		defer f.Close()
 		_, err = f.WriteString(`{ "test":"data", 
 									 "json value" : {"test" : "data"}
 									}`)
@@ -193,26 +195,26 @@ func TestMapGet(t *testing.T) {
 			args        string
 			key         interface{}
 			value       interface{}
-			sout        string
+			output      string
 			errContains string
 		}{
 			{
-				name:  "valid get key(string), value(string)",
-				args:  "--key k1" + mapNameArg,
-				key:   "k1",
-				value: "v1",
-				sout:  "v1",
+				name:   "valid get key(string), value(string)",
+				args:   "--key k1" + mapNameArg,
+				key:    "k1",
+				value:  "v1",
+				output: "v1",
 			},
 			{
 				name:  "valid get key(json), value(json)",
 				args:  `--key {"some":"key"} --key-type json` + mapNameArg,
 				key:   serialization.JSON(`{"some":"key"}`),
 				value: serialization.JSON(`{"some":"value"}`),
-				sout: `[1m[30m{[0m[1m[36m"some"[0m[1m[30m:[0m[32m"value"[0m[1m[30m}[0m`,
+				output: `[1m[30m{[0m[1m[36m"some"[0m[1m[30m:[0m[32m"value"[0m[1m[30m}[0m`,
 			},
 			{
 				name:        "invalid get, missing key",
-				args:        "" + mapNameArg,
+				args:        mapNameArg,
 				errContains: `"key" not set`,
 			},
 			{
@@ -240,7 +242,7 @@ func TestMapGet(t *testing.T) {
 				}
 				require.NoError(t, err)
 				// cmd should not print anything
-				require.Equal(t, tc.sout+"\n", stdout.String())
+				require.Equal(t, tc.output+"\n", stdout.String())
 				require.Empty(t, stderr.String())
 			})
 		}
@@ -390,7 +392,7 @@ func TestMapRemove(t *testing.T) {
 
 func TestMapClear(t *testing.T) {
 	it.MapTesterWithConfigAndMapName(t, func(t *testing.T, c *hazelcast.Config, m *hazelcast.Map, mn string) {
-		//populate map
+		// populate map
 		key1, key2 := "k1", "k2"
 		entries := []types.Entry{
 			{
@@ -416,7 +418,7 @@ func TestMapClear(t *testing.T) {
 			},
 			{
 				name: "clear removes the entries",
-				args: "" + mapNameArg,
+				args: mapNameArg,
 			},
 		}
 		for _, tc := range tcs {
@@ -440,7 +442,7 @@ func TestMapClear(t *testing.T) {
 				size, err := m.Size(ctx)
 				require.NoError(t, err)
 				if size != 0 {
-					t.FailNow()
+					t.Fatalf("map should be empty after clear command")
 				}
 			})
 		}

@@ -22,14 +22,6 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it/skip"
 )
 
-/*
-SkipIf can be used to skip a test case based on comma-separated conditions.
-Deprecated: Use skip.If instead.
-*/
-func SkipIf(t *testing.T, conditions string) {
-	skip.If(t, conditions)
-}
-
 // MarkSlow marks a test "slow", so it is run only when slow test mode is enabled.
 // Note that if "all" mode is enabled, the test runs disregard of whether slow test mode is enabled or disabled.
 func MarkSlow(t *testing.T) {

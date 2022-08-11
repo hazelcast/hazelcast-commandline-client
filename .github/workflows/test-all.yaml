@@ -1,5 +1,5 @@
 
-name: "Test Go Client"
+name: "Test Hazelcast CLC"
 on: ["push", "pull_request"]
 jobs:
   test:
@@ -10,12 +10,12 @@ jobs:
     defaults:
       run:
         shell: "bash"
-        working-directory: "$HOME/hazelcast-go-client"
+        working-directory: "$HOME/hazelcast-commandline-client"
     steps:
       - name: "Checkout Code"
         uses: "actions/checkout@v2"
         with:
-          path: "$HOME/hazelcast-go-client"
+          path: "$HOME/hazelcast-commandline-client"
 
       - name: "Install Dependencies"
         run: |

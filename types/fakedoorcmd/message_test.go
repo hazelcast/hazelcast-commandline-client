@@ -8,14 +8,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const expectedMsg = `The support for List hasn't been implemented yet.
-
-If you would like us to implement it, please drop by at:
-https://github.com/hazelcast/hazelcast-commandline-client/issues/48 and add a thumbs up 👍.
-We're happy to implement it quickly based on demand!
-`
-
 func TestNewFakeCommand(t *testing.T) {
+	const expectedMsg = `The support for List isn't implemented yet.
+Add a thumbs up to it at: https://github.com/hazelcast/hazelcast-commandline-client/issues/48
+`
 	fd := FakeDoor{Name: "List", IssueNum: 48}
 	cmd := NewFakeCommand(fd)
 	ctx := context.Background()
