@@ -65,7 +65,7 @@ func TestConvertString(t *testing.T) {
 				value:     `"jsonString"`,
 				valueType: TypeNameJSON,
 			},
-			want: serialization.JSON("jsonString"),
+			want: serialization.JSON(`"jsonString"`),
 		},
 		{
 			name: "valid json",
