@@ -13,7 +13,7 @@ import (
 // supported types
 const (
 	TypeNameString  = "string"
-	TypeNameBoolean = "boolean"
+	TypeNameBoolean = "bool"
 	TypeNameJSON    = "json"
 	TypeNameInt8    = "int8"
 	TypeNameInt16   = "int16"
@@ -47,8 +47,15 @@ func ConvertString(value, valueType string) (interface{}, error) {
 	// "" is for default/empty
 	case TypeNameString, "":
 		cv = value
-	case TypeNameBoolean, "bool":
+	case TypeNameBoolean:
 		cv, err = strconv.ParseBool(value)
+		if value == "true" {
+			cv = true
+		} else if value == "false" {
+			cv = false
+		} else {
+			err = errors.New("bool values can be only true or false")
+		}
 	case TypeNameJSON:
 		if !json.Valid([]byte(value)) {
 			err = errors.New("malformed JSON string")

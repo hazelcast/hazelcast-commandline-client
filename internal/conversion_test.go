@@ -27,13 +27,12 @@ func TestConvertString(t *testing.T) {
 			want: "abc",
 		},
 		{
-			name: "valid boolean",
+			name: "invalid boolean",
 			args: args{
 				value:     "1",
 				valueType: TypeNameBoolean,
 			},
-			want:  true,
-			isErr: false,
+			isErr: true,
 		},
 		{
 			name: "valid boolean",
@@ -45,22 +44,12 @@ func TestConvertString(t *testing.T) {
 			isErr: false,
 		},
 		{
-			name: "valid boolean",
-			args: args{
-				value:     "0",
-				valueType: TypeNameBoolean,
-			},
-			want:  false,
-			isErr: false,
-		},
-		{
-			name: "valid boolean",
+			name: "invalid boolean",
 			args: args{
 				value:     "FALSE",
 				valueType: TypeNameBoolean,
 			},
-			want:  false,
-			isErr: false,
+			isErr: true,
 		},
 		{
 			name: "valid json",
