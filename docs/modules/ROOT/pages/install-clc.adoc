@@ -90,7 +90,7 @@ Installer Script::
 curl -V
 ----
 +
-Note the capital `V` in the command. If installed, you'll get its version information. Otherwise, you'll receive an error stating the command is not found; install it following the instructions https://everything.curl.dev/get/linux[here].
+Note the capital `V` in the command. If installed, you'll get its version information. Otherwise, you'll receive an error stating the command is not found; install it following the https://everything.curl.dev/get/linux[cURL documentation].
 +
 . Run the following command on a terminal.
 +
@@ -109,7 +109,7 @@ Homebrew::
 brew -v
 ----
 +
-If installed, you'll get its version information. Otherwise, you'll receive an error stating the command is not found; install it following the instructions https://docs.brew.sh/Installation[here].
+If installed, you'll get its version information. Otherwise, you'll receive an error stating the command is not found; install it following the https://docs.brew.sh/Installation[Homebrew documentation].
 +
 . Run the following commands on a terminal.
 +
