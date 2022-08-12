@@ -36,6 +36,6 @@ jobs:
           go mod tidy
           go install github.com/tc-hib/go-winres@latest
           set PATH=%PATH%;"C:\Program Files (x86)\Inno Setup 6";
-          tree
+          tree /F
           .\make.cmd installer
 
