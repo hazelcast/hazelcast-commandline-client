@@ -23,7 +23,6 @@ goto :end
 
 :build
     go-winres make --product-version=%CLC_VERSION% --file-version=%CLC_VERSION%
-    go generate ./...
     go build -ldflags %ldflags% -o hzc.exe .
     goto :end
 
