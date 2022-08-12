@@ -30,12 +30,11 @@ type table struct {
 	termdbmsTable viewer.TuiModel
 	keyboardFocus bool
 	lastIteration *SQLIterator
-	noColor       bool
 }
 
 func (t *table) Init() tea.Cmd {
 	tuiutil.Faint = true
-	if lipgloss.ColorProfile() == termenv.Ascii || t.noColor {
+	if lipgloss.ColorProfile() == termenv.Ascii || tuiutil.SelectedTheme == tuiutil.NoColor {
 		tuiutil.Ascii = true
 		tuiutil.SelectedTheme = tuiutil.NoColor
 	}
@@ -315,10 +314,10 @@ func (c controller) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return c, cmd
 }
 
-func InitSQLBrowser(driver *sql.DB, noColor bool) *tea.Program {
+func InitSQLBrowser(driver *sql.DB) *tea.Program {
 	var s SeparatorWithProgress
 	textArea := multiline.InitTextArea()
-	table := &table{noColor: noColor}
+	table := &table{}
 	c := &controller{vertical.InitialModel([]tea.Model{
 		table,
 		&s,
