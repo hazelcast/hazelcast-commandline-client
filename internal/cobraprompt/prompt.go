@@ -105,10 +105,11 @@ var Themes = map[string][]goprompt.Option{
 		goprompt.OptionSelectedDescriptionBGColor(goprompt.Blue), goprompt.OptionDescriptionBGColor(goprompt.DarkGray),
 	},
 	tuiutil.NoColor: {
-		goprompt.OptionSelectedSuggestionTextColor(goprompt.White), goprompt.OptionSuggestionTextColor(goprompt.White),
-		goprompt.OptionSelectedDescriptionTextColor(goprompt.LightGray), goprompt.OptionDescriptionTextColor(goprompt.LightGray),
-		goprompt.OptionSelectedSuggestionBGColor(goprompt.Blue), goprompt.OptionSuggestionBGColor(goprompt.DarkGray),
-		goprompt.OptionSelectedDescriptionBGColor(goprompt.Blue), goprompt.OptionDescriptionBGColor(goprompt.DarkGray),
+		goprompt.OptionSelectedSuggestionTextColor(goprompt.NoColor), goprompt.OptionSuggestionTextColor(goprompt.NoColor),
+		goprompt.OptionSelectedDescriptionTextColor(goprompt.NoColor), goprompt.OptionDescriptionTextColor(goprompt.NoColor),
+		goprompt.OptionSelectedSuggestionBGColor(goprompt.NoColor), goprompt.OptionSuggestionBGColor(goprompt.NoColor),
+		goprompt.OptionSelectedDescriptionBGColor(goprompt.NoColor), goprompt.OptionDescriptionBGColor(goprompt.NoColor),
+		goprompt.OptionPreviewSuggestionTextColor(goprompt.NoColor), goprompt.OptionPrefixTextColor(goprompt.NoColor),
 	},
 	tuiutil.Solarized: {
 		goprompt.OptionSelectedSuggestionTextColor(goprompt.White), goprompt.OptionSuggestionTextColor(goprompt.White),

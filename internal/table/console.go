@@ -10,7 +10,7 @@ import (
 	console "github.com/nathan-fiscaletti/consolesize-go"
 )
 
-var consoleSize = console.GetConsoleSize
+var ConsoleSize = console.GetConsoleSize
 
 const (
 	alignLeft = iota
@@ -49,7 +49,7 @@ func (t *TabularWriter) initSize(cells []interface{}) {
 		return
 	}
 	// start state
-	t.width, t.rowCount = consoleSize()
+	t.width, t.rowCount = ConsoleSize()
 	// minimum space required for => | ... | ... | ... |
 	minWidth := (len(cells)+1)*2 + len(cells)*3
 	if t.width < minWidth {

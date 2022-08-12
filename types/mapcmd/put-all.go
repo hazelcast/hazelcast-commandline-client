@@ -99,6 +99,13 @@ func NewPutAll(config *hazelcast.Config) *cobra.Command {
 				if err := validateJsonEntryFlag(); err != nil {
 					return err
 				}
+				// assign default values
+				if mapKeyType == "" {
+					mapKeyType = "string"
+				}
+				if mapValueType == "" {
+					mapKeyType = "string"
+				}
 				data, err := ioutil.ReadFile(jsonEntryPath)
 				if err != nil {
 					return err
