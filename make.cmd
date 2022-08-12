@@ -26,7 +26,7 @@ goto :end
 
 :installer
     call make.cmd build
-    ISCC.exe /O%cd% /DSourceDir=%cd% extras\windows\installer\hazelcast-clc-installer.iss
+    ISCC.exe /O%cd% /DSourceDir=%cd% %cd%\extras\windows\installer\hazelcast-clc-installer.iss
     goto :end
 
 :end
