@@ -1,0 +1,31 @@
+name: "Release CLC for Windows"
+
+env:
+  INNO_VERSION: 6.2.1
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  goreleaser:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.18
+
+      - name: Download Inno Setup installer
+        run: curl -L -o installer.exe http://files.jrsoftware.org/is/6/innosetup-${{ env.INNO_VERSION }}.exe
+
+      - name: Install Inno Setup
+        run: ./installer.exe /verysilent /allusers /dir=inst
