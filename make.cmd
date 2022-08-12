@@ -1,4 +1,4 @@
-@echo off
+rem @echo off
 
 setlocal
 FOR /F "tokens=* USEBACKQ" %%F IN (`git rev-list --tags --max-count=1`) DO (
@@ -22,7 +22,13 @@ if errorlevel 1 (
 goto :end
 
 :build
+    go-winres make --product-version=%CLC_VERSION% --file-version=%CLC_VERSION%
     go build -ldflags %ldflags% -o hzc.exe .
+    goto :end
+
+:installer
+    call make.cmd build
+    ISCC.exe /O%cd% /DSourceDir=%cd% extras\windows\installer\hazelcast-clc-installer.iss
     goto :end
 
 :end
