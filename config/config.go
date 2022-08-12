@@ -120,7 +120,6 @@ styling:
     #headerforeground: "#000000"
     #highlight: "#ff12aa"
     #footerforeground: "#ff12aa"
-disableautocompletion: false
 `
 
 func writeToFile(config string, confPath string) error {

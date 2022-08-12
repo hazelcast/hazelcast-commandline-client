@@ -2,6 +2,8 @@ before:
   hooks:
     - go install golang.org/x/tools/...@latest
     - go mod tidy
+    - go install github.com/tc-hib/go-winres@latest
+    - go-winres make --product-version=git-tag --file-version=git-tag
     - go generate ./...
 builds:
   - 
@@ -14,9 +16,13 @@ builds:
     goos:
       - darwin
       - linux
+      - windows
     goarch:
       - amd64
       - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
 archives:
   - 
     id: default
@@ -38,7 +44,6 @@ changelog:
       - '^docs:'
       - '^test:'
 
-# .goreleaser.yaml
 brews:
   -
     # Name template of the recipe
