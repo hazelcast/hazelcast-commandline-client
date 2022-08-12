@@ -19,13 +19,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/spf13/cobra"
+
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/browser"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/tuiutil"
-
-	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/spf13/cobra"
 )
 
 const (
@@ -56,7 +55,7 @@ sql "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR, this VARCHAR) TYPE IMAP 
 			q = strings.TrimSpace(q)
 			if len(q) == 0 {
 				// If no queries given, run sql browser
-				p := browser.InitSQLBrowser(driver, tuiutil.SelectedTheme == tuiutil.NoColor)
+				p := browser.InitSQLBrowser(driver)
 				if err := p.Start(); err != nil {
 					fmt.Println("could not run sql browser:", err)
 					return err
