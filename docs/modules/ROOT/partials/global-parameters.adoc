@@ -20,4 +20,8 @@
 |Disables auto completion on for interactive mode
 |false
 
+|--no-color
+|Disables color support for SQL browser and interactive mode
+|false
+
 |===
