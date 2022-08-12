@@ -97,3 +97,7 @@ func assignPersistentFlags(cmd *cobra.Command, flags *config.GlobalFlagValues) {
 	cmd.PersistentFlags().BoolVar(&flags.NoColor, "no-color", false, "disable colors")
 	cmd.PersistentFlags().BoolVar(&flags.NoAutocompletion, "no-completion", false, "disable completion [interactive mode]")
 }
+
+func init() {
+	cobra.MousetrapHelpText = ""
+}
