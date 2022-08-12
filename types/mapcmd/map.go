@@ -102,7 +102,6 @@ func validateTTL(d time.Duration) error {
 		return err
 	}
 	// server side time resolution is one second
-	fmt.Println(d.Seconds())
 	if d.Seconds() < 1.0 {
 		return errors.New("ttl duration cannot be less than a second")
 	}
