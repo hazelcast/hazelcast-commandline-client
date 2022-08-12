@@ -29,5 +29,8 @@ require (
 	github.com/muesli/termenv v0.11.1-0.20220212125758-44cd13922739
 )
 
-// termdbms
-require github.com/muesli/reflow v0.3.0
+require (
+	github.com/apache/thrift v0.14.1
+	// termdbms
+	github.com/muesli/reflow v0.3.0
+)

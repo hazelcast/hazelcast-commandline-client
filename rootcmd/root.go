@@ -18,7 +18,6 @@ package rootcmd
 import (
 	"errors"
 	"fmt"
-	"github.com/hazelcast/hazelcast-commandline-client/versioncmd"
 	"os"
 	"strings"
 
@@ -30,6 +29,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/sqlcmd"
 	fakeDoor "github.com/hazelcast/hazelcast-commandline-client/types/fakedoorcmd"
 	"github.com/hazelcast/hazelcast-commandline-client/types/mapcmd"
+	"github.com/hazelcast/hazelcast-commandline-client/versioncmd"
 )
 
 // New initializes root command for non-interactive mode
