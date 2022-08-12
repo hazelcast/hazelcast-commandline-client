@@ -3,7 +3,6 @@
 #define MyAppPublisher "Hazelcast, Inc."
 #define MyAppURL "https://www.hazelcast.com/"
 #define MyAppExeName "hzc.exe"
-#define MyAppAssocName MyAppName + " Configuration"
 
 #ifndef SourceDir
 #define SourceDir "NOT-SPECIFIED"
