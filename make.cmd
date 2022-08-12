@@ -1,5 +1,3 @@
-rem @echo off
-
 setlocal
 FOR /F "tokens=* USEBACKQ" %%F IN (`git rev-list --tags --max-count=1`) DO (
 set GIT_COMMIT=%%F
@@ -14,7 +12,7 @@ if "%1" == "" (
     goto :build
 )
 
-2>NUL call :%1
+call :%1
 if errorlevel 1 (
     echo Unknown target: %1
 )
@@ -28,7 +26,7 @@ goto :end
 
 :installer
     call make.cmd build
-    ISCC.exe /O%cd% /DSourceDir=%cd% extras\windows\installer\hazelcast-clc-installer.iss
+    ISCC.exe /O%cd% /DSourceDir=%cd% %cd%\extras\windows\installer\hazelcast-clc-installer.iss
     goto :end
 
 :end
