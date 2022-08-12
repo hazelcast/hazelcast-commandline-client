@@ -277,6 +277,7 @@ The prior versions of the given targets would also work, but that's not tested.
 * Git
 * GNU Make (on Linux and MacOS)
 * Command Prompt (on Windows) 
+* go-winres: https://github.com/tc-hib/go-winres (on Windows)
  
 ### 1. Download the source
 
