@@ -2,10 +2,11 @@
 
 ## Installation
 
-There are two ways you can install the command line client:
-* Using [Brew](https://brew.sh) (**Recommended for MacOS**)
+There are three ways you can install the command line client:
+
+* Using [Brew](https://brew.sh) (Linux, MacOS)
 * Using script installation (Linux, MacOS)
-* Currently we don't provide automated Windows installation. See [Building from source](#building-from-source).
+* Install wizard (Windows only)
 
 ### Installing with Brew
 
@@ -31,6 +32,11 @@ brew install hazelcast-commandline-client
 ```
 curl https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/scripts/install.sh | bash
 ```
+
+### Installing using the Windows Install Wizard
+
+If you are using a recent version of Windows, you may prefer to install CLC using the Install Wizard we provide.
+You can download the Install Wizard at: https://github.com/hazelcast/hazelcast-commandline-client/releases
   
 ## Uninstallation
 
@@ -48,6 +54,10 @@ brew untap hazelcast/homebrew-hz
 ```
 ~/.local/share/hz-cli/bin/uninstall.sh
 ```
+
+### Uninstallation using the Windows Install Wizard
+
+If you have installed CLC using the Windows Install Wizard, you can use the Settings/Apps menu to uninstall it.
 
 ## Usage
 
@@ -276,7 +286,7 @@ The prior versions of the given targets would also work, but that's not tested.
 * Go 1.18 or better
 * Git
 * GNU Make (on Linux and MacOS)
-* Command Prompt (on Windows) 
+* Command Prompt or Powershell (on Windows) 
 * go-winres: https://github.com/tc-hib/go-winres (on Windows)
  
 ### 1. Download the source

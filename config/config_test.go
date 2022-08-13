@@ -16,18 +16,21 @@
 package config
 
 import (
+	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
-	"path"
+	"path/filepath"
+	"sync/atomic"
 	"testing"
 
 	"github.com/alecthomas/assert"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
 
+	clcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/tuiutil"
 )
 
@@ -39,62 +42,53 @@ func TestDefaultConfig(t *testing.T) {
 }
 
 func TestReadConfig(t *testing.T) {
-	defaultConf := DefaultConfig()
-	customConfig := *defaultConf
-	customConfig.Hazelcast.ClientName = "test-client"
-	emptyFile, err := ioutil.TempFile("", "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.Remove(emptyFile.Name())
-	defer emptyFile.Close()
-	customConfFile, err := ioutil.TempFile("", "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.Remove(customConfFile.Name())
-	defer customConfFile.Close()
-	b, err := yaml.Marshal(customConfig)
-	assert.Nil(t, err)
-	_, err = customConfFile.Write(b)
-	assert.Nil(t, err)
-	tests := []struct {
+	const clientName = "test-client"
+	tempDir := t.TempDir()
+	cfg := DefaultConfig()
+	cfg.Hazelcast.ClientName = clientName
+	emptyPath := uniquePathWithContent(tempDir, nil)
+	b, err := yaml.Marshal(cfg)
+	require.Nil(t, err)
+	customPath := uniquePathWithContent(tempDir, b)
+	require.Nil(t, err)
+	nonExistentPath := uniquePath(tempDir)
+	testCases := []struct {
 		name              string
 		defaultConfigPath string
 		path              string
 		// workaround !!
 		// not comparing hazelcast.Config objects since config != unmarshal(marshal(config)) because of nil map and slices
 		expectedClientName string
-		wantErrWithMessage error
+		errMsg             string
 	}{
 		{
-			name:               "Path: custom path, File: does not exist, Expect: error",
-			path:               path.Dir(emptyFile.Name()) + "non_existing",
-			wantErrWithMessage: fmt.Errorf("configuration file can not be found on configuration path %s", path.Dir(emptyFile.Name())+"non_existing"),
+			name:   "Path: custom path, File: does not exist, Expect: error",
+			path:   nonExistentPath,
+			errMsg: fmt.Sprintf("configuration not found: %s", nonExistentPath),
 		},
 		{
-			name:               "Path: custom path, File: is empty, Expect: Default Configuration",
-			path:               emptyFile.Name(),
-			expectedClientName: defaultConf.Hazelcast.ClientName,
+			name:               "Path: custom path, File: is empty, Expect: default configuration",
+			path:               emptyPath,
+			expectedClientName: "",
 		},
 		{
-			name:               "Path: custom path, File: custom config, Expect: Custom Configuration",
-			path:               customConfFile.Name(),
-			expectedClientName: customConfig.Hazelcast.ClientName,
+			name:               "Path: custom path, File: custom config, Expect: custom configuration",
+			path:               customPath,
+			expectedClientName: clientName,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			conf := DefaultConfig()
-			err := readConfig(tt.path, conf, tt.defaultConfigPath)
-			if tt.wantErrWithMessage != nil {
-				assert.NotNil(t, err)
-				assert.Equal(t, err.Error(), tt.wantErrWithMessage.Error())
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg := DefaultConfig()
+			err := readConfig(tc.path, &cfg, tc.defaultConfigPath)
+			if tc.errMsg != "" {
+				require.NotNil(t, err)
+				require.Equal(t, err.Error(), tc.errMsg)
 				return
 			}
-			assert.Nil(t, err)
-			conf.Hazelcast.Clone()
-			assert.Equal(t, conf.Hazelcast.ClientName, tt.expectedClientName)
+			require.Nil(t, err)
+			cfg.Hazelcast.Clone()
+			require.Equal(t, cfg.Hazelcast.ClientName, tc.expectedClientName)
 		})
 	}
 }
@@ -102,7 +96,7 @@ func TestReadConfig(t *testing.T) {
 func TestMergeFlagsWithConfig(t *testing.T) {
 	tests := []struct {
 		flags          GlobalFlagValues
-		expectedConfig *Config
+		expectedConfig Config
 		wantErr        bool
 	}{
 		{
@@ -113,7 +107,7 @@ func TestMergeFlagsWithConfig(t *testing.T) {
 			flags: GlobalFlagValues{
 				Token: "test-token",
 			},
-			expectedConfig: func() *Config {
+			expectedConfig: func() Config {
 				c := DefaultConfig()
 				c.Hazelcast.Cluster.Cloud.Token = "test-token"
 				c.Hazelcast.Cluster.Cloud.Enabled = true
@@ -124,7 +118,7 @@ func TestMergeFlagsWithConfig(t *testing.T) {
 			flags: GlobalFlagValues{
 				Cluster: "test-cluster",
 			},
-			expectedConfig: func() *Config {
+			expectedConfig: func() Config {
 				c := DefaultConfig()
 				c.Hazelcast.Cluster.Name = "test-cluster"
 				return c
@@ -134,7 +128,7 @@ func TestMergeFlagsWithConfig(t *testing.T) {
 			flags: GlobalFlagValues{
 				Address: "localhost:8904,myserver:4343",
 			},
-			expectedConfig: func() *Config {
+			expectedConfig: func() Config {
 				c := DefaultConfig()
 				c.Hazelcast.Cluster.Network.Addresses = []string{"localhost:8904", "myserver:4343"}
 				return c
@@ -144,7 +138,7 @@ func TestMergeFlagsWithConfig(t *testing.T) {
 	for i, tt := range tests {
 		t.Run(fmt.Sprintf("testcase-%d", i+1), func(t *testing.T) {
 			c := DefaultConfig()
-			err := mergeFlagsWithConfig(&tt.flags, c)
+			err := mergeFlagsWithConfig(&tt.flags, &c)
 			isErr := err != nil
 			if isErr != tt.wantErr {
 				t.Errorf("mergeFlagsWithConfig() error = %v, wantErr %v", err, tt.wantErr)
@@ -155,12 +149,56 @@ func TestMergeFlagsWithConfig(t *testing.T) {
 }
 
 func TestSetStyling(t *testing.T) {
-	theme := "solarized"
 	c := Config{Styling: Styling{
-		Theme:        &theme,
+		Theme:        "solarized",
 		ColorPalette: tuiutil.ColorPalette{ResultText: tuiutil.NewColor(lipgloss.Color("#ffffaa"))},
 	}}
 	setStyling(false, &c)
 	selectedTheme := tuiutil.GetTheme()
 	require.Equal(t, lipgloss.Color("#ffffaa"), selectedTheme.ResultText.TerminalColor)
+}
+
+func TestDefaultConfigWritten(t *testing.T) {
+	path := uniquePath(t.TempDir())
+	cfg := DefaultConfig()
+	err := readConfig(path, &cfg, path)
+	if err != nil {
+		var le clcerrors.LoggableError
+		if errors.As(err, &le) {
+			t.Fatal(le.VerboseError())
+		}
+		t.Fatal(err.Error())
+	}
+	b, err := os.ReadFile(path)
+	require.NoError(t, err)
+	cfg = Config{}
+	require.NoError(t, yaml.Unmarshal(b, &cfg))
+	cc := cfg.Hazelcast.Cluster
+	assert.Equal(t, "dev", cc.Name)
+	assert.Equal(t, true, cc.Unisocket)
+	assert.Equal(t, cluster.NetworkConfig{Addresses: []string{"localhost:5701"}}, cc.Network)
+	assert.Equal(t, cluster.CloudConfig{}, cc.Cloud)
+	assert.Equal(t, cluster.SecurityConfig{}, cc.Security)
+	assert.Equal(t, cluster.DiscoveryConfig{}, cc.Discovery)
+	assert.Equal(t, logger.ErrorLevel, cfg.Hazelcast.Logger.Level)
+	assert.Equal(t, SSLConfig{}, cfg.SSL)
+	assert.Equal(t, false, cfg.NoAutocompletion)
+	assert.Equal(t, "default", cfg.Styling.Theme)
+
+}
+
+var pathID int32
+
+func uniquePath(parentDir string) string {
+	id := atomic.AddInt32(&pathID, 1)
+	fn := fmt.Sprintf("config-%05d.yaml", id)
+	return filepath.Join(parentDir, fn)
+}
+
+func uniquePathWithContent(parentDir string, content []byte) string {
+	path := uniquePath(parentDir)
+	if err := os.WriteFile(path, content, 0666); err != nil {
+		panic(err)
+	}
+	return path
 }
