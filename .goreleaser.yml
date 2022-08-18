@@ -25,7 +25,8 @@ archives:
       linux: Linux
       amd64: x86_64
     files:
-      - extras/*
+      - extras/bash_completion.sh
+      - extras/zsh_completion.zsh
       - scripts/uninstall.sh
 checksum:
   name_template: 'checksums.txt'
