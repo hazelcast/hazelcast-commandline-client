@@ -30,21 +30,21 @@ const (
 )
 
 func main() {
-	cnfg := config.DefaultConfig()
-	rootCmd, globalFlagValues := rootcmd.New(&cnfg.Hazelcast)
+	cfg := config.DefaultConfig()
+	rootCmd, globalFlagValues := rootcmd.New(&cfg.Hazelcast)
 	programArgs := os.Args[1:]
 	// update config before running root command to make sure flags are processed
-	err := updateConfigWithFlags(rootCmd, cnfg, programArgs, globalFlagValues)
+	err := updateConfigWithFlags(rootCmd, &cfg, programArgs, globalFlagValues)
 	ExitOnError(err)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	isInteractive := IsInteractiveCall(rootCmd, programArgs)
 	if isInteractive {
-		RunCmdInteractively(ctx, rootCmd, cnfg, globalFlagValues.NoColor)
+		RunCmdInteractively(ctx, rootCmd, &cfg, globalFlagValues.NoColor)
 	} else {
 		// Since the cluster config related flags has already being parsed in previous steps,
 		// there is no need for second parameter anymore. The purpose is overwriting rootCmd as it is at the beginning.
-		rootCmd, _ = rootcmd.New(&cnfg.Hazelcast)
+		rootCmd, _ = rootcmd.New(&cfg.Hazelcast)
 		err = RunCmd(ctx, rootCmd)
 		ExitOnError(err)
 	}

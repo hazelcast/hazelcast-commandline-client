@@ -18,7 +18,6 @@ package config
 import (
 	"crypto/tls"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -57,7 +56,7 @@ type Config struct {
 }
 
 type Styling struct {
-	Theme *string
+	Theme string
 	tuiutil.ColorPalette
 }
 
@@ -71,36 +70,36 @@ type GlobalFlagValues struct {
 	NoColor          bool
 }
 
-func DefaultConfig() *Config {
+func DefaultConfig() Config {
 	hz := hazelcast.Config{}
 	hz.Cluster.Unisocket = true
 	hz.Logger.Level = logger.ErrorLevel
 	hz.Cluster.Name = DefaultClusterName
 	hz.Stats.Enabled = true
-	return &Config{Hazelcast: hz}
+	return Config{Hazelcast: hz}
 }
 
-const defaultUserConfig = `hazelcast:
-  clientname: ""
-  logger:
-    level: error
+const defaultUserConfig = `
+hazelcast:
   cluster:
+    name: dev
+    unisocket: true
+    network:
+      # 0s is no timeout
+      connectiontimeout: 0s
+      addresses:
+      - "localhost:5701"
+    cloud:
+      token: ""
+      enabled: false
     security:
       credentials:
         username: ""
         password: ""
-    name: dev
-    cloud:
-      token: ""
-      enabled: false
     discovery:
       usepublicip: false
-    unisocket: true
-  network:
-    addresses:
-      - "localhost:5701"
-    # 0s means infinite timeout (no timeout)
-    connectiontimeout: 0s
+  logger:
+    level: error
 ssl:
   enabled: false
   servername: ""
@@ -108,18 +107,11 @@ ssl:
   certpath: ""
   keypath: ""
   keypassword: ""
-# disables auto completion on interactive mode
+# disables auto completion on interactive mode if true
 noautocompletion: false
 styling:
-  theme: "default" # default, no-color, solarized
-  colorpalette:
-    # uncomment to override theme color. closest supported color will be used
-    #headerbackground: "#ff12aa"
-    #border: "#ff12aa"
-    #resulttext: "#ff12aa"
-    #headerforeground: "#000000"
-    #highlight: "#ff12aa"
-    #footerforeground: "#ff12aa"
+  # builtin themes: default, no-color, solarized
+  theme: "default"
 `
 
 func writeToFile(config string, confPath string) error {
@@ -140,13 +132,12 @@ func ReadAndMergeWithFlags(flags *GlobalFlagValues, c *Config) error {
 
 func setStyling(noColorFlag bool, c *Config) {
 	if noColorFlag {
-		s := tuiutil.NoColor
-		c.Styling.Theme = &s
+		c.Styling.Theme = tuiutil.NoColor
 	}
 	styling := c.Styling
-	if styling.Theme != nil {
+	if styling.Theme != "" {
 		// if not a valid theme, leave it as default
-		_ = tuiutil.SetTheme(*styling.Theme)
+		_ = tuiutil.SetTheme(styling.Theme)
 	}
 	ifSetReplace := func(org *tuiutil.Color, replacement *tuiutil.Color) {
 		if replacement == nil {
@@ -200,28 +191,27 @@ func mergeFlagsWithConfig(flags *GlobalFlagValues, config *Config) error {
 }
 
 func readConfig(path string, config *Config, defaultConfPath string) error {
-	isDefaultConfigPath := path == defaultConfPath
 	var confBytes []byte
 	var err error
 	exists, err := file.Exists(path)
 	if err != nil {
-		return hzcerrors.NewLoggableError(err, "can not access configuration path %s", path)
+		return hzcerrors.NewLoggableError(err, "can not access configuration: %s", path)
 	}
-	if !exists && !isDefaultConfigPath {
-		// file should exist if custom path is used
-		return hzcerrors.NewLoggableError(os.ErrNotExist, "configuration file can not be found on configuration path %s", path)
-	}
-	if !exists && isDefaultConfigPath {
+	if !exists {
+		if path != defaultConfPath {
+			// file should exist if custom path is used
+			return hzcerrors.NewLoggableError(os.ErrNotExist, "configuration not found: %s", path)
+		}
 		if err = writeToFile(defaultUserConfig, path); err != nil {
-			return hzcerrors.NewLoggableError(err, "Cannot create configuration file on default configuration path %s. Make sure that process has necessary permissions to write default path.\n", path)
+			return hzcerrors.NewLoggableError(err, "cannot create default configuration: %s. Make sure that process has necessary permissions to write default path.\n", path)
 		}
 	}
-	confBytes, err = ioutil.ReadFile(path)
+	confBytes, err = os.ReadFile(path)
 	if err != nil {
 		return hzcerrors.NewLoggableError(err, "cannot read configuration file on %s. Make sure Configuration path is correct and process has required permission.\n", path)
 	}
 	if err = yaml.Unmarshal(confBytes, config); err != nil {
-		return hzcerrors.NewLoggableError(err, "configuration file(%s) is not in yaml format", path)
+		return hzcerrors.NewLoggableError(err, "%s is not valid YAML", path)
 	}
 	return nil
 }
