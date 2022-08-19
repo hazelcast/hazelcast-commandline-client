@@ -184,7 +184,6 @@ func TestDefaultConfigWritten(t *testing.T) {
 	assert.Equal(t, SSLConfig{}, cfg.SSL)
 	assert.Equal(t, false, cfg.NoAutocompletion)
 	assert.Equal(t, "default", cfg.Styling.Theme)
-
 }
 
 var pathID int32
