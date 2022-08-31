@@ -38,8 +38,10 @@ jobs:
           set PATH=%PATH%;"C:\Program Files (x86)\Inno Setup 6";
           tree /F
           .\make.cmd installer
+      - name: Set env
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
 
       - name: "Release"
         uses: "softprops/action-gh-release@v1"
         with:
-          files: "hazelcast-clc-setup.exe"
+          files: "hazelcast-clc-setup-{{env.RELEASE_VERSION }}.exe"
