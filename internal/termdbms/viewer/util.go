@@ -6,11 +6,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
 	"github.com/charmbracelet/lipgloss"
+
+	"github.com/hazelcast/hazelcast-commandline-client/internal/format"
 )
 
 const (
@@ -43,23 +44,25 @@ func TruncateIfApplicable(m *TuiModel, conv string) (s string) {
 }
 
 func GetStringRepresentationOfInterface(val interface{}) string {
-	if str, ok := val.(string); ok {
-		return str
-	} else if i, ok := val.(int64); ok { // these default to int64 so not sure how this would affect 32 bit systems TODO
-		return fmt.Sprintf("%d", i)
-	} else if i, ok := val.(int32); ok { // these default to int32 so not sure how this would affect 32 bit systems TODO
-		return fmt.Sprintf("%d", i)
-	} else if i, ok := val.(float64); ok {
-		return fmt.Sprintf("%.2f", i)
-	} else if i, ok := val.(float32); ok {
-		return fmt.Sprintf("%.2f", i)
-	} else if t, ok := val.(time.Time); ok {
+	switch t := val.(type) {
+	case string:
+		return t
+	case int64:
+		return fmt.Sprintf("%d", t)
+	case int32:
+		return fmt.Sprintf("%d", t)
+	case float32:
+		return fmt.Sprintf("%.2f", t)
+	case float64:
+		return fmt.Sprintf("%.2f", t)
+	case time.Time:
 		str := t.String()
 		return str
-	} else if val == nil {
+	}
+	if val == nil {
 		return "NULL"
 	}
-	return ""
+	return format.Fmt(val)
 }
 
 func SplitLines(s string) []string {
@@ -100,17 +103,6 @@ func FormatJson(str string) (string, error) {
 		return "", err
 	}
 	return formattedJson.String(), nil
-}
-
-func Exists(path string) (bool, error) {
-	_, err := os.Stat(path)
-	if err == nil {
-		return true, nil
-	}
-	if os.IsNotExist(err) {
-		return false, nil
-	}
-	return false, err
 }
 
 func Min(a, b int) int {

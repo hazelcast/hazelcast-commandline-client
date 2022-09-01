@@ -23,6 +23,9 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/spf13/cobra"
+
+	"github.com/hazelcast/hazelcast-commandline-client/internal/format"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/table"
 )
 
@@ -42,6 +45,9 @@ func query(ctx context.Context, d *sql.DB, text string, out io.Writer, outputTyp
 			}
 			return tWriter.WriteHeader(icols...)
 		}, func(row []interface{}) error {
+			for i, v := range row {
+				row[i] = format.Fmt(v)
+			}
 			return tWriter.Write(row...)
 		})
 	case outputCSV:
@@ -55,7 +61,7 @@ func query(ctx context.Context, d *sql.DB, text string, out io.Writer, outputTyp
 		}, func(values []interface{}) error {
 			strValues := make([]string, len(values))
 			for i, v := range values {
-				strValues[i] = fmt.Sprint(v)
+				strValues[i] = format.Fmt(v)
 			}
 			if err := csvWriter.Write(strValues); err != nil {
 				return err
@@ -96,15 +102,15 @@ func rowsHandler(rows *sql.Rows, columnHandler func(cols []string) error, rowHan
 	return nil
 }
 
-func execute(ctx context.Context, d *sql.DB, text string) error {
+func execute(ctx context.Context, cmd *cobra.Command, d *sql.DB, text string) error {
 	r, err := d.ExecContext(ctx, text)
 	if err != nil {
 		return fmt.Errorf("executing: %w", err)
 	}
 	ra, err := r.RowsAffected()
 	if err != nil {
-		return nil
+		return err
 	}
-	fmt.Printf("---\nAffected rows: %d\n\n", ra)
+	cmd.Printf("---\nAffected rows: %d\n\n", ra)
 	return nil
 }

@@ -63,7 +63,7 @@ brews:
 
     # Template of your app's description.
     # Default is empty.
-    description: "Hazelcast Command line Client"
+    description: "Hazelcast Command Line Client"
 
     # SPDX identifier of your app's license.
     # Default is empty.
