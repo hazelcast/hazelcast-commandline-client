@@ -1,7 +1,7 @@
 package browser
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
 	"strings"
 	"sync"
@@ -10,6 +10,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/sql"
 	"github.com/muesli/termenv"
 
 	"github.com/hazelcast/hazelcast-commandline-client/internal/browser/layout/vertical"
@@ -19,11 +21,11 @@ import (
 )
 
 type StringResultMsg string
-type TableResultMsg *sql.Rows
+type TableResultMsg sql.Result
 
 type controller struct {
 	tea.Model
-	driver *sql.DB
+	client *hazelcast.Client
 }
 
 type table struct {
@@ -102,7 +104,7 @@ func (t *table) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return t, nil
 		case tea.KeyCtrlC:
 			if t.lastIteration != nil {
-				t.lastIteration.rows.Close()
+				t.lastIteration.result.Close()
 			}
 			changeProgress(HideProgress)
 			return t, nil
@@ -139,22 +141,29 @@ const (
 )
 
 type SQLIterator struct {
-	rows                *sql.Rows
+	it                  sql.RowsIterator
+	result              sql.Result
 	resultPipe          chan []interface{}
 	rowsFinished        bool
 	totalProcessedLines int
-	columnNames         []string // cannot access these after rows.Close(), hence save them
+	columnNames         []string // cannot access these after it.Close(), hence save them
 	iterating           int32
 	consumingRows       int32
 }
 
-func NewSqlIterator(maxIterationCount int, rows *sql.Rows) (*SQLIterator, error) {
+func NewSqlIterator(maxIterationCount int, result sql.Result) (*SQLIterator, error) {
 	var si SQLIterator
-	si.rows = rows
 	var err error
-	if si.columnNames, err = rows.Columns(); err != nil {
-		// todo: log "query cancelled unexpectedly" once we have a logging solution
+	if si.it, err = result.Iterator(); err != nil {
 		return nil, err
+	}
+	si.result = result
+	mt, err := result.RowMetadata()
+	if err != nil {
+		return nil, err
+	}
+	for _, c := range mt.Columns() {
+		si.columnNames = append(si.columnNames, c.Name())
 	}
 	si.resultPipe = make(chan []interface{}, maxIterationCount+1)
 	go si.Iterate(maxIterationCount)
@@ -165,20 +174,22 @@ func (si *SQLIterator) Iterate(maxIterationCount int) {
 	atomic.StoreInt32(&si.iterating, set)
 	defer atomic.StoreInt32(&si.iterating, unset)
 	var i int
-	for i = 0; si.rows.Next() && i < maxIterationCount; i++ {
-		// each row of the table
-		columns := make([]interface{}, len(si.columnNames))
-		columnPointers := make([]interface{}, len(si.columnNames))
-		// init interface array
-		for i := range columns {
-			columnPointers[i] = &columns[i]
-		}
-		if err := si.rows.Scan(columnPointers...); err != nil {
-			// todo: log the cause, once we have a logging solution
+	for i = 0; si.it.HasNext() && i < maxIterationCount; i++ {
+		rows, err := si.it.Next()
+		if err != nil {
 			changeProgress(HideProgress)
 			break
 		}
-		si.resultPipe <- columnPointers
+		var values []interface{}
+		for i := 0; i < rows.Metadata().ColumnCount(); i++ {
+			r, err := rows.Get(i)
+			if err != nil {
+				// this should never happen
+				panic("can not access row value")
+			}
+			values = append(values, r)
+		}
+		si.resultPipe <- values
 	}
 	if i < maxIterationCount {
 		changeProgress(HideProgress)
@@ -223,8 +234,7 @@ func (m *table) PopulateDataForResult(rows [][]interface{}) {
 	}
 	for _, row := range rows {
 		for i, colName := range columnNames {
-			val := row[i].(*interface{})
-			columnValues[colName] = append(columnValues[colName], *val)
+			columnValues[colName] = append(columnValues[colName], row[i])
 		}
 	}
 	// onto the next schema
@@ -300,13 +310,23 @@ func (c controller) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch m := msg.(type) {
 	case multiline.SubmitMsg:
 		return c, func() tea.Msg {
-			lt := strings.TrimSpace(string(m))
-			rows, err := execSQL(c.driver, lt)
+			q := strings.TrimSpace(string(m))
+			if q == "" {
+				return nil
+			}
+			if strings.HasPrefix(q, "select") || strings.HasPrefix(q, "show") {
+				result, err := c.client.SQL().Execute(context.TODO(), q)
+				if err != nil {
+					return StringResultMsg(err.Error())
+				}
+				changeProgress(ShowProgress)
+				return TableResultMsg(result)
+			}
+			result, err := c.client.SQL().Execute(context.TODO(), q)
 			if err != nil {
 				return StringResultMsg(err.Error())
 			}
-			changeProgress(ShowProgress)
-			return TableResultMsg(rows)
+			return StringResultMsg(fmt.Sprintf("Affected Rows: %d", result.UpdateCount()))
 		}
 	}
 	var cmd tea.Cmd
@@ -314,7 +334,7 @@ func (c controller) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return c, cmd
 }
 
-func InitSQLBrowser(driver *sql.DB) *tea.Program {
+func InitSQLBrowser(client *hazelcast.Client) *tea.Program {
 	var s SeparatorWithProgress
 	textArea := multiline.InitTextArea()
 	table := &table{}
@@ -351,7 +371,7 @@ func InitSQLBrowser(driver *sql.DB) *tea.Program {
 			},
 			align: lipgloss.Left,
 		},
-	}, []int{3, -1, 1, -1}), driver}
+	}, []int{3, -1, 1, -1}), client}
 	p := tea.NewProgram(
 		c,
 	)
