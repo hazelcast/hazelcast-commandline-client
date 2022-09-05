@@ -56,8 +56,7 @@ func GetStringRepresentationOfInterface(val interface{}) string {
 	case float64:
 		return fmt.Sprintf("%.2f", t)
 	case time.Time:
-		str := t.String()
-		return str
+		return t.String()
 	}
 	if val == nil {
 		return "NULL"
