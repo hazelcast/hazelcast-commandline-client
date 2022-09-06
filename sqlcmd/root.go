@@ -62,16 +62,16 @@ sql "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR, this VARCHAR) TYPE IMAP 
 				return nil
 			}
 			// If a statement is provided, run it in non-interactive mode
-			//lt := strings.ToLower(q)
-			//if strings.HasPrefix(lt, "select") || strings.HasPrefix(lt, "show") {
-			//	if err := query(ctx, driver, q, cmd.OutOrStdout(), outputType); err != nil {
-			//		return hzcerrors.NewLoggableError(err, "Cannot execute the query")
-			//	}
-			//} else {
-			//	if err := execute(ctx, cmd, driver, q); err != nil {
-			//		return hzcerrors.NewLoggableError(err, "Cannot execute the query")
-			//	}
-			//}
+			lt := strings.ToLower(q)
+			if strings.HasPrefix(lt, "select") || strings.HasPrefix(lt, "show") {
+				if err := query(ctx, c, q, cmd.OutOrStdout(), outputType); err != nil {
+					return hzcerrors.NewLoggableError(err, "Cannot execute the query")
+				}
+			} else {
+				if err := execute(ctx, c, q); err != nil {
+					return hzcerrors.NewLoggableError(err, "Cannot execute the query")
+				}
+			}
 			return nil
 		},
 	}
