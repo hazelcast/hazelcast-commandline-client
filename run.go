@@ -90,7 +90,7 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *conf
 		},
 		OnErrorFunc: func(err error) {
 			errStr := HandleError(err)
-			rootCmd.Println(errStr)
+			cnfg.Logger.Println(errStr)
 			return
 		},
 		Persister: namePersister,
