@@ -134,6 +134,44 @@ func TestMergeFlagsWithConfig(t *testing.T) {
 				return c
 			}(),
 		},
+		{
+			flags: GlobalFlagValues{
+				LogLevel: "unknownLogLevel",
+			},
+			wantErr: true,
+		},
+		{
+			flags: GlobalFlagValues{
+				LogLevel: "trace",
+			},
+			expectedConfig: func() Config {
+				c := DefaultConfig()
+				c.Hazelcast.Logger.Level = logger.TraceLevel
+				return c
+			}(),
+		},
+		{
+			flags: GlobalFlagValues{
+				LogLevel: "fatal",
+				Verbose:  true,
+			},
+			expectedConfig: func() Config {
+				c := DefaultConfig()
+				c.Hazelcast.Logger.Level = logger.DebugLevel
+				return c
+			}(),
+		},
+		{
+			flags: GlobalFlagValues{
+				LogLevel: "trace",
+				Verbose:  true,
+			},
+			expectedConfig: func() Config {
+				c := DefaultConfig()
+				c.Hazelcast.Logger.Level = logger.TraceLevel
+				return c
+			}(),
+		},
 	}
 	for i, tt := range tests {
 		t.Run(fmt.Sprintf("testcase-%d", i+1), func(t *testing.T) {
@@ -141,7 +179,10 @@ func TestMergeFlagsWithConfig(t *testing.T) {
 			err := mergeFlagsWithConfig(&tt.flags, &c)
 			isErr := err != nil
 			if isErr != tt.wantErr {
-				t.Errorf("mergeFlagsWithConfig() error = %v, wantErr %v", err, tt.wantErr)
+				t.Fatalf("mergeFlagsWithConfig() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if tt.wantErr {
+				return
 			}
 			assert.Equal(t, c, tt.expectedConfig)
 		})
