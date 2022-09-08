@@ -144,14 +144,24 @@ func ReadAndMergeWithFlags(flags *GlobalFlagValues, c *Config) error {
 	if err := mergeFlagsWithConfig(flags, c); err != nil {
 		return err
 	}
-	arrangeLogger(c)
+	if err := arrangeLogger(c, flags); err != nil {
+		return err
+	}
 	return nil
 }
 
-func arrangeLogger(c *Config) {
+func arrangeLogger(c *Config, flags *GlobalFlagValues) error {
+	if flags.LogFile != "" {
+		f, err := os.OpenFile(flags.LogFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		if err != nil {
+			return hzcerrors.NewLoggableError(err, "Can not open/create the log file on the specified path %s", flags.LogFile)
+		}
+		c.Logger.SetOutput(f)
+	}
 	// set custom Logger, and unset log level. Go client raises an error if both are set
 	c.Hazelcast.Logger.CustomLogger = newGoClientLogger(c.Logger, c.Hazelcast.Logger.Level)
 	c.Hazelcast.Logger.Level = ""
+	return nil
 }
 
 func setStyling(noColorFlag bool, c *Config) {
@@ -212,13 +222,6 @@ func mergeFlagsWithConfig(flags *GlobalFlagValues, config *Config) error {
 	}
 	if flags.Verbose && verboseWeight > confWeight {
 		config.Hazelcast.Logger.Level = logger.DebugLevel
-	}
-	if flags.LogFile != "" {
-		f, err := os.OpenFile(flags.LogFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-		if err != nil {
-			return hzcerrors.NewLoggableError(err, "Can not open/create the log file on the specified path %s", flags.LogFile)
-		}
-		config.Logger.SetOutput(f)
 	}
 	// overwrite config if flag is set
 	if flags.NoAutocompletion {
