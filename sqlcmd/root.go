@@ -69,7 +69,7 @@ sql "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR, this VARCHAR) TYPE IMAP 
 					return hzcerrors.NewLoggableError(err, "Cannot execute the query")
 				}
 			} else {
-				if err := execute(ctx, driver, q); err != nil {
+				if err := execute(ctx, cmd, driver, q); err != nil {
 					return hzcerrors.NewLoggableError(err, "Cannot execute the query")
 				}
 			}

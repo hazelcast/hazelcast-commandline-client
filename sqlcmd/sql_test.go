@@ -24,6 +24,10 @@ func TestSQLCmd(t *testing.T) {
 	defer func() {
 		table.ConsoleSize = console.GetConsoleSize
 	}()
+	const executeQueryOutput = `---
+Affected rows: 0
+
+`
 	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
 		var (
 			mappingQry = fmt.Sprintf(`
@@ -55,12 +59,12 @@ func TestSQLCmd(t *testing.T) {
 			{
 				name:   "valid create mapping query",
 				args:   []string{mappingQry},
-				output: "",
+				output: executeQueryOutput,
 			},
 			{
 				name:   "valid insert query",
 				args:   []string{insertQry},
-				output: "",
+				output: executeQueryOutput,
 			},
 			{
 				name: "valid select query",
