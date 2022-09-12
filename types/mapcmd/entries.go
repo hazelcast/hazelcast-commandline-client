@@ -22,48 +22,28 @@ import (
 	"github.com/spf13/cobra"
 
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
-	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
-const MapGetAllExample = `  # Get matched entries from the map with default delimiter. Default delimiter is the tab character.
-  hzc get-all -n mapname -k 12 -k 25 --key-type int16 --delim ":"`
+const MapEntriesExample = `  # Get all entries from the map with given delimiter (default tab character).
+  hzc entries -n mapname --delim ":"`
 
-func NewGetAll(config *hazelcast.Config) *cobra.Command {
+func NewEntries(config *hazelcast.Config) *cobra.Command {
 	var (
 		delim,
-		mapKeyType,
 		mapName string
-		mapKeys []string
 	)
-	validateFlags := func() error {
-		if len(mapKeys) == 0 {
-			return hzcerrors.NewLoggableError(nil, "At least one key must be given")
-		}
-		return nil
-	}
 	cmd := &cobra.Command{
-		Use:     "get-all [--name mapname | [--key keyname]... [--delim delimiter]]",
+		Use:     "entries --name mapname [--delim delimiter]]",
 		Short:   "Get all matched entries from the map",
-		Example: MapGetAllExample,
+		Example: MapEntriesExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var err error
-			if err = validateFlags(); err != nil {
-				return err
-			}
-			keys := make([]interface{}, len(mapKeys))
-			for i := range mapKeys {
-				keys[i], err = internal.ConvertString(mapKeys[i], mapKeyType)
-				if err != nil {
-					return hzcerrors.NewLoggableError(err, "key type does cannot be converted")
-				}
-			}
 			var entries []types.Entry
-			var m *hazelcast.Map
-			m, err = getMap(cmd.Context(), config, mapName)
+			m, err := getMap(cmd.Context(), config, mapName)
 			if err != nil {
 				return err
 			}
-			entries, err = m.GetAll(cmd.Context(), keys...)
+			entries, err = m.GetEntrySet(cmd.Context())
 			if err != nil {
 				var handled bool
 				handled, err = isCloudIssue(err, config)
@@ -79,8 +59,6 @@ func NewGetAll(config *hazelcast.Config) *cobra.Command {
 		},
 	}
 	decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name")
-	decorateCommandWithMapKeyArrayFlags(cmd, &mapKeys, true, "key(s) of the entry")
-	decorateCommandWithMapKeyTypeFlags(cmd, &mapKeyType, false)
 	decorateCommandWithDelimiter(cmd, &delim, false, "delimiter of printed key, value pairs")
 	return cmd
 }

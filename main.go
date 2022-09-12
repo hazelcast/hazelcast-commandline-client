@@ -31,7 +31,7 @@ const (
 
 func main() {
 	cfg := config.DefaultConfig()
-	rootCmd, globalFlagValues := rootcmd.New(&cfg.Hazelcast)
+	rootCmd, globalFlagValues := rootcmd.New(&cfg.Hazelcast, false)
 	programArgs := os.Args[1:]
 	// update config before running root command to make sure flags are processed
 	err := updateConfigWithFlags(rootCmd, &cfg, programArgs, globalFlagValues)
@@ -44,7 +44,7 @@ func main() {
 	} else {
 		// Since the cluster config related flags has already being parsed in previous steps,
 		// there is no need for second parameter anymore. The purpose is overwriting rootCmd as it is at the beginning.
-		rootCmd, _ = rootcmd.New(&cfg.Hazelcast)
+		rootCmd, _ = rootcmd.New(&cfg.Hazelcast, false)
 		err = RunCmd(ctx, rootCmd)
 		ExitOnError(err)
 	}

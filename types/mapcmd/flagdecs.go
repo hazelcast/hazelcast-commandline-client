@@ -28,6 +28,8 @@ const (
 	TTLFlag       = "ttl"
 	MaxIdleFlag   = "max-idle"
 	DelimiterFlag = "delim"
+	TimeoutFlag   = "timeout"
+	LeaseTimeFlag = "lease-time"
 )
 
 func decorateCommandWithJSONEntryFlag(cmd *cobra.Command, jsonEntry *string, required bool, usage string) {
@@ -61,6 +63,24 @@ func decorateCommandWithDelimiter(cmd *cobra.Command, delimiter *string, require
 	cmd.Flags().StringVar(delimiter, DelimiterFlag, "\t", usage)
 	if required {
 		if err := cmd.MarkFlagRequired(DelimiterFlag); err != nil {
+			panic(err)
+		}
+	}
+}
+
+func decorateCommandWithTimeout(cmd *cobra.Command, timeout *time.Duration, required bool, usage string) {
+	cmd.Flags().DurationVar(timeout, TimeoutFlag, 0, usage)
+	if required {
+		if err := cmd.MarkFlagRequired(TimeoutFlag); err != nil {
+			panic(err)
+		}
+	}
+}
+
+func decorateCommandWithLeaseTime(cmd *cobra.Command, lt *time.Duration, required bool, usage string) {
+	cmd.Flags().DurationVar(lt, LeaseTimeFlag, 0, usage)
+	if required {
+		if err := cmd.MarkFlagRequired(LeaseTimeFlag); err != nil {
 			panic(err)
 		}
 	}
