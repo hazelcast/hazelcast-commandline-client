@@ -26,8 +26,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/sql"
 
-	"github.com/spf13/cobra"
-
 	"github.com/hazelcast/hazelcast-commandline-client/internal/format"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/table"
 )
@@ -124,15 +122,10 @@ func rowsHandler(result sql.Result, columnHandler func(cols []string) error, row
 	return nil
 }
 
-func execute(ctx context.Context, c *hazelcast.Client, text string) error {
+func execute(ctx context.Context, c *hazelcast.Client, text string) (sql.Result, error) {
 	r, err := c.SQL().Execute(ctx, text)
 	if err != nil {
-		return fmt.Errorf("executing: %w", err)
+		return nil, fmt.Errorf("executing: %w", err)
 	}
-	uc := r.UpdateCount()
-	if uc == -1 {
-		return fmt.Errorf("invalid update count")
-	}
-	cmd.Printf("---\nAffected rows: %d\n\n", uc)
-	return nil
+	return r, nil
 }
