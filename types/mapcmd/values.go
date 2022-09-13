@@ -30,7 +30,7 @@ func NewValues(config *hazelcast.Config) *cobra.Command {
 	var mapName string
 	cmd := &cobra.Command{
 		Use:     "values --name mapname",
-		Short:   "Get all values from the map",
+		Short:   "Get all the values from the map",
 		Example: MapValuesExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var values []interface{}

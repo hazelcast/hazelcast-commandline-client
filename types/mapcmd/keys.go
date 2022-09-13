@@ -23,14 +23,14 @@ import (
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 )
 
-const MapKeysExample = `  # Get all the keys 
+const MapKeysExample = `  # Get all the keys from the map.
   hzc keys -n mapname`
 
 func NewKeys(config *hazelcast.Config) *cobra.Command {
 	var mapName string
 	cmd := &cobra.Command{
 		Use:     "keys --name mapname",
-		Short:   "Get all keys from the map",
+		Short:   "Get all the keys from the map",
 		Example: MapKeysExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var keys []interface{}

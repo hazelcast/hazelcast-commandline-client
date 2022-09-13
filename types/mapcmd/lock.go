@@ -26,7 +26,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
-const MapLockExample = `  # Lock the given map.
+const MapLockExample = `  # Lock the specified key of the given map.
   hzc map lock --key mapkey --name mapname --lease-time 10ms`
 
 func NewLock(config *hazelcast.Config) *cobra.Command {
@@ -36,7 +36,7 @@ func NewLock(config *hazelcast.Config) *cobra.Command {
 	)
 	cmd := &cobra.Command{
 		Use:     "lock --key mapkey --name mapname [--lease-time duration]",
-		Short:   "Lock the map",
+		Short:   "Lock the specified key of the given map",
 		Example: MapLockExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			key, err := internal.ConvertString(mapKey, mapKeyType)

@@ -34,7 +34,7 @@ func NewRemoveMany(config *hazelcast.Config) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "remove-many --name mapname [--key-type keysType] --key keyname [--key keyname2...]",
 		Short: "Removes entries from the map corresponding to the given keys",
-		Example: `  # Remove keys from the map
+		Example: `  # Remove entries from the map
   hzc map remove-many -n mapname -k k1 -k k2`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// actual keys

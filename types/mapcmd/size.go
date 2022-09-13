@@ -23,7 +23,7 @@ import (
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 )
 
-const MapSizeExample = `  # Get the size of given the map.
+const MapSizeExample = `  # Get the size of the given the map.
   hzc map size --name mapname`
 
 func NewSize(config *hazelcast.Config) *cobra.Command {

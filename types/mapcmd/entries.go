@@ -25,7 +25,7 @@ import (
 )
 
 const MapEntriesExample = `  # Get all entries from the map with given delimiter (default tab character).
-  hzc entries -n mapname --delim ":"`
+  hzc map entries -n mapname --delim ":"`
 
 func NewEntries(config *hazelcast.Config) *cobra.Command {
 	var (
@@ -34,7 +34,7 @@ func NewEntries(config *hazelcast.Config) *cobra.Command {
 	)
 	cmd := &cobra.Command{
 		Use:     "entries --name mapname [--delim delimiter]]",
-		Short:   "Get all matched entries from the map",
+		Short:   "Get all entries from the map with given delimiter",
 		Example: MapEntriesExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var err error
