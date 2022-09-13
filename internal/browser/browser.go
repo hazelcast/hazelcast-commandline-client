@@ -103,10 +103,14 @@ func (t *table) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			tuiutil.Faint = !tuiutil.Faint
 			return t, nil
 		case tea.KeyCtrlC:
-			if t.lastIteration != nil {
-				t.lastIteration.result.Close()
+			if atomic.CompareAndSwapInt32(&t.lastIteration.queryStatus, unset, closed) {
+				// go client halts at the Close call if there is no member to connect
+				// this is a hacky work around
+				go func() {
+					t.lastIteration.result.Close()
+				}()
+				changeProgress(HideProgress)
 			}
-			changeProgress(HideProgress)
 			return t, nil
 		}
 		if !t.keyboardFocus {
@@ -136,8 +140,9 @@ func (t *table) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 type NewRowsMessage [][]interface{}
 
 const (
-	set   = 1
-	unset = 0
+	unset  = 0
+	set    = 1
+	closed = 2
 )
 
 type SQLIterator struct {
@@ -149,6 +154,7 @@ type SQLIterator struct {
 	columnNames         []string // cannot access these after it.Close(), hence save them
 	iterating           int32
 	consumingRows       int32
+	queryStatus         int32
 }
 
 func NewSqlIterator(maxIterationCount int, result sql.Result) (*SQLIterator, error) {
