@@ -21,6 +21,7 @@ import (
 	"os"
 
 	"github.com/hazelcast/hazelcast-commandline-client/config"
+	"github.com/hazelcast/hazelcast-commandline-client/connectioncmd"
 	"github.com/hazelcast/hazelcast-commandline-client/rootcmd"
 )
 
@@ -33,6 +34,9 @@ func main() {
 	cfg := config.DefaultConfig()
 	rootCmd, globalFlagValues := rootcmd.New(&cfg.Hazelcast)
 	programArgs := os.Args[1:]
+	if !config.IsConfigExists() {
+		connectioncmd.New().Execute()
+	}
 	// update config before running root command to make sure flags are processed
 	err := updateConfigWithFlags(rootCmd, &cfg, programArgs, globalFlagValues)
 	ExitOnError(err)

@@ -79,43 +79,65 @@ func DefaultConfig() Config {
 	return Config{Hazelcast: hz}
 }
 
-const defaultUserConfig = `
-hazelcast:
-  cluster:
-    name: dev
-    unisocket: true
-    network:
-      # 0s is no timeout
-      connectiontimeout: 0s
-      addresses:
-      - "localhost:5701"
-    cloud:
-      token: ""
-      enabled: false
-    security:
-      credentials:
-        username: ""
-        password: ""
-    discovery:
-      usepublicip: false
-  logger:
-    level: error
-ssl:
-  enabled: false
-  servername: ""
-  capath: ""
-  certpath: ""
-  keypath: ""
-  keypassword: ""
-# disables auto completion on interactive mode if true
-noautocompletion: false
-styling:
-  # builtin themes: default, no-color, solarized
-  theme: "default"
-`
+type HazelcastUserFriendlyConfig struct {
+}
+type UserFriendlyConfig struct {
+	Hazelcast struct {
+		Cluster struct {
+			Name      string `yaml:"name"`
+			UniSocket bool   `yaml:"unisocket"`
+			Network   struct {
+				ConnectionTimeout string   `yaml:"connectiontimeout"`
+				Addresses         []string `yaml:"addresses"`
+			}
+			Cloud struct {
+				Token   string `yaml:"token"`
+				Enabled bool   `yaml:"enabled"`
+			}
+			Security struct {
+				Credentials struct {
+					Username string `yaml:"username"`
+					Password string `yaml:"password"`
+				}
+			}
+			Discovery struct {
+				UsePublicIP bool `yaml:"usepublicip"`
+			}
+		}
+		Logger struct {
+			Level string `yaml:"level"`
+		}
+	}
+	SSL struct {
+		Enabled     bool   `yaml:"enabled"`
+		Servername  string `yaml:"servername"`
+		CaPath      string `yaml:"capath"`
+		CertPath    string `yaml:"certpath"`
+		KeyPath     string `yaml:"keypath"`
+		KeyPassword string `yaml:"keypassword"`
+	}
+	NoAutoCompletion bool `yaml:"noautocompletion"`
+	Styling          struct {
+		Theme string `yaml:"theme"`
+	}
+}
 
-func writeToFile(config string, confPath string) error {
-	return file.CreateMissingDirsAndFileWithRWPerms(confPath, []byte(config))
+func IsConfigExists() bool {
+	exists, err := file.Exists(DefaultConfigPath())
+	if err != nil {
+
+	}
+	return exists
+}
+
+func WriteToFile(config *Config, confPath string) error {
+	defaultConfig := UserFriendlyConfig{}
+	confBytes, _ := yaml.Marshal(config)
+	if err := yaml.Unmarshal(confBytes, &defaultConfig); err != nil {
+		return hzcerrors.NewLoggableError(err, "Error during unmarshal on Config object.")
+	}
+	defaultConfigBytes, _ := yaml.Marshal(defaultConfig)
+	return file.CreateMissingDirsAndFileWithRWPerms(confPath, defaultConfigBytes)
 }
 
 func ReadAndMergeWithFlags(flags *GlobalFlagValues, c *Config) error {
@@ -202,7 +224,7 @@ func readConfig(path string, config *Config, defaultConfPath string) error {
 			// file should exist if custom path is used
 			return hzcerrors.NewLoggableError(os.ErrNotExist, "configuration not found: %s", path)
 		}
-		if err = writeToFile(defaultUserConfig, path); err != nil {
+		if err = WriteToFile(config, path); err != nil {
 			return hzcerrors.NewLoggableError(err, "cannot create default configuration: %s. Make sure that process has necessary permissions to write default path.\n", path)
 		}
 	}
