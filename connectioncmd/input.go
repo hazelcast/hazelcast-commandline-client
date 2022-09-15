@@ -42,28 +42,28 @@ func ViridianInput(config *config.Config) InputModel {
 		t.CursorStyle = selectedItemStyle
 		switch i {
 		case 0:
-			t.Prompt = "- Cluster name: "
+			t.Prompt = "- Cluster Name: "
 			t.Focus()
 			t.PromptStyle = selectedItemStyle
 			t.TextStyle = selectedItemStyle
 			t.SetCursorMode(textinput.CursorStatic)
 		case 1:
-			t.Prompt = "- Discovery token: "
+			t.Prompt = "- Discovery Token: "
 			t.PromptStyle = noStyle
 			t.TextStyle = noStyle
 			t.SetCursorMode(textinput.CursorStatic)
 		case 2:
-			t.Prompt = "- CA certificate path: "
+			t.Prompt = "- CA Certificate Path: "
 			t.PromptStyle = noStyle
 			t.TextStyle = noStyle
 			t.SetCursorMode(textinput.CursorStatic)
 		case 3:
-			t.Prompt = "- SSL certificate path: "
+			t.Prompt = "- SSL Certificate Path: "
 			t.PromptStyle = noStyle
 			t.TextStyle = noStyle
 			t.SetCursorMode(textinput.CursorStatic)
 		case 4:
-			t.Prompt = "- SSL key path: "
+			t.Prompt = "- SSL Key Path: "
 			t.PromptStyle = noStyle
 			t.TextStyle = noStyle
 			t.SetCursorMode(textinput.CursorStatic)
@@ -94,18 +94,18 @@ func CloudInput(config *config.Config) InputModel {
 		t.CursorStyle = selectedItemStyle
 		switch i {
 		case 0:
-			t.Prompt = "- Cluster name: "
+			t.Prompt = "- Cluster Name: "
 			t.Focus()
 			t.PromptStyle = selectedItemStyle
 			t.TextStyle = selectedItemStyle
 			t.SetCursorMode(textinput.CursorStatic)
 		case 1:
-			t.Prompt = "- Discovery token: "
+			t.Prompt = "- Discovery Token: "
 			t.PromptStyle = noStyle
 			t.TextStyle = noStyle
 			t.SetCursorMode(textinput.CursorStatic)
 		case 2:
-			t.Prompt = "- SSL enabled: "
+			t.Prompt = "- Setup SSL? (T/F): "
 			t.PromptStyle = noStyle
 			t.TextStyle = noStyle
 		}
@@ -116,7 +116,7 @@ func CloudInput(config *config.Config) InputModel {
 
 func LocalInput(config *config.Config) InputModel {
 	m := InputModel{
-		inputs:         make([]textinput.Model, 4),
+		inputs:         make([]textinput.Model, 3),
 		config:         config,
 		connectionType: "Local",
 		state:          0,
@@ -126,27 +126,21 @@ func LocalInput(config *config.Config) InputModel {
 		t := textinput.New()
 		t.CursorStyle = selectedItemStyle
 		t.SetCursorMode(textinput.CursorStatic)
-		t.CharLimit = 64
 		switch i {
 		case 0:
-			t.Prompt = "- Cluster name: "
+			t.Prompt = "- Cluster Name: "
 			t.Focus()
 			t.Placeholder = "dev"
 			t.PromptStyle = selectedItemStyle
 			t.TextStyle = selectedItemStyle
 		case 1:
-			t.Prompt = "- IP address: "
+			t.Prompt = "- Member Addresses: "
 			t.PromptStyle = noStyle
-			t.Placeholder = "127.0.0.1"
+			t.Placeholder = "127.0.0.1:5701"
 			t.TextStyle = noStyle
 		case 2:
-			t.Prompt = "- Port range: "
-			t.Placeholder = "5700-5800"
-			t.PromptStyle = noStyle
-			t.TextStyle = noStyle
-		case 3:
-			t.Prompt = "- SSL enabled: "
-			t.Placeholder = "false"
+			t.Prompt = "- Setup SSL? (T/F): "
+			t.Placeholder = "F"
 			t.PromptStyle = noStyle
 			t.TextStyle = noStyle
 		}
@@ -157,7 +151,7 @@ func LocalInput(config *config.Config) InputModel {
 
 func RemoteInput(config *config.Config) InputModel {
 	m := InputModel{
-		inputs:         make([]textinput.Model, 4),
+		inputs:         make([]textinput.Model, 3),
 		connectionType: "Remote",
 		config:         config,
 		state:          0,
@@ -169,21 +163,16 @@ func RemoteInput(config *config.Config) InputModel {
 		t.SetCursorMode(textinput.CursorStatic)
 		switch i {
 		case 0:
-			t.Prompt = "- Cluster name: "
+			t.Prompt = "- Cluster Name: "
 			t.Focus()
 			t.PromptStyle = selectedItemStyle
 			t.TextStyle = selectedItemStyle
 		case 1:
-			t.Prompt = "- IP address: "
+			t.Prompt = "- Member Addresses: "
 			t.PromptStyle = noStyle
 			t.TextStyle = noStyle
 		case 2:
-			t.Prompt = "- Port number: "
-			t.PromptStyle = noStyle
-			t.TextStyle = noStyle
-		case 3:
-			t.Prompt = "- SSL enabled: "
-			t.Placeholder = "false"
+			t.Prompt = "- Setup SSL? (T/F): "
 			t.PromptStyle = noStyle
 			t.TextStyle = noStyle
 		}
@@ -276,7 +265,7 @@ func updateValues(m *InputModel) {
 			m.config.Hazelcast.Cluster.Cloud.Enabled = true
 			m.config.Hazelcast.Cluster.Name = m.inputs[0].Value()
 			m.config.Hazelcast.Cluster.Cloud.Token = m.inputs[1].Value()
-			if m.inputs[2].Value() == "true" {
+			if m.inputs[2].Value() == "T" {
 				m.state = 2
 				m.config.SSL.Enabled = true
 			} else {
@@ -284,8 +273,9 @@ func updateValues(m *InputModel) {
 			}
 		} else if m.connectionType == "Local" {
 			m.config.Hazelcast.Cluster.Name = m.inputs[0].Value()
-			m.config.Hazelcast.Cluster.Network.Addresses = append(make([]string, 0), m.inputs[1].Value())
-			if m.inputs[3].Value() == "true" {
+			addressString := strings.ReplaceAll(m.inputs[1].Value(), " ", "")
+			m.config.Hazelcast.Cluster.Network.Addresses = strings.Split(addressString, ",")
+			if m.inputs[2].Value() == "T" {
 				m.state = 2
 				m.config.SSL.Enabled = true
 			} else {
@@ -294,7 +284,7 @@ func updateValues(m *InputModel) {
 		} else if m.connectionType == "Remote" {
 			m.config.Hazelcast.Cluster.Name = m.inputs[0].Value()
 			m.config.Hazelcast.Cluster.Network.Addresses = append(make([]string, 0), m.inputs[1].Value())
-			if m.inputs[3].Value() == "true" {
+			if m.inputs[2].Value() == "T" {
 				m.state = 2
 				m.config.SSL.Enabled = true
 			} else {

@@ -132,6 +132,8 @@ func IsConfigExists() bool {
 
 func WriteToFile(config *Config, confPath string) error {
 	defaultConfig := UserFriendlyConfig{}
+	config.Styling.Theme = "default"
+	config.NoAutocompletion = false
 	confBytes, _ := yaml.Marshal(config)
 	if err := yaml.Unmarshal(confBytes, &defaultConfig); err != nil {
 		return hzcerrors.NewLoggableError(err, "Error during unmarshal on Config object.")
