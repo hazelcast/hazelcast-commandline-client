@@ -1,5 +1,5 @@
 = Get Started With the Hazelcast CLC
-:description: In this tutorial, you'll learn the basics of how to configure the Hazelcast Command Line Client (CLC), start it, and connect it to a Hazelcast {hazelcast-cloud} Serverless development cluster and a Serverless production cluster. You'll also see how to switch between clusters, using the Hazelcast CLC. Finally, you'll perform some basic operations on a cluster from the command line and then by running a script to automate the same actions.
+:description: In this tutorial, you'll learn the basics of how to configure the Hazelcast Command-Line Client (CLC), start it, and connect it to a Hazelcast {hazelcast-cloud} Serverless development cluster and a Serverless production cluster. You'll also see how to switch between clusters, using the Hazelcast CLC. Finally, you'll perform some basic operations on a cluster from the command line and then by running a script to automate the same actions.
 
 {description}
 
@@ -149,7 +149,7 @@ Now that you've connected to both your clusters, try using the Hazelcast CLC to 
   "6": {
         "Code": "USD",
         "Currency": "United States Dollar"
-      },
+      }
 }
 
 ```
@@ -162,15 +162,15 @@ hzc map put-all -n currency --json-entry currencycodes.json
 The `-n` flag passes the map name to your cluster.
 
 . Do a quick check on your cluster to make sure that your data has been written successfully.
-.	Open the dashboard of the development cluster and click *Management Center*.
-.	Go to *Storage* > *Maps*. You'll see that your cluster has a map called `currency` with six entries. 
+. Open the dashboard of the development cluster and click *Management Center*.
+. Go to *Storage* > *Maps*. You'll see that your cluster has a map called `currency` with six entries. 
 
 
 [[step-6-query-map]]
 == Step 6. Query Map Data
 You can use SQL to query the data in your `currency` map.
 
-.	Start by creating a mapping to the `currency` map.
+. Start by creating a mapping to the `currency` map.
 
 +
 ```bash
@@ -233,6 +233,36 @@ hzc -c config_prod.yaml sql "SELECT * FROM currencydata ORDER BY Code"
 ----
 
 .	Save your script to the `$HOME/.local/share/hz-cli` directory.
+. Use the following command to make sure that the script is executable:
++
+```bash
+chmod 777 myscript.sh
+```
+. Then, to run the script, execute the following command:
++
+```bash
+./myscript.sh
+```
+--
+Mac:: 
++ 
+--
+. Copy the following commands into a shell script.
++
+.myscript.sh
+[source,bash]
+----
+#!/bin/bash
+hzc map put-all -n currencydata --json-entry currencycodes.json
+hzc sql "CREATE MAPPING currencydata (__key VARCHAR, Code VARCHAR, Currency VARCHAR) TYPE IMap OPTIONS('keyFormat'='varchar', 'valueFormat'='json-flat')"
+hzc sql "SELECT * FROM currencydata ORDER BY Code"
+hzc -c config_prod.yaml map put-all -n currencydata --json-entry currencycodes.json
+hzc -c config_prod.yaml sql "CREATE MAPPING currencydata (__key VARCHAR, Code VARCHAR, Currency VARCHAR) TYPE IMap OPTIONS('keyFormat'='varchar', 'valueFormat'='json-flat')"
+hzc -c config_prod.yaml sql "SELECT * FROM currencydata ORDER BY Code"
+
+----
+
+. Save your script to the `$HOME/.local/share/hz-cli` directory.
 . Use the following command to make sure that the script is executable:
 +
 ```bash
