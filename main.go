@@ -34,7 +34,7 @@ func main() {
 	cfg := config.DefaultConfig()
 	rootCmd, globalFlagValues := rootcmd.New(&cfg.Hazelcast)
 	programArgs := os.Args[1:]
-	if !config.IsConfigExists() {
+	if !config.ConfigExists() {
 		connectioncmd.New().Execute()
 	}
 	// update config before running root command to make sure flags are processed

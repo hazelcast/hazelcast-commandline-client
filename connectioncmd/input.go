@@ -6,16 +6,19 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hazelcast/hazelcast-commandline-client/config"
-	"os"
 	"strings"
 )
 
 var (
 	selectedItemStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("6"))
 	noStyle           = lipgloss.NewStyle()
+	blurStyle         = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+)
 
-	focusedButton = selectedItemStyle.Copy().Render("[ Submit ]")
-	blurredButton = fmt.Sprintf("%s", noStyle.Render("[ Submit ]"))
+const (
+	uncompleted = 0
+	ssl         = 1
+	completed   = 2
 )
 
 type InputModel struct {
@@ -32,48 +35,35 @@ func ViridianInput(config *config.Config) InputModel {
 	m := InputModel{
 		inputs:         make([]textinput.Model, 6),
 		config:         config,
-		connectionType: "Hazelcast Viridian",
-		state:          0,
+		connectionType: "Viridian",
+		state:          uncompleted,
 		cursorMode:     textinput.CursorStatic,
 	}
 	var t textinput.Model
 	for i := range m.inputs {
 		t = textinput.New()
 		t.CursorStyle = selectedItemStyle
+		t.SetCursorMode(textinput.CursorStatic)
+		t.PromptStyle = noStyle
+		t.TextStyle = noStyle
 		switch i {
 		case 0:
 			t.Prompt = "- Cluster Name: "
-			t.Focus()
 			t.PromptStyle = selectedItemStyle
 			t.TextStyle = selectedItemStyle
-			t.SetCursorMode(textinput.CursorStatic)
+			t.Focus()
 		case 1:
 			t.Prompt = "- Discovery Token: "
-			t.PromptStyle = noStyle
-			t.TextStyle = noStyle
-			t.SetCursorMode(textinput.CursorStatic)
 		case 2:
 			t.Prompt = "- CA Certificate Path: "
-			t.PromptStyle = noStyle
-			t.TextStyle = noStyle
-			t.SetCursorMode(textinput.CursorStatic)
 		case 3:
 			t.Prompt = "- SSL Certificate Path: "
-			t.PromptStyle = noStyle
-			t.TextStyle = noStyle
-			t.SetCursorMode(textinput.CursorStatic)
 		case 4:
 			t.Prompt = "- SSL Key Path: "
-			t.PromptStyle = noStyle
-			t.TextStyle = noStyle
-			t.SetCursorMode(textinput.CursorStatic)
 		case 5:
 			t.Prompt = "- SSL Password: "
 			t.EchoMode = textinput.EchoPassword
 			t.EchoCharacter = '•'
-			t.PromptStyle = noStyle
-			t.TextStyle = noStyle
-			t.SetCursorMode(textinput.CursorStatic)
 		}
 		m.inputs[i] = t
 	}
@@ -84,109 +74,78 @@ func CloudInput(config *config.Config) InputModel {
 	m := InputModel{
 		inputs:         make([]textinput.Model, 3),
 		config:         config,
-		connectionType: "Hazelcast Cloud",
-		state:          0,
+		connectionType: "Cloud",
+		state:          uncompleted,
 		cursorMode:     textinput.CursorStatic,
 	}
 	var t textinput.Model
 	for i := range m.inputs {
 		t = textinput.New()
 		t.CursorStyle = selectedItemStyle
+		t.SetCursorMode(textinput.CursorStatic)
+		t.PromptStyle = noStyle
+		t.TextStyle = noStyle
 		switch i {
 		case 0:
 			t.Prompt = "- Cluster Name: "
-			t.Focus()
 			t.PromptStyle = selectedItemStyle
 			t.TextStyle = selectedItemStyle
-			t.SetCursorMode(textinput.CursorStatic)
+			t.Focus()
 		case 1:
 			t.Prompt = "- Discovery Token: "
-			t.PromptStyle = noStyle
-			t.TextStyle = noStyle
-			t.SetCursorMode(textinput.CursorStatic)
 		case 2:
-			t.Prompt = "- Setup SSL? (T/F): "
-			t.PromptStyle = noStyle
-			t.TextStyle = noStyle
+			t.Prompt = "- Setup SSL? (y/n): "
 		}
 		m.inputs[i] = t
 	}
 	return m
 }
 
-func LocalInput(config *config.Config) InputModel {
+func StandaloneInput(config *config.Config, connection string) InputModel {
 	m := InputModel{
 		inputs:         make([]textinput.Model, 3),
 		config:         config,
-		connectionType: "Local",
-		state:          0,
+		connectionType: connection,
+		state:          uncompleted,
 		cursorMode:     textinput.CursorStatic,
 	}
 	for i := range m.inputs {
 		t := textinput.New()
 		t.CursorStyle = selectedItemStyle
+		t.PromptStyle = noStyle
+		t.TextStyle = noStyle
 		t.SetCursorMode(textinput.CursorStatic)
 		switch i {
 		case 0:
 			t.Prompt = "- Cluster Name: "
-			t.Focus()
-			t.Placeholder = "dev"
 			t.PromptStyle = selectedItemStyle
 			t.TextStyle = selectedItemStyle
+			if m.connectionType == "Local" {
+				t.Placeholder = "dev"
+			}
+			t.Focus()
 		case 1:
 			t.Prompt = "- Member Addresses: "
-			t.PromptStyle = noStyle
-			t.Placeholder = "127.0.0.1:5701"
-			t.TextStyle = noStyle
+			if m.connectionType == "Local" {
+				t.Placeholder = "localhost:5701"
+			}
 		case 2:
-			t.Prompt = "- Setup SSL? (T/F): "
-			t.Placeholder = "F"
-			t.PromptStyle = noStyle
-			t.TextStyle = noStyle
+			t.Prompt = "- Setup SSL? (y/n): "
+			if m.connectionType == "Local" {
+				t.Placeholder = "n"
+			}
 		}
 		m.inputs[i] = t
 	}
 	return m
 }
 
-func RemoteInput(config *config.Config) InputModel {
-	m := InputModel{
-		inputs:         make([]textinput.Model, 3),
-		connectionType: "Remote",
-		config:         config,
-		state:          0,
-		cursorMode:     textinput.CursorStatic,
-	}
-	for i := range m.inputs {
-		t := textinput.New()
-		t.CursorStyle = selectedItemStyle
-		t.SetCursorMode(textinput.CursorStatic)
-		switch i {
-		case 0:
-			t.Prompt = "- Cluster Name: "
-			t.Focus()
-			t.PromptStyle = selectedItemStyle
-			t.TextStyle = selectedItemStyle
-		case 1:
-			t.Prompt = "- Member Addresses: "
-			t.PromptStyle = noStyle
-			t.TextStyle = noStyle
-		case 2:
-			t.Prompt = "- Setup SSL? (T/F): "
-			t.PromptStyle = noStyle
-			t.TextStyle = noStyle
-		}
-		m.inputs[i] = t
-	}
-	return m
-}
-
-func SSLInput(config *config.Config, connectionType string) InputModel {
+func SSLInput(config *config.Config) InputModel {
 	m := InputModel{
 		inputs:         make([]textinput.Model, 4),
 		config:         config,
-		connectionType: connectionType,
-		state:          2,
+		state:          ssl,
+		connectionType: "SSL",
 		cursorMode:     textinput.CursorStatic,
 	}
 	var t textinput.Model
@@ -227,12 +186,12 @@ func ApprovalInput() InputModel {
 	m := InputModel{
 		inputs:         make([]textinput.Model, 1),
 		connectionType: "Approval",
-		state:          1,
+		state:          completed,
 		cursorMode:     textinput.CursorStatic,
 	}
 	t := textinput.New()
 	t.CursorStyle = selectedItemStyle
-	t.Prompt = "Your config file will be overwritten, are you want to continue? (y/n): "
+	t.Prompt = "Your config file will be overwritten, do you want to continue? (y/n): "
 	t.Focus()
 	t.PromptStyle = noStyle
 	t.TextStyle = noStyle
@@ -241,58 +200,41 @@ func ApprovalInput() InputModel {
 	return m
 }
 
-func updateValues(m *InputModel) {
-	if m.state == 2 {
-		m.config.SSL.CAPath = m.inputs[0].Value()
-		m.config.SSL.CertPath = m.inputs[1].Value()
-		m.config.SSL.KeyPath = m.inputs[2].Value()
-		m.config.SSL.KeyPassword = m.inputs[3].Value()
-		m.state = 1
-	} else {
-		if m.connectionType == "Hazelcast Viridian" {
-			_ = os.Setenv("HZ_CLOUD_COORDINATOR_BASE_URL", "https://api.viridian.hazelcast.com")
+func updateConfig(m *InputModel) {
+	switch m.state {
+	case uncompleted:
+		switch m.connectionType {
+		case "Viridian":
 			m.config.Hazelcast.Cluster.Cloud.Enabled = true
+			m.config.SSL.ServerName = "hazelcast.cloud"
 			m.config.Hazelcast.Cluster.Name = m.inputs[0].Value()
 			m.config.Hazelcast.Cluster.Cloud.Token = m.inputs[1].Value()
 			m.config.SSL.Enabled = true
-			m.config.SSL.ServerName = "hazelcast.cloud"
 			m.config.SSL.CAPath = m.inputs[2].Value()
 			m.config.SSL.CertPath = m.inputs[3].Value()
 			m.config.SSL.KeyPath = m.inputs[4].Value()
 			m.config.SSL.KeyPassword = m.inputs[5].Value()
-		} else if m.connectionType == "Hazelcast Cloud" {
-			_ = os.Setenv("HZ_CLOUD_COORDINATOR_BASE_URL", "https://coordinator.hazelcast.cloud")
+			m.state = completed
+		case "Cloud":
 			m.config.Hazelcast.Cluster.Cloud.Enabled = true
+			m.config.SSL.ServerName = "hazelcast.cloud"
 			m.config.Hazelcast.Cluster.Name = m.inputs[0].Value()
 			m.config.Hazelcast.Cluster.Cloud.Token = m.inputs[1].Value()
-			if m.inputs[2].Value() == "T" {
-				m.state = 2
-				m.config.SSL.Enabled = true
-			} else {
-				m.config.SSL.Enabled = false
-			}
-		} else if m.connectionType == "Local" {
+			m.config.SSL.Enabled = m.inputs[2].Value() == "y"
+		case "Local", "Remote":
 			m.config.Hazelcast.Cluster.Name = m.inputs[0].Value()
 			addressString := strings.ReplaceAll(m.inputs[1].Value(), " ", "")
 			m.config.Hazelcast.Cluster.Network.Addresses = strings.Split(addressString, ",")
-			if m.inputs[2].Value() == "T" {
-				m.state = 2
-				m.config.SSL.Enabled = true
-			} else {
-				m.config.SSL.Enabled = false
-			}
-		} else if m.connectionType == "Remote" {
-			m.config.Hazelcast.Cluster.Name = m.inputs[0].Value()
-			m.config.Hazelcast.Cluster.Network.Addresses = append(make([]string, 0), m.inputs[1].Value())
-			if m.inputs[2].Value() == "T" {
-				m.state = 2
-				m.config.SSL.Enabled = true
-			} else {
-				m.config.SSL.Enabled = false
-			}
-		} else if m.connectionType == "Approval" {
-			choice = m.inputs[0].Value()
+			m.config.SSL.Enabled = m.inputs[2].Value() == "y"
 		}
+	case ssl:
+		m.config.SSL.CAPath = m.inputs[0].Value()
+		m.config.SSL.CertPath = m.inputs[1].Value()
+		m.config.SSL.KeyPath = m.inputs[2].Value()
+		m.config.SSL.KeyPassword = m.inputs[3].Value()
+		m.state = completed
+	case completed:
+		choice = m.inputs[0].Value()
 	}
 }
 
@@ -303,46 +245,35 @@ func (m InputModel) Init() tea.Cmd {
 func (m InputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c", "esc":
+		switch msg.Type {
+		case tea.KeyCtrlC, tea.KeyEsc:
 			m.quitting = true
 			return m, tea.Quit
-		case "tab", "enter", "up", "down":
-			s := msg.String()
-			if s == "enter" && (m.focusIndex == len(m.inputs) || m.connectionType == "Approval") {
-				updateValues(&m)
-				if m.state == 2 {
-					m = SSLInput(m.config, m.connectionType)
-					cmd := m.updateInputs(msg)
-					return m, cmd
+		case tea.KeyUp:
+			if m.focusIndex--; m.focusIndex < 0 {
+				m.focusIndex = len(m.inputs)
+			}
+			cmd := m.updateStyles()
+			return m, cmd
+		case tea.KeyDown:
+			if m.focusIndex++; m.focusIndex > len(m.inputs) {
+				m.focusIndex = 0
+			}
+			cmd := m.updateStyles()
+			return m, cmd
+		case tea.KeyEnter:
+			if m.focusIndex == len(m.inputs) || m.connectionType == "Approval" {
+				updateConfig(&m)
+				if m.state == completed {
+					m.quitting = true
+					return m, tea.Quit
+				} else if m.config.SSL.Enabled {
+					m = SSLInput(m.config)
 				} else {
 					m.quitting = true
 					return m, tea.Quit
 				}
 			}
-			if s == "up" || s == "shift+tab" {
-				m.focusIndex--
-			} else {
-				m.focusIndex++
-			}
-			if m.focusIndex > len(m.inputs) {
-				m.focusIndex = 0
-			} else if m.focusIndex < 0 {
-				m.focusIndex = len(m.inputs)
-			}
-			cmds := make([]tea.Cmd, len(m.inputs))
-			for i := 0; i <= len(m.inputs)-1; i++ {
-				if i == m.focusIndex {
-					cmds[i] = m.inputs[i].Focus()
-					m.inputs[i].PromptStyle = selectedItemStyle
-					m.inputs[i].TextStyle = selectedItemStyle
-					continue
-				}
-				m.inputs[i].Blur()
-				m.inputs[i].PromptStyle = noStyle
-				m.inputs[i].TextStyle = noStyle
-			}
-			return m, tea.Batch(cmds...)
 		}
 	}
 	cmd := m.updateInputs(msg)
@@ -357,20 +288,43 @@ func (m *InputModel) updateInputs(msg tea.Msg) tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
+func (m *InputModel) updateStyles() tea.Cmd {
+	cmds := make([]tea.Cmd, len(m.inputs))
+	for i := 0; i <= len(m.inputs)-1; i++ {
+		if i == m.focusIndex {
+			cmds[i] = m.inputs[i].Focus()
+			m.inputs[i].PromptStyle = selectedItemStyle
+			m.inputs[i].TextStyle = selectedItemStyle
+			continue
+		}
+		m.inputs[i].Blur()
+		m.inputs[i].PromptStyle = noStyle
+		m.inputs[i].TextStyle = noStyle
+	}
+	return tea.Batch(cmds...)
+}
+
 func (m InputModel) View() string {
 	if m.quitting {
 		return ""
 	} else {
 		var b strings.Builder
-		if m.connectionType == "Hazelcast Viridian" {
+		switch m.connectionType {
+		case "Viridian":
 			fmt.Fprintf(&b, "%s\n", fmt.Sprintf("%s",
 				noStyle.Render("Please provide your Hazelcast Viridian tokens below.")))
-		} else if m.connectionType == "Local" {
+		case "Local":
 			fmt.Fprintf(&b, "%s\n", fmt.Sprintf("%s",
-				noStyle.Render("Please provide IP address and port number.")))
-		} else if m.connectionType == "Remote" {
+				noStyle.Render("Please provide IP address and port number of your local cluster.")))
+		case "Remote":
 			fmt.Fprintf(&b, "%s\n", fmt.Sprintf("%s",
-				noStyle.Render("Please provide your remote connection address.")))
+				noStyle.Render("Please provide IP address and port number of your remote cluster.")))
+		case "Cloud":
+			fmt.Fprintf(&b, "%s\n", fmt.Sprintf("%s",
+				noStyle.Render("Please provide your Hazelcast Cloud tokens below.")))
+		case "SSL":
+			fmt.Fprintf(&b, "%s\n", fmt.Sprintf("%s",
+				noStyle.Render("Please provide paths to your SSL certificates below.")))
 		}
 		for i := range m.inputs {
 			b.WriteString(m.inputs[i].View())
@@ -379,11 +333,11 @@ func (m InputModel) View() string {
 			}
 		}
 		if m.connectionType != "Approval" {
-			button := &blurredButton
+			button := fmt.Sprintf("%s", noStyle.Render("[ Submit ]"))
 			if m.focusIndex == len(m.inputs) {
-				button = &focusedButton
+				button = fmt.Sprintf("%s", selectedItemStyle.Copy().Render("[ Submit ]"))
 			}
-			fmt.Fprintf(&b, "\n\n%s\n\n", *button)
+			fmt.Fprintf(&b, "\n\n%s", button)
 		}
 		return b.String()
 	}

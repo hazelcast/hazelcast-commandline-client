@@ -53,6 +53,7 @@ type Config struct {
 	SSL              SSLConfig
 	NoAutocompletion bool
 	Styling          Styling
+	CoordinatorUrl   string
 }
 
 type Styling struct {
@@ -79,8 +80,6 @@ func DefaultConfig() Config {
 	return Config{Hazelcast: hz}
 }
 
-type HazelcastUserFriendlyConfig struct {
-}
 type UserFriendlyConfig struct {
 	Hazelcast struct {
 		Cluster struct {
@@ -122,10 +121,10 @@ type UserFriendlyConfig struct {
 	}
 }
 
-func IsConfigExists() bool {
+func ConfigExists() bool {
 	exists, err := file.Exists(DefaultConfigPath())
 	if err != nil {
-
+		return false
 	}
 	return exists
 }
@@ -136,7 +135,7 @@ func WriteToFile(config *Config, confPath string) error {
 	config.NoAutocompletion = false
 	confBytes, _ := yaml.Marshal(config)
 	if err := yaml.Unmarshal(confBytes, &defaultConfig); err != nil {
-		return hzcerrors.NewLoggableError(err, "Error during unmarshal on Config object.")
+		return err
 	}
 	defaultConfigBytes, _ := yaml.Marshal(defaultConfig)
 	return file.CreateMissingDirsAndFileWithRWPerms(confPath, defaultConfigBytes)
@@ -236,6 +235,11 @@ func readConfig(path string, config *Config, defaultConfPath string) error {
 	}
 	if err = yaml.Unmarshal(confBytes, config); err != nil {
 		return hzcerrors.NewLoggableError(err, "%s is not valid YAML", path)
+	}
+	if config.CoordinatorUrl != "" {
+		_ = os.Setenv("HZ_CLOUD_COORDINATOR_BASE_URL", config.CoordinatorUrl)
+	} else {
+		_ = os.Setenv("HZ_CLOUD_COORDINATOR_BASE_URL", "https://api.viridian.hazelcast.com")
 	}
 	return nil
 }

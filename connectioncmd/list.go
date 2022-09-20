@@ -52,14 +52,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.list.SetWidth(msg.Width)
 		return m, nil
 	case tea.KeyMsg:
-		switch keypress := msg.String(); keypress {
-		case "ctrl+c":
+		switch msg.Type {
+		case tea.KeyCtrlC:
 			m.quitting = true
 			return m, tea.Quit
-		case "enter":
+		case tea.KeyEnter:
 			m.quitting = true
 			value, _ := m.list.SelectedItem().(item)
-			choice = string(value)
+			choice = value.FilterValue()
 			return m, tea.Quit
 		}
 	}
