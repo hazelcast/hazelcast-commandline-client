@@ -8,7 +8,6 @@ import (
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/file"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 func New() *cobra.Command {
@@ -31,7 +30,7 @@ func New() *cobra.Command {
 			l.SetFilteringEnabled(false)
 			m := Model{list: l}
 			if err := tea.NewProgram(m).Start(); err != nil {
-				os.Exit(1)
+				return err
 			}
 			c := config.DefaultConfig()
 			var im InputModel
@@ -43,12 +42,15 @@ func New() *cobra.Command {
 			case "Hazelcast Cloud":
 				im = CloudInput(&c)
 			default:
-				return hzcerrors.LoggableError{}
+				return hzcerrors.NewLoggableError(nil, "No selection during connection-wizard.")
 			}
 			if err := tea.NewProgram(im).Start(); err != nil {
 				return hzcerrors.NewLoggableError(err, "Can not run list model during connection-wizard.")
 			}
-			exists, _ := file.Exists(config.DefaultConfigPath())
+			exists, err := file.Exists(config.DefaultConfigPath())
+			if err != nil {
+				return hzcerrors.NewLoggableError(err, "Can not check default config path during connection-wizard.")
+			}
 			if exists {
 				choice = "n"
 				im = ApprovalInput()
@@ -61,7 +63,7 @@ func New() *cobra.Command {
 			if choice == "y" {
 				err := config.WriteToFile(&c, config.DefaultConfigPath())
 				if err != nil {
-					cmd.Println("There was an error during overwriting config file.")
+					return hzcerrors.NewLoggableError(err, "There was an error during overwriting config file.")
 				} else if exists {
 					cmd.Println("Your config file has been changed. Please re-start CLC to apply new config.")
 				}
