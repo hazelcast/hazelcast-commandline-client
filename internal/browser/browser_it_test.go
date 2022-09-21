@@ -12,7 +12,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/stretchr/testify/require"
 
-	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/browser"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
 )
@@ -25,11 +24,9 @@ func TestBrowser(t *testing.T) {
 		_, err := client.SQL().Execute(ctx, fmt.Sprintf(`select * from "%s"`, mapName))
 		require.Error(t, err)
 		// create a mapping via SQLBrowser
-		driver, err := internal.SQLDriver(ctx, config)
-		require.NoError(t, err)
 		var out bytes.Buffer
 		reader, writer := io.Pipe()
-		p := browser.InitSQLBrowser(driver, reader, &out)
+		p := browser.InitSQLBrowser(client, reader, &out)
 		done := make(chan error, 1)
 		go func() {
 			done <- p.Start()
