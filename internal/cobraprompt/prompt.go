@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"runtime/debug"
@@ -32,6 +33,7 @@ import (
 
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
+	cobra_util "github.com/hazelcast/hazelcast-commandline-client/internal/cobra"
 	goprompt "github.com/hazelcast/hazelcast-commandline-client/internal/go-prompt"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/tuiutil"
 	"github.com/hazelcast/hazelcast-commandline-client/rootcmd"
@@ -120,9 +122,11 @@ var Themes = map[string][]goprompt.Option{
 	},
 }
 
-// Run will automatically generate suggestions for all cobra commands and flags defined by RootCmd and execute the selected commands.
-// Run will also reset all given flags by default, see PersistFlagValues
-func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelcast.Config, cmdHistoryPath string) {
+var OptionsHookForTests []goprompt.Option
+
+// Init will automatically generate suggestions for all cobra commands and flags defined by RootCmd and execute the selected commands.
+// Init will also reset all given flags by default, see PersistFlagValues
+func (co CobraPrompt) Init(ctx context.Context, root *cobra.Command, cnfg *hazelcast.Config, logger *log.Logger, cmdHistoryPath string) *goprompt.Prompt {
 	defer handleExit()
 	// let ctrl+c exit goprompt
 	co.GoPromptOptions = append(co.GoPromptOptions, goprompt.OptionAddKeyBind(goprompt.KeyBind{
@@ -144,20 +148,21 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 		},
 	}))
 	co.GoPromptOptions = append(co.GoPromptOptions, Themes[tuiutil.SelectedTheme]...)
+	co.GoPromptOptions = append(co.GoPromptOptions, OptionsHookForTests...)
 	history := goprompt.NewHistory()
 	f, err := os.OpenFile(cmdHistoryPath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0600)
 	defer func() {
 		f.Close()
 	}()
 	if err != nil {
-		// todo log this once we have a logging solution
+		logger.Printf("Can not open command history file. There will be no history information: %s\n", err.Error())
 	} else {
 		scanner := bufio.NewScanner(f)
 		for scanner.Scan() {
 			history.Add(scanner.Text())
 		}
 		if scanner.Err() != nil {
-			root.Printf("Cannot load command history, will proceed without one\nhistory file on %s:%s...\n", cmdHistoryPath, err)
+			logger.Printf("Cannot load command history, will proceed without one\nhistory file on %s:%s...\n", cmdHistoryPath, err)
 			history.Clear()
 		}
 	}
@@ -187,14 +192,13 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 			}
 			// re-init command chain every iteration
 			// ignore global flags, they are already parsed
-			root, _ = rootcmd.New(cnfg)
-			prepareRootCmdForPrompt(co, root)
-			root.SetArgs(promptArgs)
+			rootCopy, _ := rootcmd.New(cnfg)
+			prepareRootCmdForPrompt(co, rootCopy)
+			cobra_util.InitCommandForCustomInvocation(rootCopy, root.InOrStdin(), root.OutOrStdout(), root.OutOrStderr(), promptArgs)
 			root.SetFlagErrorFunc(func(_ *cobra.Command, err error) error {
 				return hzcerrors.FlagError(err)
 			})
-			os.Args = promptArgs
-			err = root.ExecuteContext(ctx)
+			err = rootCopy.ExecuteContext(ctx)
 			if _, writeErr := f.WriteString(fmt.Sprintln(in)); writeErr != nil {
 				// todo log this once we have a logging solution
 			}
@@ -234,7 +238,7 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 		co.GoPromptOptions...,
 	)
 	p.History = history
-	p.Run()
+	return p
 }
 
 func prepareRootCmdForPrompt(co CobraPrompt, root *cobra.Command) {

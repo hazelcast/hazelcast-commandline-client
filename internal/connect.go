@@ -163,6 +163,11 @@ func ConnectToCluster(ctx context.Context, clientConfig *hazelcast.Config) (cli 
 	return
 }
 
+// ResetClient is for testing
+func ResetClient() {
+	client = nil
+}
+
 func SQLDriver(ctx context.Context, config *hazelcast.Config) (*sql.DB, error) {
 	if sqlDriver != nil {
 		return sqlDriver, nil

@@ -72,7 +72,6 @@ func NewStandardInputParser() *PosixParser {
 	if err != nil {
 		panic(err)
 	}
-
 	return &PosixParser{
 		fd: in,
 	}

@@ -18,6 +18,7 @@ package config
 import (
 	"crypto/tls"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -55,6 +56,8 @@ type Config struct {
 	NoAutocompletion bool
 	Styling          Styling
 	Logger           *log.Logger `json:"-"`
+	// field is present to flush the content on exit
+	LogFile *os.File `json:"-"`
 }
 
 type Styling struct {
@@ -82,8 +85,12 @@ func DefaultConfig() Config {
 	hz.Stats.Enabled = true
 	dc := Config{Hazelcast: hz}
 	// pretty standard Logger
-	dc.Logger = log.New(os.Stderr, "", log.LstdFlags|log.Lmsgprefix)
+	dc.Logger = CLCLogger(os.Stderr)
 	return dc
+}
+
+func CLCLogger(stderr io.Writer) *log.Logger {
+	return log.New(stderr, "", log.LstdFlags|log.Lmsgprefix)
 }
 
 const defaultUserConfig = `

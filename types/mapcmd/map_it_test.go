@@ -1,4 +1,4 @@
-package mapcmd
+package mapcmd_test
 
 import (
 	"bytes"
@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
+	"github.com/hazelcast/hazelcast-commandline-client/types/mapcmd"
 )
 
 // todo add value-file test
@@ -78,7 +79,7 @@ func TestMapPut(t *testing.T) {
 		}
 		for _, tc := range tcs {
 			t.Run(tc.name, func(t *testing.T) {
-				cmd := NewPut(c)
+				cmd := mapcmd.NewPut(c)
 				var stdout, stderr bytes.Buffer
 				cmd.SetOut(&stdout)
 				cmd.SetErr(&stderr)
@@ -114,7 +115,7 @@ func TestMapPutAll_JSONEntries(t *testing.T) {
 									 "json value" : {"test" : "data"}
 									}`)
 		require.NoError(t, err)
-		cmd := NewPutAll(c)
+		cmd := mapcmd.NewPutAll(c)
 		var stdout, stderr bytes.Buffer
 		cmd.SetOut(&stdout)
 		cmd.SetErr(&stderr)
@@ -183,7 +184,7 @@ func TestMapPutAll(t *testing.T) {
 		}
 		for _, tc := range tcs {
 			t.Run(tc.name, func(t *testing.T) {
-				cmd := NewPutAll(c)
+				cmd := mapcmd.NewPutAll(c)
 				var stdout, stderr bytes.Buffer
 				cmd.SetOut(&stdout)
 				cmd.SetErr(&stderr)
@@ -251,7 +252,7 @@ func TestMapGet(t *testing.T) {
 		}
 		for _, tc := range tcs {
 			t.Run(tc.name, func(t *testing.T) {
-				cmd := NewGet(c)
+				cmd := mapcmd.NewGet(c)
 				var stdout, stderr bytes.Buffer
 				cmd.SetOut(&stdout)
 				cmd.SetErr(&stderr)
@@ -328,7 +329,7 @@ func TestMapGetAll(t *testing.T) {
 		}
 		for _, tc := range tcs {
 			t.Run(tc.name, func(t *testing.T) {
-				cmd := NewGetAll(c)
+				cmd := mapcmd.NewGetAll(c)
 				var stdout, stderr bytes.Buffer
 				cmd.SetOut(&stdout)
 				cmd.SetErr(&stderr)
@@ -388,7 +389,7 @@ func TestMapRemove(t *testing.T) {
 		}
 		for _, tc := range tcs {
 			t.Run(tc.name, func(t *testing.T) {
-				cmd := NewRemove(c)
+				cmd := mapcmd.NewRemove(c)
 				var stdout, stderr bytes.Buffer
 				cmd.SetOut(&stdout)
 				cmd.SetErr(&stderr)
@@ -448,7 +449,7 @@ func TestMapClear(t *testing.T) {
 		}
 		for _, tc := range tcs {
 			t.Run(tc.name, func(t *testing.T) {
-				cmd := NewClear(c)
+				cmd := mapcmd.NewClear(c)
 				var stdout, stderr bytes.Buffer
 				cmd.SetOut(&stdout)
 				cmd.SetErr(&stderr)

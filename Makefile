@@ -5,6 +5,7 @@ CLC_VERSION=$(shell git describe --tags `git rev-list --tags --max-count=1` || e
 LDFLAGS="-X 'github.com/hazelcast/hazelcast-go-client/internal.ClientType=CLC' -X 'github.com/hazelcast/hazelcast-commandline-client/internal.GitCommit=$(GIT_COMMIT)' -X 'github.com/hazelcast/hazelcast-commandline-client/internal.ClientVersion=$(CLC_VERSION)' -X 'github.com/hazelcast/hazelcast-go-client/internal.ClientVersion=$(CLC_VERSION)'"
 TEST_FLAGS ?= -v -count 1
 COVERAGE_OUT = coverage.out
+PACKAGES=$(shell go list ./... | grep -v go-prompt | grep -v termdbms | grep -v internal/it | tr '\n' ',')
 
 build:
 	go build -ldflags $(LDFLAGS) -o hzc github.com/hazelcast/hazelcast-commandline-client
@@ -18,7 +19,7 @@ test:
 	go test $(TEST_FLAGS) ./...
 
 test-cover:
-	go test $(TEST_FLAGS) -coverprofile=coverage.out -coverpkg "$(go list ./... | grep -v go-prompt | grep -v termdbms | grep -v internal/it | tr '\n' ',')" -coverprofile=$(COVERAGE_OUT) ./...
+	go test $(TEST_FLAGS) -coverprofile=coverage.out -coverpkg $(PACKAGES) -coverprofile=$(COVERAGE_OUT) ./...
 
 view-cover:
 	go tool cover -func $(COVERAGE_OUT) | grep total:
