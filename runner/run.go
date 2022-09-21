@@ -36,7 +36,10 @@ func CLC(programArgs []string, stdin io.Reader, stdout io.Writer, stderr io.Writ
 	defer cancel()
 	isInteractive := IsInteractiveCall(rootCmd, programArgs)
 	if isInteractive {
-		prompt := RunCmdInteractively(ctx, rootCmd, &cfg, globalFlagValues.NoColor)
+		prompt, err := RunCmdInteractively(ctx, rootCmd, &cfg, globalFlagValues.NoColor)
+		if err != nil {
+			return &cfg, hzcerrors.NewLoggableError(err, "")
+		}
 		prompt.Run()
 		return &cfg, nil
 	}
@@ -67,15 +70,15 @@ func IsInteractiveCall(rootCmd *cobra.Command, args []string) bool {
 	return false
 }
 
-func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *config.Config, noColor bool) *goprompt.Prompt {
+func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *config.Config, noColor bool) (*goprompt.Prompt, error) {
 	cmdHistoryPath := filepath.Join(file.HZCHomePath(), "history")
 	exists, err := file.Exists(cmdHistoryPath)
 	if err != nil {
-		// todo log err once we have logging solution
+		cnfg.Logger.Println("Command history path file does not exist.")
 	}
 	if !exists {
 		if err := file.CreateMissingDirsAndFileWithRWPerms(cmdHistoryPath, []byte{}); err != nil {
-			// todo log err once we have logging solution
+			cnfg.Logger.Printf("Cannot create command history file on %s, history will not be preserved.\n", cmdHistoryPath)
 		}
 	}
 	hConfig := &cnfg.Hazelcast
@@ -109,8 +112,7 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *conf
 	}
 	rootCmd.Println("Connecting to the cluster ...")
 	if _, err := internal.ConnectToCluster(ctx, hConfig); err != nil {
-		rootCmd.Printf("Error: %s\n", err)
-		return nil
+		return nil, err
 	}
 	var flagsToExclude []string
 	rootCmd.PersistentFlags().VisitAll(func(flag *pflag.Flag) {
@@ -122,7 +124,7 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *conf
 	p.FlagsToExclude = flagsToExclude
 	rootCmd.Example = fmt.Sprintf("> %s\n> %s", mapcmd.MapPutExample, mapcmd.MapGetExample) + "\n> cluster version"
 	rootCmd.Use = ""
-	return p.Init(ctx, rootCmd, hConfig, cnfg.Logger, cmdHistoryPath)
+	return p.Init(ctx, rootCmd, hConfig, cnfg.Logger, cmdHistoryPath), nil
 }
 
 func UpdateConfigWithFlags(rootCmd *cobra.Command, cnfg *config.Config, programArgs []string, globalFlagValues *config.GlobalFlagValues) error {

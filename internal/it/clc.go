@@ -95,7 +95,8 @@ func TestCLCInteractiveModeWithCluster(t *testing.T, cluster *TestCluster, args 
 	defer func() {
 		cobraprompt.OptionsHookForTests = nil
 	}()
-	prompt := runner.RunCmdInteractively(ctx, rootCmd, &cfg, globalFlagValues.NoColor)
+	prompt, err := runner.RunCmdInteractively(ctx, rootCmd, &cfg, globalFlagValues.NoColor)
+	require.NoError(t, err)
 	done := make(chan error, 1)
 	go func() {
 		prompt.Run()
