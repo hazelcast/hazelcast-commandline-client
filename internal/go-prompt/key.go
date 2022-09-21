@@ -56,7 +56,9 @@ const (
 	Up
 	Down
 	Right
+	AltRight
 	Left
+	AltLeft
 
 	ShiftLeft
 	ShiftUp
