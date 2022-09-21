@@ -84,7 +84,7 @@ func exitPromptSafely() {
 	panic(ErrExit)
 }
 
-func handleExit() {
+func handleExit(*log.Logger) {
 	switch v := recover().(type) {
 	case nil:
 		return
@@ -92,7 +92,7 @@ func handleExit() {
 		if errors.Is(v, ErrExit) {
 			return
 		}
-		fmt.Println(v)
+		log.Println(v)
 	default:
 		fmt.Println(v)
 		fmt.Println(string(debug.Stack()))
@@ -126,8 +126,7 @@ var OptionsHookForTests []goprompt.Option
 
 // Init will automatically generate suggestions for all cobra commands and flags defined by RootCmd and execute the selected commands.
 // Init will also reset all given flags by default, see PersistFlagValues
-func (co CobraPrompt) Init(ctx context.Context, root *cobra.Command, cnfg *hazelcast.Config, logger *log.Logger, cmdHistoryPath string) *goprompt.Prompt {
-	defer handleExit()
+func (co CobraPrompt) Init(ctx context.Context, root *cobra.Command, cnfg *hazelcast.Config, logger *log.Logger, cmdHistoryPath string) GoPromptWithGracefulShutdown {
 	// let ctrl+c exit goprompt
 	co.GoPromptOptions = append(co.GoPromptOptions, goprompt.OptionAddKeyBind(goprompt.KeyBind{
 		Key: goprompt.ControlC,
@@ -238,7 +237,17 @@ func (co CobraPrompt) Init(ctx context.Context, root *cobra.Command, cnfg *hazel
 		co.GoPromptOptions...,
 	)
 	p.History = history
-	return p
+	return GoPromptWithGracefulShutdown{p: p, l: logger}
+}
+
+type GoPromptWithGracefulShutdown struct {
+	p *goprompt.Prompt
+	l *log.Logger
+}
+
+func (gp *GoPromptWithGracefulShutdown) Run() {
+	defer handleExit(gp.l)
+	gp.p.Run()
 }
 
 func prepareRootCmdForPrompt(co CobraPrompt, root *cobra.Command) {

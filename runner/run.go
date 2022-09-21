@@ -70,7 +70,7 @@ func IsInteractiveCall(rootCmd *cobra.Command, args []string) bool {
 	return false
 }
 
-func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *config.Config, noColor bool) (*goprompt.Prompt, error) {
+func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *config.Config, noColor bool) (cobraprompt.GoPromptWithGracefulShutdown, error) {
 	cmdHistoryPath := filepath.Join(file.HZCHomePath(), "history")
 	exists, err := file.Exists(cmdHistoryPath)
 	if err != nil {
@@ -112,7 +112,7 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *conf
 	}
 	rootCmd.Println("Connecting to the cluster ...")
 	if _, err := internal.ConnectToCluster(ctx, hConfig); err != nil {
-		return nil, err
+		return cobraprompt.GoPromptWithGracefulShutdown{}, err
 	}
 	var flagsToExclude []string
 	rootCmd.PersistentFlags().VisitAll(func(flag *pflag.Flag) {
