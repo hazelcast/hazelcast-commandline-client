@@ -92,6 +92,8 @@ const defaultConfigText = `hazelcast:
       addresses:
       {{- range .Hazelcast.Cluster.Network.Addresses}}
         - {{ . -}}
+      {{ else }}
+        - 127.0.0.1:5701
       {{- end }}
     cloud:
       token: "{{ .Hazelcast.Cluster.Cloud.Token}}"
