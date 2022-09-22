@@ -31,6 +31,7 @@ import (
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/cobraprompt"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/connection"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/file"
 	goprompt "github.com/hazelcast/hazelcast-commandline-client/internal/go-prompt"
 	"github.com/hazelcast/hazelcast-commandline-client/types/mapcmd"
@@ -95,8 +96,7 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *conf
 		},
 		Persister: namePersister,
 	}
-	rootCmd.Println("Connecting to the cluster ...")
-	if _, err := internal.ConnectToCluster(ctx, hConfig); err != nil {
+	if _, err = connection.ConnectToCluster(ctx, hConfig); err != nil {
 		rootCmd.Printf("Error: %s\n", err)
 		return
 	}
