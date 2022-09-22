@@ -240,8 +240,6 @@ func (m InputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.quitting = true
 					return m, tea.Quit
 				}
-			} else {
-
 			}
 		}
 	}

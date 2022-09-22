@@ -16,6 +16,9 @@ func New() *cobra.Command {
 		Short: "Assist with connection configuration",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			exists, err := file.Exists(config.DefaultConfigPath())
+			if err != nil {
+				return hzcerrors.NewLoggableError(err, "Can not check default config path during connection-wizard.")
+			}
 			items := []list.Item{
 				item("Hazelcast Viridian"),
 				item("Local"),
@@ -47,10 +50,6 @@ func New() *cobra.Command {
 			}
 			if err := tea.NewProgram(im).Start(); err != nil {
 				return hzcerrors.NewLoggableError(err, "Can not run list model during connection-wizard.")
-			}
-
-			if err != nil {
-				return hzcerrors.NewLoggableError(err, "Can not check default config path during connection-wizard.")
 			}
 			if exists {
 				choice = "n"

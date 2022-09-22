@@ -82,7 +82,7 @@ func DefaultConfig() Config {
 	return Config{Hazelcast: hz}
 }
 
-const defaultConfigText = `hazelcast:
+const defaultUserConfig = `hazelcast:
   cluster:
     name: {{ .Hazelcast.Cluster.Name}}
     unisocket: {{ .Hazelcast.Cluster.Unisocket}}
@@ -128,7 +128,7 @@ func ConfigExists() bool {
 }
 
 func WriteToFile(config *Config, confPath string) error {
-	t, _ := template.New("config").Parse(defaultConfigText)
+	t, _ := template.New("config").Parse(defaultUserConfig)
 	var buf bytes.Buffer
 	err := t.Execute(&buf, *config)
 	if err != nil {
