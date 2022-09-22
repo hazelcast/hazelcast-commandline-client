@@ -34,7 +34,8 @@ func main() {
 	cfg := config.DefaultConfig()
 	rootCmd, globalFlagValues := rootcmd.New(&cfg.Hazelcast)
 	programArgs := os.Args[1:]
-	if !config.ConfigExists() {
+	isInteractive := IsInteractiveCall(rootCmd, programArgs)
+	if !config.ConfigExists() && isInteractive {
 		connectioncmd.New().Execute()
 	}
 	// update config before running root command to make sure flags are processed
@@ -42,7 +43,7 @@ func main() {
 	ExitOnError(err)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	isInteractive := IsInteractiveCall(rootCmd, programArgs)
+
 	if isInteractive {
 		RunCmdInteractively(ctx, rootCmd, &cfg, globalFlagValues.NoColor)
 	} else {

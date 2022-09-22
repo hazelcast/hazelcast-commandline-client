@@ -16,11 +16,13 @@
 package config
 
 import (
+	"bytes"
 	"crypto/tls"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"text/template"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/logger"
@@ -80,46 +82,40 @@ func DefaultConfig() Config {
 	return Config{Hazelcast: hz}
 }
 
-type UserFriendlyConfig struct {
-	Hazelcast struct {
-		Cluster struct {
-			Name      string `yaml:"name"`
-			UniSocket bool   `yaml:"unisocket"`
-			Network   struct {
-				ConnectionTimeout string   `yaml:"connectiontimeout"`
-				Addresses         []string `yaml:"addresses"`
-			}
-			Cloud struct {
-				Token   string `yaml:"token"`
-				Enabled bool   `yaml:"enabled"`
-			}
-			Security struct {
-				Credentials struct {
-					Username string `yaml:"username"`
-					Password string `yaml:"password"`
-				}
-			}
-			Discovery struct {
-				UsePublicIP bool `yaml:"usepublicip"`
-			}
-		}
-		Logger struct {
-			Level string `yaml:"level"`
-		}
-	}
-	SSL struct {
-		Enabled     bool   `yaml:"enabled"`
-		Servername  string `yaml:"servername"`
-		CaPath      string `yaml:"capath"`
-		CertPath    string `yaml:"certpath"`
-		KeyPath     string `yaml:"keypath"`
-		KeyPassword string `yaml:"keypassword"`
-	}
-	NoAutoCompletion bool `yaml:"noautocompletion"`
-	Styling          struct {
-		Theme string `yaml:"theme"`
-	}
-}
+const defaultConfigText = `hazelcast:
+  cluster:
+    name: {{ .Hazelcast.Cluster.Name}}
+    unisocket: {{ .Hazelcast.Cluster.Unisocket}}
+    network:
+      # 0s is no timeout
+      connectiontimeout: {{ .Hazelcast.Cluster.Network.ConnectionTimeout}}
+      addresses:
+      {{- range .Hazelcast.Cluster.Network.Addresses}}
+        - {{ . -}}
+      {{- end }}
+    cloud:
+      token: "{{ .Hazelcast.Cluster.Cloud.Token}}"
+      enabled: {{ .Hazelcast.Cluster.Cloud.Enabled}}
+    security:
+      credentials:
+        username: ""
+        password: ""
+    discovery:
+      usepublicip: false
+  logger:
+    level: error
+ssl:
+  enabled: {{ .SSL.Enabled}}
+  servername: "{{ .SSL.ServerName}}"
+  capath: "{{ .SSL.CAPath}}"
+  certpath: "{{ .SSL.CertPath}}"
+  keypath: "{{ .SSL.KeyPath}}"
+  keypassword: "{{ .SSL.KeyPassword}}"
+# disables auto completion on interactive mode if true
+noautocompletion: false
+styling:
+  # builtin themes: default, no-color, solarized
+  theme: "default"`
 
 func ConfigExists() bool {
 	exists, err := file.Exists(DefaultConfigPath())
@@ -130,16 +126,13 @@ func ConfigExists() bool {
 }
 
 func WriteToFile(config *Config, confPath string) error {
-	defaultConfig := UserFriendlyConfig{}
-	config.Styling.Theme = "default"
-	config.NoAutocompletion = false
-	config.Hazelcast.Cluster.Network.Addresses = []string{"localhost:5701"}
-	confBytes, _ := yaml.Marshal(config)
-	if err := yaml.Unmarshal(confBytes, &defaultConfig); err != nil {
+	t, _ := template.New("config").Parse(defaultConfigText)
+	var buf bytes.Buffer
+	err := t.Execute(&buf, *config)
+	if err != nil {
 		return err
 	}
-	defaultConfigBytes, _ := yaml.Marshal(defaultConfig)
-	return file.CreateMissingDirsAndFileWithRWPerms(confPath, defaultConfigBytes)
+	return file.CreateMissingDirsAndFileWithRWPerms(confPath, buf.Bytes())
 }
 
 func ReadAndMergeWithFlags(flags *GlobalFlagValues, c *Config) error {
@@ -237,11 +230,7 @@ func readConfig(path string, config *Config, defaultConfPath string) error {
 	if err = yaml.Unmarshal(confBytes, config); err != nil {
 		return hzcerrors.NewLoggableError(err, "%s is not valid YAML", path)
 	}
-	if config.CoordinatorUrl != "" {
-		_ = os.Setenv("HZ_CLOUD_COORDINATOR_BASE_URL", config.CoordinatorUrl)
-	} else {
-		_ = os.Setenv("HZ_CLOUD_COORDINATOR_BASE_URL", "https://api.viridian.hazelcast.com")
-	}
+
 	return nil
 }
 
