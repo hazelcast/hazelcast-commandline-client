@@ -15,9 +15,9 @@ func New() *cobra.Command {
 		Use:   "connection-wizard",
 		Short: "Assist with connection configuration",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			exists, err := file.Exists(config.DefaultConfigPath())
 			items := []list.Item{
 				item("Hazelcast Viridian"),
-				item("Hazelcast Cloud"),
 				item("Local"),
 				item("Remote"),
 			}
@@ -39,15 +39,16 @@ func New() *cobra.Command {
 				im = ViridianInput(&c)
 			case "Local", "Remote":
 				im = StandaloneInput(&c, choice)
-			case "Hazelcast Cloud":
-				im = CloudInput(&c)
 			default:
-				return hzcerrors.NewLoggableError(nil, "No selection during connection-wizard.")
+				if !exists {
+					cmd.Println("You did not make any selection. CLC will connect to default cluster running at localhost:5701.")
+				}
+				return nil
 			}
 			if err := tea.NewProgram(im).Start(); err != nil {
 				return hzcerrors.NewLoggableError(err, "Can not run list model during connection-wizard.")
 			}
-			exists, err := file.Exists(config.DefaultConfigPath())
+
 			if err != nil {
 				return hzcerrors.NewLoggableError(err, "Can not check default config path during connection-wizard.")
 			}

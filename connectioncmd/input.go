@@ -70,37 +70,6 @@ func ViridianInput(config *config.Config) InputModel {
 	return m
 }
 
-func CloudInput(config *config.Config) InputModel {
-	m := InputModel{
-		inputs:         make([]textinput.Model, 3),
-		config:         config,
-		connectionType: "Cloud",
-		state:          uncompleted,
-		cursorMode:     textinput.CursorStatic,
-	}
-	var t textinput.Model
-	for i := range m.inputs {
-		t = textinput.New()
-		t.CursorStyle = selectedItemStyle
-		t.SetCursorMode(textinput.CursorStatic)
-		t.PromptStyle = noStyle
-		t.TextStyle = noStyle
-		switch i {
-		case 0:
-			t.Prompt = "- Cluster Name: "
-			t.PromptStyle = selectedItemStyle
-			t.TextStyle = selectedItemStyle
-			t.Focus()
-		case 1:
-			t.Prompt = "- Discovery Token: "
-		case 2:
-			t.Prompt = "- Setup SSL? (y/n): "
-		}
-		m.inputs[i] = t
-	}
-	return m
-}
-
 func StandaloneInput(config *config.Config, connection string) InputModel {
 	m := InputModel{
 		inputs:         make([]textinput.Model, 3),
@@ -215,12 +184,6 @@ func updateConfig(m *InputModel) {
 			m.config.SSL.KeyPath = m.inputs[4].Value()
 			m.config.SSL.KeyPassword = m.inputs[5].Value()
 			m.state = completed
-		case "Cloud":
-			m.config.Hazelcast.Cluster.Cloud.Enabled = true
-			m.config.SSL.ServerName = "hazelcast.cloud"
-			m.config.Hazelcast.Cluster.Name = m.inputs[0].Value()
-			m.config.Hazelcast.Cluster.Cloud.Token = m.inputs[1].Value()
-			m.config.SSL.Enabled = m.inputs[2].Value() == "y"
 		case "Local", "Remote":
 			m.config.Hazelcast.Cluster.Name = m.inputs[0].Value()
 			addressString := strings.ReplaceAll(m.inputs[1].Value(), " ", "")
@@ -255,6 +218,10 @@ func (m InputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			cmd := m.updateStyles()
 			return m, cmd
+		case tea.KeyTab:
+			if m.connectionType == "Local" && m.focusIndex < 3 && m.inputs[m.focusIndex].Value() == "" {
+				m.inputs[m.focusIndex].SetValue(m.inputs[m.focusIndex].Placeholder)
+			}
 		case tea.KeyDown:
 			if m.focusIndex++; m.focusIndex > len(m.inputs) {
 				m.focusIndex = 0
@@ -273,6 +240,8 @@ func (m InputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.quitting = true
 					return m, tea.Quit
 				}
+			} else {
+
 			}
 		}
 	}
@@ -315,13 +284,10 @@ func (m InputModel) View() string {
 				noStyle.Render("Please provide your Hazelcast Viridian tokens below.")))
 		case "Local":
 			fmt.Fprintf(&b, "%s\n", fmt.Sprintf("%s",
-				noStyle.Render("Please provide IP address and port number of your local cluster.")))
+				noStyle.Render("Please provide cluster name and address of your local cluster.\nUse TAB to accept default value.")))
 		case "Remote":
 			fmt.Fprintf(&b, "%s\n", fmt.Sprintf("%s",
-				noStyle.Render("Please provide IP address and port number of your remote cluster.")))
-		case "Cloud":
-			fmt.Fprintf(&b, "%s\n", fmt.Sprintf("%s",
-				noStyle.Render("Please provide your Hazelcast Cloud tokens below.")))
+				noStyle.Render("Please provide cluster name and address of your remote cluster.")))
 		case "SSL":
 			fmt.Fprintf(&b, "%s\n", fmt.Sprintf("%s",
 				noStyle.Render("Please provide paths to your SSL certificates below.")))
