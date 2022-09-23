@@ -96,6 +96,12 @@ func assignPersistentFlags(cmd *cobra.Command, flags *config.GlobalFlagValues) {
 	cmd.PersistentFlags().BoolVar(&flags.Verbose, "verbose", false, "verbose output")
 	cmd.PersistentFlags().BoolVar(&flags.NoColor, "no-color", false, "disable colors")
 	cmd.PersistentFlags().BoolVar(&flags.NoAutocompletion, "no-completion", false, "disable completion [interactive mode]")
+	cmd.PersistentFlags().StringVar(&flags.LogFile, "log-file", "", "direct logs to specified file")
+	cmd.PersistentFlags().StringVar(&flags.LogLevel, "log-level", "", fmt.Sprintf("(default 'error') write logs with the specified or higher level of importance. Log levels: %s", strings.Join(config.ValidLogLevels, ", ")))
+	cmd.RegisterFlagCompletionFunc("log-level", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return config.ValidLogLevels, cobra.ShellCompDirectiveDefault
+	})
+
 }
 
 func init() {
