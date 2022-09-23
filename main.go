@@ -17,6 +17,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 
@@ -56,6 +57,7 @@ func ExitOnError(err error, logger *log.Logger) {
 		return
 	}
 	errStr := HandleError(err)
-	logger.Println(errStr)
+	// ignore err, nothing to do
+	_, _ = fmt.Fprintln(os.Stderr, errStr)
 	os.Exit(exitError)
 }

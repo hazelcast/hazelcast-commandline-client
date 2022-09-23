@@ -90,10 +90,12 @@ func handleExit() {
 		if errors.Is(v, ErrExit) {
 			return
 		}
-		fmt.Println(v)
+		// skip err nothing to do
+		_, _ = fmt.Fprintln(os.Stderr, v)
 	default:
-		fmt.Println(v)
-		fmt.Println(string(debug.Stack()))
+		// skip err nothing to do
+		_, _ = fmt.Fprintln(os.Stderr, v)
+		_, _ = fmt.Fprintln(os.Stderr, string(debug.Stack()))
 	}
 }
 
@@ -182,7 +184,7 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 			}
 			promptArgs, err := shlex.Split(in)
 			if err != nil {
-				fmt.Println("unable to parse commands")
+				root.PrintErrln("unable to parse commands")
 				return
 			}
 			// re-init command chain every iteration

@@ -90,14 +90,14 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *conf
 		},
 		OnErrorFunc: func(err error) {
 			errStr := HandleError(err)
-			cnfg.Logger.Println(errStr)
+			rootCmd.PrintErrln(errStr)
 			return
 		},
 		Persister: namePersister,
 	}
 	rootCmd.Println("Connecting to the cluster ...")
 	if _, err := internal.ConnectToCluster(ctx, hConfig); err != nil {
-		rootCmd.Printf("Error: %s\n", err)
+		rootCmd.PrintErrf("Error: %s\n", err)
 		return
 	}
 	var flagsToExclude []string
@@ -118,10 +118,11 @@ func updateConfigWithFlags(rootCmd *cobra.Command, cnfg *config.Config, programA
 	// parse global persistent flags
 	subCmd, flags, _ := rootCmd.Find(programArgs)
 	// fall back to cmd.Help, even if there is error
-	_ = subCmd.ParseFlags(flags)
+	if err := subCmd.ParseFlags(flags); err != nil {
+		return err
+	}
 	// initialize config from file
-	err := config.ReadAndMergeWithFlags(globalFlagValues, cnfg)
-	return err
+	return config.ReadAndMergeWithFlags(globalFlagValues, cnfg)
 }
 
 func HandleError(err error) string {

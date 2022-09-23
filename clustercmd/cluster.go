@@ -65,7 +65,7 @@ func New(config *hazelcast.Config) *cobra.Command {
 			Use:   sc.command,
 			Short: sc.info,
 			RunE: func(cmd *cobra.Command, args []string) error {
-				defer hzcerrors.ErrorRecover()
+				defer hzcerrors.ErrorRecover(cmd.ErrOrStderr())
 				result, err := internal.CallClusterOperation(config, sc.command)
 				if err != nil {
 					return err
@@ -89,7 +89,7 @@ func NewChangeState(config *hazelcast.Config) *cobra.Command {
 		Use:   fmt.Sprintf("change-state [--state [%s]]", strings.Join(states, ",")),
 		Short: "Change state of the cluster",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			defer hzcerrors.ErrorRecover()
+			defer hzcerrors.ErrorRecover(cmd.ErrOrStderr())
 			result, err := internal.CallClusterOperationWithState(config, "change-state", &newState)
 			if err != nil {
 				return err

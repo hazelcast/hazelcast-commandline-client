@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"net/url"
 	"strings"
@@ -44,10 +45,10 @@ For operations that change state/configuration of the cluster (e.g. "cluster cha
 To change CLUSTER_WRITE permission, see the documentation: https://docs.hazelcast.com/hazelcast/latest/maintain-cluster/rest-api#using-rest-endpoint-groups`
 )
 
-func ErrorRecover() {
+func ErrorRecover(out io.Writer) {
 	obj := recover()
 	if err, ok := obj.(error); ok {
-		fmt.Println(err)
+		_, _ = fmt.Fprintln(out, err)
 	}
 }
 
