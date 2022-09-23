@@ -9,8 +9,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const ()
-
 func New() *cobra.Command {
 	cmd := cobra.Command{
 		Use:   "connection-wizard",

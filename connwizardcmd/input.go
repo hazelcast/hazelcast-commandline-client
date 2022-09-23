@@ -23,12 +23,6 @@ const (
 )
 
 const (
-	yes = 5
-	no  = 6
-	err = 7
-)
-
-const (
 	clusterNameMsg    = "- Cluster Name: "
 	addressesMsg      = "- Member Addresses: "
 	setupSslMsg       = "- Setup SSL? (y/n): "

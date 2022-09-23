@@ -55,7 +55,6 @@ type Config struct {
 	SSL              SSLConfig
 	NoAutocompletion bool
 	Styling          Styling
-	CoordinatorUrl   string
 }
 
 type Styling struct {
