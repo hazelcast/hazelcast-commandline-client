@@ -1,4 +1,4 @@
-package connectioncmd
+package connwizardcmd
 
 import (
 	"fmt"
@@ -36,17 +36,17 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 	fmt.Fprintf(w, fn(str))
 }
 
-type Model struct {
+type ListModel struct {
 	list     list.Model
 	items    []item
 	quitting bool
 }
 
-func (m Model) Init() tea.Cmd {
+func (m ListModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.list.SetWidth(msg.Width)
@@ -54,6 +54,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyCtrlC:
+			choice = "e"
 			m.quitting = true
 			return m, tea.Quit
 		case tea.KeyEnter:
@@ -68,7 +69,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m Model) View() string {
+func (m ListModel) View() string {
 	if m.quitting {
 		return fmt.Sprintf("%s", noStyle.Render(""))
 	}

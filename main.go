@@ -21,7 +21,7 @@ import (
 	"os"
 
 	"github.com/hazelcast/hazelcast-commandline-client/config"
-	"github.com/hazelcast/hazelcast-commandline-client/connectioncmd"
+	"github.com/hazelcast/hazelcast-commandline-client/connwizardcmd"
 	"github.com/hazelcast/hazelcast-commandline-client/rootcmd"
 )
 
@@ -36,7 +36,7 @@ func main() {
 	programArgs := os.Args[1:]
 	isInteractive := IsInteractiveCall(rootCmd, programArgs)
 	if !config.ConfigExists() && isInteractive {
-		connectioncmd.New().Execute()
+		connwizardcmd.New().Execute()
 	}
 	// update config before running root command to make sure flags are processed
 	err := updateConfigWithFlags(rootCmd, &cfg, programArgs, globalFlagValues)
