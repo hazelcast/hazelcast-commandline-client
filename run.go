@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -35,6 +36,8 @@ import (
 	goprompt "github.com/hazelcast/hazelcast-commandline-client/internal/go-prompt"
 	"github.com/hazelcast/hazelcast-commandline-client/types/mapcmd"
 )
+
+const ViridianCoordinatorURL = "https://api.viridian.hazelcast.com"
 
 func IsInteractiveCall(rootCmd *cobra.Command, args []string) bool {
 	cmd, flags, err := rootCmd.Find(args)
@@ -121,7 +124,18 @@ func updateConfigWithFlags(rootCmd *cobra.Command, cnfg *config.Config, programA
 	_ = subCmd.ParseFlags(flags)
 	// initialize config from file
 	err := config.ReadAndMergeWithFlags(globalFlagValues, cnfg)
+	setDefaultCoordinator(cnfg.Logger)
 	return err
+}
+
+func setDefaultCoordinator(logger *log.Logger) {
+	if os.Getenv("HZ_CLOUD_COORDINATOR_BASE_URL") != "" {
+		return
+	}
+	// if not set assign Viridian
+	if err := os.Setenv("HZ_CLOUD_COORDINATOR_BASE_URL", ViridianCoordinatorURL); err != nil {
+		logger.Printf("Error: Can not assign Viridian as the default coordinator: %v\n", err)
+	}
 }
 
 func HandleError(err error) string {
