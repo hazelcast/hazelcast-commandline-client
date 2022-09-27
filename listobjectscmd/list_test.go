@@ -1,4 +1,4 @@
-package list_objects
+package listobjectscmd
 
 import (
 	"bytes"
@@ -56,7 +56,7 @@ func TestList(t *testing.T) {
 	require.NoError(t, err)
 	// Topic
 	topicName := it.NewUniqueObjectName("topic")
-	_, err = c.GetReplicatedMap(ctx, topicName)
+	_, err = c.GetTopic(ctx, topicName)
 	require.NoError(t, err)
 	tcs := []struct {
 		name   string
@@ -76,9 +76,8 @@ func TestList(t *testing.T) {
 				fmt.Sprintf("multiMap %s", mmapName),
 				fmt.Sprintf("queue %s", queueName),
 				fmt.Sprintf("replicatedMap %s", repMapName),
-				// todo find out why topics output as "replicatedMap"
-				fmt.Sprintf("replicatedMap %s", topicName),
 				fmt.Sprintf("set %s", setName),
+				fmt.Sprintf("topic %s", topicName),
 			},
 		},
 		{
@@ -99,7 +98,7 @@ func TestList(t *testing.T) {
 		_, err := cmd.ExecuteContextC(ctx)
 		require.NoError(t, err)
 		out := strings.Split(strings.TrimSpace(b.String()), "\n")
-		// at the of writing this, hazelcast creates an internal replicated map
+		// at the time of writing this, hazelcast creates an internal replicated map
 		// named "__sql.catalog". The line belows removes that
 		out = filterOutInternalObjects(out)
 		require.Equal(t, tc.expect, out)

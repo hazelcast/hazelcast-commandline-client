@@ -1,4 +1,4 @@
-package list_objects
+package listobjectscmd
 
 import (
 	"context"
