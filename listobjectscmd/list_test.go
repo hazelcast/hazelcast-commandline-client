@@ -67,9 +67,8 @@ func TestList(t *testing.T) {
 			name: "list all",
 			args: []string{},
 			expect: []string{
-				// todo find out why flake id generators output as "PNCounter"
-				fmt.Sprintf("PNCounter %s", figName),
 				fmt.Sprintf("PNCounter %s", pnCounterName),
+				fmt.Sprintf("flakeIdGenerator %s", figName),
 				fmt.Sprintf("list %s", listName),
 				fmt.Sprintf("map %s", mapName1),
 				fmt.Sprintf("map %s", mapName2),
