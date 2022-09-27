@@ -37,7 +37,10 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/types/mapcmd"
 )
 
-const ViridianCoordinatorURL = "https://api.viridian.hazelcast.com"
+const (
+	ViridianCoordinatorURL    = "https://api.viridian.hazelcast.com"
+	HzCloudCoordinatorBaseUrl = "HZ_CLOUD_COORDINATOR_BASE_URL"
+)
 
 func IsInteractiveCall(rootCmd *cobra.Command, args []string) bool {
 	cmd, flags, err := rootCmd.Find(args)
@@ -129,11 +132,11 @@ func updateConfigWithFlags(rootCmd *cobra.Command, cnfg *config.Config, programA
 }
 
 func setDefaultCoordinator(logger *log.Logger) {
-	if os.Getenv("HZ_CLOUD_COORDINATOR_BASE_URL") != "" {
+	if os.Getenv(HzCloudCoordinatorBaseUrl) != "" {
 		return
 	}
 	// if not set assign Viridian
-	if err := os.Setenv("HZ_CLOUD_COORDINATOR_BASE_URL", ViridianCoordinatorURL); err != nil {
+	if err := os.Setenv(HzCloudCoordinatorBaseUrl, ViridianCoordinatorURL); err != nil {
 		logger.Printf("Error: Can not assign Viridian as the default coordinator: %v\n", err)
 	}
 }
