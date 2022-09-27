@@ -57,18 +57,6 @@ var dsObjTypes = []string{
 	CardinalityEstimator,
 }
 
-var hzServiceToFilter = map[string]string{
-	hazelcast.ServiceNameMap:              Map,
-	hazelcast.ServiceNameReplicatedMap:    ReplicatedMap,
-	hazelcast.ServiceNameMultiMap:         MultiMap,
-	hazelcast.ServiceNameQueue:            Queue,
-	hazelcast.ServiceNameTopic:            Topic,
-	hazelcast.ServiceNameList:             List,
-	hazelcast.ServiceNameSet:              Set,
-	hazelcast.ServiceNamePNCounter:        PNCounter,
-	hazelcast.ServiceNameFlakeIDGenerator: FlakeIDGenerator,
-}
-
 func New(config *hazelcast.Config) *cobra.Command {
 	var objectType string
 	cmd := cobra.Command{
@@ -108,11 +96,8 @@ func getObjects(ctx context.Context, c *hazelcast.Client, filter string) ([]stri
 	}
 	var names []string
 	for _, t := range ts {
-		toFilter, ok := hzServiceToFilter[t.ServiceName]
-		if !ok {
-			toFilter = strings.TrimPrefix(toFilter, "hz:impl:")
-			toFilter = strings.TrimSuffix(toFilter, "Service")
-		}
+		toFilter := strings.TrimPrefix(t.ServiceName, "hz:impl:")
+		toFilter = strings.TrimSuffix(toFilter, "Service")
 		if filter == "" {
 			names = append(names, fmt.Sprintf("%s %s", toFilter, t.Name))
 			continue
