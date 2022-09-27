@@ -28,16 +28,12 @@ const (
 
 func main() {
 	programArgs := os.Args[1:]
-	config, err := runner.CLC(programArgs, os.Stdin, os.Stdout, os.Stderr)
-	defer func() {
-		if config != nil {
-			config.LogFile.Close()
-		}
-	}()
+	logger, err := runner.CLC(programArgs, os.Stdin, os.Stdout, os.Stderr)
+	defer logger.Close()
 	if err == nil {
 		return
 	}
 	errStr := runner.HandleError(err)
-	config.Logger.Println(errStr)
+	logger.Println(errStr)
 	os.Exit(exitError)
 }

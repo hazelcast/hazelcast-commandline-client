@@ -50,8 +50,8 @@ func TestCLCWithCluster(t *testing.T, cluster *TestCluster, cmd string, args str
 	require.NoError(t, err)
 	done := make(chan error, 1)
 	go func() {
-		config, err := runner.CLC(programArgs, c.Tty(), c.Tty(), c.Tty())
-		config.LogFile.Close()
+		logger, err := runner.CLC(programArgs, c.Tty(), c.Tty(), c.Tty())
+		logger.Close()
 		done <- err
 		c.Tty().Close()
 
@@ -73,14 +73,14 @@ func TestCLCInteractiveModeWithCluster(t *testing.T, cluster *TestCluster, args 
 	// init clc interactive cmd
 	cfg := config.DefaultConfig()
 	cfg.Styling.Theme = "no-color"
-	cfg.Logger.SetOutput(c.Tty())
 	rootCmd, globalFlagValues := rootcmd.New(&cfg.Hazelcast)
 	flags := fmt.Sprintf(`--cluster-name "%s" --address localhost:%d %s`,
 		t.Name(), cluster.Port, args)
 	programArgs, err := shlex.Split(flags)
 	require.NoError(t, err)
 	cobra_util.InitCommandForCustomInvocation(rootCmd, c.Tty(), c.Tty(), c.Tty(), programArgs)
-	err = runner.UpdateConfigWithFlags(rootCmd, &cfg, programArgs, globalFlagValues)
+	l, err := runner.ProcessConfigAndFlags(rootCmd, &cfg, programArgs, globalFlagValues)
+	l.SetOutput(c.Tty())
 	require.NoError(t, err)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -95,7 +95,7 @@ func TestCLCInteractiveModeWithCluster(t *testing.T, cluster *TestCluster, args 
 	defer func() {
 		cobraprompt.OptionsHookForTests = nil
 	}()
-	prompt, err := runner.RunCmdInteractively(ctx, rootCmd, &cfg, globalFlagValues.NoColor)
+	prompt, err := runner.RunCmdInteractively(ctx, &cfg, l, rootCmd, globalFlagValues.NoColor)
 	require.NoError(t, err)
 	done := make(chan error, 1)
 	go func() {

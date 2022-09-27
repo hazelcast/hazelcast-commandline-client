@@ -20,35 +20,37 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/cobraprompt"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/file"
 	goprompt "github.com/hazelcast/hazelcast-commandline-client/internal/go-prompt"
+	"github.com/hazelcast/hazelcast-commandline-client/log"
 	"github.com/hazelcast/hazelcast-commandline-client/rootcmd"
 	"github.com/hazelcast/hazelcast-commandline-client/types/mapcmd"
 )
 
-func CLC(programArgs []string, stdin io.Reader, stdout io.Writer, stderr io.Writer) (*config.Config, error) {
+func CLC(programArgs []string, stdin io.Reader, stdout io.Writer, stderr io.Writer) (log.Logger, error) {
 	cfg := config.DefaultConfig()
 	var err error
 	rootCmd, globalFlagValues := rootcmd.New(&cfg.Hazelcast)
 	cobra_util.InitCommandForCustomInvocation(rootCmd, stdin, stdout, stderr, programArgs)
-	if err = UpdateConfigWithFlags(rootCmd, &cfg, programArgs, globalFlagValues); err != nil {
-		return &cfg, err
+	logger, err := ProcessConfigAndFlags(rootCmd, &cfg, programArgs, globalFlagValues)
+	if err != nil {
+		return logger, err
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	isInteractive := IsInteractiveCall(rootCmd, programArgs)
 	if isInteractive {
-		prompt, err := RunCmdInteractively(ctx, rootCmd, &cfg, globalFlagValues.NoColor)
+		prompt, err := RunCmdInteractively(ctx, &cfg, logger, rootCmd, globalFlagValues.NoColor)
 		if err != nil {
-			return &cfg, hzcerrors.NewLoggableError(err, "")
+			return logger, hzcerrors.NewLoggableError(err, "")
 		}
 		prompt.Run()
-		return &cfg, nil
+		return logger, nil
 	}
 	// Since the cluster config related flags has already being parsed in previous steps,
 	// there is no need for second parameter anymore. The purpose is overwriting rootCmd as it is at the beginning.
 	rootCmd, _ = rootcmd.New(&cfg.Hazelcast)
 	cobra_util.InitCommandForCustomInvocation(rootCmd, stdin, stdout, stderr, programArgs)
 	err = RunCmd(ctx, rootCmd)
-	return &cfg, err
+	return logger, err
 }
 
 func IsInteractiveCall(rootCmd *cobra.Command, args []string) bool {
@@ -70,15 +72,15 @@ func IsInteractiveCall(rootCmd *cobra.Command, args []string) bool {
 	return false
 }
 
-func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *config.Config, noColor bool) (cobraprompt.GoPromptWithGracefulShutdown, error) {
+func RunCmdInteractively(ctx context.Context, cnfg *config.Config, l log.Logger, rootCmd *cobra.Command, noColor bool) (cobraprompt.GoPromptWithGracefulShutdown, error) {
 	cmdHistoryPath := filepath.Join(file.HZCHomePath(), "history")
 	exists, err := file.Exists(cmdHistoryPath)
 	if err != nil {
-		cnfg.Logger.Println("Command history path file does not exist.")
+		l.Println("Command history path file does not exist.")
 	}
 	if !exists {
 		if err := file.CreateMissingDirsAndFileWithRWPerms(cmdHistoryPath, []byte{}); err != nil {
-			cnfg.Logger.Printf("Cannot create command history file on %s, history will not be preserved.\n", cmdHistoryPath)
+			l.Printf("Cannot create command history file on %s, history will not be preserved.\n", cmdHistoryPath)
 		}
 	}
 	hConfig := &cnfg.Hazelcast
@@ -105,7 +107,7 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *conf
 		},
 		OnErrorFunc: func(err error) {
 			errStr := HandleError(err)
-			cnfg.Logger.Println(errStr)
+			l.Println(errStr)
 			return
 		},
 		Persister: namePersister,
@@ -124,17 +126,26 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *conf
 	p.FlagsToExclude = flagsToExclude
 	rootCmd.Example = fmt.Sprintf("> %s\n> %s", mapcmd.MapPutExample, mapcmd.MapGetExample) + "\n> cluster version"
 	rootCmd.Use = ""
-	return p.Init(ctx, rootCmd, hConfig, cnfg.Logger, cmdHistoryPath), nil
+	return p.Init(ctx, rootCmd, hConfig, l.Logger, cmdHistoryPath), nil
 }
 
-func UpdateConfigWithFlags(rootCmd *cobra.Command, cnfg *config.Config, programArgs []string, globalFlagValues *config.GlobalFlagValues) error {
+func ProcessConfigAndFlags(rootCmd *cobra.Command, cnfg *config.Config, programArgs []string, globalFlagValues *config.GlobalFlagValues) (log.Logger, error) {
+	defaultLogger := log.NewLogger(log.NopWriteCloser(os.Stderr))
 	// parse global persistent flags
 	subCmd, flags, _ := rootCmd.Find(programArgs)
 	// fall back to cmd.Help, even if there is error
 	_ = subCmd.ParseFlags(flags)
 	// initialize config from file
 	err := config.ReadAndMergeWithFlags(globalFlagValues, cnfg)
-	return err
+	if err != nil {
+		return defaultLogger, err
+	}
+	l, err := config.SetupLogger(cnfg, globalFlagValues, os.Stderr)
+	if err != nil {
+		// assign a logger with stderr as output
+		defaultLogger.Printf("Can not setup configured logger, program will log to Stderr: %v\n", err)
+	}
+	return l, nil
 }
 
 func HandleError(err error) string {

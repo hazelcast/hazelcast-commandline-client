@@ -1,4 +1,4 @@
-package config
+package log
 
 import (
 	"strings"
@@ -10,10 +10,8 @@ import (
 
 func TestCustomLogger(t *testing.T) {
 	var bb strings.Builder
-	dc := DefaultConfig()
-	clcConfig := dc.Logger
-	clcConfig.SetOutput(&bb)
-	l := newGoClientLogger(clcConfig, logger.WarnLevel)
+	dc := NewLogger(NopWriteCloser(&bb))
+	l := NewClientLogger(dc.Logger, logger.WarnLevel)
 	l.Log(logger.WeightInfo, func() string {
 		return "should not print this"
 	})
