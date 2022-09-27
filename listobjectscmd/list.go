@@ -115,7 +115,9 @@ func getObjects(ctx context.Context, c *hazelcast.Client, filter string) ([]stri
 		}
 		if filter == "" {
 			names = append(names, fmt.Sprintf("%s %s", toFilter, t.Name))
-		} else if filter == toFilter {
+			continue
+		}
+		if filter == toFilter {
 			names = append(names, t.Name)
 		}
 	}
