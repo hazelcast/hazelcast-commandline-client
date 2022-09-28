@@ -19,7 +19,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -126,19 +125,24 @@ func updateConfigWithFlags(rootCmd *cobra.Command, cnfg *config.Config, programA
 	// fall back to cmd.Help, even if there is error
 	_ = subCmd.ParseFlags(flags)
 	// initialize config from file
-	err := config.ReadAndMergeWithFlags(globalFlagValues, cnfg)
-	setDefaultCoordinator(cnfg.Logger)
-	return err
+	if err := config.ReadAndMergeWithFlags(globalFlagValues, cnfg); err != nil {
+		return err
+	}
+	if cnfg.Hazelcast.Cluster.Cloud.Enabled {
+		return setDefaultCoordinator()
+	}
+	return nil
 }
 
-func setDefaultCoordinator(logger *log.Logger) {
+func setDefaultCoordinator() error {
 	if os.Getenv(EnvHzCloudCoordinatorBaseURL) != "" {
-		return
+		return nil
 	}
 	// if not set assign Viridian
 	if err := os.Setenv(EnvHzCloudCoordinatorBaseURL, ViridianCoordinatorURL); err != nil {
-		logger.Printf("Error: Can not assign Viridian as the default coordinator: %v\n", err)
+		return hzcerrors.NewLoggableError(err, "Can not assign Viridian as the default coordinator")
 	}
+	return nil
 }
 
 func HandleError(err error) string {
