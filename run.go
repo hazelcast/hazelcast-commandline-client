@@ -96,8 +96,7 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *conf
 		},
 		Persister: namePersister,
 	}
-	if _, err = connection.ConnectToCluster(ctx, hConfig); err != nil {
-		rootCmd.Printf("Error: %s\n", err)
+	if _, err = connection.ConnectToClusterInteractive(ctx, hConfig); err != nil {
 		return
 	}
 	var flagsToExclude []string

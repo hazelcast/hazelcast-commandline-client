@@ -21,11 +21,11 @@ type connectionSpinnerModel struct {
 	clusterName string
 	address     string
 	logFileName string
-	escapedCh   chan<- bool
 	spinner     spinner.Model
+	escaped     *bool
 }
 
-func newConnectionSpinnerModel(clusterName, address, filename string, escapedCh chan<- bool) *connectionSpinnerModel {
+func newConnectionSpinnerModel(clusterName, address, filename string, escaped *bool) *connectionSpinnerModel {
 	m := &connectionSpinnerModel{}
 	m.spinner = spinner.New()
 	m.spinner.Style = spinnerStyle
@@ -33,7 +33,7 @@ func newConnectionSpinnerModel(clusterName, address, filename string, escapedCh 
 	m.clusterName = clusterName
 	m.address = address
 	m.logFileName = filename
-	m.escapedCh = escapedCh
+	m.escaped = escaped
 	return m
 }
 
@@ -41,16 +41,42 @@ func (m connectionSpinnerModel) Init() tea.Cmd {
 	return m.spinner.Tick
 }
 
+type Quitting struct {
+}
+
+type EmptyDisplay struct {
+	quit bool
+}
+
+func (e *EmptyDisplay) Init() tea.Cmd {
+	return nil
+}
+
+func (e *EmptyDisplay) Update(_ tea.Msg) (tea.Model, tea.Cmd) {
+	if e.quit {
+		return e, tea.Quit
+	}
+	return e, nil
+}
+
+func (e *EmptyDisplay) View() string {
+	e.quit = true
+	return ""
+}
+
 func (m connectionSpinnerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	e := &EmptyDisplay{}
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c":
-			m.escapedCh <- true
-			return m, tea.Quit
+			*m.escaped = true
+			return e, nil
 		default:
 			return m, nil
 		}
+	case Quitting:
+		return e, nil
 	case spinner.TickMsg:
 		var cmd tea.Cmd
 		m.spinner, cmd = m.spinner.Update(msg)

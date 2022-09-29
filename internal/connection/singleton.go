@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package connection
 
 import (
@@ -73,35 +74,45 @@ func getHZClientInstance(ctx context.Context, clientConfig *hazelcast.Config) (*
 }
 
 func ConnectToCluster(ctx context.Context, clientConfig *hazelcast.Config) (*hazelcast.Client, error) {
+	sc, err := getHZClientInstance(ctx, clientConfig)
+	return sc.client, err
+}
+
+func ConnectToClusterInteractive(ctx context.Context, clientConfig *hazelcast.Config) (*hazelcast.Client, error) {
 	clientCh, errCh := asyncGetHZClientInstance(ctx, clientConfig)
-	escapedTeaCh := make(chan bool)
 	ticker := time.NewTicker(clientResponseTimeoutDeadline)
 	defer ticker.Stop()
 	select {
 	case <-ticker.C:
+		escaped := false
 		m := newConnectionSpinnerModel(
 			clientConfig.Cluster.Name,
 			clientConfig.Cluster.Network.Addresses[0],
 			"logfile",
-			escapedTeaCh,
+			&escaped,
 		)
+		var client *hazelcast.Client
+		var clientErr error
 		p := tea.NewProgram(m)
 		errChTea := asyncDisplaySpinner(p)
 		select {
-		case client := <-clientCh:
-			var err error
-			if err = <-errCh; err != nil {
-				if msg, handled := hzcerrors.TranslateError(err, clientConfig.Cluster.Cloud.Enabled); handled {
-					err = hzcerrors.NewLoggableError(err, msg)
-				}
-			}
-			p.Quit()
-			return client, err
-		case <-escapedTeaCh:
-			return nil, errors.New("escaped from spinning connection")
+		case client = <-clientCh:
+			p.Send(Quitting{})
 		case err := <-errChTea:
+			if escaped {
+				err = errors.New("")
+			}
 			return nil, err
 		}
+		if err := <-errChTea; err != nil {
+			return nil, err
+		}
+		if clientErr = <-errCh; clientErr != nil {
+			if msg, handled := hzcerrors.TranslateError(clientErr, clientConfig.Cluster.Cloud.Enabled); handled {
+				clientErr = hzcerrors.NewLoggableError(clientErr, msg)
+			}
+		}
+		return client, clientErr
 	case client := <-clientCh:
 		var err error
 		if err = <-errCh; err != nil {
@@ -122,6 +133,7 @@ func asyncDisplaySpinner(p *tea.Program) <-chan error {
 		if err := p.Start(); err != nil {
 			errChTea <- errors.New("could not run spinner")
 		}
+		close(errChTea)
 	}()
 	return errChTea
 }
