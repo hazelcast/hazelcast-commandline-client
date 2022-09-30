@@ -18,14 +18,12 @@ package connection
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"sync"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/sql/driver"
 
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 )
@@ -39,9 +37,7 @@ var (
 const clientResponseTimeoutDeadline = 1 * time.Second
 
 type singletonHZClient struct {
-	mu        sync.Mutex
-	sqlDriver *sql.DB
-	client    *hazelcast.Client
+	client *hazelcast.Client
 }
 
 var clientLock = &sync.Mutex{}
@@ -100,7 +96,7 @@ func ConnectToClusterInteractive(ctx context.Context, clientConfig *hazelcast.Co
 			p.Send(Quitting{})
 		case err := <-errChTea:
 			if escaped {
-				err = errors.New("")
+				err = errors.New("exited through CTRL+C from the spinner")
 			}
 			return nil, err
 		}
@@ -147,23 +143,4 @@ func asyncGetHZClientInstance(ctx context.Context, clientConfig *hazelcast.Confi
 		cch <- sc.client
 	}(clientCh, errCh)
 	return clientCh, errCh
-}
-
-func SQLDriver(ctx context.Context, config *hazelcast.Config) (*sql.DB, error) {
-	_, err := ConnectToCluster(ctx, config)
-	if err != nil {
-		return nil, err
-	}
-	if hzInstance.sqlDriver == nil {
-		hzInstance.mu.Lock()
-		defer hzInstance.mu.Unlock()
-		if hzInstance.sqlDriver == nil {
-			hzInstance.sqlDriver = driver.Open(*config)
-			if err = hzInstance.sqlDriver.PingContext(ctx); err != nil {
-				return nil, err
-			}
-			return hzInstance.sqlDriver, nil
-		}
-	}
-	return hzInstance.sqlDriver, nil
 }
