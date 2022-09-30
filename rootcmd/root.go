@@ -92,10 +92,16 @@ func assignPersistentFlags(cmd *cobra.Command, flags *config.GlobalFlagValues) {
 	cmd.PersistentFlags().StringVarP(&flags.CfgFile, "config", "c", config.DefaultConfigPath(), fmt.Sprintf("config file, only supports yaml for now"))
 	cmd.PersistentFlags().StringVarP(&flags.Address, "address", "a", "", fmt.Sprintf("addresses of the instances in the cluster (default is %s)", config.DefaultClusterAddress))
 	cmd.PersistentFlags().StringVar(&flags.Cluster, "cluster-name", "", fmt.Sprintf("name of the cluster that contains the instances (default is %s)", config.DefaultClusterName))
-	cmd.PersistentFlags().StringVar(&flags.Token, "cloud-token", "", "your Hazelcast Cloud token")
+	cmd.PersistentFlags().StringVar(&flags.Token, "cloud-token", "", "your Hazelcast Viridian token")
 	cmd.PersistentFlags().BoolVar(&flags.Verbose, "verbose", false, "verbose output")
 	cmd.PersistentFlags().BoolVar(&flags.NoColor, "no-color", false, "disable colors")
 	cmd.PersistentFlags().BoolVar(&flags.NoAutocompletion, "no-completion", false, "disable completion [interactive mode]")
+	cmd.PersistentFlags().StringVar(&flags.LogFile, "log-file", "", "direct logs to specified file")
+	cmd.PersistentFlags().StringVar(&flags.LogLevel, "log-level", "", fmt.Sprintf("(default 'error') write logs with the specified or higher level of importance. Log levels: %s", strings.Join(config.ValidLogLevels, ", ")))
+	cmd.RegisterFlagCompletionFunc("log-level", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return config.ValidLogLevels, cobra.ShellCompDirectiveDefault
+	})
+
 }
 
 func init() {

@@ -46,7 +46,7 @@ sql "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR, this VARCHAR) TYPE IMAP 
 					outputType, outputPretty, outputCSV)
 			}
 			ctx := cmd.Context()
-			driver, err := connection.SQLDriver(ctx, config)
+			c, err := connection.ConnectToCluster(ctx, config)
 			if err != nil {
 				return hzcerrors.NewLoggableError(err, "Cannot get initialize SQL driver")
 			}
@@ -54,7 +54,7 @@ sql "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR, this VARCHAR) TYPE IMAP 
 			q = strings.TrimSpace(q)
 			if len(q) == 0 {
 				// If no queries given, run sql browser
-				p := browser.InitSQLBrowser(driver)
+				p := browser.InitSQLBrowser(c)
 				if err := p.Start(); err != nil {
 					fmt.Println("could not run sql browser:", err)
 					return err
@@ -65,19 +65,35 @@ sql "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR, this VARCHAR) TYPE IMAP 
 			// If a statement is provided, run it in non-interactive mode
 			lt := strings.ToLower(q)
 			if strings.HasPrefix(lt, "select") || strings.HasPrefix(lt, "show") {
-				if err := query(ctx, driver, q, cmd.OutOrStdout(), outputType); err != nil {
+				if err := query(ctx, c, q, cmd.OutOrStdout(), outputType); err != nil && !isContextCancellationErr(err) {
 					return hzcerrors.NewLoggableError(err, "Cannot execute the query")
 				}
 			} else {
-				if err := execute(ctx, cmd, driver, q); err != nil {
+				r, err := execute(ctx, c, q)
+				if err != nil && !isContextCancellationErr(err) {
 					return hzcerrors.NewLoggableError(err, "Cannot execute the query")
 				}
+				uc := r.UpdateCount()
+				if uc == -1 {
+					return hzcerrors.NewLoggableError(fmt.Errorf("invalid update count"), "Cannot execute the query")
+				}
+				cmd.Printf("---\nAffected rows: %d\n\n", uc)
 			}
 			return nil
 		},
 	}
 	decorateCommandWithOutputFlag(&outputType, cmd)
 	return cmd
+}
+
+func isContextCancellationErr(err error) bool {
+	errTxt := err.Error()
+	// todo find a better way to detect user ended the query
+	if strings.Contains(errTxt, "context canceled") {
+		// do not print error for context cancellation.
+		return true
+	}
+	return false
 }
 
 func decorateCommandWithOutputFlag(outputType *string, cmd *cobra.Command) {
