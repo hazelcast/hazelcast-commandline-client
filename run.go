@@ -102,6 +102,7 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *conf
 		Persister: namePersister,
 	}
 	if _, err = connection.ConnectToClusterInteractive(ctx, hConfig); err != nil {
+		// ignore error coming from the connection spinner
 		return
 	}
 	var flagsToExclude []string

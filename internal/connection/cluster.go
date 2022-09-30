@@ -76,7 +76,7 @@ func NewRESTCall(conf *hazelcast.Config, operation string, state string) (*RESTC
 	case constants.ClusterGetState:
 		url = fmt.Sprintf("%s://%s%s", scheme, member, constants.ClusterGetStateEndpoint)
 	case constants.ClusterChangeState:
-		if !ensureState(state) {
+		if !validateState(state) {
 			return nil, InvalidStateErr
 		}
 		url = fmt.Sprintf("%s://%s%s", scheme, member, constants.ClusterChangeStateEndpoint)
@@ -106,7 +106,7 @@ func newParams(config *hazelcast.Config, operation string, state string) string 
 	return params
 }
 
-func ensureState(state string) bool {
+func validateState(state string) bool {
 	switch strings.ToLower(state) {
 	case constants.ClusterStateActive, constants.ClusterStateFrozen, constants.ClusterStateNoMigration, constants.ClusterStatePassive:
 		return true

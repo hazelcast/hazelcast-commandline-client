@@ -12,7 +12,8 @@ const spinnerText = `Connecting to the cluster %s at %s.
    Check the logs at %s.`
 
 var (
-	currSpinner  = spinner.Dot
+	currSpinner = spinner.Dot
+	// TODO: get the colors from the theme
 	spinnerStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#40826D"))
 	helpStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render
 )
@@ -25,43 +26,21 @@ type connectionSpinnerModel struct {
 	escaped     *bool
 }
 
-func newConnectionSpinnerModel(clusterName, address, filename string, escaped *bool) *connectionSpinnerModel {
-	m := &connectionSpinnerModel{}
-	m.spinner = spinner.New()
-	m.spinner.Style = spinnerStyle
-	m.spinner.Spinner = currSpinner
-	m.clusterName = clusterName
-	m.address = address
-	m.logFileName = filename
-	m.escaped = escaped
-	return m
+func newConnectionSpinnerModel(clusterName, address, logfile string, escaped *bool) *connectionSpinnerModel {
+	s := spinner.New()
+	s.Style = spinnerStyle
+	s.Spinner = currSpinner
+	return &connectionSpinnerModel{
+		spinner:     s,
+		clusterName: clusterName,
+		address:     address,
+		logFileName: logfile,
+		escaped:     escaped,
+	}
 }
 
 func (m connectionSpinnerModel) Init() tea.Cmd {
 	return m.spinner.Tick
-}
-
-type Quitting struct {
-}
-
-type EmptyDisplay struct {
-	quit bool
-}
-
-func (e *EmptyDisplay) Init() tea.Cmd {
-	return nil
-}
-
-func (e *EmptyDisplay) Update(_ tea.Msg) (tea.Model, tea.Cmd) {
-	if e.quit {
-		return e, tea.Quit
-	}
-	return e, nil
-}
-
-func (e *EmptyDisplay) View() string {
-	e.quit = true
-	return ""
 }
 
 func (m connectionSpinnerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -91,4 +70,27 @@ func (m connectionSpinnerModel) View() (s string) {
 	s = fmt.Sprintf("\n%s %s\n", m.spinner.View(), info)
 	s += helpStyle("\nCTRL+C to exit.\n")
 	return
+}
+
+type Quitting struct {
+}
+
+type EmptyDisplay struct {
+	quit bool
+}
+
+func (e *EmptyDisplay) Init() tea.Cmd {
+	return nil
+}
+
+func (e *EmptyDisplay) Update(_ tea.Msg) (tea.Model, tea.Cmd) {
+	if e.quit {
+		return e, tea.Quit
+	}
+	return e, nil
+}
+
+func (e *EmptyDisplay) View() string {
+	e.quit = true
+	return ""
 }

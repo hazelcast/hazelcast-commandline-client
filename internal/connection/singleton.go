@@ -28,12 +28,6 @@ import (
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 )
 
-// being initialized at compile-time.
-var (
-	GitCommit     string
-	ClientVersion string
-)
-
 const clientResponseTimeoutDeadline = 1 * time.Second
 
 type singletonHZClient struct {
@@ -90,14 +84,11 @@ func ConnectToClusterInteractive(ctx context.Context, clientConfig *hazelcast.Co
 		var client *hazelcast.Client
 		var clientErr error
 		p := tea.NewProgram(m)
-		errChTea := asyncDisplaySpinner(p)
+		errChTea := asyncDisplaySpinner(p, &escaped)
 		select {
 		case client = <-clientCh:
 			p.Send(Quitting{})
 		case err := <-errChTea:
-			if escaped {
-				err = errors.New("exited through CTRL+C from the spinner")
-			}
 			return nil, err
 		}
 		if err := <-errChTea; err != nil {
@@ -120,7 +111,7 @@ func ConnectToClusterInteractive(ctx context.Context, clientConfig *hazelcast.Co
 	}
 }
 
-func asyncDisplaySpinner(p *tea.Program) <-chan error {
+func asyncDisplaySpinner(p *tea.Program, escaped *bool) <-chan error {
 	if p == nil {
 		panic("tea program cannot be nil")
 	}
@@ -128,6 +119,10 @@ func asyncDisplaySpinner(p *tea.Program) <-chan error {
 	go func() {
 		if err := p.Start(); err != nil {
 			errChTea <- errors.New("could not run spinner")
+		}
+		// set by the BubbleTea during its runtime
+		if *escaped {
+			errChTea <- errors.New("exited from the spinner through CTRL+C")
 		}
 		close(errChTea)
 	}()
