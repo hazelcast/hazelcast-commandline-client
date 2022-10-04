@@ -58,7 +58,10 @@ var dsObjTypes = []string{
 }
 
 func New(config *hazelcast.Config) *cobra.Command {
-	var objectType string
+	var (
+		objectType string
+		showHidden bool
+	)
 	cmd := cobra.Command{
 		Use:   "list-objects [distributed object type]",
 		Short: "List distributed objects in the cluster",
@@ -72,7 +75,7 @@ func New(config *hazelcast.Config) *cobra.Command {
 			if err != nil {
 				return hzcerrors.NewLoggableError(err, "Can not connect to the cluster")
 			}
-			list, err := getObjects(ctx, c, objectType)
+			list, err := getObjects(ctx, c, objectType, showHidden)
 			if err != nil {
 				return hzcerrors.NewLoggableError(err, "Can not get the distributed objects information")
 			}
@@ -83,19 +86,23 @@ func New(config *hazelcast.Config) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&objectType, "type", "t", "", fmt.Sprintf("type: %s", strings.Join(dsObjTypes, ",")))
+	cmd.Flags().BoolVar(&showHidden, "show-hidden", false, `show objects with names starting with "__"`)
 	cmd.RegisterFlagCompletionFunc("type", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return dsObjTypes, cobra.ShellCompDirectiveDefault
 	})
 	return &cmd
 }
 
-func getObjects(ctx context.Context, c *hazelcast.Client, filter string) ([]string, error) {
+func getObjects(ctx context.Context, c *hazelcast.Client, filter string, showHidden bool) ([]string, error) {
 	ts, err := c.GetDistributedObjectsInfo(ctx)
 	if err != nil {
 		return nil, err
 	}
 	var names []string
 	for _, t := range ts {
+		if !showHidden && strings.HasPrefix(t.Name, "__") {
+			continue
+		}
 		toFilter := strings.TrimPrefix(t.ServiceName, "hz:impl:")
 		toFilter = strings.TrimSuffix(toFilter, "Service")
 		if filter == "" {
