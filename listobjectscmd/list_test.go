@@ -97,18 +97,6 @@ func TestList(t *testing.T) {
 		_, err := cmd.ExecuteContextC(ctx)
 		require.NoError(t, err)
 		out := strings.Split(strings.TrimSpace(b.String()), "\n")
-		// at the time of writing this, hazelcast creates an internal replicated map
-		// named "__sql.catalog". The line belows removes that
-		out = filterOutInternalObjects(out)
 		require.Equal(t, tc.expect, out)
 	}
-}
-
-func filterOutInternalObjects(out []string) []string {
-	for i, l := range out {
-		if strings.Contains(l, "__") {
-			out = append(out[:i], out[i+1:]...)
-		}
-	}
-	return out
 }
