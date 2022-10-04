@@ -93,6 +93,7 @@ func NewPutAll(config *hazelcast.Config) *cobra.Command {
 		Short:      "Put values to map",
 		Long:       "",
 		Example:    MapPutAllExample,
+		PreRunE:    hzcerrors.RequiredFlagChecker,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var err error
 			if jsonEntryPath != "" {

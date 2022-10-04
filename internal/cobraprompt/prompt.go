@@ -30,7 +30,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	goprompt "github.com/hazelcast/hazelcast-commandline-client/internal/go-prompt"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/tuiutil"
@@ -192,9 +191,6 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 			root = rootcmd.NewWithoutPersistentFlags(cnfg)
 			prepareRootCmdForPrompt(co, root)
 			root.SetArgs(promptArgs)
-			root.SetFlagErrorFunc(func(_ *cobra.Command, err error) error {
-				return hzcerrors.FlagError(err)
-			})
 			os.Args = promptArgs
 			err = root.ExecuteContext(ctx)
 			if _, writeErr := f.WriteString(fmt.Sprintln(in)); writeErr != nil {

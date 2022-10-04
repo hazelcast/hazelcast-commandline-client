@@ -121,9 +121,13 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *conf
 
 func updateConfigWithFlags(rootCmd *cobra.Command, cnfg *config.Config, programArgs []string, globalFlagValues *config.GlobalFlagValues) error {
 	// parse global persistent flags
-	subCmd, flags, _ := rootCmd.Find(programArgs)
+	subCmd, flags, err := rootCmd.Find(programArgs)
+	if err != nil {
+		return err
+	}
 	// fall back to cmd.Help, even if there is error
 	if err := subCmd.ParseFlags(flags); err != nil {
+		_ = subCmd.Help()
 		return err
 	}
 	// initialize config from file
@@ -153,9 +157,12 @@ func HandleError(err error) string {
 	var loggable hzcerrors.LoggableError
 	var flagErr hzcerrors.FlagError
 	if errors.As(err, &loggable) {
-		errStr = fmt.Sprintf("Error: %s\n", loggable.VerboseError())
+		errStr = fmt.Sprintf("Error: %s", loggable.VerboseError())
 	} else if errors.As(err, &flagErr) {
-		errStr = fmt.Sprintf("Flag Error: %s\n", err.Error())
+		errStr = fmt.Sprintf("Flag Error: %s", err.Error())
+	} else if strings.Contains(err.Error(), "required flag(s)") {
+		// this is also a flag error, we just can not wrap it
+		errStr = fmt.Sprintf("Flag Error: %s", err.Error())
 	}
 	return errStr
 }

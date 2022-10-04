@@ -47,6 +47,7 @@ func NewGetAll(config *hazelcast.Config) *cobra.Command {
 		Use:     "get-all [--name mapname | [--key keyname]... [--delim delimiter]]",
 		Short:   "Get all matched entries from the map",
 		Example: MapGetAllExample,
+		PreRunE: hzcerrors.RequiredFlagChecker,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var err error
 			if err = validateFlags(); err != nil {

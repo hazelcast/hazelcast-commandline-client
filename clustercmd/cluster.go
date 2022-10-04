@@ -40,6 +40,8 @@ func New(config *hazelcast.Config) *cobra.Command {
 			}
 			return nil
 		},
+		DisableFlagParsing: true,
+		RunE:               hzcerrors.RootRunnerFnc,
 	}
 	subCmds := []struct {
 		command string
@@ -62,8 +64,9 @@ func New(config *hazelcast.Config) *cobra.Command {
 		// copy to use it in the inner func
 		sc := sc
 		cmd.AddCommand(&cobra.Command{
-			Use:   sc.command,
-			Short: sc.info,
+			Use:     sc.command,
+			Short:   sc.info,
+			PreRunE: hzcerrors.RequiredFlagChecker,
 			RunE: func(cmd *cobra.Command, args []string) error {
 				defer hzcerrors.ErrorRecover(cmd.ErrOrStderr())
 				result, err := internal.CallClusterOperation(config, sc.command)
@@ -86,8 +89,9 @@ func NewChangeState(config *hazelcast.Config) *cobra.Command {
 	// monitored flag variable
 	var newState string
 	cmd := &cobra.Command{
-		Use:   fmt.Sprintf("change-state [--state [%s]]", strings.Join(states, ",")),
-		Short: "Change state of the cluster",
+		Use:     fmt.Sprintf("change-state [--state [%s]]", strings.Join(states, ",")),
+		Short:   "Change state of the cluster",
+		PreRunE: hzcerrors.RequiredFlagChecker,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			defer hzcerrors.ErrorRecover(cmd.ErrOrStderr())
 			result, err := internal.CallClusterOperationWithState(config, "change-state", &newState)

@@ -19,6 +19,7 @@ package mapcmd
 import (
 	"github.com/spf13/cobra"
 
+	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
@@ -31,6 +32,7 @@ func NewUse() *cobra.Command {
 		Use:     `use [map-name | --reset]`,
 		Short:   "sets the default map name (interactive-mode only)",
 		Example: MapUseExample,
+		PreRunE: hzcerrors.RequiredFlagChecker,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			persister := internal.PersistedNamesFromContext(cmd.Context())
 			if cmd.Flags().Changed("reset") {

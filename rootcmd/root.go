@@ -26,6 +26,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clustercmd"
 	"github.com/hazelcast/hazelcast-commandline-client/config"
+	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/sqlcmd"
 	fakeDoor "github.com/hazelcast/hazelcast-commandline-client/types/fakedoorcmd"
 	"github.com/hazelcast/hazelcast-commandline-client/types/mapcmd"
@@ -52,6 +53,7 @@ hzc sql # starts the SQL Browser
 hzc help # print help`,
 		// Handle errors explicitly
 		SilenceErrors: true,
+		SilenceUsage:  true,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			// Make sure the command receives non-nil configuration
 			if cnfg == nil {
@@ -63,6 +65,11 @@ hzc help # print help`,
 			return cmd.Help()
 		},
 	}
+	// print usage on flag errors
+	root.SetFlagErrorFunc(func(cmd *cobra.Command, err error) error {
+		_ = cmd.Help()
+		return hzcerrors.FlagError{err}
+	})
 	root.CompletionOptions.DisableDefaultCmd = true
 	// This is used to generate completion scripts
 	if mode := os.Getenv("MODE"); strings.EqualFold(mode, "dev") {

@@ -32,6 +32,7 @@ func NewClear(config *hazelcast.Config) *cobra.Command {
 		Use:     "clear [--name mapname]",
 		Short:   "Clear entries of the map",
 		Example: MapClearExample,
+		PreRunE: hzcerrors.RequiredFlagChecker,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var err error
 			m, err := getMap(cmd.Context(), config, mapName)
