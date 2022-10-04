@@ -26,6 +26,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clustercmd"
 	"github.com/hazelcast/hazelcast-commandline-client/config"
+	"github.com/hazelcast/hazelcast-commandline-client/listobjectscmd"
 	"github.com/hazelcast/hazelcast-commandline-client/sqlcmd"
 	fakeDoor "github.com/hazelcast/hazelcast-commandline-client/types/fakedoorcmd"
 	"github.com/hazelcast/hazelcast-commandline-client/types/mapcmd"
@@ -72,6 +73,7 @@ func subCommands(config *hazelcast.Config) []*cobra.Command {
 		mapcmd.New(config),
 		sqlcmd.New(config),
 		versioncmd.New(),
+		listobjectscmd.New(config),
 	}
 	fds := []fakeDoor.FakeDoor{
 		{Name: "List", IssueNum: 48},
