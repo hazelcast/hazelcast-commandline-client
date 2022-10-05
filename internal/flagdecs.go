@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-package mapcmd
+package internal
 
 import (
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
+
+	"github.com/hazelcast/hazelcast-commandline-client/internal/format"
 )
 
 // common flags
@@ -30,7 +33,7 @@ const (
 	DelimiterFlag = "delim"
 )
 
-func decorateCommandWithJSONEntryFlag(cmd *cobra.Command, jsonEntry *string, required bool, usage string) {
+func DecorateCommandWithJSONEntryFlag(cmd *cobra.Command, jsonEntry *string, required bool, usage string) {
 	cmd.Flags().StringVar(jsonEntry, JSONEntryFlag, "", usage)
 	if required {
 		if err := cmd.MarkFlagRequired(JSONEntryFlag); err != nil {
@@ -39,7 +42,7 @@ func decorateCommandWithJSONEntryFlag(cmd *cobra.Command, jsonEntry *string, req
 	}
 }
 
-func decorateCommandWithTTL(cmd *cobra.Command, ttl *time.Duration, required bool, usage string) {
+func DecorateCommandWithTTL(cmd *cobra.Command, ttl *time.Duration, required bool, usage string) {
 	cmd.Flags().DurationVar(ttl, TTLFlag, 0, usage)
 	if required {
 		if err := cmd.MarkFlagRequired(TTLFlag); err != nil {
@@ -48,7 +51,7 @@ func decorateCommandWithTTL(cmd *cobra.Command, ttl *time.Duration, required boo
 	}
 }
 
-func decorateCommandWithMaxIdle(cmd *cobra.Command, maxIdle *time.Duration, required bool, usage string) {
+func DecorateCommandWithMaxIdle(cmd *cobra.Command, maxIdle *time.Duration, required bool, usage string) {
 	cmd.Flags().DurationVar(maxIdle, MaxIdleFlag, 0, usage)
 	if required {
 		if err := cmd.MarkFlagRequired(MaxIdleFlag); err != nil {
@@ -57,11 +60,19 @@ func decorateCommandWithMaxIdle(cmd *cobra.Command, maxIdle *time.Duration, requ
 	}
 }
 
-func decorateCommandWithDelimiter(cmd *cobra.Command, delimiter *string, required bool, usage string) {
+func DecorateCommandWithDelimiter(cmd *cobra.Command, delimiter *string, required bool, usage string) {
 	cmd.Flags().StringVar(delimiter, DelimiterFlag, "\t", usage)
 	if required {
 		if err := cmd.MarkFlagRequired(DelimiterFlag); err != nil {
 			panic(err)
 		}
 	}
+}
+
+func DecorateCommandWithOutputFormat(cmd *cobra.Command, outputFormat *string) {
+	flags := cmd.Flags()
+	flags.StringVarP(outputFormat, "output-format", "o", format.Pretty, strings.Join(format.ValidFormats(), ", "))
+	cmd.RegisterFlagCompletionFunc("output-format", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return format.ValidFormats(), cobra.ShellCompDirectiveDefault
+	})
 }

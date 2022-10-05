@@ -62,7 +62,7 @@ func NewPutAll(config *hazelcast.Config) *cobra.Command {
 			len(mapValueFiles) != 0 ||
 			mapKeyType != "" ||
 			mapValueType != "" {
-			return hzcerrors.NewLoggableError(nil, fmt.Sprintf("%s is already set, there cannot be additional flags", JSONEntryFlag))
+			return hzcerrors.NewLoggableError(nil, fmt.Sprintf("%s is already set, there cannot be additional flags", internal.JSONEntryFlag))
 		}
 		return nil
 	}
@@ -195,6 +195,6 @@ func NewPutAll(config *hazelcast.Config) *cobra.Command {
 	decorateCommandWithMapValueFileArrayFlags(cmd, &mapValueFiles, false,
 		`path to the file that contains the value. Use "-" (dash) to read from stdin`)
 	decorateCommandWithMapValueTypeFlags(cmd, &mapValueType, false)
-	decorateCommandWithJSONEntryFlag(cmd, &jsonEntryPath, false, `path to json file that contains entries`)
+	internal.DecorateCommandWithJSONEntryFlag(cmd, &jsonEntryPath, false, `path to json file that contains entries`)
 	return cmd
 }

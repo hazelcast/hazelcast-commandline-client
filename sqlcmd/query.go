@@ -18,7 +18,6 @@ package sqlcmd
 
 import (
 	"context"
-	"encoding/csv"
 	"fmt"
 	"io"
 	"time"
@@ -27,7 +26,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/sql"
 
 	"github.com/hazelcast/hazelcast-commandline-client/internal/format"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/table"
 )
 
 func query(ctx context.Context, c *hazelcast.Client, text string, out io.Writer, outputType string) error {
@@ -47,51 +45,31 @@ func query(ctx context.Context, c *hazelcast.Client, text string, out io.Writer,
 		case <-ch:
 		}
 	}()
-	switch outputType {
-	case outputPretty:
-		tWriter := table.NewTableWriter(out)
-		return rowsHandler(result, func(cols []string) error {
-			icols := make([]interface{}, len(cols))
-			for i, v := range cols {
-				icols[i] = v
-			}
-			return tWriter.WriteHeader(icols...)
-		}, func(row []interface{}) error {
-			for i, v := range row {
-				row[i] = format.Fmt(v)
-			}
-			return tWriter.Write(row...)
-		})
-	case outputCSV:
-		csvWriter := csv.NewWriter(out)
-		return rowsHandler(result, func(cols []string) error {
-			if err := csvWriter.Write(cols); err != nil {
-				return err
-			}
-			csvWriter.Flush()
-			return nil
-		}, func(values []interface{}) error {
-			strValues := make([]string, len(values))
-			for i, v := range values {
-				strValues[i] = format.Fmt(v)
-			}
-			if err := csvWriter.Write(strValues); err != nil {
-				return err
-			}
-			csvWriter.Flush()
-			return nil
-		})
-	}
-	return nil
+	var writer format.Writer
+	builder := format.NewWriterBuilder().
+		WithFormat(outputType).
+		WithOut(out)
+	return rowsHandler(result, func(cols []interface{}) error {
+		var err error
+		writer, err = builder.WithHeaders(cols...).Build()
+		return err
+	}, func(values []interface{}) error {
+		strValues := make([]interface{}, len(values))
+		for i, v := range values {
+			strValues[i] = format.Fmt(v)
+		}
+		return writer(strValues...)
+	})
+
 }
 
 // Reads columns and rows calls handlers. rowHandler is called per row.
-func rowsHandler(result sql.Result, columnHandler func(cols []string) error, rowHandler func([]interface{}) error) error {
+func rowsHandler(result sql.Result, columnHandler func(cols []interface{}) error, rowHandler func([]interface{}) error) error {
 	mt, err := result.RowMetadata()
 	if err != nil {
 		return fmt.Errorf("retrieving metadata: %w", err)
 	}
-	var cols []string
+	var cols []interface{}
 	for _, c := range mt.Columns() {
 		cols = append(cols, c.Name())
 	}

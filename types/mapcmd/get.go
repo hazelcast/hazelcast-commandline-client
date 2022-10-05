@@ -22,6 +22,7 @@ import (
 
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/format"
 )
 
 const MapGetExample = `  # Get value of the given key from the map.
@@ -51,7 +52,7 @@ func NewGet(config *hazelcast.Config) *cobra.Command {
 				}
 				return hzcerrors.NewLoggableError(err, "Cannot get value for key %s from map %s", mapKey, mapName)
 			}
-			printValueBasedOnType(cmd, value)
+			format.PrintValueBasedOnType(cmd, value)
 			return nil
 		},
 	}

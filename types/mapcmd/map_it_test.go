@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/table"
 )
 
 // todo add value-file test
@@ -277,6 +278,13 @@ func TestMapGet(t *testing.T) {
 }
 
 func TestMapGetAll(t *testing.T) {
+	backup := table.ConsoleSize
+	table.ConsoleSize = func() (int, int) {
+		return 20, 100
+	}
+	defer func() {
+		table.ConsoleSize = backup
+	}()
 	it.MapTesterWithNameFlag(t, func(t *testing.T, c *hazelcast.Config, m *hazelcast.Map, withNameFlag func(string) string) {
 		tcs := []struct {
 			name        string
@@ -298,11 +306,15 @@ func TestMapGetAll(t *testing.T) {
 						Value: "v2",
 					},
 				},
-				sout: "v1\nv2",
+				sout: "+-----------------+\n" +
+					"|   key  |  value |\n" +
+					"+-----------------+\n" +
+					"| k2     | v2     |\n" +
+					"| k1     | v1     |",
 			},
 			{
 				name: "valid get key(json), value(json)",
-				args: withNameFlag(`--key {"some":"key"} --key "k2" --key-type json`),
+				args: withNameFlag(`--key {"some":"key"} --key "k2" --key-type json --output-format csv`),
 				entries: []types.Entry{
 					{
 						Key:   serialization.JSON(`{"some":"key"}`),
@@ -313,7 +325,8 @@ func TestMapGetAll(t *testing.T) {
 						Value: serialization.JSON("v2"),
 					},
 				},
-				sout: `[1m[30m{[0m[1m[36m"some"[0m[1m[30m:[0m[32m"value"[0m[1m[30m}[0m`,
+				sout: `key,value
+"{""some"":""key""}","{""some"":""value""}"`,
 			},
 			{
 				name:        "invalid get, missing key",

@@ -101,7 +101,7 @@ func NewPut(config *hazelcast.Config) *cobra.Command {
 	decorateCommandWithMapKeyTypeFlags(cmd, &mapKeyType, false)
 	decorateCommandWithValueFlags(cmd, &mapValue, &mapValueFile)
 	decorateCommandWithMapValueTypeFlags(cmd, &mapValueType, false)
-	decorateCommandWithTTL(cmd, &ttl, false, "ttl value of the entry")
-	decorateCommandWithMaxIdle(cmd, &maxIdle, false, "max-idle value of the entry")
+	internal.DecorateCommandWithTTL(cmd, &ttl, false, "ttl value of the entry")
+	internal.DecorateCommandWithMaxIdle(cmd, &maxIdle, false, "max-idle value of the entry")
 	return cmd
 }

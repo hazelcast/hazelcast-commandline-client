@@ -25,11 +25,7 @@ import (
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/browser"
-)
-
-const (
-	outputPretty = "pretty"
-	outputCSV    = "csv"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/format"
 )
 
 func New(config *hazelcast.Config) *cobra.Command {
@@ -40,10 +36,11 @@ func New(config *hazelcast.Config) *cobra.Command {
 		Example: `sql 	# starts the SQL Browser
 sql "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR, this VARCHAR) TYPE IMAP OPTIONS ( 'keyFormat' = 'varchar', 'valueFormat' = 'varchar')" 	# executes the query`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if outputType != outputPretty && outputType != outputCSV {
+			outputType = strings.ToLower(outputType)
+			if !format.IsValid(outputType) {
 				return hzcerrors.NewLoggableError(nil,
-					"Provided output type parameter (%s) is not a known type. Provide either '%s' or '%s'",
-					outputType, outputPretty, outputCSV)
+					"Provided output type parameter (%s) is not a known type. Provide either '%s', '%s' or '%s'",
+					outputType, format.Pretty, format.CSV, format.JSON)
 			}
 			ctx := cmd.Context()
 			c, err := internal.ConnectToCluster(ctx, config)
@@ -81,7 +78,7 @@ sql "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR, this VARCHAR) TYPE IMAP 
 			return nil
 		},
 	}
-	decorateCommandWithOutputFlag(&outputType, cmd)
+	internal.DecorateCommandWithOutputFormat(cmd, &outputType)
 	return cmd
 }
 
@@ -93,12 +90,4 @@ func isContextCancellationErr(err error) bool {
 		return true
 	}
 	return false
-}
-
-func decorateCommandWithOutputFlag(outputType *string, cmd *cobra.Command) {
-	flags := cmd.Flags()
-	flags.StringVarP(outputType, "output-type", "o", outputPretty, fmt.Sprintf("%s or %s", outputPretty, outputCSV))
-	cmd.RegisterFlagCompletionFunc("output-type", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{outputPretty, outputCSV}, cobra.ShellCompDirectiveDefault
-	})
 }

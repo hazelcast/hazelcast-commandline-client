@@ -84,7 +84,7 @@ Affected rows: 0
 			},
 			{
 				name: "valid select query with csv output",
-				args: []string{selectQry, "--output-type", "csv"},
+				args: []string{selectQry, "--output-format", "csv"},
 				output: `__key,this
 1,"{""countries"":""United Kingdom"",""cities"":""London""}"
 2,"{""countries"":""United Kingdom"",""cities"":""Manchester""}"

@@ -17,18 +17,17 @@
 package mapcmd
 
 import (
-	"fmt"
-
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/types"
 	"github.com/spf13/cobra"
 
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/format"
 )
 
 const MapGetAllExample = `  # Get matched entries from the map with default delimiter. Default delimiter is the tab character.
-  hzc get-all -n mapname -k 12 -k 25 --key-type int16 --delim ":"`
+  hzc get-all -n mapname -k 12 -k 25 --key-type int16 --output-format csv`
 
 func NewGetAll(config *hazelcast.Config) *cobra.Command {
 	var (
@@ -37,6 +36,7 @@ func NewGetAll(config *hazelcast.Config) *cobra.Command {
 		mapName string
 		mapKeys []string
 	)
+	var outputFormat string
 	validateFlags := func() error {
 		if len(mapKeys) == 0 {
 			return hzcerrors.NewLoggableError(nil, "At least one key must be given")
@@ -44,7 +44,7 @@ func NewGetAll(config *hazelcast.Config) *cobra.Command {
 		return nil
 	}
 	cmd := &cobra.Command{
-		Use:     "get-all [--name mapname | [--key keyname]... [--delim delimiter]]",
+		Use:     "get-all --name mapname [--key keyname]... [--output-format format]",
 		Short:   "Get all matched entries from the map",
 		Example: MapGetAllExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -74,9 +74,18 @@ func NewGetAll(config *hazelcast.Config) *cobra.Command {
 				}
 				return hzcerrors.NewLoggableError(err, "Cannot get entries for the given keys for map %s", mapName)
 			}
+			write, err := format.NewWriterBuilder().
+				WithOut(cmd.OutOrStdout()).
+				WithFormat(outputFormat).
+				WithHeaders("key", "value").
+				Build()
+			if err != nil {
+				return hzcerrors.NewLoggableError(err, "Cannot initialize writer")
+			}
 			for _, entry := range entries {
-				fmt.Print(entry.Key, delim)
-				printValueBasedOnType(cmd, entry.Value)
+				if err = write(entry.Key, entry.Value); err != nil {
+					return hzcerrors.NewLoggableError(err, "Something went wrong while writing the entries")
+				}
 			}
 			return nil
 		},
@@ -84,6 +93,7 @@ func NewGetAll(config *hazelcast.Config) *cobra.Command {
 	decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name")
 	decorateCommandWithMapKeyArrayFlags(cmd, &mapKeys, true, "key(s) of the entry")
 	decorateCommandWithMapKeyTypeFlags(cmd, &mapKeyType, false)
-	decorateCommandWithDelimiter(cmd, &delim, false, "delimiter of printed key, value pairs")
+	internal.DecorateCommandWithDelimiter(cmd, &delim, false, "delimiter of printed key, value pairs")
+	internal.DecorateCommandWithOutputFormat(cmd, &outputFormat)
 	return cmd
 }

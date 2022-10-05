@@ -25,9 +25,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/alecthomas/chroma/quick"
 	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/spf13/cobra"
 
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
@@ -106,23 +104,6 @@ func validateTTL(d time.Duration) error {
 		return errors.New("ttl duration cannot be less than a second")
 	}
 	return nil
-}
-
-func printValueBasedOnType(cmd *cobra.Command, value interface{}) {
-	var err error
-	switch v := value.(type) {
-	case serialization.JSON:
-		if err = quick.Highlight(cmd.OutOrStdout(), fmt.Sprintln(v),
-			"json", "terminal", "tango"); err != nil {
-			cmd.Println(v.String())
-		}
-	default:
-		if v == nil {
-			cmd.Println("There is no value corresponding to the provided key")
-			break
-		}
-		cmd.Println(v)
-	}
 }
 
 func normalizeMapValue(v, vFile, vType string) (interface{}, error) {
