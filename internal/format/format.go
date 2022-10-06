@@ -105,11 +105,13 @@ func (wb *writerBuilder) Build() (Writer, error) {
 		enc := json.NewEncoder(wb.out)
 		enc.SetIndent("", "")
 		valueWriter = jsonWriter(wb.out, wb.headers)
-	}
-	if err := headerWriter(wb.headers...); err != nil {
-		return nil, err
+	default:
+		return nil, errors.New("unkown output format")
 	}
 	if headersSet {
+		if err := headerWriter(wb.headers...); err != nil {
+			return nil, err
+		}
 		valueWriter = valueLengthWrapperWriter(len(wb.headers), valueWriter)
 	}
 	return valueWriter, nil
@@ -145,16 +147,6 @@ func prettyWriter(out io.Writer) (valueWriter Writer, headerWriter Writer) {
 	w := table.NewTableWriter(out)
 	headerWriter = w.WriteHeader
 	valueWriter = func(values ...interface{}) error {
-		var bb bytes.Buffer
-		for i, value := range values {
-			if _, ok := value.(serialization.JSON); !ok {
-				continue
-			}
-			if err := quick.Highlight(&bb, fmt.Sprint(value), "json", "terminal", "tango"); err != nil {
-				continue
-			}
-			values[i] = bb.String()
-		}
 		return w.Write(values...)
 	}
 	return valueWriter, headerWriter
@@ -194,11 +186,11 @@ func jsonWriter(out io.Writer, headers []interface{}) Writer {
 		if err != nil {
 			return err
 		}
-		_, err = fmt.Fprintln(out, "")
+		_, err = bb.WriteTo(out)
 		if err != nil {
 			return err
 		}
-		_, err = bb.WriteTo(out)
+		_, err = fmt.Fprintln(out, "")
 		return err
 	}
 }
