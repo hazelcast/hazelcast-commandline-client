@@ -43,9 +43,7 @@ const (
 type InputModel struct {
 	focusIndex int
 	inputs     []textinput.Model
-	cursorMode textinput.CursorMode
 	quitting   bool
-	state      int
 	config     *config.Config
 	inputType  int
 }
@@ -56,16 +54,12 @@ func ViridianInput(config *config.Config) InputModel {
 		config:    config,
 		inputType: viridian,
 	}
-	var t textinput.Model
 	for i := range m.inputs {
-		t = textinput.New()
-		t.CursorStyle = selectedItemStyle
+		t := textinput.New()
 		switch i {
 		case 0:
 			t.Prompt = clusterNameMsg
-			t.PromptStyle = selectedItemStyle
-			t.TextStyle = selectedItemStyle
-			t.Focus()
+			updateSelectedIem(&t)
 		case 1:
 			t.Prompt = discoveryTokenMsg
 		case 2:
@@ -92,13 +86,10 @@ func StandaloneInput(config *config.Config) InputModel {
 	}
 	for i := range m.inputs {
 		t := textinput.New()
-		t.CursorStyle = selectedItemStyle
 		switch i {
 		case 0:
 			t.Prompt = clusterNameMsg
-			t.PromptStyle = selectedItemStyle
-			t.TextStyle = selectedItemStyle
-			t.Focus()
+			updateSelectedIem(&t)
 		case 1:
 			t.Prompt = addressesMsg
 		case 2:
@@ -118,13 +109,10 @@ func SSLInput(config *config.Config) InputModel {
 	var t textinput.Model
 	for i := range m.inputs {
 		t = textinput.New()
-		t.CursorStyle = selectedItemStyle
 		switch i {
 		case 0:
 			t.Prompt = caPathMsg
-			t.Focus()
-			t.PromptStyle = selectedItemStyle
-			t.TextStyle = selectedItemStyle
+			updateSelectedIem(&t)
 		case 1:
 			t.Prompt = certPathMsg
 		case 2:
@@ -145,11 +133,17 @@ func ApprovalInput() InputModel {
 		inputType: approval,
 	}
 	t := textinput.New()
-	t.CursorStyle = selectedItemStyle
 	t.Prompt = approvalMsg
+	t.CharLimit = 1
 	t.Focus()
 	m.inputs[0] = t
 	return m
+}
+
+func updateSelectedIem(t *textinput.Model) {
+	t.Focus()
+	t.PromptStyle = selectedItemStyle
+	t.TextStyle = selectedItemStyle
 }
 
 func updateConfig(m *InputModel) {

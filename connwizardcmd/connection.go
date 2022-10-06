@@ -42,7 +42,7 @@ func New() *cobra.Command {
 			case "Standalone (Remote or Local)":
 				im = StandaloneInput(&c)
 			case "Local (Default)":
-				return handleWrite(cmd, &c)
+				return handleWrite(cmd, &c, "y")
 			}
 			if err := tea.NewProgram(im).Start(); err != nil {
 				return hzcerrors.NewLoggableError(err, "Can not run list model during connection-wizard.")
@@ -57,10 +57,7 @@ func New() *cobra.Command {
 					return hzcerrors.NewLoggableError(err, "Can not run input model during connection-wizard.")
 				}
 			}
-			if choice == "y" {
-				return handleWrite(cmd, &c)
-			}
-			return nil
+			return handleWrite(cmd, &c, choice)
 		},
 	}
 	return &cmd
@@ -76,13 +73,15 @@ func handleExit(cmd *cobra.Command) error {
 	return nil
 }
 
-func handleWrite(cmd *cobra.Command, c *config.Config) error {
-	exists := config.ConfigExists()
-	err := config.WriteToFile(c, config.DefaultConfigPath())
-	if err != nil {
-		return hzcerrors.NewLoggableError(err, "There was an error during overwriting config file.")
-	} else if exists {
-		cmd.Println("Your config file has been changed. Please re-start CLC to apply new config.")
+func handleWrite(cmd *cobra.Command, c *config.Config, choice string) error {
+	if choice == "y" {
+		exists := config.ConfigExists()
+		err := config.WriteToFile(c, config.DefaultConfigPath())
+		if err != nil {
+			return hzcerrors.NewLoggableError(err, "There was an error during overwriting config file.")
+		} else if exists {
+			cmd.Println("Your config file has been changed. Please re-start CLC to apply new config.")
+		}
 	}
 	return nil
 }
