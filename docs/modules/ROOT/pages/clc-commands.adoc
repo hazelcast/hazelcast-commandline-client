@@ -3,20 +3,54 @@
 
 {description}
 
+== Synopsis
+
+[source,bash]
+----
+hzc [command] [subcommand] [options]
+----
+
+You can use `hzc [command] help` for information on a specific command. The synopsis for each command shows its parameters and their usage.
+
+== Global Options
+
+include::partial$global-parameters.adoc[]
+
 == Commands
 
 [cols="1m,2a"]
 |===
 |Command|Description
 
-|xref:hzc-map.adoc[hzc map]
-|Manage map data structures.
-
 |xref:hzc-cluster.adoc[hzc cluster]
 |Manage a Hazelcast cluster.
 
+|hzc help
+|Display help for the `hzc` command.
+
+|xref:hzc-map.adoc[hzc map]
+|Manage map data structures.
+
 |xref:hzc-sql.adoc[hzc sql]
 |Execute SQL queries.
+
+|xref:hzc-replicatedmap.adoc[hzc replicatedmap]
+|Manage replicated map data structures.
+
+|xref:hzc-multimap.adoc[hzc multimap]
+|Manage multimap data structures.
+
+|xref:hzc-queue.adoc[hzc queue]
+|Manage queue data structures.
+
+|xref:hzc-set.adoc[hzc set]
+|Manage set data structures.
+
+|xref:hzc-list.adoc[hzc list]
+|Manage list data structures.
+
+|xref:hzc-topic.adoc[hzc topic]
+|Manage topic data structures.
 
 |xref:hzc-version.adoc[hzc version]
 |Get version information.
