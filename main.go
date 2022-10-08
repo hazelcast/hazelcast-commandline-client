@@ -17,7 +17,7 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"os"
 
 	"github.com/hazelcast/hazelcast-commandline-client/config"
@@ -40,7 +40,7 @@ func main() {
 	}
 	// update config before running root command to make sure flags are processed
 	err := updateConfigWithFlags(rootCmd, &cfg, programArgs, globalFlagValues)
-	ExitOnError(err)
+	ExitOnError(err, cfg.Logger)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -51,16 +51,16 @@ func main() {
 		// there is no need for second parameter anymore. The purpose is overwriting rootCmd as it is at the beginning.
 		rootCmd, _ = rootcmd.New(&cfg.Hazelcast)
 		err = RunCmd(ctx, rootCmd)
-		ExitOnError(err)
+		ExitOnError(err, cfg.Logger)
 	}
 	return
 }
 
-func ExitOnError(err error) {
+func ExitOnError(err error, logger *log.Logger) {
 	if err == nil {
 		return
 	}
 	errStr := HandleError(err)
-	fmt.Println(errStr)
+	logger.Println(errStr)
 	os.Exit(exitError)
 }

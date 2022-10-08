@@ -96,11 +96,25 @@ var emacsKeyBindings = []KeyBind{
 			buf.CursorRight(1)
 		},
 	},
+	// Alt Right allow: Forward one word
+	{
+		Key: AltRight,
+		Fn: func(buf *Buffer) {
+			buf.CursorRight(buf.Document().FindEndOfCurrentWordWithSpace())
+		},
+	},
 	// Left allow: Backward one character
 	{
 		Key: ControlB,
 		Fn: func(buf *Buffer) {
 			buf.CursorLeft(1)
+		},
+	},
+	// Alt Left allow: Backward one word
+	{
+		Key: AltLeft,
+		Fn: func(buf *Buffer) {
+			buf.CursorLeft(len([]rune(buf.Document().TextBeforeCursor())) - buf.Document().FindStartOfPreviousWordWithSpace())
 		},
 	},
 	// Cut the Word before the cursor.

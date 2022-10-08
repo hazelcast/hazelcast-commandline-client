@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -55,6 +56,7 @@ type Config struct {
 	SSL              SSLConfig
 	NoAutocompletion bool
 	Styling          Styling
+	Logger           *log.Logger `json:"-"`
 }
 
 type Styling struct {
@@ -70,6 +72,8 @@ type GlobalFlagValues struct {
 	Verbose          bool
 	NoAutocompletion bool
 	NoColor          bool
+	LogFile          string
+	LogLevel         string
 }
 
 func DefaultConfig() Config {
@@ -78,7 +82,10 @@ func DefaultConfig() Config {
 	hz.Logger.Level = logger.ErrorLevel
 	hz.Cluster.Name = DefaultClusterName
 	hz.Stats.Enabled = true
-	return Config{Hazelcast: hz}
+	dc := Config{Hazelcast: hz}
+	// pretty standard Logger
+	dc.Logger = log.New(os.Stderr, "", log.LstdFlags|log.Lmsgprefix)
+	return dc
 }
 
 const defaultUserConfig = `hazelcast:
@@ -118,6 +125,16 @@ styling:
   # builtin themes: default, no-color, solarized
   theme: "default"`
 
+var ValidLogLevels = []string{
+	string(logger.OffLevel),
+	string(logger.FatalLevel),
+	string(logger.ErrorLevel),
+	string(logger.WarnLevel),
+	string(logger.InfoLevel),
+	string(logger.DebugLevel),
+	string(logger.TraceLevel),
+}
+
 func ConfigExists() bool {
 	exists, err := file.Exists(DefaultConfigPath())
 	if err != nil {
@@ -145,6 +162,23 @@ func ReadAndMergeWithFlags(flags *GlobalFlagValues, c *Config) error {
 	if err := mergeFlagsWithConfig(flags, c); err != nil {
 		return err
 	}
+	if err := arrangeLogger(c, flags); err != nil {
+		return err
+	}
+	return nil
+}
+
+func arrangeLogger(c *Config, flags *GlobalFlagValues) error {
+	if flags.LogFile != "" {
+		f, err := os.OpenFile(flags.LogFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		if err != nil {
+			return hzcerrors.NewLoggableError(err, "Can not open/create the log file on the specified path %s", flags.LogFile)
+		}
+		c.Logger.SetOutput(f)
+	}
+	// set custom Logger, and unset log level. Go client raises an error if both are set
+	c.Hazelcast.Logger.CustomLogger = newGoClientLogger(c.Logger, c.Hazelcast.Logger.Level)
+	c.Hazelcast.Logger.Level = ""
 	return nil
 }
 
@@ -190,13 +224,19 @@ func mergeFlagsWithConfig(flags *GlobalFlagValues, config *Config) error {
 	if flags.Cluster != "" {
 		config.Hazelcast.Cluster.Name = strings.TrimSpace(flags.Cluster)
 	}
+	if flags.LogLevel != "" {
+		_, err := logger.WeightForLogLevel(logger.Level(flags.LogLevel))
+		if err != nil {
+			return hzcerrors.NewLoggableError(err, "Invalid log level (%s), should be one of %s", flags.LogLevel, ValidLogLevels)
+		}
+		config.Hazelcast.Logger.Level = logger.Level(flags.LogLevel)
+	}
 	// must return nil err
 	verboseWeight, _ := logger.WeightForLogLevel(logger.DebugLevel)
 	confLevel := config.Hazelcast.Logger.Level
 	confWeight, err := logger.WeightForLogLevel(confLevel)
 	if err != nil {
-		validLogLevels := []logger.Level{logger.OffLevel, logger.FatalLevel, logger.ErrorLevel, logger.WarnLevel, logger.InfoLevel, logger.DebugLevel, logger.TraceLevel}
-		return hzcerrors.NewLoggableError(err, "Invalid log level (%s) on configuration file, should be one of %s", confLevel, validLogLevels)
+		return hzcerrors.NewLoggableError(err, "Invalid log level (%s) on configuration file, should be one of %s", confLevel, ValidLogLevels)
 	}
 	if flags.Verbose && verboseWeight > confWeight {
 		config.Hazelcast.Logger.Level = logger.DebugLevel
@@ -231,7 +271,6 @@ func readConfig(path string, config *Config, defaultConfPath string) error {
 	if err = yaml.Unmarshal(confBytes, config); err != nil {
 		return hzcerrors.NewLoggableError(err, "%s is not valid YAML", path)
 	}
-
 	return nil
 }
 
