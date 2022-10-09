@@ -76,7 +76,7 @@ func NewGetAll(config *hazelcast.Config) *cobra.Command {
 			}
 			for _, entry := range entries {
 				fmt.Print(entry.Key, delim)
-				printValueBasedOnType(cmd, entry.Value)
+				printValueBasedOnType(cmd, entry.Value, 0, false)
 			}
 			return nil
 		},

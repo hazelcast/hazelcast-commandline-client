@@ -103,7 +103,7 @@ func assignPersistentFlags(cmd *cobra.Command, flags *config.GlobalFlagValues) {
 	cmd.RegisterFlagCompletionFunc("log-level", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return config.ValidLogLevels, cobra.ShellCompDirectiveDefault
 	})
-
+	cmd.PersistentFlags().StringVar(&flags.SchemaDir, "schema-dir", "", "set the schema directory")
 }
 
 func init() {

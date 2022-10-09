@@ -22,6 +22,8 @@ import (
 
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
 const MapGetExample = `  # Get value of the given key from the map.
@@ -29,6 +31,7 @@ const MapGetExample = `  # Get value of the given key from the map.
 
 func NewGet(config *hazelcast.Config) *cobra.Command {
 	var mapName, mapKey, mapKeyType string
+	var showType bool
 	cmd := &cobra.Command{
 		Use:     "get [--name mapname | --key keyname]",
 		Short:   "Get single entry from the map",
@@ -38,11 +41,16 @@ func NewGet(config *hazelcast.Config) *cobra.Command {
 			if err != nil {
 				return hzcerrors.NewLoggableError(err, "Conversion error on key %s to type %s, %s", mapKey, mapKeyType, err)
 			}
-			m, err := getMap(cmd.Context(), config, mapName)
+			ci, err := getClient(cmd.Context(), config)
 			if err != nil {
 				return err
 			}
-			value, err := m.Get(cmd.Context(), key)
+			keyData, err := ci.EncodeData(key)
+			if err != nil {
+				return err
+			}
+			req := codec.EncodeMapGetRequest(mapName, keyData, 0)
+			resp, err := ci.InvokeOnKey(cmd.Context(), req, keyData, nil)
 			if err != nil {
 				var handled bool
 				handled, err = isCloudIssue(err, config)
@@ -51,12 +59,19 @@ func NewGet(config *hazelcast.Config) *cobra.Command {
 				}
 				return hzcerrors.NewLoggableError(err, "Cannot get value for key %s from map %s", mapKey, mapName)
 			}
-			printValueBasedOnType(cmd, value)
+			raw := codec.DecodeMapGetResponse(resp)
+			valueType := raw.Type()
+			value, err := ci.DecodeData(raw)
+			if err != nil {
+				value = serialization.NondecodedType(serialization.TypeToString(valueType))
+			}
+			printValueBasedOnType(cmd, value, valueType, showType)
 			return nil
 		},
 	}
 	decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name")
 	decorateCommandWithMapKeyFlags(cmd, &mapKey, true, "key of the entry")
 	decorateCommandWithMapKeyTypeFlags(cmd, &mapKeyType, false)
+	decorateCommandWithShowTypesFlag(cmd, &showType)
 	return cmd
 }

@@ -7,7 +7,7 @@ TEST_FLAGS ?= -v -count 1
 COVERAGE_OUT = coverage.out
 
 build:
-	go build -ldflags $(LDFLAGS) -o hzc github.com/hazelcast/hazelcast-commandline-client
+	go build -tags hazelcastinternal,hazelcastinternaltest -ldflags $(LDFLAGS) -o hzc github.com/hazelcast/hazelcast-commandline-client
 
 generate-completion: build
 	mkdir -p extras
