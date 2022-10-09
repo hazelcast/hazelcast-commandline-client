@@ -7,7 +7,7 @@ TEST_FLAGS ?= -v -count 1
 COVERAGE_OUT = coverage.out
 
 build:
-	go build -ldflags $(LDFLAGS) -o hzc github.com/hazelcast/hazelcast-commandline-client
+	go build -tags hazelcastinternal,hazelcastinternaltest -ldflags $(LDFLAGS) -o hzc github.com/hazelcast/hazelcast-commandline-client
 
 generate-completion: build
 	mkdir -p extras
@@ -15,10 +15,10 @@ generate-completion: build
 	MODE="dev" ./hzc completion zsh --no-descriptions > extras/zsh_completion.zsh
 
 test:
-	go test $(TEST_FLAGS) ./...
+	go test -tags hazelcastinternal,hazelcastinternaltest $(TEST_FLAGS) ./...
 
 test-cover:
-	go test $(TEST_FLAGS) -coverprofile=coverage.out -coverpkg "$(go list ./... | grep -v go-prompt | grep -v termdbms | grep -v internal/it | tr '\n' ',')" -coverprofile=$(COVERAGE_OUT) ./...
+	go test -tags hazelcastinternal,hazelcastinternaltest $(TEST_FLAGS) -coverprofile=coverage.out -coverpkg "$(go list ./... | grep -v go-prompt | grep -v termdbms | grep -v internal/it | tr '\n' ',')" -coverprofile=$(COVERAGE_OUT) ./...
 
 view-cover:
 	go tool cover -func $(COVERAGE_OUT) | grep total:
