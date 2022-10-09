@@ -13,13 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package clustercmd
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/spf13/cobra"
 
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
@@ -30,7 +33,7 @@ const invocationOnCloudInfoMessage = "Cluster operations on cloud are not suppor
 
 func New(config *hazelcast.Config) *cobra.Command {
 	cmd := cobra.Command{
-		Use:   "cluster {get-state | change-state | shutdown | query} [--state new-state]",
+		Use:   "cluster {get-state | change-state | shutdown | monitor | version} [--state new-state]",
 		Short: "Administrative cluster operations",
 		Long:  `Administrative cluster operations which controls a Hazelcast cluster by manipulating its state and other features`,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
@@ -77,6 +80,7 @@ func New(config *hazelcast.Config) *cobra.Command {
 	}
 	// adding this explicitly, since it is a bit different from the rest
 	cmd.AddCommand(NewChangeState(config))
+	cmd.AddCommand(NewMonitorCmd(config))
 	return &cmd
 }
 
@@ -104,4 +108,29 @@ func NewChangeState(config *hazelcast.Config) *cobra.Command {
 		return states, cobra.ShellCompDirectiveDefault
 	})
 	return cmd
+}
+
+func NewMonitorCmd(config *hazelcast.Config) *cobra.Command {
+	return &cobra.Command{
+		Use:   "monitor",
+		Short: "Monitor the cluster for changes",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config.AddMembershipListener(func(event cluster.MembershipStateChanged) {
+				state := "ADD"
+				if event.State == cluster.MembershipStateRemoved {
+					state = "REM"
+				}
+				m := event.Member
+				fmt.Printf("%s\t%s\t%s\t%s\n", state, m.Address, m.Version, m.UUID)
+			})
+			_, err := internal.ConnectToCluster(cmd.Context(), config)
+			if err != nil {
+				return err
+			}
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			internal.WaitTerminate(ctx, cancel)
+			return nil
+		},
+	}
 }
