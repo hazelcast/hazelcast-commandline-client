@@ -46,6 +46,7 @@ func NewPut(config *hazelcast.Config) *cobra.Command {
 		Use:     "put [--name mapname | --key keyname | --value-type type | {--value-file file | --value value} | --ttl ttl | --max-idle max-idle]",
 		Short:   "Put value to map",
 		Example: MapPutExample,
+		PreRunE: hzcerrors.RequiredFlagChecker,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			key, err := internal.ConvertString(mapKey, mapKeyType)
 			if err != nil {

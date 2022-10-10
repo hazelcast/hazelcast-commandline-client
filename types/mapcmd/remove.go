@@ -35,6 +35,7 @@ func NewRemove(config *hazelcast.Config) *cobra.Command {
 		Short: "Remove key",
 		Example: `  # Remove key from the map
   hzc map remove -n mapname -k k1`,
+		PreRunE: hzcerrors.RequiredFlagChecker,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			key, err := internal.ConvertString(mapKey, mapKeyType)
 			if err != nil {

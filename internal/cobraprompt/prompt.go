@@ -31,7 +31,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	cobra_util "github.com/hazelcast/hazelcast-commandline-client/internal/cobra"
 	goprompt "github.com/hazelcast/hazelcast-commandline-client/internal/go-prompt"
@@ -84,7 +83,7 @@ func exitPromptSafely() {
 	panic(ErrExit)
 }
 
-func handleExit(l *log.Logger) {
+func handleExit() {
 	switch v := recover().(type) {
 	case nil:
 		return
@@ -92,10 +91,12 @@ func handleExit(l *log.Logger) {
 		if errors.Is(v, ErrExit) {
 			return
 		}
-		l.Println(v)
+		// skip err nothing to do
+		_, _ = fmt.Fprintln(os.Stderr, v)
 	default:
-		fmt.Println(v)
-		fmt.Println(string(debug.Stack()))
+		// skip err nothing to do
+		_, _ = fmt.Fprintln(os.Stderr, v)
+		_, _ = fmt.Fprintln(os.Stderr, string(debug.Stack()))
 	}
 }
 
@@ -190,7 +191,7 @@ func (co CobraPrompt) Init(ctx context.Context, root *cobra.Command, cnfg *hazel
 			}
 			promptArgs, err := shlex.Split(in)
 			if err != nil {
-				fmt.Println("unable to parse commands")
+				root.PrintErrln("unable to parse commands")
 				return
 			}
 			// re-init command chain every iteration
@@ -240,13 +241,10 @@ func (co CobraPrompt) Init(ctx context.Context, root *cobra.Command, cnfg *hazel
 }
 
 func initInteractiveRootCmd(cnfg *hazelcast.Config, root *cobra.Command, co CobraPrompt, args []string) *cobra.Command {
-	// ignore global flags, they are already parsed
-	rootCopy, _ := rootcmd.New(cnfg, true)
+	// skip the persistent flags since they are parsed on the initial command
+	rootCopy := rootcmd.NewWithoutPersistentFlags(cnfg, true)
 	prepareRootCmdForPrompt(co, rootCopy)
 	cobra_util.InitCommandForCustomInvocation(rootCopy, root.InOrStdin(), root.OutOrStdout(), root.OutOrStderr(), args)
-	rootCopy.SetFlagErrorFunc(func(_ *cobra.Command, err error) error {
-		return hzcerrors.FlagError(err)
-	})
 	return rootCopy
 }
 
@@ -256,7 +254,7 @@ type GoPromptWithGracefulShutdown struct {
 }
 
 func (gp *GoPromptWithGracefulShutdown) Run() {
-	defer handleExit(gp.l)
+	defer handleExit()
 	gp.p.Run()
 }
 

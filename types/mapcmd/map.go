@@ -50,9 +50,10 @@ const (
 
 func New(config *hazelcast.Config, isInteractiveInvocation bool) *cobra.Command {
 	var cmd = &cobra.Command{
-		Use:     "map {get | put | clear | put-all | get-all | remove} --name mapname --key keyname [--value-type type | --value-file file | --value value]",
-		Short:   "Map operations",
-		Example: fmt.Sprintf("%s\n%s\n%s", MapPutExample, MapGetExample, MapUseExample),
+		Use:                "map {get | put | clear | put-all | get-all | remove} --name mapname --key keyname [--value-type type | --value-file file | --value value]",
+		Short:              "Map operations",
+		DisableFlagParsing: true,
+		Example:            fmt.Sprintf("%s\n%s\n%s", MapPutExample, MapGetExample, MapUseExample),
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			// All the following lines are to set map name if it is set by "use" command.
 			// If the map name is given explicitly, do not set the one given with "use" command.
@@ -77,6 +78,7 @@ func New(config *hazelcast.Config, isInteractiveInvocation bool) *cobra.Command 
 			}
 			return nil
 		},
+		RunE: hzcerrors.RootRunnerFnc,
 	}
 	cmd.AddCommand(
 		NewPut(config),

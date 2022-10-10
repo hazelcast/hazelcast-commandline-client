@@ -113,7 +113,7 @@ func RunCmdInteractively(ctx context.Context, cnfg *config.Config, l log.Logger,
 		},
 		OnErrorFunc: func(err error) {
 			errStr := HandleError(err)
-			l.Println(errStr)
+			rootCmd.PrintErrln(errStr)
 			return
 		},
 		Persister: namePersister,
@@ -138,10 +138,15 @@ func RunCmdInteractively(ctx context.Context, cnfg *config.Config, l log.Logger,
 func ProcessConfigAndFlags(rootCmd *cobra.Command, cnfg *config.Config, programArgs []string, globalFlagValues *config.GlobalFlagValues) (log.Logger, error) {
 	defaultLogger := log.NewLogger(log.NopWriteCloser(os.Stderr))
 	// parse global persistent flags
-	subCmd, flags, _ := rootCmd.Find(programArgs)
+	subCmd, flags, err := rootCmd.Find(programArgs)
+	if err != nil {
+		return defaultLogger, err
+	}
 	// fall back to cmd.Help, even if there is error
-	_ = subCmd.ParseFlags(flags)
-	var err error
+	if err := subCmd.ParseFlags(flags); err != nil {
+		_ = subCmd.Help()
+		return defaultLogger, err
+	}
 	// initialize config from file
 	if err = config.ReadAndMergeWithFlags(globalFlagValues, cnfg); err != nil {
 		return defaultLogger, err
@@ -177,9 +182,12 @@ func HandleError(err error) string {
 	var loggable hzcerrors.LoggableError
 	var flagErr hzcerrors.FlagError
 	if errors.As(err, &loggable) {
-		errStr = fmt.Sprintf("Error: %s\n", loggable.VerboseError())
+		errStr = fmt.Sprintf("Error: %s", loggable.VerboseError())
 	} else if errors.As(err, &flagErr) {
-		errStr = fmt.Sprintf("Flag Error: %s\n", err.Error())
+		errStr = fmt.Sprintf("Flag Error: %s", err.Error())
+	} else if strings.Contains(err.Error(), "required flag(s)") {
+		// this is also a flag error, we just can not wrap it
+		errStr = fmt.Sprintf("Flag Error: %s", err.Error())
 	}
 	return errStr
 }

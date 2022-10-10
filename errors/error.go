@@ -20,12 +20,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"net/url"
 	"strings"
 	"syscall"
 
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 
 	internal "github.com/hazelcast/hazelcast-commandline-client/internal/constants"
 )
@@ -44,10 +47,10 @@ For operations that change state/configuration of the cluster (e.g. "cluster cha
 To change CLUSTER_WRITE permission, see the documentation: https://docs.hazelcast.com/hazelcast/latest/maintain-cluster/rest-api#using-rest-endpoint-groups`
 )
 
-func ErrorRecover() {
+func ErrorRecover(out io.Writer) {
 	obj := recover()
 	if err, ok := obj.(error); ok {
-		fmt.Println(err)
+		_, _ = fmt.Fprintln(out, err)
 	}
 }
 
@@ -110,7 +113,13 @@ type LoggableError struct {
 	err error
 }
 
-type FlagError error
+type FlagError struct {
+	Err error
+}
+
+func (f FlagError) Error() string {
+	return f.Err.Error()
+}
 
 func NewLoggableError(err error, format string, a ...interface{}) LoggableError {
 	return LoggableError{
@@ -132,4 +141,32 @@ func (e LoggableError) VerboseError() string {
 
 func (e LoggableError) Unwrap() error {
 	return e.err
+}
+
+func RootRunnerFnc(cmd *cobra.Command, args []string) error {
+	err := NewLoggableError(nil, `No matching subcommand with "%s"`, strings.Join(args, ","))
+	if len(args) == 0 {
+		err = NewLoggableError(nil, `No matching subcommand`)
+	}
+	_ = cmd.Help()
+	return err
+}
+
+func RequiredFlagChecker(cmd *cobra.Command, _ []string) error {
+	flags := cmd.Flags()
+	missingFlagNames := []string{}
+	flags.VisitAll(func(pflag *pflag.Flag) {
+		requiredAnnotation, found := pflag.Annotations[cobra.BashCompOneRequiredFlag]
+		if !found {
+			return
+		}
+		if (requiredAnnotation[0] == "true") && !pflag.Changed {
+			missingFlagNames = append(missingFlagNames, pflag.Name)
+		}
+	})
+	if len(missingFlagNames) > 0 {
+		_ = cmd.Help()
+		return FlagError{fmt.Errorf(`required flag(s) "%s" not set`, strings.Join(missingFlagNames, `", "`))}
+	}
+	return nil
 }
