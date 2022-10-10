@@ -1,4 +1,4 @@
-package mapcmd
+package mapcmd_test
 
 import (
 	"bytes"
@@ -18,6 +18,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/internal/connection"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
+	"github.com/hazelcast/hazelcast-commandline-client/types/mapcmd"
 )
 
 // todo add value-file test
@@ -88,7 +89,7 @@ func TestMapPut(t *testing.T) {
 		}
 		for _, tc := range tcs {
 			t.Run(tc.name, func(t *testing.T) {
-				cmd := NewPut(c)
+				cmd := mapcmd.NewPut(c)
 				var stdout, stderr bytes.Buffer
 				cmd.SetOut(&stdout)
 				cmd.SetErr(&stderr)
@@ -175,7 +176,7 @@ func TestMapSet(t *testing.T) {
 		}
 		for _, tc := range tcs {
 			t.Run(tc.name, func(t *testing.T) {
-				cmd := NewSet(c)
+				cmd := mapcmd.NewSet(c)
 				var stdout, stderr bytes.Buffer
 				cmd.SetOut(&stdout)
 				cmd.SetErr(&stderr)
@@ -211,7 +212,7 @@ func TestMapPutAll_JSONEntries(t *testing.T) {
 									 "json value" : {"test" : "data"}
 									}`)
 		require.NoError(t, err)
-		cmd := NewPutAll(c)
+		cmd := mapcmd.NewPutAll(c)
 		var stdout, stderr bytes.Buffer
 		cmd.SetOut(&stdout)
 		cmd.SetErr(&stderr)
@@ -242,7 +243,7 @@ func TestMapSize(t *testing.T) {
 		ctx := context.Background()
 		require.NoError(t, m.PutAll(ctx, entries...))
 		// get the size
-		cmd := NewSize(c)
+		cmd := mapcmd.NewSize(c)
 		var stdout, stderr bytes.Buffer
 		cmd.SetOut(&stdout)
 		cmd.SetErr(&stderr)
@@ -258,7 +259,7 @@ func TestMapLock(t *testing.T) {
 		ctx := context.Background()
 		testKey := serialization.JSON(`"testKey"`)
 		// lock a key
-		cmd := NewLock(c)
+		cmd := mapcmd.NewLock(c)
 		var stdout, stderr bytes.Buffer
 		cmd.SetOut(&stdout)
 		cmd.SetErr(&stderr)
@@ -282,7 +283,7 @@ func TestMapForceUnlock(t *testing.T) {
 		err := m.Lock(ctx, testKey)
 		require.NoError(t, err)
 		// lock a key
-		cmd := NewForceUnlock(c)
+		cmd := mapcmd.NewForceUnlock(c)
 		var stdout, stderr bytes.Buffer
 		cmd.SetOut(&stdout)
 		cmd.SetErr(&stderr)
@@ -310,7 +311,7 @@ func TestMapUnlock(t *testing.T) {
 		err = m.Lock(ctx, testKey)
 		require.NoError(t, err)
 		// lock a key
-		cmd := NewUnlock(cnfg)
+		cmd := mapcmd.NewUnlock(cnfg)
 		var stdout, stderr bytes.Buffer
 		cmd.SetOut(&stdout)
 		cmd.SetErr(&stderr)
@@ -331,7 +332,7 @@ func TestMapTryLock(t *testing.T) {
 		ctx := context.Background()
 		testKey := serialization.JSON(`"testKey"`)
 		// should lock successfully
-		cmd := NewTryLock(c)
+		cmd := mapcmd.NewTryLock(c)
 		var stdout, stderr bytes.Buffer
 		cmd.SetOut(&stdout)
 		cmd.SetErr(&stderr)
@@ -352,7 +353,7 @@ func TestMapTryLock(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, ok)
 		// tryLock again to see it fails
-		cmd = NewTryLock(c)
+		cmd = mapcmd.NewTryLock(c)
 		stdout.Reset()
 		stderr.Reset()
 		cmd.SetOut(&stdout)
@@ -368,7 +369,7 @@ func TestMapDestroy(t *testing.T) {
 	// this does not test much, situation is also similar for go client
 	it.MapTesterWithConfigAndMapName(t, func(t *testing.T, c *hazelcast.Config, m *hazelcast.Map, n string) {
 		ctx := context.Background()
-		cmd := NewDestroy(c)
+		cmd := mapcmd.NewDestroy(c)
 		var stdout, stderr bytes.Buffer
 		cmd.SetOut(&stdout)
 		cmd.SetErr(&stderr)
@@ -376,6 +377,87 @@ func TestMapDestroy(t *testing.T) {
 		require.NoError(t, cmd.ExecuteContext(ctx))
 		require.Empty(t, stdout.String())
 		require.Empty(t, stderr.String())
+	})
+}
+
+func TestMapPutAll(t *testing.T) {
+	it.MapTesterWithNameFlag(t, func(t *testing.T, c *hazelcast.Config, m *hazelcast.Map, withNameFlag func(string) string) {
+		tcs := []struct {
+			name        string
+			args        string
+			entries     []types.Entry
+			value       interface{}
+			errContains string
+		}{
+			{
+				name: "valid put-all key(string), value(string)",
+				args: withNameFlag("-k k1 -k k2 -v v1 -v v2"),
+				entries: []types.Entry{
+					{
+						Key:   "k1",
+						Value: "v1",
+					},
+					{
+						Key:   "k2",
+						Value: "v2",
+					},
+				},
+			},
+			{
+				name: "valid put-all key(json), value(json)",
+				args: withNameFlag(`--key-type json --value-type json -k '{"some":"key"}' -v '{"some":"value"}' -k '"test"' -v '"string"'`),
+				entries: []types.Entry{
+					{
+						Key:   serialization.JSON(`{"some":"key"}`),
+						Value: serialization.JSON(`{"some":"value"}`),
+					},
+					{
+						Key:   serialization.JSON(`"test"`),
+						Value: serialization.JSON(`"string"`),
+					},
+				},
+			},
+			{
+				name:        "invalid put-all, missing key",
+				args:        withNameFlag("--value v1"),
+				errContains: `keys and values do not match`,
+			},
+			{
+				name:        "invalid put-all, missing map name",
+				args:        "--key k1 --value v1",
+				errContains: `"name" not set`,
+			},
+		}
+		for _, tc := range tcs {
+			t.Run(tc.name, func(t *testing.T) {
+				cmd := mapcmd.NewPutAll(c)
+				var stdout, stderr bytes.Buffer
+				cmd.SetOut(&stdout)
+				cmd.SetErr(&stderr)
+				args, err := shlex.Split(tc.args)
+				require.NoError(t, err)
+				// no way other than this for put-all. validateJsonEntryFlag need the actual args to decide the order. Cobra don't pass the actual args
+				//cmd.SetArgs(args)
+				os.Args = append([]string{"./something"}, args...)
+				ctx := context.Background()
+				_, err = cmd.ExecuteContextC(ctx)
+				if tc.errContains != "" {
+					require.Error(t, err)
+					require.Contains(t, err.Error(), tc.errContains)
+					return
+				}
+				require.NoError(t, err)
+				// cmd should not print anything
+				require.Empty(t, stdout.String())
+				require.Empty(t, stderr.String())
+				for _, e := range tc.entries {
+					value, err := m.Get(ctx, e.Key)
+					require.NoError(t, err)
+					fmt.Println(value)
+					require.Equal(t, e.Value, value)
+				}
+			})
+		}
 	})
 }
 
@@ -416,7 +498,7 @@ func TestMapGet(t *testing.T) {
 		}
 		for _, tc := range tcs {
 			t.Run(tc.name, func(t *testing.T) {
-				cmd := NewGet(c)
+				cmd := mapcmd.NewGet(c)
 				var stdout, stderr bytes.Buffer
 				cmd.SetOut(&stdout)
 				cmd.SetErr(&stderr)
@@ -494,7 +576,7 @@ k2	v2`,
 		}
 		for _, tc := range tcs {
 			t.Run(tc.name, func(t *testing.T) {
-				cmd := NewGetAll(c)
+				cmd := mapcmd.NewGetAll(c)
 				var stdout, stderr bytes.Buffer
 				cmd.SetOut(&stdout)
 				cmd.SetErr(&stderr)
@@ -537,7 +619,7 @@ func TestMapKeys_Values_Entries(t *testing.T) {
 		}{
 			{
 				name: "map keys command",
-				cmd:  NewKeys(c),
+				cmd:  mapcmd.NewKeys(c),
 				sout: `k1
 k2
 k3
@@ -546,7 +628,7 @@ k3
 			},
 			{
 				name: "map values command",
-				cmd:  NewValues(c),
+				cmd:  mapcmd.NewValues(c),
 				sout: `v1
 v2
 v2
@@ -555,7 +637,7 @@ v2
 			},
 			{
 				name: "map entries command",
-				cmd:  NewEntries(c),
+				cmd:  mapcmd.NewEntries(c),
 				//args: "--delim \"|\"",
 				sout: `k3	v2
 k1	v1
@@ -617,7 +699,7 @@ func TestMapRemove(t *testing.T) {
 		}
 		for _, tc := range tcs {
 			t.Run(tc.name, func(t *testing.T) {
-				cmd := NewRemove(c)
+				cmd := mapcmd.NewRemove(c)
 				var stdout, stderr bytes.Buffer
 				cmd.SetOut(&stdout)
 				cmd.SetErr(&stderr)
@@ -680,7 +762,7 @@ func TestMapRemoveMany(t *testing.T) {
 		}
 		for _, tc := range tcs {
 			t.Run(tc.name, func(t *testing.T) {
-				cmd := NewRemoveMany(c)
+				cmd := mapcmd.NewRemoveMany(c)
 				var stdout, stderr bytes.Buffer
 				cmd.SetOut(&stdout)
 				cmd.SetErr(&stderr)
@@ -719,7 +801,7 @@ func TestMapRemoveMany_RemoveManyEntries(t *testing.T) {
 		require.NoError(t, m.PutAll(ctx, entries...))
 		// leave just "k3"
 		cmdArgs := fmt.Sprintf("-k k1 -k k2 -n %s", m.Name())
-		cmd := NewRemoveMany(c)
+		cmd := mapcmd.NewRemoveMany(c)
 		var stdout, stderr bytes.Buffer
 		cmd.SetOut(&stdout)
 		cmd.SetErr(&stderr)
@@ -776,7 +858,7 @@ func TestMapClear(t *testing.T) {
 		}
 		for _, tc := range tcs {
 			t.Run(tc.name, func(t *testing.T) {
-				cmd := NewClear(c)
+				cmd := mapcmd.NewClear(c)
 				var stdout, stderr bytes.Buffer
 				cmd.SetOut(&stdout)
 				cmd.SetErr(&stderr)

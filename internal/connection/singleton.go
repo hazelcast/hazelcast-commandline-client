@@ -30,42 +30,20 @@ import (
 
 const clientResponseTimeoutDeadline = 1 * time.Second
 
-type singletonHZClient struct {
-	client *hazelcast.Client
-}
-
-var clientLock = &sync.Mutex{}
-var hzInstance *singletonHZClient
-
-func newSingletonHZClient(ctx context.Context, clientConfig *hazelcast.Config) (*singletonHZClient, error) {
-	var err error
-	sc := &singletonHZClient{}
-	configCopy := clientConfig.Clone()
-	sc.client, err = hazelcast.StartNewClientWithConfig(ctx, configCopy)
-	if err != nil {
-		return nil, err
-	}
-	return sc, nil
-}
-
-func getHZClientInstance(ctx context.Context, clientConfig *hazelcast.Config) (*singletonHZClient, error) {
-	var err error
-	if hzInstance == nil {
-		clientLock.Lock()
-		defer clientLock.Unlock()
-		if hzInstance == nil {
-			if hzInstance, err = newSingletonHZClient(ctx, clientConfig); err != nil {
-				return nil, err
-			}
-			return hzInstance, nil
-		}
-	}
-	return hzInstance, nil
-}
+var hzClient = &struct {
+	*hazelcast.Client
+	sync.Mutex
+}{}
 
 func ConnectToCluster(ctx context.Context, clientConfig *hazelcast.Config) (*hazelcast.Client, error) {
-	sc, err := getHZClientInstance(ctx, clientConfig)
-	return sc.client, err
+	var err error
+	hzClient.Lock()
+	defer hzClient.Unlock()
+	if hzClient.Client == nil {
+		configCopy := clientConfig.Clone()
+		hzClient.Client, err = hazelcast.StartNewClientWithConfig(ctx, configCopy)
+	}
+	return hzClient.Client, err
 }
 
 func ConnectToClusterInteractive(ctx context.Context, clientConfig *hazelcast.Config) (*hazelcast.Client, error) {
@@ -133,9 +111,16 @@ func asyncGetHZClientInstance(ctx context.Context, clientConfig *hazelcast.Confi
 	clientCh := make(chan *hazelcast.Client)
 	errCh := make(chan error, 1)
 	go func(cch chan<- *hazelcast.Client, errCh chan<- error) {
-		sc, err := getHZClientInstance(ctx, clientConfig)
+		sc, err := ConnectToCluster(ctx, clientConfig)
 		errCh <- err
-		cch <- sc.client
+		cch <- sc
 	}(clientCh, errCh)
 	return clientCh, errCh
+}
+
+// ResetClient is for testing
+func ResetClient() {
+	hzClient.Lock()
+	defer hzClient.Unlock()
+	hzClient.Client = nil
 }

@@ -16,12 +16,9 @@
 package main
 
 import (
-	"context"
-	"log"
 	"os"
 
-	"github.com/hazelcast/hazelcast-commandline-client/config"
-	"github.com/hazelcast/hazelcast-commandline-client/rootcmd"
+	"github.com/hazelcast/hazelcast-commandline-client/runner"
 )
 
 const (
@@ -30,32 +27,13 @@ const (
 )
 
 func main() {
-	cfg := config.DefaultConfig()
-	rootCmd, globalFlagValues := rootcmd.New(&cfg.Hazelcast, false)
 	programArgs := os.Args[1:]
-	// update config before running root command to make sure flags are processed
-	err := updateConfigWithFlags(rootCmd, &cfg, programArgs, globalFlagValues)
-	ExitOnError(err, cfg.Logger)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	isInteractive := IsInteractiveCall(rootCmd, programArgs)
-	if isInteractive {
-		RunCmdInteractively(ctx, rootCmd, &cfg, globalFlagValues.NoColor)
-	} else {
-		// Since the cluster config related flags has already being parsed in previous steps,
-		// there is no need for second parameter anymore. The purpose is overwriting rootCmd as it is at the beginning.
-		rootCmd, _ = rootcmd.New(&cfg.Hazelcast, false)
-		err = RunCmd(ctx, rootCmd)
-		ExitOnError(err, cfg.Logger)
-	}
-	return
-}
-
-func ExitOnError(err error, logger *log.Logger) {
+	logger, err := runner.CLC(programArgs, os.Stdin, os.Stdout, os.Stderr)
+	defer logger.Close()
 	if err == nil {
 		return
 	}
-	errStr := HandleError(err)
+	errStr := runner.HandleError(err)
 	logger.Println(errStr)
 	os.Exit(exitError)
 }
