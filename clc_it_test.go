@@ -92,13 +92,16 @@ func TestInteractivePrompt_FlagAndCommandSuggestions(t *testing.T) {
 				name:  `when I type "map ", I should see all the map commands`,
 				input: "map ",
 				suggestions: []string{
-					"clear    Clear entries of the map",
-					"get      Get single entry from the map",
-					"get-all  Get all matched entries from the map",
-					"put      Put value to map",
-					"put-all  Put values to map",
-					"remove   Remove key",
-					"use      sets the default map name (interactive-mode only)",
+					"clear         Clear entries of the map",
+					"destroy       Destroy the map",
+					"entries       Get all entries from the map with given delimiter",
+					"force-unlock  Force unlock the map",
+					"get           Get single entry from the map",
+					"get-all       Get all matched entries from the map",
+					"keys          Get all the keys from the map",
+					"lock          Lock the specified key of the given map",
+					"put           Put value to map",
+					"put-all       Put values to map",
 				},
 			},
 			{
@@ -140,7 +143,7 @@ func TestInteractivePrompt_FlagAndCommandSuggestions(t *testing.T) {
 			out := strings.TrimSpace(gpw.ReadLatestFlushWithTimeout(sufficientDuration))
 			// strip first line (connection info prompt and the user input)
 			suggestions := strings.Split(out, "\n")[1:]
-			require.Equal(t, len(suggestions), len(tc.suggestions))
+			require.Equal(t, len(tc.suggestions), len(suggestions))
 			for ind, s := range suggestions {
 				require.Equal(t, tc.suggestions[ind], strings.TrimSpace(s))
 			}

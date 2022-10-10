@@ -1,7 +1,6 @@
 package versioncmd
 
 import (
-	"fmt"
 	"runtime"
 
 	"github.com/hazelcast/hazelcast-go-client"

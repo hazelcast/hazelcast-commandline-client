@@ -34,7 +34,7 @@ const (
 func CLC(programArgs []string, stdin io.Reader, stdout io.Writer, stderr io.Writer) (log.Logger, error) {
 	cfg := config.DefaultConfig()
 	var err error
-	rootCmd, globalFlagValues := rootcmd.New(&cfg.Hazelcast)
+	rootCmd, globalFlagValues := rootcmd.New(&cfg.Hazelcast, false)
 	cobra_util.InitCommandForCustomInvocation(rootCmd, stdin, stdout, stderr, programArgs)
 	logger, err := ProcessConfigAndFlags(rootCmd, &cfg, programArgs, globalFlagValues)
 	if err != nil {
@@ -53,7 +53,7 @@ func CLC(programArgs []string, stdin io.Reader, stdout io.Writer, stderr io.Writ
 	}
 	// Since the cluster config related flags has already being parsed in previous steps,
 	// there is no need for second parameter anymore. The purpose is overwriting rootCmd as it is at the beginning.
-	rootCmd, _ = rootcmd.New(&cfg.Hazelcast)
+	rootCmd, _ = rootcmd.New(&cfg.Hazelcast, true)
 	cobra_util.InitCommandForCustomInvocation(rootCmd, stdin, stdout, stderr, programArgs)
 	err = RunCmd(ctx, rootCmd)
 	return logger, err
@@ -118,7 +118,8 @@ func RunCmdInteractively(ctx context.Context, cnfg *config.Config, l log.Logger,
 		},
 		Persister: namePersister,
 	}
-	if _, err := internal.ConnectToCluster(ctx, hConfig); err != nil {
+	if _, err = connection.ConnectToClusterInteractive(ctx, hConfig); err != nil {
+		// ignore error coming from the connection spinner
 		return cobraprompt.GoPromptWithGracefulShutdown{}, err
 	}
 	var flagsToExclude []string
@@ -140,19 +141,23 @@ func ProcessConfigAndFlags(rootCmd *cobra.Command, cnfg *config.Config, programA
 	subCmd, flags, _ := rootCmd.Find(programArgs)
 	// fall back to cmd.Help, even if there is error
 	_ = subCmd.ParseFlags(flags)
+	var err error
 	// initialize config from file
-	if err := config.ReadAndMergeWithFlags(globalFlagValues, cnfg); err != nil {
+	if err = config.ReadAndMergeWithFlags(globalFlagValues, cnfg); err != nil {
 		return defaultLogger, err
-	}
-	if cnfg.Hazelcast.Cluster.Cloud.Enabled {
-		return setDefaultCoordinator()
 	}
 	l, err := config.SetupLogger(cnfg, globalFlagValues, os.Stderr)
 	if err != nil {
 		// assign a logger with stderr as output
 		defaultLogger.Printf("Can not setup configured logger, program will log to Stderr: %v\n", err)
 	}
-	return l, nil
+	defaultLogger = l
+	if cnfg.Hazelcast.Cluster.Cloud.Enabled {
+		if err = setDefaultCoordinator(); err != nil {
+			return defaultLogger, nil
+		}
+	}
+	return defaultLogger, nil
 }
 
 func setDefaultCoordinator() error {

@@ -12,9 +12,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/hazelcast/hazelcast-commandline-client/config"
-	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	cobra_util "github.com/hazelcast/hazelcast-commandline-client/internal/cobra"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/cobraprompt"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/connection"
 	goprompt "github.com/hazelcast/hazelcast-commandline-client/internal/go-prompt"
 	"github.com/hazelcast/hazelcast-commandline-client/rootcmd"
 	"github.com/hazelcast/hazelcast-commandline-client/runner"
@@ -36,7 +36,7 @@ func TestCLC(t *testing.T, cmd string, args string, f func(t *testing.T, console
 }
 
 func TestCLCWithCluster(t *testing.T, cluster *TestCluster, cmd string, args string, f func(t *testing.T, console *expect.Console, done chan error, cls *TestCluster, logPath string)) {
-	internal.ResetClient()
+	connection.ResetClient()
 	logFileDir, err := ioutil.TempDir("", "logger_dir")
 	logFile := path.Join(logFileDir, "log.txt")
 	require.NoError(t, err)
@@ -66,14 +66,14 @@ func TestCLCInteractiveMode(t *testing.T, args string, f func(t *testing.T, cons
 }
 
 func TestCLCInteractiveModeWithCluster(t *testing.T, cluster *TestCluster, args string, f func(t *testing.T, console *expect.Console, done chan error, cls *TestCluster, gpi *GoPromptInput, gpw *GoPromptOutputWriter)) {
-	internal.ResetClient()
+	connection.ResetClient()
 	c, err := expect.NewTestConsole(t)
 	require.NoError(t, err)
 	defer c.Close()
 	// init clc interactive cmd
 	cfg := config.DefaultConfig()
 	cfg.Styling.Theme = "no-color"
-	rootCmd, globalFlagValues := rootcmd.New(&cfg.Hazelcast)
+	rootCmd, globalFlagValues := rootcmd.New(&cfg.Hazelcast, true)
 	flags := fmt.Sprintf(`--cluster-name "%s" --address localhost:%d %s`,
 		t.Name(), cluster.Port, args)
 	programArgs, err := shlex.Split(flags)

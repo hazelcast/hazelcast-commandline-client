@@ -16,7 +16,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
 
-	"github.com/hazelcast/hazelcast-commandline-client/internal"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/connection"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
 	"github.com/hazelcast/hazelcast-commandline-client/types/mapcmd"
 )
@@ -176,7 +176,7 @@ func TestMapSet(t *testing.T) {
 		}
 		for _, tc := range tcs {
 			t.Run(tc.name, func(t *testing.T) {
-				cmd := NewSet(c)
+				cmd := mapcmd.NewSet(c)
 				var stdout, stderr bytes.Buffer
 				cmd.SetOut(&stdout)
 				cmd.SetErr(&stderr)
@@ -243,7 +243,7 @@ func TestMapSize(t *testing.T) {
 		ctx := context.Background()
 		require.NoError(t, m.PutAll(ctx, entries...))
 		// get the size
-		cmd := NewSize(c)
+		cmd := mapcmd.NewSize(c)
 		var stdout, stderr bytes.Buffer
 		cmd.SetOut(&stdout)
 		cmd.SetErr(&stderr)
@@ -259,7 +259,7 @@ func TestMapLock(t *testing.T) {
 		ctx := context.Background()
 		testKey := serialization.JSON(`"testKey"`)
 		// lock a key
-		cmd := NewLock(c)
+		cmd := mapcmd.NewLock(c)
 		var stdout, stderr bytes.Buffer
 		cmd.SetOut(&stdout)
 		cmd.SetErr(&stderr)
@@ -283,7 +283,7 @@ func TestMapForceUnlock(t *testing.T) {
 		err := m.Lock(ctx, testKey)
 		require.NoError(t, err)
 		// lock a key
-		cmd := NewForceUnlock(c)
+		cmd := mapcmd.NewForceUnlock(c)
 		var stdout, stderr bytes.Buffer
 		cmd.SetOut(&stdout)
 		cmd.SetErr(&stderr)
@@ -304,14 +304,14 @@ func TestMapUnlock(t *testing.T) {
 		ctx := context.Background()
 		testKey := serialization.JSON(`"testKey"`)
 		// lock the key with the same go client instance
-		c, err := internal.ConnectToCluster(ctx, cnfg)
+		c, err := connection.ConnectToCluster(ctx, cnfg)
 		require.NoError(t, err)
 		m, err = c.GetMap(ctx, m.Name())
 		require.NoError(t, err)
 		err = m.Lock(ctx, testKey)
 		require.NoError(t, err)
 		// lock a key
-		cmd := NewUnlock(cnfg)
+		cmd := mapcmd.NewUnlock(cnfg)
 		var stdout, stderr bytes.Buffer
 		cmd.SetOut(&stdout)
 		cmd.SetErr(&stderr)
@@ -332,7 +332,7 @@ func TestMapTryLock(t *testing.T) {
 		ctx := context.Background()
 		testKey := serialization.JSON(`"testKey"`)
 		// should lock successfully
-		cmd := NewTryLock(c)
+		cmd := mapcmd.NewTryLock(c)
 		var stdout, stderr bytes.Buffer
 		cmd.SetOut(&stdout)
 		cmd.SetErr(&stderr)
@@ -353,7 +353,7 @@ func TestMapTryLock(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, ok)
 		// tryLock again to see it fails
-		cmd = NewTryLock(c)
+		cmd = mapcmd.NewTryLock(c)
 		stdout.Reset()
 		stderr.Reset()
 		cmd.SetOut(&stdout)
@@ -369,7 +369,7 @@ func TestMapDestroy(t *testing.T) {
 	// this does not test much, situation is also similar for go client
 	it.MapTesterWithConfigAndMapName(t, func(t *testing.T, c *hazelcast.Config, m *hazelcast.Map, n string) {
 		ctx := context.Background()
-		cmd := NewDestroy(c)
+		cmd := mapcmd.NewDestroy(c)
 		var stdout, stderr bytes.Buffer
 		cmd.SetOut(&stdout)
 		cmd.SetErr(&stderr)
@@ -619,7 +619,7 @@ func TestMapKeys_Values_Entries(t *testing.T) {
 		}{
 			{
 				name: "map keys command",
-				cmd:  NewKeys(c),
+				cmd:  mapcmd.NewKeys(c),
 				sout: `k1
 k2
 k3
@@ -628,7 +628,7 @@ k3
 			},
 			{
 				name: "map values command",
-				cmd:  NewValues(c),
+				cmd:  mapcmd.NewValues(c),
 				sout: `v1
 v2
 v2
@@ -637,7 +637,7 @@ v2
 			},
 			{
 				name: "map entries command",
-				cmd:  NewEntries(c),
+				cmd:  mapcmd.NewEntries(c),
 				//args: "--delim \"|\"",
 				sout: `k3	v2
 k1	v1
@@ -762,7 +762,7 @@ func TestMapRemoveMany(t *testing.T) {
 		}
 		for _, tc := range tcs {
 			t.Run(tc.name, func(t *testing.T) {
-				cmd := NewRemoveMany(c)
+				cmd := mapcmd.NewRemoveMany(c)
 				var stdout, stderr bytes.Buffer
 				cmd.SetOut(&stdout)
 				cmd.SetErr(&stderr)
@@ -801,7 +801,7 @@ func TestMapRemoveMany_RemoveManyEntries(t *testing.T) {
 		require.NoError(t, m.PutAll(ctx, entries...))
 		// leave just "k3"
 		cmdArgs := fmt.Sprintf("-k k1 -k k2 -n %s", m.Name())
-		cmd := NewRemoveMany(c)
+		cmd := mapcmd.NewRemoveMany(c)
 		var stdout, stderr bytes.Buffer
 		cmd.SetOut(&stdout)
 		cmd.SetErr(&stderr)

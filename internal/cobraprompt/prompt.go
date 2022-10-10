@@ -84,7 +84,7 @@ func exitPromptSafely() {
 	panic(ErrExit)
 }
 
-func handleExit(*log.Logger) {
+func handleExit(l *log.Logger) {
 	switch v := recover().(type) {
 	case nil:
 		return
@@ -92,7 +92,7 @@ func handleExit(*log.Logger) {
 		if errors.Is(v, ErrExit) {
 			return
 		}
-		log.Println(v)
+		l.Println(v)
 	default:
 		fmt.Println(v)
 		fmt.Println(string(debug.Stack()))
@@ -122,13 +122,8 @@ var Themes = map[string][]goprompt.Option{
 	},
 }
 
-var OptionsHookForTests []goprompt.Option
-
-// Init will automatically generate suggestions for all cobra commands and flags defined by RootCmd and execute the selected commands.
-// Init will also reset all given flags by default, see PersistFlagValues
-func (co CobraPrompt) Init(ctx context.Context, root *cobra.Command, cnfg *hazelcast.Config, logger *log.Logger, cmdHistoryPath string) GoPromptWithGracefulShutdown {
-	// let ctrl+c exit goprompt
-	co.GoPromptOptions = append(co.GoPromptOptions, goprompt.OptionAddKeyBind(goprompt.KeyBind{
+var goPromptShortcuts = []goprompt.Option{
+	goprompt.OptionAddKeyBind(goprompt.KeyBind{
 		Key: goprompt.ControlC,
 		Fn: func(_ *goprompt.Buffer) {
 			exitPromptSafely()
@@ -145,7 +140,15 @@ func (co CobraPrompt) Init(ctx context.Context, root *cobra.Command, cnfg *hazel
 			to := b.Document().FindEndOfCurrentWordWithSpace()
 			b.CursorRight(to)
 		},
-	}))
+	}),
+}
+var OptionsHookForTests []goprompt.Option
+
+// Init will automatically generate suggestions for all cobra commands and flags defined by RootCmd and execute the selected commands.
+// Init will also reset all given flags by default, see PersistFlagValues
+func (co CobraPrompt) Init(ctx context.Context, root *cobra.Command, cnfg *hazelcast.Config, logger *log.Logger, cmdHistoryPath string) GoPromptWithGracefulShutdown {
+	// let ctrl+c exit goprompt
+	co.GoPromptOptions = append(co.GoPromptOptions, goPromptShortcuts...)
 	co.GoPromptOptions = append(co.GoPromptOptions, Themes[tuiutil.SelectedTheme]...)
 	co.GoPromptOptions = append(co.GoPromptOptions, OptionsHookForTests...)
 	history := goprompt.NewHistory()
@@ -165,6 +168,7 @@ func (co CobraPrompt) Init(ctx context.Context, root *cobra.Command, cnfg *hazel
 			history.Clear()
 		}
 	}
+	root = initInteractiveRootCmd(cnfg, root, co, []string{})
 	ctx = internal.ContextWithPersistedNames(ctx, co.Persister)
 	var p *goprompt.Prompt
 	p = goprompt.New(
@@ -191,12 +195,7 @@ func (co CobraPrompt) Init(ctx context.Context, root *cobra.Command, cnfg *hazel
 			}
 			// re-init command chain every iteration
 			// ignore global flags, they are already parsed
-			rootCopy, _ := rootcmd.New(cnfg, true)
-			prepareRootCmdForPrompt(co, rootCopy)
-			cobra_util.InitCommandForCustomInvocation(rootCopy, root.InOrStdin(), root.OutOrStdout(), root.OutOrStderr(), promptArgs)
-			root.SetFlagErrorFunc(func(_ *cobra.Command, err error) error {
-				return hzcerrors.FlagError(err)
-			})
+			rootCopy := initInteractiveRootCmd(cnfg, root, co, promptArgs)
 			err = rootCopy.ExecuteContext(ctx)
 			if _, writeErr := f.WriteString(fmt.Sprintln(in)); writeErr != nil {
 				// todo log this once we have a logging solution
@@ -238,6 +237,17 @@ func (co CobraPrompt) Init(ctx context.Context, root *cobra.Command, cnfg *hazel
 	)
 	p.History = history
 	return GoPromptWithGracefulShutdown{p: p, l: logger}
+}
+
+func initInteractiveRootCmd(cnfg *hazelcast.Config, root *cobra.Command, co CobraPrompt, args []string) *cobra.Command {
+	// ignore global flags, they are already parsed
+	rootCopy, _ := rootcmd.New(cnfg, true)
+	prepareRootCmdForPrompt(co, rootCopy)
+	cobra_util.InitCommandForCustomInvocation(rootCopy, root.InOrStdin(), root.OutOrStdout(), root.OutOrStderr(), args)
+	rootCopy.SetFlagErrorFunc(func(_ *cobra.Command, err error) error {
+		return hzcerrors.FlagError(err)
+	})
+	return rootCopy
 }
 
 type GoPromptWithGracefulShutdown struct {

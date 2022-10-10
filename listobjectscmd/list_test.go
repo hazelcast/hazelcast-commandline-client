@@ -1,4 +1,4 @@
-package listobjectscmd
+package listobjectscmd_test
 
 import (
 	"bytes"
@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
+	"github.com/hazelcast/hazelcast-commandline-client/listobjectscmd"
 )
 
 func TestList(t *testing.T) {
@@ -90,7 +91,7 @@ func TestList(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		var b bytes.Buffer
-		cmd := New(&dc)
+		cmd := listobjectscmd.New(&dc)
 		cmd.SetOut(&b)
 		ctx := context.Background()
 		cmd.SetArgs(tc.args)
