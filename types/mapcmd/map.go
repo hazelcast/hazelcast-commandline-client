@@ -32,6 +32,7 @@ import (
 
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/connection"
 )
 
 const (
@@ -211,7 +212,7 @@ func ObtainOrderingOfValueFlags(args []string) (vOrder []byte) {
 }
 
 func getMap(ctx context.Context, clientConfig *hazelcast.Config, mapName string) (result *hazelcast.Map, err error) {
-	hzcClient, err := internal.ConnectToCluster(ctx, clientConfig)
+	hzcClient, err := connection.ConnectToCluster(ctx, clientConfig)
 	if err != nil {
 		return nil, hzcerrors.NewLoggableError(err, "Cannot get initialize client")
 	}
