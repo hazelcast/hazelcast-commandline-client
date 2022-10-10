@@ -26,6 +26,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clustercmd"
 	"github.com/hazelcast/hazelcast-commandline-client/config"
+	"github.com/hazelcast/hazelcast-commandline-client/listobjectscmd"
 	"github.com/hazelcast/hazelcast-commandline-client/sqlcmd"
 	fakeDoor "github.com/hazelcast/hazelcast-commandline-client/types/fakedoorcmd"
 	"github.com/hazelcast/hazelcast-commandline-client/types/mapcmd"
@@ -33,7 +34,7 @@ import (
 )
 
 // New initializes root command for non-interactive mode
-func New(cnfg *hazelcast.Config) (*cobra.Command, *config.GlobalFlagValues) {
+func New(cnfg *hazelcast.Config, isInteractiveInvocation bool) (*cobra.Command, *config.GlobalFlagValues) {
 	var flags config.GlobalFlagValues
 	root := &cobra.Command{
 		Use:   "hzc {cluster | map | sql | version | help} [--address address | --cloud-token token | --cluster-name name | --config config]",
@@ -62,16 +63,17 @@ hzc help # print help`,
 		root.CompletionOptions.DisableDefaultCmd = false
 	}
 	assignPersistentFlags(root, &flags)
-	root.AddCommand(subCommands(cnfg)...)
+	root.AddCommand(subCommands(cnfg, isInteractiveInvocation)...)
 	return root, &flags
 }
 
-func subCommands(config *hazelcast.Config) []*cobra.Command {
+func subCommands(config *hazelcast.Config, isInteractiveInvocation bool) []*cobra.Command {
 	cmds := []*cobra.Command{
 		clustercmd.New(config),
-		mapcmd.New(config),
+		mapcmd.New(config, isInteractiveInvocation),
 		sqlcmd.New(config),
 		versioncmd.New(),
+		listobjectscmd.New(config),
 	}
 	fds := []fakeDoor.FakeDoor{
 		{Name: "List", IssueNum: 48},
@@ -92,7 +94,7 @@ func assignPersistentFlags(cmd *cobra.Command, flags *config.GlobalFlagValues) {
 	cmd.PersistentFlags().StringVarP(&flags.CfgFile, "config", "c", config.DefaultConfigPath(), fmt.Sprintf("config file, only supports yaml for now"))
 	cmd.PersistentFlags().StringVarP(&flags.Address, "address", "a", "", fmt.Sprintf("addresses of the instances in the cluster (default is %s)", config.DefaultClusterAddress))
 	cmd.PersistentFlags().StringVar(&flags.Cluster, "cluster-name", "", fmt.Sprintf("name of the cluster that contains the instances (default is %s)", config.DefaultClusterName))
-	cmd.PersistentFlags().StringVar(&flags.Token, "cloud-token", "", "your Hazelcast Cloud token")
+	cmd.PersistentFlags().StringVar(&flags.Token, "cloud-token", "", "your Hazelcast Viridian token")
 	cmd.PersistentFlags().BoolVar(&flags.Verbose, "verbose", false, "verbose output")
 	cmd.PersistentFlags().BoolVar(&flags.NoColor, "no-color", false, "disable colors")
 	cmd.PersistentFlags().BoolVar(&flags.NoAutocompletion, "no-completion", false, "disable completion [interactive mode]")

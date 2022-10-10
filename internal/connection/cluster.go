@@ -1,22 +1,6 @@
-/*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License")
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-package internal
+package connection
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -31,13 +15,6 @@ import (
 )
 
 var InvalidStateErr = errors.New("invalid new state")
-
-// todo add protection for concurrent access
-var (
-	client        *hazelcast.Client
-	GitCommit     string
-	ClientVersion string
-)
 
 type RESTCall struct {
 	url    string
@@ -99,7 +76,7 @@ func NewRESTCall(conf *hazelcast.Config, operation string, state string) (*RESTC
 	case constants.ClusterGetState:
 		url = fmt.Sprintf("%s://%s%s", scheme, member, constants.ClusterGetStateEndpoint)
 	case constants.ClusterChangeState:
-		if !EnsureState(state) {
+		if !validateState(state) {
 			return nil, InvalidStateErr
 		}
 		url = fmt.Sprintf("%s://%s%s", scheme, member, constants.ClusterChangeStateEndpoint)
@@ -110,11 +87,11 @@ func NewRESTCall(conf *hazelcast.Config, operation string, state string) (*RESTC
 	default:
 		panic("Invalid operation to set connection obj.")
 	}
-	params = NewParams(conf, operation, state)
+	params = newParams(conf, operation, state)
 	return &RESTCall{url: url, params: params}, nil
 }
 
-func NewParams(config *hazelcast.Config, operation string, state string) string {
+func newParams(config *hazelcast.Config, operation string, state string) string {
 	var params string
 	switch operation {
 	case constants.ClusterGetState, constants.ClusterShutdown:
@@ -129,38 +106,10 @@ func NewParams(config *hazelcast.Config, operation string, state string) string 
 	return params
 }
 
-func EnsureState(state string) bool {
+func validateState(state string) bool {
 	switch strings.ToLower(state) {
 	case constants.ClusterStateActive, constants.ClusterStateFrozen, constants.ClusterStateNoMigration, constants.ClusterStatePassive:
 		return true
 	}
 	return false
-}
-
-func ConnectToCluster(ctx context.Context, clientConfig *hazelcast.Config) (cli *hazelcast.Client, err error) {
-	if client != nil {
-		return client, nil
-	}
-	defer func() {
-		obj := recover()
-		if panicErr, ok := obj.(error); ok {
-			err = panicErr
-		}
-		if err != nil {
-			if msg, handled := hzcerrors.TranslateError(err, clientConfig.Cluster.Cloud.Enabled); handled {
-				err = hzcerrors.NewLoggableError(err, msg)
-			}
-		}
-	}()
-	configCopy := clientConfig.Clone()
-	cli, err = hazelcast.StartNewClientWithConfig(ctx, configCopy)
-	if err == nil {
-		client = cli
-	}
-	return
-}
-
-// ResetClient is for testing
-func ResetClient() {
-	client = nil
 }

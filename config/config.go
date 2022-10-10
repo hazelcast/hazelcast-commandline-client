@@ -308,7 +308,7 @@ func GetClusterAddress(c *hazelcast.Config) string {
 	var address string
 	switch {
 	case c.Cluster.Cloud.Enabled:
-		address = "hazelcast-cloud"
+		address = "hazelcast-viridian"
 	case len(c.Cluster.Network.Addresses) > 0:
 		address = c.Cluster.Network.Addresses[0]
 	default:

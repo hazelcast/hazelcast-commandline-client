@@ -18,11 +18,17 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	cobra_util "github.com/hazelcast/hazelcast-commandline-client/internal/cobra"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/cobraprompt"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/connection"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/file"
 	goprompt "github.com/hazelcast/hazelcast-commandline-client/internal/go-prompt"
 	"github.com/hazelcast/hazelcast-commandline-client/log"
 	"github.com/hazelcast/hazelcast-commandline-client/rootcmd"
 	"github.com/hazelcast/hazelcast-commandline-client/types/mapcmd"
+)
+
+const (
+	ViridianCoordinatorURL       = "https://api.viridian.hazelcast.com"
+	EnvHzCloudCoordinatorBaseURL = "HZ_CLOUD_COORDINATOR_BASE_URL"
 )
 
 func CLC(programArgs []string, stdin io.Reader, stdout io.Writer, stderr io.Writer) (log.Logger, error) {
@@ -112,7 +118,6 @@ func RunCmdInteractively(ctx context.Context, cnfg *config.Config, l log.Logger,
 		},
 		Persister: namePersister,
 	}
-	rootCmd.Println("Connecting to the cluster ...")
 	if _, err := internal.ConnectToCluster(ctx, hConfig); err != nil {
 		return cobraprompt.GoPromptWithGracefulShutdown{}, err
 	}
@@ -136,9 +141,11 @@ func ProcessConfigAndFlags(rootCmd *cobra.Command, cnfg *config.Config, programA
 	// fall back to cmd.Help, even if there is error
 	_ = subCmd.ParseFlags(flags)
 	// initialize config from file
-	err := config.ReadAndMergeWithFlags(globalFlagValues, cnfg)
-	if err != nil {
+	if err := config.ReadAndMergeWithFlags(globalFlagValues, cnfg); err != nil {
 		return defaultLogger, err
+	}
+	if cnfg.Hazelcast.Cluster.Cloud.Enabled {
+		return setDefaultCoordinator()
 	}
 	l, err := config.SetupLogger(cnfg, globalFlagValues, os.Stderr)
 	if err != nil {
@@ -146,6 +153,17 @@ func ProcessConfigAndFlags(rootCmd *cobra.Command, cnfg *config.Config, programA
 		defaultLogger.Printf("Can not setup configured logger, program will log to Stderr: %v\n", err)
 	}
 	return l, nil
+}
+
+func setDefaultCoordinator() error {
+	if os.Getenv(EnvHzCloudCoordinatorBaseURL) != "" {
+		return nil
+	}
+	// if not set assign Viridian
+	if err := os.Setenv(EnvHzCloudCoordinatorBaseURL, ViridianCoordinatorURL); err != nil {
+		return hzcerrors.NewLoggableError(err, "Can not assign Viridian as the default coordinator")
+	}
+	return nil
 }
 
 func HandleError(err error) string {

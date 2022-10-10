@@ -191,7 +191,7 @@ func (co CobraPrompt) Init(ctx context.Context, root *cobra.Command, cnfg *hazel
 			}
 			// re-init command chain every iteration
 			// ignore global flags, they are already parsed
-			rootCopy, _ := rootcmd.New(cnfg)
+			rootCopy, _ := rootcmd.New(cnfg, true)
 			prepareRootCmdForPrompt(co, rootCopy)
 			cobra_util.InitCommandForCustomInvocation(rootCopy, root.InOrStdin(), root.OutOrStdout(), root.OutOrStderr(), promptArgs)
 			root.SetFlagErrorFunc(func(_ *cobra.Command, err error) error {
