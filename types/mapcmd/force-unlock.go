@@ -24,15 +24,17 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
-const MapGetExample = `  # Get value of the given key from the map.
-  hzc map get --key-type int16 --key 2012 --name myMap   # default key-type is string`
+const MapForceUnlockExample = `  # Force-unlock the specified key of the specified map.
+  hzc map force-unlock --key mapkey --name mapname`
 
-func NewGet(config *hazelcast.Config) *cobra.Command {
-	var mapName, mapKey, mapKeyType string
+func NewForceUnlock(config *hazelcast.Config) *cobra.Command {
+	var (
+		mapName, mapKey, mapKeyType string
+	)
 	cmd := &cobra.Command{
-		Use:     "get [--name mapname | --key keyname]",
-		Short:   "Get single entry from the map",
-		Example: MapGetExample,
+		Use:     "force-unlock --key mapkey --name m apname",
+		Short:   "Force unlock the map",
+		Example: MapForceUnlockExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			key, err := internal.ConvertString(mapKey, mapKeyType)
 			if err != nil {
@@ -42,16 +44,15 @@ func NewGet(config *hazelcast.Config) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			value, err := m.Get(cmd.Context(), key)
+			err = m.ForceUnlock(cmd.Context(), key)
 			if err != nil {
 				var handled bool
 				handled, err = isCloudIssue(err, config)
 				if handled {
 					return err
 				}
-				return hzcerrors.NewLoggableError(err, "Cannot get value for key %s from map %s", mapKey, mapName)
+				return hzcerrors.NewLoggableError(err, "Can not force-unlock the key from map %s", mapName)
 			}
-			cmd.Println(formatGoTypeToOutput(value))
 			return nil
 		},
 	}

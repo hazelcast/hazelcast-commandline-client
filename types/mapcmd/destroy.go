@@ -17,46 +17,44 @@
 package mapcmd
 
 import (
+	"fmt"
+
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
-	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
-const MapGetExample = `  # Get value of the given key from the map.
-  hzc map get --key-type int16 --key 2012 --name myMap   # default key-type is string`
+const MapDestroyExample = `  # Destroy the given map.
+  hzc map destroy --name mapname`
 
-func NewGet(config *hazelcast.Config) *cobra.Command {
-	var mapName, mapKey, mapKeyType string
+func NewDestroy(config *hazelcast.Config) *cobra.Command {
+	var mapName string
 	cmd := &cobra.Command{
-		Use:     "get [--name mapname | --key keyname]",
-		Short:   "Get single entry from the map",
-		Example: MapGetExample,
+		Use:     "destroy --name mapname",
+		Short:   "Destroy the map",
+		Example: MapDestroyExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			key, err := internal.ConvertString(mapKey, mapKeyType)
-			if err != nil {
-				return hzcerrors.NewLoggableError(err, "Conversion error on key %s to type %s, %s", mapKey, mapKeyType, err)
-			}
 			m, err := getMap(cmd.Context(), config, mapName)
 			if err != nil {
+				fmt.Println("get map err ")
 				return err
 			}
-			value, err := m.Get(cmd.Context(), key)
+			err = m.Destroy(cmd.Context())
 			if err != nil {
 				var handled bool
 				handled, err = isCloudIssue(err, config)
 				if handled {
+					fmt.Println("handled")
 					return err
 				}
-				return hzcerrors.NewLoggableError(err, "Cannot get value for key %s from map %s", mapKey, mapName)
+				fmt.Println("normal err")
+				return hzcerrors.NewLoggableError(err, "Cannot get the size of the map %s", mapName)
 			}
-			cmd.Println(formatGoTypeToOutput(value))
+			fmt.Println("normal return")
 			return nil
 		},
 	}
 	decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name")
-	decorateCommandWithMapKeyFlags(cmd, &mapKey, true, "key of the entry")
-	decorateCommandWithMapKeyTypeFlags(cmd, &mapKeyType, false)
 	return cmd
 }

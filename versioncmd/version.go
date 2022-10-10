@@ -2,10 +2,12 @@ package versioncmd
 
 import (
 	"fmt"
-	"github.com/hazelcast/hazelcast-commandline-client/internal"
+	"runtime"
+
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
-	"runtime"
+
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
 func New() *cobra.Command {

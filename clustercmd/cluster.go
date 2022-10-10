@@ -27,7 +27,7 @@ import (
 	"github.com/spf13/cobra"
 
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
-	"github.com/hazelcast/hazelcast-commandline-client/internal"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/connection"
 )
 
 const invocationOnCloudInfoMessage = "Cluster operations on cloud are not supported. Checkout https://github.com/hazelcast/hazelcast-cloud-cli for cluster management on cloud."
@@ -70,7 +70,7 @@ func New(config *hazelcast.Config) *cobra.Command {
 			Short: sc.info,
 			RunE: func(cmd *cobra.Command, args []string) error {
 				defer hzcerrors.ErrorRecover()
-				result, err := internal.CallClusterOperation(config, sc.command)
+				result, err := connection.CallClusterOperation(config, sc.command)
 				if err != nil {
 					return err
 				}
@@ -95,7 +95,7 @@ func NewChangeState(config *hazelcast.Config) *cobra.Command {
 		Short: "Change state of the cluster",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			defer hzcerrors.ErrorRecover()
-			result, err := internal.CallClusterOperationWithState(config, "change-state", &newState)
+			result, err := connection.CallClusterOperationWithState(config, "change-state", &newState)
 			if err != nil {
 				return err
 			}

@@ -34,7 +34,7 @@ import (
 )
 
 // New initializes root command for non-interactive mode
-func New(cnfg *hazelcast.Config) (*cobra.Command, *config.GlobalFlagValues) {
+func New(cnfg *hazelcast.Config, isInteractiveInvocation bool) (*cobra.Command, *config.GlobalFlagValues) {
 	var flags config.GlobalFlagValues
 	root := &cobra.Command{
 		Use:   "hzc {cluster | map | sql | version | help} [--address address | --cloud-token token | --cluster-name name | --config config]",
@@ -63,14 +63,14 @@ hzc help # print help`,
 		root.CompletionOptions.DisableDefaultCmd = false
 	}
 	assignPersistentFlags(root, &flags)
-	root.AddCommand(subCommands(cnfg)...)
+	root.AddCommand(subCommands(cnfg, isInteractiveInvocation)...)
 	return root, &flags
 }
 
-func subCommands(config *hazelcast.Config) []*cobra.Command {
+func subCommands(config *hazelcast.Config, isInteractiveInvocation bool) []*cobra.Command {
 	cmds := []*cobra.Command{
 		clustercmd.New(config),
-		mapcmd.New(config),
+		mapcmd.New(config, isInteractiveInvocation),
 		sqlcmd.New(config),
 		versioncmd.New(),
 		listobjectscmd.New(config),
