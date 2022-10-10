@@ -3,10 +3,11 @@ module github.com/hazelcast/hazelcast-commandline-client
 go 1.18
 
 require (
+	github.com/Netflix/go-expect v0.0.0-20220104043353-73e0943537d2
 	github.com/alecthomas/assert v0.0.0-20170929043011-405dbfeb8e38
 	github.com/alecthomas/chroma v0.9.2
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
-	github.com/hazelcast/hazelcast-go-client v1.3.1-0.20220810055942-d0ea986df93b
+	github.com/hazelcast/hazelcast-go-client v1.3.1-0.20220927121914-35e33c479ef2
 	github.com/lucasb-eyer/go-colorful v1.2.0
 	github.com/mattn/go-colorable v0.1.7
 	github.com/mattn/go-runewidth v0.0.13
@@ -25,6 +26,7 @@ require (
 	github.com/alecthomas/colour v0.0.0-20160524082231-60882d9e2721 // indirect
 	github.com/alecthomas/repr v0.0.0-20180818092828-117648cd9897 // indirect
 	github.com/containerd/console v1.0.3 // indirect
+	github.com/creack/pty v1.1.17 // indirect
 	github.com/danwakefield/fnmatch v0.0.0-20160403171240-cbb64ac3d964 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dlclark/regexp2 v1.4.0 // indirect

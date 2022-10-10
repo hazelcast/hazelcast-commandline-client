@@ -27,6 +27,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clustercmd"
 	"github.com/hazelcast/hazelcast-commandline-client/config"
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
+	"github.com/hazelcast/hazelcast-commandline-client/listobjectscmd"
 	"github.com/hazelcast/hazelcast-commandline-client/sqlcmd"
 	fakeDoor "github.com/hazelcast/hazelcast-commandline-client/types/fakedoorcmd"
 	"github.com/hazelcast/hazelcast-commandline-client/types/mapcmd"
@@ -34,7 +35,7 @@ import (
 )
 
 // New initializes root command for non-interactive mode
-func New(cnfg *hazelcast.Config) (*cobra.Command, *config.GlobalFlagValues) {
+func New(cnfg *hazelcast.Config, isInteractiveInvocation bool) (*cobra.Command, *config.GlobalFlagValues) {
 	root := NewWithoutPersistentFlags(cnfg)
 	var flags config.GlobalFlagValues
 	assignPersistentFlags(root, &flags)
@@ -75,16 +76,17 @@ hzc help # print help`,
 	if mode := os.Getenv("MODE"); strings.EqualFold(mode, "dev") {
 		root.CompletionOptions.DisableDefaultCmd = false
 	}
-	root.AddCommand(subCommands(cnfg)...)
+	root.AddCommand(subCommands(cnfg, isInteractiveInvocation)...)
 	return root
 }
 
-func subCommands(config *hazelcast.Config) []*cobra.Command {
+func subCommands(config *hazelcast.Config, isInteractiveInvocation bool) []*cobra.Command {
 	cmds := []*cobra.Command{
 		clustercmd.New(config),
-		mapcmd.New(config),
+		mapcmd.New(config, isInteractiveInvocation),
 		sqlcmd.New(config),
 		versioncmd.New(),
+		listobjectscmd.New(config),
 	}
 	fds := []fakeDoor.FakeDoor{
 		{Name: "List", IssueNum: 48},

@@ -1,24 +1,10 @@
-/*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License")
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-package main
+package runner
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -30,9 +16,13 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/config"
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
+	cobra_util "github.com/hazelcast/hazelcast-commandline-client/internal/cobra"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/cobraprompt"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/connection"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/file"
 	goprompt "github.com/hazelcast/hazelcast-commandline-client/internal/go-prompt"
+	"github.com/hazelcast/hazelcast-commandline-client/log"
+	"github.com/hazelcast/hazelcast-commandline-client/rootcmd"
 	"github.com/hazelcast/hazelcast-commandline-client/types/mapcmd"
 )
 
@@ -40,6 +30,34 @@ const (
 	ViridianCoordinatorURL       = "https://api.viridian.hazelcast.com"
 	EnvHzCloudCoordinatorBaseURL = "HZ_CLOUD_COORDINATOR_BASE_URL"
 )
+
+func CLC(programArgs []string, stdin io.Reader, stdout io.Writer, stderr io.Writer) (log.Logger, error) {
+	cfg := config.DefaultConfig()
+	var err error
+	rootCmd, globalFlagValues := rootcmd.New(&cfg.Hazelcast, false)
+	cobra_util.InitCommandForCustomInvocation(rootCmd, stdin, stdout, stderr, programArgs)
+	logger, err := ProcessConfigAndFlags(rootCmd, &cfg, programArgs, globalFlagValues)
+	if err != nil {
+		return logger, err
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	isInteractive := IsInteractiveCall(rootCmd, programArgs)
+	if isInteractive {
+		prompt, err := RunCmdInteractively(ctx, &cfg, logger, rootCmd, globalFlagValues.NoColor)
+		if err != nil {
+			return logger, hzcerrors.NewLoggableError(err, "")
+		}
+		prompt.Run()
+		return logger, nil
+	}
+	// Since the cluster config related flags has already being parsed in previous steps,
+	// there is no need for second parameter anymore. The purpose is overwriting rootCmd as it is at the beginning.
+	rootCmd, _ = rootcmd.New(&cfg.Hazelcast, true)
+	cobra_util.InitCommandForCustomInvocation(rootCmd, stdin, stdout, stderr, programArgs)
+	err = RunCmd(ctx, rootCmd)
+	return logger, err
+}
 
 func IsInteractiveCall(rootCmd *cobra.Command, args []string) bool {
 	cmd, flags, err := rootCmd.Find(args)
@@ -60,15 +78,15 @@ func IsInteractiveCall(rootCmd *cobra.Command, args []string) bool {
 	return false
 }
 
-func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *config.Config, noColor bool) {
+func RunCmdInteractively(ctx context.Context, cnfg *config.Config, l log.Logger, rootCmd *cobra.Command, noColor bool) (cobraprompt.GoPromptWithGracefulShutdown, error) {
 	cmdHistoryPath := filepath.Join(file.HZCHomePath(), "history")
 	exists, err := file.Exists(cmdHistoryPath)
 	if err != nil {
-		// todo log err once we have logging solution
+		l.Println("Command history path file does not exist.")
 	}
 	if !exists {
 		if err := file.CreateMissingDirsAndFileWithRWPerms(cmdHistoryPath, []byte{}); err != nil {
-			// todo log err once we have logging solution
+			l.Printf("Cannot create command history file on %s, history will not be preserved.\n", cmdHistoryPath)
 		}
 	}
 	hConfig := &cnfg.Hazelcast
@@ -100,10 +118,9 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *conf
 		},
 		Persister: namePersister,
 	}
-	rootCmd.Println("Connecting to the cluster ...")
-	if _, err := internal.ConnectToCluster(ctx, hConfig); err != nil {
-		rootCmd.PrintErrf("Error: %s\n", err)
-		return
+	if _, err = connection.ConnectToClusterInteractive(ctx, hConfig); err != nil {
+		// ignore error coming from the connection spinner
+		return cobraprompt.GoPromptWithGracefulShutdown{}, err
 	}
 	var flagsToExclude []string
 	rootCmd.PersistentFlags().VisitAll(func(flag *pflag.Flag) {
@@ -115,11 +132,11 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *conf
 	p.FlagsToExclude = flagsToExclude
 	rootCmd.Example = fmt.Sprintf("> %s\n> %s", mapcmd.MapPutExample, mapcmd.MapGetExample) + "\n> cluster version"
 	rootCmd.Use = ""
-	p.Run(ctx, rootCmd, hConfig, cmdHistoryPath)
-	return
+	return p.Init(ctx, rootCmd, hConfig, l.Logger, cmdHistoryPath), nil
 }
 
-func updateConfigWithFlags(rootCmd *cobra.Command, cnfg *config.Config, programArgs []string, globalFlagValues *config.GlobalFlagValues) error {
+func ProcessConfigAndFlags(rootCmd *cobra.Command, cnfg *config.Config, programArgs []string, globalFlagValues *config.GlobalFlagValues) (log.Logger, error) {
+	defaultLogger := log.NewLogger(log.NopWriteCloser(os.Stderr))
 	// parse global persistent flags
 	subCmd, flags, err := rootCmd.Find(programArgs)
 	if err != nil {
@@ -130,14 +147,23 @@ func updateConfigWithFlags(rootCmd *cobra.Command, cnfg *config.Config, programA
 		_ = subCmd.Help()
 		return err
 	}
+	var err error
 	// initialize config from file
-	if err := config.ReadAndMergeWithFlags(globalFlagValues, cnfg); err != nil {
-		return err
+	if err = config.ReadAndMergeWithFlags(globalFlagValues, cnfg); err != nil {
+		return defaultLogger, err
 	}
+	l, err := config.SetupLogger(cnfg, globalFlagValues, os.Stderr)
+	if err != nil {
+		// assign a logger with stderr as output
+		defaultLogger.Printf("Can not setup configured logger, program will log to Stderr: %v\n", err)
+	}
+	defaultLogger = l
 	if cnfg.Hazelcast.Cluster.Cloud.Enabled {
-		return setDefaultCoordinator()
+		if err = setDefaultCoordinator(); err != nil {
+			return defaultLogger, nil
+		}
 	}
-	return nil
+	return defaultLogger, nil
 }
 
 func setDefaultCoordinator() error {

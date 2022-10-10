@@ -26,10 +26,10 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
-const MapPutExample = `  # Put key, value pair to map. The unit for ttl/max-idle is one of (ns,us,ms,s,m,h)
-  map put --key-type string --key hello --value-type float32 --value 19.94 --name myMap --ttl 1300ms --max-idle 1400ms`
+const MapSetExample = `  # Set puts key, value pair to map. The unit for ttl/max-idle is one of (ns,us,ms,s,m,h)
+  map set --key-type string --key hello --value-type float32 --value 19.94 --name myMap --ttl 1300ms --max-idle 1400ms`
 
-func NewPut(config *hazelcast.Config) *cobra.Command {
+func NewSet(config *hazelcast.Config) *cobra.Command {
 	var (
 		mapName,
 		mapKey,
@@ -43,30 +43,25 @@ func NewPut(config *hazelcast.Config) *cobra.Command {
 		maxIdle time.Duration
 	)
 	cmd := &cobra.Command{
-		Use:     "put [--name mapname | --key keyname | --value-type type | {--value-file file | --value value} | --ttl ttl | --max-idle max-idle]",
-		Short:   "Put value to map",
-		Example: MapPutExample,
-		PreRunE: hzcerrors.RequiredFlagChecker,
+		Use:     "set [--name mapname | --key keyname | --value-type type | {--value-file file | --value value} | --ttl ttl | --max-idle max-idle]",
+		Short:   "Set key and corresponding value on map",
+		Example: MapSetExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			key, err := internal.ConvertString(mapKey, mapKeyType)
 			if err != nil {
 				return hzcerrors.NewLoggableError(err, "Conversion error on key %s to type %s, %s", mapKey, mapKeyType, err)
 			}
-			var (
-				ttlE,
-				maxIdleE bool
-			)
-			if ttl.Seconds() != 0 {
+			var ttlIsSet, maxIdleIsSet bool
+			if ttlIsSet = ttl.Seconds() != 0; ttlIsSet {
 				if err = validateTTL(ttl); err != nil {
 					return hzcerrors.NewLoggableError(err, "ttl is invalid")
 				}
-				ttlE = true
 			}
-			if maxIdle.Seconds() != 0 {
+			if maxIdleIsSet = maxIdle.Seconds() != 0; maxIdleIsSet {
 				if err = isNegativeSecond(maxIdle); err != nil {
 					return hzcerrors.NewLoggableError(err, "max-idle is invalid")
 				}
-				maxIdleE = true
+				maxIdleIsSet = true
 			}
 			var normalizedValue interface{}
 			if normalizedValue, err = normalizeMapValue(mapValue, mapValueFile, mapValueType); err != nil {
@@ -76,16 +71,16 @@ func NewPut(config *hazelcast.Config) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			var oldValue interface{}
 			switch {
-			case ttlE && maxIdleE:
-				oldValue, err = m.PutWithTTLAndMaxIdle(cmd.Context(), key, normalizedValue, ttl, maxIdle)
-			case ttlE:
-				oldValue, err = m.PutWithTTL(cmd.Context(), key, normalizedValue, ttl)
-			case maxIdleE:
-				oldValue, err = m.PutWithMaxIdle(cmd.Context(), key, normalizedValue, maxIdle)
+			case ttlIsSet && maxIdleIsSet:
+				err = m.SetWithTTLAndMaxIdle(cmd.Context(), key, normalizedValue, ttl, maxIdle)
+			case ttlIsSet:
+				err = m.SetWithTTL(cmd.Context(), key, normalizedValue, ttl)
+			case maxIdleIsSet:
+				hackForUnSet := time.Duration(0)
+				err = m.SetWithTTLAndMaxIdle(cmd.Context(), key, normalizedValue, hackForUnSet, maxIdle)
 			default:
-				oldValue, err = m.Put(cmd.Context(), key, normalizedValue)
+				err = m.Set(cmd.Context(), key, normalizedValue)
 			}
 			if err != nil {
 				var handled bool
@@ -95,7 +90,6 @@ func NewPut(config *hazelcast.Config) *cobra.Command {
 				}
 				return hzcerrors.NewLoggableError(err, "Cannot put given entry to the map %s", mapName)
 			}
-			cmd.Println(formatGoTypeToOutput(oldValue))
 			return nil
 		},
 	}

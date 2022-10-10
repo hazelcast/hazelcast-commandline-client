@@ -1,22 +1,34 @@
-package config
+package log
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
+type Logger struct {
+	*log.Logger
+	io.WriteCloser
+}
+
+func NewLogger(out io.WriteCloser) Logger {
+	return Logger{
+		Logger:      log.New(out, "", log.LstdFlags|log.Lmsgprefix),
+		WriteCloser: out,
+	}
+}
+
 type goClientLogger struct {
-	logger log.Logger
+	logger *log.Logger
 	weight logger.Weight
 }
 
-func newGoClientLogger(l *log.Logger, level logger.Level) logger.Logger {
+func NewClientLogger(l *log.Logger, level logger.Level) logger.Logger {
 	var gcl goClientLogger
-	// copy
-	gcl.logger = *l
+	gcl.logger = log.New(l.Writer(), "[Hazelcast Go Client]", l.Flags()|log.Lmsgprefix)
 	gcl.logger.SetFlags(gcl.logger.Flags() | log.Lmsgprefix)
 	gcl.logger.SetPrefix("[Hazelcast Go Client]")
 	gcl.weight, _ = logger.WeightForLogLevel(level)
@@ -49,3 +61,15 @@ func (g *goClientLogger) Log(weight logger.Weight, f func() string) {
 	s := fmt.Sprintf(" %s: %s", strings.ToUpper(logLevel.String()), f())
 	g.logger.Print(s)
 }
+
+// NopWriteCloser returns a io.WriteCloser with a no-op Close method wrapping
+// the provided io.Writer w.
+func NopWriteCloser(w io.Writer) io.WriteCloser {
+	return nopWriteCloser{w}
+}
+
+type nopWriteCloser struct {
+	io.Writer
+}
+
+func (nopWriteCloser) Close() error { return nil }

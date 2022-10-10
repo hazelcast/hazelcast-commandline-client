@@ -258,7 +258,7 @@ func OptionBreakLineCallback(fn func(*Document)) Option {
 	}
 }
 
-// OptionSetExitCheckerOnInput set an exit function which checks if go-prompt exits its Run loop
+// OptionSetExitCheckerOnInput set an exit function which checks if go-prompt exits its Init loop
 func OptionSetExitCheckerOnInput(fn ExitChecker) Option {
 	return func(p *Prompt) error {
 		p.exitChecker = fn
@@ -272,7 +272,6 @@ func New(executor Executor, completer Completer, opts ...Option) *Prompt {
 	registerConsoleWriter(defaultWriter)
 
 	pt := &Prompt{
-		in: NewStandardInputParser(),
 		renderer: &Render{
 			prefix:                       "> ",
 			out:                          defaultWriter,
@@ -305,6 +304,9 @@ func New(executor Executor, completer Completer, opts ...Option) *Prompt {
 		if err := opt(pt); err != nil {
 			panic(err)
 		}
+	}
+	if pt.in == nil {
+		pt.in = NewStandardInputParser()
 	}
 	return pt
 }

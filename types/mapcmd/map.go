@@ -25,13 +25,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/alecthomas/chroma/quick"
 	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/spf13/cobra"
 
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/connection"
 )
 
 const (
@@ -49,7 +48,7 @@ const (
 	MapResetFlag          = "reset"
 )
 
-func New(config *hazelcast.Config) *cobra.Command {
+func New(config *hazelcast.Config, isInteractiveInvocation bool) *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:                "map {get | put | clear | put-all | get-all | remove} --name mapname --key keyname [--value-type type | --value-file file | --value value]",
 		Short:              "Map operations",
@@ -87,8 +86,22 @@ func New(config *hazelcast.Config) *cobra.Command {
 		NewGet(config),
 		NewGetAll(config),
 		NewRemove(config),
+		NewRemoveMany(config),
+		NewKeys(config),
+		NewValues(config),
+		NewEntries(config),
+		NewSize(config),
 		NewClear(config),
+		NewDestroy(config),
+		NewLock(config),
+		NewTryLock(config),
+		NewSet(config),
+		NewForceUnlock(config),
 		NewUse())
+	if isInteractiveInvocation {
+		// Unlock makes sense only for reusable clients as in interactive mode
+		cmd.AddCommand(NewUnlock(config))
+	}
 	return cmd
 }
 
@@ -110,21 +123,11 @@ func validateTTL(d time.Duration) error {
 	return nil
 }
 
-func printValueBasedOnType(cmd *cobra.Command, value interface{}) {
-	var err error
-	switch v := value.(type) {
-	case serialization.JSON:
-		if err = quick.Highlight(cmd.OutOrStdout(), fmt.Sprintln(v),
-			"json", "terminal", "tango"); err != nil {
-			cmd.Println(v.String())
-		}
-	default:
-		if v == nil {
-			cmd.Println("There is no value corresponding to the provided key")
-			break
-		}
-		cmd.Println(v)
+func formatGoTypeToOutput(v interface{}) string {
+	if v == nil {
+		return "null"
 	}
+	return fmt.Sprint(v)
 }
 
 func normalizeMapValue(v, vFile, vType string) (interface{}, error) {
@@ -213,7 +216,7 @@ func ObtainOrderingOfValueFlags(args []string) (vOrder []byte) {
 }
 
 func getMap(ctx context.Context, clientConfig *hazelcast.Config, mapName string) (result *hazelcast.Map, err error) {
-	hzcClient, err := internal.ConnectToCluster(ctx, clientConfig)
+	hzcClient, err := connection.ConnectToCluster(ctx, clientConfig)
 	if err != nil {
 		return nil, hzcerrors.NewLoggableError(err, "Cannot get initialize client")
 	}

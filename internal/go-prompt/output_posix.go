@@ -13,7 +13,7 @@ const flushMaxRetryCount = 3
 // To control terminal emulator, this outputs VT100 escape sequences.
 type PosixWriter struct {
 	VT100Writer
-	fd int
+	FD int
 }
 
 // Flush to flush buffer
@@ -22,7 +22,7 @@ func (w *PosixWriter) Flush() error {
 	offset := 0
 	retry := 0
 	for {
-		n, err := syscall.Write(w.fd, w.buffer[offset:])
+		n, err := syscall.Write(w.FD, w.buffer[offset:])
 		if err != nil {
 			if retry < flushMaxRetryCount {
 				retry++
@@ -54,7 +54,7 @@ var (
 // in POSIX OS built on top of a VT100 specification.
 func NewStdoutWriter() ConsoleWriter {
 	return &PosixWriter{
-		fd: syscall.Stdout,
+		FD: syscall.Stdout,
 	}
 }
 
@@ -63,6 +63,6 @@ func NewStdoutWriter() ConsoleWriter {
 // in POSIX OS built on top of a VT100 specification.
 func NewStderrWriter() ConsoleWriter {
 	return &PosixWriter{
-		fd: syscall.Stderr,
+		FD: syscall.Stderr,
 	}
 }

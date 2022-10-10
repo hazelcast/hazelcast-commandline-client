@@ -1,4 +1,4 @@
-package rootcmd
+package rootcmd_test
 
 import (
 	"fmt"
@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
+	"github.com/hazelcast/hazelcast-commandline-client/rootcmd"
 )
 
 func TestNew_HelpContainsFakedoors(t *testing.T) {
@@ -15,7 +16,7 @@ func TestNew_HelpContainsFakedoors(t *testing.T) {
 	cls := it.StartNewClusterWithOptions(t.Name(), p, it.MemberCount())
 	defer cls.Shutdown()
 	cnfg := cls.DefaultConfig()
-	cmd, _ := New(&cnfg)
+	cmd, _ := rootcmd.New(&cnfg, false)
 	var b strings.Builder
 	cmd.SetOut(&b)
 	cmd.SetArgs([]string{"help"})
@@ -66,7 +67,7 @@ func TestNew(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			cmd, _ := New(&cnfg)
+			cmd, _ := rootcmd.New(&cnfg, false)
 			cmd.SetArgs([]string{strings.ToLower(tc.name)})
 			var sb strings.Builder
 			cmd.SetOut(&sb)
