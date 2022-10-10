@@ -36,14 +36,14 @@ import (
 
 // New initializes root command for non-interactive mode
 func New(cnfg *hazelcast.Config, isInteractiveInvocation bool) (*cobra.Command, *config.GlobalFlagValues) {
-	root := NewWithoutPersistentFlags(cnfg)
+	root := NewWithoutPersistentFlags(cnfg, isInteractiveInvocation)
 	var flags config.GlobalFlagValues
 	assignPersistentFlags(root, &flags)
 	return root, &flags
 }
 
 // NewWithoutPersistentFlags initializes root command without the persistent flags
-func NewWithoutPersistentFlags(cnfg *hazelcast.Config) *cobra.Command {
+func NewWithoutPersistentFlags(cnfg *hazelcast.Config, isInteractiveInvocation bool) *cobra.Command {
 	root := &cobra.Command{
 		Use:   "hzc {cluster | map | sql | version | help} [--address address | --cloud-token token | --cluster-name name | --config config]",
 		Short: "Hazelcast command-line client",

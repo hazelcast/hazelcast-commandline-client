@@ -140,14 +140,13 @@ func ProcessConfigAndFlags(rootCmd *cobra.Command, cnfg *config.Config, programA
 	// parse global persistent flags
 	subCmd, flags, err := rootCmd.Find(programArgs)
 	if err != nil {
-		return err
+		return defaultLogger, err
 	}
 	// fall back to cmd.Help, even if there is error
 	if err := subCmd.ParseFlags(flags); err != nil {
 		_ = subCmd.Help()
-		return err
+		return defaultLogger, err
 	}
-	var err error
 	// initialize config from file
 	if err = config.ReadAndMergeWithFlags(globalFlagValues, cnfg); err != nil {
 		return defaultLogger, err

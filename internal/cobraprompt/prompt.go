@@ -83,7 +83,7 @@ func exitPromptSafely() {
 	panic(ErrExit)
 }
 
-func handleExit(l *log.Logger) {
+func handleExit() {
 	switch v := recover().(type) {
 	case nil:
 		return
@@ -241,13 +241,10 @@ func (co CobraPrompt) Init(ctx context.Context, root *cobra.Command, cnfg *hazel
 }
 
 func initInteractiveRootCmd(cnfg *hazelcast.Config, root *cobra.Command, co CobraPrompt, args []string) *cobra.Command {
-	// ignore global flags, they are already parsed
-	rootCopy, _ := rootcmd.New(cnfg, true)
+	// skip the persistent flags since they are parsed on the initial command
+	rootCopy := rootcmd.NewWithoutPersistentFlags(cnfg, true)
 	prepareRootCmdForPrompt(co, rootCopy)
 	cobra_util.InitCommandForCustomInvocation(rootCopy, root.InOrStdin(), root.OutOrStdout(), root.OutOrStderr(), args)
-	rootCopy.SetFlagErrorFunc(func(_ *cobra.Command, err error) error {
-		return hzcerrors.FlagError(err)
-	})
 	return rootCopy
 }
 
@@ -257,7 +254,7 @@ type GoPromptWithGracefulShutdown struct {
 }
 
 func (gp *GoPromptWithGracefulShutdown) Run() {
-	defer handleExit(gp.l)
+	defer handleExit()
 	gp.p.Run()
 }
 
