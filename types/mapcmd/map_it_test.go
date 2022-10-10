@@ -16,7 +16,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
 
-	"github.com/hazelcast/hazelcast-commandline-client/internal"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/connection"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
 )
 
@@ -303,7 +303,7 @@ func TestMapUnlock(t *testing.T) {
 		ctx := context.Background()
 		testKey := serialization.JSON(`"testKey"`)
 		// lock the key with the same go client instance
-		c, err := internal.ConnectToCluster(ctx, cnfg)
+		c, err := connection.ConnectToCluster(ctx, cnfg)
 		require.NoError(t, err)
 		m, err = c.GetMap(ctx, m.Name())
 		require.NoError(t, err)
