@@ -27,6 +27,7 @@ import (
 	"github.com/spf13/cobra"
 
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/connection"
 )
 
@@ -132,7 +133,7 @@ func NewMonitorCmd(config *hazelcast.Config) *cobra.Command {
 				t := time.Now().Format("2006-01-02 15:04:05")
 				fmt.Printf("%s\t%-19s\t%s\t%s\t%s\n", t, state, m.Address, m.Version, m.UUID)
 			})
-			client, err := internal.ConnectToCluster(cmd.Context(), config)
+			client, err := connection.ConnectToCluster(cmd.Context(), config)
 			if err != nil {
 				return err
 			}
