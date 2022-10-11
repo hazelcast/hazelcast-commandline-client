@@ -1,4 +1,4 @@
-package sqlcmd
+package sqlcmd_test
 
 import (
 	"bufio"
@@ -14,6 +14,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/table"
+	"github.com/hazelcast/hazelcast-commandline-client/sqlcmd"
 )
 
 func TestSQLCmd(t *testing.T) {
@@ -99,7 +100,7 @@ Affected rows: 0
 		}
 		for _, tc := range tcs {
 			t.Run(tc.name, func(t *testing.T) {
-				cmd := New(config)
+				cmd := sqlcmd.New(config)
 				var b bytes.Buffer
 				cmd.SetOut(&b)
 				ctx := context.Background()
@@ -117,7 +118,7 @@ Affected rows: 0
 
 func TestSQL_CancelContext(t *testing.T) {
 	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
-		cmd := New(config)
+		cmd := sqlcmd.New(config)
 		//b := &strings.Builder{}
 		r, w := io.Pipe()
 		cmd.SetOut(w)

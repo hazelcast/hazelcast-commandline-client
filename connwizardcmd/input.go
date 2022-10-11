@@ -12,25 +12,24 @@ import (
 var (
 	selectedItemStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("6"))
 	noStyle           = lipgloss.NewStyle()
-	blurStyle         = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 )
 
 const (
 	viridian   = 0
-	standalone = 2
-	ssl        = 3
-	approval   = 4
+	standalone = 1
+	ssl        = 2
+	approval   = 3
 )
 
 const (
-	clusterNameMsg    = "- Cluster Name: "
-	addressesMsg      = "- Member Addresses: "
-	setupSslMsg       = "- Setup SSL? (y/n): "
-	discoveryTokenMsg = "- Discovery Token: "
-	caPathMsg         = "- CA Certificate Path: "
-	certPathMsg       = "- SSL Certificate Path: "
-	keyPathMsg        = "- SSL Key Path: "
-	passwordMsg       = "- SSL Password: "
+	clusterNameMsg    = "• Cluster Name: "
+	addressesMsg      = "• Member Addresses: "
+	setupSslMsg       = "• Setup SSL? (y/n): "
+	discoveryTokenMsg = "• Discovery Token: "
+	caPathMsg         = "• CA Certificate Path: "
+	certPathMsg       = "• SSL Certificate Path: "
+	keyPathMsg        = "• SSL Key Path: "
+	passwordMsg       = "• SSL Password: "
 
 	approvalMsg = "Your config file will be overwritten, do you want to continue? (y/n): "
 	submitMsg   = "[ Submit ]"
@@ -255,11 +254,9 @@ func (m InputModel) View() string {
 		case ssl:
 			msg = sslInfoMsg
 		}
-		if m.inputType != approval {
-			_, err := fmt.Fprintf(&b, "%s\n", fmt.Sprintf("%s", noStyle.Render(msg)))
-			if err != nil {
-				return ""
-			}
+		isApproval := m.inputType == approval
+		if !isApproval {
+			fmt.Fprintf(&b, "%s\n", fmt.Sprintf("%s", noStyle.Render(msg)))
 		}
 		for i := range m.inputs {
 			b.WriteString(m.inputs[i].View())
@@ -267,7 +264,7 @@ func (m InputModel) View() string {
 				b.WriteRune('\n')
 			}
 		}
-		if m.inputType != approval {
+		if !isApproval {
 			button := fmt.Sprintf("%s", noStyle.Render(submitMsg))
 			if m.focusIndex == len(m.inputs) {
 				button = fmt.Sprintf("%s", selectedItemStyle.Copy().Render(submitMsg))

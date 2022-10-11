@@ -27,6 +27,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clustercmd"
 	"github.com/hazelcast/hazelcast-commandline-client/config"
+	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/listobjectscmd"
 	"github.com/hazelcast/hazelcast-commandline-client/sqlcmd"
 	fakeDoor "github.com/hazelcast/hazelcast-commandline-client/types/fakedoorcmd"
@@ -35,8 +36,15 @@ import (
 )
 
 // New initializes root command for non-interactive mode
-func New(cnfg *hazelcast.Config) (*cobra.Command, *config.GlobalFlagValues) {
+func New(cnfg *hazelcast.Config, isInteractiveInvocation bool) (*cobra.Command, *config.GlobalFlagValues) {
+	root := NewWithoutPersistentFlags(cnfg, isInteractiveInvocation)
 	var flags config.GlobalFlagValues
+	assignPersistentFlags(root, &flags)
+	return root, &flags
+}
+
+// NewWithoutPersistentFlags initializes root command without the persistent flags
+func NewWithoutPersistentFlags(cnfg *hazelcast.Config, isInteractiveInvocation bool) *cobra.Command {
 	root := &cobra.Command{
 		Use:   "hzc {cluster | map | sql | version | help} [--address address | --cloud-token token | --cluster-name name | --config config]",
 		Short: "Hazelcast command-line client",
@@ -47,6 +55,7 @@ hzc sql # starts the SQL Browser
 hzc help # print help`,
 		// Handle errors explicitly
 		SilenceErrors: true,
+		SilenceUsage:  true,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			// Make sure the command receives non-nil configuration
 			if cnfg == nil {
@@ -58,20 +67,24 @@ hzc help # print help`,
 			return cmd.Help()
 		},
 	}
+	// print usage on flag errors
+	root.SetFlagErrorFunc(func(cmd *cobra.Command, err error) error {
+		_ = cmd.Help()
+		return hzcerrors.FlagError{err}
+	})
 	root.CompletionOptions.DisableDefaultCmd = true
 	// This is used to generate completion scripts
 	if mode := os.Getenv("MODE"); strings.EqualFold(mode, "dev") {
 		root.CompletionOptions.DisableDefaultCmd = false
 	}
-	assignPersistentFlags(root, &flags)
-	root.AddCommand(subCommands(cnfg)...)
-	return root, &flags
+	root.AddCommand(subCommands(cnfg, isInteractiveInvocation)...)
+	return root
 }
 
-func subCommands(config *hazelcast.Config) []*cobra.Command {
+func subCommands(config *hazelcast.Config, isInteractiveInvocation bool) []*cobra.Command {
 	cmds := []*cobra.Command{
 		clustercmd.New(config),
-		mapcmd.New(config),
+		mapcmd.New(config, isInteractiveInvocation),
 		sqlcmd.New(config),
 		versioncmd.New(),
 		listobjectscmd.New(config),

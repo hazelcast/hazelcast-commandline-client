@@ -19,7 +19,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"fmt"
-	"log"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -32,6 +32,7 @@ import (
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/file"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/tuiutil"
+	"github.com/hazelcast/hazelcast-commandline-client/log"
 )
 
 const defaultConfigFilename = "config.yaml"
@@ -56,7 +57,11 @@ type Config struct {
 	SSL              SSLConfig
 	NoAutocompletion bool
 	Styling          Styling
-	Logger           *log.Logger `json:"-"`
+	Logger           Logger
+}
+
+type Logger struct {
+	LogFile string
 }
 
 type Styling struct {
@@ -83,8 +88,6 @@ func DefaultConfig() Config {
 	hz.Cluster.Name = DefaultClusterName
 	hz.Stats.Enabled = true
 	dc := Config{Hazelcast: hz}
-	// pretty standard Logger
-	dc.Logger = log.New(os.Stderr, "", log.LstdFlags|log.Lmsgprefix)
 	return dc
 }
 
@@ -123,7 +126,11 @@ ssl:
 noautocompletion: false
 styling:
   # builtin themes: default, no-color, solarized
-  theme: "default"`
+  theme: "default"
+logger:
+  # see hazelcast.logger.level to adjust the log level of the Hazelcast Client 
+  logfile: ""
+`
 
 var ValidLogLevels = []string{
 	string(logger.OffLevel),
@@ -159,27 +166,31 @@ func ReadAndMergeWithFlags(flags *GlobalFlagValues, c *Config) error {
 		return err
 	}
 	setStyling(flags.NoColor, c)
-	if err := mergeFlagsWithConfig(flags, c); err != nil {
-		return err
-	}
-	if err := arrangeLogger(c, flags); err != nil {
-		return err
-	}
-	return nil
+	return mergeFlagsWithConfig(flags, c)
 }
 
-func arrangeLogger(c *Config, flags *GlobalFlagValues) error {
+func SetupLogger(c *Config, flags *GlobalFlagValues, logOut io.Writer) (log.Logger, error) {
+	var logFile string
+	out := log.NopWriteCloser(logOut)
+	// flag option has the precedence
 	if flags.LogFile != "" {
-		f, err := os.OpenFile(flags.LogFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-		if err != nil {
-			return hzcerrors.NewLoggableError(err, "Can not open/create the log file on the specified path %s", flags.LogFile)
-		}
-		c.Logger.SetOutput(f)
+		logFile = flags.LogFile
+	} else if c.Logger.LogFile != "" {
+		logFile = c.Logger.LogFile
 	}
-	// set custom Logger, and unset log level. Go client raises an error if both are set
-	c.Hazelcast.Logger.CustomLogger = newGoClientLogger(c.Logger, c.Hazelcast.Logger.Level)
+	if logFile != "" {
+		f, err := os.OpenFile(logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		if err != nil {
+			return log.Logger{}, hzcerrors.NewLoggableError(err, "Can not open/create the log file on the specified path %s", flags.LogFile)
+		}
+		out = f
+	}
+	l := log.NewLogger(out)
+	// set custom Logger
+	c.Hazelcast.Logger.CustomLogger = log.NewClientLogger(l.Logger, c.Hazelcast.Logger.Level)
+	// unset log level. Go client raises an error if both are set
 	c.Hazelcast.Logger.Level = ""
-	return nil
+	return l, nil
 }
 
 func setStyling(noColorFlag bool, c *Config) {
@@ -316,7 +327,7 @@ func GetClusterAddress(c *hazelcast.Config) string {
 	var address string
 	switch {
 	case c.Cluster.Cloud.Enabled:
-		address = "hazelcast-cloud"
+		address = "hazelcast-viridian"
 	case len(c.Cluster.Network.Addresses) > 0:
 		address = c.Cluster.Network.Addresses[0]
 	default:

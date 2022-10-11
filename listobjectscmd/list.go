@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
-	"github.com/hazelcast/hazelcast-commandline-client/internal"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/connection"
 )
 
 const (
@@ -71,7 +71,7 @@ func New(config *hazelcast.Config) *cobra.Command {
   list --type fencedlock`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
-			c, err := internal.ConnectToCluster(ctx, config)
+			c, err := connection.ConnectToCluster(ctx, config)
 			if err != nil {
 				return hzcerrors.NewLoggableError(err, "Can not connect to the cluster")
 			}

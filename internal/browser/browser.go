@@ -3,6 +3,7 @@ package browser
 import (
 	"context"
 	"fmt"
+	"io"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -340,7 +341,7 @@ func (c controller) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return c, cmd
 }
 
-func InitSQLBrowser(client *hazelcast.Client) *tea.Program {
+func InitSQLBrowser(client *hazelcast.Client, in io.Reader, out io.Writer) *tea.Program {
 	var s SeparatorWithProgress
 	textArea := multiline.InitTextArea()
 	table := &table{}
@@ -380,6 +381,8 @@ func InitSQLBrowser(client *hazelcast.Client) *tea.Program {
 	}, []int{3, -1, 1, -1}), client}
 	p := tea.NewProgram(
 		c,
+		tea.WithOutput(out),
+		tea.WithInput(in),
 	)
 	return p
 }

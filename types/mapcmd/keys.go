@@ -23,30 +23,33 @@ import (
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 )
 
-const MapClearExample = `  # Clear all entries of given map.
-  hzc map clear -n mapname`
+const MapKeysExample = `  # Get all the keys from the map.
+  hzc keys -n mapname`
 
-func NewClear(config *hazelcast.Config) *cobra.Command {
+func NewKeys(config *hazelcast.Config) *cobra.Command {
 	var mapName string
 	cmd := &cobra.Command{
-		Use:     "clear [--name mapname]",
-		Short:   "Clear entries of the map",
-		Example: MapClearExample,
-		PreRunE: hzcerrors.RequiredFlagChecker,
+		Use:     "keys --name mapname",
+		Short:   "Get all the keys from the map",
+		Example: MapKeysExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			var err error
+			var keys []interface{}
+			var m *hazelcast.Map
 			m, err := getMap(cmd.Context(), config, mapName)
 			if err != nil {
 				return err
 			}
-			err = m.Clear(cmd.Context())
+			keys, err = m.GetKeySet(cmd.Context())
 			if err != nil {
 				var handled bool
 				handled, err = isCloudIssue(err, config)
 				if handled {
 					return err
 				}
-				return hzcerrors.NewLoggableError(err, "Cannot clear map %s", mapName)
+				return hzcerrors.NewLoggableError(err, "Cannot get entries for the given keys for map %s", mapName)
+			}
+			for _, k := range keys {
+				cmd.Println(formatGoTypeToOutput(k))
 			}
 			return nil
 		},

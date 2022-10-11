@@ -21,36 +21,43 @@ import (
 	"github.com/spf13/cobra"
 
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
-const MapClearExample = `  # Clear all entries of given map.
-  hzc map clear -n mapname`
+const MapForceUnlockExample = `  # Force-unlock the specified key of the specified map.
+  hzc map force-unlock --key mapkey --name mapname`
 
-func NewClear(config *hazelcast.Config) *cobra.Command {
-	var mapName string
+func NewForceUnlock(config *hazelcast.Config) *cobra.Command {
+	var (
+		mapName, mapKey, mapKeyType string
+	)
 	cmd := &cobra.Command{
-		Use:     "clear [--name mapname]",
-		Short:   "Clear entries of the map",
-		Example: MapClearExample,
-		PreRunE: hzcerrors.RequiredFlagChecker,
+		Use:     "force-unlock --key mapkey --name m apname",
+		Short:   "Force unlock the map",
+		Example: MapForceUnlockExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			var err error
+			key, err := internal.ConvertString(mapKey, mapKeyType)
+			if err != nil {
+				return hzcerrors.NewLoggableError(err, "Conversion error on key %s to type %s, %s", mapKey, mapKeyType, err)
+			}
 			m, err := getMap(cmd.Context(), config, mapName)
 			if err != nil {
 				return err
 			}
-			err = m.Clear(cmd.Context())
+			err = m.ForceUnlock(cmd.Context(), key)
 			if err != nil {
 				var handled bool
 				handled, err = isCloudIssue(err, config)
 				if handled {
 					return err
 				}
-				return hzcerrors.NewLoggableError(err, "Cannot clear map %s", mapName)
+				return hzcerrors.NewLoggableError(err, "Can not force-unlock the key from map %s", mapName)
 			}
 			return nil
 		},
 	}
 	decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name")
+	decorateCommandWithMapKeyFlags(cmd, &mapKey, true, "key of the entry")
+	decorateCommandWithMapKeyTypeFlags(cmd, &mapKeyType, false)
 	return cmd
 }

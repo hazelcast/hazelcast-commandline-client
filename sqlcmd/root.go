@@ -23,8 +23,8 @@ import (
 	"github.com/spf13/cobra"
 
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
-	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/browser"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/connection"
 )
 
 const (
@@ -46,7 +46,7 @@ sql "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR, this VARCHAR) TYPE IMAP 
 					outputType, outputPretty, outputCSV)
 			}
 			ctx := cmd.Context()
-			c, err := internal.ConnectToCluster(ctx, config)
+			c, err := connection.ConnectToCluster(ctx, config)
 			if err != nil {
 				return hzcerrors.NewLoggableError(err, "Cannot get initialize SQL driver")
 			}
@@ -54,11 +54,12 @@ sql "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR, this VARCHAR) TYPE IMAP 
 			q = strings.TrimSpace(q)
 			if len(q) == 0 {
 				// If no queries given, run sql browser
-				p := browser.InitSQLBrowser(c)
+				p := browser.InitSQLBrowser(c, cmd.InOrStdin(), cmd.OutOrStdout())
 				if err := p.Start(); err != nil {
 					fmt.Println("could not run sql browser:", err)
 					return err
 				}
+				// spinner
 				return nil
 			}
 			// If a statement is provided, run it in non-interactive mode

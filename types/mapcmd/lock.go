@@ -17,40 +17,55 @@
 package mapcmd
 
 import (
+	"time"
+
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
-const MapClearExample = `  # Clear all entries of given map.
-  hzc map clear -n mapname`
+const MapLockExample = `  # Lock the specified key of the given map.
+  hzc map lock --key mapkey --name mapname --lease-time 10ms`
 
-func NewClear(config *hazelcast.Config) *cobra.Command {
-	var mapName string
+func NewLock(config *hazelcast.Config) *cobra.Command {
+	var (
+		mapName, mapKey, mapKeyType string
+		leaseTime                   time.Duration
+	)
 	cmd := &cobra.Command{
-		Use:     "clear [--name mapname]",
-		Short:   "Clear entries of the map",
-		Example: MapClearExample,
-		PreRunE: hzcerrors.RequiredFlagChecker,
+		Use:     "lock --key mapkey --name mapname [--lease-time duration]",
+		Short:   "Lock the specified key of the given map",
+		Example: MapLockExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			var err error
+			key, err := internal.ConvertString(mapKey, mapKeyType)
+			if err != nil {
+				return hzcerrors.NewLoggableError(err, "Conversion error on key %s to type %s, %s", mapKey, mapKeyType, err)
+			}
 			m, err := getMap(cmd.Context(), config, mapName)
 			if err != nil {
 				return err
 			}
-			err = m.Clear(cmd.Context())
+			if leaseTime.Milliseconds() != 0 {
+				err = m.LockWithLease(cmd.Context(), key, leaseTime)
+			} else {
+				err = m.Lock(cmd.Context(), key)
+			}
 			if err != nil {
 				var handled bool
 				handled, err = isCloudIssue(err, config)
 				if handled {
 					return err
 				}
-				return hzcerrors.NewLoggableError(err, "Cannot clear map %s", mapName)
+				return hzcerrors.NewLoggableError(err, "Cannot get the size of the map %s", mapName)
 			}
 			return nil
 		},
 	}
 	decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name")
+	decorateCommandWithMapKeyFlags(cmd, &mapKey, true, "key of the entry")
+	decorateCommandWithMapKeyTypeFlags(cmd, &mapKeyType, false)
+	decorateCommandWithLeaseTime(cmd, &leaseTime, false, "duration to hold the lock (default: indefinitely)")
 	return cmd
 }

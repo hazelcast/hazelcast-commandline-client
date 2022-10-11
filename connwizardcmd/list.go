@@ -30,7 +30,7 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 	fn := noStyle.Render
 	if index == m.Index() {
 		fn = func(s string) string {
-			return selectedItemStyle.Render("> " + s)
+			return selectedItemStyle.Render(s)
 		}
 	}
 	fmt.Fprintf(w, fn(str))
@@ -38,11 +38,30 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 
 type ListModel struct {
 	list     list.Model
-	items    []item
 	quitting bool
 }
 
+func InitializeListModel() ListModel {
+	items := []list.Item{
+		item("Hazelcast Viridian"),
+		item("Local (Default)"),
+		item("Standalone (Remote or Local)"),
+	}
+	l := list.New(items, itemDelegate{}, 20, 14)
+	l.Title = "Where is your Hazelcast cluster (Press Ctrl+C to quit)?"
+	l.Styles.Title = noStyle
+	l.Styles.TitleBar = noStyle
+	l.SetShowStatusBar(false)
+	l.SetShowHelp(false)
+	l.SetFilteringEnabled(false)
+	return ListModel{
+		l,
+		false,
+	}
+}
+
 func (m ListModel) Init() tea.Cmd {
+
 	return nil
 }
 

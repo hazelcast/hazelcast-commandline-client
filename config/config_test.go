@@ -16,9 +16,12 @@
 package config
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"sync/atomic"
 	"testing"
@@ -215,16 +218,107 @@ func TestDefaultConfigWritten(t *testing.T) {
 	cfg = Config{}
 	require.NoError(t, yaml.Unmarshal(b, &cfg))
 	cc := cfg.Hazelcast.Cluster
-	assert.Equal(t, "dev", cc.Name)
-	assert.Equal(t, true, cc.Unisocket)
-	assert.Equal(t, cluster.NetworkConfig{Addresses: []string{"localhost:5701"}}, cc.Network)
-	assert.Equal(t, cluster.CloudConfig{}, cc.Cloud)
-	assert.Equal(t, cluster.SecurityConfig{}, cc.Security)
-	assert.Equal(t, cluster.DiscoveryConfig{}, cc.Discovery)
-	assert.Equal(t, logger.ErrorLevel, cfg.Hazelcast.Logger.Level)
-	assert.Equal(t, SSLConfig{}, cfg.SSL)
-	assert.Equal(t, false, cfg.NoAutocompletion)
-	assert.Equal(t, "default", cfg.Styling.Theme)
+	require.Equal(t, "dev", cc.Name)
+	require.Equal(t, true, cc.Unisocket)
+	require.Equal(t, cluster.NetworkConfig{Addresses: []string{"localhost:5701"}}, cc.Network)
+	require.Equal(t, cluster.CloudConfig{}, cc.Cloud)
+	require.Equal(t, cluster.SecurityConfig{}, cc.Security)
+	require.Equal(t, cluster.DiscoveryConfig{}, cc.Discovery)
+	require.Equal(t, logger.ErrorLevel, cfg.Hazelcast.Logger.Level)
+	require.Equal(t, SSLConfig{}, cfg.SSL)
+	require.Equal(t, false, cfg.NoAutocompletion)
+	require.Equal(t, "default", cfg.Styling.Theme)
+	require.Empty(t, cfg.Logger.LogFile)
+}
+
+func TestSetupLogger(t *testing.T) {
+	logFileDir := t.TempDir()
+	tcs := []struct {
+		name                 string
+		logFile              string
+		gfv                  GlobalFlagValues
+		shouldLogToFile      bool // if false, should log to out
+		logShouldOnlyContain []string
+		isErr                bool
+	}{
+		{
+			name: "No file, no log-level specified. Should log to out.",
+			gfv:  GlobalFlagValues{},
+		},
+		{
+			name:            "Log file specified. Should log to file.",
+			gfv:             GlobalFlagValues{},
+			logFile:         path.Join(logFileDir, "log1.txt"),
+			shouldLogToFile: true,
+		},
+		{
+			name:            "Log file specified via flag. Should log to file.",
+			gfv:             GlobalFlagValues{LogFile: path.Join(logFileDir, "log2.txt")},
+			shouldLogToFile: true,
+		},
+		{
+			name: "Log file specified with both flag and config. Flag should take precedence.It should log to file.",
+			gfv: GlobalFlagValues{
+				LogFile: path.Join(logFileDir, "log3.txt"),
+			},
+			logFile:         "/path/that/dont/exist",
+			shouldLogToFile: true,
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			var bb bytes.Buffer
+			c := DefaultConfig()
+			c.Logger.LogFile = tc.logFile
+			l, err := SetupLogger(&c, &tc.gfv, &bb)
+			if tc.isErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			defer l.Close()
+			// log level must set to empty, otherwise go client throws an error
+			require.Empty(t, c.Hazelcast.Logger.Level)
+			customL := c.Hazelcast.Logger.CustomLogger
+			// a custom logger must be set in all cases
+			require.NotNil(t, customL)
+			customL.Log(logger.WeightFatal, func() string {
+				return "fatal"
+			})
+			customL.Log(logger.WeightError, func() string {
+				return "error"
+			})
+			customL.Log(logger.WeightWarn, func() string {
+				return "warn"
+			})
+			l.Println("clc")
+			require.NoError(t, l.Close())
+			var logs string
+			if tc.shouldLogToFile {
+				lf := tc.logFile
+				if tc.gfv.LogFile != "" {
+					lf = tc.gfv.LogFile
+				}
+				content, err := ioutil.ReadFile(lf)
+				require.NoError(t, err)
+				logs = string(content)
+				// buffer must be untouched if logs are written to the file
+				require.Zero(t, bb.Len())
+			} else {
+				logs = bb.String()
+				require.NoFileExists(t, tc.logFile)
+			}
+			contains := make(map[string]struct{})
+			for _, e := range tc.logShouldOnlyContain {
+				contains[e] = struct{}{}
+			}
+			// should contain
+			for _, keyword := range []string{"error", "fatal", "clc"} {
+				require.Contains(t, logs, keyword)
+			}
+			require.NotContains(t, logs, "warn")
+		})
+	}
 }
 
 var pathID int32

@@ -17,6 +17,8 @@
 package mapcmd
 
 import (
+	"time"
+
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 
@@ -24,18 +26,18 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
-func NewRemove(config *hazelcast.Config) *cobra.Command {
+const MapTryLockExample = `  # Try to lock the specified key of the specified map. Prints "unsuccessful" if not successful.
+  hzc map trylock --key mapkey --name mapname --timeout 10ms --lease-time 2m`
+
+func NewTryLock(config *hazelcast.Config) *cobra.Command {
 	var (
-		mapName,
-		mapKeyType,
-		mapKey string
+		mapName, mapKey, mapKeyType string
+		timeout, leaseTime          time.Duration
 	)
 	cmd := &cobra.Command{
-		Use:   "remove [--name mapname | --key keyname]",
-		Short: "Remove key",
-		Example: `  # Remove key from the map
-  hzc map remove -n mapname -k k1`,
-		PreRunE: hzcerrors.RequiredFlagChecker,
+		Use:     "trylock --key mapkey --name mapname [--lease-time duration] [--timeout duration]",
+		Short:   "trylock the map",
+		Example: MapTryLockExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			key, err := internal.ConvertString(mapKey, mapKeyType)
 			if err != nil {
@@ -45,14 +47,28 @@ func NewRemove(config *hazelcast.Config) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			_, err = m.Remove(cmd.Context(), key)
+			var success bool
+			ctx := cmd.Context()
+			timeoutSet, leaseSet := timeout.Milliseconds() != 0, leaseTime.Milliseconds() != 0
+			if timeoutSet && leaseSet {
+				success, err = m.TryLockWithLeaseAndTimeout(ctx, key, leaseTime, timeout)
+			} else if timeoutSet {
+				success, err = m.TryLockWithTimeout(ctx, key, timeout)
+			} else if leaseSet {
+				success, err = m.TryLockWithLease(ctx, key, leaseTime)
+			} else {
+				success, err = m.TryLock(ctx, key)
+			}
 			if err != nil {
 				var handled bool
 				handled, err = isCloudIssue(err, config)
 				if handled {
 					return err
 				}
-				return hzcerrors.NewLoggableError(err, "Cannot remove given key from map %s", mapName)
+				return hzcerrors.NewLoggableError(err, "Can not do tryLock operation on the map %s", mapName)
+			}
+			if !success {
+				cmd.Println("unsuccessful")
 			}
 			return nil
 		},
@@ -60,5 +76,7 @@ func NewRemove(config *hazelcast.Config) *cobra.Command {
 	decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name")
 	decorateCommandWithMapKeyFlags(cmd, &mapKey, true, "key of the entry")
 	decorateCommandWithMapKeyTypeFlags(cmd, &mapKeyType, false)
+	decorateCommandWithTimeout(cmd, &timeout, false, "duration to wait for the lock to be available")
+	decorateCommandWithLeaseTime(cmd, &leaseTime, false, "duration to hold the lock (default: indefinitely)")
 	return cmd
 }

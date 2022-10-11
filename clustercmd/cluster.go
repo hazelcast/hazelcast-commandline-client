@@ -23,7 +23,7 @@ import (
 	"github.com/spf13/cobra"
 
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
-	"github.com/hazelcast/hazelcast-commandline-client/internal"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/connection"
 )
 
 const invocationOnCloudInfoMessage = "Cluster operations on cloud are not supported. Checkout https://github.com/hazelcast/hazelcast-cloud-cli for cluster management on cloud."
@@ -40,6 +40,8 @@ func New(config *hazelcast.Config) *cobra.Command {
 			}
 			return nil
 		},
+		DisableFlagParsing: true,
+		RunE:               hzcerrors.RootRunnerFnc,
 	}
 	subCmds := []struct {
 		command string
@@ -62,11 +64,12 @@ func New(config *hazelcast.Config) *cobra.Command {
 		// copy to use it in the inner func
 		sc := sc
 		cmd.AddCommand(&cobra.Command{
-			Use:   sc.command,
-			Short: sc.info,
+			Use:     sc.command,
+			Short:   sc.info,
+			PreRunE: hzcerrors.RequiredFlagChecker,
 			RunE: func(cmd *cobra.Command, args []string) error {
-				defer hzcerrors.ErrorRecover()
-				result, err := internal.CallClusterOperation(config, sc.command)
+				defer hzcerrors.ErrorRecover(cmd.ErrOrStderr())
+				result, err := connection.CallClusterOperation(config, sc.command)
 				if err != nil {
 					return err
 				}
@@ -86,11 +89,12 @@ func NewChangeState(config *hazelcast.Config) *cobra.Command {
 	// monitored flag variable
 	var newState string
 	cmd := &cobra.Command{
-		Use:   fmt.Sprintf("change-state [--state [%s]]", strings.Join(states, ",")),
-		Short: "Change state of the cluster",
+		Use:     fmt.Sprintf("change-state [--state [%s]]", strings.Join(states, ",")),
+		Short:   "Change state of the cluster",
+		PreRunE: hzcerrors.RequiredFlagChecker,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			defer hzcerrors.ErrorRecover()
-			result, err := internal.CallClusterOperationWithState(config, "change-state", &newState)
+			defer hzcerrors.ErrorRecover(cmd.ErrOrStderr())
+			result, err := connection.CallClusterOperationWithState(config, "change-state", &newState)
 			if err != nil {
 				return err
 			}

@@ -2,7 +2,6 @@ package connwizardcmd
 
 import (
 	"errors"
-	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hazelcast/hazelcast-commandline-client/config"
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
@@ -15,19 +14,7 @@ func New() *cobra.Command {
 		Short: "Assist with connection configuration",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			exists := config.ConfigExists()
-			items := []list.Item{
-				item("Hazelcast Viridian"),
-				item("Local (Default)"),
-				item("Standalone (Remote or Local)"),
-			}
-			l := list.New(items, itemDelegate{}, 20, 14)
-			l.Title = "Where is your Hazelcast cluster (Press Ctrl+C to quit)?"
-			l.Styles.Title = noStyle
-			l.Styles.TitleBar = noStyle
-			l.SetShowStatusBar(false)
-			l.SetShowHelp(false)
-			l.SetFilteringEnabled(false)
-			m := ListModel{list: l}
+			m := InitializeListModel()
 			if err := tea.NewProgram(m).Start(); err != nil {
 				return err
 			}

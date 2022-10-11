@@ -17,37 +17,41 @@
 package mapcmd
 
 import (
+	"fmt"
+
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 )
 
-const MapClearExample = `  # Clear all entries of given map.
-  hzc map clear -n mapname`
+const MapDestroyExample = `  # Destroy the given map.
+  hzc map destroy --name mapname`
 
-func NewClear(config *hazelcast.Config) *cobra.Command {
+func NewDestroy(config *hazelcast.Config) *cobra.Command {
 	var mapName string
 	cmd := &cobra.Command{
-		Use:     "clear [--name mapname]",
-		Short:   "Clear entries of the map",
-		Example: MapClearExample,
-		PreRunE: hzcerrors.RequiredFlagChecker,
+		Use:     "destroy --name mapname",
+		Short:   "Destroy the map",
+		Example: MapDestroyExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			var err error
 			m, err := getMap(cmd.Context(), config, mapName)
 			if err != nil {
+				fmt.Println("get map err ")
 				return err
 			}
-			err = m.Clear(cmd.Context())
+			err = m.Destroy(cmd.Context())
 			if err != nil {
 				var handled bool
 				handled, err = isCloudIssue(err, config)
 				if handled {
+					fmt.Println("handled")
 					return err
 				}
-				return hzcerrors.NewLoggableError(err, "Cannot clear map %s", mapName)
+				fmt.Println("normal err")
+				return hzcerrors.NewLoggableError(err, "Cannot get the size of the map %s", mapName)
 			}
+			fmt.Println("normal return")
 			return nil
 		},
 	}

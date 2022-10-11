@@ -33,6 +33,7 @@ func NewGet(config *hazelcast.Config) *cobra.Command {
 		Use:     "get [--name mapname | --key keyname]",
 		Short:   "Get single entry from the map",
 		Example: MapGetExample,
+		PreRunE: hzcerrors.RequiredFlagChecker,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			key, err := internal.ConvertString(mapKey, mapKeyType)
 			if err != nil {
@@ -51,7 +52,7 @@ func NewGet(config *hazelcast.Config) *cobra.Command {
 				}
 				return hzcerrors.NewLoggableError(err, "Cannot get value for key %s from map %s", mapKey, mapName)
 			}
-			printValueBasedOnType(cmd, value)
+			cmd.Println(formatGoTypeToOutput(value))
 			return nil
 		},
 	}
