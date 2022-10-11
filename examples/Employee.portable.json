@@ -1,0 +1,23 @@
+{
+  "Name": "Employee",
+  "FactoryID": 100,
+  "ClassID": 2,
+  "Fields": [
+    {
+      "Name": "FirstName",
+      "Type": "string"
+    },
+    {
+      "Name": "LastName",
+      "Type": "string"
+    },
+    {
+      "Name": "DateOfBirth",
+      "Type": "date"
+    },
+    {
+      "Name": "Department",
+      "Type": "int32"
+    }
+  ]
+}

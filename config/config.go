@@ -31,6 +31,7 @@ import (
 
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/file"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/tuiutil"
 	"github.com/hazelcast/hazelcast-commandline-client/log"
 )
@@ -58,6 +59,7 @@ type Config struct {
 	NoAutocompletion bool
 	Styling          Styling
 	Logger           Logger
+	SchemaDir        string
 }
 
 type Logger struct {
@@ -79,6 +81,7 @@ type GlobalFlagValues struct {
 	NoColor          bool
 	LogFile          string
 	LogLevel         string
+	SchemaDir        string
 }
 
 func DefaultConfig() Config {
@@ -258,6 +261,14 @@ func mergeFlagsWithConfig(flags *GlobalFlagValues, config *Config) error {
 	// overwrite config if flag is set
 	if flags.NoAutocompletion {
 		config.NoAutocompletion = true
+	}
+	// TODO: refactor this to a reusable function
+	schemaDir := flags.SchemaDir
+	if schemaDir == "" {
+		schemaDir = config.SchemaDir
+	}
+	if schemaDir != "" {
+		serialization.UpdateConfigWithRecursivePaths(&config.Hazelcast, schemaDir)
 	}
 	return nil
 }

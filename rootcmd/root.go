@@ -122,7 +122,7 @@ func assignPersistentFlags(cmd *cobra.Command, flags *config.GlobalFlagValues) {
 	if err != nil {
 		panic(err)
 	}
-
+	cmd.PersistentFlags().StringVar(&flags.SchemaDir, "schema-dir", "", "set the schema directory")
 }
 
 func init() {

@@ -26,11 +26,13 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/spf13/cobra"
 
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/connection"
+	iserialization "github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
 const (
@@ -130,6 +132,31 @@ func formatGoTypeToOutput(v interface{}) string {
 	return fmt.Sprint(v)
 }
 
+func printValueBasedOnType(cmd *cobra.Command, value interface{}, valueType int32, showType bool) {
+	var strValue string
+	typeValue := iserialization.TypeToString(valueType)
+	switch v := value.(type) {
+	case iserialization.NondecodedType:
+		if showType {
+			strValue = "NOT_DECODED"
+		} else {
+			strValue = fmt.Sprintf("[NODECODE:%s]", typeValue)
+		}
+	case serialization.JSON:
+		strValue = v.String()
+	default:
+		if v != nil {
+			strValue = fmt.Sprintf("%s", v)
+		} else if showType {
+			strValue = "NO_VALUE"
+		}
+	}
+	if showType {
+		strValue = fmt.Sprintf("%s\t%s", typeValue, strValue)
+	}
+	fmt.Println(strValue)
+}
+
 func normalizeMapValue(v, vFile, vType string) (interface{}, error) {
 	var valueStr string
 	var err error
@@ -215,18 +242,29 @@ func ObtainOrderingOfValueFlags(args []string) (vOrder []byte) {
 	return
 }
 
-func getMap(ctx context.Context, clientConfig *hazelcast.Config, mapName string) (result *hazelcast.Map, err error) {
-	hzcClient, err := connection.ConnectToCluster(ctx, clientConfig)
+func getMap(ctx context.Context, cfg *hazelcast.Config, mapName string) (result *hazelcast.Map, err error) {
+	ci, err := getClient(ctx, cfg)
+	return getClientMap(ctx, ci.Client(), cfg, mapName)
+}
+
+func getClientMap(ctx context.Context, client *hazelcast.Client, cfg *hazelcast.Config, name string) (*hazelcast.Map, error) {
+	m, err := client.GetMap(ctx, name)
 	if err != nil {
-		return nil, hzcerrors.NewLoggableError(err, "Cannot get initialize client")
-	}
-	if result, err = hzcClient.GetMap(ctx, mapName); err != nil {
-		if msg, isHandled := hzcerrors.TranslateNetworkError(err, clientConfig.Cluster.Cloud.Enabled); isHandled {
+		if msg, isHandled := hzcerrors.TranslateNetworkError(err, cfg.Cluster.Cloud.Enabled); isHandled {
 			err = hzcerrors.NewLoggableError(err, msg)
 		}
 		return nil, err
 	}
-	return
+	return m, nil
+}
+
+func getClient(ctx context.Context, cfg *hazelcast.Config) (*hazelcast.ClientInternal, error) {
+	c, err := connection.ConnectToCluster(ctx, cfg)
+	if err != nil {
+		return nil, hzcerrors.NewLoggableError(err, "Cannot initialize client")
+	}
+	ci := hazelcast.NewClientInternal(c)
+	return ci, nil
 }
 
 func decorateCommandWithValueFlags(cmd *cobra.Command, mapValue, mapValueFile *string) {
@@ -311,4 +349,8 @@ func decorateCommandWithMapValueFileArrayFlags(cmd *cobra.Command, mapValueFiles
 			panic(err)
 		}
 	}
+}
+
+func decorateCommandWithShowTypesFlag(cmd *cobra.Command, value *bool) {
+	cmd.Flags().BoolVar(value, "show-type", false, "show key and/or value types")
 }

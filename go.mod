@@ -6,7 +6,7 @@ require (
 	github.com/Netflix/go-expect v0.0.0-20220104043353-73e0943537d2
 	github.com/alecthomas/assert v0.0.0-20170929043011-405dbfeb8e38
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
-	github.com/hazelcast/hazelcast-go-client v1.3.1-0.20220927121914-35e33c479ef2
+	github.com/hazelcast/hazelcast-go-client v1.3.1-0.20221005090358-58f17bb84ba8
 	github.com/lucasb-eyer/go-colorful v1.2.0
 	github.com/mattn/go-colorable v0.1.7
 	github.com/mattn/go-runewidth v0.0.13
