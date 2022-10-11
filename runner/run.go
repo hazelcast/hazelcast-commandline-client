@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/hazelcast/hazelcast-commandline-client/connwizardcmd"
 	"io"
 	"os"
 	"os/signal"
@@ -36,13 +37,16 @@ func CLC(programArgs []string, stdin io.Reader, stdout io.Writer, stderr io.Writ
 	var err error
 	rootCmd, globalFlagValues := rootcmd.New(&cfg.Hazelcast, false)
 	cobra_util.InitCommandForCustomInvocation(rootCmd, stdin, stdout, stderr, programArgs)
+	isInteractive := IsInteractiveCall(rootCmd, programArgs)
+	if !config.ConfigExists() && isInteractive {
+		connwizardcmd.New().Execute()
+	}
 	logger, err := ProcessConfigAndFlags(rootCmd, &cfg, programArgs, globalFlagValues)
 	if err != nil {
 		return logger, err
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	isInteractive := IsInteractiveCall(rootCmd, programArgs)
 	if isInteractive {
 		prompt, err := RunCmdInteractively(ctx, &cfg, logger, rootCmd, globalFlagValues.NoColor)
 		if err != nil {

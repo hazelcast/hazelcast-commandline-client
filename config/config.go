@@ -16,12 +16,14 @@
 package config
 
 import (
+	"bytes"
 	"crypto/tls"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
+	"text/template"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/logger"
@@ -89,19 +91,22 @@ func DefaultConfig() Config {
 	return dc
 }
 
-const defaultUserConfig = `
-hazelcast:
+const defaultUserConfig = `hazelcast:
   cluster:
-    name: dev
-    unisocket: true
+    name: {{ .Hazelcast.Cluster.Name}}
+    unisocket: {{ .Hazelcast.Cluster.Unisocket}}
     network:
       # 0s is no timeout
-      connectiontimeout: 0s
+      connectiontimeout: {{ .Hazelcast.Cluster.Network.ConnectionTimeout}}
       addresses:
-      - "localhost:5701"
+      {{- range .Hazelcast.Cluster.Network.Addresses}}
+        - {{ . -}}
+      {{ else }}
+        - localhost:5701
+      {{- end }}
     cloud:
-      token: ""
-      enabled: false
+      token: "{{ .Hazelcast.Cluster.Cloud.Token}}"
+      enabled: {{ .Hazelcast.Cluster.Cloud.Enabled}}
     security:
       credentials:
         username: ""
@@ -111,12 +116,12 @@ hazelcast:
   logger:
     level: error
 ssl:
-  enabled: false
-  servername: ""
-  capath: ""
-  certpath: ""
-  keypath: ""
-  keypassword: ""
+  enabled: {{ .SSL.Enabled}}
+  servername: "{{ .SSL.ServerName}}"
+  capath: "{{ .SSL.CAPath}}"
+  certpath: "{{ .SSL.CertPath}}"
+  keypath: "{{ .SSL.KeyPath}}"
+  keypassword: "{{ .SSL.KeyPassword}}"
 # disables auto completion on interactive mode if true
 noautocompletion: false
 styling:
@@ -137,8 +142,22 @@ var ValidLogLevels = []string{
 	string(logger.TraceLevel),
 }
 
-func writeToFile(config string, confPath string) error {
-	return file.CreateMissingDirsAndFileWithRWPerms(confPath, []byte(config))
+func ConfigExists() bool {
+	exists, err := file.Exists(DefaultConfigPath())
+	if err != nil {
+		return false
+	}
+	return exists
+}
+
+func WriteToFile(config *Config, confPath string) error {
+	t, _ := template.New("config").Parse(defaultUserConfig)
+	var buf bytes.Buffer
+	err := t.Execute(&buf, *config)
+	if err != nil {
+		return err
+	}
+	return file.CreateMissingDirsAndFileWithRWPerms(confPath, buf.Bytes())
 }
 
 func ReadAndMergeWithFlags(flags *GlobalFlagValues, c *Config) error {
@@ -255,7 +274,7 @@ func readConfig(path string, config *Config, defaultConfPath string) error {
 			// file should exist if custom path is used
 			return hzcerrors.NewLoggableError(os.ErrNotExist, "configuration not found: %s", path)
 		}
-		if err = writeToFile(defaultUserConfig, path); err != nil {
+		if err = WriteToFile(config, path); err != nil {
 			return hzcerrors.NewLoggableError(err, "cannot create default configuration: %s. Make sure that process has necessary permissions to write default path.\n", path)
 		}
 	}
