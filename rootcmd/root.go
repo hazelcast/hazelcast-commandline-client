@@ -18,6 +18,7 @@ package rootcmd
 import (
 	"errors"
 	"fmt"
+	"github.com/hazelcast/hazelcast-commandline-client/connwizardcmd"
 	"os"
 	"strings"
 
@@ -87,6 +88,7 @@ func subCommands(config *hazelcast.Config, isInteractiveInvocation bool) []*cobr
 		sqlcmd.New(config),
 		versioncmd.New(),
 		listobjectscmd.New(config),
+		connwizardcmd.New(),
 	}
 	fds := []fakeDoor.FakeDoor{
 		{Name: "List", IssueNum: 48},
