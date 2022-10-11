@@ -2,11 +2,13 @@ package connwizardcmd
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+
 	"github.com/hazelcast/hazelcast-commandline-client/config"
-	"strings"
 )
 
 var (
@@ -15,10 +17,10 @@ var (
 )
 
 const (
-	viridian   = 0
-	standalone = 1
-	ssl        = 2
-	approval   = 3
+	viridian         = 0
+	standalone       = 1
+	ssl              = 2
+	approveOverwrite = 3
 )
 
 const (
@@ -31,8 +33,8 @@ const (
 	keyPathMsg        = "• SSL Key Path: "
 	passwordMsg       = "• SSL Password: "
 
-	approvalMsg = "Your config file will be overwritten, do you want to continue? (y/n): "
-	submitMsg   = "[ Submit ]"
+	approveOverwriteMsg = "Your config file will be overwritten, do you want to continue? (y/n): "
+	submitMsg           = "[ OK ]"
 
 	viridianInfoMsg   = "Please provide your Hazelcast Viridian tokens below."
 	standaloneInfoMsg = "Please provide cluster name and address of your standalone cluster."
@@ -45,62 +47,42 @@ type InputModel struct {
 	quitting   bool
 	config     *config.Config
 	inputType  int
+	choice     string
 }
 
-func ViridianInput(config *config.Config) InputModel {
-	m := InputModel{
-		inputs:    make([]textinput.Model, 6),
+func ViridianInput(config *config.Config) *InputModel {
+	inputs := []textinput.Model{
+		textInputWithPrompt(clusterNameMsg),
+		textInputWithPrompt(discoveryTokenMsg),
+		textInputWithPrompt(caPathMsg),
+		textInputWithPrompt(certPathMsg),
+		textInputWithPrompt(keyPathMsg),
+		passwordInput(),
+	}
+	updateSelectedIem(&inputs[0])
+	return &InputModel{
+		inputs:    inputs,
 		config:    config,
 		inputType: viridian,
 	}
-	for i := range m.inputs {
-		t := textinput.New()
-		switch i {
-		case 0:
-			t.Prompt = clusterNameMsg
-			updateSelectedIem(&t)
-		case 1:
-			t.Prompt = discoveryTokenMsg
-		case 2:
-			t.Prompt = caPathMsg
-		case 3:
-			t.Prompt = certPathMsg
-		case 4:
-			t.Prompt = keyPathMsg
-		case 5:
-			t.Prompt = passwordMsg
-			t.EchoMode = textinput.EchoPassword
-			t.EchoCharacter = '•'
-		}
-		m.inputs[i] = t
-	}
-	return m
 }
 
-func StandaloneInput(config *config.Config) InputModel {
-	m := InputModel{
-		inputs:    make([]textinput.Model, 3),
+func StandaloneInput(config *config.Config) *InputModel {
+	inputs := []textinput.Model{
+		textInputWithPrompt(clusterNameMsg),
+		textInputWithPrompt(addressesMsg),
+		textInputWithPrompt(setupSslMsg),
+	}
+	updateSelectedIem(&inputs[0])
+	return &InputModel{
+		inputs:    inputs,
 		config:    config,
 		inputType: standalone,
 	}
-	for i := range m.inputs {
-		t := textinput.New()
-		switch i {
-		case 0:
-			t.Prompt = clusterNameMsg
-			updateSelectedIem(&t)
-		case 1:
-			t.Prompt = addressesMsg
-		case 2:
-			t.Prompt = setupSslMsg
-		}
-		m.inputs[i] = t
-	}
-	return m
 }
 
-func SSLInput(config *config.Config) InputModel {
-	m := InputModel{
+func SSLInput(config *config.Config) *InputModel {
+	m := &InputModel{
 		inputs:    make([]textinput.Model, 4),
 		config:    config,
 		inputType: ssl,
@@ -126,26 +108,24 @@ func SSLInput(config *config.Config) InputModel {
 	return m
 }
 
-func ApprovalInput() InputModel {
-	m := InputModel{
+func ApprovalInput() *InputModel {
+	m := &InputModel{
 		inputs:    make([]textinput.Model, 1),
-		inputType: approval,
+		inputType: approveOverwrite,
 	}
 	t := textinput.New()
-	t.Prompt = approvalMsg
+	t.Prompt = approveOverwriteMsg
 	t.CharLimit = 1
 	t.Focus()
 	m.inputs[0] = t
 	return m
 }
 
-func updateSelectedIem(t *textinput.Model) {
-	t.Focus()
-	t.PromptStyle = selectedItemStyle
-	t.TextStyle = selectedItemStyle
+func (m *InputModel) Choice() string {
+	return m.choice
 }
 
-func updateConfig(m *InputModel) {
+func (m *InputModel) updateConfig() {
 	switch m.inputType {
 	case viridian:
 		m.config.Hazelcast.Cluster.Cloud.Enabled = true
@@ -167,24 +147,24 @@ func updateConfig(m *InputModel) {
 		m.config.SSL.CertPath = m.inputs[1].Value()
 		m.config.SSL.KeyPath = m.inputs[2].Value()
 		m.config.SSL.KeyPassword = m.inputs[3].Value()
-	case approval:
-		choice = m.inputs[0].Value()
+	case approveOverwrite:
+		m.choice = m.inputs[0].Value()
 	}
 }
 
-func (m InputModel) Init() tea.Cmd {
+func (m *InputModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m InputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *InputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyCtrlC, tea.KeyEsc:
-			if m.inputType == approval {
-				choice = "n"
+			if m.inputType == approveOverwrite {
+				m.choice = "n"
 			} else {
-				choice = "e"
+				m.choice = "e"
 			}
 			m.quitting = true
 			return m, tea.Quit
@@ -201,8 +181,8 @@ func (m InputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmd := m.updateStyles()
 			return m, cmd
 		case tea.KeyEnter:
-			updateConfig(&m)
-			if m.focusIndex == len(m.inputs) || m.inputType == approval {
+			m.updateConfig()
+			if m.focusIndex == len(m.inputs) || m.inputType == approveOverwrite {
 				if m.inputType == standalone && m.config.SSL.Enabled {
 					m = SSLInput(m.config)
 				} else {
@@ -254,7 +234,7 @@ func (m InputModel) View() string {
 		case ssl:
 			msg = sslInfoMsg
 		}
-		isApproval := m.inputType == approval
+		isApproval := m.inputType == approveOverwrite
 		if !isApproval {
 			fmt.Fprintf(&b, "%s\n", fmt.Sprintf("%s", noStyle.Render(msg)))
 		}
@@ -273,4 +253,24 @@ func (m InputModel) View() string {
 		}
 		return b.String()
 	}
+}
+
+func textInputWithPrompt(prompt string) textinput.Model {
+	t := textinput.New()
+	t.Prompt = prompt
+	return t
+}
+
+func passwordInput() textinput.Model {
+	t := textinput.New()
+	t.Prompt = passwordMsg
+	t.EchoMode = textinput.EchoPassword
+	t.EchoCharacter = '•'
+	return t
+}
+
+func updateSelectedIem(t *textinput.Model) {
+	t.Focus()
+	t.PromptStyle = selectedItemStyle
+	t.TextStyle = selectedItemStyle
 }

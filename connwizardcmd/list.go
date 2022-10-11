@@ -2,12 +2,17 @@ package connwizardcmd
 
 import (
 	"fmt"
+	"io"
+
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
-	"io"
 )
 
-var choice = ""
+const (
+	ChoiceViridian = "Hazelcast Viridian Serverless"
+	ChoiceLocal    = "Local computer"
+	ChoiceRemote   = "Remote"
+)
 
 type item string
 
@@ -39,33 +44,33 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 type ListModel struct {
 	list     list.Model
 	quitting bool
+	choice   string
 }
 
-func InitializeListModel() ListModel {
+func NewListModel() *ListModel {
 	items := []list.Item{
-		item("Hazelcast Viridian"),
-		item("Local (Default)"),
-		item("Standalone (Remote or Local)"),
+		item(ChoiceViridian),
+		item(ChoiceLocal),
+		item(ChoiceRemote),
 	}
 	l := list.New(items, itemDelegate{}, 20, 14)
-	l.Title = "Where is your Hazelcast cluster (Press Ctrl+C to quit)?"
+	l.Title = "Where is your Hazelcast cluster? (Press Ctrl+C to quit)"
 	l.Styles.Title = noStyle
 	l.Styles.TitleBar = noStyle
 	l.SetShowStatusBar(false)
 	l.SetShowHelp(false)
 	l.SetFilteringEnabled(false)
-	return ListModel{
-		l,
-		false,
+	return &ListModel{
+		list:     l,
+		quitting: false,
 	}
 }
 
-func (m ListModel) Init() tea.Cmd {
-
+func (m *ListModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.list.SetWidth(msg.Width)
@@ -73,13 +78,13 @@ func (m ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyCtrlC:
-			choice = "e"
+			m.choice = "e"
 			m.quitting = true
 			return m, tea.Quit
 		case tea.KeyEnter:
 			m.quitting = true
 			value, _ := m.list.SelectedItem().(item)
-			choice = value.FilterValue()
+			m.choice = value.FilterValue()
 			return m, tea.Quit
 		}
 	}
@@ -88,9 +93,13 @@ func (m ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m ListModel) View() string {
+func (m *ListModel) View() string {
 	if m.quitting {
 		return fmt.Sprintf("%s", noStyle.Render(""))
 	}
 	return m.list.View()
+}
+
+func (m *ListModel) Choice() string {
+	return m.choice
 }

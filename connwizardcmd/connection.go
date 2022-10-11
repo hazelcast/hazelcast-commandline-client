@@ -1,11 +1,11 @@
 package connwizardcmd
 
 import (
-	"errors"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/spf13/cobra"
+
 	"github.com/hazelcast/hazelcast-commandline-client/config"
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
-	"github.com/spf13/cobra"
 )
 
 func New() *cobra.Command {
@@ -13,62 +13,47 @@ func New() *cobra.Command {
 		Use:   "connection-wizard",
 		Short: "Assist with connection configuration",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			exists := config.ConfigExists()
-			m := InitializeListModel()
+			m := NewListModel()
 			if err := tea.NewProgram(m).Start(); err != nil {
 				return err
 			}
-			if err := handleExit(cmd); err != nil {
-				return nil
-			}
 			c := config.DefaultConfig()
-			var im InputModel
-			switch choice {
-			case "Hazelcast Viridian":
-				im = ViridianInput(&c)
-			case "Standalone (Remote or Local)":
-				im = StandaloneInput(&c)
-			case "Local (Default)":
-				return handleWrite(cmd, &c, "y")
+			var im *InputModel
+			switch m.Choice() {
+			case ChoiceViridian:
+				im = showInput(ViridianInput(&c))
+			case ChoiceLocal:
+				// pass
+			case ChoiceRemote:
+				im = showInput(StandaloneInput(&c))
 			}
-			if err := tea.NewProgram(im).Start(); err != nil {
-				return hzcerrors.NewLoggableError(err, "Can not run list model during connection-wizard.")
+			if m.Choice() == "e" {
+				return hzcerrors.ErrUserCancelled
 			}
-			if err := handleExit(cmd); err != nil {
-				return nil
+			if config.Exists() {
+				im = showInput(ApprovalInput())
 			}
-			choice = "y"
-			if exists {
-				im = ApprovalInput()
-				if err := tea.NewProgram(im).Start(); err != nil {
-					return hzcerrors.NewLoggableError(err, "Can not run input model during connection-wizard.")
-				}
+			if im.Choice() == "y" {
+				return writeConfig(cmd, &c)
 			}
-			return handleWrite(cmd, &c, choice)
+			return nil
 		},
 	}
 	return &cmd
 }
 
-func handleExit(cmd *cobra.Command) error {
-	if choice == "e" {
-		if !config.ConfigExists() {
-			cmd.Println("You did not make any selection. CLC will connect to the default cluster running at localhost:5701.")
-		}
-		return errors.New("")
+func writeConfig(cmd *cobra.Command, c *config.Config) error {
+	err := config.WriteToFile(c, config.DefaultConfigPath())
+	if err != nil {
+		return hzcerrors.NewLoggableError(err, "There was an error while overwriting config file.")
 	}
+	cmd.Printf("Configuration was saved to: %s\n", config.DefaultConfigPath())
 	return nil
 }
 
-func handleWrite(cmd *cobra.Command, c *config.Config, choice string) error {
-	if choice == "y" {
-		exists := config.ConfigExists()
-		err := config.WriteToFile(c, config.DefaultConfigPath())
-		if err != nil {
-			return hzcerrors.NewLoggableError(err, "There was an error during overwriting config file.")
-		} else if exists {
-			cmd.Println("Your config file has been changed. Please re-start CLC to apply new config.")
-		}
+func showInput(im *InputModel) *InputModel {
+	if err := tea.NewProgram(im).Start(); err != nil {
+		panic("Can not run input model during connection-wizard.")
 	}
-	return nil
+	return im
 }

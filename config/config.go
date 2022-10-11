@@ -142,7 +142,7 @@ var ValidLogLevels = []string{
 	string(logger.TraceLevel),
 }
 
-func ConfigExists() bool {
+func Exists() bool {
 	exists, err := file.Exists(DefaultConfigPath())
 	if err != nil {
 		return false

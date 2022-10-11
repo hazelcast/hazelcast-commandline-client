@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/hazelcast/hazelcast-commandline-client/connwizardcmd"
 	"io"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"strings"
+
+	"github.com/hazelcast/hazelcast-commandline-client/connwizardcmd"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -38,8 +39,10 @@ func CLC(programArgs []string, stdin io.Reader, stdout io.Writer, stderr io.Writ
 	rootCmd, globalFlagValues := rootcmd.New(&cfg.Hazelcast, false)
 	cobra_util.InitCommandForCustomInvocation(rootCmd, stdin, stdout, stderr, programArgs)
 	isInteractive := IsInteractiveCall(rootCmd, programArgs)
-	if !config.ConfigExists() && isInteractive {
-		connwizardcmd.New().Execute()
+	if !config.Exists() && isInteractive {
+		if err := connwizardcmd.New().Execute(); err != nil {
+			return log.Logger{}, err
+		}
 	}
 	logger, err := ProcessConfigAndFlags(rootCmd, &cfg, programArgs, globalFlagValues)
 	if err != nil {
@@ -189,19 +192,22 @@ func setDefaultCoordinator() error {
 }
 
 func HandleError(err error) string {
-	errStr := fmt.Sprintf("Unknown Error: %s\n"+
-		"Use \"hzc [command] --help\" for more information about a command.", err.Error())
 	var loggable hzcerrors.LoggableError
 	var flagErr hzcerrors.FlagError
-	if errors.As(err, &loggable) {
-		errStr = fmt.Sprintf("Error: %s", loggable.VerboseError())
-	} else if errors.As(err, &flagErr) {
-		errStr = fmt.Sprintf("Flag Error: %s", err.Error())
-	} else if strings.Contains(err.Error(), "required flag(s)") {
-		// this is also a flag error, we just can not wrap it
-		errStr = fmt.Sprintf("Flag Error: %s", err.Error())
+	if errors.Is(err, hzcerrors.ErrUserCancelled) {
+		return ""
 	}
-	return errStr
+	if errors.As(err, &loggable) {
+		return fmt.Sprintf("Error: %s", loggable.VerboseError())
+	}
+	if errors.As(err, &flagErr) {
+		return fmt.Sprintf("Flag Error: %s", err.Error())
+	}
+	if strings.Contains(err.Error(), "required flag(s)") {
+		// this is also a flag error, we just can not wrap it
+		return fmt.Sprintf("Flag Error: %s", err.Error())
+	}
+	return fmt.Sprintf("%s\nUse \"hzc [command] --help\" for more information about a command.", err.Error())
 }
 
 func RunCmd(ctx context.Context, rootCmd *cobra.Command) error {

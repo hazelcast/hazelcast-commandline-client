@@ -30,12 +30,13 @@ const (
 func main() {
 	programArgs := os.Args[1:]
 	logger, err := runner.CLC(programArgs, os.Stdin, os.Stdout, os.Stderr)
-	defer logger.Close()
-	if err == nil {
-		return
+	if err != nil {
+		errStr := runner.HandleError(err)
+		if errStr != "" {
+			// ignore err, nothing to do
+			_, _ = fmt.Fprintln(os.Stderr, errStr)
+		}
+		os.Exit(exitError)
 	}
-	errStr := runner.HandleError(err)
-	// ignore err, nothing to do
-	_, _ = fmt.Fprintln(os.Stderr, errStr)
-	os.Exit(exitError)
+	logger.Close()
 }

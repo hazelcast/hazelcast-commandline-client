@@ -18,9 +18,10 @@ package rootcmd
 import (
 	"errors"
 	"fmt"
-	"github.com/hazelcast/hazelcast-commandline-client/connwizardcmd"
 	"os"
 	"strings"
+
+	"github.com/hazelcast/hazelcast-commandline-client/connwizardcmd"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
@@ -115,9 +116,12 @@ func assignPersistentFlags(cmd *cobra.Command, flags *config.GlobalFlagValues) {
 	cmd.PersistentFlags().BoolVar(&flags.NoAutocompletion, "no-completion", false, "disable completion [interactive mode]")
 	cmd.PersistentFlags().StringVar(&flags.LogFile, "log-file", "", "save logs to the specified file or stderr")
 	cmd.PersistentFlags().StringVar(&flags.LogLevel, "log-level", "", fmt.Sprintf("(default 'error') write logs with the specified or higher level of importance. Log levels: %s", strings.Join(config.ValidLogLevels, ", ")))
-	cmd.RegisterFlagCompletionFunc("log-level", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err := cmd.RegisterFlagCompletionFunc("log-level", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return config.ValidLogLevels, cobra.ShellCompDirectiveDefault
 	})
+	if err != nil {
+		panic(err)
+	}
 
 }
 
