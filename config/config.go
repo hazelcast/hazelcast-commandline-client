@@ -159,7 +159,7 @@ func SetupLogger(c *Config, flags *GlobalFlagValues, logOut io.Writer) (log.Logg
 	} else if c.Logger.LogFile != "" {
 		logFile = c.Logger.LogFile
 	}
-	if logFile != "" {
+	if logFile != "" && logFile != "stderr" {
 		f, err := os.OpenFile(logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
 			return log.Logger{}, hzcerrors.NewLoggableError(err, "Can not open/create the log file on the specified path %s", flags.LogFile)
@@ -222,6 +222,9 @@ func mergeFlagsWithConfig(flags *GlobalFlagValues, config *Config) error {
 			return hzcerrors.NewLoggableError(err, "Invalid log level (%s), should be one of %s", flags.LogLevel, ValidLogLevels)
 		}
 		config.Hazelcast.Logger.Level = logger.Level(flags.LogLevel)
+	}
+	if flags.LogFile != "" {
+		config.Logger.LogFile = flags.LogFile
 	}
 	// must return nil err
 	verboseWeight, _ := logger.WeightForLogLevel(logger.DebugLevel)
@@ -308,7 +311,7 @@ func GetClusterAddress(c *hazelcast.Config) string {
 	var address string
 	switch {
 	case c.Cluster.Cloud.Enabled:
-		address = "hazelcast-viridian"
+		address = "Viridian"
 	case len(c.Cluster.Network.Addresses) > 0:
 		address = c.Cluster.Network.Addresses[0]
 	default:

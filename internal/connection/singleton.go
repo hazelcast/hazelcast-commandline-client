@@ -18,17 +18,16 @@ package connection
 
 import (
 	"context"
-	"errors"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hazelcast/hazelcast-go-client"
 
+	"github.com/hazelcast/hazelcast-commandline-client/config"
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 )
-
-const clientResponseTimeoutDeadline = 1 * time.Second
 
 var hzClient = &struct {
 	*hazelcast.Client
@@ -46,76 +45,46 @@ func ConnectToCluster(ctx context.Context, clientConfig *hazelcast.Config) (*haz
 	return hzClient.Client, err
 }
 
-func ConnectToClusterInteractive(ctx context.Context, clientConfig *hazelcast.Config) (*hazelcast.Client, error) {
-	clientCh, errCh := asyncGetHZClientInstance(ctx, clientConfig)
-	ticker := time.NewTicker(clientResponseTimeoutDeadline)
-	defer ticker.Stop()
-	select {
-	case <-ticker.C:
-		escaped := false
-		m := newConnectionSpinnerModel(
-			clientConfig.Cluster.Name,
-			clientConfig.Cluster.Network.Addresses[0],
-			"logfile",
-			&escaped,
-		)
-		var client *hazelcast.Client
-		var clientErr error
-		p := tea.NewProgram(m)
-		errChTea := asyncDisplaySpinner(p, &escaped)
-		select {
-		case client = <-clientCh:
-			p.Send(Quitting{})
-		case err := <-errChTea:
-			return nil, err
+func ConnectToClusterInteractive(ctx context.Context, cfg *config.Config) (*hazelcast.Client, error) {
+	var client *hazelcast.Client
+	var clientErr error
+	var escaped bool
+	var done atomic.Bool
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	// TODO: move the spinner to its own component
+	p := tea.NewProgram(newConnectionSpinnerModel(
+		cfg.Hazelcast.Cluster.Name,
+		cfg.Hazelcast.Cluster.Network.Addresses[0],
+		cfg.Logger.LogFile,
+		&escaped,
+	))
+	go func(ctx context.Context) {
+		client, clientErr = ConnectToCluster(ctx, &cfg.Hazelcast)
+		done.Store(true)
+		p.Send(Quitting{})
+	}(ctx)
+	// wait at most 200ms and show the spinner if connection still not succeeded or failed
+	for i := 0; i < 4; i++ {
+		if done.Load() {
+			break
 		}
-		if err := <-errChTea; err != nil {
-			return nil, err
-		}
-		if clientErr = <-errCh; clientErr != nil {
-			if msg, handled := hzcerrors.TranslateError(clientErr, clientConfig.Cluster.Cloud.Enabled); handled {
-				clientErr = hzcerrors.NewLoggableError(clientErr, msg)
-			}
-		}
-		return client, clientErr
-	case client := <-clientCh:
-		var err error
-		if err = <-errCh; err != nil {
-			if msg, handled := hzcerrors.TranslateError(err, clientConfig.Cluster.Cloud.Enabled); handled {
-				err = hzcerrors.NewLoggableError(err, msg)
-			}
-		}
-		return client, err
+		time.Sleep(50 * time.Millisecond)
 	}
-}
-
-func asyncDisplaySpinner(p *tea.Program, escaped *bool) <-chan error {
-	if p == nil {
-		panic("tea program cannot be nil")
+	if !done.Load() {
+		_ = p.Start()
 	}
-	errChTea := make(chan error, 1)
-	go func() {
-		if err := p.Start(); err != nil {
-			errChTea <- errors.New("could not run spinner")
+	if escaped {
+		cancel()
+		return nil, hzcerrors.ErrUserCancelled
+	}
+	if clientErr != nil {
+		if msg, handled := hzcerrors.TranslateError(clientErr, cfg.Hazelcast.Cluster.Cloud.Enabled); handled {
+			clientErr = hzcerrors.NewLoggableError(clientErr, msg)
 		}
-		// set by the BubbleTea during its runtime
-		if *escaped {
-			errChTea <- errors.New("exited from the spinner through CTRL+C")
-		}
-		close(errChTea)
-	}()
-	return errChTea
-}
-
-func asyncGetHZClientInstance(ctx context.Context, clientConfig *hazelcast.Config) (<-chan *hazelcast.Client, <-chan error) {
-	clientCh := make(chan *hazelcast.Client)
-	errCh := make(chan error, 1)
-	go func(cch chan<- *hazelcast.Client, errCh chan<- error) {
-		sc, err := ConnectToCluster(ctx, clientConfig)
-		errCh <- err
-		cch <- sc
-	}(clientCh, errCh)
-	return clientCh, errCh
+		return nil, clientErr
+	}
+	return client, nil
 }
 
 // ResetClient is for testing

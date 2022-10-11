@@ -12,7 +12,6 @@ const spinnerText = `Connecting to the cluster %s at %s.
    Check the logs at %s.`
 
 var (
-	currSpinner = spinner.Dot
 	// TODO: get the colors from the theme
 	spinnerStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#40826D"))
 	helpStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render
@@ -29,7 +28,7 @@ type connectionSpinnerModel struct {
 func newConnectionSpinnerModel(clusterName, address, logfile string, escaped *bool) *connectionSpinnerModel {
 	s := spinner.New()
 	s.Style = spinnerStyle
-	s.Spinner = currSpinner
+	s.Spinner = spinner.MiniDot
 	return &connectionSpinnerModel{
 		spinner:     s,
 		clusterName: clusterName,
@@ -72,8 +71,7 @@ func (m connectionSpinnerModel) View() (s string) {
 	return
 }
 
-type Quitting struct {
-}
+type Quitting struct{}
 
 type EmptyDisplay struct {
 	quit bool

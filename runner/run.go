@@ -46,7 +46,10 @@ func CLC(programArgs []string, stdin io.Reader, stdout io.Writer, stderr io.Writ
 	if isInteractive {
 		prompt, err := RunCmdInteractively(ctx, &cfg, logger, rootCmd, globalFlagValues.NoColor)
 		if err != nil {
-			return logger, hzcerrors.NewLoggableError(err, "")
+			if !errors.Is(err, hzcerrors.ErrUserCancelled) {
+				return logger, hzcerrors.NewLoggableError(err, "")
+			}
+			return logger, nil
 		}
 		prompt.Run()
 		return logger, nil
@@ -78,7 +81,7 @@ func IsInteractiveCall(rootCmd *cobra.Command, args []string) bool {
 	return false
 }
 
-func RunCmdInteractively(ctx context.Context, cnfg *config.Config, l log.Logger, rootCmd *cobra.Command, noColor bool) (cobraprompt.GoPromptWithGracefulShutdown, error) {
+func RunCmdInteractively(ctx context.Context, cfg *config.Config, l log.Logger, rootCmd *cobra.Command, noColor bool) (cobraprompt.GoPromptWithGracefulShutdown, error) {
 	cmdHistoryPath := filepath.Join(file.HZCHomePath(), "history")
 	exists, err := file.Exists(cmdHistoryPath)
 	if err != nil {
@@ -89,14 +92,14 @@ func RunCmdInteractively(ctx context.Context, cnfg *config.Config, l log.Logger,
 			l.Printf("Cannot create command history file on %s, history will not be preserved.\n", cmdHistoryPath)
 		}
 	}
-	hConfig := &cnfg.Hazelcast
+	hc := &cfg.Hazelcast
 	namePersister := make(map[string]string)
 	var p = &cobraprompt.CobraPrompt{
 		ShowHelpCommandAndFlags:  true,
 		ShowHiddenFlags:          true,
 		SuggestFlagsWithoutDash:  true,
 		DisableCompletionCommand: true,
-		DisableSuggestions:       cnfg.NoAutocompletion,
+		DisableSuggestions:       cfg.NoAutocompletion,
 		NoColor:                  noColor,
 		AddDefaultExitCommand:    true,
 		GoPromptOptions: []goprompt.Option{
@@ -106,7 +109,9 @@ func RunCmdInteractively(ctx context.Context, cnfg *config.Config, l log.Logger,
 				for k, v := range namePersister {
 					b.WriteString(fmt.Sprintf("&%c:%s", k[0], v))
 				}
-				return fmt.Sprintf("hzc %s@%s%s> ", config.GetClusterAddress(hConfig), hConfig.Cluster.Name, b.String()), true
+				addr := config.GetClusterAddress(hc)
+				cn := hc.Cluster.Name
+				return fmt.Sprintf("hzc %s@%s%s> ", addr, cn, b.String()), true
 			}),
 			goprompt.OptionMaxSuggestion(10),
 			goprompt.OptionCompletionOnDown(),
@@ -118,8 +123,11 @@ func RunCmdInteractively(ctx context.Context, cnfg *config.Config, l log.Logger,
 		},
 		Persister: namePersister,
 	}
-	if _, err = connection.ConnectToClusterInteractive(ctx, hConfig); err != nil {
-		// ignore error coming from the connection spinner
+	if cfg.Logger.LogFile != "" && cfg.Logger.LogFile != "stderr" {
+		if _, err = connection.ConnectToClusterInteractive(ctx, cfg); err != nil {
+			return cobraprompt.GoPromptWithGracefulShutdown{}, err
+		}
+	} else if _, err := connection.ConnectToCluster(ctx, &cfg.Hazelcast); err != nil {
 		return cobraprompt.GoPromptWithGracefulShutdown{}, err
 	}
 	var flagsToExclude []string
@@ -132,7 +140,7 @@ func RunCmdInteractively(ctx context.Context, cnfg *config.Config, l log.Logger,
 	p.FlagsToExclude = flagsToExclude
 	rootCmd.Example = fmt.Sprintf("> %s\n> %s", mapcmd.MapPutExample, mapcmd.MapGetExample) + "\n> cluster version"
 	rootCmd.Use = ""
-	return p.Init(ctx, rootCmd, hConfig, l.Logger, cmdHistoryPath), nil
+	return p.Init(ctx, rootCmd, hc, l.Logger, cmdHistoryPath), nil
 }
 
 func ProcessConfigAndFlags(rootCmd *cobra.Command, cnfg *config.Config, programArgs []string, globalFlagValues *config.GlobalFlagValues) (log.Logger, error) {

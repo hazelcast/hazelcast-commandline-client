@@ -47,6 +47,8 @@ For operations that change state/configuration of the cluster (e.g. "cluster cha
 To change CLUSTER_WRITE permission, see the documentation: https://docs.hazelcast.com/hazelcast/latest/maintain-cluster/rest-api#using-rest-endpoint-groups`
 )
 
+var ErrUserCancelled = errors.New("user cancelled")
+
 func ErrorRecover(out io.Writer) {
 	obj := recover()
 	if err, ok := obj.(error); ok {
