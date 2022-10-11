@@ -150,7 +150,7 @@ func RunCmdInteractively(ctx context.Context, cfg *config.Config, l log.Logger, 
 	return p.Init(ctx, rootCmd, hc, l.Logger, cmdHistoryPath), nil
 }
 
-func ProcessConfigAndFlags(rootCmd *cobra.Command, cnfg *config.Config, programArgs []string, globalFlagValues *config.GlobalFlagValues) (log.Logger, error) {
+func ProcessConfigAndFlags(rootCmd *cobra.Command, cfg *config.Config, programArgs []string, globalFlagValues *config.GlobalFlagValues) (log.Logger, error) {
 	defaultLogger := log.NewLogger(log.NopWriteCloser(os.Stderr))
 	// parse global persistent flags
 	subCmd, flags, err := rootCmd.Find(programArgs)
@@ -163,16 +163,16 @@ func ProcessConfigAndFlags(rootCmd *cobra.Command, cnfg *config.Config, programA
 		return defaultLogger, err
 	}
 	// initialize config from file
-	if err = config.ReadAndMergeWithFlags(globalFlagValues, cnfg); err != nil {
+	if err = config.ReadAndMergeWithFlags(globalFlagValues, cfg); err != nil {
 		return defaultLogger, err
 	}
-	l, err := config.SetupLogger(cnfg, globalFlagValues, os.Stderr)
+	l, err := config.SetupLogger(cfg, globalFlagValues, os.Stderr)
 	if err != nil {
 		// assign a logger with stderr as output
 		defaultLogger.Printf("Can not setup configured logger, program will log to Stderr: %v\n", err)
 	}
 	defaultLogger = l
-	if cnfg.Hazelcast.Cluster.Cloud.Enabled {
+	if cfg.Hazelcast.Cluster.Cloud.Enabled {
 		if err = setDefaultCoordinator(); err != nil {
 			return defaultLogger, nil
 		}

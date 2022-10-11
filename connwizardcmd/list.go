@@ -77,7 +77,7 @@ func (m *ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case tea.KeyMsg:
 		switch msg.Type {
-		case tea.KeyCtrlC:
+		case tea.KeyCtrlC, tea.KeyEsc:
 			m.choice = "e"
 			m.quitting = true
 			return m, tea.Quit
@@ -102,4 +102,10 @@ func (m *ListModel) View() string {
 
 func (m *ListModel) Choice() string {
 	return m.choice
+}
+
+func (m *ListModel) Show() {
+	if err := tea.NewProgram(m).Start(); err != nil {
+		panic(err)
+	}
 }

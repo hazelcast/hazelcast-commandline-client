@@ -151,7 +151,7 @@ func Exists() bool {
 }
 
 func WriteToFile(config *Config, confPath string) error {
-	t, _ := template.New("config").Parse(defaultUserConfig)
+	t := template.Must(template.New("config").Parse(defaultUserConfig))
 	var buf bytes.Buffer
 	err := t.Execute(&buf, *config)
 	if err != nil {
@@ -274,9 +274,14 @@ func readConfig(path string, config *Config, defaultConfPath string) error {
 			// file should exist if custom path is used
 			return hzcerrors.NewLoggableError(os.ErrNotExist, "configuration not found: %s", path)
 		}
-		if err = WriteToFile(config, path); err != nil {
-			return hzcerrors.NewLoggableError(err, "cannot create default configuration: %s. Make sure that process has necessary permissions to write default path.\n", path)
-		}
+		*config = DefaultConfig()
+		return nil
+		/*
+			if err = WriteToFile(config, path); err != nil {
+				return hzcerrors.NewLoggableError(err, "cannot create default configuration: %s. Make sure that process has necessary permissions to write default path.\n", path)
+			}
+
+		*/
 	}
 	confBytes, err = os.ReadFile(path)
 	if err != nil {

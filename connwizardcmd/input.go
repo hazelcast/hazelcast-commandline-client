@@ -51,15 +51,8 @@ type InputModel struct {
 }
 
 func ViridianInput(config *config.Config) *InputModel {
-	inputs := []textinput.Model{
-		textInputWithPrompt(clusterNameMsg),
-		textInputWithPrompt(discoveryTokenMsg),
-		textInputWithPrompt(caPathMsg),
-		textInputWithPrompt(certPathMsg),
-		textInputWithPrompt(keyPathMsg),
-		passwordInput(),
-	}
-	updateSelectedIem(&inputs[0])
+	inputs := textInputsWithPrompt(clusterNameMsg, discoveryTokenMsg, caPathMsg, certPathMsg, keyPathMsg)
+	inputs = append(inputs, passwordInput())
 	return &InputModel{
 		inputs:    inputs,
 		config:    config,
@@ -68,44 +61,21 @@ func ViridianInput(config *config.Config) *InputModel {
 }
 
 func StandaloneInput(config *config.Config) *InputModel {
-	inputs := []textinput.Model{
-		textInputWithPrompt(clusterNameMsg),
-		textInputWithPrompt(addressesMsg),
-		textInputWithPrompt(setupSslMsg),
-	}
-	updateSelectedIem(&inputs[0])
 	return &InputModel{
-		inputs:    inputs,
+		inputs:    textInputsWithPrompt(clusterNameMsg, addressesMsg, setupSslMsg),
 		config:    config,
 		inputType: standalone,
 	}
 }
 
 func SSLInput(config *config.Config) *InputModel {
-	m := &InputModel{
-		inputs:    make([]textinput.Model, 4),
+	inputs := textInputsWithPrompt(caPathMsg, certPathMsg, keyPathMsg)
+	inputs = append(inputs, passwordInput())
+	return &InputModel{
+		inputs:    inputs,
 		config:    config,
 		inputType: ssl,
 	}
-	var t textinput.Model
-	for i := range m.inputs {
-		t = textinput.New()
-		switch i {
-		case 0:
-			t.Prompt = caPathMsg
-			updateSelectedIem(&t)
-		case 1:
-			t.Prompt = certPathMsg
-		case 2:
-			t.Prompt = keyPathMsg
-		case 3:
-			t.Prompt = passwordMsg
-			t.EchoMode = textinput.EchoPassword
-			t.EchoCharacter = '•'
-		}
-		m.inputs[i] = t
-	}
-	return m
 }
 
 func ApprovalInput() *InputModel {
@@ -126,6 +96,7 @@ func (m *InputModel) Choice() string {
 }
 
 func (m *InputModel) updateConfig() {
+	// TODO: refactor
 	switch m.inputType {
 	case viridian:
 		m.config.Hazelcast.Cluster.Cloud.Enabled = true
@@ -190,6 +161,13 @@ func (m *InputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return m, tea.Quit
 				}
 			}
+			//else {
+			//	if m.focusIndex++; m.focusIndex > len(m.inputs) {
+			//		m.focusIndex = 0
+			//	}
+			//	cmd := m.updateStyles()
+			//	return m, cmd
+			//}
 		}
 	}
 	cmd := m.updateInputs(msg)
@@ -259,6 +237,15 @@ func textInputWithPrompt(prompt string) textinput.Model {
 	t := textinput.New()
 	t.Prompt = prompt
 	return t
+}
+
+func textInputsWithPrompt(prompts ...string) []textinput.Model {
+	inputs := make([]textinput.Model, len(prompts))
+	for i, prompt := range prompts {
+		inputs[i] = textInputWithPrompt(prompt)
+	}
+	updateSelectedIem(&inputs[0])
+	return inputs
 }
 
 func passwordInput() textinput.Model {

@@ -11,32 +11,30 @@ import (
 func New() *cobra.Command {
 	cmd := cobra.Command{
 		Use:   "connection-wizard",
-		Short: "Assist with connection configuration",
+		Short: "Show the connection configuration wizard",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			m := NewListModel()
-			if err := tea.NewProgram(m).Start(); err != nil {
-				return err
+			cmd.SilenceErrors = true
+			cmd.SilenceUsage = true
+			if config.Exists() {
+				response := showInput(ApprovalInput())
+				if response != "y" {
+					return hzcerrors.ErrUserCancelled
+				}
 			}
+			m := NewListModel()
+			m.Show()
 			c := config.DefaultConfig()
-			var im *InputModel
 			switch m.Choice() {
 			case ChoiceViridian:
-				im = showInput(ViridianInput(&c))
+				showInput(ViridianInput(&c))
 			case ChoiceLocal:
 				// pass
 			case ChoiceRemote:
-				im = showInput(StandaloneInput(&c))
-			}
-			if m.Choice() == "e" {
+				showInput(StandaloneInput(&c))
+			case "e":
 				return hzcerrors.ErrUserCancelled
 			}
-			if config.Exists() {
-				im = showInput(ApprovalInput())
-			}
-			if im.Choice() == "y" {
-				return writeConfig(cmd, &c)
-			}
-			return nil
+			return writeConfig(cmd, &c)
 		},
 	}
 	return &cmd
@@ -51,9 +49,9 @@ func writeConfig(cmd *cobra.Command, c *config.Config) error {
 	return nil
 }
 
-func showInput(im *InputModel) *InputModel {
+func showInput(im *InputModel) string {
 	if err := tea.NewProgram(im).Start(); err != nil {
 		panic("Can not run input model during connection-wizard.")
 	}
-	return im
+	return im.Choice()
 }
