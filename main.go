@@ -16,7 +16,11 @@
 package main
 
 import (
+	"errors"
+	"fmt"
 	"os"
+
+	"github.com/spf13/pflag"
 
 	"github.com/hazelcast/hazelcast-commandline-client/runner"
 )
@@ -30,14 +34,14 @@ func main() {
 	programArgs := os.Args[1:]
 	logger, err := runner.CLC(programArgs, os.Stdin, os.Stdout, os.Stderr)
 	if err != nil {
-		/*
+		if !errors.Is(err, pflag.ErrHelp) {
 			errStr := runner.HandleError(err)
 			if errStr != "" {
 				// ignore err, nothing to do
 				_, _ = fmt.Fprintln(os.Stderr, errStr)
 			}
-			os.Exit(exitError)
-		*/
+		}
+		os.Exit(exitError)
 	}
 	logger.Close()
 }

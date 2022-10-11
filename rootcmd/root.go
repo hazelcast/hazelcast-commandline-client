@@ -30,7 +30,6 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/config"
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/listobjectscmd"
-	"github.com/hazelcast/hazelcast-commandline-client/sqlcmd"
 	fakeDoor "github.com/hazelcast/hazelcast-commandline-client/types/fakedoorcmd"
 	"github.com/hazelcast/hazelcast-commandline-client/types/mapcmd"
 	"github.com/hazelcast/hazelcast-commandline-client/versioncmd"
@@ -86,7 +85,8 @@ func subCommands(config *hazelcast.Config, isInteractiveInvocation bool) []*cobr
 	cmds := []*cobra.Command{
 		clustercmd.New(config),
 		mapcmd.New(config, isInteractiveInvocation),
-		sqlcmd.New(config),
+		// Disabling the SQL browser for now... --YT
+		//sqlcmd.New(config),
 		versioncmd.New(),
 		listobjectscmd.New(config),
 		connwizardcmd.New(),
