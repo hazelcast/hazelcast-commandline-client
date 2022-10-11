@@ -16,7 +16,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/hazelcast/hazelcast-commandline-client/runner"
@@ -31,12 +30,14 @@ func main() {
 	programArgs := os.Args[1:]
 	logger, err := runner.CLC(programArgs, os.Stdin, os.Stdout, os.Stderr)
 	if err != nil {
-		errStr := runner.HandleError(err)
-		if errStr != "" {
-			// ignore err, nothing to do
-			_, _ = fmt.Fprintln(os.Stderr, errStr)
-		}
-		os.Exit(exitError)
+		/*
+			errStr := runner.HandleError(err)
+			if errStr != "" {
+				// ignore err, nothing to do
+				_, _ = fmt.Fprintln(os.Stderr, errStr)
+			}
+			os.Exit(exitError)
+		*/
 	}
 	logger.Close()
 }
