@@ -153,12 +153,16 @@ func (co CobraPrompt) Init(ctx context.Context, root *cobra.Command, cnfg *hazel
 	co.GoPromptOptions = append(co.GoPromptOptions, Themes[tuiutil.SelectedTheme]...)
 	co.GoPromptOptions = append(co.GoPromptOptions, OptionsHookForTests...)
 	history := goprompt.NewHistory()
-	f, err := os.OpenFile(cmdHistoryPath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0600)
+	var f *os.File
+	var err error
+	if cmdHistoryPath != "" {
+		f, err = os.OpenFile(cmdHistoryPath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0600)
+	}
 	defer func() {
 		f.Close()
 	}()
-	if err != nil {
-		logger.Printf("Can not open command history file. There will be no history information: %s\n", err.Error())
+	if f == nil {
+		logger.Printf("Can not open command history file. There will be no history information\n")
 	} else {
 		scanner := bufio.NewScanner(f)
 		for scanner.Scan() {

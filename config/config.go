@@ -18,10 +18,12 @@ package config
 import (
 	"bytes"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"text/template"
 
@@ -143,7 +145,11 @@ var ValidLogLevels = []string{
 }
 
 func ConfigExists() bool {
-	exists, err := file.Exists(DefaultConfigPath())
+	p, err := DefaultConfigPath()
+	if err != nil {
+		return false
+	}
+	exists, err := file.Exists(p)
 	if err != nil {
 		return false
 	}
@@ -161,7 +167,10 @@ func WriteToFile(config *Config, confPath string) error {
 }
 
 func ReadAndMergeWithFlags(flags *GlobalFlagValues, c *Config) error {
-	p := DefaultConfigPath()
+	p, err := DefaultConfigPath()
+	if err != nil {
+		return err
+	}
 	if err := readConfig(flags.CfgFile, c, p); err != nil {
 		return err
 	}
@@ -285,8 +294,16 @@ func readConfig(path string, config *Config, defaultConfPath string) error {
 	return nil
 }
 
-func DefaultConfigPath() string {
-	return filepath.Join(file.HZCHomePath(), defaultConfigFilename)
+func DefaultConfigPath() (string, error) {
+	if runtime.GOOS == "windows" {
+		dir := os.Getenv("AppData")
+		if dir == "" {
+			return "", errors.New("%AppData% is not defined")
+		}
+		return filepath.Join(dir, "Roaming", "Hazelcast CLC"), nil
+	}
+	path, err := file.HZCHomePath()
+	return filepath.Join(path, defaultConfigFilename), err
 }
 
 func updateConfigWithSSL(config *hazelcast.Config, sslc *SSLConfig) error {

@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/hazelcast/hazelcast-commandline-client/connwizardcmd"
 	"io"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"strings"
+
+	"github.com/hazelcast/hazelcast-commandline-client/connwizardcmd"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -83,16 +84,7 @@ func IsInteractiveCall(rootCmd *cobra.Command, args []string) bool {
 }
 
 func RunCmdInteractively(ctx context.Context, cnfg *config.Config, l log.Logger, rootCmd *cobra.Command, noColor bool) (cobraprompt.GoPromptWithGracefulShutdown, error) {
-	cmdHistoryPath := filepath.Join(file.HZCHomePath(), "history")
-	exists, err := file.Exists(cmdHistoryPath)
-	if err != nil {
-		l.Println("Command history path file does not exist.")
-	}
-	if !exists {
-		if err := file.CreateMissingDirsAndFileWithRWPerms(cmdHistoryPath, []byte{}); err != nil {
-			l.Printf("Cannot create command history file on %s, history will not be preserved.\n", cmdHistoryPath)
-		}
-	}
+	cmdHistoryPath := setupHistoryFile(l)
 	hConfig := &cnfg.Hazelcast
 	namePersister := make(map[string]string)
 	var p = &cobraprompt.CobraPrompt{
@@ -122,7 +114,7 @@ func RunCmdInteractively(ctx context.Context, cnfg *config.Config, l log.Logger,
 		},
 		Persister: namePersister,
 	}
-	if _, err = connection.ConnectToClusterInteractive(ctx, hConfig); err != nil {
+	if _, err := connection.ConnectToClusterInteractive(ctx, hConfig); err != nil {
 		// ignore error coming from the connection spinner
 		return cobraprompt.GoPromptWithGracefulShutdown{}, err
 	}
@@ -137,6 +129,26 @@ func RunCmdInteractively(ctx context.Context, cnfg *config.Config, l log.Logger,
 	rootCmd.Example = fmt.Sprintf("> %s\n> %s", mapcmd.MapPutExample, mapcmd.MapGetExample) + "\n> cluster version"
 	rootCmd.Use = ""
 	return p.Init(ctx, rootCmd, hConfig, l.Logger, cmdHistoryPath), nil
+}
+
+func setupHistoryFile(l log.Logger) string {
+	dir, err := file.HZCHomePath()
+	if err != nil {
+		l.Println("Can not locate command history path, history will not be preserved.")
+		return ""
+	}
+	cmdHistoryPath := filepath.Join(dir, "history")
+	exists, err := file.Exists(cmdHistoryPath)
+	if err != nil {
+		l.Println("Can not locate command history path, history will not be preserved.")
+		return ""
+	}
+	if !exists {
+		if err := file.CreateMissingDirsAndFileWithRWPerms(cmdHistoryPath, []byte{}); err != nil {
+			l.Printf("Cannot create command history file on %s, history will not be preserved.\n", cmdHistoryPath)
+		}
+	}
+	return cmdHistoryPath
 }
 
 func ProcessConfigAndFlags(rootCmd *cobra.Command, cnfg *config.Config, programArgs []string, globalFlagValues *config.GlobalFlagValues) (log.Logger, error) {

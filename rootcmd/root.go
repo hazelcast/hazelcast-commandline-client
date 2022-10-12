@@ -18,9 +18,10 @@ package rootcmd
 import (
 	"errors"
 	"fmt"
-	"github.com/hazelcast/hazelcast-commandline-client/connwizardcmd"
 	"os"
 	"strings"
+
+	"github.com/hazelcast/hazelcast-commandline-client/connwizardcmd"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
@@ -106,7 +107,8 @@ func subCommands(config *hazelcast.Config, isInteractiveInvocation bool) []*cobr
 
 // assignPersistentFlags assigns top level flags to command
 func assignPersistentFlags(cmd *cobra.Command, flags *config.GlobalFlagValues) {
-	cmd.PersistentFlags().StringVarP(&flags.CfgFile, "config", "c", config.DefaultConfigPath(), fmt.Sprintf("config file, only supports yaml for now"))
+	path, _ := config.DefaultConfigPath()
+	cmd.PersistentFlags().StringVarP(&flags.CfgFile, "config", "c", path, fmt.Sprintf("config file, only supports yaml for now"))
 	cmd.PersistentFlags().StringVarP(&flags.Address, "address", "a", "", fmt.Sprintf("addresses of the instances in the cluster (default is %s)", config.DefaultClusterAddress))
 	cmd.PersistentFlags().StringVar(&flags.Cluster, "cluster-name", "", fmt.Sprintf("name of the cluster that contains the instances (default is %s)", config.DefaultClusterName))
 	cmd.PersistentFlags().StringVar(&flags.Token, "cloud-token", "", "your Hazelcast Viridian token")
