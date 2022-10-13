@@ -18,47 +18,52 @@ package mapcmd
 
 import (
 	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/types"
 	"github.com/spf13/cobra"
 
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
 )
 
-const MapEntriesExample = `  # Get all entries from the map with given delimiter (default tab character).
+const MapEntrySetExample = `  # Get all entries from the map with given delimiter (default tab character).
   hzc map entries -n mapname --delim ":"`
 
 func NewEntries(config *hazelcast.Config) *cobra.Command {
 	var (
 		delim,
 		mapName string
+		showType bool
 	)
 	cmd := &cobra.Command{
-		Use:     "entries --name mapname [--delim delimiter]]",
+		Use:     "entry-set --name mapname [--delim delimiter]]",
 		Short:   "Get all entries from the map with given delimiter",
-		Example: MapEntriesExample,
+		Example: MapEntrySetExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			var err error
-			var entries []types.Entry
-			m, err := getMap(cmd.Context(), config, mapName)
+			ci, err := getClient(cmd.Context(), config)
 			if err != nil {
 				return err
 			}
-			entries, err = m.GetEntrySet(cmd.Context())
+			req := codec.EncodeMapEntrySetRequest(mapName)
+			resp, err := ci.InvokeOnRandomTarget(cmd.Context(), req, nil)
 			if err != nil {
 				var handled bool
 				handled, err = isCloudIssue(err, config)
 				if handled {
 					return err
 				}
-				return hzcerrors.NewLoggableError(err, "Cannot get entries for the given keys for map %s", mapName)
+				return hzcerrors.NewLoggableError(err, "Cannot get the entry set for the given keys for map %s", mapName)
 			}
-			for _, entry := range entries {
-				cmd.Printf("%s%s%s\n", formatGoTypeToOutput(entry.Key), delim, formatGoTypeToOutput(entry.Value))
+			pairs := codec.DecodeMapEntrySetResponse(resp)
+			//printPairs(ci, pairs, showType, output.TypeDelimited)
+			ot, err := output.TypeStringFor(cmd)
+			if err != nil {
+				return err
 			}
-			return nil
+			return printPairs(ci, pairs, showType, ot)
 		},
 	}
 	decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name")
 	decorateCommandWithDelimiter(cmd, &delim, false, "delimiter of printed key, value pairs")
+	decorateCommandWithShowTypesFlag(cmd, &showType)
 	return cmd
 }

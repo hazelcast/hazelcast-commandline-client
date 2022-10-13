@@ -22,6 +22,7 @@ import (
 
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
@@ -66,8 +67,11 @@ func NewGet(config *hazelcast.Config) *cobra.Command {
 			if err != nil {
 				value = serialization.NondecodedType(serialization.TypeToString(valueType))
 			}
-			printValueBasedOnType(cmd, value, valueType, showType)
-			return nil
+			ot, err := output.TypeStringFor(cmd)
+			if err != nil {
+				return err
+			}
+			return printSingleValue(value, valueType, showType, ot)
 		},
 	}
 	decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name")

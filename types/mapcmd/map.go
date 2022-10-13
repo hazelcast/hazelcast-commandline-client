@@ -32,6 +32,7 @@ import (
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/connection"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	iserialization "github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
@@ -137,18 +138,14 @@ func printValueBasedOnType(cmd *cobra.Command, value interface{}, valueType int3
 	typeValue := iserialization.TypeToString(valueType)
 	switch v := value.(type) {
 	case iserialization.NondecodedType:
-		if showType {
-			strValue = "NOT_DECODED"
-		} else {
-			strValue = fmt.Sprintf("[NODECODE:%s]", typeValue)
-		}
+		strValue = output.ValueNotDecoded
 	case serialization.JSON:
 		strValue = v.String()
 	default:
 		if v != nil {
 			strValue = fmt.Sprintf("%s", v)
 		} else if showType {
-			strValue = "NO_VALUE"
+			strValue = output.ValueNil
 		}
 	}
 	if showType {

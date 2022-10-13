@@ -187,3 +187,15 @@ func NewBeginFrame() proto.Frame {
 func NewEndFrame() proto.Frame {
 	return proto.NewFrameWith([]byte{}, proto.EndDataStructureFlag)
 }
+
+func DecodeEntryListForDataAndData(frameIterator *proto.ForwardFrameIterator) []proto.Pair {
+	result := make([]proto.Pair, 0)
+	frameIterator.Next()
+	for !NextFrameIsDataStructureEndFrame(frameIterator) {
+		key := DecodeData(frameIterator)
+		value := DecodeData(frameIterator)
+		result = append(result, proto.NewPair(key, value))
+	}
+	frameIterator.Next()
+	return result
+}

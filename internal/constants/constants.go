@@ -13,12 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package constants
 
-const (
-	TypeString = "string"
-	TypeJSON   = "json"
-)
+package constants
 
 const (
 	ClusterGetStateEndpoint    = "/hazelcast/rest/management/cluster/state"

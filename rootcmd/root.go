@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/hazelcast/hazelcast-commandline-client/connwizardcmd"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
@@ -123,6 +124,9 @@ func assignPersistentFlags(cmd *cobra.Command, flags *config.GlobalFlagValues) {
 		panic(err)
 	}
 	cmd.PersistentFlags().StringVar(&flags.SchemaDir, "schema-dir", "", "set the schema directory")
+	otOpts := []string{output.TypeStringDefault, output.TypeStringPretty, output.TypeStringCSV, output.TypeStringJSON}
+	otUsage := fmt.Sprintf("set the output type; one of: %s", strings.Join(otOpts, ", "))
+	cmd.PersistentFlags().StringVar(&flags.OutputType, "output-type", output.TypeStringDefault, otUsage)
 }
 
 func init() {

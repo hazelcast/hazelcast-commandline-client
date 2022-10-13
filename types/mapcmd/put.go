@@ -24,6 +24,9 @@ import (
 
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
 const MapPutExample = `  # Put key, value pair to map. The unit for ttl/max-idle is one of (ns,us,ms,s,m,h)
@@ -41,6 +44,7 @@ func NewPut(config *hazelcast.Config) *cobra.Command {
 	var (
 		ttl,
 		maxIdle time.Duration
+		showType bool
 	)
 	cmd := &cobra.Command{
 		Use:     "put [--name mapname | --key keyname | --value-type type | {--value-file file | --value value} | --ttl ttl | --max-idle max-idle]",
@@ -53,8 +57,8 @@ func NewPut(config *hazelcast.Config) *cobra.Command {
 				return hzcerrors.NewLoggableError(err, "Conversion error on key %s to type %s, %s", mapKey, mapKeyType, err)
 			}
 			var (
-				ttlE,
-				maxIdleE bool
+				ttlE bool
+				//maxIdleE bool
 			)
 			if ttl.Seconds() != 0 {
 				if err = validateTTL(ttl); err != nil {
@@ -62,31 +66,42 @@ func NewPut(config *hazelcast.Config) *cobra.Command {
 				}
 				ttlE = true
 			}
-			if maxIdle.Seconds() != 0 {
-				if err = isNegativeSecond(maxIdle); err != nil {
-					return hzcerrors.NewLoggableError(err, "max-idle is invalid")
+			/*
+				if maxIdle.Seconds() != 0 {
+					if err = isNegativeSecond(maxIdle); err != nil {
+						return hzcerrors.NewLoggableError(err, "max-idle is invalid")
+					}
+					maxIdleE = true
 				}
-				maxIdleE = true
-			}
+			*/
 			var normalizedValue interface{}
 			if normalizedValue, err = normalizeMapValue(mapValue, mapValueFile, mapValueType); err != nil {
 				return err
 			}
-			m, err := getMap(cmd.Context(), config, mapName)
+			ci, err := getClient(cmd.Context(), config)
 			if err != nil {
 				return err
 			}
-			var oldValue interface{}
-			switch {
-			case ttlE && maxIdleE:
-				oldValue, err = m.PutWithTTLAndMaxIdle(cmd.Context(), key, normalizedValue, ttl, maxIdle)
-			case ttlE:
-				oldValue, err = m.PutWithTTL(cmd.Context(), key, normalizedValue, ttl)
-			case maxIdleE:
-				oldValue, err = m.PutWithMaxIdle(cmd.Context(), key, normalizedValue, maxIdle)
-			default:
-				oldValue, err = m.Put(cmd.Context(), key, normalizedValue)
+			keyData, err := ci.EncodeData(key)
+			if err != nil {
+				return err
 			}
+			valueData, err := ci.EncodeData(normalizedValue)
+			if err != nil {
+				return err
+			}
+			var req *hazelcast.ClientMessage
+			switch {
+			//case ttlE && maxIdleE:
+			//	oldValue, err = m.PutWithTTLAndMaxIdle(cmd.Context(), key, normalizedValue, ttl, maxIdle)
+			case ttlE:
+				req = codec.EncodeMapPutRequest(mapName, keyData, valueData, 0, ttl.Milliseconds())
+			//case maxIdleE:
+			//	oldValue, err = m.PutWithMaxIdle(cmd.Context(), key, normalizedValue, maxIdle)
+			default:
+				req = codec.EncodeMapPutRequest(mapName, keyData, valueData, 0, -1)
+			}
+			resp, err := ci.InvokeOnKey(cmd.Context(), req, keyData, nil)
 			if err != nil {
 				var handled bool
 				handled, err = isCloudIssue(err, config)
@@ -95,8 +110,17 @@ func NewPut(config *hazelcast.Config) *cobra.Command {
 				}
 				return hzcerrors.NewLoggableError(err, "Cannot put given entry to the map %s", mapName)
 			}
-			cmd.Println(formatGoTypeToOutput(oldValue))
-			return nil
+			raw := codec.DecodeMapPutResponse(resp)
+			valueType := raw.Type()
+			oldValue, err := ci.DecodeData(raw)
+			if err != nil {
+				oldValue = serialization.NondecodedType(serialization.TypeToString(valueType))
+			}
+			ot, err := output.TypeStringFor(cmd)
+			if err != nil {
+				return err
+			}
+			return printSingleValue(oldValue, valueType, showType, ot)
 		},
 	}
 	decorateCommandWithMapNameFlags(cmd, &mapName, true, "specify the map name")
@@ -106,5 +130,6 @@ func NewPut(config *hazelcast.Config) *cobra.Command {
 	decorateCommandWithMapValueTypeFlags(cmd, &mapValueType, false)
 	decorateCommandWithTTL(cmd, &ttl, false, "ttl value of the entry")
 	decorateCommandWithMaxIdle(cmd, &maxIdle, false, "max-idle value of the entry")
+	decorateCommandWithShowTypesFlag(cmd, &showType)
 	return cmd
 }

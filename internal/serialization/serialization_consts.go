@@ -41,6 +41,8 @@ const (
 	TypeFloat64Array                         = -19
 	TypeStringArray                          = -20
 	TypeUUID                                 = -21
+	TypeSimpleEntry                          = -22
+	TypeSimpleImmutableEntry                 = -23
 	TypeJavaClass                            = -24
 	TypeJavaDate                             = -25
 	TypeJavaBigInteger                       = -26
@@ -89,6 +91,13 @@ const (
 	TypeHibernate5TypeHibernateNaturalIDKey  = -206
 	TypeJetSerializerFirst                   = -300
 	TypeJetSerializerLast                    = -399
+	// TypeUnknown is the type of values with unknown types
+	// does not exist in the reference implementation
+	TypeUnknown = -2022
+	// TypeSkip indicates that this value should be ignored
+	TypeSkip = -2023
+	// TypeNotDecoded indicates that this value was not decodec
+	TypeNotDecoded = -2024
 )
 
 func TypeToString(t int32) string {
@@ -138,10 +147,14 @@ func TypeToString(t int32) string {
 		s = "STRING_ARRAY"
 	case TypeUUID:
 		s = "UUID"
+	case TypeSimpleEntry:
+		s = "SIMPLE_ENTRY"
+	case TypeSimpleImmutableEntry:
+		s = "SIMPLE_IMMUTABLE_ENTRY"
 	case TypeJavaClass:
 		s = "JAVA_CLASS"
 	case TypeJavaDate:
-		s = "JAVA_DATA"
+		s = "JAVA_DATE"
 	case TypeJavaBigInteger:
 		s = "JAVA_BIG_INTEGER"
 	case TypeJavaDecimal:
@@ -153,7 +166,7 @@ func TypeToString(t int32) string {
 	case TypeJavaLinkedList:
 		s = "JAVA_LINKED_LIST"
 	case TypeJavaDefaultTypeCopyOnWriteArrayList:
-		s = "JAVA_DEFAULT_TYPE_COPY_ON_WRITE_ARRAY_LIST"
+		s = "JAVA_COPY_ON_WRITE_ARRAY_LIST"
 	case TypeJavaDefaultTypeHashMap:
 		s = "JAVA_HASHMAP"
 	case TypeJavaDefaultTypeConcurrentSkipListMap:

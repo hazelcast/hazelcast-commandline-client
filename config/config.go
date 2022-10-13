@@ -82,6 +82,7 @@ type GlobalFlagValues struct {
 	LogFile          string
 	LogLevel         string
 	SchemaDir        string
+	OutputType       string
 }
 
 func DefaultConfig() Config {

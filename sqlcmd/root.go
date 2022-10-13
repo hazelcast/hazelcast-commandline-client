@@ -25,25 +25,22 @@ import (
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/browser"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/connection"
-)
-
-const (
-	outputPretty = "pretty"
-	outputCSV    = "csv"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 )
 
 func New(config *hazelcast.Config) *cobra.Command {
-	var outputType string
+	//var outputType string
 	cmd := &cobra.Command{
 		Use:   "sql [query]",
 		Short: "Start SQL Browser or execute given SQL query",
 		Example: `sql 	# starts the SQL Browser
 sql "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR, this VARCHAR) TYPE IMAP OPTIONS ( 'keyFormat' = 'varchar', 'valueFormat' = 'varchar')" 	# executes the query`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if outputType != outputPretty && outputType != outputCSV {
+			outputType := cmd.Flag("output-type").Value.String()
+			if outputType != output.TypeStringPretty && outputType != output.TypeStringCSV {
 				return hzcerrors.NewLoggableError(nil,
 					"Provided output type parameter (%s) is not a known type. Provide either '%s' or '%s'",
-					outputType, outputPretty, outputCSV)
+					outputType, output.TypeStringPretty, output.TypeStringCSV)
 			}
 			ctx := cmd.Context()
 			c, err := connection.ConnectToCluster(ctx, config)
@@ -82,7 +79,7 @@ sql "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR, this VARCHAR) TYPE IMAP 
 			return nil
 		},
 	}
-	decorateCommandWithOutputFlag(&outputType, cmd)
+	//decorateCommandWithOutputFlag(&outputType, cmd)
 	return cmd
 }
 
@@ -96,10 +93,12 @@ func isContextCancellationErr(err error) bool {
 	return false
 }
 
-func decorateCommandWithOutputFlag(outputType *string, cmd *cobra.Command) {
-	flags := cmd.Flags()
-	flags.StringVarP(outputType, "output-type", "o", outputPretty, fmt.Sprintf("%s or %s", outputPretty, outputCSV))
-	cmd.RegisterFlagCompletionFunc("output-type", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{outputPretty, outputCSV}, cobra.ShellCompDirectiveDefault
-	})
-}
+//
+//func decorateCommandWithOutputFlag(outputType *string, cmd *cobra.Command) {
+//	flags := cmd.Flags()
+//	opts := []string{outputDefault, outputPretty, outputCSV, outputJSON}
+//	flags.StringVarP(outputType, "output-type", "o", outputPretty, fmt.Sprintf("one of: %s", strings.Join(opts, ", ")))
+//	cmd.RegisterFlagCompletionFunc("output-type", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+//		return []string{outputPretty, outputCSV}, cobra.ShellCompDirectiveDefault
+//	})
+//}

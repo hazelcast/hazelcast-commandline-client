@@ -15,7 +15,7 @@ require (
 	github.com/pkg/term v1.1.0
 	github.com/spf13/cobra v1.6.0
 	github.com/spf13/pflag v1.0.5
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.7.4
 	golang.org/x/sys v0.0.0-20211007075335-d3039528d8ac
 	gopkg.in/yaml.v2 v2.4.0
 )
@@ -29,6 +29,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
+	github.com/jedib0t/go-pretty/v6 v6.4.0 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/muesli/ansi v0.0.0-20211018074035-2e021307bc4b // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect

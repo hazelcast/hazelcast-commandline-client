@@ -1,7 +1,7 @@
 {
   "Name": "Employee",
-  "FactoryID": 100,
-  "ClassID": 2,
+  "FID": 100,
+  "CID": 2,
   "Fields": [
     {
       "Name": "FirstName",

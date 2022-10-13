@@ -40,13 +40,13 @@ func LoadPortableFromJSON(b []byte) (GenericPortable, error) {
 }
 
 func NewPortableFactoriesFromItems(items ...GenericPortable) ([]*GenericPortableFactory, error) {
-	m := map[int32][]*GenericPortableSerializer{}
+	m := map[int32][]*GenericPortable{}
 	for _, item := range items {
-		gps, err := NewGenericPortableSerializer(item)
+		gps, err := NewGenericPortable(item)
 		if err != nil {
 			return nil, err
 		}
-		m[item.FactoryID] = append(m[item.FactoryID], gps)
+		m[item.FID] = append(m[item.FID], gps)
 	}
 	fs := make([]*GenericPortableFactory, 0, len(items))
 	for fid, ss := range m {

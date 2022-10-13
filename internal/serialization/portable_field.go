@@ -3,7 +3,6 @@ package serialization
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -11,20 +10,20 @@ import (
 
 type FieldType int
 
-type Field struct {
+type PortableField struct {
 	Name  string
 	Type  PortableType
 	Value any
 }
 
-func (f Field) String() string {
+func (f PortableField) String() string {
 	return fmt.Sprintf("%s:%s", f.Name, f.formatValue())
 }
 
-func (f Field) formatValue() (v string) {
+func (f PortableField) formatValue() (v string) {
 	defer func() {
 		if e := recover(); e != nil {
-			v = "[ERROR]"
+			v = ValueNotDecoded
 		}
 	}()
 	if f.Value == nil {
@@ -33,67 +32,66 @@ func (f Field) formatValue() (v string) {
 	switch f.Type {
 	case PortableTypeNone:
 	case PortableTypePortable:
-		return "[PORTABLE]"
-	case PortableTypeByte:
-		fallthrough
-	case PortableTypeBool:
-		fallthrough
-	case PortableTypeUint16:
-		fallthrough
-	case PortableTypeInt16:
-		fallthrough
-	case PortableTypeInt32:
-		fallthrough
-	case PortableTypeInt64:
-		fallthrough
-	case PortableTypeFloat32:
-		fallthrough
-	case PortableTypeFloat64:
-		fallthrough
-	case PortableTypeString:
-		fallthrough
-	case PortableTypePortableArray:
-		fallthrough
-	case PortableTypeByteArray:
-		fallthrough
-	case PortableTypeBoolArray:
-		fallthrough
-	case PortableTypeUInt16Array:
-		fallthrough
-	case PortableTypeInt16Array:
-		fallthrough
-	case PortableTypeInt32Array:
-		fallthrough
-	case PortableTypeInt64Array:
-		fallthrough
-	case PortableTypeFloat32Array:
-		fallthrough
-	case PortableTypeFloat64Array:
-		fallthrough
-	case PortableTypeStringArray:
-		fallthrough
+		// nested portable is not supported yet
+		return ValueNotDecoded
+	case PortableTypeByte, PortableTypeBool, PortableTypeUint16,
+		PortableTypeInt16, PortableTypeInt32, PortableTypeInt64,
+		PortableTypeFloat32, PortableTypeFloat64, PortableTypeString,
+		PortableTypePortableArray, PortableTypeByteArray, PortableTypeBoolArray,
+		PortableTypeUInt16Array, PortableTypeInt16Array, PortableTypeInt32Array,
+		PortableTypeInt64Array, PortableTypeFloat32Array, PortableTypeFloat64Array,
+		PortableTypeStringArray:
+		return fmt.Sprintf("%v", f.Value)
 	case PortableTypeDecimal:
-		fallthrough
+		return MarshalDecimal(f.Value)
 	case PortableTypeDecimalArray:
-		v = fmt.Sprintf("%v", f.Value)
+		return ValueNotDecoded
 	case PortableTypeTime:
-		v = (*time.Time)(f.Value.(*types.LocalTime)).Format("15:04:05")
+		sr, err := MarshalLocalTime(f.Value)
+		if err != nil {
+			return ValueNotDecoded
+		} else if sr == nil {
+			return ValueNil
+		} else {
+			return *sr
+		}
 	case PortableTypeTimeArray:
-		v = "timearray"
+		return ValueNotDecoded
 	case PortableTypeDate:
-		v = (*time.Time)(f.Value.(*types.LocalDate)).Format("2006-01-02")
+		sr, err := MarshalLocalDate(f.Value)
+		if err != nil {
+			return ValueNotDecoded
+		} else if sr == nil {
+			return ValueNil
+		} else {
+			return *sr
+		}
 	case PortableTypeDateArray:
-		v = "datearray"
+		return ValueNotDecoded
 	case PortableTypeTimestamp:
-		v = (*time.Time)(f.Value.(*types.LocalDateTime)).Format("2006-01-02 15:04:05")
+		sr, err := MarshalLocalDateTime(f.Value)
+		if err != nil {
+			return ValueNotDecoded
+		} else if sr == nil {
+			return ValueNil
+		} else {
+			return *sr
+		}
 	case PortableTypeTimestampArray:
-		v = "timestamparray"
+		return ValueNotDecoded
 	case PortableTypeTimestampWithTimezone:
-		v = (*time.Time)(f.Value.(*types.OffsetDateTime)).Format(time.RFC3339)
+		sr, err := MarshalOffsetDateTime(f.Value)
+		if err != nil {
+			return ValueNotDecoded
+		} else if sr == nil {
+			return ValueNil
+		} else {
+			return *sr
+		}
 	case PortableTypeTimestampWithTimezoneArray:
-		v = "timestampwithtimezonearray"
+		return ValueNotDecoded
 	default:
-		v = "[UNKNOWN]"
+		return ValueUnknown
 	}
 	return v
 }
@@ -275,6 +273,74 @@ func (t *PortableType) UnmarshalText(b []byte) error {
 	return nil
 }
 
+func (t *PortableType) ToTypeID() int32 {
+	switch *t {
+	case PortableTypeNone:
+		return TypeNil
+	case PortableTypePortable:
+		return TypePortable
+	case PortableTypeByte:
+		return TypeByte
+	case PortableTypeBool:
+		return TypeBool
+	case PortableTypeUint16:
+		return TypeUInt16
+	case PortableTypeInt16:
+		return TypeInt16
+	case PortableTypeInt32:
+		return TypeInt32
+	case PortableTypeInt64:
+		return TypeInt64
+	case PortableTypeFloat32:
+		return TypeFloat32
+	case PortableTypeFloat64:
+		return TypeFloat64
+	case PortableTypeString:
+		return TypeString
+	case PortableTypePortableArray:
+		return TypeJavaArray
+	case PortableTypeByteArray:
+		return TypeByteArray
+	case PortableTypeBoolArray:
+		return TypeBoolArray
+	case PortableTypeUInt16Array:
+		return TypeUInt16Array
+	case PortableTypeInt16Array:
+		return TypeInt16Array
+	case PortableTypeInt32Array:
+		return TypeInt32Array
+	case PortableTypeInt64Array:
+		return TypeInt64Array
+	case PortableTypeFloat32Array:
+		return TypeFloat32Array
+	case PortableTypeFloat64Array:
+		return TypeFloat64Array
+	case PortableTypeStringArray:
+		return TypeStringArray
+	case PortableTypeDecimal:
+		return TypeJavaDecimal
+	case PortableTypeDecimalArray:
+		return TypeJavaArray
+	case PortableTypeTime:
+		return TypeJavaLocalTime
+	case PortableTypeTimeArray:
+		return TypeJavaArray
+	case PortableTypeDate:
+		return TypeJavaLocalDate
+	case PortableTypeDateArray:
+		return TypeJavaArray
+	case PortableTypeTimestamp:
+		return TypeJavaLocalDateTime
+	case PortableTypeTimestampArray:
+		return TypeJavaArray
+	case PortableTypeTimestampWithTimezone:
+		return TypeJavaOffsetDateTime
+	case PortableTypeTimestampWithTimezoneArray:
+		return TypeJavaArray
+	}
+	return TypeUnknown
+}
+
 var portableReaders = map[serialization.FieldDefinitionType]portableFieldReader{
 	serialization.TypeBool: func(r serialization.PortableReader, field string) any {
 		return r.ReadBool(field)
@@ -284,6 +350,15 @@ var portableReaders = map[serialization.FieldDefinitionType]portableFieldReader{
 	},
 	serialization.TypeDate: func(r serialization.PortableReader, field string) any {
 		return r.ReadDate(field)
+	},
+	serialization.TypeTime: func(r serialization.PortableReader, field string) any {
+		return r.ReadTime(field)
+	},
+	serialization.TypeTimestamp: func(r serialization.PortableReader, field string) any {
+		return r.ReadTimestamp(field)
+	},
+	serialization.TypeTimestampWithTimezone: func(r serialization.PortableReader, field string) any {
+		return r.ReadTimestampWithTimezone(field)
 	},
 	serialization.TypeInt32: func(r serialization.PortableReader, field string) any {
 		return r.ReadInt32(field)
