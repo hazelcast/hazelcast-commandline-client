@@ -24,10 +24,11 @@ func Exists(path string) (bool, error) {
 
 func HZCHomePath() (string, error) {
 	if runtime.GOOS == "windows" {
-		dir := os.Getenv("AppData")
+		dir := os.Getenv("LocalAppData")
 		if dir == "" {
-			return "", errors.New("%AppData% is not defined")
+			return "", errors.New("%LocalAppData% is not defined")
 		}
+		// C:\Users\USERNAME\AppData\Local
 		return filepath.Join(dir, "Local", "Hazelcast CLC"), nil
 	}
 	homeDirectoryPath, err := os.UserHomeDir()

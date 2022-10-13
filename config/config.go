@@ -300,7 +300,8 @@ func DefaultConfigPath() (string, error) {
 		if dir == "" {
 			return "", errors.New("%AppData% is not defined")
 		}
-		return filepath.Join(dir, "Roaming", "Hazelcast CLC"), nil
+		// C:\Users\USERNAME\AppData\Roaming
+		return filepath.Join(dir, "Hazelcast CLC"), nil
 	}
 	path, err := file.HZCHomePath()
 	return filepath.Join(path, defaultConfigFilename), err
