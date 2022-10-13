@@ -99,11 +99,13 @@ const defaultUserConfig = `hazelcast:
       # 0s is no timeout
       connectiontimeout: {{ .Hazelcast.Cluster.Network.ConnectionTimeout}}
       addresses:
-      {{- range .Hazelcast.Cluster.Network.Addresses}}
+      {{ if not .Hazelcast.Cluster.Cloud.Enabled -}}
+      {{- range .Hazelcast.Cluster.Network.Addresses }}
         - {{ . -}}
-      {{ else }}
+      {{ else -}}
         - localhost:5701
-      {{- end }}
+      {{- end -}}
+	  {{ end }}
     cloud:
       token: "{{ .Hazelcast.Cluster.Cloud.Token}}"
       enabled: {{ .Hazelcast.Cluster.Cloud.Enabled}}
