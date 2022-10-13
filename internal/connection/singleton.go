@@ -55,7 +55,6 @@ func ConnectToClusterInteractive(ctx context.Context, clientConfig *hazelcast.Co
 		escaped := false
 		m := newConnectionSpinnerModel(
 			clientConfig.Cluster.Name,
-			clientConfig.Cluster.Network.Addresses[0],
 			"logfile",
 			&escaped,
 		)

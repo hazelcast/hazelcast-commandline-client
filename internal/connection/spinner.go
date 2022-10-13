@@ -8,7 +8,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-const spinnerText = `Connecting to the cluster %s at %s.
+const spinnerText = `Trying to connect cluster %s.
    Check the logs at %s.`
 
 var (
@@ -20,20 +20,18 @@ var (
 
 type connectionSpinnerModel struct {
 	clusterName string
-	address     string
 	logFileName string
 	spinner     spinner.Model
 	escaped     *bool
 }
 
-func newConnectionSpinnerModel(clusterName, address, logfile string, escaped *bool) *connectionSpinnerModel {
+func newConnectionSpinnerModel(clusterName, logfile string, escaped *bool) *connectionSpinnerModel {
 	s := spinner.New()
 	s.Style = spinnerStyle
 	s.Spinner = currSpinner
 	return &connectionSpinnerModel{
 		spinner:     s,
 		clusterName: clusterName,
-		address:     address,
 		logFileName: logfile,
 		escaped:     escaped,
 	}
@@ -66,7 +64,7 @@ func (m connectionSpinnerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m connectionSpinnerModel) View() (s string) {
-	info := fmt.Sprintf(spinnerText, m.clusterName, m.address, m.logFileName)
+	info := fmt.Sprintf(spinnerText, m.clusterName, m.logFileName)
 	s = fmt.Sprintf("\n%s %s\n", m.spinner.View(), info)
 	s += helpStyle("\nCTRL+C to exit.\n")
 	return
