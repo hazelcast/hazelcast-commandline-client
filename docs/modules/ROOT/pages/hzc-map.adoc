@@ -5,22 +5,56 @@ Map commands are a group of map operations.
 == Commands
 
 * <<hzc-map-clear, hzc map clear>>
+* <<hzc-map-destroy, hzc map destroy>>
 * <<hzc-map-get, hzc map get>>
 * <<hzc-map-get-all, hzc map get-all>>
 * <<hzc-map-put, hzc map put>>
 * <<hzc-map-put-all, hzc map put-all>>
+* <<hzc-map-set, hzc map set>>
+* <<hzc-map-entries, hzc map entries>>
+* <<hzc-map-keys, hzc map keys>>
+* <<hzc-map-values, hzc map values>>
+* <<hzc-map-size, hzc map size>>
 * <<hzc-map-remove, hzc map remove>>
+* <<hzc-map-remove-many, hzc map remove-many>>
 * <<hzc-map-use, hzc map use>>
+* <<hzc-map-lock, hzc map lock>>
+* <<hzc-map-trylock, hzc map trylock>>
+* <<hzc-map-force-unlock, hzc map force-unlock>>
 
 == hzc map clear
 
-Deletes all entries from the map.
+Removes all entries from the map.
 
 Usage:
 
 [source,bash]
 ----
 hzc map clear --name <name of your map>
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Required
+|Name of the map.
+|`dev`
+
+|===
+
+== hzc map destroy
+
+Removes the map from the cluster.
+
+Usage:
+
+[source,bash]
+----
+hzc map destroy --name <name of your map>
 ----
 
 Parameters:
@@ -44,8 +78,8 @@ Usage:
 
 [source,bash]
 ----
-hzc map get --name
-            --key
+hzc map get --name <name of your map>
+            --key <entry key>
             [--key-type {string (default), boolean, json, int8, int16, int32, int64, float32, float64}]
 ----
 
@@ -77,7 +111,7 @@ Example:
 [source,bash]
 ----
 hzc map get --name yearbook --key 2012 --key-type int16
----
+----
 
 == hzc map get-all
 
@@ -87,8 +121,8 @@ Usage:
 
 [source,bash]
 ----
-hzc map get-all --name
-                --key
+hzc map get-all --name <name of your map>
+                --key <entry key>
                 [--key-type {string (default), boolean, json, int8, int16, int32, int64, float32, float64}]
                 [--delim {":" (default)}]
 ----
@@ -130,15 +164,15 @@ hzc get-all -n yearbook -k 2012 -k 2013 --key-type int16 --delim ":"
 
 == hzc map put
 
-Sets the value of a given key in a map.
+Adds the given key-value entry pair to a map.
 
 Usage:
 
 [source,bash]
 ----
-hzc map put --name
-            --key
-            --value
+hzc map put --name <name of your map>
+            --key <entry key>
+            --value <entry value>
             [--value-file]
             [--key-type {string (default), boolean, json, int8, int16, int32, int64, float32, float64}]
             [--value-type {string (default), boolean, json, int8, int16, int32, int64, float32, float64}]
@@ -199,19 +233,19 @@ Example:
 [source,bash]
 ----
 hzc map put --key-type string --key hello --value-type float32 --value 19.94 --name myMap --ttl 1300ms --max-idle 1400ms
----
+----
 
 == hzc map put-all
 
-Add the given key-value entry pairs to a map.
+Adds the given key-value entry pairs to a map.
 
 Usage:
 
 [source,bash]
 ----
-hzc map put-all --name
-            --key
-            --value
+hzc map put-all --name <name of your map>
+            --key <entry key>
+            --value <entry value>
             [--value-file]
             [--key-type {string (default), boolean, json, int8, int16, int32, int64, float32, float64}]
             [--value-type {string (default), boolean, json, int8, int16, int32, int64, float32, float64}]
@@ -292,6 +326,187 @@ Example JSON file:
 }
 ----
 
+== hzc map set
+
+Sets the value of a given key in a map.
+
+Usage:
+
+[source,bash]
+----
+hzc map set --name <name of your map>
+            --key <entry key>
+            --value <entry value>
+            [--value-file]
+            [--key-type {string (default), boolean, json, int8, int16, int32, int64, float32, float64}]
+            [--value-type {string (default), boolean, json, int8, int16, int32, int64, float32, float64}]
+            [--max-idle {ns, us, ms, s, m, h (nanosecond, microsecond, millisecond, second, minute, hour)}]
+            [--ttl {ns, us, ms, s, m, h (nanosecond, microsecond, millisecond, second, minute, hour)}]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Required
+|Name of the map.
+|`dev`
+
+|`--key`, `-k`
+|Required
+|Key of the map entry.
+|N/A
+
+|`--value`, `-v`
+|Required
+|Value to set for the key. Mutually exclusive with `--value-file`.
+|N/A
+
+|`--value-file`, `-f`
+|Optional
+|Path to a file that contains the value to set for the key. Use `-` (dash) to read from `stdin`. Mutually exclusive with `--value`.
+|N/A
+
+|`--key-type`
+|Optional
+|Data type of the key.
+|String
+
+|`--value-type`, `-t`
+|Optional
+|Data type of the value.
+|String
+
+|`--max-idle`
+|Optional
+|Maximum time in milliseconds for the entry to stay idle in the map. It cannot be shorter than 1 second (1000 ms).
+|N/A
+
+|`--ttl`
+|Optional
+|Duration in milliseconds after which the entry will expire and be evicted. It cannot be shorter than 1 second (1000 ms).
+|N/A
+
+|===
+
+Example:
+
+[source,bash]
+----
+hzc map set --key-type string --key hello --value-type float32 --value 19.94 --name myMap --ttl 1300ms --max-idle 1400ms
+----
+
+== hzc map entries
+
+Gets all the entries of the specified map.
+
+Usage:
+
+[source,bash]
+----
+hzc map entries --name <name of your map> [--delim <delimeter>]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Required
+|Name of the map.
+|`dev`
+
+|`--delim`
+|Optional
+|Delimiter to separate the printed key and value.
+|:
+
+|===
+
+Example:
+
+[source,bash]
+----
+hzc map entries -n myMap --delim ","
+----
+
+== hzc map keys
+
+Gets all the entry keys from the map.
+
+Usage:
+
+[source,bash]
+----
+hzc map keys --name <name of your map>
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Required
+|Name of the map.
+|`dev`
+
+|===
+
+== hzc map values
+
+Gets all the entry values from the map.
+
+Usage:
+
+[source,bash]
+----
+hzc map values --name <name of your map>
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Required
+|Name of the map.
+|`dev`
+
+|===
+
+== hzc map size
+
+Prints the size of the given the map.
+
+Usage:
+
+[source,bash]
+----
+hzc map size --name <name of your map>
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Required
+|Name of the map.
+|`dev`
+
+|===
+
 == hzc map remove
 
 Deletes the value of a given key in a map.
@@ -300,8 +515,8 @@ Usage:
 
 [source,bash]
 ----
-hzc map remove --name
-               --key
+hzc map remove --name <name of your map>
+               --key <entry key>
                [--key-type {string (default), boolean, json, int8, int16, int32, int64, float32, float64}]
 ----
 
@@ -332,7 +547,190 @@ Example:
 
 [source,bash]
 ----
-hzc map remove --name mapname --key k1
+hzc map remove --name myMap --key k1
+----
+
+== hzc map remove-many
+
+Removes entries from the map having the provided keys.
+
+Usage:
+
+[source,bash]
+----
+hzc map remove-many --name <name of your map>
+               [--key-type {string (default), boolean, json, int8, int16, int32, int64, float32, float64}]
+               --key keyname [--key keyname2...]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Required
+|Name of the map.
+|`dev`
+
+|`--key`, `-k`
+|At least one required
+|Key of the map entry.
+|N/A
+
+|`--key-type`
+|Optional
+|Data type of the key.
+|String
+
+|===
+
+Example:
+
+[source,bash]
+----
+hzc map remove --name myMap --key k1 --key k2
+----
+
+== hzc map lock
+
+Locks the specified key of the given map.
+
+Usage:
+
+[source,bash]
+----
+hzc map lock --key <entry key> --name <name of your map> [--lease-time <duration>]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Required
+|Name of the map.
+|`dev`
+
+|`--key`, `-k`
+|Required
+|Key of the map entry.
+|N/A
+
+|`--key-type`
+|Optional
+|Data type of the key.
+|String
+
+|`--lease-time`
+|Optional
+|Duration in milliseconds to hold the lock.
+|Indefinite
+
+|===
+
+Example:
+
+[source,bash]
+----
+hzc map lock --key k1 --name myMap --lease-time 10ms
+----
+
+== hzc map trylock
+
+Tries to lock the specified key of the given map. Prints *unsuccessful* if not successful.
+
+Usage:
+
+[source,bash]
+----
+hzc map trylock --key <entry key> --name <name of your map> [--lease-time <duration>] [--timeout <duration>]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Required
+|Name of the map.
+|`dev`
+
+|`--key`, `-k`
+|Required
+|Key of the map entry.
+|N/A
+
+|`--key-type`
+|Optional
+|Data type of the key.
+|String
+
+|`--lease-time`
+|Optional
+|Duration in milliseconds to hold the lock.
+|Indefinite
+
+|`--timeout`
+|Optional
+|Duration in milliseconds to wait for the lock to be available.
+|No timeout
+
+|===
+
+Example:
+
+[source,bash]
+----
+hzc map trylock --key k1 --name myMap --timeout 10ms --lease-time 2m
+----
+
+== hzc map force-unlock
+
+Force-unlocks the specified key of the given map.
+
+Usage:
+
+[source,bash]
+----
+hzc map force-unlock --name <name of your map>
+                     --key <entry key>
+                     [--key-type {string (default), boolean, json, int8, int16, int32, int64, float32, float64}]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Required
+|Name of the map.
+|`dev`
+
+|`--key`, `-k`
+|Required
+|Key of the map entry.
+|N/A
+
+|`--key-type`
+|Optional
+|Data type of the key.
+|String
+
+|===
+
+Example:
+
+[source,bash]
+----
+hzc map force-unlock --name myMap --key k1
 ----
 
 == hzc map use
@@ -367,15 +765,3 @@ hzc map use m1           # sets the default map name to m1 unless set explicitly
 hzc map get --key k1     # "--name m1" is inferred
 hzc map use --reset      # resets the default map name
 ----
-
-
-
-
-
-
-
-
-
-
-
-
