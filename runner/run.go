@@ -10,10 +10,11 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/spf13/pflag"
+
 	"github.com/hazelcast/hazelcast-commandline-client/connwizardcmd"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 
 	"github.com/hazelcast/hazelcast-commandline-client/config"
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
@@ -110,7 +111,7 @@ func RunCmdInteractively(ctx context.Context, cfg *config.Config, l log.Logger, 
 		NoColor:                  noColor,
 		AddDefaultExitCommand:    true,
 		GoPromptOptions: []goprompt.Option{
-			goprompt.OptionTitle("Hazelcast Client"),
+			goprompt.OptionTitle("Hazelcast CLC"),
 			goprompt.OptionLivePrefix(func() (prefix string, useLivePrefix bool) {
 				var b strings.Builder
 				for k, v := range namePersister {

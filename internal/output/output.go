@@ -30,6 +30,10 @@ type RowExtender interface {
 
 type Row []Column
 
+func (r Row) MarshalJSON() ([]byte, error) {
+	return []byte(`{"fdo": 42}`), nil
+}
+
 type RowProvider interface {
 	NextRow() (Row, bool)
 }

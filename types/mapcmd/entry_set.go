@@ -39,6 +39,10 @@ func NewEntries(config *hazelcast.Config) *cobra.Command {
 		Short:   "Get all entries from the map with given delimiter",
 		Example: MapEntrySetExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			ot, err := output.TypeStringFor(cmd)
+			if err != nil {
+				return err
+			}
 			ci, err := getClient(cmd.Context(), config)
 			if err != nil {
 				return err
@@ -55,10 +59,6 @@ func NewEntries(config *hazelcast.Config) *cobra.Command {
 			}
 			pairs := codec.DecodeMapEntrySetResponse(resp)
 			//printPairs(ci, pairs, showType, output.TypeDelimited)
-			ot, err := output.TypeStringFor(cmd)
-			if err != nil {
-				return err
-			}
 			return printPairs(ci, pairs, showType, ot)
 		},
 	}

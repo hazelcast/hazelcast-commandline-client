@@ -90,9 +90,7 @@ func (co Column) SingleLine() (s string) {
 		iserialization.TypeFloat32, iserialization.TypeFloat64, iserialization.TypeString,
 		iserialization.TypeByteArray, iserialization.TypeBoolArray, iserialization.TypeUInt16Array,
 		iserialization.TypeInt16Array, iserialization.TypeInt32Array, iserialization.TypeInt64Array,
-		iserialization.TypeFloat32Array, iserialization.TypeFloat64Array:
-		s = fmt.Sprintf("%v", co.Value)
-	case iserialization.TypeStringArray:
+		iserialization.TypeFloat32Array, iserialization.TypeFloat64Array, iserialization.TypeStringArray:
 		s = fmt.Sprintf("%v", co.Value)
 	case iserialization.TypeUUID:
 		s = co.Value.(types.UUID).String()

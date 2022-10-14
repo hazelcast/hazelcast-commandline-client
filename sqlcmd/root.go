@@ -23,7 +23,6 @@ import (
 	"github.com/spf13/cobra"
 
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/browser"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/connection"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 )
@@ -31,16 +30,13 @@ import (
 func New(config *hazelcast.Config) *cobra.Command {
 	//var outputType string
 	cmd := &cobra.Command{
-		Use:   "sql [query]",
-		Short: "Start SQL Browser or execute given SQL query",
-		Example: `sql 	# starts the SQL Browser
-sql "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR, this VARCHAR) TYPE IMAP OPTIONS ( 'keyFormat' = 'varchar', 'valueFormat' = 'varchar')" 	# executes the query`,
+		Use:     "sql [query]",
+		Short:   "Execute the given SQL query",
+		Example: `sql 'select * from table(generate_stream(1))'`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			outputType := cmd.Flag("output-type").Value.String()
-			if outputType != output.TypeStringPretty && outputType != output.TypeStringCSV {
-				return hzcerrors.NewLoggableError(nil,
-					"Provided output type parameter (%s) is not a known type. Provide either '%s' or '%s'",
-					outputType, output.TypeStringPretty, output.TypeStringCSV)
+			ot, err := output.TypeStringFor(cmd)
+			if err != nil {
+				return err
 			}
 			ctx := cmd.Context()
 			c, err := connection.ConnectToCluster(ctx, config)
@@ -50,19 +46,12 @@ sql "CREATE MAPPING IF NOT EXISTS myMap (__key VARCHAR, this VARCHAR) TYPE IMAP 
 			q := strings.Join(args, " ")
 			q = strings.TrimSpace(q)
 			if len(q) == 0 {
-				// If no queries given, run sql browser
-				p := browser.InitSQLBrowser(c, cmd.InOrStdin(), cmd.OutOrStdout())
-				if err := p.Start(); err != nil {
-					fmt.Println("could not run sql browser:", err)
-					return err
-				}
-				// spinner
-				return nil
+				return hzcerrors.NewLoggableError(err, "Query is required")
 			}
 			// If a statement is provided, run it in non-interactive mode
 			lt := strings.ToLower(q)
 			if strings.HasPrefix(lt, "select") || strings.HasPrefix(lt, "show") {
-				if err := query(ctx, c, q, cmd.OutOrStdout(), outputType); err != nil && !isContextCancellationErr(err) {
+				if err := query(ctx, c, q, cmd.OutOrStdout(), ot); err != nil && !isContextCancellationErr(err) {
 					return hzcerrors.NewLoggableError(err, "Cannot execute the query")
 				}
 			} else {

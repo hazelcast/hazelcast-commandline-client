@@ -27,10 +27,11 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/sql"
 
 	"github.com/hazelcast/hazelcast-commandline-client/internal/format"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/table"
 )
 
-func query(ctx context.Context, c *hazelcast.Client, text string, out io.Writer, outputType string) error {
+func query(ctx context.Context, c *hazelcast.Client, text string, out io.Writer, outputType output.Type) error {
 	result, err := c.SQL().Execute(ctx, text)
 	if err != nil {
 		return fmt.Errorf("querying: %w", err)
@@ -48,7 +49,7 @@ func query(ctx context.Context, c *hazelcast.Client, text string, out io.Writer,
 		}
 	}()
 	switch outputType {
-	case outputPretty:
+	case output.TypeTable:
 		tWriter := table.NewTableWriter(out)
 		return rowsHandler(result, func(cols []string) error {
 			icols := make([]interface{}, len(cols))
@@ -62,7 +63,7 @@ func query(ctx context.Context, c *hazelcast.Client, text string, out io.Writer,
 			}
 			return tWriter.Write(row...)
 		})
-	case outputCSV:
+	case output.TypeDelimited, output.TypeCSV:
 		csvWriter := csv.NewWriter(out)
 		return rowsHandler(result, func(cols []string) error {
 			if err := csvWriter.Write(cols); err != nil {

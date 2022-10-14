@@ -23,6 +23,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/connwizardcmd"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
+	"github.com/hazelcast/hazelcast-commandline-client/sqlcmd"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
@@ -86,8 +87,7 @@ func subCommands(config *hazelcast.Config, isInteractiveInvocation bool) []*cobr
 	cmds := []*cobra.Command{
 		clustercmd.New(config),
 		mapcmd.New(config, isInteractiveInvocation),
-		// Disabling the SQL browser for now... --YT
-		//sqlcmd.New(config),
+		sqlcmd.New(config),
 		versioncmd.New(),
 		listobjectscmd.New(config),
 		connwizardcmd.New(),

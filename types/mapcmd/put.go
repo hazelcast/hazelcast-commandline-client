@@ -52,6 +52,10 @@ func NewPut(config *hazelcast.Config) *cobra.Command {
 		Example: MapPutExample,
 		PreRunE: hzcerrors.RequiredFlagChecker,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			ot, err := output.TypeStringFor(cmd)
+			if err != nil {
+				return err
+			}
 			key, err := internal.ConvertString(mapKey, mapKeyType)
 			if err != nil {
 				return hzcerrors.NewLoggableError(err, "Conversion error on key %s to type %s, %s", mapKey, mapKeyType, err)
@@ -115,10 +119,6 @@ func NewPut(config *hazelcast.Config) *cobra.Command {
 			oldValue, err := ci.DecodeData(raw)
 			if err != nil {
 				oldValue = serialization.NondecodedType(serialization.TypeToString(valueType))
-			}
-			ot, err := output.TypeStringFor(cmd)
-			if err != nil {
-				return err
 			}
 			return printSingleValue(oldValue, valueType, showType, ot)
 		},
