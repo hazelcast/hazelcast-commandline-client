@@ -40,7 +40,7 @@ func printSingleValue(value any, valueType int32, showType bool, ot output.Type)
 	panic(fmt.Errorf("unsupported output type: %d", ot))
 }
 
-func printPairs(ic *hazelcast.ClientInternal, pairs []hazelcast.Pair, showType bool, ot output.Type) error {
+func decodePairs(ic *hazelcast.ClientInternal, pairs []hazelcast.Pair, showType bool) []output.Row {
 	rows := make([]output.Row, 0, len(pairs))
 	vs := []any{}
 	for _, pair := range pairs {
@@ -58,6 +58,14 @@ func printPairs(ic *hazelcast.ClientInternal, pairs []hazelcast.Pair, showType b
 		}
 		rows = append(rows, row)
 	}
+	return rows
+}
+
+func printPairs(ic *hazelcast.ClientInternal, pairs []hazelcast.Pair, showType bool, ot output.Type) error {
+	return printRows(decodePairs(ic, pairs, showType), ot)
+}
+
+func printRows(rows []output.Row, ot output.Type) error {
 	if ot == output.TypeDelimited {
 		result := output.NewSimpleRows(rows)
 		dr := output.NewDelimitedResult("\t", result, true)
@@ -111,6 +119,14 @@ func printPairs(ic *hazelcast.ClientInternal, pairs []hazelcast.Pair, showType b
 			}
 			drows[i] = newRow
 		}
+		stdHeader := []string{output.NameKey}
+		if _, ok := hd[output.NameKeyType]; ok {
+			stdHeader = append(stdHeader, output.NameKeyType)
+		}
+		stdHeader = append(stdHeader, output.NameValue)
+		if _, ok := hd[output.NameValueType]; ok {
+			stdHeader = append(stdHeader, output.NameValueType)
+		}
 		header := make([]string, 0, len(hd))
 		// delete standard headers
 		delete(hd, output.NameKeyType)
@@ -123,10 +139,6 @@ func printPairs(ic *hazelcast.ClientInternal, pairs []hazelcast.Pair, showType b
 		sort.Slice(header, func(i, j int) bool {
 			return header[i] < header[j]
 		})
-		stdHeader := []string{output.NameKey, output.NameValue}
-		if showType {
-			stdHeader = []string{output.NameKey, output.NameKeyType, output.NameValue, output.NameValueType}
-		}
 		header = append(stdHeader, header...)
 		// create new rows
 		nilCol := output.Column{Type: serialization.TypeNil}

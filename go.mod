@@ -7,6 +7,7 @@ require (
 	github.com/alecthomas/assert v0.0.0-20170929043011-405dbfeb8e38
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/hazelcast/hazelcast-go-client v1.3.1-0.20221005090358-58f17bb84ba8
+	github.com/jedib0t/go-pretty/v6 v6.4.0
 	github.com/lucasb-eyer/go-colorful v1.2.0
 	github.com/mattn/go-colorable v0.1.7
 	github.com/mattn/go-runewidth v0.0.13
@@ -29,7 +30,6 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
-	github.com/jedib0t/go-pretty/v6 v6.4.0 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/muesli/ansi v0.0.0-20211018074035-2e021307bc4b // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
