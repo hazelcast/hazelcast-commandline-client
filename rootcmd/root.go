@@ -18,6 +18,7 @@ package rootcmd
 import (
 	"errors"
 	"fmt"
+	"github.com/hazelcast/hazelcast-commandline-client/listmemberscmd"
 	"os"
 	"strings"
 
@@ -90,6 +91,7 @@ func subCommands(config *hazelcast.Config, isInteractiveInvocation bool) []*cobr
 		versioncmd.New(),
 		listobjectscmd.New(config),
 		connwizardcmd.New(),
+		listmemberscmd.New(config),
 	}
 	fds := []fakeDoor.FakeDoor{
 		{Name: "List", IssueNum: 48},
