@@ -9,12 +9,10 @@ import (
 
 func New(config *hazelcast.Config) *cobra.Command {
 	cmd := cobra.Command{
-		Use:   "list-members [distributed object type]",
-		Short: "List distributed objects in the cluster",
-		Long:  `List type and name of the distributed objects present in the cluster`,
-		Example: `  list
-  list --type map
-  list --type fencedlock`,
+		Use:     "list-members",
+		Short:   "",
+		Long:    ``,
+		Example: ``,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 			c, _ := connection.ConnectToCluster(ctx, config)
