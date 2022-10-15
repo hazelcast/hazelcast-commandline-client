@@ -19,7 +19,7 @@ func New(config *hazelcast.Config) *cobra.Command {
 			members := hazelcast.NewClientInternal(c).OrderedMembers()
 			cmd.Println(fmt.Sprintf("%s\t%s\t%s\t%s\t%s\t%s", "Order", "Private_IP", "Public_IP", "Version", "Lite?", "UUID"))
 			for i, m := range members {
-				l := fmt.Sprintf("%d\t%s\t%s\t%s\t%t\t%s", i, m.Addr, m.Address, m.Version, m.LiteMember, m.UUID)
+				l := fmt.Sprintf("%d\t%s\t%s\t%s\t%t\t%s", i, m.Address, m.Address, m.Version, m.LiteMember, m.UUID)
 				cmd.Println(l)
 			}
 			return nil
