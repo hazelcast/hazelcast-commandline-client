@@ -13,4 +13,5 @@ func main() {
 	if err := m.Execute(); err != nil {
 		I2(fmt.Fprintln(os.Stderr, err.Error()))
 	}
+	m.Exit()
 }

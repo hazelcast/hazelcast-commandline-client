@@ -13,10 +13,12 @@ import (
 type InitContext interface {
 	AddStringFlag(long, short, value string, required bool, help string)
 	AddBoolFlag(long, short string, value bool, required bool, help string)
+	SetPositionalArgCount(min, max int)
 	Interactive() bool
 	SetCommandUsage(long, short string)
 	AddCommandGroup(id, title string)
 	SetCommandGroup(id string)
+	AddStringConfig(name, value, flag string, help string)
 }
 
 type ExecContext interface {

@@ -2,22 +2,26 @@ package internal
 
 import (
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/make"
 )
 
 type CommandContext struct {
 	Cmd           *cobra.Command
+	Vpr           *viper.Viper
 	stringValues  map[string]*string
 	boolValues    map[string]*bool
 	isInteractive bool
 	groups        map[string]*cobra.Group
 }
 
-func NewCommandContext(cmd *cobra.Command, isInteractive bool) *CommandContext {
+func NewCommandContext(cmd *cobra.Command, vpr *viper.Viper, isInteractive bool) *CommandContext {
 	return &CommandContext{
 		Cmd:           cmd,
+		Vpr:           vpr,
 		stringValues:  map[string]*string{},
 		boolValues:    map[string]*bool{},
 		isInteractive: isInteractive,
@@ -52,6 +56,10 @@ func (cc *CommandContext) AddBoolFlag(long, short string, value bool, required b
 	cc.boolValues[long] = &b
 }
 
+func (cc *CommandContext) SetPositionalArgCount(min, max int) {
+	cc.Cmd.Args = cobra.RangeArgs(min, max)
+}
+
 func (cc *CommandContext) Interactive() bool {
 	return cc.isInteractive
 }
@@ -78,4 +86,15 @@ func (cc *CommandContext) AddCommandGroup(id, title string) {
 
 func (cc *CommandContext) Groups() []*cobra.Group {
 	return make.SliceFromMap(cc.groups)
+}
+
+func (cc *CommandContext) AddStringConfig(name, value, flag string, help string) {
+	cc.Vpr.SetDefault(name, value)
+	if flag != "" && !cc.isInteractive {
+		f := cc.Cmd.Flag(flag)
+		if f != nil {
+			Must(cc.Vpr.BindPFlag(name, f))
+		}
+		return
+	}
 }

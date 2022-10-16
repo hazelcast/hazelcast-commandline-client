@@ -7,6 +7,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/property"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/make"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
@@ -14,22 +15,31 @@ import (
 )
 
 const (
-	mapFlagKey = "key"
+	mapFlagKeyType = "key"
 )
 
 type MapGetCommand struct{}
 
 func (mc *MapGetCommand) Init(cc plug.InitContext) error {
-	cc.AddStringFlag(mapFlagKey, "k", "", true, "IMap key")
+	cc.AddStringFlag(mapFlagKeyType, "k", "", false, "key type")
 	usage := "Get a value from the given IMap"
 	cc.SetCommandUsage(usage, usage)
+	cc.SetPositionalArgCount(1, 1)
 	return nil
 }
 
 func (mc *MapGetCommand) Exec(ec plug.ExecContext) error {
 	ctx := context.TODO()
-	key := ec.Props().GetString(mapFlagKey)
 	mapName := ec.Props().GetString(mapFlagName)
+	ks := ec.Args()[0]
+	kt := ec.Props().GetString(mapFlagKeyType)
+	if kt == "" {
+		kt = "string"
+	}
+	key, err := make.ValueFromString(ks, kt)
+	if err != nil {
+		return err
+	}
 	ci := MustAnyValue[*hazelcast.ClientInternal](ec.Props().GetBlocking(property.ClientInternalName))
 	keyData, err := ci.EncodeData(key)
 	if err != nil {
@@ -41,15 +51,15 @@ func (mc *MapGetCommand) Exec(ec plug.ExecContext) error {
 		return err
 	}
 	raw := codec.DecodeMapGetResponse(resp)
-	valueType := raw.Type()
+	vt := raw.Type()
 	value, err := ci.DecodeData(raw)
 	if err != nil {
-		value = serialization.NondecodedType(serialization.TypeToString(valueType))
+		value = serialization.NondecodedType(serialization.TypeToString(vt))
 	}
 	row := output.Row{
 		output.Column{
 			Name:  output.NameValue,
-			Type:  valueType,
+			Type:  vt,
 			Value: value,
 		},
 	}
@@ -57,7 +67,7 @@ func (mc *MapGetCommand) Exec(ec plug.ExecContext) error {
 		row = append(row, output.Column{
 			Name:  output.NameValueType,
 			Type:  serialization.TypeString,
-			Value: serialization.TypeToString(valueType),
+			Value: serialization.TypeToString(vt),
 		})
 	}
 	ec.AddOutputRows(row)
