@@ -2,6 +2,14 @@
 
 Map commands are a group of map operations.
 
+Usage:
+
+[source,bash]
+----
+hzc map [command] [options]
+----
+
+
 == Commands
 
 * <<hzc-map-clear, hzc map clear>>

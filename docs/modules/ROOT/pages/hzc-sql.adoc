@@ -1,14 +1,16 @@
 = hzc sql
-:description: Execute SQL queries.
+:description: Executes a SQL statement or starts the interactive SQL browser.
 
 {description}
+
+Usage:
 
 [source,bash]
 ----
 hzc sql "[query]" [--output]
 ----
 
-== Parameters
+Parameters:
 
 [cols="1m,1a,2a,1a"]
 |===
@@ -30,8 +32,7 @@ hzc sql "[query]" [--output]
 include::partial$global-parameters.adoc[]
 ====
 
-
-== Examples of SQL Querying
+== Querying with SQL using Hazelcast CLC
 
 You can use SQL to query a map, using all three modes of the Hazelcast CLC.
 

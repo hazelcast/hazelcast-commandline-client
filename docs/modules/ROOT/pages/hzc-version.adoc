@@ -1,5 +1,5 @@
 = hzc version
-:description: Prints the version information about CLC.
+:description: Prints the version information about the Hazelcast CLC.
 
 {description}
 
