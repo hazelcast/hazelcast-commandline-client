@@ -4,6 +4,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/make"
 )
 
 type CommandContext struct {
@@ -11,6 +12,7 @@ type CommandContext struct {
 	stringValues  map[string]*string
 	boolValues    map[string]*bool
 	isInteractive bool
+	groups        map[string]*cobra.Group
 }
 
 func NewCommandContext(cmd *cobra.Command, isInteractive bool) *CommandContext {
@@ -19,6 +21,7 @@ func NewCommandContext(cmd *cobra.Command, isInteractive bool) *CommandContext {
 		stringValues:  map[string]*string{},
 		boolValues:    map[string]*bool{},
 		isInteractive: isInteractive,
+		groups:        map[string]*cobra.Group{},
 	}
 }
 
@@ -36,6 +39,7 @@ func (cc *CommandContext) AddStringFlag(long, short, value string, required bool
 }
 
 func (cc *CommandContext) AddBoolFlag(long, short string, value bool, required bool, help string) {
+	cc.Cmd.AddGroup()
 	var b bool
 	if short != "" {
 		cc.Cmd.PersistentFlags().BoolVarP(&b, long, short, value, help)
@@ -50,4 +54,28 @@ func (cc *CommandContext) AddBoolFlag(long, short string, value bool, required b
 
 func (cc *CommandContext) Interactive() bool {
 	return cc.isInteractive
+}
+
+func (cc *CommandContext) SetCommandUsage(long, short string) {
+	if long != "" {
+		cc.Cmd.Long = long
+	}
+	if short != "" {
+		cc.Cmd.Short = short
+	}
+}
+
+func (cc *CommandContext) SetCommandGroup(id string) {
+	cc.Cmd.GroupID = id
+}
+
+func (cc *CommandContext) AddCommandGroup(id, title string) {
+	cc.groups[id] = &cobra.Group{
+		ID:    id,
+		Title: title,
+	}
+}
+
+func (cc *CommandContext) Groups() []*cobra.Group {
+	return make.SliceFromMap(cc.groups)
 }

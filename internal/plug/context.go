@@ -10,10 +10,13 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 )
 
-type CommandContext interface {
+type InitContext interface {
 	AddStringFlag(long, short, value string, required bool, help string)
 	AddBoolFlag(long, short string, value bool, required bool, help string)
 	Interactive() bool
+	SetCommandUsage(long, short string)
+	AddCommandGroup(id, title string)
+	SetCommandGroup(id string)
 }
 
 type ExecContext interface {
@@ -25,4 +28,8 @@ type ExecContext interface {
 	Client(ctx context.Context) (*hazelcast.Client, error)
 	Interactive() bool
 	AddOutputRows(row ...output.Row)
+}
+
+type ConfigContext interface {
+	AddStringConfig(key, value, help string)
 }

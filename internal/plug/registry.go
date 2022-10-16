@@ -11,20 +11,26 @@ import (
 var Registry = newRegistry()
 
 type registry struct {
-	commands   map[string]Command
+	initters   map[string]Initializer
+	commands   map[string]Commander
 	augmentors map[string]Augmentor
 	printers   map[string]Printer
 }
 
 func newRegistry() *registry {
 	return &registry{
-		commands:   map[string]Command{},
+		initters:   map[string]Initializer{},
+		commands:   map[string]Commander{},
 		augmentors: map[string]Augmentor{},
 		printers:   map[string]Printer{},
 	}
 }
 
-func (rg *registry) RegisterCommand(name string, cmd Command) error {
+func (rg *registry) RegisterGlobalInitializer(name string, ita Initializer) {
+	rg.initters[name] = ita
+}
+
+func (rg *registry) RegisterCommand(name string, cmd Commander) error {
 	if ok := validName(name); !ok {
 		return fmt.Errorf("invalid name: %s", name)
 	}
@@ -40,7 +46,11 @@ func (rg *registry) RegisterPrinter(name string, pr Printer) {
 	rg.printers[name] = pr
 }
 
-func (rg *registry) Commands() []RegistryItem[Command] {
+func (rg *registry) GlobalInitializers() []RegistryItem[Initializer] {
+	return sortedItems(rg.initters)
+}
+
+func (rg *registry) Commands() []RegistryItem[Commander] {
 	return sortedItems(rg.commands)
 }
 
@@ -50,6 +60,15 @@ func (rg *registry) Augmentors() []RegistryItem[Augmentor] {
 
 func (rg *registry) Printers() []RegistryItem[Printer] {
 	return sortedItems(rg.printers)
+}
+
+func (rg *registry) PrinterNames() []string {
+	prs := rg.Printers()
+	ns := make([]string, 0, len(prs))
+	for _, pr := range prs {
+		ns = append(ns, pr.Name)
+	}
+	return ns
 }
 
 func sortedItems[T any](d map[string]T) []RegistryItem[T] {

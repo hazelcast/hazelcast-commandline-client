@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/internal"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/property"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
@@ -24,23 +25,30 @@ type Main struct {
 	stderr        io.WriteCloser
 	ec            plug.ExecContext
 	isInteractive bool
+	outputType    string
 }
 
-func NewMain() *Main {
+func NewMain(interactive bool) *Main {
 	rc := &cobra.Command{
 		Use:   "clc",
 		Short: "Hazelcast CLC",
 		Long:  "Hazelcast Command Line Client",
 	}
 	m := &Main{
-		root:   rc,
-		cmds:   map[string]*cobra.Command{},
-		lg:     internal.NewLogger(nopWriteCloser{W: os.Stderr}),
-		stdout: nopWriteCloser{W: os.Stdout},
-		stderr: nopWriteCloser{W: os.Stderr},
+		root:          rc,
+		cmds:          map[string]*cobra.Command{},
+		lg:            internal.NewLogger(nopWriteCloser{W: os.Stderr}),
+		stdout:        nopWriteCloser{W: os.Stdout},
+		stderr:        nopWriteCloser{W: os.Stderr},
+		isInteractive: interactive,
 	}
-	err := m.createCommands()
-	if err != nil {
+	cc := internal.NewCommandContext(rc, m.isInteractive)
+	if err := m.runInitializers(cc); err != nil {
+		// TODO:
+		panic(err)
+	}
+	if err := m.createCommands(); err != nil {
+		// TODO:
 		panic(err)
 	}
 	return m
@@ -56,6 +64,16 @@ func (m *Main) runAugmentors(ec plug.ExecContext, props *plug.Properties) error 
 			return fmt.Errorf("augmenting %s: %w", a.Name, err)
 		}
 	}
+	return nil
+}
+
+func (m *Main) runInitializers(cc *internal.CommandContext) error {
+	for _, ita := range plug.Registry.GlobalInitializers() {
+		if err := ita.Item.Init(cc); err != nil {
+			return err
+		}
+	}
+	m.root.AddGroup(cc.Groups()...)
 	return nil
 }
 
@@ -87,9 +105,12 @@ func (m *Main) createCommands() error {
 			SilenceUsage: true,
 		}
 		cc := internal.NewCommandContext(cmd, m.isInteractive)
-		if err := c.Item.Init(cc); err != nil {
-			return fmt.Errorf("initializing command: %w", err)
+		if ci, ok := c.Item.(plug.Initializer); ok {
+			if err := ci.Init(cc); err != nil {
+				return fmt.Errorf("initializing command: %w", err)
+			}
 		}
+		parent.AddGroup(cc.Groups()...)
 		cmd.RunE = func(cmd *cobra.Command, args []string) error {
 			fs := cmd.Flags()
 			props := plug.NewProperties()
@@ -121,7 +142,8 @@ func (m *Main) printRows(ec *internal.ExecContext) error {
 	for _, pr := range plug.Registry.Printers() {
 		prs[pr.Name] = pr.Item
 	}
-	pr := prs["table"]
+	name := ec.Props().GetString(property.OutputType)
+	pr := prs[name]
 	return pr.Print(os.Stdout, ec.OutputRows())
 }
 

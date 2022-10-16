@@ -10,7 +10,7 @@ import (
 type Command struct {
 }
 
-func (c Command) Init(ctx plug.CommandContext) error {
+func (c Command) Init(ctx plug.InitContext) error {
 	return nil
 }
 

@@ -1,12 +1,16 @@
 package commands
 
 import (
+	"fmt"
 	"runtime"
 
 	"github.com/hazelcast/hazelcast-go-client"
 
+	"github.com/hazelcast/hazelcast-commandline-client/clc/property"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 )
@@ -14,17 +18,39 @@ import (
 type VersionCommand struct {
 }
 
-func (c VersionCommand) Init(ctx plug.CommandContext) error {
+func (vc VersionCommand) Init(cc plug.InitContext) error {
+	usage := "Print CLC version"
+	cc.SetCommandUsage(usage, usage)
 	return nil
 }
 
-func (c VersionCommand) Exec(ctx plug.ExecContext) error {
-	so := ctx.Stdout()
-	printf(so, "Hazelcast Command Line Client Version : %s\n", internal.ClientVersion)
-	printf(so, "Latest Git Commit Hash                : %s\n", internal.GitCommit)
-	printf(so, "Hazelcast Go Client Version           : %s\n", hazelcast.ClientVersion)
-	printf(so, "Go Version                            : %s\n", runtime.Version())
+func (vc VersionCommand) Exec(ec plug.ExecContext) error {
+	if ec.Props().GetBool(property.Verbose) {
+		ec.AddOutputRows(
+			vc.row("Hazelcast CLC", internal.ClientVersion),
+			vc.row("Latest Git Commit Hash", internal.GitCommit),
+			vc.row("Hazelcast Go Client", hazelcast.ClientVersion),
+			vc.row("Go", runtime.Version()),
+		)
+		return nil
+	}
+	I2(fmt.Fprintln(ec.Stdout(), internal.ClientVersion))
 	return nil
+}
+
+func (vc VersionCommand) row(key, value string) output.Row {
+	return output.Row{
+		output.Column{
+			Name:  "Name",
+			Type:  serialization.TypeString,
+			Value: key,
+		},
+		output.Column{
+			Name:  "Version",
+			Type:  serialization.TypeString,
+			Value: value,
+		},
+	}
 }
 
 func init() {

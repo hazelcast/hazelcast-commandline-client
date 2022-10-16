@@ -5,7 +5,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 
-	"github.com/hazelcast/hazelcast-commandline-client/base"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/property"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -19,8 +19,10 @@ const (
 
 type MapGetCommand struct{}
 
-func (mc *MapGetCommand) Init(ctx plug.CommandContext) error {
-	ctx.AddStringFlag(mapFlagKey, "k", "", true, "IMap key")
+func (mc *MapGetCommand) Init(cc plug.InitContext) error {
+	cc.AddStringFlag(mapFlagKey, "k", "", true, "IMap key")
+	usage := "Get a value from the given IMap"
+	cc.SetCommandUsage(usage, usage)
 	return nil
 }
 
@@ -28,7 +30,7 @@ func (mc *MapGetCommand) Exec(ec plug.ExecContext) error {
 	ctx := context.TODO()
 	key := ec.Props().GetString(mapFlagKey)
 	mapName := ec.Props().GetString(mapFlagName)
-	ci := MustAnyValue[*hazelcast.ClientInternal](ec.Props().GetBlocking(base.PropertyClientInternalName))
+	ci := MustAnyValue[*hazelcast.ClientInternal](ec.Props().GetBlocking(property.ClientInternalName))
 	keyData, err := ci.EncodeData(key)
 	if err != nil {
 		return err

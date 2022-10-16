@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	m := clc.NewMain()
+	m := clc.NewMain(false)
 	if err := m.Execute(); err != nil {
 		I2(fmt.Fprintln(os.Stderr, err.Error()))
 	}

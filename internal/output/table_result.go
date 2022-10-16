@@ -10,6 +10,15 @@ import (
 	iserialization "github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
+type TableOutputMode int
+
+const (
+	TableOutModeDefault TableOutputMode = iota
+	TableOutputModeCSV
+	TableOutputModeHTML
+	TableOutputModeMarkDown
+)
+
 type TableResult struct {
 	header []string
 	rp     RowProvider
@@ -22,7 +31,7 @@ func NewTableResult(header []string, rp RowProvider) *TableResult {
 	}
 }
 
-func (tr *TableResult) Serialize(ctx context.Context, w io.Writer) (int, error) {
+func (tr *TableResult) Serialize(ctx context.Context, w io.Writer, mode TableOutputMode) (int, error) {
 	var n int
 	header := make(table.Row, len(tr.header))
 	for i, h := range tr.header {
@@ -46,7 +55,16 @@ func (tr *TableResult) Serialize(ctx context.Context, w io.Writer) (int, error) 
 		}
 		t.AppendRow(row)
 	}
-	t.Render()
+	switch mode {
+	case TableOutputModeCSV:
+		t.RenderCSV()
+	case TableOutputModeHTML:
+		t.RenderHTML()
+	case TableOutputModeMarkDown:
+		t.RenderMarkdown()
+	default:
+		t.Render()
+	}
 	return n, nil
 }
 
