@@ -73,6 +73,12 @@ func (lg *Logger) Log(weight logger.Weight, f func() string) {
 	lg.clientLogger.Log(weight, f)
 }
 
+func (lg *Logger) Error(err error) {
+	lg.appLogger.Log(logger.WeightError, func() string {
+		return err.Error()
+	})
+}
+
 func (lg *Logger) Info(format string, args ...any) {
 	lg.appLogger.Log(logger.WeightInfo, func() string {
 		return fmt.Sprintf(format, args...)

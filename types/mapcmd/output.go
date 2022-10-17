@@ -40,29 +40,8 @@ func printSingleValue(value any, valueType int32, showType bool, ot output.Type)
 	panic(fmt.Errorf("unsupported output type: %d", ot))
 }
 
-func decodePairs(ic *hazelcast.ClientInternal, pairs []hazelcast.Pair, showType bool) []output.Row {
-	rows := make([]output.Row, 0, len(pairs))
-	vs := []any{}
-	for _, pair := range pairs {
-		row := make(output.Row, 0, 4)
-		kt, key := ensureTypeValue(ic, pair.Key.(hazelcast.Data))
-		row = append(row, output.NewKeyColumn(kt, key))
-		if showType {
-			row = append(row, output.NewKeyTypeColumn(kt))
-		}
-		vt, value := ensureTypeValue(ic, pair.Value.(hazelcast.Data))
-		vs = append(vs, value)
-		row = append(row, output.NewValueColumn(vt, value))
-		if showType {
-			row = append(row, output.NewValueTypeColumn(vt))
-		}
-		rows = append(rows, row)
-	}
-	return rows
-}
-
 func printPairs(ic *hazelcast.ClientInternal, pairs []hazelcast.Pair, showType bool, ot output.Type) error {
-	return printRows(decodePairs(ic, pairs, showType), ot)
+	return printRows(output.DecodePairs(ic, pairs, showType), ot)
 }
 
 func printRows(rows []output.Row, ot output.Type) error {
@@ -161,17 +140,8 @@ func printRows(rows []output.Row, ot output.Type) error {
 			header[i] = strings.TrimPrefix(h, thisPfx)
 		}
 		tr := output.NewTableResult(header, result)
-		_, err := tr.Serialize(context.Background(), os.Stdout)
+		_, err := tr.Serialize(context.Background(), os.Stdout, output.TableOutModeDefault)
 		return err
 	}
 	panic(fmt.Errorf("unsupported output type: %d", ot))
-}
-
-func ensureTypeValue(ic *hazelcast.ClientInternal, data hazelcast.Data) (int32, any) {
-	t := data.Type()
-	v, err := ic.DecodeData(data)
-	if err != nil {
-		v = serialization.NondecodedType(serialization.TypeToString(t))
-	}
-	return t, v
 }

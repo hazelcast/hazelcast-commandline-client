@@ -82,7 +82,7 @@ func sortedItems[T any](d map[string]T) []RegistryItem[T] {
 	return r
 }
 
-var cmdRegex = MustValue(regexp.Compile(`^[a-z]+(:[a-z]+)?$`))
+var cmdRegex = MustValue(regexp.Compile(`^[a-z]+(:[a-z-]+)?$`))
 
 func validName(name string) bool {
 	return cmdRegex.Match([]byte(name))

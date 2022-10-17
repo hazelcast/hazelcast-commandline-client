@@ -22,6 +22,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc/property"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
 type Main struct {
@@ -211,6 +212,13 @@ func (m *Main) makeConfiguration(props plug.ReadOnlyProperties) hazelcast.Config
 	}
 	if m.lg != nil {
 		cfg.Logger.CustomLogger = m.lg
+	}
+	sd := props.GetString(property.SchemaDir)
+	if sd == "" {
+		sd = filepath.Join(paths.HomeDir(), "schemas")
+	}
+	if err := serialization.UpdateConfigWithRecursivePaths(&cfg, sd); err != nil {
+		m.lg.Error(fmt.Errorf("setting schema dir: %w", err))
 	}
 	return cfg
 }
