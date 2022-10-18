@@ -22,24 +22,26 @@ func MakeTable(rows []Row) ([]string, []Row) {
 			}
 			// break out only complex types
 			if col.Type == serialization.TypeJSONSerialization || col.Type == serialization.TypePortable {
+				// XXX: what if col.Value == ValueNotDecoded ?
 				if col.Value != ValueNotDecoded {
 					nc, err := col.RowExtensions()
-					if err == nil {
-						for _, sc := range nc {
-							if sc.Name == "" {
-								sc.Name = col.Name
-							} else {
-								sc.Name = fmt.Sprintf("%s.%s", col.Name, sc.Name)
-							}
-							hd[sc.Name] = struct{}{}
-							newRow[sc.Name] = sc
-							newRow[col.Name] = NewSkipColumn()
+					if err != nil {
+						hd[col.Name] = struct{}{}
+						newRow[col.Name] = Column{
+							Type:  serialization.TypeString,
+							Value: ValueNotDecoded,
 						}
 						continue
 					}
-					newRow[col.Name] = Column{
-						Type:  serialization.TypeString,
-						Value: ValueNotDecoded,
+					for _, sc := range nc {
+						if sc.Name == "" {
+							sc.Name = col.Name
+						} else {
+							sc.Name = fmt.Sprintf("%s.%s", col.Name, sc.Name)
+						}
+						hd[sc.Name] = struct{}{}
+						newRow[sc.Name] = sc
+						newRow[col.Name] = NewSkipColumn()
 					}
 					continue
 				}
