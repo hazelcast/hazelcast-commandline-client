@@ -15,7 +15,8 @@ type InitContext interface {
 	AddBoolFlag(long, short string, value bool, required bool, help string)
 	SetPositionalArgCount(min, max int)
 	Interactive() bool
-	SetCommandUsage(long, short string)
+	SetCommandHelp(long, short string)
+	SetCommandUsage(usage string)
 	AddCommandGroup(id, title string)
 	SetCommandGroup(id string)
 	AddStringConfig(name, value, flag string, help string)

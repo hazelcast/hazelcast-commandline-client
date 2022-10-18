@@ -65,13 +65,17 @@ func (cc *CommandContext) Interactive() bool {
 	return cc.isInteractive
 }
 
-func (cc *CommandContext) SetCommandUsage(long, short string) {
+func (cc *CommandContext) SetCommandHelp(long, short string) {
 	if long != "" {
 		cc.Cmd.Long = long
 	}
 	if short != "" {
 		cc.Cmd.Short = short
 	}
+}
+
+func (cc *CommandContext) SetCommandUsage(usage string) {
+	cc.Cmd.Use = usage
 }
 
 func (cc *CommandContext) SetCommandGroup(id string) {

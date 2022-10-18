@@ -16,7 +16,7 @@ type GlobalInitializer struct{}
 func (g GlobalInitializer) Init(cc plug.InitContext) error {
 	// base group IDs
 	cc.AddCommandGroup(groups.DDSID, "Distributed Data Structures")
-	// output-type flag
+	// output type flag
 	pns := plug.Registry.PrinterNames()
 	usage := fmt.Sprintf("set the output type, one of: %s", strings.Join(pns, ", "))
 	// other flags

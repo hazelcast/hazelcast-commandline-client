@@ -12,9 +12,10 @@ import (
 type HomeCommand struct{}
 
 func (hc HomeCommand) Init(cc plug.InitContext) error {
-	usage := "Print the CLC home directory"
-	cc.SetCommandUsage(usage, usage)
+	help := "Print the CLC home directory, optionally by joining the given sub-path"
+	cc.SetCommandHelp(help, help)
 	cc.SetPositionalArgCount(0, 1)
+	cc.SetCommandUsage("home [sub-path]")
 	return nil
 }
 

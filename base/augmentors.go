@@ -45,7 +45,7 @@ func (ag *CheckOutputTypeAugmentor) Augment(ec plug.ExecContext, props *plug.Pro
 	}
 	_, ok := pns[ot]
 	if !ok {
-		return fmt.Errorf("invalid output-type: %s", ot)
+		return fmt.Errorf("invalid %s: %s", property.OutputType, ot)
 	}
 	return nil
 }

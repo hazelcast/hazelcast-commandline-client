@@ -19,8 +19,8 @@ type VersionCommand struct {
 }
 
 func (vc VersionCommand) Init(cc plug.InitContext) error {
-	usage := "Print CLC version"
-	cc.SetCommandUsage(usage, usage)
+	help := "Print CLC version"
+	cc.SetCommandHelp(help, help)
 	return nil
 }
 
