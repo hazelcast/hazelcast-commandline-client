@@ -15,17 +15,17 @@ import (
 
 type MapEntrySetCommand struct{}
 
-func (m *MapEntrySetCommand) Init(cc plug.InitContext) error {
+func (mc *MapEntrySetCommand) Init(cc plug.InitContext) error {
 	usage := "Get all entries of an IMap"
 	cc.SetCommandUsage(usage, usage)
 	return nil
 }
 
-func (m *MapEntrySetCommand) Exec(ec plug.ExecContext) error {
+func (mc *MapEntrySetCommand) Exec(ec plug.ExecContext) error {
 	ctx := context.TODO()
 	mapName := ec.Props().GetString(mapFlagName)
 	showType := ec.Props().GetBool(mapFlagShowType)
-	ci := MustAnyValue[*hazelcast.ClientInternal](ec.Props().GetBlocking(property.ClientInternalName))
+	ci := MustAnyValue[*hazelcast.ClientInternal](ec.Props().GetBlocking(property.ClientInternal))
 	req := codec.EncodeMapEntrySetRequest(mapName)
 	resp, err := ci.InvokeOnRandomTarget(ctx, req, nil)
 	if err != nil {

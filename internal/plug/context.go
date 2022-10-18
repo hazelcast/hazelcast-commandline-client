@@ -19,6 +19,7 @@ type InitContext interface {
 	AddCommandGroup(id, title string)
 	SetCommandGroup(id string)
 	AddStringConfig(name, value, flag string, help string)
+	SetTopLevel(b bool)
 }
 
 type ExecContext interface {

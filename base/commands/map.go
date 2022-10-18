@@ -25,11 +25,11 @@ func (mc *MapCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandGroup(groups.DDSID)
 	cc.AddStringFlag(mapFlagName, "n", "", true, "IMap name")
 	cc.AddBoolFlag(mapFlagShowType, "", false, false, "add the type names to the output")
+	cc.SetTopLevel(true)
 	return nil
 }
 
-func (mc *MapCommand) Exec(ctx plug.ExecContext) error {
-	I2(fmt.Fprintln(ctx.Stdout(), "Map:", ctx.Props().GetString("name")))
+func (mc *MapCommand) Exec(ec plug.ExecContext) error {
 	return nil
 }
 

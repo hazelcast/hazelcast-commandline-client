@@ -40,7 +40,7 @@ func (mc *MapGetCommand) Exec(ec plug.ExecContext) error {
 	if err != nil {
 		return err
 	}
-	ci := MustAnyValue[*hazelcast.ClientInternal](ec.Props().GetBlocking(property.ClientInternalName))
+	ci := MustAnyValue[*hazelcast.ClientInternal](ec.Props().GetBlocking(property.ClientInternal))
 	keyData, err := ci.EncodeData(key)
 	if err != nil {
 		return err

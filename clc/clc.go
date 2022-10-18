@@ -161,6 +161,16 @@ func (m *Main) createCommands() error {
 			}
 		}
 		parent.AddGroup(cc.Groups()...)
+		if cc.TopLevel() {
+			// since this is a top level command, it should always display the help.
+			cmd.Args = func(cmd *cobra.Command, args []string) error {
+				Must(cmd.Help())
+				if !m.isInteractive {
+					os.Exit(0)
+				}
+				return nil
+			}
+		}
 		cmd.RunE = func(cmd *cobra.Command, args []string) error {
 			cfs := cmd.Flags()
 			props := plug.NewProperties()

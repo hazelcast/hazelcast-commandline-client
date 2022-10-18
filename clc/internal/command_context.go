@@ -15,6 +15,7 @@ type CommandContext struct {
 	stringValues  map[string]*string
 	boolValues    map[string]*bool
 	isInteractive bool
+	isTopLevel    bool
 	groups        map[string]*cobra.Group
 }
 
@@ -97,4 +98,12 @@ func (cc *CommandContext) AddStringConfig(name, value, flag string, help string)
 		}
 		return
 	}
+}
+
+func (cc *CommandContext) SetTopLevel(b bool) {
+	cc.isTopLevel = b
+}
+
+func (cc *CommandContext) TopLevel() bool {
+	return cc.isTopLevel
 }

@@ -16,7 +16,7 @@ type ClientInternalAugmentor struct {
 
 func (c *ClientInternalAugmentor) Augment(ec plug.ExecContext, props *plug.Properties) error {
 	ctx := context.TODO()
-	props.SetBlocking(property.ClientInternalName, func() (any, error) {
+	props.SetBlocking(property.ClientInternal, func() (any, error) {
 		if c.ci != nil {
 			return c.ci, nil
 		}
