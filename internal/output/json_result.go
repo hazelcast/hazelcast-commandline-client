@@ -117,6 +117,8 @@ func columnToJSONValue(col Column) (any, error) {
 		} else {
 			return *sr, nil
 		}
+	case iserialization.TypeJSONSerialization:
+		return col.Value, nil
 	}
 	return nil, errors.ErrNotDecoded
 }
