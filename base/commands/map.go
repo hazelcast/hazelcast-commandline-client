@@ -44,11 +44,11 @@ func (mc *MapCommand) Augment(ec plug.ExecContext, props *plug.Properties) error
 		if mc.m != nil {
 			return mc.m, nil
 		}
-		client, err := ec.Client(ctx)
+		ci, err := ec.ClientInternal(ctx)
 		if err != nil {
 			return nil, err
 		}
-		m, err := client.GetMap(ctx, mapName)
+		m, err := ci.Client().GetMap(ctx, mapName)
 		if err != nil {
 			return nil, err
 		}

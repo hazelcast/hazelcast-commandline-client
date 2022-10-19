@@ -21,6 +21,7 @@ type ExecContext struct {
 	props    *plug.Properties
 	clientFn ClientFn
 	rows     []output.Row
+	ci       *hazelcast.ClientInternal
 }
 
 func NewExecContext(lg log.Logger, stdout, stderr io.Writer, args []string, props *plug.Properties, clientFn ClientFn) *ExecContext {
@@ -54,8 +55,16 @@ func (ec *ExecContext) Props() plug.ReadOnlyProperties {
 	return ec.props
 }
 
-func (ec *ExecContext) Client(ctx context.Context) (*hazelcast.Client, error) {
-	return ec.clientFn(ctx)
+func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInternal, error) {
+	if ec.ci != nil {
+		return ec.ci, nil
+	}
+	client, err := ec.clientFn(ctx)
+	if err != nil {
+		return nil, err
+	}
+	ec.ci = hazelcast.NewClientInternal(client)
+	return ec.ci, nil
 }
 
 func (ec *ExecContext) Interactive() bool {

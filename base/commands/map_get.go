@@ -3,9 +3,6 @@ package commands
 import (
 	"context"
 
-	"github.com/hazelcast/hazelcast-go-client"
-
-	"github.com/hazelcast/hazelcast-commandline-client/clc/property"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -27,7 +24,10 @@ func (mc *MapGetCommand) Init(cc plug.InitContext) error {
 func (mc *MapGetCommand) Exec(ec plug.ExecContext) error {
 	ctx := context.TODO()
 	mapName := ec.Props().GetString(mapFlagName)
-	ci := MustAnyValue[*hazelcast.ClientInternal](ec.Props().GetBlocking(property.ClientInternal))
+	ci, err := ec.ClientInternal(ctx)
+	if err != nil {
+		return err
+	}
 	keyData, err := MakeKeyData(ec, ci)
 	if err != nil {
 		return err

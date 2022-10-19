@@ -1,15 +1,13 @@
 package base
 
 import (
-	"context"
 	"fmt"
-
-	"github.com/hazelcast/hazelcast-go-client"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/property"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
+/*
 type ClientInternalAugmentor struct {
 	ci *hazelcast.ClientInternal
 }
@@ -20,7 +18,7 @@ func (c *ClientInternalAugmentor) Augment(ec plug.ExecContext, props *plug.Prope
 		if c.ci != nil {
 			return c.ci, nil
 		}
-		client, err := ec.Client(ctx)
+		client, err := ec.ClientInternal(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -30,6 +28,7 @@ func (c *ClientInternalAugmentor) Augment(ec plug.ExecContext, props *plug.Prope
 	})
 	return nil
 }
+*/
 
 type CheckOutputTypeAugmentor struct{}
 
@@ -43,14 +42,13 @@ func (ag *CheckOutputTypeAugmentor) Augment(ec plug.ExecContext, props *plug.Pro
 		props.Set(property.OutputType, "delimited")
 		return nil
 	}
-	_, ok := pns[ot]
-	if !ok {
+	if _, ok := pns[ot]; !ok {
 		return fmt.Errorf("invalid %s: %s", property.OutputType, ot)
 	}
 	return nil
 }
 
 func init() {
-	plug.Registry.RegisterAugmentor("00-client-internal", &ClientInternalAugmentor{})
+	//plug.Registry.RegisterAugmentor("00-client-internal", &ClientInternalAugmentor{})
 	plug.Registry.RegisterAugmentor("00-check-output-type", &CheckOutputTypeAugmentor{})
 }

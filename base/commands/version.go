@@ -27,14 +27,14 @@ func (vc VersionCommand) Init(cc plug.InitContext) error {
 func (vc VersionCommand) Exec(ec plug.ExecContext) error {
 	if ec.Props().GetBool(property.Verbose) {
 		ec.AddOutputRows(
-			vc.row("Hazelcast CLC", internal.ClientVersion),
+			vc.row("Hazelcast CLC", internal.Version),
 			vc.row("Latest Git Commit Hash", internal.GitCommit),
 			vc.row("Hazelcast Go Client", hazelcast.ClientVersion),
 			vc.row("Go", runtime.Version()),
 		)
 		return nil
 	}
-	I2(fmt.Fprintln(ec.Stdout(), internal.ClientVersion))
+	I2(fmt.Fprintln(ec.Stdout(), internal.Version))
 	return nil
 }
 

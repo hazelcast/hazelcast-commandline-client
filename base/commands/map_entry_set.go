@@ -3,9 +3,6 @@ package commands
 import (
 	"context"
 
-	"github.com/hazelcast/hazelcast-go-client"
-
-	"github.com/hazelcast/hazelcast-commandline-client/clc/property"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
@@ -25,7 +22,10 @@ func (mc *MapEntrySetCommand) Exec(ec plug.ExecContext) error {
 	ctx := context.TODO()
 	mapName := ec.Props().GetString(mapFlagName)
 	showType := ec.Props().GetBool(mapFlagShowType)
-	ci := MustAnyValue[*hazelcast.ClientInternal](ec.Props().GetBlocking(property.ClientInternal))
+	ci, err := ec.ClientInternal(ctx)
+	if err != nil {
+		return err
+	}
 	req := codec.EncodeMapEntrySetRequest(mapName)
 	resp, err := ci.InvokeOnRandomTarget(ctx, req, nil)
 	if err != nil {

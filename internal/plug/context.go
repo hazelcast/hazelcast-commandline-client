@@ -30,7 +30,7 @@ type ExecContext interface {
 	Stderr() io.Writer
 	Args() []string
 	Props() ReadOnlyProperties
-	Client(ctx context.Context) (*hazelcast.Client, error)
+	ClientInternal(ctx context.Context) (*hazelcast.ClientInternal, error)
 	Interactive() bool
 	AddOutputRows(row ...output.Row)
 }

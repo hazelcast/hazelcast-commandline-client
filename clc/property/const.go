@@ -1,7 +1,6 @@
 package property
 
 const (
-	ClientInternal = "ci"
 	OutputType     = "output.type"
 	Verbose        = "verbose"
 	ConfigPath     = "config.path"
