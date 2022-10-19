@@ -13,6 +13,7 @@ import (
 type InitContext interface {
 	AddStringFlag(long, short, value string, required bool, help string)
 	AddBoolFlag(long, short string, value bool, required bool, help string)
+	AddIntFlag(long, short string, value int64, required bool, help string)
 	SetPositionalArgCount(min, max int)
 	Interactive() bool
 	SetCommandHelp(long, short string)

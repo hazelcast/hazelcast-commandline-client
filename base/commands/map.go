@@ -13,7 +13,7 @@ import (
 
 const (
 	mapFlagName     = "name"
-	mapFlagShowType = "show-type"
+	mapFlagShowType = "show.type"
 	mapPropertyName = "map"
 )
 

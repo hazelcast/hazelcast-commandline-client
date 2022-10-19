@@ -14,6 +14,7 @@ type CommandContext struct {
 	Vpr           *viper.Viper
 	stringValues  map[string]*string
 	boolValues    map[string]*bool
+	intValues     map[string]*int64
 	isInteractive bool
 	isTopLevel    bool
 	groups        map[string]*cobra.Group
@@ -25,6 +26,7 @@ func NewCommandContext(cmd *cobra.Command, vpr *viper.Viper, isInteractive bool)
 		Vpr:           vpr,
 		stringValues:  map[string]*string{},
 		boolValues:    map[string]*bool{},
+		intValues:     map[string]*int64{},
 		isInteractive: isInteractive,
 		groups:        map[string]*cobra.Group{},
 	}
@@ -32,25 +34,26 @@ func NewCommandContext(cmd *cobra.Command, vpr *viper.Viper, isInteractive bool)
 
 func (cc *CommandContext) AddStringFlag(long, short, value string, required bool, help string) {
 	var s string
-	if short != "" {
-		cc.Cmd.PersistentFlags().StringVarP(&s, long, short, value, help)
-	} else {
-		cc.Cmd.PersistentFlags().StringVar(&s, long, value, help)
-	}
+	cc.Cmd.PersistentFlags().StringVarP(&s, long, short, value, help)
 	if required {
 		check.Must(cc.Cmd.MarkPersistentFlagRequired(long))
 	}
 	cc.stringValues[long] = &s
 }
 
+func (cc *CommandContext) AddIntFlag(long, short string, value int64, required bool, help string) {
+	var i int64
+	cc.Cmd.PersistentFlags().Int64VarP(&value, long, short, value, help)
+	if required {
+		check.Must(cc.Cmd.MarkPersistentFlagRequired(long))
+	}
+	cc.intValues[long] = &i
+}
+
 func (cc *CommandContext) AddBoolFlag(long, short string, value bool, required bool, help string) {
 	cc.Cmd.AddGroup()
 	var b bool
-	if short != "" {
-		cc.Cmd.PersistentFlags().BoolVarP(&b, long, short, value, help)
-	} else {
-		cc.Cmd.PersistentFlags().BoolVar(&b, long, value, help)
-	}
+	cc.Cmd.PersistentFlags().BoolVarP(&b, long, short, value, help)
 	if required {
 		check.Must(cc.Cmd.MarkPersistentFlagRequired(long))
 	}
@@ -58,6 +61,16 @@ func (cc *CommandContext) AddBoolFlag(long, short string, value bool, required b
 }
 
 func (cc *CommandContext) SetPositionalArgCount(min, max int) {
+	if min == max {
+		cc.Cmd.Args = cobra.ExactArgs(min)
+		return
+	}
+	if min == 0 {
+		cc.Cmd.Args = cobra.MaximumNArgs(max)
+	}
+	if max == 0 {
+		cc.Cmd.Args = cobra.MinimumNArgs(min)
+	}
 	cc.Cmd.Args = cobra.RangeArgs(min, max)
 }
 

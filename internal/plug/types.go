@@ -12,6 +12,7 @@ type ReadOnlyProperties interface {
 	GetBlocking(name string) (any, error)
 	GetString(name string) string
 	GetBool(name string) bool
+	GetInt(name string) int64
 }
 
 type Properties struct {
@@ -77,6 +78,17 @@ func (p *Properties) GetBool(name string) bool {
 		}
 	}
 	return false
+}
+
+func (p *Properties) GetInt(name string) int64 {
+	v, ok := p.Get(name)
+	if ok {
+		if bv, ok := v.(int64); ok {
+			return bv
+		}
+	}
+	return 0
+
 }
 
 type RegistryItem[T any] struct {
