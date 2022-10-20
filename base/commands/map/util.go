@@ -1,4 +1,4 @@
-package commands
+package _map
 
 import (
 	"github.com/hazelcast/hazelcast-go-client"

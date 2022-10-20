@@ -1,43 +1,47 @@
-package commands
+package _map
 
 import (
 	"context"
 
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
+
+	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 )
 
-type MapGetCommand struct{}
+type MapPutCommand struct{}
 
-func (mc *MapGetCommand) Init(cc plug.InitContext) error {
+func (mc *MapPutCommand) Init(cc plug.InitContext) error {
 	cc.AddStringFlag(mapFlagKeyType, "k", "", false, "key type")
-	help := "Get a value from the given IMap"
+	cc.AddStringFlag(mapFlagValueType, "v", "", false, "value type")
+	cc.AddIntFlag(mapTTL, "", ttlUnset, false, "time-to-live (ms)")
+	cc.SetPositionalArgCount(2, 2)
+	help := "Put a value to the given IMap and return the old value"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("get KEY")
-	cc.SetPositionalArgCount(1, 1)
+	cc.SetCommandUsage("put KEY VALUE")
 	return nil
 }
 
-func (mc *MapGetCommand) Exec(ec plug.ExecContext) error {
+func (mc *MapPutCommand) Exec(ec plug.ExecContext) error {
 	ctx := context.TODO()
 	mapName := ec.Props().GetString(mapFlagName)
+	ttl := GetTTL(ec)
 	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
 		return err
 	}
-	keyData, err := MakeKeyData(ec, ci)
+	kd, vd, err := MakeKeyValueData(ec, ci)
 	if err != nil {
 		return err
 	}
-	req := codec.EncodeMapGetRequest(mapName, keyData, 0)
-	resp, err := ci.InvokeOnKey(ctx, req, keyData, nil)
+	req := codec.EncodeMapPutRequest(mapName, kd, vd, 0, ttl)
+	resp, err := ci.InvokeOnKey(ctx, req, kd, nil)
 	if err != nil {
 		return err
 	}
-	raw := codec.DecodeMapGetResponse(resp)
+	raw := codec.DecodeMapPutResponse(resp)
 	vt := raw.Type()
 	value, err := ci.DecodeData(raw)
 	if err != nil {
@@ -62,5 +66,5 @@ func (mc *MapGetCommand) Exec(ec plug.ExecContext) error {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("map:get", &MapGetCommand{}))
+	Must(plug.Registry.RegisterCommand("map:put", &MapPutCommand{}))
 }
