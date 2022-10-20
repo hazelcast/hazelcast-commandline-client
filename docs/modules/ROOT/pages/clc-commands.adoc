@@ -34,6 +34,9 @@ include::partial$global-parameters.adoc[]
 |xref:hzc-sql.adoc[hzc sql]
 |Execute SQL queries.
 
+|xref:hzc-list-objects.adoc[hzc list-objects]
+|List data structures in the cluster.
+
 |xref:hzc-replicatedmap.adoc[hzc replicatedmap]
 |Manage replicated map data structures.
 
