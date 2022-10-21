@@ -180,7 +180,7 @@ func (m *Main) createCommands() error {
 			cf := func(ctx context.Context) (*hazelcast.Client, error) {
 				return m.ensureClient(ctx, props)
 			}
-			ec := internal.NewExecContext(m.lg, m.stdout, m.stderr, args, props, cf)
+			ec := internal.NewExecContext(m.lg, m.stdout, m.stderr, args, props, cf, m.isInteractive, cmd)
 			if err := m.runAugmentors(ec, props); err != nil {
 				return err
 			}
@@ -195,7 +195,10 @@ func (m *Main) createCommands() error {
 			if err != nil {
 				return err
 			}
-			return m.printRows(ec)
+			if ic, ok := c.Item.(plug.InteractiveCommander); ok {
+				return ic.ExecInteractive(ec)
+			}
+			return ec.FlushOutput()
 		}
 		parent.AddCommand(cmd)
 		m.cmds[c.Name] = cmd
@@ -231,16 +234,6 @@ func (m *Main) makeConfiguration(props plug.ReadOnlyProperties) hazelcast.Config
 		m.lg.Error(fmt.Errorf("setting schema dir: %w", err))
 	}
 	return cfg
-}
-
-func (m *Main) printRows(ec *internal.ExecContext) error {
-	prs := map[string]plug.Printer{}
-	for _, pr := range plug.Registry.Printers() {
-		prs[pr.Name] = pr.Item
-	}
-	name := ec.Props().GetString(property.OutputType)
-	pr := prs[name]
-	return pr.Print(os.Stdout, ec.OutputRows())
 }
 
 func (m *Main) loadConfig(props plug.ReadOnlyProperties) (bool, error) {

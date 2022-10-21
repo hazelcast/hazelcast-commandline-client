@@ -3,9 +3,13 @@ package internal
 import (
 	"context"
 	"io"
+	"os"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/spf13/cobra"
 
+	"github.com/hazelcast/hazelcast-commandline-client/clc/property"
+	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -14,24 +18,28 @@ import (
 type ClientFn func(ctx context.Context) (*hazelcast.Client, error)
 
 type ExecContext struct {
-	lg       log.Logger
-	stdout   io.Writer
-	stderr   io.Writer
-	args     []string
-	props    *plug.Properties
-	clientFn ClientFn
-	rows     []output.Row
-	ci       *hazelcast.ClientInternal
+	lg            log.Logger
+	stdout        io.Writer
+	stderr        io.Writer
+	args          []string
+	props         *plug.Properties
+	clientFn      ClientFn
+	rows          []output.Row
+	ci            *hazelcast.ClientInternal
+	isInteractive bool
+	cmd           *cobra.Command
 }
 
-func NewExecContext(lg log.Logger, stdout, stderr io.Writer, args []string, props *plug.Properties, clientFn ClientFn) *ExecContext {
+func NewExecContext(lg log.Logger, stdout, stderr io.Writer, args []string, props *plug.Properties, clientFn ClientFn, interactive bool, cmd *cobra.Command) *ExecContext {
 	return &ExecContext{
-		lg:       lg,
-		stdout:   stdout,
-		stderr:   stderr,
-		args:     args,
-		props:    props,
-		clientFn: clientFn,
+		lg:            lg,
+		stdout:        stdout,
+		stderr:        stderr,
+		args:          args,
+		props:         props,
+		clientFn:      clientFn,
+		isInteractive: interactive,
+		cmd:           cmd,
 	}
 }
 
@@ -73,6 +81,32 @@ func (ec *ExecContext) Interactive() bool {
 
 func (ec *ExecContext) AddOutputRows(row ...output.Row) {
 	ec.rows = append(ec.rows, row...)
+}
+
+func (ec *ExecContext) ShowHelpAndExit() {
+	Must(ec.cmd.Help())
+	if !ec.isInteractive {
+		os.Exit(0)
+	}
+}
+
+func (ec *ExecContext) QuitCh() <-chan struct{} {
+	return nil
+}
+
+func (ec *ExecContext) FlushOutput() error {
+	prs := map[string]plug.Printer{}
+	for _, pr := range plug.Registry.Printers() {
+		prs[pr.Name] = pr.Item
+	}
+	name := ec.Props().GetString(property.OutputType)
+	pr := prs[name]
+	err := pr.Print(os.Stdout, ec.OutputRows())
+	ec.rows = nil
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (ec *ExecContext) OutputRows() []output.Row {

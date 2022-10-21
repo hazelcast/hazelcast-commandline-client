@@ -33,8 +33,11 @@ type ExecContext interface {
 	ClientInternal(ctx context.Context) (*hazelcast.ClientInternal, error)
 	Interactive() bool
 	AddOutputRows(row ...output.Row)
+	ShowHelpAndExit()
 }
 
-type ConfigContext interface {
-	AddStringConfig(key, value, help string)
+type ExecInteractiveContext interface {
+	ExecContext
+	QuitCh() <-chan struct{}
+	FlushOutput() error
 }

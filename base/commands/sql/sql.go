@@ -1,4 +1,4 @@
-package commands
+package sql
 
 import (
 	"context"
@@ -7,8 +7,8 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/sql"
 
+	"github.com/hazelcast/hazelcast-commandline-client/clc/property"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
@@ -20,50 +20,32 @@ const (
 type SQLCommand struct{}
 
 func (cm *SQLCommand) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("sql [query]")
-	cc.SetPositionalArgCount(1, 1)
+	cc.SetCommandUsage("sql QUERY")
+	cc.SetPositionalArgCount(0, 1)
 	cc.AddCommandGroup("sql", "SQL")
 	cc.SetCommandGroup("sql")
+	cc.SetCommandHelp(
+		"",
+		"",
+	)
 	cc.AddBoolFlag(propertyApplySuggestion, "", false, false, "execute the proposed CREATE MAPPING suggestion and retry the query")
 	return nil
 }
 
 func (cm *SQLCommand) Exec(ec plug.ExecContext) error {
+	if len(ec.Args()) < 1 {
+		ec.ShowHelpAndExit()
+		return nil
+	}
 	ctx := context.TODO()
 	query := ec.Args()[0]
 	res, err := cm.execQuery(ctx, query, ec)
 	if err != nil {
 		return err
 	}
-	if !res.IsRowSet() {
-		ec.AddOutputRows(output.Row{
-			{
-				Name: "affected rows", Type: serialization.TypeInt64, Value: res.UpdateCount(),
-			},
-		})
-		return nil
-	}
-	it, err := res.Iterator()
-	if err != nil {
-		return err
-	}
-	for it.HasNext() {
-		row, err := it.Next()
-		if err != nil {
-			return err
-		}
-		cols := row.Metadata().Columns()
-		orow := make([]output.Column, len(cols))
-		for i, col := range cols {
-			orow[i] = output.Column{
-				Name:  col.Name(),
-				Type:  convertSQLType(col.Type()),
-				Value: MustValue(row.Get(i)),
-			}
-		}
-		ec.AddOutputRows(orow)
-	}
-	return nil
+	// TODO: keep it or remove it?
+	verbose := ec.Props().GetBool(property.Verbose)
+	return updateOutput(ec, res, verbose)
 }
 
 func (cm *SQLCommand) execQuery(ctx context.Context, query string, ec plug.ExecContext) (sql.Result, error) {
@@ -82,7 +64,7 @@ func (cm *SQLCommand) execQuery(ctx context.Context, query string, ec plug.ExecC
 		}
 		// TODO: This changes the error in order to remove 'decoding SQL execute response:' prefix.
 		// Once that is removed from the Go client, the code below may be removed.
-		err = fmt.Errorf(serr.Message)
+		err = adaptSQLError(err)
 		if !as {
 			if serr.Suggestion != "" {
 				return nil, fmt.Errorf("%w\n\nUse --%s to automatically apply the suggestion", err, propertyApplySuggestion)
