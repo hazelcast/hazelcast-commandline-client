@@ -8,11 +8,13 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
+
+	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 )
 
 type recurseCallback func(path string)
 
-func UpdateConfigWithRecursivePaths(cfg *hazelcast.Config, paths ...string) error {
+func UpdateConfigWithRecursivePaths(cfg *hazelcast.Config, lg log.Logger, paths ...string) error {
 	var portablePaths []string
 	cb := func(path string) {
 		if strings.HasSuffix(path, PortablePathSuffix) {
@@ -22,12 +24,12 @@ func UpdateConfigWithRecursivePaths(cfg *hazelcast.Config, paths ...string) erro
 	for _, path := range paths {
 		info, err := os.Stat(path)
 		if err != nil {
-			// TODO: log the error
+			lg.Warn("Cannot stat %s: %s", path, err.Error())
 			continue
 		}
 		if info.IsDir() {
-			if err := recurseDirectory(path, cb); err != nil {
-				// TODO: log the error
+			if err := recurseDirectory(path, cb, lg); err != nil {
+				lg.Warn("Cannot traverse directory %s: %s", path, err.Error())
 			}
 			continue
 		}
@@ -49,7 +51,7 @@ func UpdateConfigWithRecursivePaths(cfg *hazelcast.Config, paths ...string) erro
 	return nil
 }
 
-func recurseDirectory(dir string, cb recurseCallback) error {
+func recurseDirectory(dir string, cb recurseCallback, lg log.Logger) error {
 	es, err := os.ReadDir(dir)
 	if err != nil {
 		return fmt.Errorf("reading dir: %s: %w", dir, err)
@@ -68,8 +70,9 @@ func recurseDirectory(dir string, cb recurseCallback) error {
 	}
 	for _, dir = range dirs {
 		// ignoring the error while traversing directories
-		// TODO: log the error
-		_ = recurseDirectory(dir, cb)
+		if err := recurseDirectory(dir, cb, lg); err != nil {
+			lg.Warn("Cannot traverse directory %s: %s", dir, err.Error())
+		}
 	}
 	return nil
 }

@@ -2,13 +2,12 @@ package sql
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/peterh/liner"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/property"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/shell"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
@@ -16,6 +15,13 @@ import (
 type SQLShellCommand struct {
 	client  *hazelcast.Client
 	verbose bool
+}
+
+func (cm *SQLShellCommand) Augment(ec plug.ExecContext, props *plug.Properties) error {
+	if ec.CommandName() == "clc sql shell" {
+		props.Set(property.OutputType, "table")
+	}
+	return nil
 }
 
 func (cm *SQLShellCommand) Init(cc plug.InitContext) error {
@@ -35,56 +41,30 @@ func (cm *SQLShellCommand) Exec(ec plug.ExecContext) error {
 }
 
 func (cm *SQLShellCommand) ExecInteractive(ec plug.ExecInteractiveContext) error {
-	line := liner.NewLiner()
-	defer line.Close()
-	line.SetCtrlCAborts(true)
-	line.SetMultiLineMode(true)
-	ctx := context.Background()
-	for {
-		ok, err := cm.execSQL(ctx, ec, line)
-		if !ok {
+	sh := shell.NewShell("SQL> ", "... ", "",
+		ec.Stdout(), ec.Stderr(),
+		func(line string) bool {
+			return strings.HasSuffix(line, ";")
+		},
+		func(ctx context.Context, text string) error {
+			res, err := cm.client.SQL().Execute(ctx, text)
+			if err != nil {
+				return adaptSQLError(err)
+			}
+			if err := updateOutput(ec, res, cm.verbose); err != nil {
+				return err
+			}
+			if err := ec.FlushOutput(); err != nil {
+				return err
+			}
 			return nil
-		}
-		if err != nil {
-			fmt.Println(err.Error())
-		}
-	}
-}
-
-func (cm *SQLShellCommand) execSQL(ctx context.Context, ec plug.ExecInteractiveContext, line *liner.State) (bool, error) {
-	prompt := "> "
-	var sb strings.Builder
-	for {
-		p, err := line.Prompt(prompt)
-		if err == liner.ErrPromptAborted {
-			return false, err
-		}
-		if err != nil {
-			return false, err
-		}
-		p = strings.TrimSpace(p)
-		if p == "" {
-			continue
-		}
-		sb.WriteString(p)
-		sb.WriteString("\n")
-		if strings.HasSuffix(p, ";") {
-			break
-		}
-		prompt = "... "
-	}
-	query := sb.String()
-	line.AppendHistory(query)
-	res, err := cm.client.SQL().Execute(ctx, query)
-	if err != nil {
-		return true, adaptSQLError(err)
-	}
-	if err := updateOutput(ec, res, cm.verbose); err != nil {
-		return true, err
-	}
-	return true, ec.FlushOutput()
+		},
+	)
+	defer sh.Close()
+	return sh.Start(context.Background())
 }
 
 func init() {
+	plug.Registry.RegisterAugmentor("20-sql-shell", &SQLShellCommand{})
 	Must(plug.Registry.RegisterCommand("sql:shell", &SQLShellCommand{}))
 }

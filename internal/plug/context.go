@@ -34,6 +34,7 @@ type ExecContext interface {
 	Interactive() bool
 	AddOutputRows(row ...output.Row)
 	ShowHelpAndExit()
+	CommandName() string
 }
 
 type ExecInteractiveContext interface {

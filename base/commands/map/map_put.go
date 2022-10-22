@@ -32,7 +32,9 @@ func (mc *MapPutCommand) Exec(ec plug.ExecContext) error {
 	if err != nil {
 		return err
 	}
-	kd, vd, err := MakeKeyValueData(ec, ci)
+	keyStr := ec.Args()[0]
+	valueStr := ec.Args()[1]
+	kd, vd, err := MakeKeyValueData(ec, ci, keyStr, valueStr)
 	if err != nil {
 		return err
 	}

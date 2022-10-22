@@ -40,7 +40,7 @@ func New(w io.WriteCloser, weight logger.Weight) (*Logger, error) {
 		}
 	}
 	// app logger
-	al, err := MakeZapLogger(0)
+	al, err := MakeZapLogger(2)
 	if err != nil {
 		return nil, err
 	}
@@ -79,6 +79,12 @@ func (lg *Logger) Error(err error) {
 	})
 }
 
+func (lg *Logger) Warn(format string, args ...any) {
+	lg.appLogger.Log(logger.WeightWarn, func() string {
+		return fmt.Sprintf(format, args...)
+	})
+}
+
 func (lg *Logger) Info(format string, args ...any) {
 	lg.appLogger.Log(logger.WeightInfo, func() string {
 		return fmt.Sprintf(format, args...)
@@ -87,4 +93,8 @@ func (lg *Logger) Info(format string, args ...any) {
 
 func (lg *Logger) Debug(f func() string) {
 	lg.appLogger.Log(logger.WeightDebug, f)
+}
+
+func (lg *Logger) Trace(f func() string) {
+	lg.appLogger.Log(logger.WeightTrace, f)
 }

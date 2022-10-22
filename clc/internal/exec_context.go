@@ -90,6 +90,10 @@ func (ec *ExecContext) ShowHelpAndExit() {
 	}
 }
 
+func (ec *ExecContext) CommandName() string {
+	return ec.cmd.CommandPath()
+}
+
 func (ec *ExecContext) QuitCh() <-chan struct{} {
 	return nil
 }

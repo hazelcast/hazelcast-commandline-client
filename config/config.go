@@ -31,7 +31,6 @@ import (
 
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/file"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/tuiutil"
 	"github.com/hazelcast/hazelcast-commandline-client/log"
 )
@@ -264,13 +263,15 @@ func mergeFlagsWithConfig(flags *GlobalFlagValues, config *Config) error {
 		config.NoAutocompletion = true
 	}
 	// TODO: refactor this to a reusable function
-	schemaDir := flags.SchemaDir
-	if schemaDir == "" {
-		schemaDir = config.SchemaDir
-	}
-	if schemaDir != "" {
-		serialization.UpdateConfigWithRecursivePaths(&config.Hazelcast, schemaDir)
-	}
+	/*
+		schemaDir := flags.SchemaDir
+		if schemaDir == "" {
+			schemaDir = config.SchemaDir
+		}
+		if schemaDir != "" {
+			serialization.UpdateConfigWithRecursivePaths(&config.Hazelcast, schemaDir)
+		}
+	*/
 	return nil
 }
 

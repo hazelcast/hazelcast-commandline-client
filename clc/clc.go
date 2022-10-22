@@ -230,7 +230,8 @@ func (m *Main) makeConfiguration(props plug.ReadOnlyProperties) hazelcast.Config
 	if sd == "" {
 		sd = filepath.Join(paths.HomeDir(), "schemas")
 	}
-	if err := serialization.UpdateConfigWithRecursivePaths(&cfg, sd); err != nil {
+	m.lg.Info("Loading schemas recursively from directory: %s", sd)
+	if err := serialization.UpdateConfigWithRecursivePaths(&cfg, m.lg, sd); err != nil {
 		m.lg.Error(fmt.Errorf("setting schema dir: %w", err))
 	}
 	return cfg

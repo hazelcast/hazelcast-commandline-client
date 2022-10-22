@@ -28,7 +28,8 @@ func (mc *MapGetCommand) Exec(ec plug.ExecContext) error {
 	if err != nil {
 		return err
 	}
-	keyData, err := MakeKeyData(ec, ci)
+	keyStr := ec.Args()[0]
+	keyData, err := MakeKeyData(ec, ci, keyStr)
 	if err != nil {
 		return err
 	}
@@ -41,6 +42,7 @@ func (mc *MapGetCommand) Exec(ec plug.ExecContext) error {
 	vt := raw.Type()
 	value, err := ci.DecodeData(raw)
 	if err != nil {
+		ec.Logger().Info("The value for %s was not decoded, due to error: %s", keyStr, err.Error())
 		value = serialization.NondecodedType(serialization.TypeToString(vt))
 	}
 	row := output.Row{
