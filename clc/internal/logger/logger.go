@@ -95,6 +95,12 @@ func (lg *Logger) Debug(f func() string) {
 	lg.appLogger.Log(logger.WeightDebug, f)
 }
 
+func (lg *Logger) Debugf(format string, args ...any) {
+	lg.appLogger.Log(logger.WeightDebug, func() string {
+		return fmt.Sprintf(format, args...)
+	})
+}
+
 func (lg *Logger) Trace(f func() string) {
 	lg.appLogger.Log(logger.WeightTrace, f)
 }

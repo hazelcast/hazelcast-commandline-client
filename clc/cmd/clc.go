@@ -1,4 +1,4 @@
-package clc
+package cmd
 
 import (
 	"context"
@@ -16,13 +16,17 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/internal/logger"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/property"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
+)
+
+const (
+	viridianCoordinatorURL       = "https://api.viridian.hazelcast.com"
+	envHzCloudCoordinatorBaseURL = "HZ_CLOUD_COORDINATOR_BASE_URL"
 )
 
 type Main struct {
@@ -81,7 +85,7 @@ func (m *Main) createLogger() {
 }
 
 func (m *Main) updateLogger() {
-	path := m.vpr.GetString(property.LogFile)
+	path := m.vpr.GetString(clc.PropertyLogFile)
 	if path == "" {
 		path = paths.DefaultLogPath(time.Now())
 	}
@@ -89,7 +93,7 @@ func (m *Main) updateLogger() {
 	if path == "stderr" {
 		return
 	}
-	weight, err := logger.WeightForLevel(m.vpr.GetString(property.LogLevel))
+	weight, err := logger.WeightForLevel(m.vpr.GetString(clc.PropertyLogLevel))
 	f, err := m.createGetLogFile(path)
 	if err != nil {
 		m.lg.Info("Failed to open the log file, using stderr: %s", err.Error())
@@ -207,9 +211,11 @@ func (m *Main) createCommands() error {
 }
 
 func (m *Main) ensureClient(ctx context.Context, props plug.ReadOnlyProperties) (*hazelcast.Client, error) {
-	var err error
 	if m.client == nil {
-		cfg := m.makeConfiguration(props)
+		cfg, err := makeConfiguration(props, m.lg)
+		if err != nil {
+			return nil, err
+		}
 		m.client, err = hazelcast.StartNewClientWithConfig(ctx, cfg)
 		if err != nil {
 			return nil, err
@@ -218,32 +224,13 @@ func (m *Main) ensureClient(ctx context.Context, props plug.ReadOnlyProperties) 
 	return m.client, nil
 }
 
-func (m *Main) makeConfiguration(props plug.ReadOnlyProperties) hazelcast.Config {
-	var cfg hazelcast.Config
-	if ca := props.GetString("cluster.address"); ca != "" {
-		cfg.Cluster.Network.SetAddresses(ca)
-	}
-	if m.lg != nil {
-		cfg.Logger.CustomLogger = m.lg
-	}
-	sd := props.GetString(property.SchemaDir)
-	if sd == "" {
-		sd = filepath.Join(paths.HomeDir(), "schemas")
-	}
-	m.lg.Info("Loading schemas recursively from directory: %s", sd)
-	if err := serialization.UpdateConfigWithRecursivePaths(&cfg, m.lg, sd); err != nil {
-		m.lg.Error(fmt.Errorf("setting schema dir: %w", err))
-	}
-	return cfg
-}
-
 func (m *Main) loadConfig(props plug.ReadOnlyProperties) (bool, error) {
 	if m.configLoaded {
 		return true, nil
 	}
 	m.configLoaded = true
 	defaultPath := paths.DefaultConfigPath()
-	path := props.GetString(property.ConfigPath)
+	path := props.GetString(clc.PropertyConfigPath)
 	if path == "" {
 		path = defaultPath
 	}
@@ -294,6 +281,8 @@ func convertFlagValue(fs *pflag.FlagSet, name string, v pflag.Value) any {
 		return MustValue(fs.GetString(name))
 	case "bool":
 		return MustValue(fs.GetBool(name))
+	case "int":
+		return MustValue(fs.GetInt(name))
 	}
 	return v
 }

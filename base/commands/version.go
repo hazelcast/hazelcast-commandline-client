@@ -6,7 +6,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 
-	"github.com/hazelcast/hazelcast-commandline-client/clc/property"
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -25,12 +25,12 @@ func (vc VersionCommand) Init(cc plug.InitContext) error {
 }
 
 func (vc VersionCommand) Exec(ec plug.ExecContext) error {
-	if ec.Props().GetBool(property.Verbose) {
+	if ec.Props().GetBool(clc.PropertyVerbose) {
 		ec.AddOutputRows(
 			vc.row("Hazelcast CLC", internal.Version),
 			vc.row("Latest Git Commit Hash", internal.GitCommit),
 			vc.row("Hazelcast Go Client", hazelcast.ClientVersion),
-			vc.row("Go", runtime.Version()),
+			vc.row("Go", fmt.Sprintf("%s %s/%s", runtime.Version(), runtime.GOOS, runtime.GOARCH)),
 		)
 		return nil
 	}

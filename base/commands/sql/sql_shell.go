@@ -6,7 +6,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 
-	"github.com/hazelcast/hazelcast-commandline-client/clc/property"
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/shell"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -19,7 +19,7 @@ type SQLShellCommand struct {
 
 func (cm *SQLShellCommand) Augment(ec plug.ExecContext, props *plug.Properties) error {
 	if ec.CommandName() == "clc sql shell" {
-		props.Set(property.OutputType, "table")
+		props.Set(clc.PropertyOutputFormat, "table")
 	}
 	return nil
 }
@@ -36,7 +36,7 @@ func (cm *SQLShellCommand) Exec(ec plug.ExecContext) error {
 		return err
 	}
 	cm.client = ci.Client()
-	cm.verbose = ec.Props().GetBool(property.Verbose)
+	cm.verbose = ec.Props().GetBool(clc.PropertyVerbose)
 	return nil
 }
 

@@ -7,7 +7,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/sql"
 
-	"github.com/hazelcast/hazelcast-commandline-client/clc/property"
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
@@ -44,7 +44,7 @@ func (cm *SQLCommand) Exec(ec plug.ExecContext) error {
 		return err
 	}
 	// TODO: keep it or remove it?
-	verbose := ec.Props().GetBool(property.Verbose)
+	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	return updateOutput(ec, res, verbose)
 }
 

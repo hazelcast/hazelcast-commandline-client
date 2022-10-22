@@ -3,7 +3,7 @@ package base
 import (
 	"fmt"
 
-	"github.com/hazelcast/hazelcast-commandline-client/clc/property"
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
@@ -37,13 +37,13 @@ func (ag *CheckOutputTypeAugmentor) Augment(ec plug.ExecContext, props *plug.Pro
 	for _, n := range plug.Registry.PrinterNames() {
 		pns[n] = struct{}{}
 	}
-	ot := ec.Props().GetString(property.OutputType)
+	ot := ec.Props().GetString(clc.PropertyOutputFormat)
 	if ot == "" {
-		props.Set(property.OutputType, "delimited")
+		props.Set(clc.PropertyOutputFormat, "delimited")
 		return nil
 	}
 	if _, ok := pns[ot]; !ok {
-		return fmt.Errorf("invalid %s: %s", property.OutputType, ot)
+		return fmt.Errorf("invalid %s: %s", clc.PropertyOutputFormat, ot)
 	}
 	return nil
 }

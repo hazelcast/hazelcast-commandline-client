@@ -14,7 +14,7 @@ import (
 
 type recurseCallback func(path string)
 
-func UpdateConfigWithRecursivePaths(cfg *hazelcast.Config, lg log.Logger, paths ...string) error {
+func UpdateSerializationConfigWithRecursivePaths(cfg *hazelcast.Config, lg log.Logger, paths ...string) error {
 	var portablePaths []string
 	cb := func(path string) {
 		if strings.HasSuffix(path, PortablePathSuffix) {

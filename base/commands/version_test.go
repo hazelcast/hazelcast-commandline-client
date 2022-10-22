@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/hazelcast/hazelcast-commandline-client/base/commands"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/property"
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
 )
@@ -22,7 +22,7 @@ func TestVersion(t *testing.T) {
 	output := ec.StdoutText()
 	t.Log("output", output)
 	assert.Equal(t, "v5.2.0\n", output)
-	ec.Set(property.Verbose, true)
+	ec.Set(clc.PropertyVerbose, true)
 	require.NoError(t, cmd.Exec(ec))
 	assert.Equal(t, ec.Rows[0][0].Value, "Hazelcast CLC")
 	assert.Contains(t, ec.Rows[1][0].Value, "Latest Git Commit Hash")

@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	clc "github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 )
 
 func main() {

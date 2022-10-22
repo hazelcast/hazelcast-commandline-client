@@ -8,7 +8,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 
-	"github.com/hazelcast/hazelcast-commandline-client/clc/property"
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
@@ -103,7 +103,7 @@ func (ec *ExecContext) FlushOutput() error {
 	for _, pr := range plug.Registry.Printers() {
 		prs[pr.Name] = pr.Item
 	}
-	name := ec.Props().GetString(property.OutputType)
+	name := ec.Props().GetString(clc.PropertyOutputFormat)
 	pr := prs[name]
 	err := pr.Print(os.Stdout, ec.OutputRows())
 	ec.rows = nil
