@@ -1,4 +1,4 @@
-package base
+package main
 
 import (
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands"

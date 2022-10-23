@@ -17,8 +17,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/internal"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/internal/logger"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/logger"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -37,10 +36,11 @@ type Main struct {
 	lg            *logger.Logger
 	stdout        io.WriteCloser
 	stderr        io.WriteCloser
-	ec            plug.ExecContext
 	isInteractive bool
-	outputType    string
+	outputFormat  string
 	configLoaded  bool
+	props         *plug.Properties
+	ec            *ExecContext
 }
 
 func NewMain(interactive bool) *Main {
@@ -56,13 +56,19 @@ func NewMain(interactive bool) *Main {
 		stdout:        nopWriteCloser{W: os.Stdout},
 		stderr:        nopWriteCloser{W: os.Stderr},
 		isInteractive: interactive,
+		props:         plug.NewProperties(),
 	}
 	m.createLogger()
-	cc := internal.NewCommandContext(rc, m.vpr, m.isInteractive)
+	cc := NewCommandContext(rc, m.vpr, m.isInteractive)
 	if err := m.runInitializers(cc); err != nil {
 		// TODO:
 		panic(err)
 	}
+	cf := func(ctx context.Context) (*hazelcast.Client, error) {
+		return m.ensureClient(ctx, m.props)
+	}
+	m.ec = NewExecContext(m.lg, m.stdout, m.stderr, m.props, cf, m.isInteractive)
+	m.ec.SetMain(m)
 	if err := m.createCommands(); err != nil {
 		// TODO:
 		panic(err)
@@ -70,7 +76,43 @@ func NewMain(interactive bool) *Main {
 	return m
 }
 
-func (m *Main) Execute() error {
+func (m *Main) CloneForInteractiveMode() (*Main, error) {
+	rc := &cobra.Command{
+		Use:   "",
+		Short: "Hazelcast CLC",
+		Long:  "Hazelcast Command Line Client",
+	}
+	mc := &Main{
+		root:          rc,
+		cmds:          map[string]*cobra.Command{},
+		vpr:           m.vpr,
+		client:        m.client,
+		lg:            m.lg,
+		stdout:        m.stdout,
+		stderr:        m.stderr,
+		ec:            m.ec,
+		isInteractive: true,
+		outputFormat:  m.outputFormat,
+		configLoaded:  m.configLoaded,
+		props:         m.props,
+	}
+	cc := NewCommandContext(rc, mc.vpr, mc.isInteractive)
+	if err := mc.runInitializers(cc); err != nil {
+		// TODO:
+		panic(err)
+	}
+	if err := mc.createCommands(); err != nil {
+		return nil, err
+	}
+	return mc, nil
+}
+
+func (m *Main) Root() *cobra.Command {
+	return m.root
+}
+
+func (m *Main) Execute(args []string) error {
+	m.root.SetArgs(args)
 	return m.root.Execute()
 }
 
@@ -123,7 +165,7 @@ func (m *Main) runAugmentors(ec plug.ExecContext, props *plug.Properties) error 
 	return nil
 }
 
-func (m *Main) runInitializers(cc *internal.CommandContext) error {
+func (m *Main) runInitializers(cc *CommandContext) error {
 	for _, ita := range plug.Registry.GlobalInitializers() {
 		if err := ita.Item.Init(cc); err != nil {
 			return err
@@ -136,6 +178,12 @@ func (m *Main) runInitializers(cc *internal.CommandContext) error {
 func (m *Main) createCommands() error {
 	for _, c := range plug.Registry.Commands() {
 		c := c
+		// skip interactive commands in interactive mode
+		if m.isInteractive {
+			if _, ok := c.Item.(plug.InteractiveCommander); ok {
+				continue
+			}
+		}
 		// create the command hierarchy
 		ps := strings.Split(c.Name, ":")
 		if len(ps) == 0 {
@@ -158,51 +206,41 @@ func (m *Main) createCommands() error {
 			Use:          ps[len(ps)-1],
 			SilenceUsage: true,
 		}
-		cc := internal.NewCommandContext(cmd, m.vpr, m.isInteractive)
+		cc := NewCommandContext(cmd, m.vpr, m.isInteractive)
 		if ci, ok := c.Item.(plug.Initializer); ok {
 			if err := ci.Init(cc); err != nil {
 				return fmt.Errorf("initializing command: %w", err)
 			}
 		}
 		parent.AddGroup(cc.Groups()...)
-		if cc.TopLevel() {
-			// since this is a top level command, it should always display the help.
-			cmd.Args = func(cmd *cobra.Command, args []string) error {
-				Must(cmd.Help())
-				if !m.isInteractive {
-					os.Exit(0)
+		if !cc.TopLevel() {
+			cmd.RunE = func(cmd *cobra.Command, args []string) error {
+				cfs := cmd.Flags()
+				props := m.props
+				cfs.Visit(func(f *pflag.Flag) {
+					props.Set(f.Name, convertFlagValue(cfs, f.Name, f.Value))
+				})
+				ec := m.ec
+				ec.SetArgs(args)
+				ec.SetCmd(cmd)
+				if err := m.runAugmentors(ec, props); err != nil {
+					return err
 				}
-				return nil
+				if _, err := m.loadConfig(props); err != nil {
+					return err
+				}
+				for k, v := range m.vpr.AllSettings() {
+					m.setConfigProps(props, k, v)
+				}
+				m.updateLogger()
+				if err := c.Item.Exec(ec); err != nil {
+					return err
+				}
+				if ic, ok := c.Item.(plug.InteractiveCommander); ok {
+					return ic.ExecInteractive(ec)
+				}
+				return ec.FlushOutput()
 			}
-		}
-		cmd.RunE = func(cmd *cobra.Command, args []string) error {
-			cfs := cmd.Flags()
-			props := plug.NewProperties()
-			cfs.Visit(func(f *pflag.Flag) {
-				props.Set(f.Name, convertFlagValue(cfs, f.Name, f.Value))
-			})
-			cf := func(ctx context.Context) (*hazelcast.Client, error) {
-				return m.ensureClient(ctx, props)
-			}
-			ec := internal.NewExecContext(m.lg, m.stdout, m.stderr, args, props, cf, m.isInteractive, cmd)
-			if err := m.runAugmentors(ec, props); err != nil {
-				return err
-			}
-			if _, err := m.loadConfig(props); err != nil {
-				return err
-			}
-			for k, v := range m.vpr.AllSettings() {
-				m.setConfigProps(props, k, v)
-			}
-			m.updateLogger()
-			err := c.Item.Exec(ec)
-			if err != nil {
-				return err
-			}
-			if ic, ok := c.Item.(plug.InteractiveCommander); ok {
-				return ic.ExecInteractive(ec)
-			}
-			return ec.FlushOutput()
 		}
 		parent.AddCommand(cmd)
 		m.cmds[c.Name] = cmd

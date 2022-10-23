@@ -9,7 +9,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/internal/logger"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/logger"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
@@ -17,6 +17,8 @@ import (
 
 func makeConfiguration(props plug.ReadOnlyProperties, lg *logger.Logger) (hazelcast.Config, error) {
 	var cfg hazelcast.Config
+	cfg.Cluster.Unisocket = true
+	cfg.Stats.Enabled = true
 	if ca := props.GetString(clc.PropertyClusterAddress); ca != "" {
 		lg.Debugf("Set the cluster address: %s", ca)
 		cfg.Cluster.Network.SetAddresses(ca)
@@ -77,7 +79,6 @@ func makeConfiguration(props plug.ReadOnlyProperties, lg *logger.Logger) (hazelc
 				}
 			}
 		}
-		cfg.Stats.Enabled = true
 	}
 	return cfg, nil
 }

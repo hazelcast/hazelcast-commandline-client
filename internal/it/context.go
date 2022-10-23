@@ -93,8 +93,7 @@ func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInt
 }
 
 func (ec *ExecContext) Interactive() bool {
-	//TODO implement me
-	panic("implement me")
+	return false
 }
 
 func (ec *ExecContext) AddOutputRows(row ...output.Row) {
@@ -115,6 +114,16 @@ func (ec *ExecContext) Stderr() io.Writer {
 
 func (ec *ExecContext) Args() []string {
 	return ec.args
+}
+
+func (ec *ExecContext) ShowHelpAndExit() {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (ec *ExecContext) CommandName() string {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (ec *ExecContext) StdoutText() string {

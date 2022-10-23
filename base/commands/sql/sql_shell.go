@@ -26,6 +26,8 @@ func (cm *SQLShellCommand) Augment(ec plug.ExecContext, props *plug.Properties) 
 
 func (cm *SQLShellCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("shell")
+	help := "Start the interactive SQL shell"
+	cc.SetCommandHelp(help, help)
 	return nil
 }
 
@@ -41,24 +43,24 @@ func (cm *SQLShellCommand) Exec(ec plug.ExecContext) error {
 }
 
 func (cm *SQLShellCommand) ExecInteractive(ec plug.ExecInteractiveContext) error {
-	sh := shell.NewShell("SQL> ", "... ", "",
-		ec.Stdout(), ec.Stderr(),
-		func(line string) bool {
-			return strings.HasSuffix(line, ";")
-		},
-		func(ctx context.Context, text string) error {
-			res, err := cm.client.SQL().Execute(ctx, text)
-			if err != nil {
-				return adaptSQLError(err)
-			}
-			if err := updateOutput(ec, res, cm.verbose); err != nil {
-				return err
-			}
-			if err := ec.FlushOutput(); err != nil {
-				return err
-			}
-			return nil
-		},
+	endLineFn := func(line string) bool {
+		return strings.HasSuffix(line, ";")
+	}
+	textFn := func(ctx context.Context, text string) error {
+		res, err := cm.client.SQL().Execute(ctx, text)
+		if err != nil {
+			return adaptSQLError(err)
+		}
+		if err := updateOutput(ec, res, cm.verbose); err != nil {
+			return err
+		}
+		if err := ec.FlushOutput(); err != nil {
+			return err
+		}
+		return nil
+	}
+	sh := shell.New("SQL> ", "... ", "",
+		ec.Stdout(), ec.Stderr(), endLineFn, textFn,
 	)
 	defer sh.Close()
 	return sh.Start(context.Background())

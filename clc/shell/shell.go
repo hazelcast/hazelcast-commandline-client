@@ -26,7 +26,7 @@ type Shell struct {
 	stdout      io.Writer
 }
 
-func NewShell(prompt1, prompt2, historyPath string, stdout, stderr io.Writer, endLineFn EndLineFn, textFn TextFn) *Shell {
+func New(prompt1, prompt2, historyPath string, stdout, stderr io.Writer, endLineFn EndLineFn, textFn TextFn) *Shell {
 	state := liner.NewLiner()
 	state.SetCtrlCAborts(true)
 	state.SetMultiLineMode(true)

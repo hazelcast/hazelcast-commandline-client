@@ -1,4 +1,4 @@
-package internal
+package cmd
 
 import (
 	"context"
@@ -28,19 +28,34 @@ type ExecContext struct {
 	ci            *hazelcast.ClientInternal
 	isInteractive bool
 	cmd           *cobra.Command
+	main          *Main
 }
 
-func NewExecContext(lg log.Logger, stdout, stderr io.Writer, args []string, props *plug.Properties, clientFn ClientFn, interactive bool, cmd *cobra.Command) *ExecContext {
+func NewExecContext(lg log.Logger, stdout, stderr io.Writer, props *plug.Properties, clientFn ClientFn, interactive bool) *ExecContext {
 	return &ExecContext{
 		lg:            lg,
 		stdout:        stdout,
 		stderr:        stderr,
-		args:          args,
 		props:         props,
 		clientFn:      clientFn,
 		isInteractive: interactive,
-		cmd:           cmd,
 	}
+}
+
+func (ec *ExecContext) SetArgs(args []string) {
+	ec.args = args
+}
+
+func (ec *ExecContext) SetCmd(cmd *cobra.Command) {
+	ec.cmd = cmd
+}
+
+func (ec *ExecContext) SetMain(main *Main) {
+	ec.main = main
+}
+
+func (ec *ExecContext) Main() *Main {
+	return ec.main
 }
 
 func (ec *ExecContext) Logger() log.Logger {
