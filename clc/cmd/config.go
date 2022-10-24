@@ -69,7 +69,7 @@ func makeConfiguration(props plug.ReadOnlyProperties, lg *logger.Logger) (hazelc
 			lg.Debugf("Using certificate path: %s", cp)
 			lg.Debugf("Using key path: %s", kp)
 			if kps != "" {
-				lg.Debugf("Using key password: %s", kps)
+				lg.Debugf("Using key password: XXX")
 				if err := sc.AddClientCertAndEncryptedKeyPath(cp, kp, kps); err != nil {
 					return cfg, err
 				}

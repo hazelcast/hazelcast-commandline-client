@@ -6,7 +6,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/peterh/liner"
+	"github.com/lmorg/readline"
 
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 )
@@ -16,7 +16,7 @@ type EndLineFn func(line string) bool
 type TextFn func(ctx context.Context, text string) error
 
 type Shell struct {
-	state       *liner.State
+	rl          *readline.Instance
 	endLineFn   EndLineFn
 	textFn      TextFn
 	prompt1     string
@@ -27,11 +27,10 @@ type Shell struct {
 }
 
 func New(prompt1, prompt2, historyPath string, stdout, stderr io.Writer, endLineFn EndLineFn, textFn TextFn) *Shell {
-	state := liner.NewLiner()
-	state.SetCtrlCAborts(true)
-	state.SetMultiLineMode(true)
+	rl := readline.NewInstance()
+	rl.SetPrompt(prompt1)
 	return &Shell{
-		state:       state,
+		rl:          rl,
 		endLineFn:   endLineFn,
 		textFn:      textFn,
 		prompt1:     prompt1,
@@ -43,13 +42,13 @@ func New(prompt1, prompt2, historyPath string, stdout, stderr io.Writer, endLine
 }
 
 func (sh Shell) Close() error {
-	return sh.state.Close()
+	return nil
 }
 
 func (sh Shell) Start(ctx context.Context) error {
 	for {
 		text, err := sh.readText()
-		if err == liner.ErrPromptAborted || err == io.EOF {
+		if err == readline.CtrlC || err == readline.EOF {
 			return nil
 		}
 		if text == "" {
@@ -68,7 +67,8 @@ func (sh Shell) readText() (string, error) {
 	prompt := sh.prompt1
 	var sb strings.Builder
 	for {
-		p, err := sh.state.Prompt(prompt)
+		sh.rl.SetPrompt(prompt)
+		p, err := sh.rl.Readline()
 		if err != nil {
 			return "", err
 		}
@@ -84,6 +84,5 @@ func (sh Shell) readText() (string, error) {
 		prompt = sh.prompt2
 	}
 	text := sb.String()
-	sh.state.AppendHistory(text)
 	return text, nil
 }
