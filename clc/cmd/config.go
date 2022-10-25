@@ -16,6 +16,8 @@ import (
 )
 
 func makeConfiguration(props plug.ReadOnlyProperties, lg *logger.Logger) (hazelcast.Config, error) {
+	// if the path is not absolute, assume it is in the parent directory of the configuration
+	wd := filepath.Dir(props.GetString(clc.PropertyConfigPath))
 	var cfg hazelcast.Config
 	cfg.Cluster.Unisocket = true
 	cfg.Stats.Enabled = true
@@ -30,7 +32,7 @@ func makeConfiguration(props plug.ReadOnlyProperties, lg *logger.Logger) (hazelc
 	cfg.Logger.CustomLogger = lg
 	sd := props.GetString(clc.PropertySchemaDir)
 	if sd == "" {
-		sd = filepath.Join(paths.HomeDir(), "schemas")
+		sd = paths.Join(paths.HomeDir(), "schemas")
 	}
 	lg.Info("Loading schemas recursively from directory: %s", sd)
 	if err := serialization.UpdateSerializationConfigWithRecursivePaths(&cfg, lg, sd); err != nil {
@@ -47,9 +49,9 @@ func makeConfiguration(props plug.ReadOnlyProperties, lg *logger.Logger) (hazelc
 		viridianEnabled = true
 	}
 	if props.GetBool(clc.PropertySSLEnabled) || viridianEnabled {
-		sn := props.GetString(clc.PropertySSLServerName)
-		if viridianEnabled {
-			sn = "hazelcast.cloud"
+		sn := "hazelcast.cloud"
+		if !viridianEnabled {
+			sn = props.GetString(clc.PropertySSLServerName)
 		}
 		lg.Debugf("Using SSL server name: %s", sn)
 		tc := &tls.Config{ServerName: sn}
@@ -57,16 +59,19 @@ func makeConfiguration(props plug.ReadOnlyProperties, lg *logger.Logger) (hazelc
 		sc.Enabled = true
 		sc.SetTLSConfig(tc)
 		if cp := props.GetString(clc.PropertySSLCAPath); cp != "" {
+			cp = paths.Join(wd, cp)
 			lg.Debugf("Using SSL CA path: %s", cp)
 			if err := sc.SetCAPath(cp); err != nil {
-				return cfg, nil
+				return cfg, err
 			}
 		}
 		cp := props.GetString(clc.PropertySSLCertPath)
 		kp := props.GetString(clc.PropertySSLKeyPath)
 		kps := props.GetString(clc.PropertySSLKeyPassword)
 		if cp != "" && kp != "" {
+			cp = paths.Join(wd, cp)
 			lg.Debugf("Using certificate path: %s", cp)
+			kp = paths.Join(wd, kp)
 			lg.Debugf("Using key path: %s", kp)
 			if kps != "" {
 				lg.Debugf("Using key password: XXX")

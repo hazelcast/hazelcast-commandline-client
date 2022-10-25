@@ -1,6 +1,7 @@
 package clc
 
 const (
+	ShortcutConfigPath     = "c"
 	PropertyClusterAddress = "cluster.address"
 	PropertyClusterName    = "cluster.name"
 	PropertyViridianToken  = "cluster.viridian-token"
@@ -8,7 +9,7 @@ const (
 	PropertyVerbose        = "verbose"
 	PropertyConfigPath     = "config-path"
 	PropertyLogLevel       = "log.level"
-	PropertyLogFile        = "log.file"
+	PropertyLogPath        = "log.path"
 	PropertySchemaDir      = "schema-dir"
 	PropertySSLEnabled     = "ssl.enabled"
 	PropertySSLServerName  = "ssl.server-name"

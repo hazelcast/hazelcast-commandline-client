@@ -24,17 +24,17 @@ func (g GlobalInitializer) Init(cc plug.InitContext) error {
 	cc.AddBoolFlag(clc.PropertyVerbose, "", false, false, "enable verbose output")
 	lp := paths.DefaultLogPath(time.Now())
 	if !cc.Interactive() {
-		cc.AddStringFlag(clc.PropertyConfigPath, "c", "", false, "set the configuration path")
+		cc.AddStringFlag(clc.PropertyConfigPath, clc.ShortcutConfigPath, "", false, "set the configuration path")
 		cc.AddStringFlag(clc.PropertyClusterAddress, "a", "", false, "set the cluster address")
 		cc.AddStringFlag(clc.PropertyClusterName, "", "", false, "set the cluster name")
-		cc.AddStringFlag(clc.PropertyLogFile, "", lp, false, "set the log file, use stderr to log to stderr")
+		cc.AddStringFlag(clc.PropertyLogPath, "", lp, false, "set the log path, use stderr to log to stderr")
 		cc.AddStringFlag(clc.PropertyLogLevel, "", "info", false, "set the log level")
 		cc.AddStringFlag(clc.PropertySchemaDir, "", "", false, "set the schema directory")
 	}
 	// configuration
 	cc.AddStringConfig(clc.PropertyClusterAddress, "localhost:5701", clc.PropertyClusterAddress, "cluster address")
 	cc.AddStringConfig(clc.PropertyClusterName, "dev", clc.PropertyClusterName, "cluster name")
-	cc.AddStringConfig(clc.PropertyLogFile, "", clc.PropertyLogFile, "log file")
+	cc.AddStringConfig(clc.PropertyLogPath, "", clc.PropertyLogPath, "log path")
 	cc.AddStringConfig(clc.PropertyLogLevel, "", clc.PropertyLogLevel, "log level")
 	cc.AddStringConfig(clc.PropertySchemaDir, "", clc.PropertySchemaDir, "schema directory")
 	cc.AddStringConfig(clc.PropertyViridianToken, "", "", "Viridian token")

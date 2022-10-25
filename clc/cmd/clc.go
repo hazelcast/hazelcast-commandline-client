@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
@@ -43,22 +42,40 @@ type Main struct {
 	ec            *ExecContext
 }
 
-func NewMain(interactive bool) *Main {
+func NewMain(cfgPath, logPath, logLevel string) (*Main, error) {
 	rc := &cobra.Command{
 		Use:   "clc",
 		Short: "Hazelcast CLC",
 		Long:  "Hazelcast Command Line Client",
 	}
 	m := &Main{
-		root:          rc,
-		cmds:          map[string]*cobra.Command{},
-		vpr:           viper.New(),
-		stdout:        nopWriteCloser{W: os.Stdout},
-		stderr:        nopWriteCloser{W: os.Stderr},
-		isInteractive: interactive,
-		props:         plug.NewProperties(),
+		root:   rc,
+		cmds:   map[string]*cobra.Command{},
+		vpr:    viper.New(),
+		stdout: nopWriteCloser{W: os.Stdout},
+		stderr: nopWriteCloser{W: os.Stderr},
+		props:  plug.NewProperties(),
 	}
-	m.createLogger()
+	cfgPath = paths.ResolveConfigPath(cfgPath)
+	if _, err := m.loadConfig(cfgPath); err != nil {
+		return nil, err
+	}
+	if logPath == "" {
+		logPath = m.vpr.GetString(clc.PropertyLogPath)
+	}
+	if logLevel == "" {
+		logLevel = m.vpr.GetString(clc.PropertyLogLevel)
+	}
+	if err := m.createLogger(logPath, logLevel); err != nil {
+		return nil, err
+	}
+	for k, v := range m.vpr.AllSettings() {
+		m.setConfigProps(m.props, k, v)
+	}
+	// these properties are managed manually
+	m.props.Set(clc.PropertyConfigPath, cfgPath)
+	m.props.Set(clc.PropertyLogPath, logPath)
+	m.props.Set(clc.PropertyLogLevel, logLevel)
 	cc := NewCommandContext(rc, m.vpr, m.isInteractive)
 	if err := m.runInitializers(cc); err != nil {
 		// TODO:
@@ -70,10 +87,9 @@ func NewMain(interactive bool) *Main {
 	m.ec = NewExecContext(m.lg, m.stdout, m.stderr, m.props, cf, m.isInteractive)
 	m.ec.SetMain(m)
 	if err := m.createCommands(); err != nil {
-		// TODO:
-		panic(err)
+		return nil, err
 	}
-	return m
+	return m, nil
 }
 
 func (m *Main) CloneForInteractiveMode() (*Main, error) {
@@ -122,27 +138,27 @@ func (m *Main) Exit() error {
 	return nil
 }
 
-func (m *Main) createLogger() {
-	m.lg = MustValue(logger.New(os.Stderr, logger.WeightInfo))
-}
-
-func (m *Main) updateLogger() {
-	path := m.vpr.GetString(clc.PropertyLogFile)
-	if path == "" {
-		path = paths.DefaultLogPath(time.Now())
+func (m *Main) createLogger(path, level string) error {
+	if level == "" {
+		level = "info"
 	}
-	// Continue to use the temporary logger if the output is for stderr
-	if path == "stderr" {
-		return
-	}
-	weight, err := logger.WeightForLevel(m.vpr.GetString(clc.PropertyLogLevel))
-	f, err := m.createGetLogFile(path)
+	weight, err := logger.WeightForLevel(level)
 	if err != nil {
-		m.lg.Info("Failed to open the log file, using stderr: %s", err.Error())
-		return
+		return err
 	}
-	m.lg.SetWriter(f)
-	m.lg.SetWeight(weight)
+	var f io.WriteCloser
+	if path == "stderr" {
+		f = os.Stderr
+	} else {
+		path = paths.ResolveLogPath(path)
+		f, err = m.createGetLogFile(path)
+		if err != nil {
+			// failed to open the log file, use stderr
+			f = os.Stderr
+		}
+	}
+	m.lg, err = logger.New(f, weight)
+	return nil
 }
 
 func (m *Main) createGetLogFile(path string) (io.WriteCloser, error) {
@@ -218,6 +234,10 @@ func (m *Main) createCommands() error {
 				cfs := cmd.Flags()
 				props := m.props
 				cfs.Visit(func(f *pflag.Flag) {
+					// skip managed flags
+					if f.Name == clc.PropertyConfigPath || f.Name == clc.PropertyLogPath || f.Name == clc.PropertyLogLevel {
+						return
+					}
 					props.Set(f.Name, convertFlagValue(cfs, f.Name, f.Value))
 				})
 				ec := m.ec
@@ -226,13 +246,6 @@ func (m *Main) createCommands() error {
 				if err := m.runAugmentors(ec, props); err != nil {
 					return err
 				}
-				if _, err := m.loadConfig(props); err != nil {
-					return err
-				}
-				for k, v := range m.vpr.AllSettings() {
-					m.setConfigProps(props, k, v)
-				}
-				m.updateLogger()
 				if err := c.Item.Exec(ec); err != nil {
 					return err
 				}
@@ -262,18 +275,15 @@ func (m *Main) ensureClient(ctx context.Context, props plug.ReadOnlyProperties) 
 	return m.client, nil
 }
 
-func (m *Main) loadConfig(props plug.ReadOnlyProperties) (bool, error) {
+func (m *Main) loadConfig(path string) (bool, error) {
 	if m.configLoaded {
 		return true, nil
 	}
 	m.configLoaded = true
 	defaultPath := paths.DefaultConfigPath()
-	path := props.GetString(clc.PropertyConfigPath)
-	if path == "" {
-		path = defaultPath
-	}
 	m.vpr.SetConfigFile(path)
 	if err := m.vpr.ReadInConfig(); err != nil {
+		// ignore the errors if the path is the default path, it is possible that it does not exist.
 		var pe *fs.PathError
 		if errors.As(err, &pe) {
 			if path == defaultPath {
