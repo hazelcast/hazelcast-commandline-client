@@ -8,11 +8,9 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
-type FieldType int
-
 type PortableField struct {
 	Name  string
-	Type  PortableType
+	Type  PortableFieldType
 	Value any
 }
 
@@ -96,44 +94,44 @@ func (f PortableField) formatValue() (v string) {
 	return v
 }
 
-// PortableType corresponds to FieldDefinitionType+1
-type PortableType int32
+// PortableFieldType corresponds to FieldDefinitionType+1
+type PortableFieldType int32
 
 const (
-	PortableTypeNone                       PortableType = 0
-	PortableTypePortable                   PortableType = 1
-	PortableTypeByte                       PortableType = 2
-	PortableTypeBool                       PortableType = 3
-	PortableTypeUint16                     PortableType = 4
-	PortableTypeInt16                      PortableType = 5
-	PortableTypeInt32                      PortableType = 6
-	PortableTypeInt64                      PortableType = 7
-	PortableTypeFloat32                    PortableType = 8
-	PortableTypeFloat64                    PortableType = 9
-	PortableTypeString                     PortableType = 10
-	PortableTypePortableArray              PortableType = 11
-	PortableTypeByteArray                  PortableType = 12
-	PortableTypeBoolArray                  PortableType = 13
-	PortableTypeUInt16Array                PortableType = 14
-	PortableTypeInt16Array                 PortableType = 15
-	PortableTypeInt32Array                 PortableType = 16
-	PortableTypeInt64Array                 PortableType = 17
-	PortableTypeFloat32Array               PortableType = 18
-	PortableTypeFloat64Array               PortableType = 19
-	PortableTypeStringArray                PortableType = 20
-	PortableTypeDecimal                    PortableType = 21
-	PortableTypeDecimalArray               PortableType = 22
-	PortableTypeTime                       PortableType = 23
-	PortableTypeTimeArray                  PortableType = 24
-	PortableTypeDate                       PortableType = 25
-	PortableTypeDateArray                  PortableType = 26
-	PortableTypeTimestamp                  PortableType = 27
-	PortableTypeTimestampArray             PortableType = 28
-	PortableTypeTimestampWithTimezone      PortableType = 29
-	PortableTypeTimestampWithTimezoneArray PortableType = 30
+	PortableTypeNone                       PortableFieldType = 0
+	PortableTypePortable                   PortableFieldType = 1
+	PortableTypeByte                       PortableFieldType = 2
+	PortableTypeBool                       PortableFieldType = 3
+	PortableTypeUint16                     PortableFieldType = 4
+	PortableTypeInt16                      PortableFieldType = 5
+	PortableTypeInt32                      PortableFieldType = 6
+	PortableTypeInt64                      PortableFieldType = 7
+	PortableTypeFloat32                    PortableFieldType = 8
+	PortableTypeFloat64                    PortableFieldType = 9
+	PortableTypeString                     PortableFieldType = 10
+	PortableTypePortableArray              PortableFieldType = 11
+	PortableTypeByteArray                  PortableFieldType = 12
+	PortableTypeBoolArray                  PortableFieldType = 13
+	PortableTypeUInt16Array                PortableFieldType = 14
+	PortableTypeInt16Array                 PortableFieldType = 15
+	PortableTypeInt32Array                 PortableFieldType = 16
+	PortableTypeInt64Array                 PortableFieldType = 17
+	PortableTypeFloat32Array               PortableFieldType = 18
+	PortableTypeFloat64Array               PortableFieldType = 19
+	PortableTypeStringArray                PortableFieldType = 20
+	PortableTypeDecimal                    PortableFieldType = 21
+	PortableTypeDecimalArray               PortableFieldType = 22
+	PortableTypeTime                       PortableFieldType = 23
+	PortableTypeTimeArray                  PortableFieldType = 24
+	PortableTypeDate                       PortableFieldType = 25
+	PortableTypeDateArray                  PortableFieldType = 26
+	PortableTypeTimestamp                  PortableFieldType = 27
+	PortableTypeTimestampArray             PortableFieldType = 28
+	PortableTypeTimestampWithTimezone      PortableFieldType = 29
+	PortableTypeTimestampWithTimezoneArray PortableFieldType = 30
 )
 
-func (t PortableType) MarshalText() ([]byte, error) {
+func (t PortableFieldType) MarshalText() ([]byte, error) {
 	var s string
 	switch t {
 	case PortableTypeNone:
@@ -204,7 +202,7 @@ func (t PortableType) MarshalText() ([]byte, error) {
 	return []byte(s), nil
 }
 
-func (t *PortableType) UnmarshalText(b []byte) error {
+func (t *PortableFieldType) UnmarshalText(b []byte) error {
 	s := strings.ToLower(string(b))
 	switch s {
 	case "":
@@ -273,7 +271,7 @@ func (t *PortableType) UnmarshalText(b []byte) error {
 	return nil
 }
 
-func (t *PortableType) ToTypeID() int32 {
+func (t *PortableFieldType) ToTypeID() int32 {
 	switch *t {
 	case PortableTypeNone:
 		return TypeNil
@@ -365,6 +363,7 @@ var portableReaders = map[serialization.FieldDefinitionType]portableFieldReader{
 	},
 }
 
+// the list of writers is not complete, but that's OK since we don't yet support writing portables --YT
 var portableWriters = map[serialization.FieldDefinitionType]portableFieldWriter{
 	serialization.TypeBool: func(w serialization.PortableWriter, field string, value any) {
 		w.WriteBool(field, value.(bool))

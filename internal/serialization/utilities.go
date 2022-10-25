@@ -1,6 +1,7 @@
 package serialization
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,13 +13,51 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 )
 
+const (
+	PortablePathSuffix = ".portable.json"
+	CompactPathSuffix  = ".compact.json"
+)
+
 type recurseCallback func(path string)
+
+func LoadStructFromJSON[T any](b []byte) (T, error) {
+	var gp T
+	if err := json.Unmarshal(b, &gp); err != nil {
+		return gp, err
+	}
+	return gp, nil
+}
+
+func LoadStructsFromPaths[T any](suffix string, paths ...string) ([]T, error) {
+	ps := make([]T, 0, len(paths))
+	for _, path := range paths {
+		if strings.HasPrefix(path, ".") {
+			continue
+		}
+		if !strings.HasSuffix(path, suffix) {
+			continue
+		}
+		b, err := os.ReadFile(path)
+		if err != nil {
+			return nil, fmt.Errorf("error reading path: %s: %w", path, err)
+		}
+		p, err := LoadStructFromJSON[T](b)
+		if err != nil {
+			return nil, fmt.Errorf("error loading from path: %s: %w", path, err)
+		}
+		ps = append(ps, p)
+	}
+	return ps, nil
+}
 
 func UpdateSerializationConfigWithRecursivePaths(cfg *hazelcast.Config, lg log.Logger, paths ...string) error {
 	var portablePaths []string
+	var compactPaths []string
 	cb := func(path string) {
 		if strings.HasSuffix(path, PortablePathSuffix) {
 			portablePaths = append(portablePaths, path)
+		} else if strings.HasSuffix(path, CompactPathSuffix) {
+			compactPaths = append(compactPaths, path)
 		}
 	}
 	for _, path := range paths {
@@ -35,7 +74,8 @@ func UpdateSerializationConfigWithRecursivePaths(cfg *hazelcast.Config, lg log.L
 		}
 		cb(path)
 	}
-	gps, err := LoadPortablesFromPaths(portablePaths...)
+	// portable stuff
+	gps, err := LoadStructsFromPaths[GenericPortable](PortablePathSuffix, portablePaths...)
 	if err != nil {
 		return err
 	}
@@ -48,6 +88,20 @@ func UpdateSerializationConfigWithRecursivePaths(cfg *hazelcast.Config, lg log.L
 		fs[i] = f
 	}
 	cfg.Serialization.SetPortableFactories(fs...)
+	// compact stuff
+	gcs, err := LoadStructsFromPaths[GenericCompact](CompactPathSuffix, compactPaths...)
+	if err != nil {
+		return err
+	}
+	gs := make([]serialization.CompactSerializer, len(gcs))
+	for i, f := range gcs {
+		cs, err := NewGenericCompact(f)
+		if err != nil {
+			lg.Warn("Could not create GenericCompact for type: %s: %s", f.ValueTypeName, err.Error())
+		}
+		gs[i] = cs
+	}
+	cfg.Serialization.Compact.SetSerializers(gs...)
 	return nil
 }
 

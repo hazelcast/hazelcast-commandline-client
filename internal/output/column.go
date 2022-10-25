@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"reflect"
 	"strings"
 	"time"
 
@@ -183,7 +184,11 @@ func (co Column) SingleLine() (s string) {
 			s = *sr
 		}
 	case iserialization.TypeCompact:
-		fallthrough
+		sr, err := structToString(co.Value)
+		if err != nil {
+			sr = ValueNotDecoded
+		}
+		s = sr
 	case iserialization.TypeCompactWithSchema:
 		fallthrough
 	case iserialization.TypeJavaDefaultTypeSerializable:
@@ -270,6 +275,18 @@ func (co Column) RowExtensions() ([]Column, error) {
 			}
 		}
 		return cols, nil
+	case iserialization.TypeCompact:
+		value, err := structToString(co.Value)
+		if err != nil {
+			return nil, errors.ErrNotDecoded
+		}
+		// the same code path with JSON
+		var m any
+		if err := json.Unmarshal([]byte(value), &m); err != nil {
+			return nil, errors.ErrNotDecoded
+		}
+		// TODO: nested fields
+		return jsonValueToColumns(m), nil
 	}
 	return []Column{co}, nil
 }
@@ -314,4 +331,22 @@ func jsonValueToTypeID(v any) int32 {
 		return iserialization.TypeNil
 	}
 	return iserialization.TypeUnknown
+}
+
+func structToString(v any) (string, error) {
+	vv := reflect.ValueOf(v)
+	if vv.Kind() == reflect.Pointer {
+		if vv.IsNil() {
+			return ValueNil, nil
+		}
+		vv = vv.Elem()
+	}
+	if vv.Kind() == reflect.Struct {
+		b, err := json.Marshal(v)
+		if err != nil {
+			return "", err
+		}
+		return string(b), nil
+	}
+	return fmt.Sprintf("%v", v), nil
 }

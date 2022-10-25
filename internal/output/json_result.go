@@ -56,7 +56,7 @@ func columnToJSONValue(col Column) (any, error) {
 	switch col.Type {
 	case iserialization.TypeNil:
 		return nil, nil
-	case iserialization.TypePortable:
+	case iserialization.TypePortable, iserialization.TypeCompact:
 		return col.Value, nil
 	case iserialization.TypeDataSerializable:
 		return nil, errors.ErrNotDecoded

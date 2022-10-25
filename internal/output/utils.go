@@ -13,15 +13,16 @@ func MakeTable(rows []Row) ([]string, []Row) {
 	drows := make([]map[string]Column, len(rows))
 	for i, row := range rows {
 		newRow := map[string]Column{}
-		for ci, col := range row {
+		for _, col := range row {
 			// do not break the key column
-			if ci == 0 {
+			// TODO: fix this properly
+			if col.Name == NameKey {
 				hd[col.Name] = struct{}{}
 				newRow[col.Name] = col
 				continue
 			}
 			// break out only complex types
-			if col.Type == serialization.TypeJSONSerialization || col.Type == serialization.TypePortable {
+			if col.Type == serialization.TypeJSONSerialization || col.Type == serialization.TypePortable || col.Type == serialization.TypeCompact {
 				// XXX: what if col.Value == ValueNotDecoded ?
 				if col.Value != ValueNotDecoded {
 					nc, err := col.RowExtensions()

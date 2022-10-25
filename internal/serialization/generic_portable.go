@@ -26,7 +26,7 @@ func NewGenericPortable(value GenericPortable) (*GenericPortable, error) {
 	ws := make([]portableFieldWriter, len(value.Fields))
 	for i, f := range value.Fields {
 		pt := serialization.FieldDefinitionType(f.Type - 1)
-		if pt < serialization.TypePortable {
+		if pt < serialization.TypePortable || pt > serialization.TypeTimestampWithTimezoneArray {
 			return nil, fmt.Errorf("invalid portable type: %d", f.Type)
 		}
 		r, ok := portableReaders[pt]
@@ -167,4 +167,24 @@ func (g GenericPortableFactory) Create(classID int32) serialization.Portable {
 
 func (g GenericPortableFactory) FactoryID() int32 {
 	return g.factoryID
+}
+
+func NewPortableFactoriesFromItems(items ...GenericPortable) ([]*GenericPortableFactory, error) {
+	m := map[int32][]*GenericPortable{}
+	for _, item := range items {
+		gps, err := NewGenericPortable(item)
+		if err != nil {
+			return nil, err
+		}
+		m[item.FID] = append(m[item.FID], gps)
+	}
+	fs := make([]*GenericPortableFactory, 0, len(items))
+	for fid, ss := range m {
+		f, err := NewGenericPortableFactory(fid, ss...)
+		if err != nil {
+			return nil, err
+		}
+		fs = append(fs, f)
+	}
+	return fs, nil
 }

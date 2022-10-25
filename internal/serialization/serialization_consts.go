@@ -250,5 +250,5 @@ func TypeToString(t int32) string {
 	default:
 		s = fmt.Sprintf("UNKNOWN_TYPE:%d", t)
 	}
-	return fmt.Sprintf("%s", s)
+	return s
 }
