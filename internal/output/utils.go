@@ -8,7 +8,8 @@ import (
 )
 
 func MakeTable(rows []Row) ([]string, []Row) {
-	hd := map[string]struct{}{}
+	//hd := map[string]struct{}{}
+	hd := NewOrderedSet[string]()
 	drows := make([]map[string]Column, len(rows))
 	for i, row := range rows {
 		newRow := map[string]Column{}
@@ -16,7 +17,7 @@ func MakeTable(rows []Row) ([]string, []Row) {
 			// do not break the key column
 			// TODO: fix this properly
 			if col.Name == NameKey {
-				hd[col.Name] = struct{}{}
+				hd.Add(col.Name)
 				newRow[col.Name] = col
 				continue
 			}
@@ -26,7 +27,7 @@ func MakeTable(rows []Row) ([]string, []Row) {
 				if col.Value != ValueNotDecoded {
 					nc, err := col.RowExtensions()
 					if err != nil {
-						hd[col.Name] = struct{}{}
+						hd.Add(col.Name)
 						newRow[col.Name] = Column{
 							Type:  serialization.TypeString,
 							Value: ValueNotDecoded,
@@ -39,14 +40,14 @@ func MakeTable(rows []Row) ([]string, []Row) {
 						} else {
 							sc.Name = fmt.Sprintf("%s.%s", col.Name, sc.Name)
 						}
-						hd[sc.Name] = struct{}{}
+						hd.Add(sc.Name)
 						newRow[sc.Name] = sc
 						newRow[col.Name] = NewSkipColumn()
 					}
 					continue
 				}
 			}
-			hd[col.Name] = struct{}{}
+			hd.Add(col.Name)
 			newRow[col.Name] = col
 		}
 		drows[i] = newRow
@@ -54,18 +55,15 @@ func MakeTable(rows []Row) ([]string, []Row) {
 	stdNames := []string{NameKey, NameKeyType, NameValue, NameValueType}
 	var stdHeader []string
 	for _, h := range stdNames {
-		if _, ok := hd[h]; ok {
+		if hd.Contains(h) {
 			stdHeader = append(stdHeader, h)
 		}
 	}
-	header := make([]string, 0, len(hd))
 	// delete standard headers
 	for _, h := range stdNames {
-		delete(hd, h)
+		hd.Delete(h)
 	}
-	for h := range hd {
-		header = append(header, h)
-	}
+	header := hd.Items()
 	/*
 		sort.Slice(header, func(i, j int) bool {
 			return header[i] < header[j]
