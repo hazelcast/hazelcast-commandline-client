@@ -2,12 +2,14 @@ package sql
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/shell"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -46,7 +48,7 @@ func (cm *SQLShellCommand) Exec(ec plug.ExecContext) error {
 func (cm *SQLShellCommand) ExecInteractive(ec plug.ExecInteractiveContext) error {
 	endLineFn := func(line string) bool {
 		line = strings.TrimSpace(line)
-		return strings.HasPrefix(line, "\\") || strings.HasSuffix(line, ";")
+		return strings.HasPrefix(line, "help") || strings.HasPrefix(line, "\\") || strings.HasSuffix(line, ";")
 	}
 	textFn := func(ctx context.Context, text string) error {
 		text, err := convertStatement(text)
@@ -65,8 +67,8 @@ func (cm *SQLShellCommand) ExecInteractive(ec plug.ExecInteractiveContext) error
 		}
 		return nil
 	}
-	sh := shell.New("SQL> ", "... ", "",
-		ec.Stdout(), ec.Stderr(), endLineFn, textFn)
+	path := paths.Join(paths.Home(), "sql.history")
+	sh := shell.New("SQL> ", " ... ", path, ec.Stdout(), ec.Stderr(), endLineFn, textFn)
 	sh.SetCommentPrefix("--")
 	defer sh.Close()
 	return sh.Start(context.Background())
@@ -74,6 +76,9 @@ func (cm *SQLShellCommand) ExecInteractive(ec plug.ExecInteractiveContext) error
 
 func convertStatement(stmt string) (string, error) {
 	stmt = strings.TrimSpace(stmt)
+	if strings.HasPrefix(stmt, "help") {
+		return "", errors.New(help())
+	}
 	if strings.HasPrefix(stmt, "\\") {
 		// this is a shell command
 		parts := strings.Fields(stmt)
@@ -104,17 +109,19 @@ func convertStatement(stmt string) (string, error) {
 				`, mn), nil
 			}
 			return "", fmt.Errorf("Usage: \\dm+ [mapping]")
-		case "\\help":
-			return "", fmt.Errorf(`
-Commands:
-	\dm          : list mappings
-	\dm  MAPPING : display info about a mapping
-	\dm+ MAPPING : describe a mapping
-			`)
 		}
 		return "", fmt.Errorf("Unknown shell command: %s", stmt)
 	}
 	return stmt, nil
+}
+
+func help() string {
+	return `
+Commands:
+	\dm           list mappings
+	\dm  MAPPING  display info about a mapping
+	\dm+ MAPPING  describe a mapping
+`
 }
 
 func init() {

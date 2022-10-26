@@ -20,7 +20,7 @@ func (hc HomeCommand) Init(cc plug.InitContext) error {
 }
 
 func (hc HomeCommand) Exec(ec plug.ExecContext) error {
-	dir := paths.HomeDir()
+	dir := paths.Home()
 	args := ec.Args()
 	if len(args) > 0 {
 		dir = filepath.Join(append([]string{dir}, args...)...)

@@ -13,7 +13,7 @@ const (
 	DefaultConfig = "config.yaml"
 )
 
-func HomeDir() string {
+func Home() string {
 	dir := os.Getenv(EnvCLCHome)
 	if dir == "" {
 		cd, err := os.UserHomeDir()
@@ -25,25 +25,25 @@ func HomeDir() string {
 	return dir
 }
 
-func ConfigsDir() string {
-	return filepath.Join(HomeDir(), "configs")
+func Configs() string {
+	return filepath.Join(Home(), "configs")
 }
 
-func SchemasDir() string {
-	return filepath.Join(HomeDir(), "schemas")
+func Schemas() string {
+	return filepath.Join(Home(), "schemas")
 }
 
-func LogsDir() string {
-	return filepath.Join(HomeDir(), "logs")
+func Logs() string {
+	return filepath.Join(Home(), "logs")
 }
 
 func DefaultConfigPath() string {
-	return filepath.Join(HomeDir(), "config.yaml")
+	return filepath.Join(Home(), "config.yaml")
 }
 
 func DefaultLogPath(now time.Time) string {
 	fn := fmt.Sprintf("%s.log", now.Format("2006-01-02"))
-	return filepath.Join(LogsDir(), fn)
+	return filepath.Join(Logs(), fn)
 }
 
 /*
@@ -59,7 +59,7 @@ func ResolveConfigPath(path string) string {
 		path = DefaultConfigPath()
 	}
 	if filepath.Ext(path) == "" {
-		path = filepath.Join(ConfigsDir(), path, DefaultConfig)
+		path = filepath.Join(Configs(), path, DefaultConfig)
 	}
 	return path
 }

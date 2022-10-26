@@ -32,7 +32,7 @@ func makeConfiguration(props plug.ReadOnlyProperties, lg *logger.Logger) (hazelc
 	cfg.Logger.CustomLogger = lg
 	sd := props.GetString(clc.PropertySchemaDir)
 	if sd == "" {
-		sd = paths.Join(paths.HomeDir(), "schemas")
+		sd = paths.Join(paths.Home(), "schemas")
 	}
 	lg.Info("Loading schemas recursively from directory: %s", sd)
 	if err := serialization.UpdateSerializationConfigWithRecursivePaths(&cfg, lg, sd); err != nil {

@@ -16,7 +16,7 @@ import (
 func TestHomeDir_Unix(t *testing.T) {
 	skip.If(t, "os = windows")
 	os.Setenv("HOME", "/dev/shm")
-	assert.Equal(t, "/dev/shm/.local/share/clc", paths.HomeDir())
+	assert.Equal(t, "/dev/shm/.local/share/clc", paths.Home())
 }
 
 func TestDefaultConfigPath_Unix(t *testing.T) {

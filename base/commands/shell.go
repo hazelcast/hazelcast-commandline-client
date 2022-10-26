@@ -9,6 +9,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/shell"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -44,14 +45,15 @@ func (cm *ShellCommand) ExecInteractive(ec plug.ExecInteractiveContext) error {
 		return !strings.HasSuffix(line, "\\")
 	}
 	textFn := func(ctx context.Context, text string) error {
+		text = strings.TrimSpace(text)
 		args, err := shlex.Split(text)
 		if err != nil {
 			return err
 		}
 		return m.Execute(args)
 	}
-	sh := shell.New("CLC> ", "... ", "",
-		ec.Stdout(), ec.Stderr(), endLineFn, textFn)
+	path := paths.Join(paths.Home(), "shell.history")
+	sh := shell.New("CLC> ", " ... ", path, ec.Stdout(), ec.Stderr(), endLineFn, textFn)
 	sh.SetCommentPrefix("#")
 	defer sh.Close()
 	return sh.Start(context.Background())
