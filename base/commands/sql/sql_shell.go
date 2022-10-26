@@ -2,6 +2,7 @@ package sql
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client"
@@ -44,9 +45,14 @@ func (cm *SQLShellCommand) Exec(ec plug.ExecContext) error {
 
 func (cm *SQLShellCommand) ExecInteractive(ec plug.ExecInteractiveContext) error {
 	endLineFn := func(line string) bool {
-		return strings.HasSuffix(line, ";")
+		line = strings.TrimSpace(line)
+		return strings.HasPrefix(line, "\\") || strings.HasSuffix(line, ";")
 	}
 	textFn := func(ctx context.Context, text string) error {
+		text, err := convertStatement(text)
+		if err != nil {
+			return err
+		}
 		res, err := cm.client.SQL().Execute(ctx, text)
 		if err != nil {
 			return adaptSQLError(err)
@@ -64,6 +70,51 @@ func (cm *SQLShellCommand) ExecInteractive(ec plug.ExecInteractiveContext) error
 	sh.SetCommentPrefix("--")
 	defer sh.Close()
 	return sh.Start(context.Background())
+}
+
+func convertStatement(stmt string) (string, error) {
+	stmt = strings.TrimSpace(stmt)
+	if strings.HasPrefix(stmt, "\\") {
+		// this is a shell command
+		parts := strings.Fields(stmt)
+		switch parts[0] {
+		case "\\dm":
+			if len(parts) == 1 {
+				return "show mappings;", nil
+			}
+			if len(parts) == 2 {
+				// escape single quote
+				mn := strings.Replace(parts[1], "'", "''", -1)
+				return fmt.Sprintf(`
+					SELECT * FROM information_schema.mappings
+					WHERE table_name = '%s';
+				`, mn), nil
+			}
+			return "", fmt.Errorf("Usage: \\dm [mapping]")
+		case "\\dm+":
+			if len(parts) == 1 {
+				return "show mappings;", nil
+			}
+			if len(parts) == 2 {
+				// escape single quote
+				mn := strings.Replace(parts[1], "'", "''", -1)
+				return fmt.Sprintf(`
+					SELECT * FROM information_schema.columns
+					WHERE table_name = '%s';
+				`, mn), nil
+			}
+			return "", fmt.Errorf("Usage: \\dm+ [mapping]")
+		case "\\help":
+			return "", fmt.Errorf(`
+Commands:
+	\dm          : list mappings
+	\dm  MAPPING : display info about a mapping
+	\dm+ MAPPING : describe a mapping
+			`)
+		}
+		return "", fmt.Errorf("Unknown shell command: %s", stmt)
+	}
+	return stmt, nil
 }
 
 func init() {
