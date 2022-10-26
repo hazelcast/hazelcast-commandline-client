@@ -21,7 +21,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/connwizardcmd"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/sqlcmd"
@@ -34,7 +33,6 @@ import (
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	fakeDoor "github.com/hazelcast/hazelcast-commandline-client/types/fakedoorcmd"
 	"github.com/hazelcast/hazelcast-commandline-client/types/mapcmd"
-	"github.com/hazelcast/hazelcast-commandline-client/versioncmd"
 )
 
 // New initializes root command for non-interactive mode
@@ -88,8 +86,6 @@ func subCommands(config *hazelcast.Config, isInteractiveInvocation bool) []*cobr
 		clustercmd.New(config),
 		mapcmd.New(config, isInteractiveInvocation),
 		sqlcmd.New(config),
-		versioncmd.New(),
-		commands.New(config),
 		connwizardcmd.New(),
 	}
 	fds := []fakeDoor.FakeDoor{

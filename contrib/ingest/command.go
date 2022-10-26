@@ -37,8 +37,8 @@ func (cm IngestCommand) Init(cc plug.InitContext) error {
 func (cm IngestCommand) Exec(ec plug.ExecContext) error {
 	// TODO: proper error handling
 	path := ec.Args()[0]
-	if !strings.HasSuffix(path, ".flat.json") {
-		return fmt.Errorf("only .flat.json files are supported")
+	if !strings.HasSuffix(path, ".json") {
+		return fmt.Errorf("only files having the .json extension are supported")
 	}
 	format := ec.Props().GetString(clc.PropertyFormat)
 	if format != "json" {
