@@ -19,7 +19,7 @@ type SQLShellCommand struct {
 
 func (cm *SQLShellCommand) Augment(ec plug.ExecContext, props *plug.Properties) error {
 	if ec.CommandName() == "clc sql shell" {
-		props.Set(clc.PropertyOutputFormat, "table")
+		props.Set(clc.PropertyFormat, "table")
 	}
 	return nil
 }
@@ -60,8 +60,8 @@ func (cm *SQLShellCommand) ExecInteractive(ec plug.ExecInteractiveContext) error
 		return nil
 	}
 	sh := shell.New("SQL> ", "... ", "",
-		ec.Stdout(), ec.Stderr(), endLineFn, textFn,
-	)
+		ec.Stdout(), ec.Stderr(), endLineFn, textFn)
+	sh.SetCommentPrefix("--")
 	defer sh.Close()
 	return sh.Start(context.Background())
 }

@@ -37,13 +37,13 @@ func (ag *CheckOutputTypeAugmentor) Augment(ec plug.ExecContext, props *plug.Pro
 	for _, n := range plug.Registry.PrinterNames() {
 		pns[n] = struct{}{}
 	}
-	ot := ec.Props().GetString(clc.PropertyOutputFormat)
+	ot := ec.Props().GetString(clc.PropertyFormat)
 	if ot == "" {
-		props.Set(clc.PropertyOutputFormat, "delimited")
+		props.Set(clc.PropertyFormat, "delimited")
 		return nil
 	}
 	if _, ok := pns[ot]; !ok {
-		return fmt.Errorf("invalid %s: %s", clc.PropertyOutputFormat, ot)
+		return fmt.Errorf("invalid %s: %s", clc.PropertyFormat, ot)
 	}
 	return nil
 }

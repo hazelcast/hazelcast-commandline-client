@@ -20,7 +20,7 @@ func (g GlobalInitializer) Init(cc plug.InitContext) error {
 	pns := plug.Registry.PrinterNames()
 	usage := fmt.Sprintf("set the output type, one of: %s", strings.Join(pns, ", "))
 	// other flags
-	cc.AddStringFlag(clc.PropertyOutputFormat, "", "", false, usage)
+	cc.AddStringFlag(clc.PropertyFormat, "", "", false, usage)
 	cc.AddBoolFlag(clc.PropertyVerbose, "", false, false, "enable verbose output")
 	lp := paths.DefaultLogPath(time.Now())
 	if !cc.Interactive() {
@@ -29,7 +29,7 @@ func (g GlobalInitializer) Init(cc plug.InitContext) error {
 		cc.AddStringFlag(clc.PropertyClusterName, "", "", false, "set the cluster name")
 		cc.AddStringFlag(clc.PropertyLogPath, "", lp, false, "set the log path, use stderr to log to stderr")
 		cc.AddStringFlag(clc.PropertyLogLevel, "", "info", false, "set the log level")
-		cc.AddStringFlag(clc.PropertySchemaDir, "", "", false, "set the schema directory")
+		cc.AddStringFlag(clc.PropertySchemaDir, "", paths.SchemasDir(), false, "set the schema directory")
 	}
 	// configuration
 	cc.AddStringConfig(clc.PropertyClusterAddress, "localhost:5701", clc.PropertyClusterAddress, "cluster address")

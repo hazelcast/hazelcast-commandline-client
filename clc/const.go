@@ -5,7 +5,7 @@ const (
 	PropertyClusterAddress = "cluster.address"
 	PropertyClusterName    = "cluster.name"
 	PropertyViridianToken  = "cluster.viridian-token"
-	PropertyOutputFormat   = "format"
+	PropertyFormat         = "format"
 	PropertyVerbose        = "verbose"
 	PropertyConfigPath     = "config-path"
 	PropertyLogLevel       = "log.level"

@@ -52,6 +52,7 @@ func (cm *ShellCommand) ExecInteractive(ec plug.ExecInteractiveContext) error {
 	}
 	sh := shell.New("CLC> ", "... ", "",
 		ec.Stdout(), ec.Stderr(), endLineFn, textFn)
+	sh.SetCommentPrefix("#")
 	defer sh.Close()
 	return sh.Start(context.Background())
 }

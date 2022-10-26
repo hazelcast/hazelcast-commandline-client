@@ -118,7 +118,7 @@ func (ec *ExecContext) FlushOutput() error {
 	for _, pr := range plug.Registry.Printers() {
 		prs[pr.Name] = pr.Item
 	}
-	name := ec.Props().GetString(clc.PropertyOutputFormat)
+	name := ec.Props().GetString(clc.PropertyFormat)
 	pr := prs[name]
 	err := pr.Print(os.Stdout, ec.OutputRows())
 	ec.rows = nil

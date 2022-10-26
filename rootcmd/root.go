@@ -21,6 +21,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/connwizardcmd"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/sqlcmd"
@@ -31,7 +32,6 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clustercmd"
 	"github.com/hazelcast/hazelcast-commandline-client/config"
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
-	"github.com/hazelcast/hazelcast-commandline-client/listobjectscmd"
 	fakeDoor "github.com/hazelcast/hazelcast-commandline-client/types/fakedoorcmd"
 	"github.com/hazelcast/hazelcast-commandline-client/types/mapcmd"
 	"github.com/hazelcast/hazelcast-commandline-client/versioncmd"
@@ -89,7 +89,7 @@ func subCommands(config *hazelcast.Config, isInteractiveInvocation bool) []*cobr
 		mapcmd.New(config, isInteractiveInvocation),
 		sqlcmd.New(config),
 		versioncmd.New(),
-		listobjectscmd.New(config),
+		commands.New(config),
 		connwizardcmd.New(),
 	}
 	fds := []fakeDoor.FakeDoor{

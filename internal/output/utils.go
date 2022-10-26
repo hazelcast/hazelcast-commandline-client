@@ -2,7 +2,6 @@ package output
 
 import (
 	"fmt"
-	"sort"
 	"strings"
 
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
@@ -67,9 +66,11 @@ func MakeTable(rows []Row) ([]string, []Row) {
 	for h := range hd {
 		header = append(header, h)
 	}
-	sort.Slice(header, func(i, j int) bool {
-		return header[i] < header[j]
-	})
+	/*
+		sort.Slice(header, func(i, j int) bool {
+			return header[i] < header[j]
+		})
+	*/
 	header = append(stdHeader, header...)
 	// create new rows
 	nilCol := Column{Type: serialization.TypeNil}

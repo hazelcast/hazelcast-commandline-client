@@ -27,6 +27,8 @@ func (mc *MapCommand) Init(cc plug.InitContext) error {
 	cc.AddBoolFlag(mapFlagShowType, "", false, false, "add the type names to the output")
 	cc.SetTopLevel(true)
 	cc.SetCommandUsage("map [command]")
+	help := "map operations"
+	cc.SetCommandHelp(help, help)
 	return nil
 }
 
