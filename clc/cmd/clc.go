@@ -63,6 +63,7 @@ func NewMain(cfgPath, logPath, logLevel string) (*Main, error) {
 	if logPath == "" {
 		logPath = m.vpr.GetString(clc.PropertyLogPath)
 	}
+	logPath = paths.ResolveLogPath(logPath)
 	if logLevel == "" {
 		logLevel = m.vpr.GetString(clc.PropertyLogLevel)
 	}
@@ -78,8 +79,7 @@ func NewMain(cfgPath, logPath, logLevel string) (*Main, error) {
 	m.props.Set(clc.PropertyLogLevel, logLevel)
 	cc := NewCommandContext(rc, m.vpr, m.isInteractive)
 	if err := m.runInitializers(cc); err != nil {
-		// TODO:
-		panic(err)
+		return nil, err
 	}
 	cf := func(ctx context.Context) (*hazelcast.Client, error) {
 		return m.ensureClient(ctx, m.props)
@@ -114,8 +114,7 @@ func (m *Main) CloneForInteractiveMode() (*Main, error) {
 	}
 	cc := NewCommandContext(rc, mc.vpr, mc.isInteractive)
 	if err := mc.runInitializers(cc); err != nil {
-		// TODO:
-		panic(err)
+		return nil, err
 	}
 	if err := mc.createCommands(); err != nil {
 		return nil, err
@@ -139,9 +138,6 @@ func (m *Main) Exit() error {
 }
 
 func (m *Main) createLogger(path, level string) error {
-	if level == "" {
-		level = "info"
-	}
 	weight, err := logger.WeightForLevel(level)
 	if err != nil {
 		return err
@@ -150,7 +146,6 @@ func (m *Main) createLogger(path, level string) error {
 	if path == "stderr" {
 		f = os.Stderr
 	} else {
-		path = paths.ResolveLogPath(path)
 		f, err = m.createGetLogFile(path)
 		if err != nil {
 			// failed to open the log file, use stderr

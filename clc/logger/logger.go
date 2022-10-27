@@ -9,16 +9,11 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-	WeightDebug = logger.WeightDebug
-	WeightInfo  = logger.WeightInfo
-)
-
 type Weight = logger.Weight
 
 func WeightForLevel(s string) (Weight, error) {
 	if s == "" {
-		return WeightInfo, nil
+		return logger.WeightInfo, nil
 	}
 	return logger.WeightForLogLevel(logger.Level(s))
 }

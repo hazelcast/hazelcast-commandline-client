@@ -32,6 +32,8 @@ func (mc *MapPutCommand) Exec(ec plug.ExecContext) error {
 	if err != nil {
 		return err
 	}
+	// get the map just to ensure the corresponding proxy is created
+	I2(ec.Props().GetBlocking(mapPropertyName))
 	keyStr := ec.Args()[0]
 	valueStr := ec.Args()[1]
 	kd, vd, err := MakeKeyValueData(ec, ci, keyStr, valueStr)

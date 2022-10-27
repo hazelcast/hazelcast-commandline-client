@@ -35,6 +35,7 @@ func (vc VersionCommand) Exec(ec plug.ExecContext) error {
 		return nil
 	}
 	I2(fmt.Fprintln(ec.Stdout(), internal.Version))
+	ec.Logger().Debugf("version command ran OK")
 	return nil
 }
 

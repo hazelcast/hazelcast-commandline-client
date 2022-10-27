@@ -19,17 +19,17 @@ func makeConfiguration(props plug.ReadOnlyProperties, lg *logger.Logger) (hazelc
 	// if the path is not absolute, assume it is in the parent directory of the configuration
 	wd := filepath.Dir(props.GetString(clc.PropertyConfigPath))
 	var cfg hazelcast.Config
+	cfg.Logger.CustomLogger = lg
 	cfg.Cluster.Unisocket = true
 	cfg.Stats.Enabled = true
 	if ca := props.GetString(clc.PropertyClusterAddress); ca != "" {
-		lg.Debugf("Set the cluster address: %s", ca)
+		lg.Debugf("Cluster address: %s", ca)
 		cfg.Cluster.Network.SetAddresses(ca)
 	}
 	if cn := props.GetString(clc.PropertyClusterName); cn != "" {
-		lg.Debugf("Set the cluster name: %s", cn)
+		lg.Debugf("Cluster name: %s", cn)
 		cfg.Cluster.Name = cn
 	}
-	cfg.Logger.CustomLogger = lg
 	sd := props.GetString(clc.PropertySchemaDir)
 	if sd == "" {
 		sd = paths.Join(paths.Home(), "schemas")
@@ -40,7 +40,7 @@ func makeConfiguration(props plug.ReadOnlyProperties, lg *logger.Logger) (hazelc
 	}
 	var viridianEnabled bool
 	if vt := props.GetString(clc.PropertyViridianToken); vt != "" {
-		lg.Debugf("Set the Viridan token: XXX")
+		lg.Debugf("Viridan token: XXX")
 		if err := os.Setenv(envHzCloudCoordinatorBaseURL, viridianCoordinatorURL); err != nil {
 			return cfg, fmt.Errorf("setting coordinator URL")
 		}
@@ -53,14 +53,14 @@ func makeConfiguration(props plug.ReadOnlyProperties, lg *logger.Logger) (hazelc
 		if !viridianEnabled {
 			sn = props.GetString(clc.PropertySSLServerName)
 		}
-		lg.Debugf("Using SSL server name: %s", sn)
+		lg.Debugf("SSL server name: %s", sn)
 		tc := &tls.Config{ServerName: sn}
 		sc := &cfg.Cluster.Network.SSL
 		sc.Enabled = true
 		sc.SetTLSConfig(tc)
 		if cp := props.GetString(clc.PropertySSLCAPath); cp != "" {
 			cp = paths.Join(wd, cp)
-			lg.Debugf("Using SSL CA path: %s", cp)
+			lg.Debugf("SSL CA path: %s", cp)
 			if err := sc.SetCAPath(cp); err != nil {
 				return cfg, err
 			}
@@ -70,11 +70,11 @@ func makeConfiguration(props plug.ReadOnlyProperties, lg *logger.Logger) (hazelc
 		kps := props.GetString(clc.PropertySSLKeyPassword)
 		if cp != "" && kp != "" {
 			cp = paths.Join(wd, cp)
-			lg.Debugf("Using certificate path: %s", cp)
+			lg.Debugf("Certificate path: %s", cp)
 			kp = paths.Join(wd, kp)
-			lg.Debugf("Using key path: %s", kp)
+			lg.Debugf("Key path: %s", kp)
 			if kps != "" {
-				lg.Debugf("Using key password: XXX")
+				lg.Debugf("Key password: XXX")
 				if err := sc.AddClientCertAndEncryptedKeyPath(cp, kp, kps); err != nil {
 					return cfg, err
 				}

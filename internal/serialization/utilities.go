@@ -63,7 +63,7 @@ func UpdateSerializationConfigWithRecursivePaths(cfg *hazelcast.Config, lg log.L
 	for _, path := range paths {
 		info, err := os.Stat(path)
 		if err != nil {
-			lg.Warn("Cannot stat %s: %s", path, err.Error())
+			lg.Warn("Checking schemas directory: %s", err.Error())
 			continue
 		}
 		if info.IsDir() {

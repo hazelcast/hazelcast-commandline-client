@@ -51,9 +51,7 @@ func (ad *ZapLogAdaptor) Log(wantWeight logger.Weight, f func() string) {
 	}
 	// Call the appropriate log function.
 	switch wantWeight {
-	case logger.WeightTrace:
-		fallthrough
-	case logger.WeightDebug:
+	case logger.WeightTrace, logger.WeightDebug:
 		ad.lg.Debug(f())
 	case logger.WeightInfo:
 		ad.lg.Info(f())
