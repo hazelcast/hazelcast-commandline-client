@@ -2,8 +2,10 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
+	"sync"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
@@ -24,6 +26,7 @@ type ExecContext struct {
 	args          []string
 	props         *plug.Properties
 	clientFn      ClientFn
+	mu            *sync.Mutex
 	rows          []output.Row
 	ci            *hazelcast.ClientInternal
 	isInteractive bool
@@ -39,6 +42,7 @@ func NewExecContext(lg log.Logger, stdout, stderr io.Writer, props *plug.Propert
 		props:         props,
 		clientFn:      clientFn,
 		isInteractive: interactive,
+		mu:            &sync.Mutex{},
 	}
 }
 
@@ -109,25 +113,21 @@ func (ec *ExecContext) CommandName() string {
 	return ec.cmd.CommandPath()
 }
 
-func (ec *ExecContext) QuitCh() <-chan struct{} {
-	return nil
-}
-
 func (ec *ExecContext) FlushOutput() error {
-	prs := map[string]plug.Printer{}
-	for _, pr := range plug.Registry.Printers() {
-		prs[pr.Name] = pr.Item
+	ec.mu.Lock()
+	defer ec.mu.Unlock()
+	rows := ec.outputRows()
+	pn := ec.props.GetString(clc.PropertyFormat)
+	pr, ok := plug.Registry.Printers()[pn]
+	if !ok {
+		return fmt.Errorf("printer %s is not available", pn)
 	}
-	name := ec.Props().GetString(clc.PropertyFormat)
-	pr := prs[name]
-	err := pr.Print(os.Stdout, ec.OutputRows())
-	ec.rows = nil
-	if err != nil {
-		return err
-	}
-	return nil
+	return pr.Print(os.Stdout, rows)
 }
 
-func (ec *ExecContext) OutputRows() []output.Row {
-	return ec.rows
+func (ec *ExecContext) outputRows() []output.Row {
+	// assumes called under lock
+	r := ec.rows
+	ec.rows = nil
+	return r
 }

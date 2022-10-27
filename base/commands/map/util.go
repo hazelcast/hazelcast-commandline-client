@@ -3,7 +3,7 @@ package _map
 import (
 	"github.com/hazelcast/hazelcast-go-client"
 
-	"github.com/hazelcast/hazelcast-commandline-client/internal/make"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/mk"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
@@ -12,7 +12,7 @@ func MakeKeyData(ec plug.ExecContext, ci *hazelcast.ClientInternal, keyStr strin
 	if kt == "" {
 		kt = "string"
 	}
-	key, err := make.ValueFromString(keyStr, kt)
+	key, err := mk.ValueFromString(keyStr, kt)
 	if err != nil {
 		return nil, err
 	}
@@ -24,7 +24,7 @@ func MakeValueData(ec plug.ExecContext, ci *hazelcast.ClientInternal, valueStr s
 	if vt == "" {
 		vt = "string"
 	}
-	value, err := make.ValueFromString(valueStr, vt)
+	value, err := mk.ValueFromString(valueStr, vt)
 	if err != nil {
 		return nil, err
 	}

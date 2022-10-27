@@ -1,4 +1,4 @@
-package make
+package mk
 
 import "github.com/hazelcast/hazelcast-commandline-client/internal"
 

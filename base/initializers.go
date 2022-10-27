@@ -32,8 +32,8 @@ func (g GlobalInitializer) Init(cc plug.InitContext) error {
 		cc.AddStringFlag(clc.PropertySchemaDir, "", paths.Schemas(), false, "set the schema directory")
 	}
 	// configuration
-	cc.AddStringConfig(clc.PropertyClusterAddress, "", clc.PropertyClusterAddress, "cluster address")
-	cc.AddStringConfig(clc.PropertyClusterName, "", clc.PropertyClusterName, "cluster name")
+	cc.AddStringConfig(clc.PropertyClusterAddress, "localhost:5701", clc.PropertyClusterAddress, "cluster address")
+	cc.AddStringConfig(clc.PropertyClusterName, "dev", clc.PropertyClusterName, "cluster name")
 	cc.AddStringConfig(clc.PropertyLogPath, "", clc.PropertyLogPath, "log path")
 	cc.AddStringConfig(clc.PropertyLogLevel, "", clc.PropertyLogLevel, "log level")
 	cc.AddStringConfig(clc.PropertySchemaDir, "", clc.PropertySchemaDir, "schema directory")

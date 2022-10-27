@@ -45,7 +45,7 @@ func (cm *SQLShellCommand) Exec(ec plug.ExecContext) error {
 	return nil
 }
 
-func (cm *SQLShellCommand) ExecInteractive(ec plug.ExecInteractiveContext) error {
+func (cm *SQLShellCommand) ExecInteractive(ec plug.ExecContext) error {
 	endLineFn := func(line string) bool {
 		line = strings.TrimSpace(line)
 		return strings.HasPrefix(line, "help") || strings.HasPrefix(line, "\\") || strings.HasSuffix(line, ";")
@@ -68,7 +68,12 @@ func (cm *SQLShellCommand) ExecInteractive(ec plug.ExecInteractiveContext) error
 		return nil
 	}
 	path := paths.Join(paths.Home(), "sql.history")
-	sh := shell.New("SQL> ", " ... ", path, ec.Stdout(), ec.Stderr(), endLineFn, textFn)
+	if shell.IsPipe() {
+		sh := shell.NewOneshot(endLineFn, textFn)
+		sh.SetCommentPrefix("--")
+		return sh.Run(context.Background())
+	}
+	sh := shell.New("SQL>", " ... ", path, ec.Stdout(), ec.Stderr(), endLineFn, textFn)
 	sh.SetCommentPrefix("--")
 	defer sh.Close()
 	return sh.Start(context.Background())

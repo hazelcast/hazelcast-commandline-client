@@ -33,14 +33,16 @@ func NewTableResult(header []string, rp RowProvider) *TableResult {
 
 func (tr *TableResult) Serialize(ctx context.Context, w io.Writer, mode TableOutputMode) (int, error) {
 	var n int
-	header := make(table.Row, len(tr.header))
-	for i, h := range tr.header {
-		header[i] = h
-	}
 	t := table.NewWriter()
 	t.SetOutputMirror(w)
 	t.Style().Format.Header = text.FormatDefault
-	t.AppendHeader(header)
+	if tr.header != nil {
+		header := make(table.Row, len(tr.header))
+		for i, h := range tr.header {
+			header[i] = h
+		}
+		t.AppendHeader(header)
+	}
 	for {
 		if ctx.Err() != nil {
 			return 0, nil

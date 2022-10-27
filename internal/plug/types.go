@@ -95,3 +95,13 @@ type RegistryItem[T any] struct {
 	Name string
 	Item T
 }
+
+type RegistryItems[T any] []RegistryItem[T]
+
+func (ri RegistryItems[T]) Map() map[string]T {
+	m := make(map[string]T, len(ri))
+	for _, x := range ri {
+		m[x.Name] = x.Item
+	}
+	return m
+}

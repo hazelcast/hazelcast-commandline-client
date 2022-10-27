@@ -3,9 +3,11 @@ package shell
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
+	"os/signal"
 	"strings"
 	"sync"
 	"time"
@@ -67,15 +69,19 @@ func (sh *Shell) Start(ctx context.Context) error {
 		if err == readline.CtrlC || err == readline.EOF {
 			return nil
 		}
-		if text == "" {
-			continue
-		}
 		if err != nil {
 			I2(fmt.Fprintf(sh.stderr, "%s\n", err.Error()))
 		}
-		if err := sh.textFn(ctx, text); err != nil {
-			I2(fmt.Fprintf(sh.stderr, "%s\n", err.Error()))
+		if text == "" {
+			continue
 		}
+		ctx, stop := signal.NotifyContext(ctx, os.Interrupt, os.Kill)
+		if err := sh.textFn(ctx, text); err != nil {
+			if !errors.Is(err, context.DeadlineExceeded) && !errors.Is(err, context.Canceled) {
+				I2(fmt.Fprintf(sh.stderr, "%s\n", err.Error()))
+			}
+		}
+		stop()
 	}
 }
 
@@ -105,17 +111,6 @@ func (sh *Shell) readTextReadline() (string, error) {
 	text := sb.String()
 	return text, nil
 }
-
-/*
-func (sh Shell) readTextBasic() (string, error) {
-	//prompt := sh.prompt1
-	var sb strings.Builder
-	var scn scanner.Scanner
-	for {
-		text := os.Stdin.Re
-	}
-}
-*/
 
 type FileHistory struct {
 	lines      []string

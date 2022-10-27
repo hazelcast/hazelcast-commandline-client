@@ -6,6 +6,7 @@ import (
 	"sort"
 
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/mk"
 )
 
 var Registry = newRegistry()
@@ -46,33 +47,28 @@ func (rg *registry) RegisterPrinter(name string, pr Printer) {
 	rg.printers[name] = pr
 }
 
-func (rg *registry) GlobalInitializers() []RegistryItem[Initializer] {
+func (rg *registry) GlobalInitializers() RegistryItems[Initializer] {
 	return sortedItems(rg.initters)
 }
 
-func (rg *registry) Commands() []RegistryItem[Commander] {
+func (rg *registry) Commands() RegistryItems[Commander] {
 	return sortedItems(rg.commands)
 }
 
-func (rg *registry) Augmentors() []RegistryItem[Augmentor] {
+func (rg *registry) Augmentors() RegistryItems[Augmentor] {
 	return sortedItems(rg.augmentors)
 }
 
-func (rg *registry) Printers() []RegistryItem[Printer] {
-	return sortedItems(rg.printers)
+func (rg *registry) Printers() map[string]Printer {
+	return rg.printers
 }
 
 func (rg *registry) PrinterNames() []string {
-	prs := rg.Printers()
-	ns := make([]string, 0, len(prs))
-	for _, pr := range prs {
-		ns = append(ns, pr.Name)
-	}
-	return ns
+	return mk.KeysOf(rg.printers)
 }
 
-func sortedItems[T any](d map[string]T) []RegistryItem[T] {
-	r := make([]RegistryItem[T], 0, len(d))
+func sortedItems[T any](d map[string]T) RegistryItems[T] {
+	r := make(RegistryItems[T], 0, len(d))
 	for name, item := range d {
 		r = append(r, RegistryItem[T]{Name: name, Item: item})
 	}

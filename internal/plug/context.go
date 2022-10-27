@@ -11,34 +11,29 @@ import (
 )
 
 type InitContext interface {
-	AddStringFlag(long, short, value string, required bool, help string)
 	AddBoolFlag(long, short string, value bool, required bool, help string)
+	AddCommandGroup(id, title string)
 	AddIntFlag(long, short string, value int64, required bool, help string)
-	SetPositionalArgCount(min, max int)
+	AddStringConfig(name, value, flag string, help string)
+	AddStringFlag(long, short, value string, required bool, help string)
 	Interactive() bool
+	SetCommandGroup(id string)
 	SetCommandHelp(long, short string)
 	SetCommandUsage(usage string)
-	AddCommandGroup(id, title string)
-	SetCommandGroup(id string)
-	AddStringConfig(name, value, flag string, help string)
+	SetPositionalArgCount(min, max int)
 	SetTopLevel(b bool)
 }
 
 type ExecContext interface {
-	Logger() log.Logger
-	Stdout() io.Writer
-	Stderr() io.Writer
-	Args() []string
-	Props() ReadOnlyProperties
-	ClientInternal(ctx context.Context) (*hazelcast.ClientInternal, error)
-	Interactive() bool
 	AddOutputRows(row ...output.Row)
-	ShowHelpAndExit()
+	Args() []string
+	ClientInternal(ctx context.Context) (*hazelcast.ClientInternal, error)
 	CommandName() string
-}
-
-type ExecInteractiveContext interface {
-	ExecContext
-	QuitCh() <-chan struct{}
+	Interactive() bool
+	Logger() log.Logger
+	Props() ReadOnlyProperties
+	ShowHelpAndExit()
+	Stderr() io.Writer
+	Stdout() io.Writer
 	FlushOutput() error
 }

@@ -84,7 +84,6 @@ func (cm *SQLCommand) execQuery(ctx context.Context, query string, ec plug.ExecC
 		}
 	}
 	return res, err
-
 }
 
 func convertSQLType(ct sql.ColumnType) int32 {

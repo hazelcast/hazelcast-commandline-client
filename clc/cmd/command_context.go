@@ -6,7 +6,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/make"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/mk"
 )
 
 type CommandContext struct {
@@ -103,7 +103,7 @@ func (cc *CommandContext) AddCommandGroup(id, title string) {
 }
 
 func (cc *CommandContext) Groups() []*cobra.Group {
-	return make.SliceFromMap(cc.groups)
+	return mk.ValuesOf(cc.groups)
 }
 
 func (cc *CommandContext) AddStringConfig(name, value, flag string, help string) {

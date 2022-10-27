@@ -36,7 +36,7 @@ func (cm *ShellCommand) Exec(ec plug.ExecContext) error {
 	return nil
 }
 
-func (cm *ShellCommand) ExecInteractive(ec plug.ExecInteractiveContext) error {
+func (cm *ShellCommand) ExecInteractive(ec plug.ExecContext) error {
 	m, err := ec.(*cmd.ExecContext).Main().CloneForInteractiveMode()
 	if err != nil {
 		return fmt.Errorf("cloning Main: %w", err)
@@ -53,6 +53,11 @@ func (cm *ShellCommand) ExecInteractive(ec plug.ExecInteractiveContext) error {
 		return m.Execute(args)
 	}
 	path := paths.Join(paths.Home(), "shell.history")
+	if shell.IsPipe() {
+		sh := shell.NewOneshot(endLineFn, textFn)
+		sh.SetCommentPrefix("#")
+		return sh.Run(context.Background())
+	}
 	sh := shell.New("CLC> ", " ... ", path, ec.Stdout(), ec.Stderr(), endLineFn, textFn)
 	sh.SetCommentPrefix("#")
 	defer sh.Close()

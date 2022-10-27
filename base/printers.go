@@ -27,10 +27,11 @@ func (pr JSONPrinter) Print(w io.Writer, rows []output.Row) error {
 }
 
 type TablePrinter struct {
-	Mode output.TableOutputMode
+	Mode          output.TableOutputMode
+	headerPrinted bool
 }
 
-func (pr TablePrinter) Print(w io.Writer, rows []output.Row) error {
+func (pr *TablePrinter) Print(w io.Writer, rows []output.Row) error {
 	header, rows := output.MakeTable(rows)
 	result := output.NewSimpleRows(rows)
 	tr := output.NewTableResult(header, result)

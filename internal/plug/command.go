@@ -5,5 +5,5 @@ type Commander interface {
 }
 
 type InteractiveCommander interface {
-	ExecInteractive(ec ExecInteractiveContext) error
+	ExecInteractive(ec ExecContext) error
 }
