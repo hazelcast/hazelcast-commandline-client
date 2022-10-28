@@ -73,7 +73,7 @@ func (cm *SQLShellCommand) ExecInteractive(ec plug.ExecContext) error {
 		sh.SetCommentPrefix("--")
 		return sh.Run(context.Background())
 	}
-	sh := shell.New("SQL>", " ... ", path, ec.Stdout(), ec.Stderr(), endLineFn, textFn)
+	sh := shell.New("SQL> ", " ... ", path, ec.Stdout(), ec.Stderr(), endLineFn, textFn)
 	sh.SetCommentPrefix("--")
 	defer sh.Close()
 	return sh.Start(context.Background())
