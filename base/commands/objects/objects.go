@@ -10,7 +10,7 @@ type ObjectsCommand struct{}
 func (cm ObjectsCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandGroup("dds")
 	cc.SetTopLevel(true)
-	help := "generic distributed data structure operations"
+	help := "Generic distributed data structure operations"
 	cc.SetCommandUsage("objects [command]")
 	cc.SetCommandHelp(help, help)
 	return nil

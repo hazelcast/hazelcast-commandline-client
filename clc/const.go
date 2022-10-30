@@ -7,7 +7,7 @@ const (
 	PropertyViridianToken  = "cluster.viridian-token"
 	PropertyFormat         = "format"
 	PropertyVerbose        = "verbose"
-	PropertyConfigPath     = "config-path"
+	PropertyConfig         = "config"
 	PropertyLogLevel       = "log.level"
 	PropertyLogPath        = "log.path"
 	PropertySchemaDir      = "schema-dir"

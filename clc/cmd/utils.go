@@ -11,7 +11,7 @@ func ExtractStartupArgs(args []string) (cfgPath, logFile, logLevel string, err e
 	ln := len(args)
 	for i < ln {
 		switch args[i] {
-		case fmt.Sprintf("--%s", clc.PropertyConfigPath), fmt.Sprintf("-%s", clc.ShortcutConfigPath):
+		case fmt.Sprintf("--%s", clc.PropertyConfig), fmt.Sprintf("-%s", clc.ShortcutConfigPath):
 			if ln <= i+1 {
 				return cfgPath, logFile, logLevel, fmt.Errorf("%s requires a path", args[i])
 			}

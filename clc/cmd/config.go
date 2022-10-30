@@ -17,7 +17,7 @@ import (
 
 func makeConfiguration(props plug.ReadOnlyProperties, lg *logger.Logger) (hazelcast.Config, error) {
 	// if the path is not absolute, assume it is in the parent directory of the configuration
-	wd := filepath.Dir(props.GetString(clc.PropertyConfigPath))
+	wd := filepath.Dir(props.GetString(clc.PropertyConfig))
 	var cfg hazelcast.Config
 	cfg.Logger.CustomLogger = lg
 	cfg.Cluster.Unisocket = true

@@ -74,7 +74,7 @@ func NewMain(cfgPath, logPath, logLevel string) (*Main, error) {
 		m.setConfigProps(m.props, k, v)
 	}
 	// these properties are managed manually
-	m.props.Set(clc.PropertyConfigPath, cfgPath)
+	m.props.Set(clc.PropertyConfig, cfgPath)
 	m.props.Set(clc.PropertyLogPath, logPath)
 	m.props.Set(clc.PropertyLogLevel, logLevel)
 	cc := NewCommandContext(rc, m.vpr, m.isInteractive)
@@ -230,7 +230,7 @@ func (m *Main) createCommands() error {
 				props := m.props
 				cfs.Visit(func(f *pflag.Flag) {
 					// skip managed flags
-					if f.Name == clc.PropertyConfigPath || f.Name == clc.PropertyLogPath || f.Name == clc.PropertyLogLevel {
+					if f.Name == clc.PropertyConfig || f.Name == clc.PropertyLogPath || f.Name == clc.PropertyLogLevel {
 						return
 					}
 					props.Set(f.Name, convertFlagValue(cfs, f.Name, f.Value))

@@ -24,11 +24,11 @@ func TestExtractStartupArgs(t *testing.T) {
 			args: []string{"foo"},
 		},
 		{
-			args:   []string{"--config-path"},
+			args:   []string{"--config"},
 			hasErr: true,
 		},
 		{
-			args:    []string{"--config-path", "foo.yaml"},
+			args:    []string{"--config", "foo.yaml"},
 			cfgPath: "foo.yaml",
 		},
 		{
@@ -36,11 +36,11 @@ func TestExtractStartupArgs(t *testing.T) {
 			cfgPath: "foo.yaml",
 		},
 		{
-			args:   []string{"--log.file"},
+			args:   []string{"--log.path"},
 			hasErr: true,
 		},
 		{
-			args:    []string{"--log.file", "foo.log"},
+			args:    []string{"--log.path", "foo.log"},
 			logFile: "foo.log",
 		},
 		{
@@ -52,7 +52,7 @@ func TestExtractStartupArgs(t *testing.T) {
 			logLevel: "trace",
 		},
 		{
-			args:     []string{"foo", "bar", "--config-path", "foo.yaml", "zoo", "--log.file", "foo.log", "qoo", "--log.level", "trace", "baz"},
+			args:     []string{"foo", "bar", "--config", "foo.yaml", "zoo", "--log.path", "foo.log", "qoo", "--log.level", "trace", "baz"},
 			cfgPath:  "foo.yaml",
 			logFile:  "foo.log",
 			logLevel: "trace",
