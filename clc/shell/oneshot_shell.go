@@ -49,14 +49,19 @@ func (sh *OneshotShell) readTextBasic() error {
 		if sh.commentPrefix != "" && strings.HasPrefix(p, sh.commentPrefix) {
 			continue
 		}
-		sb.WriteString(p)
+		text, end := sh.endLineFn(p)
+		sb.WriteString(text)
 		sb.WriteString("\n")
-		if sh.endLineFn(p) {
+		if end {
 			if err := sh.textFn(context.Background(), sb.String()); err != nil {
 				return err
 			}
 			sb.Reset()
 		}
+	}
+	text := sb.String()
+	if text != "" {
+		return sh.textFn(context.Background(), sb.String())
 	}
 	return nil
 }

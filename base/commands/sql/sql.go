@@ -32,12 +32,11 @@ func (cm *SQLCommand) Init(cc plug.InitContext) error {
 	return nil
 }
 
-func (cm *SQLCommand) Exec(ec plug.ExecContext) error {
+func (cm *SQLCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if len(ec.Args()) < 1 {
 		ec.ShowHelpAndExit()
 		return nil
 	}
-	ctx := context.TODO()
 	query := ec.Args()[0]
 	res, err := cm.execQuery(ctx, query, ec)
 	if err != nil {
@@ -54,7 +53,7 @@ func (cm *SQLCommand) execQuery(ctx context.Context, query string, ec plug.ExecC
 		return nil, err
 	}
 	as := ec.Props().GetBool(propertyApplySuggestion)
-	res, err := ci.Client().SQL().Execute(ctx, query)
+	r, err := execSQL(ctx, ec, ci, query)
 	if err != nil {
 		// check whether this is an SQL error with a suggestion,
 		// so we can improve the error message or apply the suggestion if there's one
@@ -83,7 +82,7 @@ func (cm *SQLCommand) execQuery(ctx context.Context, query string, ec plug.ExecC
 			return ci.Client().SQL().Execute(ctx, query)
 		}
 	}
-	return res, err
+	return r, err
 }
 
 func convertSQLType(ct sql.ColumnType) int32 {

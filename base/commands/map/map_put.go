@@ -2,6 +2,9 @@ package _map
 
 import (
 	"context"
+	"fmt"
+
+	"github.com/hazelcast/hazelcast-go-client"
 
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -24,8 +27,7 @@ func (mc *MapPutCommand) Init(cc plug.InitContext) error {
 	return nil
 }
 
-func (mc *MapPutCommand) Exec(ec plug.ExecContext) error {
-	ctx := context.TODO()
+func (mc *MapPutCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	mapName := ec.Props().GetString(mapFlagName)
 	ttl := GetTTL(ec)
 	ci, err := ec.ClientInternal(ctx)
@@ -41,11 +43,14 @@ func (mc *MapPutCommand) Exec(ec plug.ExecContext) error {
 		return err
 	}
 	req := codec.EncodeMapPutRequest(mapName, kd, vd, 0, ttl)
-	resp, err := ci.InvokeOnKey(ctx, req, kd, nil)
+	hint := fmt.Sprintf("Putting into map %s", mapName)
+	rv, err := ec.ExecuteBlocking(ctx, hint, func(ctx context.Context) (any, error) {
+		return ci.InvokeOnKey(ctx, req, kd, nil)
+	})
 	if err != nil {
 		return err
 	}
-	raw := codec.DecodeMapPutResponse(resp)
+	raw := codec.DecodeMapPutResponse(rv.(*hazelcast.ClientMessage))
 	vt := raw.Type()
 	value, err := ci.DecodeData(raw)
 	if err != nil {

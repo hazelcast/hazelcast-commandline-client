@@ -1,6 +1,8 @@
 package objects
 
 import (
+	"context"
+
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
@@ -16,7 +18,7 @@ func (cm ObjectsCommand) Init(cc plug.InitContext) error {
 	return nil
 }
 
-func (cm ObjectsCommand) Exec(ec plug.ExecContext) error {
+func (cm ObjectsCommand) Exec(context.Context, plug.ExecContext) error {
 	return nil
 }
 

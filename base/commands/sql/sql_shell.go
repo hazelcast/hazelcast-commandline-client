@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hazelcast/hazelcast-go-client"
-
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/shell"
@@ -15,10 +13,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-type SQLShellCommand struct {
-	client  *hazelcast.Client
-	verbose bool
-}
+type SQLShellCommand struct{}
 
 func (cm *SQLShellCommand) Augment(ec plug.ExecContext, props *plug.Properties) error {
 	if ec.CommandName() == "clc sql shell" {
@@ -34,32 +29,31 @@ func (cm *SQLShellCommand) Init(cc plug.InitContext) error {
 	return nil
 }
 
-func (cm *SQLShellCommand) Exec(ec plug.ExecContext) error {
-	ctx := context.Background()
+func (cm *SQLShellCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+	return nil
+}
+
+func (cm *SQLShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext) error {
 	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
 		return err
 	}
-	cm.client = ci.Client()
-	cm.verbose = ec.Props().GetBool(clc.PropertyVerbose)
-	return nil
-}
-
-func (cm *SQLShellCommand) ExecInteractive(ec plug.ExecContext) error {
-	endLineFn := func(line string) bool {
+	verbose := ec.Props().GetBool(clc.PropertyVerbose)
+	endLineFn := func(line string) (string, bool) {
 		line = strings.TrimSpace(line)
-		return strings.HasPrefix(line, "help") || strings.HasPrefix(line, "\\") || strings.HasSuffix(line, ";")
+		end := strings.HasPrefix(line, "help") || strings.HasPrefix(line, "\\") || strings.HasSuffix(line, ";")
+		return line, end
 	}
 	textFn := func(ctx context.Context, text string) error {
 		text, err := convertStatement(text)
 		if err != nil {
 			return err
 		}
-		res, err := cm.client.SQL().Execute(ctx, text)
+		res, err := execSQL(ctx, ec, ci, text)
 		if err != nil {
 			return adaptSQLError(err)
 		}
-		if err := updateOutput(ec, res, cm.verbose); err != nil {
+		if err := updateOutput(ec, res, verbose); err != nil {
 			return err
 		}
 		if err := ec.FlushOutput(); err != nil {
@@ -76,7 +70,7 @@ func (cm *SQLShellCommand) ExecInteractive(ec plug.ExecContext) error {
 	sh := shell.New("SQL> ", " ... ", path, ec.Stdout(), ec.Stderr(), endLineFn, textFn)
 	sh.SetCommentPrefix("--")
 	defer sh.Close()
-	return sh.Start(context.Background())
+	return sh.Start(ctx)
 }
 
 func convertStatement(stmt string) (string, error) {

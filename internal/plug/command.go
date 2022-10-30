@@ -1,9 +1,11 @@
 package plug
 
+import "context"
+
 type Commander interface {
-	Exec(ec ExecContext) error
+	Exec(ctx context.Context, ec ExecContext) error
 }
 
 type InteractiveCommander interface {
-	ExecInteractive(ec ExecContext) error
+	ExecInteractive(ctx context.Context, ec ExecContext) error
 }

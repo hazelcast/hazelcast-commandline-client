@@ -1,9 +1,13 @@
 package sql
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"time"
 
+	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/sql"
 
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -47,6 +51,31 @@ func updateOutput(ec plug.ExecContext, res sql.Result, verbose bool) error {
 		}
 	}
 	return nil
+}
+
+func execSQL(ctx context.Context, ec plug.ExecContext, ci *hazelcast.ClientInternal, query string) (sql.Result, error) {
+	rv, err := ec.ExecuteBlocking(ctx, "Executing SQL", func(ctx context.Context) (any, error) {
+		for {
+			if ctx.Err() != nil {
+				return nil, ctx.Err()
+			}
+			r, err := ci.Client().SQL().Execute(ctx, query)
+			// If Go client cannot find a connection, it returns immediately with ErrIO
+			// Retry logic here
+			if err != nil {
+				if errors.Is(err, hzerrors.ErrIO) {
+					time.Sleep(1 * time.Second)
+					continue
+				}
+				return nil, err
+			}
+			return r, nil
+		}
+	})
+	if err != nil {
+		return nil, err
+	}
+	return rv.(sql.Result), nil
 }
 
 func adaptSQLError(err error) error {

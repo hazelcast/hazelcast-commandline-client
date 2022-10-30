@@ -34,7 +34,7 @@ func (cm IngestCommand) Init(cc plug.InitContext) error {
 	return nil
 }
 
-func (cm IngestCommand) Exec(ec plug.ExecContext) error {
+func (cm IngestCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	// TODO: proper error handling
 	path := ec.Args()[0]
 	if !strings.HasSuffix(path, ".json") {
@@ -44,7 +44,6 @@ func (cm IngestCommand) Exec(ec plug.ExecContext) error {
 	if format != "json" {
 		return fmt.Errorf("only JSON data line per record format is supported")
 	}
-	ctx := context.Background()
 	ci := MustValue(ec.ClientInternal(ctx))
 	m := MustValue(ci.Client().GetMap(ctx, ec.Props().GetString(mapName)))
 	f := MustValue(os.Open(path))

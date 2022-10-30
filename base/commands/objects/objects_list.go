@@ -6,7 +6,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/types"
 
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -75,15 +74,10 @@ func (cm ObjectsListCommand) Init(cc plug.InitContext) error {
 	return nil
 }
 
-func (cm ObjectsListCommand) Exec(ec plug.ExecContext) error {
-	ctx := context.Background()
+func (cm ObjectsListCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	typeFilter := ec.Props().GetString(flagType)
 	showHidden := ec.Props().GetBool(flagShowHidden)
-	ci, err := ec.ClientInternal(ctx)
-	if err != nil {
-		return err
-	}
-	objs, err := getObjects(ctx, ci.Client(), typeFilter, showHidden)
+	objs, err := getObjects(ctx, ec, typeFilter, showHidden)
 	if err != nil {
 		return err
 	}
@@ -109,13 +103,19 @@ func (cm ObjectsListCommand) Exec(ec plug.ExecContext) error {
 	return nil
 }
 
-func getObjects(ctx context.Context, c *hazelcast.Client, typeFilter string, showHidden bool) ([]types.DistributedObjectInfo, error) {
-	objs, err := c.GetDistributedObjectsInfo(ctx)
+func getObjects(ctx context.Context, ec plug.ExecContext, typeFilter string, showHidden bool) ([]types.DistributedObjectInfo, error) {
+	ci, err := ec.ClientInternal(ctx)
+	if err != nil {
+		return nil, err
+	}
+	objs, err := ec.ExecuteBlocking(ctx, "Getting distributed objects", func(ctx context.Context) (any, error) {
+		return ci.Client().GetDistributedObjectsInfo(ctx)
+	})
 	if err != nil {
 		return nil, err
 	}
 	var r []types.DistributedObjectInfo
-	for _, o := range objs {
+	for _, o := range objs.([]types.DistributedObjectInfo) {
 		if !showHidden && strings.HasPrefix(o.Name, "__") {
 			continue
 		}

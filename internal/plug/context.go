@@ -36,4 +36,5 @@ type ExecContext interface {
 	Stderr() io.Writer
 	Stdout() io.Writer
 	FlushOutput() error
+	ExecuteBlocking(ctx context.Context, hint string, f func(context.Context) (any, error)) (any, error)
 }

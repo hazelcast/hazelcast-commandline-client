@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 
@@ -19,7 +20,7 @@ func (hc HomeCommand) Init(cc plug.InitContext) error {
 	return nil
 }
 
-func (hc HomeCommand) Exec(ec plug.ExecContext) error {
+func (hc HomeCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	dir := paths.Home()
 	args := ec.Args()
 	if len(args) > 0 {

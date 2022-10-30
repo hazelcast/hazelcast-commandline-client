@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"runtime"
 
@@ -24,7 +25,7 @@ func (vc VersionCommand) Init(cc plug.InitContext) error {
 	return nil
 }
 
-func (vc VersionCommand) Exec(ec plug.ExecContext) error {
+func (vc VersionCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if ec.Props().GetBool(clc.PropertyVerbose) {
 		ec.AddOutputRows(
 			vc.row("Hazelcast CLC", internal.Version),

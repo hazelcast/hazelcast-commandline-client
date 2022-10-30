@@ -2,6 +2,9 @@ package _map
 
 import (
 	"context"
+	"fmt"
+
+	"github.com/hazelcast/hazelcast-go-client"
 
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
@@ -21,8 +24,7 @@ func (mc *MapGetCommand) Init(cc plug.InitContext) error {
 	return nil
 }
 
-func (mc *MapGetCommand) Exec(ec plug.ExecContext) error {
-	ctx := context.TODO()
+func (mc *MapGetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	mapName := ec.Props().GetString(mapFlagName)
 	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
@@ -34,11 +36,14 @@ func (mc *MapGetCommand) Exec(ec plug.ExecContext) error {
 		return err
 	}
 	req := codec.EncodeMapGetRequest(mapName, keyData, 0)
-	resp, err := ci.InvokeOnKey(ctx, req, keyData, nil)
+	hint := fmt.Sprintf("Getting from map %s", mapName)
+	rv, err := ec.ExecuteBlocking(ctx, hint, func(ctx context.Context) (any, error) {
+		return ci.InvokeOnKey(ctx, req, keyData, nil)
+	})
 	if err != nil {
 		return err
 	}
-	raw := codec.DecodeMapGetResponse(resp)
+	raw := codec.DecodeMapGetResponse(rv.(*hazelcast.ClientMessage))
 	vt := raw.Type()
 	value, err := ci.DecodeData(raw)
 	if err != nil {

@@ -32,7 +32,7 @@ func (mc *MapCommand) Init(cc plug.InitContext) error {
 	return nil
 }
 
-func (mc *MapCommand) Exec(ec plug.ExecContext) error {
+func (mc *MapCommand) Exec(context.Context, plug.ExecContext) error {
 	return nil
 }
 
@@ -50,12 +50,16 @@ func (mc *MapCommand) Augment(ec plug.ExecContext, props *plug.Properties) error
 		if err != nil {
 			return nil, err
 		}
-		m, err := ci.Client().GetMap(ctx, mapName)
-		if err != nil {
-			return nil, err
-		}
-		mc.m = m
-		return m, nil
+		hint := fmt.Sprintf("Getting map %s", mapName)
+		mv, err := ec.ExecuteBlocking(ctx, hint, func(ctx context.Context) (any, error) {
+			m, err := ci.Client().GetMap(ctx, mapName)
+			if err != nil {
+				return nil, err
+			}
+			return m, nil
+		})
+		mc.m = mv.(*hazelcast.Map)
+		return mc.m, nil
 	})
 	return nil
 }

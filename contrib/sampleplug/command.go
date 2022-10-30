@@ -1,6 +1,7 @@
 package sampleplug
 
 import (
+	"context"
 	"fmt"
 
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -10,8 +11,8 @@ import (
 type Command struct {
 }
 
-func (c Command) Exec(ctx plug.ExecContext) error {
-	I2(fmt.Fprintf(ctx.Stdout(), "Hello, World!\n"))
+func (c Command) Exec(ctx context.Context, ec plug.ExecContext) error {
+	I2(fmt.Fprintf(ec.Stdout(), "Hello, World!\n"))
 	return nil
 }
 

@@ -241,11 +241,12 @@ func (m *Main) createCommands() error {
 				if err := m.runAugmentors(ec, props); err != nil {
 					return err
 				}
-				if err := c.Item.Exec(ec); err != nil {
+				if err := c.Item.Exec(cmd.Context(), ec); err != nil {
 					return err
 				}
 				if ic, ok := c.Item.(plug.InteractiveCommander); ok {
-					return ic.ExecInteractive(ec)
+					ec.SetInteractive(true)
+					return ic.ExecInteractive(cmd.Context(), ec)
 				}
 				return ec.FlushOutput()
 			}

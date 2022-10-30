@@ -17,7 +17,7 @@ import (
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 )
 
-type EndLineFn func(line string) bool
+type EndLineFn func(line string) (string, bool)
 
 type TextFn func(ctx context.Context, text string) error
 
@@ -101,9 +101,10 @@ func (sh *Shell) readTextReadline() (string, error) {
 		if sh.commentPrefix != "" && strings.HasPrefix(p, sh.commentPrefix) {
 			continue
 		}
-		sb.WriteString(p)
+		text, end := sh.endLineFn(p)
+		sb.WriteString(text)
 		sb.WriteString("\n")
-		if sh.endLineFn(p) {
+		if end {
 			break
 		}
 		prompt = sh.prompt2

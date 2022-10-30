@@ -5,12 +5,16 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/signal"
 	"sync"
+	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
+	"github.com/theckman/yacspin"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/shell"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
@@ -32,6 +36,7 @@ type ExecContext struct {
 	isInteractive bool
 	cmd           *cobra.Command
 	main          *Main
+	spinnerWait   time.Duration
 }
 
 func NewExecContext(lg log.Logger, stdout, stderr io.Writer, props *plug.Properties, clientFn ClientFn, interactive bool) *ExecContext {
@@ -43,6 +48,7 @@ func NewExecContext(lg log.Logger, stdout, stderr io.Writer, props *plug.Propert
 		clientFn:      clientFn,
 		isInteractive: interactive,
 		mu:            &sync.Mutex{},
+		spinnerWait:   1 * time.Second,
 	}
 }
 
@@ -86,11 +92,13 @@ func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInt
 	if ec.ci != nil {
 		return ec.ci, nil
 	}
-	client, err := ec.clientFn(ctx)
+	client, err := ec.ExecuteBlocking(ctx, "Connecting to the cluster", func(ctx context.Context) (any, error) {
+		return ec.clientFn(ctx)
+	})
 	if err != nil {
 		return nil, err
 	}
-	ec.ci = hazelcast.NewClientInternal(client)
+	ec.ci = hazelcast.NewClientInternal(client.(*hazelcast.Client))
 	return ec.ci, nil
 }
 
@@ -123,6 +131,59 @@ func (ec *ExecContext) FlushOutput() error {
 		return fmt.Errorf("printer %s is not available", pn)
 	}
 	return pr.Print(os.Stdout, rows)
+}
+
+func (ec *ExecContext) SetInteractive(value bool) {
+	ec.isInteractive = value
+}
+
+func (ec *ExecContext) ExecuteBlocking(ctx context.Context, hint string, f func(context.Context) (any, error)) (any, error) {
+	ch := make(chan any)
+	go func() {
+		v, err := f(ctx)
+		if err != nil {
+			ch <- err
+			return
+		}
+		ch <- v
+	}()
+	// setup the Ctrl+C handler
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, os.Kill)
+	defer stop()
+	timer := time.NewTimer(ec.spinnerWait)
+	defer timer.Stop()
+	var s *yacspin.Spinner
+	if ec.isInteractive && !shell.IsPipe() {
+		if hint != "" {
+			hint = fmt.Sprintf("%s ", hint)
+		}
+		hint = fmt.Sprintf("%s(Ctrl+C to cancel) ", hint)
+		sc := yacspin.Config{
+			Frequency:    100 * time.Millisecond,
+			CharSet:      yacspin.CharSets[59],
+			Prefix:       hint,
+			SpinnerAtEnd: true,
+		}
+		// ignoring the error here
+		s, _ = yacspin.New(sc)
+		defer s.Stop()
+	}
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case v := <-ch:
+			if err, ok := v.(error); ok {
+				return nil, err
+			}
+			return v, nil
+		case <-timer.C:
+			if ec.isInteractive && s != nil {
+				// ignoring the error here
+				_ = s.Start()
+			}
+		}
+	}
 }
 
 func (ec *ExecContext) outputRows() []output.Row {
