@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/groups"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
@@ -15,7 +14,7 @@ type GlobalInitializer struct{}
 
 func (g GlobalInitializer) Init(cc plug.InitContext) error {
 	// base group IDs
-	cc.AddCommandGroup(groups.DDSID, "Distributed Data Structures")
+	cc.AddCommandGroup(clc.GroupDDSID, "Distributed Data Structures")
 	// output type flag
 	pns := plug.Registry.PrinterNames()
 	usage := fmt.Sprintf("set the output type, one of: %s", strings.Join(pns, ", "))

@@ -6,7 +6,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 
-	"github.com/hazelcast/hazelcast-commandline-client/clc/groups"
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
@@ -22,7 +22,7 @@ type MapCommand struct {
 }
 
 func (mc *MapCommand) Init(cc plug.InitContext) error {
-	cc.SetCommandGroup(groups.DDSID)
+	cc.SetCommandGroup(clc.GroupDDSID)
 	cc.AddStringFlag(mapFlagName, "n", "", true, "IMap name")
 	cc.AddBoolFlag(mapFlagShowType, "", false, false, "add the type names to the output")
 	cc.SetTopLevel(true)

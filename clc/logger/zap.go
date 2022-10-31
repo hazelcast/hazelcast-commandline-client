@@ -12,19 +12,6 @@ import (
 var sink zap.Sink
 var sinkWriter io.WriteCloser
 
-func CloseSinkWriter() {
-	if sink != nil {
-		// ignoring the error here
-		_ = sink.Close()
-		sink = nil
-	}
-	if sinkWriter != nil {
-		// ignoring the error here
-		_ = sinkWriter.Close()
-		sinkWriter = nil
-	}
-}
-
 // ZapLogAdaptor adapts zap.SugaredLogger to use as a custom Hazelcst logger.
 type ZapLogAdaptor struct {
 	lg     *zap.SugaredLogger

@@ -17,4 +17,5 @@ const (
 	PropertySSLCertPath    = "ssl.cert-path"
 	PropertySSLKeyPath     = "ssl.key-path"
 	PropertySSLKeyPassword = "ssl.key-password"
+	GroupDDSID             = "dds"
 )
