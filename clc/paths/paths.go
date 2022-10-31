@@ -38,7 +38,7 @@ func Logs() string {
 }
 
 func DefaultConfigPath() string {
-	return filepath.Join(Home(), "config.yaml")
+	return filepath.Join(Configs(), "default", "config.yaml")
 }
 
 func DefaultLogPath(now time.Time) string {
