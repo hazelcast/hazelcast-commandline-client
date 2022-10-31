@@ -22,7 +22,7 @@ func TestHomeDir_Unix(t *testing.T) {
 func TestDefaultConfigPath_Unix(t *testing.T) {
 	skip.If(t, "os = windows")
 	Must(os.Setenv("HOME", "/dev/shm"))
-	assert.Equal(t, "/dev/shm/.local/share/clc/config.yaml", paths.DefaultConfigPath())
+	assert.Equal(t, "/dev/shm/.local/share/clc/configs/default/config.yaml", paths.DefaultConfigPath())
 }
 
 func TestDefaultLogPath_Unix(t *testing.T) {
