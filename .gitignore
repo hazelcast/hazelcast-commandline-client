@@ -1,5 +1,4 @@
 .idea/
-cmd/
 hz-cli
 /dev_scripts/devcontainer.sh
 /dist/
