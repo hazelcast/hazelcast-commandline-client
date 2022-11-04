@@ -20,7 +20,7 @@ import (
 type ImportCmd struct{}
 
 func (cm ImportCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("import [flags] [source] ")
+	cc.SetCommandUsage("import [flags] [source]")
 	help := "Imports configuration from an arbitrary source"
 	cc.SetCommandHelp(help, help)
 	cc.SetPositionalArgCount(1, 1)

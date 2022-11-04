@@ -89,3 +89,11 @@ func Join(paths ...string) string {
 	}
 	return path
 }
+
+func Exists(path string) bool {
+	_, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return true
+}
