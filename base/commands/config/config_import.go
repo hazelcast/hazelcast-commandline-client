@@ -17,31 +17,31 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-type InstallCmd struct{}
+type ImportCmd struct{}
 
-func (cm InstallCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("install [flags] [source] ")
-	help := "Installs configuration from an arbitrary source"
+func (cm ImportCmd) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("import [flags] [source] ")
+	help := "Imports configuration from an arbitrary source"
 	cc.SetCommandHelp(help, help)
 	cc.SetPositionalArgCount(1, 1)
 	return nil
 }
 
-func (cm InstallCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (cm ImportCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	src := ec.Args()[0]
-	return cm.installSource(ctx, ec, src)
+	return cm.importSource(ctx, ec, src)
 }
 
-func (cm InstallCmd) installSource(ctx context.Context, ec plug.ExecContext, src string) error {
+func (cm ImportCmd) importSource(ctx context.Context, ec plug.ExecContext, src string) error {
 	src = strings.TrimSpace(src)
-	ok, err := cm.tryInstallViridianCurlSource(ctx, ec, src)
+	ok, err := cm.tryImportViridianCurlSource(ctx, ec, src)
 	if err != nil {
 		return err
 	}
 	if ok {
 		return nil
 	}
-	ok, err = cm.tryInstallViridianZipSource(ctx, ec, src)
+	ok, err = cm.tryImportViridianZipSource(ctx, ec, src)
 	if err != nil {
 		return err
 	}
@@ -51,7 +51,7 @@ func (cm InstallCmd) installSource(ctx context.Context, ec plug.ExecContext, src
 	return nil
 }
 
-func (cm InstallCmd) tryInstallViridianCurlSource(ctx context.Context, ec plug.ExecContext, src string) (bool, error) {
+func (cm ImportCmd) tryImportViridianCurlSource(ctx context.Context, ec plug.ExecContext, src string) (bool, error) {
 	const reCurlSource = `curl (?P<url>.*) -o hazelcast-cloud-(?P<language>[a-z]+)-sample-client-(?P<cn>[a-z-0-9-]+)-default\.zip`
 	re, err := regexp.Compile(reCurlSource)
 	if err != nil {
@@ -79,7 +79,7 @@ func (cm InstallCmd) tryInstallViridianCurlSource(ctx context.Context, ec plug.E
 	return true, nil
 }
 
-func (cm InstallCmd) tryInstallViridianZipSource(ctx context.Context, ec plug.ExecContext, src string) (bool, error) {
+func (cm ImportCmd) tryImportViridianZipSource(ctx context.Context, ec plug.ExecContext, src string) (bool, error) {
 	const reSource = `hazelcast-cloud-(?P<language>[a-z]+)-sample-client-(?P<cn>[a-z-0-9-]+)-default\.zip`
 	re, err := regexp.Compile(reSource)
 	if err != nil {
@@ -101,7 +101,7 @@ func (cm InstallCmd) tryInstallViridianZipSource(ctx context.Context, ec plug.Ex
 	return true, nil
 }
 
-func (cm InstallCmd) download(ctx context.Context, ec plug.ExecContext, url string) (string, error) {
+func (cm ImportCmd) download(ctx context.Context, ec plug.ExecContext, url string) (string, error) {
 	p, err := ec.ExecuteBlocking(ctx, "Downloading the sample", func(ctx context.Context) (any, error) {
 		f, err := os.CreateTemp("", "clc-download-*")
 		if err != nil {
@@ -121,7 +121,7 @@ func (cm InstallCmd) download(ctx context.Context, ec plug.ExecContext, url stri
 	return p.(string), nil
 }
 
-func (cm InstallCmd) makeConfigFromZip(ctx context.Context, ec plug.ExecContext, clusterName, path, outDir string) error {
+func (cm ImportCmd) makeConfigFromZip(ctx context.Context, ec plug.ExecContext, clusterName, path, outDir string) error {
 	_, err := ec.ExecuteBlocking(ctx, "Extracting files from the sample", func(ctx context.Context) (any, error) {
 		if err := os.MkdirAll(outDir, 0700); err != nil {
 			return nil, err
@@ -191,7 +191,7 @@ func (cm InstallCmd) makeConfigFromZip(ctx context.Context, ec plug.ExecContext,
 	return err
 }
 
-func (cm InstallCmd) createConfigYAML(path, clusterName, token, password string) error {
+func (cm ImportCmd) createConfigYAML(path, clusterName, token, password string) error {
 	text := fmt.Sprintf(`
 cluster:
   name: "%s"
@@ -205,13 +205,13 @@ ssl:
 	return os.WriteFile(path, []byte(text), 0600)
 }
 
-func (cm InstallCmd) extractViridianToken(text string) string {
+func (cm ImportCmd) extractViridianToken(text string) string {
 	// config.Cluster.Cloud.Token = "EWEKHVOOQOjMN5mXB8OngRF4YG5aOm6N2LUEOlhdC7SWpY54hm"
 	const re = `config.Cluster.Cloud.Token\s+=\s+"([^"]+)"`
 	return extractSimpleString(re, text)
 }
 
-func (cm InstallCmd) extractKeyPassword(text string) string {
+func (cm ImportCmd) extractKeyPassword(text string) string {
 	// err = config.Cluster.Network.SSL.AddClientCertAndEncryptedKeyPath(certFile, keyFile, "12ee6ff601a")
 	const re = `config.Cluster.Network.SSL.AddClientCertAndEncryptedKeyPath\(certFile,\s+keyFile,\s+"([^"]+)"`
 	return extractSimpleString(re, text)
@@ -230,5 +230,5 @@ func extractSimpleString(pattern, text string) string {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("config:install", &InstallCmd{}))
+	Must(plug.Registry.RegisterCommand("config:import", &ImportCmd{}))
 }
