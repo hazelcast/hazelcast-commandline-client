@@ -23,7 +23,7 @@ func (g GlobalInitializer) Init(cc plug.InitContext) error {
 	cc.AddBoolFlag(clc.PropertyVerbose, "", false, false, "enable verbose output")
 	lp := paths.DefaultLogPath(time.Now())
 	if !cc.Interactive() {
-		cc.AddStringFlag(clc.PropertyConfig, clc.ShortcutConfigPath, "", false, "set the configuration path")
+		cc.AddStringFlag(clc.PropertyConfig, clc.ShortcutConfig, "", false, "set the configuration")
 		cc.AddStringFlag(clc.PropertyClusterAddress, "a", "localhost:5701", false, "set the cluster address")
 		cc.AddStringFlag(clc.PropertyClusterName, "", "dev", false, "set the cluster name")
 		cc.AddStringFlag(clc.PropertyLogPath, "", lp, false, "set the log path, use stderr to log to stderr")

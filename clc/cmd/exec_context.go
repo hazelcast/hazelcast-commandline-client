@@ -103,7 +103,7 @@ func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInt
 }
 
 func (ec *ExecContext) Interactive() bool {
-	return false
+	return ec.isInteractive
 }
 
 func (ec *ExecContext) AddOutputRows(row ...output.Row) {

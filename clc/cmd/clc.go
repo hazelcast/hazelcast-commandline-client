@@ -46,7 +46,7 @@ func NewMain(cfgPath, logPath, logLevel string) (*Main, error) {
 	rc := &cobra.Command{
 		Use:   "clc",
 		Short: "Hazelcast CLC",
-		Long:  "Hazelcast Command Line Client",
+		Long:  "Hazelcast CLC",
 	}
 	m := &Main{
 		root:   rc,
@@ -96,7 +96,7 @@ func (m *Main) CloneForInteractiveMode() (*Main, error) {
 	rc := &cobra.Command{
 		Use:   "",
 		Short: "Hazelcast CLC",
-		Long:  "Hazelcast Command Line Client",
+		Long:  "Hazelcast CLC",
 	}
 	mc := &Main{
 		root:          rc,
@@ -106,12 +106,15 @@ func (m *Main) CloneForInteractiveMode() (*Main, error) {
 		lg:            m.lg,
 		stdout:        m.stdout,
 		stderr:        m.stderr,
-		ec:            m.ec,
 		isInteractive: true,
 		outputFormat:  m.outputFormat,
 		configLoaded:  m.configLoaded,
 		props:         m.props,
 	}
+	cf := func(ctx context.Context) (*hazelcast.Client, error) {
+		return mc.ensureClient(ctx, mc.props)
+	}
+	mc.ec = NewExecContext(m.lg, m.stderr, m.stderr, m.props, cf, true)
 	cc := NewCommandContext(rc, mc.vpr, mc.isInteractive)
 	if err := mc.runInitializers(cc); err != nil {
 		return nil, err

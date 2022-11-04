@@ -1,7 +1,7 @@
 package clc
 
 const (
-	ShortcutConfigPath     = "c"
+	ShortcutConfig         = "c"
 	PropertyClusterAddress = "cluster.address"
 	PropertyClusterName    = "cluster.name"
 	PropertyViridianToken  = "cluster.viridian-token"

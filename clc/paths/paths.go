@@ -38,12 +38,16 @@ func Logs() string {
 }
 
 func DefaultConfigPath() string {
-	return filepath.Join(Configs(), "default", "config.yaml")
+	return filepath.Join(ResolveConfigDir("default"), "config.yaml")
 }
 
 func DefaultLogPath(now time.Time) string {
 	fn := fmt.Sprintf("%s.log", now.Format("2006-01-02"))
 	return filepath.Join(Logs(), fn)
+}
+
+func ResolveConfigDir(name string) string {
+	return Join(Configs(), name)
 }
 
 /*
