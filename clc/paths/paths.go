@@ -8,21 +8,20 @@ import (
 )
 
 const (
-	unixDir       = ".local/share/clc"
 	EnvCLCHome    = "CLC_HOME"
 	DefaultConfig = "config.yaml"
 )
 
 func Home() string {
 	dir := os.Getenv(EnvCLCHome)
-	if dir == "" {
-		cd, err := os.UserHomeDir()
-		if err != nil {
-			panic(err)
-		}
-		dir = filepath.Join(cd, unixDir)
+	if dir != "" {
+		return dir
 	}
-	return dir
+	d, err := os.UserHomeDir()
+	if err != nil {
+		panic(err)
+	}
+	return homeDir(d)
 }
 
 func Configs() string {
