@@ -21,7 +21,7 @@ func TestHomeDir_Unix(t *testing.T) {
 
 func TestHomeDir_Windows(t *testing.T) {
 	skip.IfNot(t, "os = windows")
-	Must(os.Setenv("USERPROFILE", `C:/Users/foo'`))
+	Must(os.Setenv("USERPROFILE", `C:/Users/foo`))
 	assert.Equal(t, `C:/Users/foo/AppData/Roaming/Hazelcast CLC`, paths.Home())
 }
 
@@ -33,7 +33,7 @@ func TestDefaultConfigPath_Unix(t *testing.T) {
 
 func TestDefaultConfigPath_Windows(t *testing.T) {
 	skip.IfNot(t, "os = windows")
-	Must(os.Setenv("USERPROFILE", `C:/Users/foo'`))
+	Must(os.Setenv("USERPROFILE", `C:/Users/foo`))
 	assert.Equal(t, `C:/Users/foo/AppData/Roaming/Hazelcast CLC/configs/default/config.yaml`, paths.Home())
 }
 
@@ -46,7 +46,7 @@ func TestDefaultLogPath_Unix(t *testing.T) {
 
 func TestDefaultLogPath_Windows(t *testing.T) {
 	skip.IfNot(t, "os = windows")
-	Must(os.Setenv("USERPROFILE", `C:/Users/foo'`))
+	Must(os.Setenv("USERPROFILE", `C:/Users/foo`))
 	now := time.Date(2020, 2, 1, 9, 0, 0, 0, time.UTC)
 	assert.Equal(t, "C:/Users/foo/AppData/Roaming/Hazelcast CLC/logs/2020-02-01.log", paths.DefaultLogPath(now))
 }
