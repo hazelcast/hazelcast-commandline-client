@@ -28,10 +28,6 @@ func (cm *ShellCommand) Exec(context.Context, plug.ExecContext) error {
 }
 
 func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext) error {
-	_, err := ec.ClientInternal(ctx)
-	if err != nil {
-		return err
-	}
 	m, err := ec.(*cmd.ExecContext).Main().CloneForInteractiveMode()
 	if err != nil {
 		return fmt.Errorf("cloning Main: %w", err)

@@ -7,29 +7,6 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-/*
-type ClientInternalAugmentor struct {
-	ci *hazelcast.ClientInternal
-}
-
-func (c *ClientInternalAugmentor) Augment(ec plug.ExecContext, props *plug.Properties) error {
-	ctx := context.TODO()
-	props.SetBlocking(property.ClientInternal, func() (any, error) {
-		if c.ci != nil {
-			return c.ci, nil
-		}
-		client, err := ec.ClientInternal(ctx)
-		if err != nil {
-			return nil, err
-		}
-		ci := hazelcast.NewClientInternal(client)
-		c.ci = ci
-		return ci, nil
-	})
-	return nil
-}
-*/
-
 type CheckOutputTypeAugmentor struct{}
 
 func (ag *CheckOutputTypeAugmentor) Augment(ec plug.ExecContext, props *plug.Properties) error {
@@ -49,6 +26,5 @@ func (ag *CheckOutputTypeAugmentor) Augment(ec plug.ExecContext, props *plug.Pro
 }
 
 func init() {
-	//plug.Registry.RegisterAugmentor("00-client-internal", &ClientInternalAugmentor{})
 	plug.Registry.RegisterAugmentor("00-check-output-type", &CheckOutputTypeAugmentor{})
 }

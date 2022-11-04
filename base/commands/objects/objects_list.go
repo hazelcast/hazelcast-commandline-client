@@ -70,7 +70,7 @@ func (cm ObjectsListCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandHelp("list distributed objects, optionally filter by type", "list distributed objects")
 	typeHelp := fmt.Sprintf("filter by type, one of: %s", strings.Join(objTypes, ","))
 	cc.AddStringFlag(flagType, "t", "", false, typeHelp)
-	cc.AddBoolFlag(flagShowHidden, "", false, false, "show hidden and systemm objects")
+	cc.AddBoolFlag(flagShowHidden, "", false, false, "show hidden and system objects")
 	return nil
 }
 
