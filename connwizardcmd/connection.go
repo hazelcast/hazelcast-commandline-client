@@ -2,10 +2,12 @@ package connwizardcmd
 
 import (
 	"errors"
+
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/spf13/cobra"
+
 	"github.com/hazelcast/hazelcast-commandline-client/config"
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
-	"github.com/spf13/cobra"
 )
 
 func New() *cobra.Command {
@@ -63,7 +65,11 @@ func handleExit(cmd *cobra.Command) error {
 func handleWrite(cmd *cobra.Command, c *config.Config, choice string) error {
 	if choice == "y" {
 		exists := config.ConfigExists()
-		err := config.WriteToFile(c, config.DefaultConfigPath())
+		p, err := config.DefaultConfigPath()
+		if err != nil {
+			return hzcerrors.NewLoggableError(err, "Can not locate config path %s", p)
+		}
+		err = config.WriteToFile(c, p)
 		if err != nil {
 			return hzcerrors.NewLoggableError(err, "There was an error during overwriting config file.")
 		} else if exists {
