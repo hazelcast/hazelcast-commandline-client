@@ -27,7 +27,7 @@ func TestLogger(t *testing.T) {
 	}{
 		{
 			name: "Level: error, no log in file",
-			args: `-k "test-key" -n TestLogger`,
+			args: `-k "test-key" -n TestLogger --log-level error`,
 		},
 		{
 			name:        "Level: info, go client logs in the file",

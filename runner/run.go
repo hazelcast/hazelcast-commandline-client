@@ -90,7 +90,11 @@ func IsInteractiveCall(rootCmd *cobra.Command, args []string) bool {
 }
 
 func RunCmdInteractively(ctx context.Context, cfg *config.Config, l log.Logger, rootCmd *cobra.Command, noColor bool) (cobraprompt.GoPromptWithGracefulShutdown, error) {
-	cmdHistoryPath := filepath.Join(file.HZCHomePath(), "history")
+	hp, err := file.HZCHomePath()
+	if err != nil {
+		return cobraprompt.GoPromptWithGracefulShutdown{}, err
+	}
+	cmdHistoryPath := filepath.Join(hp, "history")
 	exists, err := file.Exists(cmdHistoryPath)
 	if err != nil {
 		l.Println("Command history path file does not exist.")

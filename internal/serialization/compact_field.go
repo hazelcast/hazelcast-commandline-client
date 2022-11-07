@@ -41,7 +41,7 @@ func (t *CompactFieldType) UnmarshalText(b []byte) error {
 	case "string":
 		*t = CompactFieldType(serialization.FieldKindString)
 	default:
-		return fmt.Errorf("unknown type: %d", s)
+		return fmt.Errorf("unknown type: %s", s)
 	}
 	return nil
 }

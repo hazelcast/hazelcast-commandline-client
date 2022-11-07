@@ -73,6 +73,16 @@ type ExecContext struct {
 	Rows   []output.Row
 }
 
+func (ec *ExecContext) FlushOutput() error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (ec *ExecContext) ExecuteBlocking(ctx context.Context, hint string, f func(context.Context) (any, error)) (any, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func NewExecuteContext(args []string) *ExecContext {
 	return &ExecContext{
 		lg:     NewLogger(),

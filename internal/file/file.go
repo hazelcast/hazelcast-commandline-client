@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 )
 
 func Exists(path string) (bool, error) {
@@ -21,12 +22,20 @@ func Exists(path string) (bool, error) {
 	return false, err
 }
 
-func HZCHomePath() string {
+func HZCHomePath() (string, error) {
+	if runtime.GOOS == "windows" {
+		dir := os.Getenv("LocalAppData")
+		if dir == "" {
+			return "", errors.New("%LocalAppData% is not defined")
+		}
+		// C:\Users\USERNAME\AppData\Local
+		return filepath.Join(dir, "Local", "Hazelcast CLC"), nil
+	}
 	homeDirectoryPath, err := os.UserHomeDir()
 	if err != nil {
 		panic(fmt.Errorf("retrieving home directory: %w", err))
 	}
-	return filepath.Join(homeDirectoryPath, ".local/share/hz-cli")
+	return filepath.Join(homeDirectoryPath, ".local/share/hz-cli"), nil
 }
 
 func CreateMissingDirsAndFileWithRWPerms(path string, content []byte) error {

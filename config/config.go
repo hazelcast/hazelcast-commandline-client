@@ -289,12 +289,6 @@ func readConfig(path string, config *Config, defaultConfPath string) error {
 		}
 		*config = DefaultConfig()
 		return nil
-		/*
-			if err = WriteToFile(config, path); err != nil {
-				return hzcerrors.NewLoggableError(err, "cannot create default configuration: %s. Make sure that process has necessary permissions to write default path.\n", path)
-			}
-
-		*/
 	}
 	confBytes, err = os.ReadFile(path)
 	if err != nil {
@@ -307,7 +301,11 @@ func readConfig(path string, config *Config, defaultConfPath string) error {
 }
 
 func DefaultConfigPath() string {
-	return filepath.Join(file.HZCHomePath(), defaultConfigFilename)
+	p, err := file.HZCHomePath()
+	if err != nil {
+		panic(p)
+	}
+	return filepath.Join(p, defaultConfigFilename)
 }
 
 func updateConfigWithSSL(config *hazelcast.Config, sslc *SSLConfig) error {

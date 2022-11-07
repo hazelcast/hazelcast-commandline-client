@@ -1,6 +1,7 @@
 package commands_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -18,12 +19,12 @@ func TestVersion(t *testing.T) {
 	cc := &it.CommandContext{}
 	require.NoError(t, cmd.Init(cc))
 	ec := it.NewExecuteContext(nil)
-	require.NoError(t, cmd.Exec(ec))
+	require.NoError(t, cmd.Exec(context.TODO(), ec))
 	output := ec.StdoutText()
 	t.Log("output", output)
 	assert.Equal(t, "v5.2.0\n", output)
 	ec.Set(clc.PropertyVerbose, true)
-	require.NoError(t, cmd.Exec(ec))
+	require.NoError(t, cmd.Exec(context.TODO(), ec))
 	assert.Equal(t, ec.Rows[0][0].Value, "Hazelcast CLC")
 	assert.Contains(t, ec.Rows[1][0].Value, "Latest Git Commit Hash")
 	assert.Contains(t, ec.Rows[2][0].Value, "Hazelcast Go Client")

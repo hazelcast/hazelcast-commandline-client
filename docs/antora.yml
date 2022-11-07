@@ -1,18 +1,18 @@
 name: clc
 title: Hazelcast CLC
 # Version in the URL
-version: '0.1'
+version: '5.2.0-BETA-2'
 # Version in the version selector (we display only the latest major.minor version)
-display_version: '0.1'
+display_version: '5.2.0-Beta-2'
 # Displays a banner to inform users that this is a prerelease version 
 prerelease: true
 asciidoc:
   attributes:
     # The full major.minor.patch version, which is used as a variable in the docs for things like download links
-    full-version: '0.1.0'
+    full-version: '5.2.0-Beta-2'
     # Allows us to use UI macros. See https://docs.asciidoctor.org/asciidoc/latest/macros/ui-macros/
     experimental: true
     snapshot: true
-    page-toclevels: 2@  
+    page-toclevels: 3@  
 nav:
   - modules/ROOT/nav.adoc
