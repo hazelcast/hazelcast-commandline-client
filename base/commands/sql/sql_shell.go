@@ -34,10 +34,6 @@ func (cm *SQLShellCommand) Exec(ctx context.Context, ec plug.ExecContext) error 
 }
 
 func (cm *SQLShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext) error {
-	ci, err := ec.ClientInternal(ctx)
-	if err != nil {
-		return err
-	}
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	endLineFn := func(line string) (string, bool) {
 		line = strings.TrimSpace(line)
@@ -46,6 +42,10 @@ func (cm *SQLShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecCont
 	}
 	textFn := func(ctx context.Context, text string) error {
 		text, err := convertStatement(text)
+		if err != nil {
+			return err
+		}
+		ci, err := ec.ClientInternal(ctx)
 		if err != nil {
 			return err
 		}
