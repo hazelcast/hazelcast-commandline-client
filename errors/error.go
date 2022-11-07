@@ -21,6 +21,6 @@ import (
 )
 
 var (
-	ErrUserCancelled = errors.New("user cancelled")
+	ErrUserCancelled = errors.New("cancelled")
 	ErrNotDecoded    = errors.New("not decoded")
 )

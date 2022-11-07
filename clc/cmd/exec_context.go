@@ -15,6 +15,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/shell"
+	"github.com/hazelcast/hazelcast-commandline-client/errors"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
@@ -171,7 +172,7 @@ func (ec *ExecContext) ExecuteBlocking(ctx context.Context, hint string, f func(
 	for {
 		select {
 		case <-ctx.Done():
-			return nil, ctx.Err()
+			return nil, errors.ErrUserCancelled
 		case v := <-ch:
 			if err, ok := v.(error); ok {
 				return nil, err
