@@ -1,4 +1,4 @@
-.PHONY: build generate-completion test test-cover view-cover
+.PHONY: build clc generate-completion test test-cover view-cover
 
 GIT_COMMIT=$(shell git rev-parse HEAD 2> /dev/null || echo unknown)
 CLC_VERSION=$(shell git describe --tags `git rev-list --tags --max-count=1` || echo UNKNOWN)
@@ -24,3 +24,9 @@ test-cover:
 view-cover:
 	go tool cover -func $(COVERAGE_OUT) | grep total:
 	go tool cover -html $(COVERAGE_OUT) -o coverage.html
+
+clc:
+	go build -tags hazelcastinternal,hazelcastinternaltest -ldflags $(LDFLAGS)  -o build/clc ./cmd/clc
+
+clc-contrib:
+	go build -tags hazelcastinternal,hazelcastinternaltest,contrib -ldflags $(LDFLAGS)  -o build/clc ./cmd/clc
