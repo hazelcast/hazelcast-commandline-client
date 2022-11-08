@@ -59,6 +59,7 @@ You're ready to connect the Hazelcast CLC to your development cluster. Make sure
 . Execute the following command:
 +
 ```bash
+export HZ_CLOUD_COORDINATOR_BASE_URL=https://api.viridian.hazelcast.com/
 hzc
 ```
 +
