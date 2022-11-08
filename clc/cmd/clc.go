@@ -40,6 +40,7 @@ type Main struct {
 	configLoaded  bool
 	props         *plug.Properties
 	ec            *ExecContext
+	cc            *CommandContext
 }
 
 func NewMain(cfgPath, logPath, logLevel string) (*Main, error) {
@@ -77,8 +78,8 @@ func NewMain(cfgPath, logPath, logLevel string) (*Main, error) {
 	m.props.Set(clc.PropertyConfig, cfgPath)
 	m.props.Set(clc.PropertyLogPath, logPath)
 	m.props.Set(clc.PropertyLogLevel, logLevel)
-	cc := NewCommandContext(rc, m.vpr, m.isInteractive)
-	if err := m.runInitializers(cc); err != nil {
+	m.cc = NewCommandContext(rc, m.vpr, m.isInteractive)
+	if err := m.runInitializers(m.cc); err != nil {
 		return nil, err
 	}
 	cf := func(ctx context.Context) (*hazelcast.Client, error) {
@@ -93,36 +94,41 @@ func NewMain(cfgPath, logPath, logLevel string) (*Main, error) {
 }
 
 func (m *Main) CloneForInteractiveMode() (*Main, error) {
-	rc := &cobra.Command{
-		Use:   "",
-		Short: "Hazelcast CLC",
-		Long:  "Hazelcast CLC",
-	}
-	mc := &Main{
-		root:          rc,
-		cmds:          map[string]*cobra.Command{},
-		vpr:           m.vpr,
-		client:        m.client,
-		lg:            m.lg,
-		stdout:        m.stdout,
-		stderr:        m.stderr,
-		isInteractive: true,
-		outputFormat:  m.outputFormat,
-		configLoaded:  m.configLoaded,
-		props:         m.props,
-	}
-	cf := func(ctx context.Context) (*hazelcast.Client, error) {
-		return mc.ensureClient(ctx, mc.props)
-	}
-	mc.ec = NewExecContext(m.lg, m.stderr, m.stderr, m.props, cf, true)
-	cc := NewCommandContext(rc, mc.vpr, mc.isInteractive)
-	if err := mc.runInitializers(cc); err != nil {
-		return nil, err
-	}
-	if err := mc.createCommands(); err != nil {
-		return nil, err
-	}
-	return mc, nil
+	mc := *m
+	mc.isInteractive = true
+	return &mc, nil
+	/*
+		rc := &cobra.Command{
+			Use:   "",
+			Short: "Hazelcast CLC",
+			Long:  "Hazelcast CLC",
+		}
+		mc := &Main{
+			root:          rc,
+			cmds:          map[string]*cobra.Command{},
+			vpr:           m.vpr,
+			client:        m.client,
+			lg:            m.lg,
+			stdout:        m.stdout,
+			stderr:        m.stderr,
+			isInteractive: true,
+			outputFormat:  m.outputFormat,
+			configLoaded:  m.configLoaded,
+			props:         m.props,
+		}
+		cf := func(ctx context.Context) (*hazelcast.Client, error) {
+			return mc.ensureClient(ctx, mc.props)
+		}
+		mc.ec = NewExecContext(m.lg, m.stderr, m.stderr, m.props, cf, true)
+		cc := NewCommandContext(rc, mc.vpr, mc.isInteractive)
+		if err := mc.runInitializers(cc); err != nil {
+			return nil, err
+		}
+		if err := mc.createCommands(cc); err != nil {
+			return nil, err
+		}
+		return mc, nil
+	*/
 }
 
 func (m *Main) Root() *cobra.Command {
@@ -209,7 +215,8 @@ func (m *Main) createCommands() error {
 			name := strings.Join(ps[:i], ":")
 			p, ok := m.cmds[name]
 			if !ok {
-				p = &cobra.Command{Use: ps[i-1]}
+				//p = &cobra.Command{Use: ps[i-1]}
+				p = &cobra.Command{}
 				m.cmds[name] = p
 				parent.AddCommand(p)
 			}
@@ -217,7 +224,7 @@ func (m *Main) createCommands() error {
 		}
 		// current command
 		cmd := &cobra.Command{
-			Use:          ps[len(ps)-1],
+			//Use:          ps[len(ps)-1],
 			SilenceUsage: true,
 		}
 		cc := NewCommandContext(cmd, m.vpr, m.isInteractive)
@@ -229,6 +236,9 @@ func (m *Main) createCommands() error {
 		parent.AddGroup(cc.Groups()...)
 		if !cc.TopLevel() {
 			cmd.RunE = func(cmd *cobra.Command, args []string) error {
+				// resetting the flag values, so they are not persistent between runs.
+				// resetting at the end of the function, after the command execution is complete.
+				defer m.cc.Reset()
 				cfs := cmd.Flags()
 				props := m.props
 				cfs.Visit(func(f *pflag.Flag) {

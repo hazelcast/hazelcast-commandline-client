@@ -7,8 +7,7 @@ TEST_FLAGS ?= -v -count 1
 COVERAGE_OUT = coverage.out
 PACKAGES=$(shell go list ./... | grep -v go-prompt | grep -v termdbms | grep -v internal/it | tr '\n' ',')
 
-build:
-	go build -tags hazelcastinternal,hazelcastinternaltest -ldflags $(LDFLAGS) -o hzc github.com/hazelcast/hazelcast-commandline-client
+build: clc
 
 generate-completion: build
 	mkdir -p extras

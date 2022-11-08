@@ -16,6 +16,7 @@ type MapClearCommand struct{}
 func (mc *MapClearCommand) Init(cc plug.InitContext) error {
 	help := "Delete all entries of an IMap"
 	cc.SetCommandHelp(help, help)
+	cc.SetCommandUsage("clear [flags]")
 	return nil
 }
 

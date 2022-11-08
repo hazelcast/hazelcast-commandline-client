@@ -76,7 +76,7 @@ func (cm *SQLShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecCont
 func convertStatement(stmt string) (string, error) {
 	stmt = strings.TrimSpace(stmt)
 	if strings.HasPrefix(stmt, "help") {
-		return "", errors.New(help())
+		return "", errors.New(interactiveHelp())
 	}
 	if strings.HasPrefix(stmt, "\\") {
 		// this is a shell command
@@ -114,7 +114,7 @@ func convertStatement(stmt string) (string, error) {
 	return stmt, nil
 }
 
-func help() string {
+func interactiveHelp() string {
 	return `
 Commands:
 	\dm           list mappings

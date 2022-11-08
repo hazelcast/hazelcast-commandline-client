@@ -67,15 +67,22 @@ type ObjectsListCommand struct{}
 
 func (cm ObjectsListCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("list [object-type]")
-	cc.SetCommandHelp("list distributed objects, optionally filter by type", "list distributed objects")
-	typeHelp := fmt.Sprintf("filter by type, one of: %s", strings.Join(objTypes, ","))
-	cc.AddStringFlag(flagType, "t", "", false, typeHelp)
+	long := fmt.Sprintf(`List distributed objects, optionally filter by type.
+	
+The object-type filter may be one of:
+%s
+`, objectFilterTypes())
+	cc.SetCommandHelp(long, "List distributed objects")
 	cc.AddBoolFlag(flagShowHidden, "", false, false, "show hidden and system objects")
+	cc.SetPositionalArgCount(0, 1)
 	return nil
 }
 
 func (cm ObjectsListCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
-	typeFilter := ec.Props().GetString(flagType)
+	var typeFilter string
+	if len(ec.Args()) > 0 {
+		typeFilter = ec.Args()[0]
+	}
 	showHidden := ec.Props().GetBool(flagShowHidden)
 	objs, err := getObjects(ctx, ec, typeFilter, showHidden)
 	if err != nil {
@@ -103,6 +110,14 @@ func (cm ObjectsListCommand) Exec(ctx context.Context, ec plug.ExecContext) erro
 	return nil
 }
 
+func objectFilterTypes() string {
+	var sb strings.Builder
+	for _, o := range objTypes {
+		sb.WriteString(fmt.Sprintf("\t* %s\n", strings.ToLower(o)))
+	}
+	return sb.String()
+}
+
 func getObjects(ctx context.Context, ec plug.ExecContext, typeFilter string, showHidden bool) ([]types.DistributedObjectInfo, error) {
 	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
@@ -115,6 +130,7 @@ func getObjects(ctx context.Context, ec plug.ExecContext, typeFilter string, sho
 		return nil, err
 	}
 	var r []types.DistributedObjectInfo
+	typeFilter = strings.ToLower(typeFilter)
 	for _, o := range objs.([]types.DistributedObjectInfo) {
 		if !showHidden && strings.HasPrefix(o.Name, "__") {
 			continue
@@ -143,9 +159,14 @@ func getObjects(ctx context.Context, ec plug.ExecContext, typeFilter string, sho
 }
 
 func shortType(svcName string) string {
-	return strings.TrimSuffix(strings.TrimPrefix(svcName, "hz:impl:"), "Service")
+	s := strings.TrimSuffix(strings.TrimPrefix(svcName, "hz:impl:"), "Service")
+	return strings.ToLower(s)
 }
 
 func init() {
+	// sort objectTypes so they look better in help
+	sort.Slice(objTypes, func(i, j int) bool {
+		return objTypes[i] < objTypes[j]
+	})
 	Must(plug.Registry.RegisterCommand("objects:list", &ObjectsListCommand{}))
 }

@@ -20,14 +20,15 @@ const (
 type SQLCommand struct{}
 
 func (cm *SQLCommand) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("sql QUERY")
+	cc.SetCommandUsage("sql QUERY [flags]")
 	cc.SetPositionalArgCount(0, 1)
 	cc.AddCommandGroup("sql", "SQL")
 	cc.SetCommandGroup("sql")
-	cc.SetCommandHelp(
-		"",
-		"",
-	)
+	long := `Run the given SQL query
+
+If COMMAND is shell, then the SQL shell is started.
+`
+	cc.SetCommandHelp(long, "Run SQL")
 	cc.AddBoolFlag(propertyApplySuggestion, "", false, false, "execute the proposed CREATE MAPPING suggestion and retry the query")
 	return nil
 }
