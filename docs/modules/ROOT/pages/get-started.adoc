@@ -1,9 +1,324 @@
-= Get Started with Hazelcast CLC
+= Get Started With the Hazelcast CLC
+:description: In this tutorial, you'll learn the basics of how to configure the Hazelcast Command-Line Client (CLC), start it, and connect it to a Hazelcast {hazelcast-cloud} Serverless development cluster and a Serverless production cluster. You'll also see how to switch between clusters, using the Hazelcast CLC. Finally, you'll perform some basic operations on a cluster from the command line and then by running a script to automate the same actions.
 
-You can use Hazelcast CLC to manage {hazelcast-cloud} clusters or self-managed installations of Hazelcast Platform.
+{description}
 
-Choose the Hazelcast product that you want to use:
+== Before You Begin
 
-- {hazelcast-cloud}
-- Hazelcast Platform
+You need the following:
+
+- The xref:install-clc.adoc[Hazelcast CLC] installed on your local machine
+- Two xref:cloud:ROOT:create-serverless-cluster.adoc[Hazelcast {hazelcast-cloud} Serverless clusters]. For this tutorial, you'll use one development and one production cluster, to show how you might use the CLC for basic administration and deployment tasks.
+- Connection credentials and TLS certificate files for both clusters.
+
+TIP: You can find all connection credentials, such as the cluster name, discovery token, and TLS certificate files in the Hazelcast {hazelcast-cloud} console. For details, see xref:cloud:ROOT:connect-to-cluster.adoc[]. 
+
+[[step-1-dev-config]]
+== Step 1. Configure the Hazelcast CLC for a Development Cluster
+
+Before you can connect the Hazelcast CLC to your development cluster, you need to add the cluster's TLS certificate files and connection details to the default configuration file.
+
+. Save the following files to a location that's easy to find on your local machine. For example: `$HOME/.local/share/*dev*`.
+
+** `ca.pem`
+** `cert.pem`
+** `key.pem`
+
+. Go to the `$HOME/.local/share/hz-cli` directory and open the `config.yaml` file. This is the default configuration file for the Hazelcast CLC.
+
+. Add the following configuration details for your development cluster:
++
+[source,yaml]
+----
+ssl:
+  enabled: true
+  capath: "/$PATH/ca.pem"
+  certpath: "/$PATH/cert.pem"
+  keypath: "/$PATH/key.pem"
+  keypassword: "$DEV_KEYSTORE_PASSWORD"
+hazelcast:
+  cluster:
+    name: "$DEV_CLUSTER_NAME"
+    cloud:
+      token: "$DEV_DISCOVERY_TOKEN"
+      enabled: true
+----
+. Replace the following placeholders:
+
+** `/$PATH/`: The absolute path to the TLS certificate files on your local machine.
+** `$DEV_KEYSTORE_PASSWORD`: The keystore and truststore password for the development cluster.
+** `$DEV_CLUSTER_NAME`: The short name for the development cluster. For example: `pr-3145`.
+** `$DEV_DISCOVERY_TOKEN`: The discovery token for the development cluster.
+. Save your changes.
+
+[[step-2-dev-connect]]
+== Step 2. Connect the Hazelcast CLC to the Development Cluster
+You're ready to connect the Hazelcast CLC to your development cluster. Make sure that the cluster is running before you start.
+
+. From the command line, change into the `$HOME/.local/share/hz-cli` directory.
+. Execute the following command:
++
+```bash
+export HZ_CLOUD_COORDINATOR_BASE_URL=https://api.viridian.hazelcast.com/
+hzc
+```
++
+The Hazelcast CLC connects to the development cluster and the command prompt displays the cluster details. For example: `hzc hazelcast-cloud@pr-3145>`.
+. Press kbd:[Ctrl+C] or type `exit` to shut down the Hazelcast CLC while you complete the configuration for your production cluster.
+
+[[step-3-prod-configure]]
+== Step 3. Add Configuration for the Production Cluster
+Now add the TLS certificate files and a new configuration file for your production cluster.
+
+. Save the TLS certificate files for the production cluster to a separate directory on your local machine. For example: `$HOME/.local/share/*prod*`.
+. Return to the `$HOME/.local/share/hz-cli` directory, make a copy of the `config.yaml` file and save it to the same directory. Give the new file a unique name. For example, `config_prod.yaml`.
+. Open the new configuration file and update the following parameters with values for your production cluster.
++
+[source,yaml]
+----
+ssl:
+  enabled: true
+  capath: "/$PATH/ca.pem"
+  certpath: "/$PATH/cert.pem"
+  keypath: "/$PATH/key.pem"
+  keypassword: "$PROD_KEYSTORE_PASSWORD"
+hazelcast:
+  cluster:
+    name: "$PROD_CLUSTER_NAME"
+    cloud:
+      token: "$PROD_DISCOVERY_TOKEN"
+      enabled: true
+----
+. Replace the following placeholders:
+
+** `/$PATH/`: The absolute path to the TLS certificate files on your local machine.
+** `$PROD_KEYSTORE_PASSWORD`: The keystore and truststore password for the production cluster.
+** `$PROD_CLUSTER_NAME`: The short name for the production cluster. For example: `pr-3145`.
+** `$PROD_DISCOVERY_TOKEN`: The discovery token for the production cluster.
+. Save your changes.
+
+[[step-4-cluster-switch]]
+== Step 4. Switch Between Clusters
+Having separate local configurations for your development and production clusters allows you to switch between them without leaving the command line. Make sure both clusters are running before you start.
+
+. From the command line, change into the `$HOME/.local/share/hz-cli` directory.
+. Execute the following command to use the default configuration to connect to your development cluster:
++
+```bash
+hzc
+```
++
+As before, the Hazelcast CLC connects to your development cluster.
+. Type `exit` to return to `$HOME/.local/share/hz-cli`.
+. Execute the following command to use the new configuration file for your production cluster.
++
+```bash
+hzc -c <config_prod>.yaml
+```
++
+The Hazelcast CLC connects to your production cluster.
+
+[[step-5-write-data]]
+== Step 5. Write Data to a Map
+Now that you've connected to both your clusters, try using the Hazelcast CLC to write data to a map on your development cluster. A quick and easy way to do this is to use a JSON file.
+
+. Copy the following JSON to a file in the `$HOME/.local/share/hz-cli` directory.
++
+.currencycodes.json
+```json
+{
+  "1": {
+        "Code": "CAD",
+        "Currency": "Canadian Dollar"
+      },
+  "2": {
+        "Code": "INR",
+        "Currency": "Indian Rupee"
+      },
+  "3": {
+        "Code": "MXN",
+        "Currency": "Mexican Peso"
+      },
+  "4": {
+        "Code": "GBP",
+        "Currency": "Pounds Sterling"
+      },
+  "5": {
+        "Code": "TRY",
+        "Currency": "Turkish Lira"
+      },
+  "6": {
+        "Code": "USD",
+        "Currency": "United States Dollar"
+      }
+}
+
+```
+. As before, from the command line change into the `$HOME/.local/share/hz-cli` directory. This time execute a `put-all` command to write the data from the JSON file to a new map called `currency`.
++
+```bash
+hzc map put-all -n currency --json-entry currencycodes.json
+```
++
+The `-n` flag passes the map name to your cluster.
+
+. Do a quick check on your cluster to make sure that your data has been written successfully.
+. Open the dashboard of the development cluster and click *Management Center*.
+. Go to *Storage* > *Maps*. You'll see that your cluster has a map called `currency` with six entries. 
+
+
+[[step-6-query-map]]
+== Step 6. Query Map Data
+You can use SQL to query the data in your `currency` map.
+
+. Start by creating a mapping to the `currency` map.
+
++
+```bash
+hzc sql "CREATE MAPPING currency (__key VARCHAR, Code VARCHAR, Currency VARCHAR) TYPE IMap OPTIONS('keyFormat'='varchar', 'valueFormat'='json-flat')"
+```
+The SQL mapping statement does a number of things:
+
+** Adds column headings for currencies and codes
+** Creates a SQL connection to the map
+** Tells Hazelcast how to serialize and deserialize the keys and values.
+
+. Try running some simple queries against the `currency` map. For example, this query returns all data in the map and orders it by the currency code.  
++
+```bash
+hzc sql "SELECT * FROM currency ORDER BY Code"
+```
++
+The results look like this:
+
++
+[source,shell]
+----
++------------+--------------------+--------------------+
+|__key       |Code                |Currency            |
++------------+--------------------+--------------------+
+|1           |CAD                 |Canadian Dollar     |
+|4           |GBP                 |Pounds Sterling     |
+|2           |INR                 |Indian Rupee        |
+|3           |MXN                 |Mexican Peso        |
+|5           |TRY                 |Turkish Lira        |
+|6           |USD                 |United States Dollar|
++------------+--------------------+--------------------+
+
+----
+
+[[step-7-automate]]
+== Step 7. Automate Actions
+When you're ready, combine the commands that you've learned about so far into a shell script and run them from the command line. 
+
+The script first writes the currency data to a new map called `currencydata` on your development server, queries it and then switches to your production cluster to perform the same actions.
+
+[tabs] 
+==== 
+Linux:: 
++ 
+--
+. Copy the following commands into a shell script.
++
+.myscript.sh
+[source,bash]
+----
+#!/usr/bin/bash
+hzc map put-all -n currencydata --json-entry currencycodes.json
+hzc sql "CREATE MAPPING currencydata (__key VARCHAR, Code VARCHAR, Currency VARCHAR) TYPE IMap OPTIONS('keyFormat'='varchar', 'valueFormat'='json-flat')"
+hzc sql "SELECT * FROM currencydata ORDER BY Code"
+hzc -c config_prod.yaml map put-all -n currencydata --json-entry currencycodes.json
+hzc -c config_prod.yaml sql "CREATE MAPPING currencydata (__key VARCHAR, Code VARCHAR, Currency VARCHAR) TYPE IMap OPTIONS('keyFormat'='varchar', 'valueFormat'='json-flat')"
+hzc -c config_prod.yaml sql "SELECT * FROM currencydata ORDER BY Code"
+
+----
+
+.	Save your script to the `$HOME/.local/share/hz-cli` directory.
+. Use the following command to make sure that the script is executable:
++
+```bash
+chmod 777 myscript.sh
+```
+. Then, to run the script, execute the following command:
++
+```bash
+./myscript.sh
+```
+--
+Mac:: 
++ 
+--
+. Copy the following commands into a shell script.
++
+.myscript.sh
+[source,bash]
+----
+#!/bin/bash
+hzc map put-all -n currencydata --json-entry currencycodes.json
+hzc sql "CREATE MAPPING currencydata (__key VARCHAR, Code VARCHAR, Currency VARCHAR) TYPE IMap OPTIONS('keyFormat'='varchar', 'valueFormat'='json-flat')"
+hzc sql "SELECT * FROM currencydata ORDER BY Code"
+hzc -c config_prod.yaml map put-all -n currencydata --json-entry currencycodes.json
+hzc -c config_prod.yaml sql "CREATE MAPPING currencydata (__key VARCHAR, Code VARCHAR, Currency VARCHAR) TYPE IMap OPTIONS('keyFormat'='varchar', 'valueFormat'='json-flat')"
+hzc -c config_prod.yaml sql "SELECT * FROM currencydata ORDER BY Code"
+
+----
+
+. Save your script to the `$HOME/.local/share/hz-cli` directory.
+. Use the following command to make sure that the script is executable:
++
+```bash
+chmod 777 myscript.sh
+```
+. Then, to run the script, execute the following command:
++
+```bash
+./myscript.sh
+```
+--
+Windows:: 
++ 
+--
+. Copy the following commands into a batch file.
++
+.myscript.bat
+[source,bash]
+----
+hzc map put-all -n currencydata --json-entry currencycodes.json
+hzc sql "CREATE MAPPING currencydata (__key VARCHAR, Code VARCHAR, Currency VARCHAR) TYPE IMap OPTIONS('keyFormat'='varchar', 'valueFormat'='json-flat')"
+hzc sql "SELECT * FROM currencydata ORDER BY Code"
+hzc -c config_prod.yaml map put-all -n currencydata --json-entry currencycodes.json
+hzc -c config_prod.yaml sql "CREATE MAPPING currencydata (__key VARCHAR, Code VARCHAR, Currency VARCHAR) TYPE IMap OPTIONS('keyFormat'='varchar', 'valueFormat'='json-flat')"
+hzc -c config_prod.yaml sql "SELECT * FROM currencydata ORDER BY Code"
+
+----
+
+.	Save your batch file to the `$HOME/.local/share/hz-cli` directory.
+. Then, to run the script, execute the following command:
++
+```bash
+myscript.bat
+```
+
+--
+====
+
+== Summary
+
+In this tutorial, you learned how to do the following:
+
+* Connect to a Hazelcast {hazelcast-cloud} Serverless cluster using the default configuration file.
+* Create a custom configuration file for another cluster.
+* Switch between clusters from the command line.
+* Write data to a map and query the data using SQL.
+* Automate commands by running a sequence of actions from a shell script.
+
+== Learn More
+
+Use these resources to continue learning:
+
+- xref:configuration.adoc[].
+
+- xref:clc-commands.adoc[].
+
+- xref:hzc-sql.adoc[].
 
