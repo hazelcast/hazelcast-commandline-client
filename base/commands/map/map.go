@@ -24,7 +24,7 @@ type MapCommand struct {
 
 func (mc *MapCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandGroup(clc.GroupDDSID)
-	cc.AddStringFlag(mapFlagName, "n", "", true, "map name")
+	cc.AddStringFlag(mapFlagName, "n", defaultMapName, false, "Map name")
 	cc.AddBoolFlag(mapFlagShowType, "", false, false, "add the type names to the output")
 	if !cc.Interactive() {
 		cc.AddStringFlag(clc.PropertySchemaDir, "", paths.Schemas(), false, "set the schema directory")
@@ -43,12 +43,12 @@ func (mc *MapCommand) Exec(context.Context, plug.ExecContext) error {
 func (mc *MapCommand) Augment(ec plug.ExecContext, props *plug.Properties) error {
 	ctx := context.TODO()
 	props.SetBlocking(mapPropertyName, func() (any, error) {
+		if mc.m != nil {
+			return mc.m, nil
+		}
 		mapName := ec.Props().GetString(mapFlagName)
 		if mapName == "" {
 			return nil, fmt.Errorf("map name is required")
-		}
-		if mc.m != nil {
-			return mc.m, nil
 		}
 		ci, err := ec.ClientInternal(ctx)
 		if err != nil {

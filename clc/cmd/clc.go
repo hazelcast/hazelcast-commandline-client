@@ -245,7 +245,7 @@ func (m *Main) createCommands() error {
 				defer m.cc.Reset()
 				cfs := cmd.Flags()
 				props := m.props
-				cfs.Visit(func(f *pflag.Flag) {
+				cfs.VisitAll(func(f *pflag.Flag) {
 					// skip managed flags
 					if f.Name == clc.PropertyConfig || f.Name == clc.PropertyLogPath || f.Name == clc.PropertyLogLevel {
 						return

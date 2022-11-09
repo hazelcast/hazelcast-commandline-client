@@ -5,5 +5,6 @@ const (
 	mapFlagValueType = "value-type"
 	mapTTL           = "ttl"
 	// TODO: move
-	ttlUnset = -1
+	ttlUnset       = -1
+	defaultMapName = "__default"
 )

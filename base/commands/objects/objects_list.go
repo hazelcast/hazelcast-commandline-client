@@ -132,8 +132,11 @@ func getObjects(ctx context.Context, ec plug.ExecContext, typeFilter string, sho
 	var r []types.DistributedObjectInfo
 	typeFilter = strings.ToLower(typeFilter)
 	for _, o := range objs.([]types.DistributedObjectInfo) {
-		if !showHidden && strings.HasPrefix(o.Name, "__") {
+		if !showHidden && (o.Name == "" || strings.HasPrefix(o.Name, "__")) {
 			continue
+		}
+		if o.Name == "" {
+			o.Name = "(no name)"
 		}
 		if typeFilter == "" {
 			r = append(r, o)

@@ -21,9 +21,9 @@ func (mc *MapPutCommand) Init(cc plug.InitContext) error {
 	cc.AddStringFlag(mapFlagValueType, "v", "", false, "value type")
 	cc.AddIntFlag(mapTTL, "", ttlUnset, false, "time-to-live (ms)")
 	cc.SetPositionalArgCount(2, 2)
-	help := "Put a value to the given IMap and return the old value"
+	help := "Put a value in the given Map and return the old value"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("put -n MAP KEY VALUE [flags]")
+	cc.SetCommandUsage("put [-n MAP] KEY VALUE [flags]")
 	return nil
 }
 
@@ -35,7 +35,9 @@ func (mc *MapPutCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		return err
 	}
 	// get the map just to ensure the corresponding proxy is created
-	I2(ec.Props().GetBlocking(mapPropertyName))
+	if _, err := ec.Props().GetBlocking(mapPropertyName); err != nil {
+		return err
+	}
 	keyStr := ec.Args()[0]
 	valueStr := ec.Args()[1]
 	kd, vd, err := MakeKeyValueData(ec, ci, keyStr, valueStr)

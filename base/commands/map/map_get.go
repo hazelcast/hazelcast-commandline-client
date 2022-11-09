@@ -17,9 +17,9 @@ type MapGetCommand struct{}
 
 func (mc *MapGetCommand) Init(cc plug.InitContext) error {
 	cc.AddStringFlag(mapFlagKeyType, "k", "", false, "key type")
-	help := "Get a value from the given IMap"
+	help := "Get a value from the given Map"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("get -n MAP KEY [flags]")
+	cc.SetCommandUsage("get [-n MAP] KEY [flags]")
 	cc.SetPositionalArgCount(1, 1)
 	return nil
 }
