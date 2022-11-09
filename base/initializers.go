@@ -22,7 +22,7 @@ func (g GlobalInitializer) Init(cc plug.InitContext) error {
 	slices.Sort(pns)
 	usage := fmt.Sprintf("set the output type, one of: %s", strings.Join(pns, ", "))
 	// other flags
-	cc.AddStringFlag(clc.PropertyFormat, "", "", false, usage)
+	cc.AddStringFlag(clc.PropertyFormat, clc.ShortcutFormat, "", false, usage)
 	cc.AddBoolFlag(clc.PropertyVerbose, "", false, false, "enable verbose output")
 	lp := paths.DefaultLogPath(time.Now())
 	if !cc.Interactive() {
