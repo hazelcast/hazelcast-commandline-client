@@ -6,5 +6,5 @@ const (
 	mapTTL           = "ttl"
 	// TODO: move
 	ttlUnset       = -1
-	defaultMapName = "__default"
+	defaultMapName = "default"
 )
