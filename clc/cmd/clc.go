@@ -18,6 +18,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/logger"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
+	puberrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
@@ -263,7 +264,11 @@ func (m *Main) createCommands() error {
 				}
 				if ic, ok := c.Item.(plug.InteractiveCommander); ok {
 					ec.SetInteractive(true)
-					return ic.ExecInteractive(cmd.Context(), ec)
+					err := ic.ExecInteractive(cmd.Context(), ec)
+					if errors.Is(err, puberrors.ErrNotAvailable) {
+						return nil
+					}
+					return err
 				}
 				return ec.FlushOutput()
 			}

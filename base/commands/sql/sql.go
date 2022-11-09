@@ -4,38 +4,49 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client/sql"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/shell"
+	puberrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
 const (
-	propertyApplySuggestion = "apply-suggestion"
+	propertyUseMappingSuggestion = "use-mapping-suggestion"
 )
 
 type SQLCommand struct{}
 
+func (cm *SQLCommand) Augment(ec plug.ExecContext, props *plug.Properties) error {
+	// set the default format to table in the interactive mode
+	if ec.CommandName() == "clc sql" && len(ec.Args()) == 0 {
+		props.Set(clc.PropertyFormat, "table")
+	}
+	return nil
+}
+
 func (cm *SQLCommand) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("sql {COMMAND | QUERY} [flags]")
-	//cc.SetPositionalArgCount(0, 1)
+	cc.SetCommandUsage("sql [QUERY] [flags]")
+	cc.SetPositionalArgCount(0, 1)
 	cc.AddCommandGroup("sql", "SQL")
 	cc.SetCommandGroup("sql")
-	long := `Run the given SQL query
+	long := `Runs the given SQL query or starts the SQL shell
 
-If COMMAND is shell, then the SQL shell is started.
+If QUERY is not given, then the SQL shell is started.
 `
 	cc.SetCommandHelp(long, "Run SQL")
-	cc.AddBoolFlag(propertyApplySuggestion, "", false, false, "execute the proposed CREATE MAPPING suggestion and retry the query")
+	cc.AddBoolFlag(propertyUseMappingSuggestion, "", false, false, "execute the proposed CREATE MAPPING suggestion and retry the query")
 	return nil
 }
 
 func (cm *SQLCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if len(ec.Args()) < 1 {
-		ec.ShowHelpAndExit()
 		return nil
 	}
 	query := ec.Args()[0]
@@ -48,12 +59,55 @@ func (cm *SQLCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	return updateOutput(ec, res, verbose)
 }
 
+func (cm *SQLCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext) error {
+	if len(ec.Args()) > 0 {
+		return puberrors.ErrNotAvailable
+	}
+	verbose := ec.Props().GetBool(clc.PropertyVerbose)
+	endLineFn := func(line string) (string, bool) {
+		line = strings.TrimSpace(line)
+		end := strings.HasPrefix(line, "help") || strings.HasPrefix(line, "\\") || strings.HasSuffix(line, ";")
+		return line, end
+	}
+	textFn := func(ctx context.Context, text string) error {
+		text, err := convertStatement(text)
+		if err != nil {
+			return err
+		}
+		ci, err := ec.ClientInternal(ctx)
+		if err != nil {
+			return err
+		}
+		res, err := execSQL(ctx, ec, ci, text)
+		if err != nil {
+			return adaptSQLError(err)
+		}
+		if err := updateOutput(ec, res, verbose); err != nil {
+			return err
+		}
+		if err := ec.FlushOutput(); err != nil {
+			return err
+		}
+		return nil
+	}
+	path := paths.Join(paths.Home(), "sql.history")
+	if shell.IsPipe() {
+		sh := shell.NewOneshot(endLineFn, textFn)
+		sh.SetCommentPrefix("--")
+		return sh.Run(context.Background())
+	}
+	sh := shell.New("SQL> ", " ... ", path, ec.Stdout(), ec.Stderr(), endLineFn, textFn)
+	sh.SetCommentPrefix("--")
+	defer sh.Close()
+	return sh.Start(ctx)
+}
+
 func (cm *SQLCommand) execQuery(ctx context.Context, query string, ec plug.ExecContext) (sql.Result, error) {
 	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
 		return nil, err
 	}
-	as := ec.Props().GetBool(propertyApplySuggestion)
+	as := ec.Props().GetBool(propertyUseMappingSuggestion)
 	r, err := execSQL(ctx, ec, ci, query)
 	if err != nil {
 		// check whether this is an SQL error with a suggestion,
@@ -67,7 +121,7 @@ func (cm *SQLCommand) execQuery(ctx context.Context, query string, ec plug.ExecC
 		err = adaptSQLError(err)
 		if !as {
 			if serr.Suggestion != "" {
-				return nil, fmt.Errorf("%w\n\nUse --%s to automatically apply the suggestion", err, propertyApplySuggestion)
+				return nil, fmt.Errorf("%w\n\nUse --%s to automatically apply the suggestion", err, propertyUseMappingSuggestion)
 			}
 			return nil, err
 		}
@@ -125,5 +179,6 @@ func convertSQLType(ct sql.ColumnType) int32 {
 }
 
 func init() {
+	plug.Registry.RegisterAugmentor("20-sql", &SQLCommand{})
 	Must(plug.Registry.RegisterCommand("sql", &SQLCommand{}))
 }

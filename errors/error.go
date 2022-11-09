@@ -23,4 +23,5 @@ import (
 var (
 	ErrUserCancelled = errors.New("cancelled")
 	ErrNotDecoded    = errors.New("not decoded")
+	ErrNotAvailable  = errors.New("not available")
 )
