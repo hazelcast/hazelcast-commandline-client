@@ -47,9 +47,7 @@ func (mc *MapCommand) Augment(ec plug.ExecContext, props *plug.Properties) error
 			return mc.m, nil
 		}
 		mapName := ec.Props().GetString(mapFlagName)
-		if mapName == "" {
-			return nil, fmt.Errorf("map name is required")
-		}
+		// empty map name is allowed
 		ci, err := ec.ClientInternal(ctx)
 		if err != nil {
 			return nil, err
