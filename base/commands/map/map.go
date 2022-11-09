@@ -60,6 +60,9 @@ func (mc *MapCommand) Augment(ec plug.ExecContext, props *plug.Properties) error
 			}
 			return m, nil
 		})
+		if err != nil {
+			return nil, err
+		}
 		mc.m = mv.(*hazelcast.Map)
 		return mc.m, nil
 	})
