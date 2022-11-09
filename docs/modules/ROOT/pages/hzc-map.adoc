@@ -28,6 +28,7 @@ hzc map [command] [options]
 * <<hzc-map-use, hzc map use>>
 * <<hzc-map-lock, hzc map lock>>
 * <<hzc-map-trylock, hzc map trylock>>
+* <<hzc-map-unlock, hzc map unlock>>
 * <<hzc-map-force-unlock, hzc map force-unlock>>
 
 == hzc map clear
@@ -698,9 +699,52 @@ Example:
 hzc map trylock --key k1 --name myMap --timeout 10ms --lease-time 2m
 ----
 
+== hzc map unlock
+
+Unlocks the specified key of the given map. It can only be used in the xref:overview.adoc#interactive-mode[interactive mode].
+
+Usage:
+
+[source,bash]
+----
+hzc map unlock --name <name of your map>
+               --key <entry key>
+               [--key-type {string (default), boolean, json, int8, int16, int32, int64, float32, float64}]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Required
+|Name of the map.
+|`dev`
+
+|`--key`, `-k`
+|Required
+|Key of the map entry.
+|N/A
+
+|`--key-type`
+|Optional
+|Data type of the key.
+|String
+
+|===
+
+Example:
+
+[source,bash]
+----
+hzc map unlock --name myMap --key k1
+----
+
 == hzc map force-unlock
 
-Force-unlocks the specified key of the given map.
+xref:hazelcast:data-structures:locking-maps#pessimistic-locking[Force-unlocks] the specified key of the given map.
 
 Usage:
 
