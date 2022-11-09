@@ -16,7 +16,7 @@ func (hc HomeCommand) Init(cc plug.InitContext) error {
 	help := "Print the CLC home directory, optionally by joining the given sub-path"
 	cc.SetCommandHelp(help, help)
 	cc.SetPositionalArgCount(0, 1)
-	cc.SetCommandUsage("home [sub-path]")
+	cc.SetCommandUsage("home [sub-path] [flags]")
 	return nil
 }
 

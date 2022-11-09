@@ -23,9 +23,10 @@ func (cm *SQLShellCommand) Augment(ec plug.ExecContext, props *plug.Properties) 
 }
 
 func (cm *SQLShellCommand) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("shell")
+	//cc.SetCommandUsage("shell")
 	help := "Start the interactive SQL shell"
 	cc.SetCommandHelp(help, help)
+	cc.SetCommandUsage("shell [flags]")
 	return nil
 }
 

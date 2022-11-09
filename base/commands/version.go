@@ -22,6 +22,7 @@ type VersionCommand struct {
 func (vc VersionCommand) Init(cc plug.InitContext) error {
 	help := "Print CLC version"
 	cc.SetCommandHelp(help, help)
+	cc.SetCommandUsage("version [flags]")
 	return nil
 }
 

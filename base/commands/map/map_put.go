@@ -23,7 +23,7 @@ func (mc *MapPutCommand) Init(cc plug.InitContext) error {
 	cc.SetPositionalArgCount(2, 2)
 	help := "Put a value to the given IMap and return the old value"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("put KEY VALUE")
+	cc.SetCommandUsage("put -n MAP KEY VALUE [flags]")
 	return nil
 }
 

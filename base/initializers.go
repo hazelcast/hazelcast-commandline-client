@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/exp/slices"
+
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -17,6 +19,7 @@ func (g GlobalInitializer) Init(cc plug.InitContext) error {
 	cc.AddCommandGroup(clc.GroupDDSID, "Distributed Data Structures")
 	// output type flag
 	pns := plug.Registry.PrinterNames()
+	slices.Sort(pns)
 	usage := fmt.Sprintf("set the output type, one of: %s", strings.Join(pns, ", "))
 	// other flags
 	cc.AddStringFlag(clc.PropertyFormat, "", "", false, usage)

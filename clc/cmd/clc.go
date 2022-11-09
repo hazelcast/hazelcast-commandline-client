@@ -215,8 +215,11 @@ func (m *Main) createCommands() error {
 			name := strings.Join(ps[:i], ":")
 			p, ok := m.cmds[name]
 			if !ok {
-				//p = &cobra.Command{Use: ps[i-1]}
-				p = &cobra.Command{}
+				p = &cobra.Command{
+					Use: fmt.Sprintf("%s [command] [flags]", ps[i-1]),
+				}
+				p.SetUsageTemplate(usageTemplate)
+				//p = &cobra.Command{}
 				m.cmds[name] = p
 				parent.AddCommand(p)
 			}
@@ -224,9 +227,10 @@ func (m *Main) createCommands() error {
 		}
 		// current command
 		cmd := &cobra.Command{
-			//Use:          ps[len(ps)-1],
+			Use:          ps[len(ps)-1],
 			SilenceUsage: true,
 		}
+		cmd.SetUsageTemplate(usageTemplate)
 		cc := NewCommandContext(cmd, m.vpr, m.isInteractive)
 		if ci, ok := c.Item.(plug.Initializer); ok {
 			if err := ci.Init(cc); err != nil {

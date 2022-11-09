@@ -20,8 +20,8 @@ const (
 type SQLCommand struct{}
 
 func (cm *SQLCommand) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("sql QUERY [flags]")
-	cc.SetPositionalArgCount(0, 1)
+	cc.SetCommandUsage("sql {COMMAND | QUERY} [flags]")
+	//cc.SetPositionalArgCount(0, 1)
 	cc.AddCommandGroup("sql", "SQL")
 	cc.SetCommandGroup("sql")
 	long := `Run the given SQL query

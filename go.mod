@@ -20,7 +20,7 @@ require (
 	github.com/spf13/viper v1.13.0
 	github.com/stretchr/testify v1.8.0
 	go.uber.org/zap v1.23.0
-	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a
+	golang.org/x/sys v0.1.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -57,6 +57,7 @@ require (
 	github.com/tklauser/numcpus v0.2.1 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
+	golang.org/x/exp v0.0.0-20221108223516-5d533826c662 // indirect
 	golang.org/x/term v0.0.0-20210422114643-f5beecf764ed // indirect
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect

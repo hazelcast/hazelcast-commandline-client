@@ -24,13 +24,13 @@ type MapCommand struct {
 
 func (mc *MapCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandGroup(clc.GroupDDSID)
-	cc.AddStringFlag(mapFlagName, "n", "", true, "IMap name")
+	cc.AddStringFlag(mapFlagName, "n", "", true, "map name")
 	cc.AddBoolFlag(mapFlagShowType, "", false, false, "add the type names to the output")
 	if !cc.Interactive() {
 		cc.AddStringFlag(clc.PropertySchemaDir, "", paths.Schemas(), false, "set the schema directory")
 	}
 	cc.SetTopLevel(true)
-	cc.SetCommandUsage("map COMMAND")
+	cc.SetCommandUsage("map COMMAND [flags]")
 	help := "Map operations"
 	cc.SetCommandHelp(help, help)
 	return nil

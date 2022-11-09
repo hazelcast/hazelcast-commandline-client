@@ -16,8 +16,9 @@ import (
 type MapEntrySetCommand struct{}
 
 func (mc *MapEntrySetCommand) Init(cc plug.InitContext) error {
-	help := "Get all entries of an IMap"
+	help := "Get all entries of a map"
 	cc.SetCommandHelp(help, help)
+	cc.SetCommandUsage("entry-set -n MAP [flags]")
 	return nil
 }
 

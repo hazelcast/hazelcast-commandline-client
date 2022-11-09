@@ -19,7 +19,7 @@ func (mc *MapGetCommand) Init(cc plug.InitContext) error {
 	cc.AddStringFlag(mapFlagKeyType, "k", "", false, "key type")
 	help := "Get a value from the given IMap"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("get KEY")
+	cc.SetCommandUsage("get -n MAP KEY [flags]")
 	cc.SetPositionalArgCount(1, 1)
 	return nil
 }
