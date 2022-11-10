@@ -46,9 +46,14 @@ func updateOutput(ec plug.ExecContext, res sql.Result, verbose bool) error {
 			}
 		}
 		ec.AddOutputRows(orow)
-		if err := ec.FlushOutput(); err != nil {
-			return err
-		}
+		/*
+			if err := ec.FlushOutput(); err != nil {
+				return err
+			}
+		*/
+	}
+	if err := ec.FlushOutput(); err != nil {
+		return err
 	}
 	return nil
 }

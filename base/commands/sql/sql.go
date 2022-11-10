@@ -46,6 +46,7 @@ If QUERY is not given, then the SQL shell is started.
 }
 
 func (cm *SQLCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+	// this method is only for the non-interactive mode
 	if len(ec.Args()) < 1 {
 		return nil
 	}

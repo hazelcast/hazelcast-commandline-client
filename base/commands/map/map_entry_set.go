@@ -19,6 +19,7 @@ func (mc *MapEntrySetCommand) Init(cc plug.InitContext) error {
 	help := "Get all entries of a Map"
 	cc.SetCommandHelp(help, help)
 	cc.SetCommandUsage("entry-set [-n MAP] [flags]")
+	cc.SetPositionalArgCount(0, 0)
 	return nil
 }
 
