@@ -10,6 +10,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/sql"
 
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -17,6 +18,10 @@ import (
 )
 
 func updateOutput(ec plug.ExecContext, res sql.Result, verbose bool) error {
+	// we enable streaming only for non-table output
+	// TODO: properly fix the table output
+	f := ec.Props().GetString(clc.PropertyFormat)
+	tableOutput := f != "json" && f != "delimited"
 	if !res.IsRowSet() {
 		if verbose {
 			ec.AddOutputRows(output.Row{
@@ -46,11 +51,11 @@ func updateOutput(ec plug.ExecContext, res sql.Result, verbose bool) error {
 			}
 		}
 		ec.AddOutputRows(orow)
-		/*
+		if !tableOutput {
 			if err := ec.FlushOutput(); err != nil {
 				return err
 			}
-		*/
+		}
 	}
 	if err := ec.FlushOutput(); err != nil {
 		return err
