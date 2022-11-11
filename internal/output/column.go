@@ -66,13 +66,11 @@ func NewValueTypeColumn(vt int32) Column {
 }
 
 func (co Column) SingleLine() (s string) {
-	/*
-		defer func() {
-			if e := recover(); e != nil {
-				s = ValueNotDecoded
-			}
-		}()
-	*/
+	defer func() {
+		if e := recover(); e != nil {
+			s = ValueNotDecoded
+		}
+	}()
 	if sl, ok := co.Value.(SingleLiner); ok {
 		return sl.SingleLine()
 	}
