@@ -10,31 +10,29 @@ import (
 
 type DelimitedPrinter struct{}
 
-func (pr DelimitedPrinter) Print(w io.Writer, rows []output.Row) error {
-	result := output.NewSimpleRows(rows)
-	dr := output.NewDelimitedResult("\t", result, true)
+func (pr DelimitedPrinter) Print(w io.Writer, rp output.RowProducer) error {
+	dr := output.NewDelimitedResult("\t", rp, true)
 	_, err := dr.Serialize(context.Background(), w)
 	return err
 }
 
 type JSONPrinter struct{}
 
-func (pr JSONPrinter) Print(w io.Writer, rows []output.Row) error {
-	result := output.NewSimpleRows(rows)
-	jr := output.NewJSONResult(result)
+func (pr JSONPrinter) Print(w io.Writer, rp output.RowProducer) error {
+	jr := output.NewJSONResult(rp)
 	_, err := jr.Serialize(context.Background(), w)
 	return err
 }
 
 type TablePrinter struct {
-	Mode          output.TableOutputMode
-	headerPrinted bool
+	Mode output.TableOutputMode
 }
 
-func (pr *TablePrinter) Print(w io.Writer, rows []output.Row) error {
+func (pr *TablePrinter) Print(w io.Writer, rp output.RowProducer) error {
+	rows := output.MaterializeRows(rp)
 	header, rows := output.MakeTable(rows)
-	result := output.NewSimpleRows(rows)
-	tr := output.NewTableResult(header, result)
+	rp = output.NewSimpleRows(rows)
+	tr := output.NewTableResult(header, rp)
 	_, err := tr.Serialize(context.Background(), w, pr.Mode)
 	return err
 }

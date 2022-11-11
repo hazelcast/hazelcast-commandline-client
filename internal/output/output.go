@@ -34,8 +34,12 @@ func (r Row) MarshalJSON() ([]byte, error) {
 	return []byte(`{"fdo": 42}`), nil
 }
 
-type RowProvider interface {
+type RowProducer interface {
 	NextRow() (Row, bool)
+}
+
+type RowConsumer interface {
+	AddRow(row Row)
 }
 
 type SimpleRows struct {
@@ -54,4 +58,15 @@ func (s *SimpleRows) NextRow() (Row, bool) {
 	row := s.rows[s.index]
 	s.index++
 	return row, true
+}
+
+func MaterializeRows(rp RowProducer) []Row {
+	var rs []Row
+	for {
+		row, ok := rp.NextRow()
+		if !ok {
+			return rs
+		}
+		rs = append(rs, row)
+	}
 }

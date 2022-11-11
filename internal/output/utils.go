@@ -8,7 +8,6 @@ import (
 )
 
 func MakeTable(rows []Row) ([]string, []Row) {
-	//hd := map[string]struct{}{}
 	hd := NewOrderedSet[string]()
 	drows := make([]map[string]Column, len(rows))
 	for i, row := range rows {
@@ -64,11 +63,6 @@ func MakeTable(rows []Row) ([]string, []Row) {
 		hd.Delete(h)
 	}
 	header := hd.Items()
-	/*
-		sort.Slice(header, func(i, j int) bool {
-			return header[i] < header[j]
-		})
-	*/
 	header = append(stdHeader, header...)
 	// create new rows
 	nilCol := Column{Type: serialization.TypeNil}
