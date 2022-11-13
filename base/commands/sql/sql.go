@@ -97,7 +97,10 @@ func (cm *SQLCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext) 
 		sh.SetCommentPrefix("--")
 		return sh.Run(context.Background())
 	}
-	sh := shell.New("SQL> ", " ... ", path, ec.Stdout(), ec.Stderr(), endLineFn, textFn)
+	sh, err := shell.New("SQL> ", " ... ", path, "sql", ec.Stdout(), ec.Stderr(), endLineFn, textFn)
+	if err != nil {
+		return err
+	}
 	sh.SetCommentPrefix("--")
 	defer sh.Close()
 	return sh.Start(ctx)

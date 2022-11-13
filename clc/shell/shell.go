@@ -2,19 +2,27 @@ package shell
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"os/signal"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/lmorg/readline"
+	"github.com/alecthomas/chroma/quick"
+	"github.com/gohxs/readline"
 
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+)
+
+const (
+	envStyler    = "CLC_EXPERIMENTAL_STYLER"
+	envFormatter = "CLC_EXPERIMENTAL_FORMATTER"
 )
 
 type EndLineFn func(line string) (string, bool)
@@ -33,12 +41,39 @@ type Shell struct {
 	commentPrefix string
 }
 
-func New(prompt1, prompt2, historyPath string, stdout, stderr io.Writer, endLineFn EndLineFn, textFn TextFn) *Shell {
-	rl := readline.NewInstance()
-	if historyPath != "" {
-		rl.History = NewFileHistory(historyPath)
+func New(prompt1, prompt2, historyPath, lexer string, stdout, stderr io.Writer, endLineFn EndLineFn, textFn TextFn) (*Shell, error) {
+	styler := os.Getenv(envStyler)
+	formatter := os.Getenv(envFormatter)
+	if formatter == "" || !strings.HasPrefix(formatter, "terminal") {
+		formatter = "terminal"
 	}
-	rl.SetPrompt(prompt1)
+	cfg := &readline.Config{
+		Prompt:          prompt1,
+		HistoryFile:     "/tmp/readline.tmp",
+		InterruptPrompt: "^C",
+		EOFPrompt:       "exit",
+		Output: func(input string) string {
+			if lexer == "" || styler == "" {
+				return input
+			}
+			buf := bytes.NewBuffer([]byte{})
+			err := quick.Highlight(buf, input, lexer, formatter, styler)
+			if err != nil {
+				log.Fatal(err)
+			}
+			return buf.String()
+		},
+		HistorySearchFold: true,
+		Stdout:            stdout,
+		Stderr:            stderr,
+	}
+	if historyPath != "" {
+		cfg.HistoryFile = historyPath
+	}
+	rl, err := readline.NewEx(cfg)
+	if err != nil {
+		return nil, err
+	}
 	return &Shell{
 		rl:            rl,
 		endLineFn:     endLineFn,
@@ -49,14 +84,11 @@ func New(prompt1, prompt2, historyPath string, stdout, stderr io.Writer, endLine
 		stderr:        stderr,
 		stdout:        stdout,
 		commentPrefix: "",
-	}
+	}, nil
 }
 
 func (sh *Shell) Close() error {
-	if hs, ok := sh.rl.History.(*FileHistory); ok {
-		hs.Close()
-	}
-	return nil
+	return sh.rl.Close()
 }
 
 func (sh *Shell) SetCommentPrefix(pfx string) {
@@ -66,7 +98,7 @@ func (sh *Shell) SetCommentPrefix(pfx string) {
 func (sh *Shell) Start(ctx context.Context) error {
 	for {
 		text, err := sh.readTextReadline()
-		if err == readline.CtrlC || err == readline.EOF {
+		if err == readline.ErrInterrupt || err == io.EOF {
 			return nil
 		}
 		if err != nil {
