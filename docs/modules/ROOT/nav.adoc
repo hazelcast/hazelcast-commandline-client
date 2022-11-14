@@ -1,14 +1,12 @@
 .Get Started
 * xref:overview.adoc[What is Hazelcast CLC?]
 * xref:get-started.adoc[Get Started]
-** xref:clc-viridian.adoc[Hazelcast Viridian]
-** xref:clc-platform.adoc[Hazelcast Platform]
 
 .Manage
 * xref:install-clc.adoc[Install]
 * xref:configuration.adoc[Configure]
-** xref:connect-to-viridian[Connect to Viridian]
-** xref:connect-to-platform[Connect to Platform]
+** xref:connect-to-viridian.adoc[Connect to Viridian]
+** xref:connect-to-platform.adoc[Connect to Platform]
 * xref:upgrade-clc.adoc[Upgrade]
 
 .Reference
