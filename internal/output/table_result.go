@@ -2,12 +2,11 @@ package output
 
 import (
 	"context"
+	"fmt"
 	"io"
 
-	"github.com/jedib0t/go-pretty/v6/table"
-	"github.com/jedib0t/go-pretty/v6/text"
-
 	iserialization "github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/table"
 )
 
 type TableOutputMode int
@@ -33,39 +32,30 @@ func NewTableResult(header []string, rp RowProducer) *TableResult {
 
 func (tr *TableResult) Serialize(ctx context.Context, w io.Writer, mode TableOutputMode) (int, error) {
 	var n int
-	t := table.NewWriter()
-	t.SetOutputMirror(w)
-	t.Style().Format.Header = text.FormatDefault
+	t := table.New(table.Config{Stdout: w})
 	if tr.header != nil {
-		header := make(table.Row, len(tr.header))
+		cs := make([]table.Column, len(tr.header))
 		for i, h := range tr.header {
-			header[i] = h
+			cs[i] = table.Column{
+				Header: h,
+				Align:  10,
+			}
 		}
-		t.AppendHeader(header)
+		t.WriteHeader(cs)
 	}
 	for {
 		if ctx.Err() != nil {
-			return 0, nil
+			return 0, ctx.Err()
 		}
 		vr, ok := tr.rp.NextRow()
 		if !ok {
 			break
 		}
-		row := make(table.Row, len(vr))
+		row := make([]string, len(vr))
 		for i, v := range vr {
-			row[i] = tr.convertColumn(v)
+			row[i] = fmt.Sprint(tr.convertColumn(v))
 		}
-		t.AppendRow(row)
-	}
-	switch mode {
-	case TableOutputModeCSV:
-		t.RenderCSV()
-	case TableOutputModeHTML:
-		t.RenderHTML()
-	case TableOutputModeMarkDown:
-		t.RenderMarkdown()
-	default:
-		t.Render()
+		t.WriteRow(row)
 	}
 	return n, nil
 }
