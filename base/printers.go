@@ -33,7 +33,7 @@ func (pr *TablePrinter) Print(w io.Writer, rp output.RowProducer) error {
 	header, rows := output.MakeTable(rows)
 	rp = output.NewSimpleRows(rows)
 	tr := output.NewTableResult(header, rp)
-	_, err := tr.Serialize(context.Background(), w, pr.Mode)
+	_, err := tr.Serialize(context.Background(), w)
 	return err
 }
 

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/fatih/color"
+
 	iserialization "github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/table"
 )
@@ -19,30 +21,29 @@ const (
 )
 
 type TableResult struct {
-	header []string
+	header []table.Column
 	rp     RowProducer
 }
 
-func NewTableResult(header []string, rp RowProducer) *TableResult {
+func NewTableResult(header []table.Column, rp RowProducer) *TableResult {
 	return &TableResult{
 		header: header,
 		rp:     rp,
 	}
 }
 
-func (tr *TableResult) Serialize(ctx context.Context, w io.Writer, mode TableOutputMode) (int, error) {
+func (tr *TableResult) Serialize(ctx context.Context, w io.Writer) (int, error) {
 	var n int
-	t := table.New(table.Config{Stdout: w})
-	if tr.header != nil {
-		cs := make([]table.Column, len(tr.header))
-		for i, h := range tr.header {
-			cs[i] = table.Column{
-				Header: h,
-				Align:  10,
-			}
-		}
-		t.WriteHeader(cs)
+	cfg := table.Config{
+		Stdout:     w,
+		CellFormat: [2]string{" %s ", "| %s "},
 	}
+	// use the header separator if color is not enabled
+	if color.NoColor {
+		cfg.HeaderSeperator = "-"
+	}
+	t := table.New(cfg)
+	t.WriteHeader(tr.header)
 	for {
 		if ctx.Err() != nil {
 			return 0, ctx.Err()
