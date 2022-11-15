@@ -180,7 +180,7 @@ func (m *Main) createGetLogFile(path string) (io.WriteCloser, error) {
 func (m *Main) runAugmentors(ec plug.ExecContext, props *plug.Properties) error {
 	for _, a := range plug.Registry.Augmentors() {
 		if err := a.Item.Augment(ec, props); err != nil {
-			return fmt.Errorf("augmenting %s: %w", a.Name, err)
+			return err
 		}
 	}
 	return nil
