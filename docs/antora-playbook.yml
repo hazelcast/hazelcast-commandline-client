@@ -1,6 +1,6 @@
 site:
   title: Documentation
-  url: 
+  url: https://eclectic-sawine-19fcf1.netlify.app
   start_page: clc::overview.adoc
   robots: disallow
   keys:
