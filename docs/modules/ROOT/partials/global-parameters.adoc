@@ -2,13 +2,17 @@
 |===
 |Parameter|Description|Default
 
-|--address -a
+|`--address`, `-a`
 |Addresses of one or more members in the cluster.
 |localhost:5701
 
-|--cluster-name
+|`--cluster-name`
 |Name of the cluster to connect to.
 |dev
+
+|`--config`, `-c`
+|Path to the configuration file. Currently it only supports YAML file format.
+|`~/.local/share/hz-cli/config.yaml`
 
 // tag::cloud-token[]
 |--cloud-token
@@ -17,11 +21,15 @@
 // end::cloud-token[]
 
 |--no-completion
-|Disables auto completion on for interactive mode
+|Disables auto completion on for interactive mode.
 |false
 
 |--no-color
-|Disables color support for SQL browser and interactive mode
+|Disables color support for SQL browser and interactive mode.
 |false
+
+|--verbose
+|Prints verbose log outputs
+|
 
 |===

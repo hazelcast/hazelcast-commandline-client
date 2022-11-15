@@ -1,0 +1,50 @@
+= hzc list-objects
+:description: Prints the distributed objects in the cluster as type-name pairs.
+
+{description}
+
+Usage:
+
+[source,bash]
+----
+hzc list-objects [--type] [--show-hidden]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--type`
+|Optional
+|Type of the objects to be listed. If not specified, the command lists all the objects. Available types:
+
+* map
+* replicatedmap
+* multimap
+* queue
+* topic
+* list
+* set
+* pncounter
+* flakeidgenerator
+|N/A
+
+|`--show-hidden`
+|Optional
+|Lists the objects with names starting with "__"
+|N/A
+
+|===
+
+Example output:
+
+Assuming you have a map named `currency` in your cluster:
+
+[source,bash]
+----
+hzc list-objects
+
+  map currency
+----
