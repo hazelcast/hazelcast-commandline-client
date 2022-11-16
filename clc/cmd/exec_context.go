@@ -131,6 +131,9 @@ func (ec *ExecContext) FlushOutput() error {
 	if !ok {
 		return fmt.Errorf("printer %s is not available", pn)
 	}
+	if len(rows) == 0 {
+		return nil
+	}
 	return pr.Print(os.Stdout, output.NewSimpleRows(rows))
 }
 
