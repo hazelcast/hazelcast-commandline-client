@@ -97,3 +97,41 @@ func adaptSQLError(err error) error {
 	// Once that is removed from the Go client, the code below may be removed.
 	return fmt.Errorf(serr.Message)
 }
+
+func convertSQLType(ct sql.ColumnType) int32 {
+	switch ct {
+	case sql.ColumnTypeVarchar:
+		return serialization.TypeString
+	case sql.ColumnTypeBoolean:
+		return serialization.TypeBool
+	case sql.ColumnTypeTinyInt:
+		return serialization.TypeByte
+	case sql.ColumnTypeSmallInt:
+		return serialization.TypeInt16
+	case sql.ColumnTypeInt:
+		return serialization.TypeInt32
+	case sql.ColumnTypeBigInt:
+		return serialization.TypeInt64
+	case sql.ColumnTypeDecimal:
+		return serialization.TypeJavaDecimal
+	case sql.ColumnTypeReal:
+		return serialization.TypeFloat32
+	case sql.ColumnTypeDouble:
+		return serialization.TypeFloat64
+	case sql.ColumnTypeDate:
+		return serialization.TypeJavaLocalDate
+	case sql.ColumnTypeTime:
+		return serialization.TypeJavaLocalTime
+	case sql.ColumnTypeTimestamp:
+		return serialization.TypeJavaLocalDateTime
+	case sql.ColumnTypeTimestampWithTimeZone:
+		return serialization.TypeJavaOffsetDateTime
+	case sql.ColumnTypeObject:
+		return serialization.TypeSkip
+	case sql.ColumnTypeNull:
+		return serialization.TypeNil
+	case sql.ColumnTypeJSON:
+		return serialization.TypeJSONSerialization
+	}
+	return serialization.TypeNotDecoded
+}

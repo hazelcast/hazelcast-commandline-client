@@ -29,3 +29,6 @@ clc:
 
 clc-contrib:
 	go build -tags base,contrib,hazelcastinternal,hazelcastinternaltest -ldflags $(LDFLAGS)  -o build/clc ./cmd/clc
+
+none:
+	go build -tags hazelcastinternal,hazelcastinternaltest -ldflags $(LDFLAGS)  -o build/clc-none ./cmd/clc
