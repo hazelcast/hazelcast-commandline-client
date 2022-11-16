@@ -1,3 +1,5 @@
+//go:build base || map
+
 package _map
 
 import (

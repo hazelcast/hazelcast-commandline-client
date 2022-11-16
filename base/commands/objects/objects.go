@@ -1,3 +1,5 @@
+//go:build base || objects
+
 package objects
 
 import (

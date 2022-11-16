@@ -25,7 +25,7 @@ view-cover:
 	go tool cover -html $(COVERAGE_OUT) -o coverage.html
 
 clc:
-	go build -tags hazelcastinternal,hazelcastinternaltest -ldflags $(LDFLAGS)  -o build/clc ./cmd/clc
+	go build -tags base,hazelcastinternal,hazelcastinternaltest -ldflags $(LDFLAGS)  -o build/clc ./cmd/clc
 
 clc-contrib:
-	go build -tags hazelcastinternal,hazelcastinternaltest,contrib -ldflags $(LDFLAGS)  -o build/clc ./cmd/clc
+	go build -tags base,contrib,hazelcastinternal,hazelcastinternaltest -ldflags $(LDFLAGS)  -o build/clc ./cmd/clc
