@@ -98,40 +98,29 @@ func adaptSQLError(err error) error {
 	return fmt.Errorf(serr.Message)
 }
 
+var sqlTypeToSerializationType = map[sql.ColumnType]int32{
+	sql.ColumnTypeVarchar:               serialization.TypeString,
+	sql.ColumnTypeBoolean:               serialization.TypeBool,
+	sql.ColumnTypeTinyInt:               serialization.TypeByte,
+	sql.ColumnTypeSmallInt:              serialization.TypeInt16,
+	sql.ColumnTypeInt:                   serialization.TypeInt32,
+	sql.ColumnTypeBigInt:                serialization.TypeInt64,
+	sql.ColumnTypeDecimal:               serialization.TypeJavaDecimal,
+	sql.ColumnTypeReal:                  serialization.TypeFloat32,
+	sql.ColumnTypeDouble:                serialization.TypeFloat64,
+	sql.ColumnTypeDate:                  serialization.TypeJavaLocalDate,
+	sql.ColumnTypeTime:                  serialization.TypeJavaLocalTime,
+	sql.ColumnTypeTimestamp:             serialization.TypeJavaLocalDateTime,
+	sql.ColumnTypeTimestampWithTimeZone: serialization.TypeJavaOffsetDateTime,
+	sql.ColumnTypeObject:                serialization.TypeSkip,
+	sql.ColumnTypeNull:                  serialization.TypeNil,
+	sql.ColumnTypeJSON:                  serialization.TypeJSONSerialization,
+}
+
 func convertSQLType(ct sql.ColumnType) int32 {
-	switch ct {
-	case sql.ColumnTypeVarchar:
-		return serialization.TypeString
-	case sql.ColumnTypeBoolean:
-		return serialization.TypeBool
-	case sql.ColumnTypeTinyInt:
-		return serialization.TypeByte
-	case sql.ColumnTypeSmallInt:
-		return serialization.TypeInt16
-	case sql.ColumnTypeInt:
-		return serialization.TypeInt32
-	case sql.ColumnTypeBigInt:
-		return serialization.TypeInt64
-	case sql.ColumnTypeDecimal:
-		return serialization.TypeJavaDecimal
-	case sql.ColumnTypeReal:
-		return serialization.TypeFloat32
-	case sql.ColumnTypeDouble:
-		return serialization.TypeFloat64
-	case sql.ColumnTypeDate:
-		return serialization.TypeJavaLocalDate
-	case sql.ColumnTypeTime:
-		return serialization.TypeJavaLocalTime
-	case sql.ColumnTypeTimestamp:
-		return serialization.TypeJavaLocalDateTime
-	case sql.ColumnTypeTimestampWithTimeZone:
-		return serialization.TypeJavaOffsetDateTime
-	case sql.ColumnTypeObject:
-		return serialization.TypeSkip
-	case sql.ColumnTypeNull:
-		return serialization.TypeNil
-	case sql.ColumnTypeJSON:
-		return serialization.TypeJSONSerialization
+	t, ok := sqlTypeToSerializationType[ct]
+	if !ok {
+		return serialization.TypeNotDecoded
 	}
-	return serialization.TypeNotDecoded
+	return t
 }
