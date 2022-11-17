@@ -98,38 +98,6 @@ func (m *Main) CloneForInteractiveMode() (*Main, error) {
 	mc := *m
 	mc.isInteractive = true
 	return &mc, nil
-	/*
-		rc := &cobra.Command{
-			Use:   "",
-			Short: "Hazelcast CLC",
-			Long:  "Hazelcast CLC",
-		}
-		mc := &Main{
-			root:          rc,
-			cmds:          map[string]*cobra.Command{},
-			vpr:           m.vpr,
-			client:        m.client,
-			lg:            m.lg,
-			stdout:        m.stdout,
-			stderr:        m.stderr,
-			isInteractive: true,
-			outputFormat:  m.outputFormat,
-			configLoaded:  m.configLoaded,
-			props:         m.props,
-		}
-		cf := func(ctx context.Context) (*hazelcast.Client, error) {
-			return mc.ensureClient(ctx, mc.props)
-		}
-		mc.ec = NewExecContext(m.lg, m.stderr, m.stderr, m.props, cf, true)
-		cc := NewCommandContext(rc, mc.vpr, mc.isInteractive)
-		if err := mc.runInitializers(cc); err != nil {
-			return nil, err
-		}
-		if err := mc.createCommands(cc); err != nil {
-			return nil, err
-		}
-		return mc, nil
-	*/
 }
 
 func (m *Main) Root() *cobra.Command {
@@ -142,7 +110,6 @@ func (m *Main) Execute(args []string) error {
 }
 
 func (m *Main) Exit() error {
-	// ignore file close error
 	m.lg.Close()
 	return nil
 }
@@ -220,7 +187,6 @@ func (m *Main) createCommands() error {
 					Use: fmt.Sprintf("%s [command] [flags]", ps[i-1]),
 				}
 				p.SetUsageTemplate(usageTemplate)
-				//p = &cobra.Command{}
 				m.cmds[name] = p
 				parent.AddCommand(p)
 			}

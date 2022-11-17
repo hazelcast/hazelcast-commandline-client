@@ -17,16 +17,15 @@ import (
 )
 
 const (
-	Map              = "map"
-	ReplicatedMap    = "replicatedMap"
-	MultiMap         = "multiMap"
-	Queue            = "queue"
-	Topic            = "topic"
-	List             = "list"
-	Set              = "set"
-	PNCounter        = "PNCounter"
-	FlakeIDGenerator = "flakeIdGenerator"
-	// unsupported types by go client
+	Map                  = "map"
+	ReplicatedMap        = "replicatedMap"
+	MultiMap             = "multiMap"
+	Queue                = "queue"
+	Topic                = "topic"
+	List                 = "list"
+	Set                  = "set"
+	PNCounter            = "PNCounter"
+	FlakeIDGenerator     = "flakeIdGenerator"
 	Cache                = "cache"
 	EventJournal         = "eventJournal"
 	Ringbuffer           = "ringBuffer"
@@ -48,7 +47,6 @@ var objTypes = []string{
 	Set,
 	PNCounter,
 	FlakeIDGenerator,
-	// unsupported types by go client
 	Cache,
 	EventJournal,
 	Ringbuffer,
@@ -61,7 +59,6 @@ var objTypes = []string{
 }
 
 const (
-	flagType       = "type"
 	flagShowHidden = "show-hidden"
 )
 

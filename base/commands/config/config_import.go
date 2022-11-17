@@ -208,13 +208,13 @@ ssl:
 }
 
 func (cm ImportCmd) extractViridianToken(text string) string {
-	// config.Cluster.Cloud.Token = "EWEKHVOOQOjMN5mXB8OngRF4YG5aOm6N2LUEOlhdC7SWpY54hm"
+	// extract from: config.Cluster.Cloud.Token = "EWEKHVOOQOjMN5mXB8OngRF4YG5aOm6N2LUEOlhdC7SWpY54hm"
 	const re = `config.Cluster.Cloud.Token\s+=\s+"([^"]+)"`
 	return extractSimpleString(re, text)
 }
 
 func (cm ImportCmd) extractKeyPassword(text string) string {
-	// err = config.Cluster.Network.SSL.AddClientCertAndEncryptedKeyPath(certFile, keyFile, "12ee6ff601a")
+	// extract from: err = config.Cluster.Network.SSL.AddClientCertAndEncryptedKeyPath(certFile, keyFile, "12ee6ff601a")
 	const re = `config.Cluster.Network.SSL.AddClientCertAndEncryptedKeyPath\(certFile,\s+keyFile,\s+"([^"]+)"`
 	return extractSimpleString(re, text)
 }
