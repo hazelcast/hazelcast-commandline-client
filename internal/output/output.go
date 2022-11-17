@@ -9,13 +9,6 @@ const (
 
 type Type int
 
-const (
-	TypeDelimited Type = iota
-	TypeCSV
-	TypeTable
-	TypeJSON
-)
-
 type SingleLiner interface {
 	SingleLine() string
 }
@@ -29,10 +22,6 @@ type RowExtender interface {
 }
 
 type Row []Column
-
-func (r Row) MarshalJSON() ([]byte, error) {
-	return []byte(`{"fdo": 42}`), nil
-}
 
 type RowProducer interface {
 	NextRow() (Row, bool)
