@@ -44,7 +44,7 @@ type Main struct {
 	cc            *CommandContext
 }
 
-func NewMain(cfgPath, logPath, logLevel string) (*Main, error) {
+func NewMain(cfgPath, logPath, logLevel string, stdout, stderr io.Writer) (*Main, error) {
 	rc := &cobra.Command{
 		Use:   "clc",
 		Short: "Hazelcast CLC",
@@ -54,8 +54,8 @@ func NewMain(cfgPath, logPath, logLevel string) (*Main, error) {
 		root:   rc,
 		cmds:   map[string]*cobra.Command{},
 		vpr:    viper.New(),
-		stdout: nopWriteCloser{W: os.Stdout},
-		stderr: nopWriteCloser{W: os.Stderr},
+		stdout: nopWriteCloser{W: stdout},
+		stderr: nopWriteCloser{W: stderr},
 		props:  plug.NewProperties(),
 	}
 	cfgPath = paths.ResolveConfigPath(cfgPath)
