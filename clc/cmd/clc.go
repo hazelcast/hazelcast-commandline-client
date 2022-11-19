@@ -97,6 +97,21 @@ func NewMain(cfgPath, logPath, logLevel string) (*Main, error) {
 func (m *Main) CloneForInteractiveMode() (*Main, error) {
 	mc := *m
 	mc.isInteractive = true
+	rc := &cobra.Command{}
+	mc.root = rc
+	mc.cmds = map[string]*cobra.Command{}
+	mc.cc = NewCommandContext(rc, mc.vpr, mc.isInteractive)
+	if err := mc.runInitializers(mc.cc); err != nil {
+		return nil, err
+	}
+	cf := func(ctx context.Context) (*hazelcast.Client, error) {
+		return mc.ensureClient(ctx, mc.props)
+	}
+	mc.ec = NewExecContext(mc.lg, mc.stdout, mc.stderr, mc.props, cf, mc.isInteractive)
+	mc.ec.SetMain(&mc)
+	if err := mc.createCommands(); err != nil {
+		return nil, err
+	}
 	return &mc, nil
 }
 
