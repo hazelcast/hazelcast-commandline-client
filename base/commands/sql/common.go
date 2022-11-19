@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/sql"
 
@@ -17,7 +16,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
-func updateOutput(ec plug.ExecContext, res sql.Result, verbose bool) error {
+func UpdateOutput(ec plug.ExecContext, res sql.Result, verbose bool) error {
 	// we enable streaming only for non-table output
 	// TODO: properly fix the table output
 	f := ec.Props().GetString(clc.PropertyFormat)
@@ -63,7 +62,12 @@ func updateOutput(ec plug.ExecContext, res sql.Result, verbose bool) error {
 	return nil
 }
 
-func execSQL(ctx context.Context, ec plug.ExecContext, ci *hazelcast.ClientInternal, query string) (sql.Result, error) {
+func ExecSQL(ctx context.Context, ec plug.ExecContext, query string) (sql.Result, error) {
+	ci, err := ec.ClientInternal(ctx)
+	if err != nil {
+		return nil, err
+	}
+	as := ec.Props().GetBool(propertyUseMappingSuggestion)
 	rv, err := ec.ExecuteBlocking(ctx, "Executing SQL", func(ctx context.Context) (any, error) {
 		for {
 			if ctx.Err() != nil {
@@ -83,12 +87,37 @@ func execSQL(ctx context.Context, ec plug.ExecContext, ci *hazelcast.ClientInter
 		}
 	})
 	if err != nil {
-		return nil, err
+		// check whether this is an SQL error with a suggestion,
+		// so we can improve the error message or apply the suggestion if there's one
+		var serr *sql.Error
+		if !errors.As(err, &serr) {
+			return nil, err
+		}
+		// TODO: This changes the error in order to remove 'decoding SQL execute response:' prefix.
+		// Once that is removed from the Go client, the code below may be removed.
+		err = AdaptSQLError(err)
+		if !as {
+			if serr.Suggestion != "" {
+				return nil, fmt.Errorf("%w\n\nUse --%s to automatically apply the suggestion", err, propertyUseMappingSuggestion)
+			}
+			return nil, err
+		}
+		if serr.Suggestion != "" {
+			ec.Logger().Debug(func() string {
+				return fmt.Sprintf("Re-trying executing SQL with suggestion: %s", serr.Suggestion)
+			})
+			// execute the suggested query
+			if _, err := ci.Client().SQL().Execute(ctx, serr.Suggestion); err != nil {
+				return nil, err
+			}
+			// execute the original query
+			return ci.Client().SQL().Execute(ctx, query)
+		}
 	}
 	return rv.(sql.Result), nil
 }
 
-func adaptSQLError(err error) error {
+func AdaptSQLError(err error) error {
 	var serr *sql.Error
 	if !errors.As(err, &serr) {
 		return err

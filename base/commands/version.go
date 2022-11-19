@@ -38,7 +38,11 @@ func (vc VersionCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		)
 		return nil
 	}
-	I2(fmt.Fprintln(ec.Stdout(), internal.Version))
+	if ec.Props().GetString(clc.PropertyFormat) == "delimited" {
+		I2(fmt.Fprintln(ec.Stdout(), internal.Version))
+	} else {
+		ec.AddOutputRows(vc.row("Hazelcast CLC", internal.Version))
+	}
 	ec.Logger().Debugf("version command ran OK")
 	return nil
 }

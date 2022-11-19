@@ -122,6 +122,20 @@ func (m *Main) Root() *cobra.Command {
 }
 
 func (m *Main) Execute(args []string) error {
+	cmd, _, _ := m.root.Find(args)
+	if cmd.Use == "clc" {
+		// check whether --help is requested
+		help := false
+		for _, arg := range args {
+			if arg == "--help" || arg == "-h" {
+				help = true
+			}
+		}
+		// if help was not requested, set shell as the command
+		if !help {
+			args = append([]string{"shell"}, args...)
+		}
+	}
 	m.root.SetArgs(args)
 	return m.root.Execute()
 }

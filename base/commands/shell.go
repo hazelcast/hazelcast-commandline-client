@@ -4,24 +4,35 @@ package commands
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/google/shlex"
 
+	"github.com/hazelcast/hazelcast-commandline-client/base/commands/sql"
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/shell"
+	puberrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-type ShellCommand struct{}
+type ShellCommand struct {
+	shortcuts map[string]struct{}
+}
 
 func (cm *ShellCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("shell")
 	help := "Start the interactive shell"
 	cc.SetCommandHelp(help, help)
+	cm.shortcuts = map[string]struct{}{
+		`\dm`:   {},
+		`\dm+`:  {},
+		`\exit`: {},
+	}
 	return nil
 }
 
@@ -30,40 +41,124 @@ func (cm *ShellCommand) Exec(context.Context, plug.ExecContext) error {
 }
 
 func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext) error {
+	if len(ec.Args()) > 0 {
+		return puberrors.ErrNotAvailable
+	}
 	m, err := ec.(*cmd.ExecContext).Main().CloneForInteractiveMode()
 	if err != nil {
 		return fmt.Errorf("cloning Main: %w", err)
 	}
+	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	endLineFn := func(line string) (string, bool) {
-		end := !strings.HasSuffix(line, "\\")
-		if !end {
-			line = line[:len(line)-1]
+		// not caching trimmed line, since we want the backslash at the very end of the line. --YT
+		if strings.HasPrefix(strings.TrimSpace(line), "\\") {
+			end := !strings.HasSuffix(line, "\\")
+			if !end {
+				line = line[:len(line)-1]
+			}
+			return line, end
 		}
+		line = strings.TrimSpace(line)
+		end := strings.HasPrefix(line, "help") || strings.HasPrefix(line, "\\") || strings.HasSuffix(line, ";")
 		return line, end
 	}
 	textFn := func(ctx context.Context, text string) error {
-		text = strings.TrimSpace(text)
-		args, err := shlex.Split(text)
+		if strings.HasPrefix(strings.TrimSpace(text), "\\") {
+			parts := strings.Fields(text)
+			if _, ok := cm.shortcuts[parts[0]]; !ok {
+				// this is a CLC command
+				text = strings.TrimSpace(text)
+				text = strings.TrimLeft(text, "\\")
+				args, err := shlex.Split(text)
+				if err != nil {
+					return err
+				}
+				return m.Execute(args)
+			}
+		}
+		text, err := convertStatement(text)
 		if err != nil {
 			return err
 		}
-		return m.Execute(args)
+		res, err := sql.ExecSQL(ctx, ec, text)
+		if err != nil {
+			return err
+		}
+		if err := sql.UpdateOutput(ec, res, verbose); err != nil {
+			return err
+		}
+		if err := ec.FlushOutput(); err != nil {
+			return err
+		}
+		return nil
 	}
 	path := paths.Join(paths.Home(), "shell.history")
 	if shell.IsPipe() {
-		// set interactive mode to false, so the animations and other stuff doesn't affect the input
-		ec.(*cmd.ExecContext).SetInteractive(false)
 		sh := shell.NewOneshot(endLineFn, textFn)
-		sh.SetCommentPrefix("#")
+		sh.SetCommentPrefix("--")
 		return sh.Run(context.Background())
 	}
-	sh, err := shell.New("CLC> ", " ... ", path, "", ec.Stdout(), ec.Stderr(), endLineFn, textFn)
+	sh, err := shell.New("CLC> ", " ... ", path, "sql", ec.Stdout(), ec.Stderr(), endLineFn, textFn)
 	if err != nil {
 		return err
 	}
-	sh.SetCommentPrefix("#")
+	sh.SetCommentPrefix("--")
 	defer sh.Close()
-	return sh.Start(context.Background())
+	return sh.Start(ctx)
+}
+
+func convertStatement(stmt string) (string, error) {
+	stmt = strings.TrimSpace(stmt)
+	if strings.HasPrefix(stmt, "help") {
+		return "", errors.New(interactiveHelp())
+	}
+	if strings.HasPrefix(stmt, "\\") {
+		// this is a shell command
+		parts := strings.Fields(stmt)
+		switch parts[0] {
+		case "\\dm":
+			if len(parts) == 1 {
+				return "show mappings;", nil
+			}
+			if len(parts) == 2 {
+				// escape single quote
+				mn := strings.Replace(parts[1], "'", "''", -1)
+				return fmt.Sprintf(`
+					SELECT * FROM information_schema.mappings
+					WHERE table_name = '%s';
+				`, mn), nil
+			}
+			return "", fmt.Errorf("Usage: \\dm [mapping]")
+		case "\\dm+":
+			if len(parts) == 1 {
+				return "show mappings;", nil
+			}
+			if len(parts) == 2 {
+				// escape single quote
+				mn := strings.Replace(parts[1], "'", "''", -1)
+				return fmt.Sprintf(`
+					SELECT * FROM information_schema.columns
+					WHERE table_name = '%s';
+				`, mn), nil
+			}
+			return "", fmt.Errorf("Usage: \\dm+ [mapping]")
+		case "\\exit":
+			return "", shell.ErrExit
+		}
+		return "", fmt.Errorf("Unknown shell command: %s", stmt)
+	}
+	return stmt, nil
+}
+
+func interactiveHelp() string {
+	return `
+Shortcut Commands:
+	\dm           List mappings
+	\dm  MAPPING  Display information about a mapping
+	\dm+ MAPPING  Describe a mapping
+	\exit         Exit the shell
+	\help         Display help for CLC commands
+`
 }
 
 func init() {
