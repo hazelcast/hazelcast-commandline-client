@@ -8,9 +8,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/google/shlex"
 	"github.com/hazelcast/hazelcast-go-client/sql"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/shell"
 	puberrors "github.com/hazelcast/hazelcast-commandline-client/errors"
@@ -65,13 +67,34 @@ func (cm *SQLCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext) 
 	if len(ec.Args()) > 0 {
 		return puberrors.ErrNotAvailable
 	}
+	m, err := ec.(*cmd.ExecContext).Main().CloneForInteractiveMode()
+	if err != nil {
+		return fmt.Errorf("cloning Main: %w", err)
+	}
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	endLineFn := func(line string) (string, bool) {
+		// not caching trimmed line, since we want the backslash at the very end of the line. --YT
+		if strings.HasPrefix(strings.TrimSpace(line), "\\") {
+			end := !strings.HasSuffix(line, "\\")
+			if !end {
+				line = line[:len(line)-1]
+			}
+			return line, end
+		}
 		line = strings.TrimSpace(line)
 		end := strings.HasPrefix(line, "help") || strings.HasPrefix(line, "\\") || strings.HasSuffix(line, ";")
 		return line, end
 	}
 	textFn := func(ctx context.Context, text string) error {
+		if strings.HasPrefix(strings.TrimSpace(text), "\\") {
+			text = strings.TrimSpace(text)
+			text = strings.TrimLeft(text, "\\")
+			args, err := shlex.Split(text)
+			if err != nil {
+				return err
+			}
+			return m.Execute(args)
+		}
 		text, err := convertStatement(text)
 		if err != nil {
 			return err

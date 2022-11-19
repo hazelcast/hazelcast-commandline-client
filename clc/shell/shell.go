@@ -110,7 +110,7 @@ func (sh *Shell) Start(ctx context.Context) error {
 		ctx, stop := signal.NotifyContext(ctx, os.Interrupt, os.Kill)
 		if err := sh.textFn(ctx, text); err != nil {
 			if !errors.Is(err, context.DeadlineExceeded) && !errors.Is(err, context.Canceled) {
-				I2(fmt.Fprintf(sh.stderr, "%s\n", err.Error()))
+				I2(fmt.Fprintf(sh.stderr, "Error: %s\n", err.Error()))
 			}
 		}
 		stop()

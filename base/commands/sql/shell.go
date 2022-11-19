@@ -51,9 +51,10 @@ func convertStatement(stmt string) (string, error) {
 
 func interactiveHelp() string {
 	return `
-Commands:
-	\dm           list mappings
-	\dm  MAPPING  display info about a mapping
-	\dm+ MAPPING  describe a mapping
+Shortcut Commands:
+	\dm           List mappings
+	\dm  MAPPING  Display information about a mapping
+	\dm+ MAPPING  Describe a mapping
+	\help         Display help for CLC commands
 `
 }

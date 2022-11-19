@@ -97,7 +97,9 @@ func NewMain(cfgPath, logPath, logLevel string, stdout, stderr io.Writer) (*Main
 func (m *Main) CloneForInteractiveMode() (*Main, error) {
 	mc := *m
 	mc.isInteractive = true
-	rc := &cobra.Command{}
+	rc := &cobra.Command{
+		SilenceErrors: true,
+	}
 	mc.root = rc
 	mc.cmds = map[string]*cobra.Command{}
 	mc.cc = NewCommandContext(rc, mc.vpr, mc.isInteractive)
