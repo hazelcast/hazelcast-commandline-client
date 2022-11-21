@@ -32,18 +32,6 @@ func NewCommandContext(cmd *cobra.Command, vpr *viper.Viper, isInteractive bool)
 	}
 }
 
-func (cc *CommandContext) Reset() {
-	for _, p := range cc.stringValues {
-		*p = ""
-	}
-	for _, p := range cc.boolValues {
-		*p = false
-	}
-	for _, p := range cc.intValues {
-		*p = 0
-	}
-}
-
 func (cc *CommandContext) AddStringFlag(long, short, value string, required bool, help string) {
 	var s string
 	cc.Cmd.PersistentFlags().StringVarP(&s, long, short, value, help)

@@ -8,6 +8,13 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
+const (
+	PrinterDelimited = "delimited"
+	PrinterJSON      = "json"
+	PrinterTable     = "table"
+	PrinterCSV       = "csv"
+)
+
 type DelimitedPrinter struct{}
 
 func (pr DelimitedPrinter) Print(w io.Writer, rp output.RowProducer) error {
@@ -38,8 +45,8 @@ func (pr *TablePrinter) Print(w io.Writer, rp output.RowProducer) error {
 }
 
 func init() {
-	plug.Registry.RegisterPrinter("delimited", &DelimitedPrinter{})
-	plug.Registry.RegisterPrinter("json", &JSONPrinter{})
-	plug.Registry.RegisterPrinter("table", &TablePrinter{})
-	plug.Registry.RegisterPrinter("csv", &TablePrinter{Mode: output.TableOutputModeCSV})
+	plug.Registry.RegisterPrinter(PrinterDelimited, &DelimitedPrinter{})
+	plug.Registry.RegisterPrinter(PrinterJSON, &JSONPrinter{})
+	plug.Registry.RegisterPrinter(PrinterTable, &TablePrinter{})
+	plug.Registry.RegisterPrinter(PrinterCSV, &TablePrinter{Mode: output.TableOutputModeCSV})
 }

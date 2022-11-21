@@ -9,6 +9,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/sql"
 
+	"github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
@@ -20,7 +21,7 @@ func UpdateOutput(ec plug.ExecContext, res sql.Result, verbose bool) error {
 	// we enable streaming only for non-table output
 	// TODO: properly fix the table output
 	f := ec.Props().GetString(clc.PropertyFormat)
-	tableOutput := f != "json" && f != "delimited"
+	tableOutput := f != base.PrinterJSON && f != base.PrinterDelimited
 	if !res.IsRowSet() {
 		if verbose {
 			ec.AddOutputRows(output.Row{

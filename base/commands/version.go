@@ -9,6 +9,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 
+	"github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
@@ -38,7 +39,7 @@ func (vc VersionCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		)
 		return nil
 	}
-	if ec.Props().GetString(clc.PropertyFormat) == "delimited" {
+	if ec.Props().GetString(clc.PropertyFormat) == base.PrinterDelimited {
 		I2(fmt.Fprintln(ec.Stdout(), internal.Version))
 	} else {
 		ec.AddOutputRows(vc.row("Hazelcast CLC", internal.Version))

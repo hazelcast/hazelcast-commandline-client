@@ -7,6 +7,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/sql"
 
+	"github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -21,7 +22,7 @@ type SQLCommand struct{}
 func (cm *SQLCommand) Augment(ec plug.ExecContext, props *plug.Properties) error {
 	// set the default format to table in the interactive mode
 	if ec.CommandName() == "clc shell" && len(ec.Args()) == 0 {
-		props.Set(clc.PropertyFormat, "table")
+		props.Set(clc.PropertyFormat, base.PrinterTable)
 	}
 	return nil
 }

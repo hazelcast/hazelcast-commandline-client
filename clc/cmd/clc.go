@@ -137,7 +137,19 @@ func (m *Main) Execute(args []string) error {
 		}
 	}
 	m.root.SetArgs(args)
-	return m.root.Execute()
+	m.props.Push()
+	err := m.root.Execute()
+	m.props.Pop()
+	// set all flags to their defaults
+	// XXX: it may not work with slices, see: https://github.com/spf13/cobra/issues/1488#issuecomment-1205104931
+	cmd.Flags().VisitAll(func(f *pflag.Flag) {
+		if f.Changed {
+			// ignoring the error
+			_ = f.Value.Set(f.DefValue)
+			f.Changed = false
+		}
+	})
+	return err
 }
 
 func (m *Main) Exit() error {
@@ -238,9 +250,6 @@ func (m *Main) createCommands() error {
 		parent.AddGroup(cc.Groups()...)
 		if !cc.TopLevel() {
 			cmd.RunE = func(cmd *cobra.Command, args []string) error {
-				// resetting the flag values, so they are not persistent between runs.
-				// resetting at the end of the function, after the command execution is complete.
-				defer m.cc.Reset()
 				cfs := cmd.Flags()
 				props := m.props
 				cfs.VisitAll(func(f *pflag.Flag) {

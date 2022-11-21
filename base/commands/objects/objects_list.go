@@ -24,7 +24,7 @@ const (
 	Topic                = "topic"
 	List                 = "list"
 	Set                  = "set"
-	PNCounter            = "PNCounter"
+	PNCounter            = "pnCounter"
 	FlakeIDGenerator     = "flakeIdGenerator"
 	Cache                = "cache"
 	EventJournal         = "eventJournal"
@@ -112,7 +112,7 @@ func (cm ObjectsListCommand) Exec(ctx context.Context, ec plug.ExecContext) erro
 func objectFilterTypes() string {
 	var sb strings.Builder
 	for _, o := range objTypes {
-		sb.WriteString(fmt.Sprintf("\t* %s\n", strings.ToLower(o)))
+		sb.WriteString(fmt.Sprintf("\t* %s\n", o))
 	}
 	return sb.String()
 }
