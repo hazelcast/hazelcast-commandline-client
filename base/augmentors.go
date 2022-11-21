@@ -15,12 +15,8 @@ func (ag *CheckOutputTypeAugmentor) Augment(ec plug.ExecContext, props *plug.Pro
 		pns[n] = struct{}{}
 	}
 	ot := ec.Props().GetString(clc.PropertyFormat)
-	if ot == "" {
-		props.Set(clc.PropertyFormat, "delimited")
-		return nil
-	}
 	if _, ok := pns[ot]; !ok {
-		return fmt.Errorf("invalid %s: %s", clc.PropertyFormat, ot)
+		return fmt.Errorf("invalid format: %s", ot)
 	}
 	return nil
 }

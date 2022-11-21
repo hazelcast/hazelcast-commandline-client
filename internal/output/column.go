@@ -100,45 +100,16 @@ func (co Column) SingleLine() (s string) {
 		s = iserialization.MarshalDecimal(co.Value)
 	case iserialization.TypeJavaArray, iserialization.TypeJavaArrayList, iserialization.TypeJavaLinkedList:
 		s = fmt.Sprintf("%v", co.Value)
-	case iserialization.TypeJavaDefaultTypeCopyOnWriteArrayList:
-		fallthrough
-	case iserialization.TypeJavaDefaultTypeHashMap:
-		fallthrough
-	case iserialization.TypeJavaDefaultTypeConcurrentSkipListMap:
-		fallthrough
-	case iserialization.TypeJavaDefaultTypeConcurrentHashMap:
-		fallthrough
-	case iserialization.TypeJavaDefaultTypeLinkedHashMap:
-		fallthrough
-	case iserialization.TypeJavaDefaultTypeTreeMap:
-		fallthrough
-	case iserialization.TypeJavaDefaultTypeHashSet:
-		fallthrough
-	case iserialization.TypeJavaDefaultTypeTreeSet:
-		fallthrough
-	case iserialization.TypeJavaDefaultTypeLinkedHashSet:
-		fallthrough
-	case iserialization.TypeJavaDefaultTypeCopyOnWriteArraySet:
-		fallthrough
-	case iserialization.TypeJavaDefaultTypeConcurrentSkipListSet:
-		fallthrough
-	case iserialization.TypeJavaDefaultTypeArrayDeque:
-		fallthrough
-	case iserialization.TypeJavaDefaultTypeLinkedBlockingQueue:
-		fallthrough
-	case iserialization.TypeJavaDefaultTypeArrayBlockingQueue:
-		fallthrough
-	case iserialization.TypeJavaDefaultTypePriorityBlockingQueue:
-		fallthrough
-	case iserialization.TypeJavaDefaultTypeDelayQueue:
-		fallthrough
-	case iserialization.TypeJavaDefaultTypeSynchronousQueue:
-		fallthrough
-	case iserialization.TypeJavaDefaultTypeLinkedTransferQueue:
-		fallthrough
-	case iserialization.TypeJavaDefaultTypePriorityQueue:
-		fallthrough
-	case iserialization.TypeJavaDefaultTypeOptional:
+	case iserialization.TypeJavaDefaultTypeCopyOnWriteArrayList, iserialization.TypeJavaDefaultTypeHashMap,
+		iserialization.TypeJavaDefaultTypeConcurrentSkipListMap, iserialization.TypeJavaDefaultTypeConcurrentHashMap,
+		iserialization.TypeJavaDefaultTypeLinkedHashMap, iserialization.TypeJavaDefaultTypeTreeMap,
+		iserialization.TypeJavaDefaultTypeHashSet, iserialization.TypeJavaDefaultTypeTreeSet,
+		iserialization.TypeJavaDefaultTypeLinkedHashSet, iserialization.TypeJavaDefaultTypeCopyOnWriteArraySet,
+		iserialization.TypeJavaDefaultTypeConcurrentSkipListSet, iserialization.TypeJavaDefaultTypeArrayDeque,
+		iserialization.TypeJavaDefaultTypeLinkedBlockingQueue, iserialization.TypeJavaDefaultTypeArrayBlockingQueue,
+		iserialization.TypeJavaDefaultTypePriorityBlockingQueue, iserialization.TypeJavaDefaultTypeDelayQueue,
+		iserialization.TypeJavaDefaultTypeSynchronousQueue, iserialization.TypeJavaDefaultTypeLinkedTransferQueue,
+		iserialization.TypeJavaDefaultTypePriorityQueue, iserialization.TypeJavaDefaultTypeOptional:
 		s = ValueNotDecoded
 	case iserialization.TypeJavaLocalDate:
 		sr, err := iserialization.MarshalLocalDate(co.Value)
@@ -182,15 +153,9 @@ func (co Column) SingleLine() (s string) {
 			sr = ValueNotDecoded
 		}
 		s = sr
-	case iserialization.TypeCompactWithSchema:
-		fallthrough
-	case iserialization.TypeJavaDefaultTypeSerializable:
-		fallthrough
-	case iserialization.TypeJavaDefaultTypeExternalizable:
-		fallthrough
-	case iserialization.TypeCsharpCLRSerializationType:
-		fallthrough
-	case iserialization.TypePythonPickleSerializationType:
+	case iserialization.TypeCompactWithSchema, iserialization.TypeJavaDefaultTypeSerializable,
+		iserialization.TypeJavaDefaultTypeExternalizable, iserialization.TypeCsharpCLRSerializationType,
+		iserialization.TypePythonPickleSerializationType:
 		s = ValueNotDecoded
 	case iserialization.TypeJSONSerialization:
 		sp := strings.Split(string(co.Value.(serialization.JSON)), "\n")
@@ -200,23 +165,11 @@ func (co Column) SingleLine() (s string) {
 		s = strings.Join(sp, "")
 	case iserialization.TypeGobSerialization:
 		s = fmt.Sprintf("%v", co.Value)
-	case iserialization.TypeHibernate3TypeHibernateCacheKey:
-		fallthrough
-	case iserialization.TypeHibernate3TypeHibernateCacheEntry:
-		fallthrough
-	case iserialization.TypeHibernate4TypeHibernateCacheKey:
-		fallthrough
-	case iserialization.TypeHibernate4TypeHibernateCacheEntry:
-		fallthrough
-	case iserialization.TypeHibernate5TypeHibernateCacheKey:
-		fallthrough
-	case iserialization.TypeHibernate5TypeHibernateCacheEntry:
-		fallthrough
-	case iserialization.TypeHibernate5TypeHibernateNaturalIDKey:
-		fallthrough
-	case iserialization.TypeJetSerializerFirst:
-		fallthrough
-	case iserialization.TypeJetSerializerLast:
+	case iserialization.TypeHibernate3TypeHibernateCacheKey, iserialization.TypeHibernate3TypeHibernateCacheEntry,
+		iserialization.TypeHibernate4TypeHibernateCacheKey, iserialization.TypeHibernate4TypeHibernateCacheEntry,
+		iserialization.TypeHibernate5TypeHibernateCacheKey, iserialization.TypeHibernate5TypeHibernateCacheEntry,
+		iserialization.TypeHibernate5TypeHibernateNaturalIDKey,
+		iserialization.TypeJetSerializerFirst, iserialization.TypeJetSerializerLast:
 		s = ValueNotDecoded
 	case iserialization.TypeUnknown:
 		s = ValueUnknown

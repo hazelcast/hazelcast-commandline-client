@@ -1,3 +1,5 @@
+//go:build base || objects
+
 package objects
 
 import (
@@ -15,16 +17,15 @@ import (
 )
 
 const (
-	Map              = "map"
-	ReplicatedMap    = "replicatedMap"
-	MultiMap         = "multiMap"
-	Queue            = "queue"
-	Topic            = "topic"
-	List             = "list"
-	Set              = "set"
-	PNCounter        = "PNCounter"
-	FlakeIDGenerator = "flakeIdGenerator"
-	// unsupported types by go client
+	Map                  = "map"
+	ReplicatedMap        = "replicatedMap"
+	MultiMap             = "multiMap"
+	Queue                = "queue"
+	Topic                = "topic"
+	List                 = "list"
+	Set                  = "set"
+	PNCounter            = "pnCounter"
+	FlakeIDGenerator     = "flakeIdGenerator"
 	Cache                = "cache"
 	EventJournal         = "eventJournal"
 	Ringbuffer           = "ringBuffer"
@@ -46,7 +47,6 @@ var objTypes = []string{
 	Set,
 	PNCounter,
 	FlakeIDGenerator,
-	// unsupported types by go client
 	Cache,
 	EventJournal,
 	Ringbuffer,
@@ -59,7 +59,6 @@ var objTypes = []string{
 }
 
 const (
-	flagType       = "type"
 	flagShowHidden = "show-hidden"
 )
 
@@ -113,7 +112,7 @@ func (cm ObjectsListCommand) Exec(ctx context.Context, ec plug.ExecContext) erro
 func objectFilterTypes() string {
 	var sb strings.Builder
 	for _, o := range objTypes {
-		sb.WriteString(fmt.Sprintf("\t* %s\n", strings.ToLower(o)))
+		sb.WriteString(fmt.Sprintf("\t* %s\n", o))
 	}
 	return sb.String()
 }

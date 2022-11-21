@@ -13,12 +13,11 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc/logger"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-commandline-client/log"
 )
 
 func TestMakeConfiguration_Default(t *testing.T) {
 	props := plug.NewProperties()
-	w := log.NopWriteCloser(bytes.NewBuffer(nil))
+	w := nopWriteCloser{bytes.NewBuffer(nil)}
 	lg := MustValue(logger.New(w, hzlogger.WeightDebug))
 	cfg, err := makeConfiguration(props, lg)
 	require.NoError(t, err)
@@ -41,7 +40,7 @@ func TestMakeConfiguration_Viridian(t *testing.T) {
 		props.Set(clc.PropertySSLKeyPath, "my-key.pem")
 		props.Set(clc.PropertySSLKeyPassword, "123456")
 	*/
-	w := log.NopWriteCloser(bytes.NewBuffer(nil))
+	w := nopWriteCloser{bytes.NewBuffer(nil)}
 	lg := MustValue(logger.New(w, hzlogger.WeightDebug))
 	cfg, err := makeConfiguration(props, lg)
 	require.NoError(t, err)
