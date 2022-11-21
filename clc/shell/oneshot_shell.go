@@ -36,22 +36,28 @@ func (sh *OneshotShell) Run(ctx context.Context) error {
 }
 
 func (sh *OneshotShell) readTextBasic() error {
+	// NOTE: when this implementation is changed,
+	// clc/shell/shell.go:readTextReadline should also change!
 	var sb strings.Builder
+	multiline := false
 	scn := bufio.NewScanner(os.Stdin)
 	for scn.Scan() {
 		if scn.Err() != nil {
 			return scn.Err()
 		}
-		p := strings.TrimSpace(scn.Text())
-		if p == "" {
-			continue
+		p := scn.Text()
+		if !multiline {
+			p = strings.TrimSpace(p)
+			if p == "" {
+				continue
+			}
+			if sh.commentPrefix != "" && strings.HasPrefix(p, sh.commentPrefix) {
+				continue
+			}
 		}
-		if sh.commentPrefix != "" && strings.HasPrefix(p, sh.commentPrefix) {
-			continue
-		}
-		text, end := sh.endLineFn(p)
+		text, end := sh.endLineFn(p, multiline)
 		sb.WriteString(text)
-		sb.WriteString("\n")
+		multiline = !end
 		if end {
 			if err := sh.textFn(context.Background(), sb.String()); err != nil {
 				return err

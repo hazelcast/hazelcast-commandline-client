@@ -49,17 +49,24 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 		return fmt.Errorf("cloning Main: %w", err)
 	}
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
-	endLineFn := func(line string) (string, bool) {
+	clcMultilineContinue := false
+	endLineFn := func(line string, multiline bool) (string, bool) {
 		// not caching trimmed line, since we want the backslash at the very end of the line. --YT
-		if strings.HasPrefix(strings.TrimSpace(line), "\\") {
+		clcCmd := strings.HasPrefix(strings.TrimSpace(line), "\\")
+		if clcCmd || multiline && clcMultilineContinue {
+			clcMultilineContinue = true
 			end := !strings.HasSuffix(line, "\\")
 			if !end {
 				line = line[:len(line)-1]
 			}
 			return line, end
 		}
+		clcMultilineContinue = false
 		line = strings.TrimSpace(line)
 		end := strings.HasPrefix(line, "help") || strings.HasPrefix(line, "\\") || strings.HasSuffix(line, ";")
+		if !end {
+			line = fmt.Sprintf("%s\n", line)
+		}
 		return line, end
 	}
 	textFn := func(ctx context.Context, text string) error {

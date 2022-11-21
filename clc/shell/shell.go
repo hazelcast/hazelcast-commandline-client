@@ -24,7 +24,7 @@ const (
 
 var ErrExit = errors.New("exit")
 
-type EndLineFn func(line string) (string, bool)
+type EndLineFn func(line string, multiline bool) (string, bool)
 
 type TextFn func(ctx context.Context, text string) error
 
@@ -120,7 +120,10 @@ func (sh *Shell) Start(ctx context.Context) error {
 }
 
 func (sh *Shell) readTextReadline() (string, error) {
+	// NOTE: when this implementation is changed,
+	// clc/shell/oneshot_shell.go:readTextBasic should also change!
 	prompt := sh.prompt1
+	multiline := false
 	var sb strings.Builder
 	for {
 		sh.rl.SetPrompt(prompt)
@@ -128,16 +131,18 @@ func (sh *Shell) readTextReadline() (string, error) {
 		if err != nil {
 			return "", err
 		}
-		p = strings.TrimSpace(p)
-		if p == "" {
-			continue
+		if !multiline {
+			p = strings.TrimSpace(p)
+			if p == "" {
+				continue
+			}
+			if sh.commentPrefix != "" && strings.HasPrefix(p, sh.commentPrefix) {
+				continue
+			}
 		}
-		if sh.commentPrefix != "" && strings.HasPrefix(p, sh.commentPrefix) {
-			continue
-		}
-		text, end := sh.endLineFn(p)
+		text, end := sh.endLineFn(p, multiline)
 		sb.WriteString(text)
-		sb.WriteString("\n")
+		multiline = !end
 		if end {
 			break
 		}
