@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
@@ -21,6 +22,7 @@ func TestVersion(t *testing.T) {
 	cc := &it.CommandContext{}
 	require.NoError(t, cmd.Init(cc))
 	ec := it.NewExecuteContext(nil)
+	ec.Set(clc.PropertyFormat, base.PrinterDelimited)
 	require.NoError(t, cmd.Exec(context.TODO(), ec))
 	output := ec.StdoutText()
 	t.Log("output", output)
