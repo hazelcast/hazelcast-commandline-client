@@ -40,7 +40,6 @@ type Main struct {
 	outputFormat  string
 	configLoaded  bool
 	props         *plug.Properties
-	ec            *ExecContext
 	cc            *CommandContext
 }
 
@@ -83,11 +82,6 @@ func NewMain(cfgPath, logPath, logLevel string, stdout, stderr io.Writer) (*Main
 	if err := m.runInitializers(m.cc); err != nil {
 		return nil, err
 	}
-	cf := func(ctx context.Context) (*hazelcast.Client, error) {
-		return m.ensureClient(ctx, m.props)
-	}
-	m.ec = NewExecContext(m.lg, m.stdout, m.stderr, m.props, cf, m.isInteractive)
-	m.ec.SetMain(m)
 	if err := m.createCommands(); err != nil {
 		return nil, err
 	}
@@ -106,11 +100,6 @@ func (m *Main) CloneForInteractiveMode() (*Main, error) {
 	if err := mc.runInitializers(mc.cc); err != nil {
 		return nil, err
 	}
-	cf := func(ctx context.Context) (*hazelcast.Client, error) {
-		return mc.ensureClient(ctx, mc.props)
-	}
-	mc.ec = NewExecContext(mc.lg, mc.stdout, mc.stderr, mc.props, cf, mc.isInteractive)
-	mc.ec.SetMain(&mc)
 	if err := mc.createCommands(); err != nil {
 		return nil, err
 	}
@@ -264,7 +253,10 @@ func (m *Main) createCommands() error {
 					}
 					props.Set(f.Name, convertFlagValue(cfs, f.Name, f.Value))
 				})
-				ec := m.ec
+				ec := NewExecContext(m.lg, m.stdout, m.stderr, m.props, func(ctx context.Context) (*hazelcast.Client, error) {
+					return m.ensureClient(ctx, m.props)
+				}, m.isInteractive)
+				ec.SetMain(m)
 				ec.SetArgs(args)
 				ec.SetCmd(cmd)
 				if err := m.runAugmentors(ec, props); err != nil {

@@ -108,7 +108,9 @@ func (ec *ExecContext) Interactive() bool {
 }
 
 func (ec *ExecContext) AddOutputRows(row ...output.Row) {
+	ec.mu.Lock()
 	ec.rows = append(ec.rows, row...)
+	ec.mu.Unlock()
 }
 
 func (ec *ExecContext) ShowHelpAndExit() {
