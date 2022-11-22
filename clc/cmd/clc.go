@@ -126,9 +126,14 @@ func (m *Main) Execute(args []string) error {
 	if cmd.Use == "clc" {
 		// check whether --help is requested
 		help := false
-		for _, arg := range args {
+		for i, arg := range args {
 			if arg == "--help" || arg == "-h" {
 				help = true
+				break
+			}
+			if i == 0 && arg == "help" {
+				help = true
+				break
 			}
 		}
 		// if help was not requested, set shell as the command
