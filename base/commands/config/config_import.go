@@ -36,13 +36,16 @@ func (cm ImportCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 
 func (cm ImportCmd) importSource(ctx context.Context, ec plug.ExecContext, src string) error {
 	src = strings.TrimSpace(src)
+	// first assume the passed string is a CURL command line, and try to import it.
 	ok, err := cm.tryImportViridianCurlSource(ctx, ec, src)
 	if err != nil {
 		return err
 	}
+	// import is successful
 	if ok {
 		return nil
 	}
+	// import is not successful, so assume this is a zip file path and try to import from it.
 	ok, err = cm.tryImportViridianZipSource(ctx, ec, src)
 	if err != nil {
 		return err
@@ -53,6 +56,7 @@ func (cm ImportCmd) importSource(ctx context.Context, ec plug.ExecContext, src s
 	return nil
 }
 
+// tryImportViridianCurlSource returns true if importing from a Viridian CURL command line is successful
 func (cm ImportCmd) tryImportViridianCurlSource(ctx context.Context, ec plug.ExecContext, src string) (bool, error) {
 	const reCurlSource = `curl (?P<url>.*) -o hazelcast-cloud-(?P<language>[a-z]+)-sample-client-(?P<cn>[a-z-0-9-]+)-default\.zip`
 	re, err := regexp.Compile(reCurlSource)
@@ -81,6 +85,7 @@ func (cm ImportCmd) tryImportViridianCurlSource(ctx context.Context, ec plug.Exe
 	return true, nil
 }
 
+// tryImportViridianZipSource returns true if importing from a Viridian Go sample zip file is successful
 func (cm ImportCmd) tryImportViridianZipSource(ctx context.Context, ec plug.ExecContext, src string) (bool, error) {
 	const reSource = `hazelcast-cloud-(?P<language>[a-z]+)-sample-client-(?P<cn>[a-z-0-9-]+)-default\.zip`
 	re, err := regexp.Compile(reSource)
