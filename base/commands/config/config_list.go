@@ -32,9 +32,29 @@ Directory names which start with . or _ are ignored.
 
 func (cm ListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	cd := paths.Configs()
+	cs, err := cm.findConfigs(cd)
+	if err != nil {
+		ec.Logger().Warn("Cannot access configs directory at: %s: %s", cd, err.Error())
+	}
+	if cs == nil && ec.Interactive() {
+		I2(fmt.Fprintln(ec.Stderr(), "No configuration was found."))
+		return nil
+	}
+	for _, c := range cs {
+		ec.AddOutputRows(output.Row{output.Column{
+			Name:  "Config Name",
+			Type:  serialization.TypeString,
+			Value: c,
+		}})
+	}
+	return nil
+}
+
+func (cm ListCmd) findConfigs(cd string) ([]string, error) {
+	var cs []string
 	es, err := os.ReadDir(cd)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	for _, e := range es {
 		if !e.IsDir() {
@@ -44,14 +64,10 @@ func (cm ListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 			continue
 		}
 		if paths.Exists(paths.Join(cd, e.Name(), "config.yaml")) {
-			ec.AddOutputRows(output.Row{output.Column{
-				Name:  "Config Name",
-				Type:  serialization.TypeString,
-				Value: e.Name(),
-			}})
+			cs = append(cs, e.Name())
 		}
 	}
-	return nil
+	return cs, nil
 }
 
 func init() {
