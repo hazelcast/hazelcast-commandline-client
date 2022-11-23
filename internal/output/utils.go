@@ -8,7 +8,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/table"
 )
 
-func MakeTable(rows []Row) ([]table.Column, []Row) {
+func MakeTableFromRows(rows []Row) (table.Row, []Row) {
 	hd := NewOrderedSet[string]()
 	drows := make([]map[string]Column, len(rows))
 	for i, row := range rows {
@@ -89,15 +89,7 @@ func MakeTable(rows []Row) ([]table.Column, []Row) {
 				width[i] = len(sv)
 			}
 			if !alignSet {
-				switch v.Type {
-				case serialization.TypeByte, serialization.TypeUInt16, serialization.TypeInt16,
-					serialization.TypeInt32, serialization.TypeInt64,
-					serialization.TypeFloat32, serialization.TypeFloat64,
-					serialization.TypeJavaBigInteger, serialization.TypeJavaDecimal:
-					align[i] = -1
-				default:
-					align[i] = 1
-				}
+				align[i] = alignmentForType(v.Type)
 			}
 		}
 		alignSet = true
@@ -105,7 +97,7 @@ func MakeTable(rows []Row) ([]table.Column, []Row) {
 	}
 	// remove this. prefix from header cells
 	thisPfx := fmt.Sprintf("%s.", NameValue)
-	columns := make([]table.Column, len(header))
+	columns := make(table.Row, len(header))
 	for i, h := range header {
 		columns[i] = table.Column{
 			Header: strings.TrimPrefix(h, thisPfx),
@@ -113,4 +105,27 @@ func MakeTable(rows []Row) ([]table.Column, []Row) {
 		}
 	}
 	return columns, rows
+}
+
+func MakeHeaderFromRow(row Row) table.Row {
+	hd := make(table.Row, len(row))
+	for i, c := range row {
+		hd[i] = table.Column{
+			Header: c.Name,
+			Align:  alignmentForType(c.Type) * len(c.Name),
+		}
+	}
+	return hd
+}
+
+func alignmentForType(t int32) int {
+	switch t {
+	case serialization.TypeByte, serialization.TypeUInt16, serialization.TypeInt16,
+		serialization.TypeInt32, serialization.TypeInt64,
+		serialization.TypeFloat32, serialization.TypeFloat64,
+		serialization.TypeJavaBigInteger, serialization.TypeJavaDecimal:
+		return -1
+	default:
+		return 1
+	}
 }

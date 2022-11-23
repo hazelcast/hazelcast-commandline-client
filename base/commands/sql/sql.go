@@ -47,16 +47,17 @@ func (cm *SQLCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		return nil
 	}
 	query := ec.Args()[0]
-	res, err := cm.execQuery(ctx, query, ec)
+	res, stop, err := cm.execQuery(ctx, query, ec)
+	defer stop()
 	if err != nil {
 		return err
 	}
 	// TODO: keep it or remove it?
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
-	return UpdateOutput(ec, res, verbose)
+	return UpdateOutput(ctx, ec, res, verbose)
 }
 
-func (cm *SQLCommand) execQuery(ctx context.Context, query string, ec plug.ExecContext) (sql.Result, error) {
+func (cm *SQLCommand) execQuery(ctx context.Context, query string, ec plug.ExecContext) (sql.Result, context.CancelFunc, error) {
 	return ExecSQL(ctx, ec, query)
 }
 

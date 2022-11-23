@@ -39,12 +39,13 @@ func (mc *MapGetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	}
 	req := codec.EncodeMapGetRequest(mapName, keyData, 0)
 	hint := fmt.Sprintf("Getting from map %s", mapName)
-	rv, err := ec.ExecuteBlocking(ctx, hint, func(ctx context.Context) (any, error) {
+	rv, stop, err := ec.ExecuteBlocking(ctx, hint, func(ctx context.Context) (any, error) {
 		return ci.InvokeOnKey(ctx, req, keyData, nil)
 	})
 	if err != nil {
 		return err
 	}
+	stop()
 	raw := codec.DecodeMapGetResponse(rv.(*hazelcast.ClientMessage))
 	vt := raw.Type()
 	value, err := ci.DecodeData(raw)
@@ -66,8 +67,7 @@ func (mc *MapGetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 			Value: serialization.TypeToString(vt),
 		})
 	}
-	ec.AddOutputRows(row)
-	return nil
+	return ec.AddOutputRows(ctx, row)
 }
 
 func init() {

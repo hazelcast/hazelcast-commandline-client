@@ -43,14 +43,18 @@ func (tr *TableResult) Serialize(ctx context.Context, w io.Writer) (int, error) 
 		cfg.HeaderSeperator = "-"
 	}
 	t := table.New(cfg)
-	t.WriteHeader(tr.header)
+	wroteHeader := false
 	for {
 		if ctx.Err() != nil {
 			return 0, ctx.Err()
 		}
-		vr, ok := tr.rp.NextRow()
+		vr, ok := tr.rp.NextRow(ctx)
 		if !ok {
 			break
+		}
+		if !wroteHeader {
+			t.WriteHeader(MakeHeaderFromRow(vr))
+			wroteHeader = true
 		}
 		row := make([]string, len(vr))
 		for i, v := range vr {

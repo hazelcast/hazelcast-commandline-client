@@ -87,14 +87,12 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 		if err != nil {
 			return err
 		}
-		res, err := sql.ExecSQL(ctx, ec, text)
+		res, stop, err := sql.ExecSQL(ctx, ec, text)
+		defer stop()
 		if err != nil {
 			return err
 		}
-		if err := sql.UpdateOutput(ec, res, verbose); err != nil {
-			return err
-		}
-		if err := ec.FlushOutput(); err != nil {
+		if err := sql.UpdateOutput(ctx, ec, res, verbose); err != nil {
 			return err
 		}
 		return nil

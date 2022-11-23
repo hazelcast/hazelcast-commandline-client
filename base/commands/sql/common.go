@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/sql"
 
@@ -15,13 +16,12 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
-func UpdateOutput(ec plug.ExecContext, res sql.Result, verbose bool) error {
-	// we enable streaming only for non-table output
+func UpdateOutput(ctx context.Context, ec plug.ExecContext, res sql.Result, verbose bool) error {
 	if !res.IsRowSet() {
 		if verbose {
-			ec.AddOutputRows(output.Row{
+			return ec.AddOutputRows(ctx, output.Row{
 				{
-					Name: "affected rows", Type: serialization.TypeInt64, Value: res.UpdateCount(),
+					Name: "Affected Rows", Type: serialization.TypeInt64, Value: res.UpdateCount(),
 				},
 			})
 		}
@@ -31,38 +31,85 @@ func UpdateOutput(ec plug.ExecContext, res sql.Result, verbose bool) error {
 	if err != nil {
 		return err
 	}
-	for it.HasNext() {
-		row, err := it.Next()
-		if err != nil {
-			return err
-		}
-		cols := row.Metadata().Columns()
-		orow := make([]output.Column, len(cols))
-		for i, col := range cols {
-			orow[i] = output.Column{
-				Name:  col.Name(),
-				Type:  convertSQLType(col.Type()),
-				Value: MustValue(row.Get(i)),
+	rowCh := make(chan output.Row, 1)
+	errCh := make(chan error)
+	go func() {
+		for it.HasNext() {
+			row, err := it.Next()
+			if err != nil {
+				errCh <- err
+				break
+			}
+			cols := row.Metadata().Columns()
+			orow := make(output.Row, len(cols))
+			for i, col := range cols {
+				orow[i] = output.Column{
+					Name:  col.Name(),
+					Type:  convertSQLType(col.Type()),
+					Value: MustValue(row.Get(i)),
+				}
+			}
+			select {
+			case rowCh <- orow:
+			case <-ctx.Done():
+				break
 			}
 		}
-		ec.AddOutputRows(orow)
-		if err := ec.FlushOutput(); err != nil {
-			return err
-		}
-	}
-	if err := ec.FlushOutput(); err != nil {
+		close(rowCh)
+		errCh <- nil
+	}()
+	_ = ec.AddOutputStream(ctx, rowCh)
+	select {
+	case err = <-errCh:
 		return err
+	case <-ctx.Done():
+		break
 	}
 	return nil
 }
 
-func ExecSQL(ctx context.Context, ec plug.ExecContext, query string) (sql.Result, error) {
+func ExecSQL(ctx context.Context, ec plug.ExecContext, query string) (sql.Result, context.CancelFunc, error) {
 	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	as := ec.Props().GetBool(propertyUseMappingSuggestion)
-	rv, err := ec.ExecuteBlocking(ctx, "Executing SQL", func(ctx context.Context) (any, error) {
+	rv, stop, err := execSQL(ctx, ec, ci, query)
+	if err != nil {
+		// check whether this is an SQL error with a suggestion,
+		// so we can improve the error message or apply the suggestion if there's one
+		var serr *sql.Error
+		if !errors.As(err, &serr) {
+			return nil, stop, err
+		}
+		// TODO: This changes the error in order to remove 'decoding SQL execute response:' prefix.
+		// Once that is removed from the Go client, the code below may be removed.
+		err = AdaptSQLError(err)
+		if !as {
+			if serr.Suggestion != "" {
+				return nil, stop, fmt.Errorf("%w\n\nUse --%s to automatically apply the suggestion", err, propertyUseMappingSuggestion)
+			}
+			return nil, stop, err
+		}
+		if serr.Suggestion != "" {
+			ec.Logger().Debug(func() string {
+				return fmt.Sprintf("Re-trying executing SQL with suggestion: %s", serr.Suggestion)
+			})
+			// execute the suggested query
+			_, stop, err := execSQL(ctx, ec, ci, serr.Suggestion)
+			if err != nil {
+				return nil, stop, err
+			}
+			stop()
+			// execute the original query
+			return execSQL(ctx, ec, ci, query)
+		}
+	}
+	return rv, stop, nil
+}
+
+func execSQL(ctx context.Context, ec plug.ExecContext, ci *hazelcast.ClientInternal, query string) (sql.Result, context.CancelFunc, error) {
+	rv, stop, err := ec.ExecuteBlocking(ctx, "Executing SQL", func(ctx context.Context) (any, error) {
 		for {
 			if ctx.Err() != nil {
 				return nil, ctx.Err()
@@ -81,34 +128,9 @@ func ExecSQL(ctx context.Context, ec plug.ExecContext, query string) (sql.Result
 		}
 	})
 	if err != nil {
-		// check whether this is an SQL error with a suggestion,
-		// so we can improve the error message or apply the suggestion if there's one
-		var serr *sql.Error
-		if !errors.As(err, &serr) {
-			return nil, err
-		}
-		// TODO: This changes the error in order to remove 'decoding SQL execute response:' prefix.
-		// Once that is removed from the Go client, the code below may be removed.
-		err = AdaptSQLError(err)
-		if !as {
-			if serr.Suggestion != "" {
-				return nil, fmt.Errorf("%w\n\nUse --%s to automatically apply the suggestion", err, propertyUseMappingSuggestion)
-			}
-			return nil, err
-		}
-		if serr.Suggestion != "" {
-			ec.Logger().Debug(func() string {
-				return fmt.Sprintf("Re-trying executing SQL with suggestion: %s", serr.Suggestion)
-			})
-			// execute the suggested query
-			if _, err := ci.Client().SQL().Execute(ctx, serr.Suggestion); err != nil {
-				return nil, err
-			}
-			// execute the original query
-			return ci.Client().SQL().Execute(ctx, query)
-		}
+		return nil, stop, err
 	}
-	return rv.(sql.Result), nil
+	return rv.(sql.Result), stop, nil
 }
 
 func AdaptSQLError(err error) error {

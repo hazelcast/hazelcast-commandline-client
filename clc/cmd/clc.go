@@ -253,9 +253,12 @@ func (m *Main) createCommands() error {
 					}
 					props.Set(f.Name, convertFlagValue(cfs, f.Name, f.Value))
 				})
-				ec := NewExecContext(m.lg, m.stdout, m.stderr, m.props, func(ctx context.Context) (*hazelcast.Client, error) {
+				ec, err := NewExecContext(m.lg, m.stdout, m.stderr, m.props, func(ctx context.Context) (*hazelcast.Client, error) {
 					return m.ensureClient(ctx, m.props)
 				}, m.isInteractive)
+				if err != nil {
+					return err
+				}
 				ec.SetMain(m)
 				ec.SetArgs(args)
 				ec.SetCmd(cmd)
@@ -273,7 +276,7 @@ func (m *Main) createCommands() error {
 					}
 					return err
 				}
-				return ec.FlushOutput()
+				return nil
 			}
 		}
 		parent.AddCommand(cmd)

@@ -87,6 +87,7 @@ func (cm ObjectsListCommand) Exec(ctx context.Context, ec plug.ExecContext) erro
 	if err != nil {
 		return err
 	}
+	var rows []output.Row
 	for _, o := range objs {
 		valueCol := output.Column{
 			Name:  "Object Name",
@@ -94,10 +95,10 @@ func (cm ObjectsListCommand) Exec(ctx context.Context, ec plug.ExecContext) erro
 			Value: o.Name,
 		}
 		if typeFilter != "" {
-			ec.AddOutputRows(output.Row{valueCol})
+			rows = append(rows, output.Row{valueCol})
 			continue
 		}
-		ec.AddOutputRows(output.Row{
+		rows = append(rows, output.Row{
 			output.Column{
 				Name:  "Service Name",
 				Type:  serialization.TypeString,
@@ -106,7 +107,7 @@ func (cm ObjectsListCommand) Exec(ctx context.Context, ec plug.ExecContext) erro
 			valueCol,
 		})
 	}
-	return nil
+	return ec.AddOutputRows(ctx, rows...)
 }
 
 func objectFilterTypes() string {
@@ -122,12 +123,13 @@ func getObjects(ctx context.Context, ec plug.ExecContext, typeFilter string, sho
 	if err != nil {
 		return nil, err
 	}
-	objs, err := ec.ExecuteBlocking(ctx, "Getting distributed objects", func(ctx context.Context) (any, error) {
+	objs, stop, err := ec.ExecuteBlocking(ctx, "Getting distributed objects", func(ctx context.Context) (any, error) {
 		return ci.Client().GetDistributedObjectsInfo(ctx)
 	})
 	if err != nil {
 		return nil, err
 	}
+	stop()
 	var r []types.DistributedObjectInfo
 	typeFilter = strings.ToLower(typeFilter)
 	for _, o := range objs.([]types.DistributedObjectInfo) {

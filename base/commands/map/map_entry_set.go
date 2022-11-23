@@ -34,16 +34,16 @@ func (mc *MapEntrySetCommand) Exec(ctx context.Context, ec plug.ExecContext) err
 	}
 	req := codec.EncodeMapEntrySetRequest(mapName)
 	hint := fmt.Sprintf("Getting entries of %s", mapName)
-	rv, err := ec.ExecuteBlocking(ctx, hint, func(ctx context.Context) (any, error) {
+	rv, stop, err := ec.ExecuteBlocking(ctx, hint, func(ctx context.Context) (any, error) {
 		return ci.InvokeOnRandomTarget(ctx, req, nil)
 	})
 	if err != nil {
 		return err
 	}
+	stop()
 	pairs := codec.DecodeMapEntrySetResponse(rv.(*hazelcast.ClientMessage))
 	rows := output.DecodePairs(ci, pairs, showType)
-	ec.AddOutputRows(rows...)
-	return nil
+	return ec.AddOutputRows(ctx, rows...)
 }
 
 func init() {

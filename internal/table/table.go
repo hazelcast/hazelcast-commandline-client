@@ -16,6 +16,8 @@ type Column struct {
 	Align  int
 }
 
+type Row []Column
+
 type Table struct {
 	cfg    Config
 	rowIdx int64
@@ -28,7 +30,7 @@ func New(cfg Config) *Table {
 	return &Table{cfg: cfg}
 }
 
-func (t *Table) WriteHeader(cs []Column) {
+func (t *Table) WriteHeader(cs Row) {
 	t.width = make([]int, len(cs))
 	t.rwf = make([]runeWidthFn, len(cs))
 	t.updateAlignment(cs)
@@ -59,8 +61,8 @@ func (t *Table) WriteRow(row []string) {
 	t.printf("\n")
 }
 
-func (t *Table) updateAlignment(cs []Column) {
-	for i, h := range cs {
+func (t *Table) updateAlignment(row Row) {
+	for i, h := range row {
 		t.rwf[i] = runewidth.FillRight
 		t.width[i] = h.Align
 		if h.Align < 0 {

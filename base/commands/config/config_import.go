@@ -109,7 +109,7 @@ func (cm ImportCmd) tryImportViridianZipSource(ctx context.Context, ec plug.Exec
 }
 
 func (cm ImportCmd) download(ctx context.Context, ec plug.ExecContext, url string) (string, error) {
-	p, err := ec.ExecuteBlocking(ctx, "Downloading the sample", func(ctx context.Context) (any, error) {
+	p, stop, err := ec.ExecuteBlocking(ctx, "Downloading the sample", func(ctx context.Context) (any, error) {
 		f, err := os.CreateTemp("", "clc-download-*")
 		if err != nil {
 			return "", err
@@ -125,11 +125,12 @@ func (cm ImportCmd) download(ctx context.Context, ec plug.ExecContext, url strin
 	if err != nil {
 		return "", nil
 	}
+	stop()
 	return p.(string), nil
 }
 
 func (cm ImportCmd) makeConfigFromZip(ctx context.Context, ec plug.ExecContext, clusterName, path, outDir string) error {
-	_, err := ec.ExecuteBlocking(ctx, "Extracting files from the sample", func(ctx context.Context) (any, error) {
+	_, stop, err := ec.ExecuteBlocking(ctx, "Extracting files from the sample", func(ctx context.Context) (any, error) {
 		if err := os.MkdirAll(outDir, 0700); err != nil {
 			return nil, err
 		}
@@ -195,7 +196,11 @@ func (cm ImportCmd) makeConfigFromZip(ctx context.Context, ec plug.ExecContext, 
 		}
 		return nil, nil
 	})
-	return err
+	if err != nil {
+		return err
+	}
+	stop()
+	return nil
 }
 
 func (cm ImportCmd) createConfigYAML(path, clusterName, token, password string) error {
