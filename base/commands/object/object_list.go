@@ -1,6 +1,6 @@
 //go:build base || objects
 
-package objects
+package object
 
 import (
 	"context"
@@ -62,9 +62,9 @@ const (
 	flagShowHidden = "show-hidden"
 )
 
-type ObjectsListCommand struct{}
+type ObjectListCommand struct{}
 
-func (cm ObjectsListCommand) Init(cc plug.InitContext) error {
+func (cm ObjectListCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("list [object-type]")
 	long := fmt.Sprintf(`List distributed objects, optionally filter by type.
 	
@@ -77,7 +77,7 @@ The object-type filter may be one of:
 	return nil
 }
 
-func (cm ObjectsListCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (cm ObjectListCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	var typeFilter string
 	if len(ec.Args()) > 0 {
 		typeFilter = ec.Args()[0]
@@ -172,5 +172,5 @@ func init() {
 	sort.Slice(objTypes, func(i, j int) bool {
 		return objTypes[i] < objTypes[j]
 	})
-	Must(plug.Registry.RegisterCommand("objects:list", &ObjectsListCommand{}))
+	Must(plug.Registry.RegisterCommand("object:list", &ObjectListCommand{}))
 }

@@ -21,6 +21,8 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
+var errHelp = errors.New("interactive help")
+
 type ShellCommand struct {
 	shortcuts map[string]struct{}
 }
@@ -29,6 +31,7 @@ func (cm *ShellCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("shell")
 	help := "Start the interactive shell"
 	cc.SetCommandHelp(help, help)
+	cc.SetPositionalArgCount(0, 0)
 	cm.shortcuts = map[string]struct{}{
 		`\dm`:   {},
 		`\dm+`:  {},
@@ -88,11 +91,16 @@ Prefix non-SQL commands with \
 				if err != nil {
 					return err
 				}
+				args[0] = fmt.Sprintf("\\%s", args[0])
 				return m.Execute(args)
 			}
 		}
 		text, err := convertStatement(text)
 		if err != nil {
+			if errors.Is(err, errHelp) {
+				I2(fmt.Fprintln(ec.Stdout(), interactiveHelp()))
+				return nil
+			}
 			return err
 		}
 		res, stop, err := sql.ExecSQL(ctx, ec, text)
@@ -123,7 +131,7 @@ Prefix non-SQL commands with \
 func convertStatement(stmt string) (string, error) {
 	stmt = strings.TrimSpace(stmt)
 	if strings.HasPrefix(stmt, "help") {
-		return "", errors.New(interactiveHelp())
+		return "", errHelp
 	}
 	if strings.HasPrefix(stmt, "\\") {
 		// this is a shell command

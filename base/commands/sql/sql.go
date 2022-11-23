@@ -9,6 +9,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/errors"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
@@ -28,6 +29,9 @@ func (cm *SQLCommand) Augment(ec plug.ExecContext, props *plug.Properties) error
 }
 
 func (cm *SQLCommand) Init(cc plug.InitContext) error {
+	if cc.Interactive() {
+		return errors.ErrNotAvailable
+	}
 	cc.SetCommandUsage("sql [QUERY] [flags]")
 	cc.SetPositionalArgCount(1, 1)
 	cc.AddCommandGroup("sql", "SQL")

@@ -48,6 +48,7 @@ func NewMain(cfgPath, logPath, logLevel string, stdout, stderr io.Writer) (*Main
 		Use:   "clc",
 		Short: "Hazelcast CLC",
 		Long:  "Hazelcast CLC",
+		Args:  cobra.ExactArgs(0),
 	}
 	m := &Main{
 		root:   rc,
@@ -111,38 +112,57 @@ func (m *Main) Root() *cobra.Command {
 }
 
 func (m *Main) Execute(args []string) error {
-	cmd, _, _ := m.root.Find(args)
-	if cmd.Use == "clc" {
-		// check whether --help is requested
-		help := false
-		for i, arg := range args {
-			if arg == "--help" || arg == "-h" {
-				help = true
-				break
+	var cm *cobra.Command
+	var cmdArgs []string
+	var err error
+	if !m.isInteractive {
+		cm, cmdArgs, err = m.root.Find(args)
+		if err != nil {
+			return err
+		}
+		if cm.Use == "clc" {
+			// check whether help or completion is requested
+			useShell := true
+			for i, arg := range cmdArgs {
+				if arg == "--help" || arg == "-h" {
+					useShell = false
+					break
+				}
+				if i == 0 && (arg == "help" || arg == "completion") {
+					useShell = false
+					break
+				}
 			}
-			if i == 0 && arg == "help" {
-				help = true
-				break
+			// if help was not requested, set shell as the command
+			if useShell {
+				args = append([]string{"shell"}, cmdArgs...)
 			}
 		}
-		// if help was not requested, set shell as the command
-		if !help {
-			args = append([]string{"shell"}, args...)
-		}
+	} else {
+		// disable completions command in the interactive mode
+		m.root.CompletionOptions.DisableDefaultCmd = true
+		m.root.SetHelpCommand(&cobra.Command{
+			Use: `\help`,
+			RunE: func(cmd *cobra.Command, args []string) error {
+				return m.root.Help()
+			},
+		})
 	}
 	m.root.SetArgs(args)
 	m.props.Push()
-	err := m.root.Execute()
+	err = m.root.Execute()
 	m.props.Pop()
 	// set all flags to their defaults
 	// XXX: it may not work with slices, see: https://github.com/spf13/cobra/issues/1488#issuecomment-1205104931
-	cmd.Flags().VisitAll(func(f *pflag.Flag) {
-		if f.Changed {
-			// ignoring the error
-			_ = f.Value.Set(f.DefValue)
-			f.Changed = false
-		}
-	})
+	if cm != nil {
+		cm.Flags().VisitAll(func(f *pflag.Flag) {
+			if f.Changed {
+				// ignoring the error
+				_ = f.Value.Set(f.DefValue)
+				f.Changed = false
+			}
+		})
+	}
 	return err
 }
 
@@ -238,6 +258,9 @@ func (m *Main) createCommands() error {
 		cc := NewCommandContext(cmd, m.vpr, m.isInteractive)
 		if ci, ok := c.Item.(plug.Initializer); ok {
 			if err := ci.Init(cc); err != nil {
+				if errors.Is(err, puberrors.ErrNotAvailable) {
+					continue
+				}
 				return fmt.Errorf("initializing command: %w", err)
 			}
 		}
