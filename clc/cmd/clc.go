@@ -142,7 +142,8 @@ func (m *Main) Execute(args []string) error {
 		// disable completions command in the interactive mode
 		m.root.CompletionOptions.DisableDefaultCmd = true
 		m.root.SetHelpCommand(&cobra.Command{
-			Use: `\help`,
+			Use:   `\help`,
+			Short: "Help about commands",
 			RunE: func(cmd *cobra.Command, args []string) error {
 				return m.root.Help()
 			},
