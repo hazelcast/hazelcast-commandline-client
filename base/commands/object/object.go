@@ -1,6 +1,6 @@
 //go:build base || objects
 
-package objects
+package object
 
 import (
 	"context"
@@ -9,21 +9,21 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-type ObjectsCommand struct{}
+type ObjectCommand struct{}
 
-func (cm ObjectsCommand) Init(cc plug.InitContext) error {
+func (cm ObjectCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandGroup("dds")
 	cc.SetTopLevel(true)
 	help := "Generic distributed data structure operations"
-	cc.SetCommandUsage("objects [command]")
+	cc.SetCommandUsage("object [command]")
 	cc.SetCommandHelp(help, help)
 	return nil
 }
 
-func (cm ObjectsCommand) Exec(context.Context, plug.ExecContext) error {
+func (cm ObjectCommand) Exec(context.Context, plug.ExecContext) error {
 	return nil
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("objects", &ObjectsCommand{}))
+	Must(plug.Registry.RegisterCommand("object", &ObjectCommand{}))
 }
