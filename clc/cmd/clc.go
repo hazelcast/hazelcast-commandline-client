@@ -254,10 +254,21 @@ func (m *Main) createCommands() error {
 					props.Set(f.Name, convertFlagValue(cfs, f.Name, f.Value))
 				})
 				ec, err := NewExecContext(m.lg, m.stdout, m.stderr, m.props, func(ctx context.Context) (*hazelcast.Client, error) {
-					return m.ensureClient(ctx, m.props)
+					if m.client != nil {
+						return m.client, nil
+					}
+					c, err := m.ensureClient(ctx, m.props)
+					if err != nil {
+						return nil, err
+					}
+					m.client = c
+					return c, nil
 				}, m.isInteractive)
 				if err != nil {
 					return err
+				}
+				if m.client != nil {
+					ec.ci = hazelcast.NewClientInternal(m.client)
 				}
 				ec.SetMain(m)
 				ec.SetArgs(args)

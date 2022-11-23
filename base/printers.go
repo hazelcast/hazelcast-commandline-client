@@ -4,6 +4,8 @@ import (
 	"context"
 	"io"
 
+	"github.com/nathan-fiscaletti/consolesize-go"
+
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
@@ -48,7 +50,8 @@ func (pr JSONPrinter) PrintRows(ctx context.Context, w io.Writer, rows []output.
 type TablePrinter struct{}
 
 func (pr *TablePrinter) PrintStream(ctx context.Context, w io.Writer, rp output.RowProducer) error {
-	tr := output.NewTableResult(nil, rp)
+	maxCols, _ := consolesize.GetConsoleSize()
+	tr := output.NewTableResult(nil, rp, maxCols)
 	_, err := tr.Serialize(ctx, w)
 	return err
 }
@@ -56,7 +59,8 @@ func (pr *TablePrinter) PrintStream(ctx context.Context, w io.Writer, rp output.
 func (pr *TablePrinter) PrintRows(ctx context.Context, w io.Writer, rows []output.Row) error {
 	header, rows := output.MakeTableFromRows(rows)
 	rp := output.NewSimpleRows(rows)
-	tr := output.NewTableResult(header, rp)
+	maxCols, _ := consolesize.GetConsoleSize()
+	tr := output.NewTableResult(header, rp, maxCols)
 	_, err := tr.Serialize(ctx, w)
 	return err
 }

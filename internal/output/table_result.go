@@ -11,14 +11,16 @@ import (
 )
 
 type TableResult struct {
-	header []table.Column
-	rp     RowProducer
+	header   []table.Column
+	rp       RowProducer
+	maxWidth int
 }
 
-func NewTableResult(header []table.Column, rp RowProducer) *TableResult {
+func NewTableResult(header []table.Column, rp RowProducer, maxWidth int) *TableResult {
 	return &TableResult{
-		header: header,
-		rp:     rp,
+		header:   header,
+		rp:       rp,
+		maxWidth: maxWidth,
 	}
 }
 
@@ -43,7 +45,7 @@ func (tr *TableResult) Serialize(ctx context.Context, w io.Writer) (int, error) 
 			break
 		}
 		if !wroteHeader {
-			t.WriteHeader(makeTableHeaderFromRow(vr))
+			t.WriteHeader(makeTableHeaderFromRow(vr, tr.maxWidth))
 			wroteHeader = true
 		}
 		row := make([]string, len(vr))

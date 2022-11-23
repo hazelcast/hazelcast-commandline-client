@@ -16,6 +16,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/shell"
 	puberrors "github.com/hazelcast/hazelcast-commandline-client/errors"
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
@@ -48,6 +49,13 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 	if err != nil {
 		return fmt.Errorf("cloning Main: %w", err)
 	}
+	I2(fmt.Fprintf(ec.Stdout(), `Hazelcast CLC %s
+(c) 2022 Hazelcast Inc.
+	
+Type 'help' for help information.
+Prefix non-SQL commands with \
+	
+	`, internal.Version))
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	clcMultilineContinue := false
 	endLineFn := func(line string, multiline bool) (string, bool) {
