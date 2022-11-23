@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"os/signal"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
@@ -33,6 +35,8 @@ func UpdateOutput(ctx context.Context, ec plug.ExecContext, res sql.Result, verb
 	}
 	rowCh := make(chan output.Row, 1)
 	errCh := make(chan error)
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, os.Kill)
+	defer stop()
 	go func() {
 		for it.HasNext() {
 			row, err := it.Next()

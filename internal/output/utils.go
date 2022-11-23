@@ -107,7 +107,7 @@ func MakeTableFromRows(rows []Row) (table.Row, []Row) {
 	return columns, rows
 }
 
-func MakeHeaderFromRow(row Row) table.Row {
+func makeTableHeaderFromRow(row Row) table.Row {
 	hd := make(table.Row, len(row))
 	for i, c := range row {
 		hd[i] = table.Column{

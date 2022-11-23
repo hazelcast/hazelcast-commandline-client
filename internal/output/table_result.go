@@ -7,17 +7,7 @@ import (
 
 	"github.com/fatih/color"
 
-	iserialization "github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/table"
-)
-
-type TableOutputMode int
-
-const (
-	TableOutModeDefault TableOutputMode = iota
-	TableOutputModeCSV
-	TableOutputModeHTML
-	TableOutputModeMarkDown
 )
 
 type TableResult struct {
@@ -53,31 +43,14 @@ func (tr *TableResult) Serialize(ctx context.Context, w io.Writer) (int, error) 
 			break
 		}
 		if !wroteHeader {
-			t.WriteHeader(MakeHeaderFromRow(vr))
+			t.WriteHeader(makeTableHeaderFromRow(vr))
 			wroteHeader = true
 		}
 		row := make([]string, len(vr))
 		for i, v := range vr {
-			row[i] = fmt.Sprint(tr.convertColumn(v))
+			row[i] = fmt.Sprint(convertColumn(v))
 		}
 		t.WriteRow(row)
 	}
 	return n, nil
-}
-
-func (tr *TableResult) convertColumn(col Column) any {
-	switch col.Type {
-	case iserialization.TypeByte, iserialization.TypeBool, iserialization.TypeUInt16,
-		iserialization.TypeInt16, iserialization.TypeInt32, iserialization.TypeInt64,
-		iserialization.TypeFloat32, iserialization.TypeFloat64, iserialization.TypeString:
-		return col.Value
-	case iserialization.TypeNil:
-		return ValueNil
-	case iserialization.TypeUnknown:
-		return ValueUnknown
-	case iserialization.TypeSkip:
-		return ValueSkip
-	default:
-		return col.SingleLine()
-	}
 }

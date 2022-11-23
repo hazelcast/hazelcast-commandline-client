@@ -45,9 +45,7 @@ func (pr JSONPrinter) PrintRows(ctx context.Context, w io.Writer, rows []output.
 	return err
 }
 
-type TablePrinter struct {
-	Mode output.TableOutputMode
-}
+type TablePrinter struct{}
 
 func (pr *TablePrinter) PrintStream(ctx context.Context, w io.Writer, rp output.RowProducer) error {
 	tr := output.NewTableResult(nil, rp)
@@ -63,9 +61,24 @@ func (pr *TablePrinter) PrintRows(ctx context.Context, w io.Writer, rows []outpu
 	return err
 }
 
+type CSVPrinter struct{}
+
+func (pr *CSVPrinter) PrintStream(ctx context.Context, w io.Writer, rp output.RowProducer) error {
+	cr := output.NewCSVResult(rp)
+	_, err := cr.Serialize(ctx, w)
+	return err
+}
+
+func (pr *CSVPrinter) PrintRows(ctx context.Context, w io.Writer, rows []output.Row) error {
+	rp := output.NewSimpleRows(rows)
+	cr := output.NewCSVResult(rp)
+	_, err := cr.Serialize(ctx, w)
+	return err
+}
+
 func init() {
 	plug.Registry.RegisterPrinter(PrinterDelimited, &DelimitedPrinter{})
 	plug.Registry.RegisterPrinter(PrinterJSON, &JSONPrinter{})
 	plug.Registry.RegisterPrinter(PrinterTable, &TablePrinter{})
-	plug.Registry.RegisterPrinter(PrinterCSV, &TablePrinter{Mode: output.TableOutputModeCSV})
+	plug.Registry.RegisterPrinter(PrinterCSV, &CSVPrinter{})
 }
