@@ -100,155 +100,85 @@ const (
 	TypeNotDecoded = -2024
 )
 
+var typeToString = map[int32]string{
+	TypeNil:                                  "NIL",
+	TypePortable:                             "PORTABLE",
+	TypeDataSerializable:                     "DATA_SERIALIZABLE",
+	TypeByte:                                 "BYTE",
+	TypeBool:                                 "BOOL",
+	TypeUInt16:                               "UINT16",
+	TypeInt16:                                "INT16",
+	TypeInt32:                                "INT32",
+	TypeInt64:                                "INT64",
+	TypeFloat32:                              "FLOAT32",
+	TypeFloat64:                              "FLOAT64",
+	TypeString:                               "STRING",
+	TypeByteArray:                            "BYTE_ARRAY",
+	TypeBoolArray:                            "BOOL_ARRAY",
+	TypeUInt16Array:                          "UINT16_ARRAY",
+	TypeInt16Array:                           "INT16_ARRAY",
+	TypeInt32Array:                           "INT32_ARRAY",
+	TypeInt64Array:                           "INT64_ARRAY",
+	TypeFloat32Array:                         "FLOAT32_ARRAY",
+	TypeFloat64Array:                         "FLOAT64_ARRAY",
+	TypeStringArray:                          "STRING_ARRAY",
+	TypeUUID:                                 "UUID",
+	TypeSimpleEntry:                          "SIMPLE_ENTRY",
+	TypeSimpleImmutableEntry:                 "SIMPLE_IMMUTABLE_ENTRY",
+	TypeJavaClass:                            "JAVA_CLASS",
+	TypeJavaDate:                             "JAVA_DATE",
+	TypeJavaBigInteger:                       "JAVA_BIG_INTEGER",
+	TypeJavaDecimal:                          "JAVA_DECIMAL",
+	TypeJavaArray:                            "JAVA_ARRAY",
+	TypeJavaArrayList:                        "JAVA_ARRAY_LIST",
+	TypeJavaLinkedList:                       "JAVA_LINKED_LIST",
+	TypeJavaDefaultTypeCopyOnWriteArrayList:  "JAVA_COPY_ON_WRITE_ARRAY_LIST",
+	TypeJavaDefaultTypeHashMap:               "JAVA_HASHMAP",
+	TypeJavaDefaultTypeConcurrentSkipListMap: "JAVA_CONCURRENT_SKIP_LIST_MAP",
+	TypeJavaDefaultTypeConcurrentHashMap:     "JAVA_CONCURRENT_HASH_MAP",
+	TypeJavaDefaultTypeLinkedHashMap:         "JAVA_LINKED_HASH_MAP",
+	TypeJavaDefaultTypeTreeMap:               "JAVA_TREE_MAP",
+	TypeJavaDefaultTypeHashSet:               "JAVA_HASH_SET",
+	TypeJavaDefaultTypeTreeSet:               "JAVA_TREE_SET",
+	TypeJavaDefaultTypeLinkedHashSet:         "JAVA_LINKED_HASH_SET",
+	TypeJavaDefaultTypeCopyOnWriteArraySet:   "JAVA_COPY_ON_WRITE_ARRAY_SET",
+	TypeJavaDefaultTypeConcurrentSkipListSet: "JAVA_CONCURRENT_SKIP_LIST_SET",
+	TypeJavaDefaultTypeArrayDeque:            "JAVA_ARRAY_DEQUE",
+	TypeJavaDefaultTypeLinkedBlockingQueue:   "JAVA_LINKED_BLOCKING_QUEUE",
+	TypeJavaDefaultTypeArrayBlockingQueue:    "JAVA_ARRAY_BLOCKING_QUEUE",
+	TypeJavaDefaultTypePriorityBlockingQueue: "JAVA_PRIORITY_BLOCKING_QUEUE",
+	TypeJavaDefaultTypeDelayQueue:            "JAVA_DELAY_QUEUE",
+	TypeJavaDefaultTypeSynchronousQueue:      "JAVA_SYNCHRONOUS_QUEUE",
+	TypeJavaDefaultTypeLinkedTransferQueue:   "JAVA_LINKED_TRANSFER_QUEUE",
+	TypeJavaDefaultTypePriorityQueue:         "JAVA_PRIORITY_QUEUE",
+	TypeJavaDefaultTypeOptional:              "JAVA_OPTIONAL",
+	TypeJavaLocalDate:                        "JAVA_LOCALDATE",
+	TypeJavaLocalTime:                        "JAVA_LOCALTIME",
+	TypeJavaLocalDateTime:                    "JAVA_LOCALDATETIME",
+	TypeJavaOffsetDateTime:                   "JAVA_OFFSETDATETIME",
+	TypeCompact:                              "COMPACT",
+	TypeCompactWithSchema:                    "COMPACT_WITH_SCHEMA",
+	TypeJavaDefaultTypeSerializable:          "JAVA_SERIALIZABLE",
+	TypeJavaDefaultTypeExternalizable:        "JAVA_EXTERNALIZABLE",
+	TypeCsharpCLRSerializationType:           "CSHARP_CLR_SERIALIZATION",
+	TypePythonPickleSerializationType:        "PYTHON_PICKLE_SERIALIZATION",
+	TypeJSONSerialization:                    "JSON",
+	TypeGobSerialization:                     "GO_GOB_SERIALIZATION",
+	TypeHibernate3TypeHibernateCacheKey:      "HIBERNATE3_CACHE_KEY",
+	TypeHibernate3TypeHibernateCacheEntry:    "HIBERNATE3_CACHE_ENTRY",
+	TypeHibernate4TypeHibernateCacheKey:      "HIBERNATE4_CACHE_KEY",
+	TypeHibernate4TypeHibernateCacheEntry:    "HIBERNATE4_CACHE_ENTRY",
+	TypeHibernate5TypeHibernateCacheKey:      "HIBERNATE5_CACHE_KEY",
+	TypeHibernate5TypeHibernateCacheEntry:    "HIBERNATE5_CACHE_ENTRY",
+	TypeHibernate5TypeHibernateNaturalIDKey:  "HIBERNATE5_NATURAL_ID_KEY",
+	TypeJetSerializerFirst:                   "JET_SERIALIZER_FIRST",
+	TypeJetSerializerLast:                    "JET_SERIALIZER_LAST",
+}
+
 func TypeToString(t int32) string {
-	var s string
-	switch t {
-	case TypeNil:
-		s = "NIL"
-	case TypePortable:
-		s = "PORTABLE"
-	case TypeDataSerializable:
-		s = "DATA_SERIALIZABLE"
-	case TypeByte:
-		s = "BYTE"
-	case TypeBool:
-		s = "BOOL"
-	case TypeUInt16:
-		s = "UINT16"
-	case TypeInt16:
-		s = "INT16"
-	case TypeInt32:
-		s = "INT32"
-	case TypeInt64:
-		s = "INT64"
-	case TypeFloat32:
-		s = "FLOAT32"
-	case TypeFloat64:
-		s = "FLOAT64"
-	case TypeString:
-		s = "STRING"
-	case TypeByteArray:
-		s = "BYTE_ARRAY"
-	case TypeBoolArray:
-		s = "BOOL_ARRAY"
-	case TypeUInt16Array:
-		s = "UINT16_ARRAY"
-	case TypeInt16Array:
-		s = "UINT16_ARRAY"
-	case TypeInt32Array:
-		s = "INT32_ARRAY"
-	case TypeInt64Array:
-		s = "INT64_ARRAY"
-	case TypeFloat32Array:
-		s = "FLOAT32_ARRAY"
-	case TypeFloat64Array:
-		s = "FLOAT64_ARRAY"
-	case TypeStringArray:
-		s = "STRING_ARRAY"
-	case TypeUUID:
-		s = "UUID"
-	case TypeSimpleEntry:
-		s = "SIMPLE_ENTRY"
-	case TypeSimpleImmutableEntry:
-		s = "SIMPLE_IMMUTABLE_ENTRY"
-	case TypeJavaClass:
-		s = "JAVA_CLASS"
-	case TypeJavaDate:
-		s = "JAVA_DATE"
-	case TypeJavaBigInteger:
-		s = "JAVA_BIG_INTEGER"
-	case TypeJavaDecimal:
-		s = "JAVA_DECIMAL"
-	case TypeJavaArray:
-		s = "JAVA_ARRAY"
-	case TypeJavaArrayList:
-		s = "JAVA_ARRAY_LIST"
-	case TypeJavaLinkedList:
-		s = "JAVA_LINKED_LIST"
-	case TypeJavaDefaultTypeCopyOnWriteArrayList:
-		s = "JAVA_COPY_ON_WRITE_ARRAY_LIST"
-	case TypeJavaDefaultTypeHashMap:
-		s = "JAVA_HASHMAP"
-	case TypeJavaDefaultTypeConcurrentSkipListMap:
-		s = "JAVA_CONCURRENT_SKIP_LIST_MAP"
-	case TypeJavaDefaultTypeConcurrentHashMap:
-		s = "JAVA_CONCURRENT_HASH_MAP"
-	case TypeJavaDefaultTypeLinkedHashMap:
-		s = "JAVA_LINKED_HASH_MAP"
-	case TypeJavaDefaultTypeTreeMap:
-		s = "JAVA_TREE_MAP"
-	case TypeJavaDefaultTypeHashSet:
-		s = "JAVA_HASH_SET"
-	case TypeJavaDefaultTypeTreeSet:
-		s = "JAVA_TREE_SET"
-	case TypeJavaDefaultTypeLinkedHashSet:
-		s = "JAVA_LINKED_HASH_SET"
-	case TypeJavaDefaultTypeCopyOnWriteArraySet:
-		s = "JAVA_COPY_ON_WRITE_ARRAY_SET"
-	case TypeJavaDefaultTypeConcurrentSkipListSet:
-		s = "JAVA_CONCURRENT_SKIP_LIST_SET"
-	case TypeJavaDefaultTypeArrayDeque:
-		s = "JAVA_ARRAY_DEQUE"
-	case TypeJavaDefaultTypeLinkedBlockingQueue:
-		s = "JAVA_LINKED_BLOCKING_QUEUE"
-	case TypeJavaDefaultTypeArrayBlockingQueue:
-		s = "JAVA_ARRAY_BLOCKING_QUEUE"
-	case TypeJavaDefaultTypePriorityBlockingQueue:
-		s = "JAVA_PRIORITY_BLOCKING_QUEUE"
-	case TypeJavaDefaultTypeDelayQueue:
-		s = "JAVA_DELAY_QUEUE"
-	case TypeJavaDefaultTypeSynchronousQueue:
-		s = "JAVA_SYNCHRONOUS_QUEUE"
-	case TypeJavaDefaultTypeLinkedTransferQueue:
-		s = "JAVA_LINKED_TRANSFER_QUEUE"
-	case TypeJavaDefaultTypePriorityQueue:
-		s = "JAVA_PRIORITY_QUEUE"
-	case TypeJavaDefaultTypeOptional:
-		s = "JAVA_OPTIONAL"
-	case TypeJavaLocalDate:
-		s = "JAVA_LOCALDATE"
-	case TypeJavaLocalTime:
-		s = "JAVA_LOCALTIME"
-	case TypeJavaLocalDateTime:
-		s = "JAVA_LOCALDATETIME"
-	case TypeJavaOffsetDateTime:
-		s = "JAVA_OFFSETDATETIME"
-	case TypeCompact:
-		s = "COMPACT"
-	case TypeCompactWithSchema:
-		s = "COMPACT_WITH_SCHEMA"
-	case TypeJavaDefaultTypeSerializable:
-		s = "JAVA_SERIALIZABLE"
-	case TypeJavaDefaultTypeExternalizable:
-		s = "JAVA_EXTERNALIZABLE"
-	case TypeCsharpCLRSerializationType:
-		s = "CSHARP_CLR_SERIALIZATION"
-	case TypePythonPickleSerializationType:
-		s = "PYTHON_PICKLE_SERIALIZATION"
-	case TypeJSONSerialization:
-		s = "JSON"
-	case TypeGobSerialization:
-		s = "GO_GOB_SERIALIZATION"
-	case TypeHibernate3TypeHibernateCacheKey:
-		s = "HIBERNATE3_CACHE_KEY"
-	case TypeHibernate3TypeHibernateCacheEntry:
-		s = "HIBERNATE3_CACHE_ENTRY"
-	case TypeHibernate4TypeHibernateCacheKey:
-		s = "HIBERNATE3_CACHE_KEY"
-	case TypeHibernate4TypeHibernateCacheEntry:
-		s = "HIBERNATE4_CACHE_ENTRY"
-	case TypeHibernate5TypeHibernateCacheKey:
-		s = "HIBERNATE5_CACHE_KEY"
-	case TypeHibernate5TypeHibernateCacheEntry:
-		s = "HIBERNATE5_CACHE_ENTRY"
-	case TypeHibernate5TypeHibernateNaturalIDKey:
-		s = "HIBERNATE5_NATURAL_ID_KEY"
-	case TypeJetSerializerFirst:
-		s = "JET_SERIALIZER_FIRST"
-	case TypeJetSerializerLast:
-		s = "JET_SERIALIZER_LAST"
-	default:
-		s = fmt.Sprintf("UNKNOWN_TYPE:%d", t)
+	s, ok := typeToString[t]
+	if !ok {
+		return fmt.Sprintf("UNKNOWN_TYPE:%d", t)
 	}
 	return s
 }

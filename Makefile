@@ -7,8 +7,7 @@ TEST_FLAGS ?= -v -count 1
 COVERAGE_OUT = coverage.out
 PACKAGES=$(shell go list ./... | grep -v go-prompt | grep -v termdbms | grep -v internal/it | tr '\n' ',')
 
-build:
-	go build -ldflags $(LDFLAGS) -o hzc github.com/hazelcast/hazelcast-commandline-client
+build: clc
 
 generate-completion: build
 	mkdir -p extras
@@ -16,17 +15,20 @@ generate-completion: build
 	MODE="dev" ./hzc completion zsh --no-descriptions > extras/zsh_completion.zsh
 
 test:
-	go test -tags hazelcastinternal,hazelcastinternaltest $(TEST_FLAGS) ./...
+	go test -tags base,hazelcastinternal,hazelcastinternaltest $(TEST_FLAGS) ./...
 
 test-cover:
-	go test -tags hazelcastinternal,hazelcastinternaltest $(TEST_FLAGS) -coverprofile=coverage.out -coverpkg $(PACKAGES) -coverprofile=$(COVERAGE_OUT) ./...
+	go test -tags base,hazelcastinternal,hazelcastinternaltest $(TEST_FLAGS) -coverprofile=coverage.out -coverpkg $(PACKAGES) -coverprofile=$(COVERAGE_OUT) ./...
 
 view-cover:
 	go tool cover -func $(COVERAGE_OUT) | grep total:
 	go tool cover -html $(COVERAGE_OUT) -o coverage.html
 
 clc:
-	go build -tags hazelcastinternal,hazelcastinternaltest -ldflags $(LDFLAGS)  -o build/clc ./cmd/clc
+	go build -tags base,hazelcastinternal,hazelcastinternaltest -ldflags $(LDFLAGS)  -o build/clc ./cmd/clc
 
 clc-contrib:
-	go build -tags hazelcastinternal,hazelcastinternaltest,contrib -ldflags $(LDFLAGS)  -o build/clc ./cmd/clc
+	go build -tags base,contrib,hazelcastinternal,hazelcastinternaltest -ldflags $(LDFLAGS)  -o build/clc ./cmd/clc
+
+none:
+	go build -tags hazelcastinternal,hazelcastinternaltest -ldflags $(LDFLAGS)  -o build/clc-none ./cmd/clc

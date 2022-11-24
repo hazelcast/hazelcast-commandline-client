@@ -1,0 +1,31 @@
+{
+  "Name": "Sample",
+  "FID": 200,
+  "CID": 1,
+  "Fields": [
+    {
+      "Name": "FieldA",
+      "Type": "string"
+    },
+    {
+      "Name": "FieldB",
+      "Type": "int32"
+    },
+    {
+      "Name": "FieldC",
+      "Type": "date"
+    },
+    {
+      "Name": "FieldD",
+      "Type": "time"
+    },
+    {
+      "Name": "FieldE",
+      "Type": "timestamp"
+    },
+    {
+      "Name": "FieldF",
+      "Type": "timestampwithtimezone"
+    }
+  ]
+}

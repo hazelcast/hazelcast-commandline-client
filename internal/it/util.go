@@ -39,6 +39,8 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
+
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 )
 
 const (
@@ -152,37 +154,6 @@ func (f SamplePortableFactory) FactoryID() int32 {
 	return SamplePortableFactoryID
 }
 
-// Must panics if err is not nil.
-func Must(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
-// MustValue returns value if err is nil, otherwise it panics.
-func MustValue(value interface{}, err error) interface{} {
-	if err != nil {
-		panic(err)
-	}
-	return value
-}
-
-// MustSlice returns a slice of values if err is nil, otherwise it panics.
-func MustSlice(slice []interface{}, err error) []interface{} {
-	if err != nil {
-		panic(err)
-	}
-	return slice
-}
-
-// MustBool returns value if err is nil, otherwise it panics.
-func MustBool(value bool, err error) bool {
-	if err != nil {
-		panic(err)
-	}
-	return value
-}
-
 // MustClient returns client if err is nil, otherwise it panics.
 func MustClient(client *hz.Client, err error) *hz.Client {
 	if err != nil {
@@ -239,12 +210,12 @@ func CreateDefaultRemoteController() *RemoteControllerClientWrapper {
 }
 
 func CreateRemoteController(addr string) *RemoteControllerClient {
-	transport := MustValue(thrift.NewTSocketConf(addr, nil)).(*thrift.TSocket)
+	transport := check.MustAnyValue[*thrift.TSocket](thrift.NewTSocketConf(addr, nil))
 	bufferedTransport := thrift.NewTBufferedTransport(transport, 4096)
 	protocol := thrift.NewTBinaryProtocolConf(bufferedTransport, nil)
 	client := thrift.NewTStandardClient(protocol, protocol)
 	rc := NewRemoteControllerClient(client)
-	Must(transport.Open())
+	check.Must(transport.Open())
 	return rc
 }
 
@@ -289,10 +260,10 @@ func newRemoteControllerClientWrapper(rc *RemoteControllerClient) *RemoteControl
 }
 
 func (rcw *RemoteControllerClientWrapper) startNewCluster(memberCount int, config string, port int) *TestCluster {
-	cluster := MustValue(rcw.CreateClusterKeepClusterName(context.Background(), HzVersion(), config)).(*Cluster)
+	cluster := check.MustAnyValue[*Cluster](rcw.CreateClusterKeepClusterName(context.Background(), HzVersion(), config))
 	memberUUIDs := make([]string, 0, memberCount)
 	for i := 0; i < memberCount; i++ {
-		member := MustValue(rcw.StartMember(context.Background(), cluster.ID)).(*Member)
+		member := check.MustAnyValue[*Member](rcw.StartMember(context.Background(), cluster.ID))
 		memberUUIDs = append(memberUUIDs, member.UUID)
 	}
 	return &TestCluster{
@@ -518,7 +489,6 @@ func Eventually(t *testing.T, condition func() bool, msgAndArgs ...interface{}) 
 
 // Never asserts that the given condition doesn't satisfy in 3 seconds,
 // checking target function every 200 milliseconds.
-//
 func Never(t *testing.T, condition func() bool, msgAndArgs ...interface{}) {
 	if !assert.Never(t, condition, time.Second*3, time.Millisecond*200, msgAndArgs) {
 		t.FailNow()

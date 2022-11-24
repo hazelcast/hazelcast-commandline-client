@@ -7,5 +7,5 @@ import (
 )
 
 type Printer interface {
-	Print(w io.Writer, rows []output.Row) error
+	Print(w io.Writer, rp output.RowProducer) error
 }

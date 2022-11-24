@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -88,7 +90,11 @@ func (cc *CommandContext) SetCommandHelp(long, short string) {
 }
 
 func (cc *CommandContext) SetCommandUsage(usage string) {
-	cc.Cmd.Use = usage
+	pfx := ""
+	if cc.isInteractive {
+		pfx = "\\"
+	}
+	cc.Cmd.Use = fmt.Sprintf("%s%s", pfx, usage)
 }
 
 func (cc *CommandContext) SetCommandGroup(id string) {

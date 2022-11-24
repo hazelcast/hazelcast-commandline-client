@@ -15,10 +15,10 @@ import (
 )
 
 type JSONResult struct {
-	rp RowProvider
+	rp RowProducer
 }
 
-func NewJSONResult(rp RowProvider) *JSONResult {
+func NewJSONResult(rp RowProducer) *JSONResult {
 	return &JSONResult{rp: rp}
 }
 

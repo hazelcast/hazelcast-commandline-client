@@ -16,17 +16,40 @@ type ReadOnlyProperties interface {
 }
 
 type Properties struct {
-	mu  *sync.RWMutex
+	mu *sync.RWMutex
+	// properties stack
+	pss []map[string]any
+	// current properties
 	ps  map[string]any
 	psb map[string]BlockingValue
 }
 
 func NewProperties() *Properties {
+	pss := []map[string]any{{}}
 	return &Properties{
 		mu:  &sync.RWMutex{},
-		ps:  map[string]any{},
+		pss: pss,
+		ps:  pss[len(pss)-1],
 		psb: map[string]BlockingValue{},
 	}
+}
+
+func (p *Properties) Push() {
+	p.mu.Lock()
+	ps := map[string]any{}
+	p.pss = append(p.pss, ps)
+	p.ps = p.pss[len(p.pss)-1]
+	p.mu.Unlock()
+}
+
+func (p *Properties) Pop() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if len(p.pss) == 0 {
+		return
+	}
+	p.pss = p.pss[:len(p.pss)-1]
+	p.ps = p.pss[len(p.pss)-1]
 }
 
 func (p *Properties) Set(name string, value any) {
@@ -43,9 +66,16 @@ func (p *Properties) SetBlocking(name string, value BlockingValue) {
 
 func (p *Properties) Get(name string) (any, bool) {
 	p.mu.RLock()
-	v, ok := p.ps[name]
-	p.mu.RUnlock()
-	return v, ok
+	defer p.mu.RUnlock()
+	// traverse the stack to find the name
+	for i := len(p.pss) - 1; i >= 0; i-- {
+		ps := p.pss[i]
+		v, ok := ps[name]
+		if ok {
+			return v, true
+		}
+	}
+	return nil, false
 }
 
 func (p *Properties) GetBlocking(name string) (any, error) {

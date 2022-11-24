@@ -15,6 +15,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/shell"
+	"github.com/hazelcast/hazelcast-commandline-client/errors"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
@@ -103,7 +104,7 @@ func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInt
 }
 
 func (ec *ExecContext) Interactive() bool {
-	return false
+	return ec.isInteractive
 }
 
 func (ec *ExecContext) AddOutputRows(row ...output.Row) {
@@ -130,7 +131,7 @@ func (ec *ExecContext) FlushOutput() error {
 	if !ok {
 		return fmt.Errorf("printer %s is not available", pn)
 	}
-	return pr.Print(os.Stdout, rows)
+	return pr.Print(os.Stdout, output.NewSimpleRows(rows))
 }
 
 func (ec *ExecContext) SetInteractive(value bool) {
@@ -171,7 +172,7 @@ func (ec *ExecContext) ExecuteBlocking(ctx context.Context, hint string, f func(
 	for {
 		select {
 		case <-ctx.Done():
-			return nil, ctx.Err()
+			return nil, errors.ErrUserCancelled
 		case v := <-ch:
 			if err, ok := v.(error); ok {
 				return nil, err

@@ -73,15 +73,12 @@ func MakeZapLogger(callerSkip int) (*zap.Logger, error) {
 	// Set the logger to the finest setting, since we handle log filtering manually.
 	cfg.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
 	cfg.OutputPaths = []string{"clc:clc"}
-	//cfg.ErrorOutputPaths = []string{"stderr"}
 	// Use production defaults ...
 	cfg.EncoderConfig = zap.NewProductionEncoderConfig()
 	// ... with our settings.
 	ec := &cfg.EncoderConfig
 	ec.EncodeLevel = zapcore.CapitalLevelEncoder
 	ec.EncodeTime = zapcore.ISO8601TimeEncoder
-	// Try commenting out the following line.
-	//ec.FunctionKey = "func"
 	// Adjust the call stack so the root coller is displayed in the logs.
 	lg, err := cfg.Build(zap.AddCallerSkip(callerSkip))
 	if err != nil {

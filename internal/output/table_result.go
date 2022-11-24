@@ -21,10 +21,10 @@ const (
 
 type TableResult struct {
 	header []string
-	rp     RowProvider
+	rp     RowProducer
 }
 
-func NewTableResult(header []string, rp RowProvider) *TableResult {
+func NewTableResult(header []string, rp RowProducer) *TableResult {
 	return &TableResult{
 		header: header,
 		rp:     rp,

@@ -1,0 +1,1 @@
+This is the build directory of Hazelcast CLC project.

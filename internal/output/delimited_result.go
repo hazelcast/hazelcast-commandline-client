@@ -9,11 +9,11 @@ import (
 
 type DelimitedResult struct {
 	delim      string
-	rp         RowProvider
+	rp         RowProducer
 	singleLine bool
 }
 
-func NewDelimitedResult(delim string, rp RowProvider, oneline bool) *DelimitedResult {
+func NewDelimitedResult(delim string, rp RowProducer, oneline bool) *DelimitedResult {
 	return &DelimitedResult{
 		delim:      delim,
 		rp:         rp,

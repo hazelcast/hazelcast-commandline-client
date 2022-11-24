@@ -18,6 +18,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/logger"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
+	puberrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
@@ -40,20 +41,22 @@ type Main struct {
 	configLoaded  bool
 	props         *plug.Properties
 	ec            *ExecContext
+	cc            *CommandContext
 }
 
-func NewMain(cfgPath, logPath, logLevel string) (*Main, error) {
+func NewMain(cfgPath, logPath, logLevel string, stdout, stderr io.Writer) (*Main, error) {
 	rc := &cobra.Command{
 		Use:   "clc",
 		Short: "Hazelcast CLC",
-		Long:  "Hazelcast Command Line Client",
+		Long:  "Hazelcast CLC",
+		Args:  cobra.ExactArgs(0),
 	}
 	m := &Main{
 		root:   rc,
 		cmds:   map[string]*cobra.Command{},
 		vpr:    viper.New(),
-		stdout: nopWriteCloser{W: os.Stdout},
-		stderr: nopWriteCloser{W: os.Stderr},
+		stdout: nopWriteCloser{W: stdout},
+		stderr: nopWriteCloser{W: stderr},
 		props:  plug.NewProperties(),
 	}
 	cfgPath = paths.ResolveConfigPath(cfgPath)
@@ -77,8 +80,8 @@ func NewMain(cfgPath, logPath, logLevel string) (*Main, error) {
 	m.props.Set(clc.PropertyConfig, cfgPath)
 	m.props.Set(clc.PropertyLogPath, logPath)
 	m.props.Set(clc.PropertyLogLevel, logLevel)
-	cc := NewCommandContext(rc, m.vpr, m.isInteractive)
-	if err := m.runInitializers(cc); err != nil {
+	m.cc = NewCommandContext(rc, m.vpr, m.isInteractive)
+	if err := m.runInitializers(m.cc); err != nil {
 		return nil, err
 	}
 	cf := func(ctx context.Context) (*hazelcast.Client, error) {
@@ -93,33 +96,26 @@ func NewMain(cfgPath, logPath, logLevel string) (*Main, error) {
 }
 
 func (m *Main) CloneForInteractiveMode() (*Main, error) {
+	mc := *m
+	mc.isInteractive = true
 	rc := &cobra.Command{
-		Use:   "",
-		Short: "Hazelcast CLC",
-		Long:  "Hazelcast Command Line Client",
+		SilenceErrors: true,
 	}
-	mc := &Main{
-		root:          rc,
-		cmds:          map[string]*cobra.Command{},
-		vpr:           m.vpr,
-		client:        m.client,
-		lg:            m.lg,
-		stdout:        m.stdout,
-		stderr:        m.stderr,
-		ec:            m.ec,
-		isInteractive: true,
-		outputFormat:  m.outputFormat,
-		configLoaded:  m.configLoaded,
-		props:         m.props,
-	}
-	cc := NewCommandContext(rc, mc.vpr, mc.isInteractive)
-	if err := mc.runInitializers(cc); err != nil {
+	mc.root = rc
+	mc.cmds = map[string]*cobra.Command{}
+	mc.cc = NewCommandContext(rc, mc.vpr, mc.isInteractive)
+	if err := mc.runInitializers(mc.cc); err != nil {
 		return nil, err
 	}
+	cf := func(ctx context.Context) (*hazelcast.Client, error) {
+		return mc.ensureClient(ctx, mc.props)
+	}
+	mc.ec = NewExecContext(mc.lg, mc.stdout, mc.stderr, mc.props, cf, mc.isInteractive)
+	mc.ec.SetMain(&mc)
 	if err := mc.createCommands(); err != nil {
 		return nil, err
 	}
-	return mc, nil
+	return &mc, nil
 }
 
 func (m *Main) Root() *cobra.Command {
@@ -127,12 +123,62 @@ func (m *Main) Root() *cobra.Command {
 }
 
 func (m *Main) Execute(args []string) error {
+	var cm *cobra.Command
+	var cmdArgs []string
+	var err error
+	if !m.isInteractive {
+		cm, cmdArgs, err = m.root.Find(args)
+		if err != nil {
+			return err
+		}
+		if cm.Use == "clc" {
+			// check whether help or completion is requested
+			useShell := true
+			for i, arg := range cmdArgs {
+				if arg == "--help" || arg == "-h" {
+					useShell = false
+					break
+				}
+				if i == 0 && (arg == "help" || arg == "completion") {
+					useShell = false
+					break
+				}
+			}
+			// if help was not requested, set shell as the command
+			if useShell {
+				args = append([]string{"shell"}, cmdArgs...)
+			}
+		}
+	} else {
+		// disable completions command in the interactive mode
+		m.root.CompletionOptions.DisableDefaultCmd = true
+		m.root.SetHelpCommand(&cobra.Command{
+			Use:   `\help`,
+			Short: "Help about commands",
+			RunE: func(cmd *cobra.Command, args []string) error {
+				return m.root.Help()
+			},
+		})
+	}
 	m.root.SetArgs(args)
-	return m.root.Execute()
+	m.props.Push()
+	err = m.root.Execute()
+	m.props.Pop()
+	// set all flags to their defaults
+	// XXX: it may not work with slices, see: https://github.com/spf13/cobra/issues/1488#issuecomment-1205104931
+	if cm != nil {
+		cm.Flags().VisitAll(func(f *pflag.Flag) {
+			if f.Changed {
+				// ignoring the error
+				_ = f.Value.Set(f.DefValue)
+				f.Changed = false
+			}
+		})
+	}
+	return err
 }
 
 func (m *Main) Exit() error {
-	// ignore file close error
 	m.lg.Close()
 	return nil
 }
@@ -170,7 +216,7 @@ func (m *Main) createGetLogFile(path string) (io.WriteCloser, error) {
 func (m *Main) runAugmentors(ec plug.ExecContext, props *plug.Properties) error {
 	for _, a := range plug.Registry.Augmentors() {
 		if err := a.Item.Augment(ec, props); err != nil {
-			return fmt.Errorf("augmenting %s: %w", a.Name, err)
+			return err
 		}
 	}
 	return nil
@@ -206,7 +252,10 @@ func (m *Main) createCommands() error {
 			name := strings.Join(ps[:i], ":")
 			p, ok := m.cmds[name]
 			if !ok {
-				p = &cobra.Command{Use: ps[i-1]}
+				p = &cobra.Command{
+					Use: fmt.Sprintf("%s [command] [flags]", ps[i-1]),
+				}
+				p.SetUsageTemplate(usageTemplate)
 				m.cmds[name] = p
 				parent.AddCommand(p)
 			}
@@ -217,9 +266,13 @@ func (m *Main) createCommands() error {
 			Use:          ps[len(ps)-1],
 			SilenceUsage: true,
 		}
+		cmd.SetUsageTemplate(usageTemplate)
 		cc := NewCommandContext(cmd, m.vpr, m.isInteractive)
 		if ci, ok := c.Item.(plug.Initializer); ok {
 			if err := ci.Init(cc); err != nil {
+				if errors.Is(err, puberrors.ErrNotAvailable) {
+					continue
+				}
 				return fmt.Errorf("initializing command: %w", err)
 			}
 		}
@@ -228,7 +281,7 @@ func (m *Main) createCommands() error {
 			cmd.RunE = func(cmd *cobra.Command, args []string) error {
 				cfs := cmd.Flags()
 				props := m.props
-				cfs.Visit(func(f *pflag.Flag) {
+				cfs.VisitAll(func(f *pflag.Flag) {
 					// skip managed flags
 					if f.Name == clc.PropertyConfig || f.Name == clc.PropertyLogPath || f.Name == clc.PropertyLogLevel {
 						return
@@ -246,7 +299,11 @@ func (m *Main) createCommands() error {
 				}
 				if ic, ok := c.Item.(plug.InteractiveCommander); ok {
 					ec.SetInteractive(true)
-					return ic.ExecInteractive(cmd.Context(), ec)
+					err := ic.ExecInteractive(cmd.Context(), ec)
+					if errors.Is(err, puberrors.ErrNotAvailable) {
+						return nil
+					}
+					return err
 				}
 				return ec.FlushOutput()
 			}
