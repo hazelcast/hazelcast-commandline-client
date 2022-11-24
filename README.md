@@ -1,8 +1,8 @@
-# Hazelcast CLC (Command Line Client)
+# Hazelcast CLC
 
 ## Installation
 
-There are three ways you can install the command line client:
+There are three ways you can install CLC:
 
 * Using [Brew](https://brew.sh) (Linux, MacOS)
 * Using script installation (Linux, MacOS)
@@ -11,12 +11,14 @@ There are three ways you can install the command line client:
 ### Installing with Brew
 
 ```
-brew tap hazelcast/homebrew-hz
-brew install hazelcast-commandline-client
+$ brew tap hazelcast/homebrew-hz
+$ brew install hazelcast-clc
 ```
+
 **To have a superior experience, enable autocompletion on Brew:**
-- For **Bash** users:
-  - Execute `brew install bash-completion` and follow the printed "Caveats" section.  
+
+* **Bash** users:
+  * Execute `brew install bash-completion` and follow the printed "Caveats" section.  
     Example instruction:
     Add the following line to your ~/.bash_profile:
     ```
@@ -24,13 +26,15 @@ brew install hazelcast-commandline-client
     ```
     *Note that paths may differ depending on your installation, so you should follow the Caveats section on your system.*
 
-- For **Zsh** users
-  - Follow https://docs.brew.sh/Shell-Completion#configuring-completions-in-zsh 
+* **Zsh** users
+  * Follow https://docs.brew.sh/Shell-Completion#configuring-completions-in-zsh 
 
 ### Installation with script
 
+If you are using Linux or MacOS, you can run the following Bash script to install 
+
 ```
-curl https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/scripts/install.sh | bash
+$ curl https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/scripts/install.sh | bash
 ```
 
 ### Installing using the Windows Install Wizard
@@ -45,14 +49,14 @@ Depending on how you install the command line client, choose the uninstallation 
 ### Uninstallation using Brew
 
 ```
-brew uninstall hazelcast-commandline-client
-brew untap hazelcast/homebrew-hz
+$ brew uninstall hazelcast-clc
+$ brew untap hazelcast/homebrew-hz
 ```
 
 ### Uninstallation using script
 
 ```
-~/.local/share/hz-cli/bin/uninstall.sh
+$ bash ~/.local/share/clc/bin/uninstall.sh
 ```
 
 ### Uninstallation using the Windows Install Wizard
@@ -65,113 +69,40 @@ Make sure a Hazelcast 4 or Hazelcast 5 cluster is running.
 
 ```
 # Start interactive shell
-hzc
+$ clc
 
 # Print help
-hzc --help
+$ clc --help
 
 # Non-interactive mode
-hzc map --name myMap put --key myKey --value myValue
+$ clc map put myKey myValue
 ```
 ### Keyboard Shortcuts
 
-Emacs-like keyboard shortcuts are available by default (these also are the default shortcuts in Bash shell).
+The following keyboard shortcuts are available in the interactive-mode:
 
-| Key Binding         | Description                                     |
-|---------------------|-------------------------------------------------|
-| <kbd>Ctrl + A</kbd> | Go to the beginning of the line (Home)          |
-| <kbd>Ctrl + E</kbd> | Go to the end of the line (End)                 |
-| <kbd>Ctrl + P</kbd> | Previous command (Up arrow)                     |
-| <kbd>Ctrl + N</kbd> | Next command (Down arrow)                       |
-| <kbd>Ctrl + F</kbd> | Forward one character                           |
-| <kbd>Ctrl + B</kbd> | Backward one character                          |
-| <kbd>Ctrl + D</kbd> | Delete character under the cursor               |
-| <kbd>Ctrl + H</kbd> | Delete character before the cursor (Backspace)  |
-| <kbd>Ctrl + W</kbd> | Cut the word before the cursor to the clipboard |
-| <kbd>Ctrl + K</kbd> | Cut the line after the cursor to the clipboard  |
-| <kbd>Ctrl + U</kbd> | Cut the line before the cursor to the clipboard |
-| <kbd>Ctrl + L</kbd> | Clear the screen                                |
-
-\
-With few additions:
-
-| Key Binding          | Description                             |
-|----------------------|-----------------------------------------|
-| <kbd>Ctrl + C</kbd>  | Cancel running command or close the app |
-| <kbd>Ctrl + -></kbd> | Go to the end of to next word           |
-| <kbd>Ctrl + <-</kbd> | Go to the start of the previous word    |
+| Key Binding         | Description                                    |
+|---------------------|------------------------------------------------|
+| <kbd>Ctrl + A</kbd> | Go to the beginning of the line (Home)         |
+| <kbd>Ctrl + E</kbd> | Go to the end of the line (End)                |
+| <kbd>Ctrl + P</kbd> | Previous command (Up arrow)                    |
+| <kbd>Ctrl + N</kbd> | Next command (Down arrow)                      |
+| <kbd>Ctrl + F</kbd> | Forward one character                          |
+| <kbd>Ctrl + B</kbd> | Backward one character                         |
+| <kbd>Ctrl + D</kbd> | Delete character under the cursor              |
+| <kbd>Ctrl + H</kbd> | Delete character before the cursor (Backspace) |
+| <kbd>Ctrl + W</kbd> | Cut the word before the cursor                 |
+| <kbd>Ctrl + K</kbd> | Cut the line after the cursor                  |
+| <kbd>Ctrl + U</kbd> | Cut the line before the cursor                 |
+| <kbd>Ctrl + L</kbd> | Clear the screen                               |
+| <kbd>Ctrl + C</kbd> | Cancel running command or close the app        |
+| <kbd>Ctrl + -></kbd>| Go to the end of to next word                  |
+| <kbd>Ctrl + <-</kbd>| Go to the start of the previous word           |
 
 ## Connecting to Hazelcast Cloud
 
-The cluster creation and retrieving connection info can be done directly in command line using [Hazelcast Cloud CLI](https://github.com/hazelcast/hazelcast-cloud-cli).
 
-- Authenticate to Hazelcast Cloud account:
 
-  ```  
-  hzcloud login
-  -  API Key: SAMPLE_API_KEY
-  -  API Secret: SAMPLE_API_SECRET
-  ```
-
-- Create a cluster:
-
-  ```
-  hzcloud starter-cluster create \
-  --cloud-provider=aws \
-  --cluster-type=FREE \
-  --name=mycluster \
-  --region=us-west-2 \
-  --total-memory=0.2 \
-  --hazelcast-version=5.0
-
-  > Cluster 2258 is creating. You can check the status using hzcloud starter-cluster list.
-  ```
-  
-- Wait until the cluster is running:
-
-  ```
-  hzcloud starter-cluster list
-  
-  > 
-  ┌────────┬────────────┬─────────┬─────────┬──────────────┬────────────────┬───────────┬─────────┐
-  │ Id     │ Name       │ State   │ Version │ Memory (GiB) │ Cloud Provider │ Region    │ Is Free │
-  ├────────┼────────────┼─────────┼─────────┼──────────────┼────────────────┼───────────┼─────────┤
-  │ 2285   │ mycluster  │ PENDING │ 5.0     │          0.2 │ aws            │ us-west-2 │ true    │
-  ├────────┼────────────┼─────────┼─────────┼──────────────┼────────────────┼───────────┼─────────┤
-  │ Total: │ 1          │         │         │              │                │           │         │
-  └────────┴────────────┴─────────┴─────────┴──────────────┴────────────────┴───────────┴─────────┘
-  
-  ...
-  
-  hzcloud starter-cluster list
-  > 
-  ┌────────┬────────────┬─────────┬─────────┬──────────────┬────────────────┬───────────┬─────────┐
-  │ Id     │ Name       │ State   │ Version │ Memory (GiB) │ Cloud Provider │ Region    │ Is Free │
-  ├────────┼────────────┼─────────┼─────────┼──────────────┼────────────────┼───────────┼─────────┤
-  │ 2285   │ mycluster  │ RUNNING │ 5.0     │          0.2 │ aws            │ us-west-2 │ true    │
-  ├────────┼────────────┼─────────┼─────────┼──────────────┼────────────────┼───────────┼─────────┤
-  │ Total: │ 1          │         │         │              │                │           │         │
-  └────────┴────────────┴─────────┴─────────┴──────────────┴────────────────┴───────────┴─────────┘
-
-  ```
-
-- Get the cluster name and discovery token:
-  
-  ```
-  # Get cluster name
-  hzcloud starter-cluster get --cluster-id 2285 --output json | jq '.releaseName'
-  > "ex-1111"
-  
-  # Get discovery token
-  hzcloud starter-cluster get --cluster-id 2285 --output json | jq '.discoveryTokens[].token'
-  > "exampleHashDiscoveryToken"
-  ```
-
-- Connect to the cluster using the command line client using the credentials above:
-
-  ```
-  hzc --cluster-name <CLUSTER NAME> --cloud-token <DISCOVERY TOKEN>
-  ```
 
 ## SSL Configuration
 
