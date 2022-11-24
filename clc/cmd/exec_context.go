@@ -98,7 +98,7 @@ func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInt
 	}
 	stop()
 	ec.ci = hazelcast.NewClientInternal(client.(*hazelcast.Client))
-	if ec.Interactive() {
+	if ec.Interactive() && !shell.IsPipe() {
 		I2(fmt.Fprintf(ec.stdout, "Connected to cluster: %s\n\n", ec.ci.ClusterService().FailoverService().Current().ClusterName))
 	}
 	return ec.ci, nil

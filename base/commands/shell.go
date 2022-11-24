@@ -52,13 +52,15 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 	if err != nil {
 		return fmt.Errorf("cloning Main: %w", err)
 	}
-	I2(fmt.Fprintf(ec.Stdout(), `Hazelcast CLC %s
+	if !shell.IsPipe() {
+		I2(fmt.Fprintf(ec.Stdout(), `Hazelcast CLC %s
 (c) 2022 Hazelcast Inc.
 	
 Type 'help' for help information.
 Prefix non-SQL commands with \
 	
 	`, internal.Version))
+	}
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	clcMultilineContinue := false
 	endLineFn := func(line string, multiline bool) (string, bool) {

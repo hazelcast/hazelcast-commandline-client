@@ -112,9 +112,9 @@ func MakeTableFromRows(rows []Row) (table.Row, []Row) {
 
 func makeTableHeaderFromRow(row Row, maxWidth int) table.Row {
 	dw := defaultWidthForFlexibleColumns(row, maxWidth)
-	// the max width for a column is 80, just an arbitrary decision --YT
-	if dw > 80 {
-		dw = 80
+	// the max width for a column is 1000, just an arbitrary decision --YT
+	if dw > 1000 {
+		dw = 1000
 	}
 	ww := 0
 	for _, c := range row {
