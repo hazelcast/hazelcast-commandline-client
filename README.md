@@ -63,20 +63,39 @@ $ bash ~/.local/share/clc/bin/uninstall.sh
 
 If you have installed CLC using the Windows Install Wizard, you can use the Settings/Apps menu to uninstall it.
 
-## Usage
+## Usage Summary
 
 Make sure a Hazelcast 4 or Hazelcast 5 cluster is running.
 
-```
-# Start interactive shell
-$ clc
+### Non-interactive Mode
 
-# Print help
+Run commands:
+```
+$ clc map put my-key my-value
+```
+
+Get help:
+```
 $ clc --help
-
-# Non-interactive mode
-$ clc map put myKey myValue
 ```
+
+### Interactive (Shell) Mode
+
+Start interactive shell:
+```
+$ clc
+```
+
+Run SQL commands:
+```
+CLC> select * from cities;
+```
+
+Run CLC commands:
+```
+CLC> \map put my-key my-value
+```
+ 
 ### Keyboard Shortcuts
 
 The following keyboard shortcuts are available in the interactive-mode:
@@ -99,108 +118,42 @@ The following keyboard shortcuts are available in the interactive-mode:
 | <kbd>Ctrl + -></kbd>| Go to the end of to next word                  |
 | <kbd>Ctrl + <-</kbd>| Go to the start of the previous word           |
 
-## Connecting to Hazelcast Cloud
+## Connecting to Viridian Serverless
 
+1. If you don't have a running Viridian Serverless cluster, follow the steps in [Step 1. Start a Viridian Serverless Development Cluster](https://docs.hazelcast.com/cloud/get-started#step-1-start-a-viridian-serverless-development-cluster) to create a cluster.
+  Both development and production clusters will work very well.
+2. Download the Go client sample for your cluster from the Viridian Console. The sample is typically a Zip file with the following name format: "hazelcast-cloud-go-sample-client-CLUSTER-ID-default.zip". For instance: `hazelcast-cloud-csharp-sample-client-pr-3814-default.zip` 
+3. Import the configuration with CLC:
+  ```
+  $ clc config import ~/hazelcast-cloud-go-sample-client-pr-3814-default.zip
+  ```
+4. The configuration will be imported with the name as the cluster ID. Check that the configuration is known to CLC:
+  ```
+  $ clc config list
+  default
+  pr-3814
+  ```
+5. In order to use this configuration, use `-c CONFIG_NAME` flag whenever you run CLC:
+  ```
+  $ clc -c pr-3814 map put my-key my-value
+  ```
 
+## Generating auto-completion
 
+CLC supports auto-completion in the non-interactive mode for the following shells:
+* Bash
+* Fish
+* Powershell
+* Zsh
 
-## SSL Configuration
-
-You can use the following configuration file to enable SSL support:
+Run `clc completion SHELL-NAME` command to generate an autocompletion file.
+The instructions for each shell is different and can be access by running `clc completion SHELL-NAME --help`:
 ```
-ssl:
-    enabled: true
-    servername: "HOSTNAME-FOR-SERVER"
-    # or: insecureskipverify: true
-hazelcast:
-  cluster:
-    security:
-      credentials:
-        username: "OPTIONAL USERNAME"
-        password: "OPTIONAL PASSWORD"
-    name: "CLUSTER-NAME"
-    network:
-      addresses:
-        - "localhost:5701"
-```
+# show the instructions to enable auto-completion for bash
+$ clc completion bash --help
 
-Mutual authentication is also supported:
-```
-ssl:
-    enabled: true
-    servername: "HOSTNAME-FOR-SERVER"
-    # insecureskipverify: true
-    capath: "/tmp/ca.pem"
-    certpath: "/tmp/cert.pem"
-    keypath: "/tmp/key.pem"
-    keypassword: "PASSWORD FOR THE KEY"
-hazelcast:
-  cluster:
-    security:
-      credentials:
-        username: "OPTIONAL USERNAME"
-        password: "OPTIONAL PASSWORD"
-    name: "CLUSTER-NAME"
-    network:
-      addresses:
-        - "localhost:5701"
-```
-
-Cloud SSL configuration:
-```
-ssl:
-    enabled: true
-    capath: "/tmp/ca.pem"
-    certpath: "/tmp/cert.pem"
-    keypath: "/tmp/key.pem"
-    keypassword: "PASSWORD FOR THE KEY"
-hazelcast:
-  cluster:
-    name: "CLUSTER NAME"
-    cloud:
-      token: "HAZELCAST CLOUD TOKEN"
-      enabled: true
-```
-
-## More examples
-
-```
-# Get from a map
-hzc map get --name my-map --key my-key
-
-# Put to a map
-hzc map put --name my-map --key my-key --value my-value
-
-# Get state of the cluster
-hzc cluster get-state
-
-# Work with JSON values
-hzc map put --name map --key b --value-type json --value '{"english":"Greetings"}'
-hzc map get --name map --key b
-> {"english":"Greetings"}
-
-# Change state of the cluster
-# Either of these: active | frozen | no_migration | passive
-hzc cluster change-state --state <NEW_STATE>
-
-# Shutdown the cluster
-hzc cluster shutdown
-
-# Get the version of the cluster
-hzc cluster version
-```
-
-## Configuration
-```
-# Using Custom Config
-# <CONFIG_PATH>: path of the target configuration
-hzc --config <CONFIG_PATH>
-
-# Connect to a Local Hazelcast cluster
-# <ADDRESSES>: addresses of the members of the Hazelcast cluster
-e.g. 192.168.1.1:5702,192.168.1.2:5703,192.168.1.3:5701
-# <CLUSTER_NAME>: name of the cluster
-hzc --address <ADDRESSES> --cluster-name <YOUR_CLUSTER_NAME>
+# generate the auto-completion for bash and save it to clc.bash
+$ clc completion bash > clc.bash
 ```
 
 ## Building from source
@@ -214,7 +167,7 @@ The prior versions of the given targets would also work, but that's not tested.
 
 ### Requirements
 
-* Go 1.18 or better
+* Go 1.19 or better
 * Git
 * GNU Make (on Linux and MacOS)
 * Command Prompt or Powershell (on Windows) 
@@ -225,21 +178,19 @@ The prior versions of the given targets would also work, but that's not tested.
 You can acquire the source using Git:
 
 ```
-git clone https://github.com/hazelcast/hazelcast-commandline-client.git
+$ git clone https://github.com/hazelcast/hazelcast-commandline-client.git
 ```
 
-Or download the source archive and extract it:
-
-```
-https://github.com/hazelcast/hazelcast-commandline-client/archive/refs/heads/main.zip
-```
+Or download the source archive from https://github.com/hazelcast/hazelcast-commandline-client/archive/refs/heads/main.zip and extract it.
 
 ### 2. Build the project
 
 ```
-cd hazelcast-commandline-client
-make
+$ cd hazelcast-commandline-client
+$ make
 ```
+
+The `clc` or `clc.exe` binary is created in the `build` directory.
 
 ### Finally, run the project
 
@@ -247,10 +198,10 @@ CLC starts the interactive mode by default.
 
 On Linux and MacOS:
 ```
-./hzc
+./build/clc
 ```
 
 On Windows:
 ```
-hzc.exe
+.\build\clc.exe
 ```
