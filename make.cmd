@@ -21,7 +21,7 @@ goto :end
 
 :build
     go-winres make --product-version=%CLC_VERSION% --file-version=%CLC_VERSION%
-    go build -tags hazelcastinternal,hazelcastinternaltest -ldflags %ldflags% -o hzc.exe .
+    go build -tags base,hazelcastinternal,hazelcastinternaltest -ldflags %ldflags% -o clc.exe .
     goto :end
 
 :installer
