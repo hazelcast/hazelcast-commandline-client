@@ -265,6 +265,10 @@ func (m *Main) createCommands() error {
 				return fmt.Errorf("initializing command: %w", err)
 			}
 		}
+		// add the backslash prefix for top-level commands in the interactive mode
+		if m.isInteractive && parent == m.root {
+			cmd.Use = fmt.Sprintf("\\%s", cmd.Use)
+		}
 		parent.AddGroup(cc.Groups()...)
 		if !cc.TopLevel() {
 			cmd.RunE = func(cmd *cobra.Command, args []string) error {
