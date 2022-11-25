@@ -1,6 +1,6 @@
 site:
   title: Documentation
-  url: 
+  url: https://eclectic-sawine-19fcf1.netlify.app
   start_page: clc::overview.adoc
   robots: disallow
   keys:
@@ -14,7 +14,7 @@ content:
     start_path: ./docs
 ui: 
   bundle:
-    url:  https://github.com/hazelcast/hazelcast-docs-ui/releases/latest/download/ui-bundle.zip #../hazelcast-docs-ui/build/ui-bundle.zip
+    url: https://github.com/hazelcast/hazelcast-docs-ui/releases/latest/download/ui-bundle.zip #../hazelcast-docs-ui/build/ui-bundle.zip
     snapshot: true
 asciidoc:
   attributes:
