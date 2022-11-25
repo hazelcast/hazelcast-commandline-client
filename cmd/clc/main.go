@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/fatih/color"
+
 	clc "github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 )
 
@@ -13,6 +15,8 @@ func bye(err error) {
 }
 
 func main() {
+	// disable color mode
+	color.NoColor = true
 	args := os.Args[1:]
 	cfgPath, logPath, logLevel, err := clc.ExtractStartupArgs(args)
 	if err != nil {
