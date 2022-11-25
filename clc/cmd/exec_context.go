@@ -21,7 +21,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-type ClientFn func(ctx context.Context) (*hazelcast.Client, error)
+type ClientFn func(ctx context.Context) (*hazelcast.ClientInternal, error)
 
 type ExecContext struct {
 	lg            log.Logger
@@ -30,7 +30,6 @@ type ExecContext struct {
 	args          []string
 	props         *plug.Properties
 	clientFn      ClientFn
-	ci            *hazelcast.ClientInternal
 	isInteractive bool
 	cmd           *cobra.Command
 	main          *Main
@@ -87,21 +86,21 @@ func (ec *ExecContext) Props() plug.ReadOnlyProperties {
 }
 
 func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInternal, error) {
-	if ec.ci != nil {
-		return ec.ci, nil
+	if clientInternal != nil {
+		return clientInternal, nil
 	}
-	client, stop, err := ec.ExecuteBlocking(ctx, "Connecting to the cluster", func(ctx context.Context) (any, error) {
+	ci, stop, err := ec.ExecuteBlocking(ctx, "Connecting to the cluster", func(ctx context.Context) (any, error) {
 		return ec.clientFn(ctx)
 	})
 	if err != nil {
 		return nil, err
 	}
 	stop()
-	ec.ci = hazelcast.NewClientInternal(client.(*hazelcast.Client))
+	clientInternal = ci.(*hazelcast.ClientInternal)
 	if ec.Interactive() && !shell.IsPipe() {
-		I2(fmt.Fprintf(ec.stdout, "Connected to cluster: %s\n\n", ec.ci.ClusterService().FailoverService().Current().ClusterName))
+		I2(fmt.Fprintf(ec.stdout, "Connected to cluster: %s\n\n", clientInternal.ClusterService().FailoverService().Current().ClusterName))
 	}
-	return ec.ci, nil
+	return clientInternal, nil
 }
 
 func (ec *ExecContext) Interactive() bool {

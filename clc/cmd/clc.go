@@ -28,11 +28,15 @@ const (
 	envHzCloudCoordinatorBaseURL = "HZ_CLOUD_COORDINATOR_BASE_URL"
 )
 
+// client is currently global in order to have a single client.
+// This is bad.
+// TODO: make the client unique without making it global.
+var clientInternal *hazelcast.ClientInternal
+
 type Main struct {
 	root          *cobra.Command
 	cmds          map[string]*cobra.Command
 	vpr           *viper.Viper
-	client        *hazelcast.Client
 	lg            *logger.Logger
 	stdout        io.WriteCloser
 	stderr        io.WriteCloser
@@ -96,6 +100,16 @@ func (m *Main) CloneForInteractiveMode() (*Main, error) {
 		SilenceErrors: true,
 	}
 	mc.root = rc
+	// disable completions command in the interactive mode
+	rc.CompletionOptions.DisableDefaultCmd = true
+	rc.SetHelpCommand(&cobra.Command{
+		Use:   `\help`,
+		Short: "Help about commands",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return mc.root.Help()
+		},
+	})
+
 	mc.cmds = map[string]*cobra.Command{}
 	mc.cc = NewCommandContext(rc, mc.vpr, mc.isInteractive)
 	if err := mc.runInitializers(mc.cc); err != nil {
@@ -138,16 +152,6 @@ func (m *Main) Execute(args []string) error {
 				args = append([]string{"shell"}, cmdArgs...)
 			}
 		}
-	} else {
-		// disable completions command in the interactive mode
-		m.root.CompletionOptions.DisableDefaultCmd = true
-		m.root.SetHelpCommand(&cobra.Command{
-			Use:   `\help`,
-			Short: "Help about commands",
-			RunE: func(cmd *cobra.Command, args []string) error {
-				return m.root.Help()
-			},
-		})
 	}
 	m.root.SetArgs(args)
 	m.props.Push()
@@ -281,22 +285,14 @@ func (m *Main) createCommands() error {
 					}
 					props.Set(f.Name, convertFlagValue(cfs, f.Name, f.Value))
 				})
-				ec, err := NewExecContext(m.lg, m.stdout, m.stderr, m.props, func(ctx context.Context) (*hazelcast.Client, error) {
-					if m.client != nil {
-						return m.client, nil
-					}
-					c, err := m.ensureClient(ctx, m.props)
-					if err != nil {
+				ec, err := NewExecContext(m.lg, m.stdout, m.stderr, m.props, func(ctx context.Context) (*hazelcast.ClientInternal, error) {
+					if err := m.ensureClient(ctx, m.props); err != nil {
 						return nil, err
 					}
-					m.client = c
-					return c, nil
+					return clientInternal, nil
 				}, m.isInteractive)
 				if err != nil {
 					return err
-				}
-				if m.client != nil {
-					ec.ci = hazelcast.NewClientInternal(m.client)
 				}
 				ec.SetMain(m)
 				ec.SetArgs(args)
@@ -324,18 +320,19 @@ func (m *Main) createCommands() error {
 	return nil
 }
 
-func (m *Main) ensureClient(ctx context.Context, props plug.ReadOnlyProperties) (*hazelcast.Client, error) {
-	if m.client == nil {
+func (m *Main) ensureClient(ctx context.Context, props plug.ReadOnlyProperties) error {
+	if clientInternal == nil {
 		cfg, err := makeConfiguration(props, m.lg)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		m.client, err = hazelcast.StartNewClientWithConfig(ctx, cfg)
+		client, err := hazelcast.StartNewClientWithConfig(ctx, cfg)
 		if err != nil {
-			return nil, err
+			return err
 		}
+		clientInternal = hazelcast.NewClientInternal(client)
 	}
-	return m.client, nil
+	return nil
 }
 
 func (m *Main) loadConfig(path string) (bool, error) {
