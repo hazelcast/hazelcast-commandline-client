@@ -1,7 +1,9 @@
 package table
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"strings"
 	"sync/atomic"
 
@@ -34,20 +36,27 @@ func (t *Table) WriteHeader(cs Row) {
 	t.width = make([]int, len(cs))
 	t.rwf = make([]runeWidthFn, len(cs))
 	t.updateAlignment(cs)
-	var size int
+	var sep string
+	if t.cfg.HeaderSeperator != "" {
+		sep = t.makeSeparator(cs)
+	}
+	if sep != "" {
+		withColor(t.cfg.TitleColor, func() {
+			t.printf("%s", sep)
+		})
+		t.printf("\n")
+	}
 	withColor(t.cfg.TitleColor, func() {
 		row := make([]string, len(cs))
 		for i, h := range cs {
 			row[i] = h.Header
 		}
-		size = t.printRow(row)
+		t.printRow(row)
 	})
 	t.printf("\n")
-	if t.cfg.HeaderSeperator != "" {
-		// TODO: support separators with more than one rune.
-		repeat := size / len(t.cfg.HeaderSeperator)
+	if sep != "" {
 		withColor(t.cfg.TitleColor, func() {
-			t.printf("%s", strings.Repeat(t.cfg.HeaderSeperator, repeat))
+			t.printf("%s", sep)
 		})
 		t.printf("\n")
 	}
@@ -72,7 +81,22 @@ func (t *Table) updateAlignment(row Row) {
 	}
 }
 
+func (t *Table) makeSeparator(row Row) string {
+	bf := &bytes.Buffer{}
+	rs := make([]string, len(row))
+	for i, h := range row {
+		rs[i] = h.Header
+	}
+	size := t.wPrintRow(bf, rs)
+	repeat := size / len(t.cfg.HeaderSeperator)
+	return strings.Repeat(t.cfg.HeaderSeperator, repeat)
+}
+
 func (t *Table) printRow(row []string) int {
+	return t.wPrintRow(t.cfg.Stdout, row)
+}
+
+func (t *Table) wPrintRow(wr io.Writer, row []string) int {
 	var n int
 	for i, v := range row {
 		w := t.width[i]
@@ -81,14 +105,18 @@ func (t *Table) printRow(row []string) int {
 		if i == 0 {
 			f = t.cfg.CellFormat[0]
 		}
-		n += t.printf(f, t.rwf[i](v, w))
+		n += printf(wr, f, t.rwf[i](v, w))
 	}
 	return n
 }
 
 func (t *Table) printf(format string, args ...any) int {
+	return printf(t.cfg.Stdout, format, args...)
+}
+
+func printf(w io.Writer, format string, args ...any) int {
 	// ignoring the error here
-	n, err := fmt.Fprintf(t.cfg.Stdout, format, args...)
+	n, err := fmt.Fprintf(w, format, args...)
 	if err != nil {
 		return 0
 	}

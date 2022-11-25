@@ -31,7 +31,7 @@ const (
 // client is currently global in order to have a single client.
 // This is bad.
 // TODO: make the client unique without making it global.
-var client *hazelcast.Client
+var clientInternal *hazelcast.ClientInternal
 
 type Main struct {
 	root          *cobra.Command
@@ -285,22 +285,14 @@ func (m *Main) createCommands() error {
 					}
 					props.Set(f.Name, convertFlagValue(cfs, f.Name, f.Value))
 				})
-				ec, err := NewExecContext(m.lg, m.stdout, m.stderr, m.props, func(ctx context.Context) (*hazelcast.Client, error) {
-					if client != nil {
-						return client, nil
-					}
-					c, err := m.ensureClient(ctx, m.props)
-					if err != nil {
+				ec, err := NewExecContext(m.lg, m.stdout, m.stderr, m.props, func(ctx context.Context) (*hazelcast.ClientInternal, error) {
+					if err := m.ensureClient(ctx, m.props); err != nil {
 						return nil, err
 					}
-					client = c
-					return c, nil
+					return clientInternal, nil
 				}, m.isInteractive)
 				if err != nil {
 					return err
-				}
-				if client != nil {
-					ec.ci = hazelcast.NewClientInternal(client)
 				}
 				ec.SetMain(m)
 				ec.SetArgs(args)
@@ -328,18 +320,19 @@ func (m *Main) createCommands() error {
 	return nil
 }
 
-func (m *Main) ensureClient(ctx context.Context, props plug.ReadOnlyProperties) (*hazelcast.Client, error) {
-	if client == nil {
+func (m *Main) ensureClient(ctx context.Context, props plug.ReadOnlyProperties) error {
+	if clientInternal == nil {
 		cfg, err := makeConfiguration(props, m.lg)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		client, err = hazelcast.StartNewClientWithConfig(ctx, cfg)
+		client, err := hazelcast.StartNewClientWithConfig(ctx, cfg)
 		if err != nil {
-			return nil, err
+			return err
 		}
+		clientInternal = hazelcast.NewClientInternal(client)
 	}
-	return client, nil
+	return nil
 }
 
 func (m *Main) loadConfig(path string) (bool, error) {
