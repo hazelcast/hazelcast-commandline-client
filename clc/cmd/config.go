@@ -17,6 +17,10 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
+const (
+	envClientMame = "CLC_CLIENT_NAME"
+)
+
 func makeConfiguration(props plug.ReadOnlyProperties, lg *logger.Logger) (hazelcast.Config, error) {
 	// if the path is not absolute, assume it is in the parent directory of the configuration
 	wd := filepath.Dir(props.GetString(clc.PropertyConfig))
@@ -92,6 +96,10 @@ func makeConfiguration(props plug.ReadOnlyProperties, lg *logger.Logger) (hazelc
 }
 
 func makeClientName() string {
+	cn := os.Getenv(envClientMame)
+	if cn != "" {
+		return cn
+	}
 	var userName string
 	u, err := user.Current()
 	if err != nil {
