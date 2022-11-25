@@ -28,11 +28,15 @@ const (
 	envHzCloudCoordinatorBaseURL = "HZ_CLOUD_COORDINATOR_BASE_URL"
 )
 
+// client is currently global in order to have a single client.
+// This is bad.
+// TODO: make the client unique without making it global.
+var client *hazelcast.Client
+
 type Main struct {
 	root          *cobra.Command
 	cmds          map[string]*cobra.Command
 	vpr           *viper.Viper
-	client        *hazelcast.Client
 	lg            *logger.Logger
 	stdout        io.WriteCloser
 	stderr        io.WriteCloser
@@ -282,21 +286,21 @@ func (m *Main) createCommands() error {
 					props.Set(f.Name, convertFlagValue(cfs, f.Name, f.Value))
 				})
 				ec, err := NewExecContext(m.lg, m.stdout, m.stderr, m.props, func(ctx context.Context) (*hazelcast.Client, error) {
-					if m.client != nil {
-						return m.client, nil
+					if client != nil {
+						return client, nil
 					}
 					c, err := m.ensureClient(ctx, m.props)
 					if err != nil {
 						return nil, err
 					}
-					m.client = c
+					client = c
 					return c, nil
 				}, m.isInteractive)
 				if err != nil {
 					return err
 				}
-				if m.client != nil {
-					ec.ci = hazelcast.NewClientInternal(m.client)
+				if client != nil {
+					ec.ci = hazelcast.NewClientInternal(client)
 				}
 				ec.SetMain(m)
 				ec.SetArgs(args)
@@ -325,17 +329,17 @@ func (m *Main) createCommands() error {
 }
 
 func (m *Main) ensureClient(ctx context.Context, props plug.ReadOnlyProperties) (*hazelcast.Client, error) {
-	if m.client == nil {
+	if client == nil {
 		cfg, err := makeConfiguration(props, m.lg)
 		if err != nil {
 			return nil, err
 		}
-		m.client, err = hazelcast.StartNewClientWithConfig(ctx, cfg)
+		client, err = hazelcast.StartNewClientWithConfig(ctx, cfg)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return m.client, nil
+	return client, nil
 }
 
 func (m *Main) loadConfig(path string) (bool, error) {

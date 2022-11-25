@@ -4,7 +4,9 @@ import (
 	"crypto/tls"
 	"fmt"
 	"os"
+	"os/user"
 	"path/filepath"
+	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
 
@@ -85,5 +87,25 @@ func makeConfiguration(props plug.ReadOnlyProperties, lg *logger.Logger) (hazelc
 			}
 		}
 	}
+	cfg.ClientName = makeClientName()
 	return cfg, nil
+}
+
+func makeClientName() string {
+	var userName string
+	u, err := user.Current()
+	if err != nil {
+		userName = "UNKNOWN"
+	} else {
+		userName = u.Username
+	}
+	var hostName string
+	host, err := os.Hostname()
+	if err != nil {
+		host = "UNKNOWN"
+	} else {
+		hostName = host
+	}
+	t := time.Now().Unix()
+	return fmt.Sprintf("%s@%s-%d", userName, hostName, t)
 }

@@ -106,10 +106,10 @@ Prefix non-SQL commands with \
 			return err
 		}
 		res, stop, err := sql.ExecSQL(ctx, ec, text)
-		defer stop()
 		if err != nil {
 			return err
 		}
+		defer stop()
 		if err := sql.UpdateOutput(ctx, ec, res, verbose); err != nil {
 			return err
 		}
