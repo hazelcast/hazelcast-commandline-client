@@ -53,14 +53,11 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 		return fmt.Errorf("cloning Main: %w", err)
 	}
 	if !shell.IsPipe() {
-		I2(fmt.Fprintf(ec.Stdout(), `Hazelcast CLC %s
-(c) 2022 Hazelcast Inc.
+		I2(fmt.Fprintf(ec.Stdout(), `Hazelcast CLC %s (c) 2022 Hazelcast Inc.
 		
-Participate to our survey at:
-https://forms.gle/rPFywdQjvib1QCe49
-	
-Type 'help' for help information.
-Prefix non-SQL commands with \
+Participate to our survey at: https://forms.gle/rPFywdQjvib1QCe49
+
+Type 'help' for help information. Prefix non-SQL commands with \
 	
 	`, internal.Version))
 	}
