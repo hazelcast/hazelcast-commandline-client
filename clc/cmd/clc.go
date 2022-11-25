@@ -102,6 +102,16 @@ func (m *Main) CloneForInteractiveMode() (*Main, error) {
 		SilenceErrors: true,
 	}
 	mc.root = rc
+	// disable completions command in the interactive mode
+	rc.CompletionOptions.DisableDefaultCmd = true
+	rc.SetHelpCommand(&cobra.Command{
+		Use:   `\help`,
+		Short: "Help about commands",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return mc.root.Help()
+		},
+	})
+
 	mc.cmds = map[string]*cobra.Command{}
 	mc.cc = NewCommandContext(rc, mc.vpr, mc.isInteractive)
 	if err := mc.runInitializers(mc.cc); err != nil {
@@ -149,16 +159,6 @@ func (m *Main) Execute(args []string) error {
 				args = append([]string{"shell"}, cmdArgs...)
 			}
 		}
-	} else {
-		// disable completions command in the interactive mode
-		m.root.CompletionOptions.DisableDefaultCmd = true
-		m.root.SetHelpCommand(&cobra.Command{
-			Use:   `\help`,
-			Short: "Help about commands",
-			RunE: func(cmd *cobra.Command, args []string) error {
-				return m.root.Help()
-			},
-		})
 	}
 	m.root.SetArgs(args)
 	m.props.Push()
