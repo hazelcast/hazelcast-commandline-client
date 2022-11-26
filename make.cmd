@@ -2,9 +2,7 @@ setlocal
 FOR /F "tokens=* USEBACKQ" %%F IN (`git rev-list --tags --max-count=1`) DO (
 set GIT_COMMIT=%%F
 )
-FOR /F "tokens=* USEBACKQ" %%F IN (`git describe --tags %GIT_COMMIT%`) DO (
-set CLC_VERSION=%%F
-)
+if not defined CLC_VERSION set CLC_VERSION=UNKNOWN
 set ldflags="-X 'github.com/hazelcast/hazelcast-go-client/internal.ClientType=CLC' -X 'github.com/hazelcast/hazelcast-commandline-client/internal.GitCommit=%GIT_COMMIT%' -X 'github.com/hazelcast/hazelcast-commandline-client/internal.ClientVersion=%CLC_VERSION%' -X 'github.com/hazelcast/hazelcast-go-client/internal.ClientVersion=%CLC_VERSION%'"
 
 REM default target is build
@@ -27,7 +25,7 @@ goto :end
 
 :installer
     call make.cmd build
-    ISCC.exe /O%cd%/build /Fhazelcast-clc-setup-%CLC_VERSION% /DSourceDir=%cd% %cd%\extras\windows\installer\hazelcast-clc-installer.iss
+    ISCC.exe /O%cd%/build /Fhazelcast-clc-setup_%CLC_VERSION%_amd64 /DSourceDir=%cd% %cd%\extras\windows\installer\hazelcast-clc-installer.iss
     goto :end
 
 :end
