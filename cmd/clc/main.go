@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/fatih/color"
+	"github.com/spf13/cobra"
 
 	clc "github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 )
@@ -15,8 +15,10 @@ func bye(err error) {
 }
 
 func main() {
+	// do not exit prematurely on Windows
+	cobra.MousetrapHelpText = ""
 	// disable color mode
-	color.NoColor = true
+	//color.NoColor = true
 	args := os.Args[1:]
 	cfgPath, logPath, logLevel, err := clc.ExtractStartupArgs(args)
 	if err != nil {

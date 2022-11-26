@@ -16,7 +16,13 @@ type TableResult struct {
 	maxWidth int
 }
 
+// NewTableResult creates a table result from the row producer and (optional) header.
+// If header is not given, then it is assumed the first row in the row producer is the header, and alignment is auto-calculatd.
+// In this case maxWidth is required.
 func NewTableResult(header []table.Column, rp RowProducer, maxWidth int) *TableResult {
+	if header == nil && maxWidth <= 0 {
+		panic("maxWidth should be positive if header is nil")
+	}
 	return &TableResult{
 		header:   header,
 		rp:       rp,
@@ -45,7 +51,11 @@ func (tr *TableResult) Serialize(ctx context.Context, w io.Writer) (int, error) 
 			break
 		}
 		if !wroteHeader {
-			t.WriteHeader(makeTableHeaderFromRow(vr, tr.maxWidth))
+			if tr.header != nil {
+				t.WriteHeader(tr.header)
+			} else {
+				t.WriteHeader(makeTableHeaderFromRow(vr, tr.maxWidth))
+			}
 			wroteHeader = true
 		}
 		row := make([]string, len(vr))
@@ -54,5 +64,6 @@ func (tr *TableResult) Serialize(ctx context.Context, w io.Writer) (int, error) 
 		}
 		t.WriteRow(row)
 	}
+	t.End()
 	return n, nil
 }

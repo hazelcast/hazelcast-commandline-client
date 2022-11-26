@@ -52,14 +52,19 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 	if err != nil {
 		return fmt.Errorf("cloning Main: %w", err)
 	}
+	var cfgText string
+	cfgPath := ec.Props().GetString(clc.PropertyConfig)
+	if cfgPath != "" {
+		cfgText = fmt.Sprintf("Using configuration at: %s\n", cfgPath)
+	}
 	if !shell.IsPipe() {
 		I2(fmt.Fprintf(ec.Stdout(), `Hazelcast CLC %s (c) 2022 Hazelcast Inc.
 		
 Participate to our survey at: https://forms.gle/rPFywdQjvib1QCe49
 
-Type 'help' for help information. Prefix non-SQL commands with \
+%sType 'help' for help information. Prefix non-SQL commands with \
 	
-	`, internal.Version))
+	`, internal.Version, cfgText))
 	}
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	clcMultilineContinue := false
@@ -88,7 +93,7 @@ Type 'help' for help information. Prefix non-SQL commands with \
 			if _, ok := cm.shortcuts[parts[0]]; !ok {
 				// this is a CLC command
 				text = strings.TrimSpace(text)
-				text = strings.TrimLeft(text, "\\")
+				text = strings.TrimPrefix(text, "\\")
 				args, err := shlex.Split(text)
 				if err != nil {
 					return err

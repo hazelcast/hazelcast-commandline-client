@@ -8,6 +8,8 @@ const (
 	PropertyViridianToken  = "cluster.viridian-token"
 	PropertyFormat         = "format"
 	PropertyVerbose        = "verbose"
+	// PropertyConfig is the config name or path
+	// TODO: Separate config name and path
 	PropertyConfig         = "config"
 	PropertyLogLevel       = "log.level"
 	PropertyLogPath        = "log.path"

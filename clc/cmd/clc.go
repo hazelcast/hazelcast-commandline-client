@@ -340,10 +340,10 @@ func (m *Main) loadConfig(path string) (bool, error) {
 		return true, nil
 	}
 	m.configLoaded = true
-	defaultPath := paths.DefaultConfigPath()
 	m.vpr.SetConfigFile(path)
 	if err := m.vpr.ReadInConfig(); err != nil {
 		// ignore the errors if the path is the default path, it is possible that it does not exist.
+		defaultPath := paths.DefaultConfigPath()
 		var pe *fs.PathError
 		if errors.As(err, &pe) {
 			if path == defaultPath {
