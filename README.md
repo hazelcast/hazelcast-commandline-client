@@ -2,6 +2,103 @@
 
 ## Usage Summary
 
+### Home Directory
+
+CLC stores all configuration, logs and other files in its home directory.
+We will refer to that directory as `$CLC_HOME`.
+You can use `clc home` command to show where is `$CLC_HOME`:
+```
+$ clc home
+/home/guest/.local/share/clc
+```
+
+### Configuration
+
+CLC has a simple YAML configuration, usually named `config.yaml`.
+This file can exist anywhere in the file system, and can be used with the `--config` (or `-c`) flag:
+
+```
+$ clc -c test/config.yaml
+```
+
+If there is a `config.yaml` in the same directory with the CLC binary and the configuration was not explicitly set, CLC tries to load that configuration file:
+```
+$ ls -lh
+total 17M
+-rwxrwxr-x 1 yuce yuce  17M Nov 26 23:11 clc*
+-rw------- 1 yuce yuce  200 Nov 26 23:12 config.yaml
+```
+
+`configs` directory in `$CLC_HOME` is special, it contains all the configurations known to CLC.
+Known configurations can be directly specified by their names, instead of the full path.
+`clc config list` command lists the configurations known to CLC:
+```
+# List configurations
+$ clc config list
+default
+pr-3066
+
+# Start CLC shell with configuration named pr-3066 
+$ clc -c pr-3066
+```
+
+If no configuration is specified, the `default` configuration is used.
+
+#### Configuration format
+
+All paths in the configuration are relative to the parent directory of the configuration file.
+
+* cluster
+  * name: Name of the cluster. By default `dev`.
+  * address: Address of a member in the cluster. By default `localhost:5701`.
+  * discovery-token: Viridian Serverless Token.
+
+* ssl
+  * ca-path: TLS CA certificate path.
+  * cert-path: TLS certificate path.
+  * key-path: TLS mutual authentication key certificate path.
+  * key-password: Password for the key certificate.
+
+* log
+  * path: Path to the log file, or `stderr`. By default, the logs are written to `$CLC_HOME/logs` with the current date as the name.
+  * level: Log level, one of: `debug`, `info`, `warn`, `error`. The default is `info`.
+
+Here's a sample Viridian Serverless configuration:
+```
+cluster:
+  name: "pr-3814"  
+  viridian-token: "HY8eR7X...."
+ssl:
+  ca-path: "ca.pem"
+  cert-path: "cert.pem"
+  key-path: "key.pem"
+  key-password: "a6..."
+```
+
+### Logging
+
+CLC doesn't log to the screen by default, in order to reduce clutter.
+By default, logs are saved in `$CLC_HOME/logs`, creating a new log file per day.
+In order to log to a different file, or to stderr (usually the screen), use the `--log.path` flag:
+
+```
+# log to object-list.log
+$ clc object list --log.path object-list.log
+
+# log to screen
+$ clc object list --log.path stderr
+```
+
+By default, logs with level `info` and above are logged.
+You can use the `--log.level` flag to change the level.
+Supported levels: `debug`, `info`, `warn`, `error`
+
+```
+# log only errors
+$ clc object list --log.level error
+```
+
+
 ### Non-interactive Mode
 
 Run commands:
