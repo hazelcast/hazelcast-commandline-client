@@ -20,13 +20,14 @@ if errorlevel 1 (
 goto :end
 
 :build
-    go-winres make --product-version=%CLC_VERSION% --file-version=%CLC_VERSION%
-    go build -tags hazelcastinternal,hazelcastinternaltest -ldflags %ldflags% -o hzc.exe .
+    go-winres make --in windows/winres.json --product-version=%CLC_VERSION% --file-version=%CLC_VERSION%
+    go-winres make --in extras/windows/winres.json --product-version=%CLC_VERSION% --file-version=%CLC_VERSION% --out cmd\clc\rsrc
+    go build -tags base,hazelcastinternal,hazelcastinternaltest -ldflags %ldflags% -o build\clc.exe ./cmd/clc
     goto :end
 
 :installer
     call make.cmd build
-    ISCC.exe /O%cd% /Fhazelcast-clc-setup-%CLC_VERSION% /DSourceDir=%cd% %cd%\extras\windows\installer\hazelcast-clc-installer.iss
+    ISCC.exe /O%cd%/build /Fhazelcast-clc-setup-%CLC_VERSION% /DSourceDir=%cd% %cd%\extras\windows\installer\hazelcast-clc-installer.iss
     goto :end
 
 :end
