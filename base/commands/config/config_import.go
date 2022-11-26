@@ -207,7 +207,7 @@ func (cm ImportCmd) createConfigYAML(path, clusterName, token, password string) 
 	text := fmt.Sprintf(`
 cluster:
   name: "%s"
-  viridian-token: "%s"
+  discovery-token: "%s"
 ssl:
   ca-path: "ca.pem"
   cert-path: "cert.pem"

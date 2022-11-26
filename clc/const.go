@@ -5,7 +5,7 @@ const (
 	ShortcutFormat         = "f"
 	PropertyClusterAddress = "cluster.address"
 	PropertyClusterName    = "cluster.name"
-	PropertyViridianToken  = "cluster.viridian-token"
+	PropertyViridianToken  = "cluster.discovery-token"
 	PropertyFormat         = "format"
 	PropertyVerbose        = "verbose"
 	// PropertyConfig is the config name or path
