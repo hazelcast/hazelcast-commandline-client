@@ -31,7 +31,7 @@
         "info": {
           "0409": {
             "FileDescription": "Hazelcast CLC",
-            "InternalName": "hzc",
+            "InternalName": "clc",
             "LegalCopyright": "© Hazelcast, Inc.",
             "OriginalFilename": "clc.exe",
             "ProductName": "Hazelcast CLC",
