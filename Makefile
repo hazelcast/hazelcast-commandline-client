@@ -35,6 +35,6 @@ ifeq ($(TARGZ), false)
 	cd build && zip -r $(RELEASE_BASE).zip $(RELEASE_BASE)
 	echo $(RELEASE_BASE).zip >> build/$(RELEASE_FILE)
 else
-	tar cf build/$(RELEASE_BASE).tar.gz -C build $(RELEASE_BASE)
+	tar cfz build/$(RELEASE_BASE).tar.gz -C build $(RELEASE_BASE)
 	echo $(RELEASE_BASE).tar.gz >> build/$(RELEASE_FILE)
 endif
