@@ -2,8 +2,6 @@
 
 ## Usage Summary
 
-Make sure a Hazelcast 4 or Hazelcast 5 cluster is running.
-
 ### Non-interactive Mode
 
 Run commands:
