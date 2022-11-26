@@ -6,7 +6,7 @@ jobs:
     runs-on: "ubuntu-latest"
     env:
       GOPATH: "${{ github.workspace }}"
-      HZ_VERSION: "5.1"
+      HZ_VERSION: "5.2"
     defaults:
       run:
         shell: "bash"

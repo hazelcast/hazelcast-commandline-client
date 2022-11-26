@@ -30,10 +30,10 @@
       "0409": {
         "info": {
           "0409": {
-            "FileDescription": "Hazelcast Command Line Client",
-            "InternalName": "hzc",
+            "FileDescription": "Hazelcast CLC",
+            "InternalName": "clc",
             "LegalCopyright": "© Hazelcast, Inc.",
-            "OriginalFilename": "hzc.exe",
+            "OriginalFilename": "clc.exe",
             "ProductName": "Hazelcast CLC",
             "Comments": "",
             "CompanyName": "Hazelcast, Inc.",
