@@ -152,6 +152,8 @@ func (m *Main) Execute(args []string) error {
 				args = append([]string{"shell"}, cmdArgs...)
 			}
 		}
+	} else {
+		cm, _, _ = m.root.Find(args)
 	}
 	m.root.SetArgs(args)
 	m.props.Push()
