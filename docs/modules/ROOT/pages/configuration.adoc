@@ -1,5 +1,5 @@
 = Configuration for Hazelcast CLC
-:description: Hazelcast CLC allows you to configure settings for cluster connection credentials, using a configuration file. You can also override those settings, using global command-line parameters.
+:description: Hazelcast CLC allows you to configure settings for cluster connection credentials, using a configuration file. Some of those settings may be overriden using global command-line parameters.
 
 {description}
 

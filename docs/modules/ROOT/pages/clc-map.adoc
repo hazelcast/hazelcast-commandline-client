@@ -1,4 +1,4 @@
-= hzc map
+= clc map
 
 Map commands are a group of map operations.
 
@@ -6,32 +6,20 @@ Usage:
 
 [source,bash]
 ----
-hzc map [command] [options]
+clc map [command] [options]
 ----
 
 
 == Commands
 
-* <<hzc-map-clear, hzc map clear>>
-* <<hzc-map-destroy, hzc map destroy>>
-* <<hzc-map-get, hzc map get>>
-* <<hzc-map-get-all, hzc map get-all>>
-* <<hzc-map-put, hzc map put>>
-* <<hzc-map-put-all, hzc map put-all>>
-* <<hzc-map-set, hzc map set>>
-* <<hzc-map-entries, hzc map entries>>
-* <<hzc-map-keys, hzc map keys>>
-* <<hzc-map-values, hzc map values>>
-* <<hzc-map-size, hzc map size>>
-* <<hzc-map-remove, hzc map remove>>
-* <<hzc-map-remove-many, hzc map remove-many>>
-* <<hzc-map-use, hzc map use>>
-* <<hzc-map-lock, hzc map lock>>
-* <<hzc-map-trylock, hzc map trylock>>
-* <<hzc-map-unlock, hzc map unlock>>
-* <<hzc-map-force-unlock, hzc map force-unlock>>
+* <<clc-map-clear, clc map clear>>
+* <<clc-map-get, clc map get>>
+* <<clc-map-put, clc map put>>
+* <<clc-map-entry-set, clc map entries>>
+* <<clc-map-size, clc map size>>
+* <<clc-map-remove, clc map remove>>
 
-== hzc map clear
+== clc map clear
 
 Removes all entries from the map.
 
@@ -39,7 +27,7 @@ Usage:
 
 [source,bash]
 ----
-hzc map clear --name <name of your map>
+clc map clear --name <name of your map>
 ----
 
 Parameters:
@@ -51,35 +39,11 @@ Parameters:
 |`--name`, `-n`
 |Required
 |Name of the map.
-|`dev`
+|`default`
 
 |===
 
-== hzc map destroy
-
-Removes the map from the cluster.
-
-Usage:
-
-[source,bash]
-----
-hzc map destroy --name <name of your map>
-----
-
-Parameters:
-
-[cols="1m,1a,2a,1a"]
-|===
-|Parameter|Required|Description|Default
-
-|`--name`, `-n`
-|Required
-|Name of the map.
-|`dev`
-
-|===
-
-== hzc map get
+== clc map get
 
 Prints a single entry from the map as a key-value pair.
 
@@ -87,9 +51,9 @@ Usage:
 
 [source,bash]
 ----
-hzc map get --name <name of your map>
-            --key <entry key>
+clc map get --name <name of your map>
             [--key-type {string (default), boolean, json, int8, int16, int32, int64, float32, float64}]
+            KEY
 ----
 
 Parameters:

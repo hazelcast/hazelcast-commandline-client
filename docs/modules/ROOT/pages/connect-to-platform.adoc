@@ -33,30 +33,26 @@ Hazelcast CLC supports the following TLS connections for Hazelcast Platform:
 +
 [source,yaml]
 ----
+cluster:
+  name: "<CLUSTER NAME>"
+  address: "<MEMBER IP ADDRESS>"
+credentials:
+  user: "<OPTIONAL USERNAME>"
+  password: "<OPTIONAL PASSWORD>"
 ssl:
   enabled: true
-  servername: "<HOSTNAME IN CLUSTER CERTIFICATE>"
-hazelcast:
-  cluster:
-    security:
-      credentials:
-        username: "<OPTIONAL USERNAME>"
-        password: "<OPTIONAL PASSWORD>"
-    name: "<CLUSTER NAME>"
-    network:
-    addresses:
-    - "<MEMBER IP ADDRESS>"
+  server: "<HOSTNAME IN CLUSTER CERTIFICATE>"
 ----
 
 . Start an interactive shell session.
 +
 ```bash
-hzc
+clc
 ```
 
-If the connection is successful, you should see a command prompt.
+CLC will start in the interactive mode, and you should see a command prompt.
 
-If you see `ERROR: cannot connect`, make sure that you are using the correct configuration.
+Note that, CLC connects to the cluster on demand, that is when you issue a command that requires the connection, such as running SQL queries.
 
 [[mutual]]
 == Connecting to Clusters with Mutual TLS Authentication
@@ -65,39 +61,35 @@ If you see `ERROR: cannot connect`, make sure that you are using the correct con
 +
 [source,yaml]
 ----
+cluster:
+  name: "<CLUSTER NAME>"
+  address: "<MEMBER IP ADDRESS>"
+credentials:
+  user: "<OPTIONAL USERNAME>"
+  password: "<OPTIONAL PASSWORD>"
 ssl:
   enabled: true
-  servername: "<HOSTNAME IN CLUSTER CERTIFICATE>"
-  capath: "/<PATH>/ca.pem"
-  certpath: "/<PATH>/cert.pem"
-  keypath: "/<PATH>/key.pem"
-  keypassword: "<PASSWORD FOR THE KEY>"
-hazelcast:
-  cluster:
-    security:
-      credentials:
-        username: "<OPTIONAL USERNAME>"
-        password: "<OPTIONAL PASSWORD>"
-    name: "<CLUSTER NAME>"
-    network:
-      addresses:
-        - "<MEMBER IP ADDRESS>"
+  server: "<HOSTNAME IN CLUSTER CERTIFICATE>"
+  ca-path: "/<PATH>/ca.pem"
+  cert-path: "/<PATH>/cert.pem"
+  key-path: "/<PATH>/key.pem"
+  key-password: "<PASSWORD FOR THE KEY>"
 ----
 
 . Start an interactive shell session.
 +
 ```bash
-hzc
+clc
 ```
 
-If the connection is successful, you should see a command prompt.
+CLC will start in the interactive mode, and you should see a command prompt.
 
-If you see `ERROR: cannot connect`, make sure that you are using the correct configuration.
+Note that, CLC connects to the cluster on demand, that is when you issue a command that requires the connection, such as running SQL queries.
 
 [[no-verify]]
 == Connecting to Clusters with Self-Signed TLS Certificates
 
-If your cluster members use self-signed TLS certificates, you can use the `insecureskipverify` setting to skip TLS verification and avoid connection errors.
+If your cluster members use self-signed TLS certificates, you can use the `skip-verify` setting to skip TLS verification and avoid connection errors.
 
 WARNING: Skipping TLS verification makes you vulnerable to man-in-the-middle attacks because any device can act as the intended cluster.
 
@@ -105,30 +97,26 @@ WARNING: Skipping TLS verification makes you vulnerable to man-in-the-middle att
 +
 [source,yaml]
 ----
+cluster:
+  name: "<CLUSTER NAME>"
+  address: "<MEMBER IP ADDRESS>"
+credentials:
+  user: "<OPTIONAL USERNAME>"
+  password: "<OPTIONAL PASSWORD>"
 ssl:
   enabled: true
-  insecureskipverify: true
-hazelcast:
-  cluster:
-    security:
-      credentials:
-        username: "<OPTIONAL USERNAME>"
-        password: "<OPTIONAL PASSWORD>"
-    name: "<CLUSTER NAME>"
-    network:
-    addresses:
-    - "<MEMBER IP ADDRESS>"
+  skip-verify: true
 ----
 
 . Start an interactive shell session.
 +
 ```bash
-hzc
+clc
 ```
 
-If the connection is successful, you should see a command prompt.
+CLC will start in the interactive mode, and you should see a command prompt.
 
-If you see `ERROR: cannot connect`, make sure that you are using the correct configuration.
+Note that, CLC connects to the cluster on demand, that is when you issue a command that requires the connection, such as running SQL queries.
 
 [[none]]
 == Connecting to Clusters with TLS Disabled
@@ -137,29 +125,23 @@ If you see `ERROR: cannot connect`, make sure that you are using the correct con
 +
 [source,yaml]
 ----
-ssl:
-  enabled: false
-hazelcast:
-  cluster:
-    security:
-      credentials:
-        username: "<OPTIONAL USERNAME>"
-        password: "<OPTIONAL PASSWORD>"
-    name: "<CLUSTER NAME>"
-    network:
-    addresses:
-    - "<MEMBER IP ADDRESS>"
+cluster:
+  name: "<CLUSTER NAME>"
+  address: "<MEMBER IP ADDRESS>"
+credentials:
+  user: "<OPTIONAL USERNAME>"
+  password: "<OPTIONAL PASSWORD>"
 ----
 
 . Start an interactive shell session.
 +
 ```bash
-hzc
+clc
 ```
 
-If the connection is successful, you should see a command prompt.
+CLC will start in the interactive mode, and you should see a command prompt.
 
-If you see `ERROR: cannot connect`, make sure that you are using the correct configuration.
+Note that, CLC connects to the cluster on demand, that is when you issue a command that requires the connection, such as running SQL queries.
 
 == Next Steps
 

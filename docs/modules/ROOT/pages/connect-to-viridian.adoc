@@ -12,68 +12,25 @@ You need the following:
 
 - Hazelcast CLC
 - A {hazelcast-cloud} cluster
-- Your cluster's connection credentials
 
 TIP: You can find all connection credentials such as the cluster name and discovery token in the {hazelcast-cloud} console. For details, see xref:cloud:connect-to-cluster.adoc[].
 
 [[mutual]]
-== Connecting to Clusters with Mutual TLS Authentication
+== Connecting to Clusters
 
-. Add the following to your configuration file:
+. Download the Go Client sample from {hazelcast-cloud} console.
+
+. Import the configuration from the sample:
 +
-[source,yaml]
-----
-ssl:
-  enabled: true
-  capath: "/<PATH>/ca.pem"
-  certpath: "/<PATH>/cert.pem"
-  keypath: "/<PATH>/key.pem"
-  keypassword: "<PASSWORD FOR THE KEY>"
-hazelcast:
-  cluster:
-    name: "<CLUSTER NAME>"
-    cloud:
-      token: "<DISCOVERY TOKEN>"
-      enabled: true
-----
-
+```bash
+clc config import PATH-TO-GO-CLIENT-SAMPLE.zip -c CONFIG-NAME
+```
 . Start an interactive shell session.
 +
 ```bash
-hzc
+clc -c CONFIG-NAME
 ```
 
-If the connection is successful, you should see a command prompt.
+CLC will start in the interactive mode, and you should see a command prompt.
 
-If you see `ERROR: cannot connect`, make sure that you are using the correct configuration.
-
-[[none]]
-== Connecting to Clusters with TLS Disabled
-
-. Add the following to your configuration file:
-+
-[source,yaml]
-----
-ssl:
-  enabled: false
-hazelcast:
-  cluster:
-    name: "<CLUSTER NAME>"
-    cloud:
-      token: "<DISCOVERY TOKEN>"
-      enabled: true
-----
-
-. Start an interactive shell session.
-+
-```bash
-hzc
-```
-
-If the connection is successful, you should see a command prompt.
-
-If you see `ERROR: cannot connect`, make sure that you are using the correct configuration.
-
-== Next Steps
-
-See the xref:clc-commands.adoc[command reference] to learn what you can do with Hazelcast CLC.
+Note that, CLC connects to the cluster on demand, that is when you issue a command that requires the connection, such as running SQL queries.

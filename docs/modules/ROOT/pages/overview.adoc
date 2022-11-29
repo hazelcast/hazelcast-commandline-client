@@ -20,7 +20,7 @@ NOTE: {hazelcast-cloud} has a separate link:{url-github-clc}[CLI for cluster man
 
 === Access Data for Debugging
 
-Get xref:hzc-map.adoc[direct access to map data] for quick debugging of prototypes or production applications. Easily read or query data on a cluster using <<sql-mode, SQL mode>> to view query results, and then perform updates without changing tools.
+Get xref:clc-map.adoc[direct access to map data] for quick debugging of prototypes or production applications. Easily read or query data on a cluster using <<sql-mode, SQL mode>> to view query results, and then perform updates without changing tools.
 
 === Scripting for Automation
 
@@ -53,7 +53,7 @@ Interactive mode uses auto-completion to display matching commands, subcommands,
 
 image:ROOT:hzc-interactive-screenshot.png[HZC interactive]
 
-In interactive mode, you can run the xref:hzc-map.adoc[`hzc map use` command] to avoid re-typing the object name on each command. In this example, the developer only needed to type `m1` once.
+In interactive mode, you can run the xref:clc-map.adoc[`hzc map use` command] to avoid re-typing the object name on each command. In this example, the developer only needed to type `m1` once.
 
 ----
 hzc

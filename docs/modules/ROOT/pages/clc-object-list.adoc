@@ -1,4 +1,4 @@
-= hzc list-objects
+= clc objects-list
 :description: Prints the distributed objects in the cluster as type-name pairs.
 
 {description}
@@ -7,7 +7,7 @@ Usage:
 
 [source,bash]
 ----
-hzc list-objects [--type] [--show-hidden]
+clc object-list [TYPE] [--show-hidden]
 ----
 
 Parameters:
@@ -16,7 +16,7 @@ Parameters:
 |===
 |Parameter|Required|Description|Default
 
-|`--type`
+|`TYPE`
 |Optional
 |Type of the objects to be listed. If not specified, the command lists all the objects. Available types:
 
@@ -44,7 +44,7 @@ Assuming you have a map named `currency` in your cluster:
 
 [source,bash]
 ----
-hzc list-objects
+clc object list
 
   map currency
 ----
