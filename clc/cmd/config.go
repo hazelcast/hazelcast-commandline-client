@@ -45,7 +45,7 @@ func makeConfiguration(props plug.ReadOnlyProperties, lg *logger.Logger) (hazelc
 		lg.Error(fmt.Errorf("loading serialization paths: %w", err))
 	}
 	var viridianEnabled bool
-	if vt := props.GetString(clc.PropertyViridianToken); vt != "" {
+	if vt := props.GetString(clc.PropertyClusterDiscoveryToken); vt != "" {
 		lg.Debugf("Viridan token: XXX")
 		if err := os.Setenv(envHzCloudCoordinatorBaseURL, viridianCoordinatorURL); err != nil {
 			return cfg, fmt.Errorf("setting coordinator URL")
@@ -60,7 +60,14 @@ func makeConfiguration(props plug.ReadOnlyProperties, lg *logger.Logger) (hazelc
 			sn = props.GetString(clc.PropertySSLServerName)
 		}
 		lg.Debugf("SSL server name: %s", sn)
-		tc := &tls.Config{ServerName: sn}
+		sv := props.GetBool(clc.PropertySSLSkipVerify)
+		if sv {
+			lg.Debugf("Skip verify: %t", sv)
+		}
+		tc := &tls.Config{
+			ServerName:         sn,
+			InsecureSkipVerify: sv,
+		}
 		sc := &cfg.Cluster.Network.SSL
 		sc.Enabled = true
 		sc.SetTLSConfig(tc)
@@ -92,6 +99,14 @@ func makeConfiguration(props plug.ReadOnlyProperties, lg *logger.Logger) (hazelc
 		}
 	}
 	cfg.ClientName = makeClientName()
+	usr := props.GetString(clc.PropertyClusterUser)
+	pass := props.GetString(clc.PropertyClusterPassword)
+	if usr != "" || pass != "" {
+		lg.Debugf("Cluster user: %s", usr)
+		lg.Debugf("Cluster password: XXX")
+		cfg.Cluster.Security.Credentials.Username = usr
+		cfg.Cluster.Security.Credentials.Password = pass
+	}
 	return cfg, nil
 }
 

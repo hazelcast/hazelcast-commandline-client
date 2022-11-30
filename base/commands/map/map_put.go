@@ -19,8 +19,8 @@ import (
 type MapPutCommand struct{}
 
 func (mc *MapPutCommand) Init(cc plug.InitContext) error {
-	cc.AddStringFlag(mapFlagKeyType, "k", "", false, "key type")
-	cc.AddStringFlag(mapFlagValueType, "v", "", false, "value type")
+	addKeyTypeFlag(cc)
+	addValueTypeFlag(cc)
 	cc.AddIntFlag(mapTTL, "", ttlUnset, false, "time-to-live (ms)")
 	cc.SetPositionalArgCount(2, 2)
 	help := "Put a value in the given Map and return the old value"
@@ -42,7 +42,7 @@ func (mc *MapPutCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	}
 	keyStr := ec.Args()[0]
 	valueStr := ec.Args()[1]
-	kd, vd, err := MakeKeyValueData(ec, ci, keyStr, valueStr)
+	kd, vd, err := makeKeyValueData(ec, ci, keyStr, valueStr)
 	if err != nil {
 		return err
 	}

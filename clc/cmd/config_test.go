@@ -34,7 +34,7 @@ func TestMakeConfiguration_Default(t *testing.T) {
 
 func TestMakeConfiguration_Viridian(t *testing.T) {
 	props := plug.NewProperties()
-	props.Set(clc.PropertyViridianToken, "TOKEN")
+	props.Set(clc.PropertyClusterDiscoveryToken, "TOKEN")
 	props.Set(clc.PropertyClusterName, "pr-3066")
 	/*
 		// TODO: need to figure out how to specify these config options --YT

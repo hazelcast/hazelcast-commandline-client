@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -12,15 +13,15 @@ import (
 
 // supported types
 const (
-	TypeNameString  = "string"
+	TypeNameString  = "str"
 	TypeNameBoolean = "bool"
 	TypeNameJSON    = "json"
-	TypeNameInt8    = "int8"
-	TypeNameInt16   = "int16"
-	TypeNameInt32   = "int32"
-	TypeNameInt64   = "int64"
-	TypeNameFloat32 = "float32"
-	TypeNameFloat64 = "float64"
+	TypeNameInt8    = "i8"
+	TypeNameInt16   = "i16"
+	TypeNameInt32   = "i32"
+	TypeNameInt64   = "i64"
+	TypeNameFloat32 = "f32"
+	TypeNameFloat64 = "f64"
 )
 
 var SupportedTypeNames = []string{
@@ -87,4 +88,10 @@ func ConvertString(value, valueType string) (interface{}, error) {
 		err = fmt.Errorf(`%s can not be represented with specified bit number (max val:%v)`, value, cv)
 	}
 	return cv, err
+}
+
+func init() {
+	sort.Slice(SupportedTypeNames, func(i, j int) bool {
+		return SupportedTypeNames[i] < SupportedTypeNames[j]
+	})
 }

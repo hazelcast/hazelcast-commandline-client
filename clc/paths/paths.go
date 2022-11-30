@@ -102,16 +102,24 @@ func Exists(path string) bool {
 }
 
 func nearbyConfigPath() string {
-	e, err := os.Executable()
-	if err != nil {
-		// ignore the error and return early
-		return ""
+	// check whether there is config.yaml in the current directory
+	wd, err := os.Getwd()
+	if err == nil {
+		// if no error
+		path := Join(wd, DefaultConfig)
+		if Exists(path) {
+			return path
+		}
 	}
-	dir := filepath.Dir(e)
-	// check whether config.yaml exists in this dir
-	path := Join(dir, DefaultConfig)
-	if Exists(path) {
-		return path
+	e, err := os.Executable()
+	if err == nil {
+		// if no error
+		dir := filepath.Dir(e)
+		// check whether config.yaml exists in this dir
+		path := Join(dir, DefaultConfig)
+		if Exists(path) {
+			return path
+		}
 	}
 	return ""
 }

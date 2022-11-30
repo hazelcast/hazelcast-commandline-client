@@ -53,17 +53,17 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 		return fmt.Errorf("cloning Main: %w", err)
 	}
 	var cfgText string
-	cfgPath := ec.Props().GetString(clc.PropertyConfig)
-	if cfgPath != "" {
-		cfgText = fmt.Sprintf("Using configuration at: %s\n", cfgPath)
-	}
 	if !shell.IsPipe() {
+		cfgPath := ec.Props().GetString(clc.PropertyConfig)
+		if cfgPath != "" {
+			cfgText = fmt.Sprintf("Using configuration at: %s\n", cfgPath)
+		}
 		I2(fmt.Fprintf(ec.Stdout(), `Hazelcast CLC %s (c) 2022 Hazelcast Inc.
 		
-Participate in our survey at: https://forms.gle/rPFywdQjvib1QCe49
-
-%sType 'help' for help information. Prefix non-SQL commands with \
-	
+* Participate in our survey at: https://forms.gle/rPFywdQjvib1QCe49
+* Type 'help' for help information. Prefix non-SQL commands with \
+		
+%s	
 	`, internal.Version, cfgText))
 	}
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
