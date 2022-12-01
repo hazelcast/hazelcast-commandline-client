@@ -40,7 +40,7 @@ func DefaultConfigPath() string {
 	if p := nearbyConfigPath(); p != "" {
 		return p
 	}
-	return filepath.Join(ResolveConfigDir("default"), "config.yaml")
+	return filepath.Join(ResolveConfigDir("default"), DefaultConfig)
 }
 
 func DefaultLogPath(now time.Time) string {
