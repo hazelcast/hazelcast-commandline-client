@@ -82,7 +82,7 @@ Example:
 
 [source,bash]
 ----
-hzc map get --name yearbook 2012 --key-type i16
+clc map get --name yearbook 2012 --key-type i16
 ----
 
 == clc map put
