@@ -25,14 +25,26 @@ include::partial$global-parameters.adoc[]
 |clc help
 |Display help for the `clc` command.
 
-|xref:clc-map.adoc[hzc map]
+|xref:clc-completion.adoc[clc completion]
+|Generate shell autocompletion.
+
+|xref:clc-home.adoc[clc home]
+|Print CLC home directory.
+
+|xref:clc-config.adoc[clc config]
+|Manage the configuration.
+
+|xref:clc-map.adoc[clc map]
 |Manage map data structures.
 
-|xref:clc-sql.adoc[hzc sql]
+|xref:clc-shell.adoc[clc shell]
+|Start CLC shell.
+
+|xref:clc-sql.adoc[clc sql]
 |Execute SQL queries.
 
-|xref:clc-object-list.adoc[clc object-list]
-|List data structures in the cluster.
+|xref:clc-object.adoc[clc object]
+|Generic distributed data structure commands.
 
 |xref:clc-version.adoc[clc version]
 |Get version information.

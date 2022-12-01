@@ -320,5 +320,5 @@ Use these resources to continue learning:
 
 - xref:clc-commands.adoc[].
 
-- xref:hzc-sql.adoc[].
+- xref:clc-sql.adoc[].
 

@@ -1,5 +1,5 @@
-= hzc sql
-:description: Executes a SQL statement or starts the interactive SQL browser.
+= clc sql
+:description: Executes a SQL statement.
 
 {description}
 
@@ -7,7 +7,7 @@ Usage:
 
 [source,bash]
 ----
-hzc sql "[query]" [--output]
+hzc sql "[query]" [--format OUTPUT-FORMAT]
 ----
 
 Parameters:
@@ -16,13 +16,15 @@ Parameters:
 |===
 |Parameter|Required|Description|Default
 
-|`--output -o`
+|`--format`, `-f`
 |Optional
 |Output format. Supported formats:
 
-- `"csv"`
-- `"pretty"`
-|`"pretty"`
+- `csv`
+- `delimited`
+- `json`
+- `table`
+|`delimited` in non-interactive mode, `table` in interactive mode.
 
 |===
 
@@ -34,7 +36,7 @@ include::partial$global-parameters.adoc[]
 
 == Querying with SQL using Hazelcast CLC
 
-You can use SQL to query a map, using all three modes of the Hazelcast CLC.
+You can run SQL queries in both interactive and non-interactive mode of Hazelcast CLC.
 
 [tabs]
 ====
@@ -43,7 +45,7 @@ Non-Interactive mode::
 --
 [source,bash]
 ----
-hzc sql "SELECT * FROM employees"
+clc sql "SELECT * FROM employees"
 +-----------------------------------------------------------------+
 |        __key        |         age         |         name        |
 +-----------------------------------------------------------------+
@@ -59,9 +61,8 @@ Interactive mode::
 --
 [source,bash]
 ----
-hzc
-Connecting to the cluster ...
-hzc localhost:5701@dev> sql "SELECT * FROM employees"
+clc
+CLC> sql "SELECT * FROM employees"
 +-----------------------------------------------------------------+
 |        __key        |         age         |         name        |
 +-----------------------------------------------------------------+
@@ -71,16 +72,6 @@ hzc localhost:5701@dev> sql "SELECT * FROM employees"
 | 3                   | 22                  | Joe Taylor          |
 | 75                  | 33                  | Mandy Bronson       |
 ----
---
-
-SQL mode::
-+
---
-1. Enter `hzc sql`.
-2. Enter the query you want to execute.
-3. Press kbd:[Ctrl + E] to execute the query.
-4. Press kbd:[Tab] to change the keyboard focus from the query editor to the result browser.
-5. Use kbd:[w,a,s,d], arrow keys or kbd:[h,j,k,l] to navigate the result rows.
 --
 ====
 

@@ -147,8 +147,6 @@ The following keyboard shortcuts are available in the interactive-mode:
 | <kbd>Ctrl + U</kbd> | Cut the line before the cursor                 |
 | <kbd>Ctrl + L</kbd> | Clear the screen                               |
 | <kbd>Ctrl + C</kbd> | Cancel running command or close the app        |
-| <kbd>Ctrl + -></kbd>| Go to the end of to next word                  |
-| <kbd>Ctrl + <-</kbd>| Go to the start of the previous word           |
 
 ## Connecting to Viridian Serverless
 

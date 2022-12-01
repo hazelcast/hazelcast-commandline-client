@@ -46,10 +46,4 @@
 |kbd:[Ctrl + C]
 |Cancel running command or close the app.
 
-|kbd:[Ctrl + ->]
-|Go to the end of to next word.
-
-|kbd:[Ctrl + <-]
-|Go to the start of the previous word.
-
 |===

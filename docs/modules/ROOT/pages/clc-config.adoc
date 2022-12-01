@@ -1,0 +1,70 @@
+= clc config
+
+Configuration operations.
+
+Usage:
+
+[source,bash]
+----
+clc config [command] [options]
+----
+
+== Commands
+
+* <<clc-config-import, clc config import>>
+* <<clc-config-list, clc config list>>
+
+== clc config import
+
+Imports configuration from an arbitrary source.
+
+Usage:
+
+[source,bash]
+----
+clc config import [source]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`source`
+|Required
+|The following configuration sources are supported:
+
+* Viridian Go Client sample zip file, e.g., `hazelcast-cloud-go-sample-client-pr-3814-default.zip`. Use this if you have downloaded the sample yourself.
+* Viridian Go Client sample cURL command line, such as: `curl https://api.viridian.hazelcast.com/client_samples/download/XXX -o hazelcast-cloud-go-sample-client-pr-3814-default.zip`. Use this for CLC to download the sample. Do not forget to wrap the line with quotes.
+
+|N/A
+
+|===
+
+Example output:
+
+[source,bash]
+----
+clc config import ~/Downloads/hazelcast-cloud-go-sample-client-pr-3814-default.zip
+----
+
+== clc config list
+
+Lists the known configurations.
+
+Usage:
+
+[source,bash]
+----
+clc config list
+----
+
+Example output:
+
+[source,bash]
+----
+clc config list
+default
+pr-3814
+----

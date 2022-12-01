@@ -2,34 +2,43 @@
 |===
 |Parameter|Description|Default
 
-|`--address`, `-a`
-|Addresses of one or more members in the cluster.
-|localhost:5701
-
-|`--cluster-name`
-|Name of the cluster to connect to.
-|dev
-
 |`--config`, `-c`
-|Path to the configuration file. Currently it only supports YAML file format.
-|`~/.local/share/hz-cli/config.yaml`
+|Path to the configuration file in YAML format.
+a|The following locations are tried in order for the existence of `config.yaml`
 
-// tag::cloud-token[]
-|--cloud-token
-|{hazelcast-cloud} discovery token.
-|-
-// end::cloud-token[]
+1. Current working directory
+2. The parent directory of the `clc` executable
+3. `$CLC_HOME/default` directory
 
-|--no-completion
-|Disables auto completion on for interactive mode.
-|false
+|`--format`, `-f`
+a|Set the output format
 
-|--no-color
-|Disables color support for SQL browser and interactive mode.
-|false
+* `csv`
+* `delimited`: By tab characters
+* `json`
+* `table`
+
+a|
+
+* Interactive mode: `table`
+* Non-interactive mode: `delimited`
+
+|`--log.level`
+a|Set the log level, one of:
+
+* `debug`
+* `info`
+* `warning`
+* `error`
+
+|`info`
+
+|`--log.path`
+|Set the log path. Use `stderr` to log to the screen (stderr).
+|`$CLC_HOME/logs/YYYY-MM-DD.log` where `YYYY-MM-DD` is today's date.
 
 |--verbose
-|Prints verbose log outputs
-|
+|Enable verbose output
+|N/A
 
 |===

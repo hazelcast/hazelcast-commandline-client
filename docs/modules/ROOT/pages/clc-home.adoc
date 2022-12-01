@@ -1,0 +1,32 @@
+= clc home
+
+CLC stores all configuration, logs and other files in its home directory (`$CLC_HOME`).
+This command outputs the CLC home directory.
+
+Usage:
+
+[source,bash]
+----
+clc home [subdirectory ...]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`subdirectory`
+|Optional
+|If specified, CLC joins the given subdirectories with `$CLC_HOME`
+|N/A
+
+|===
+
+Example output:
+
+[source,bash]
+----
+clc home configs pr-3814
+/home/me/.local/share/clc/configs/pr-3814
+----

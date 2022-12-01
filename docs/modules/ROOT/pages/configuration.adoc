@@ -19,14 +19,14 @@ The default configuration file is located at `$HOME/.local/share/hz-cli/config.y
 To change the configuration settings, you can either edit the default configuration file, or create your own and use the `-c` flag to pass it to Hazelcast CLC:
 
 ```bash
-hzc -c /<PATH>/<FILENAME>.yaml
+clc -c /<PATH>/<FILENAME>.yaml
 ```
 
 == CLC Configuration with Command-Line Parameters
 
 Command-line parameters are for overriding some configuration settings in the configuration file.
 
-You can override the values in the configuration file by providing the following command-line parameters to any `hzc` command:
+You can override the values in the configuration file by providing the following command-line parameters to any `clc` command:
 
 include::partial$global-parameters.adoc[]
 
