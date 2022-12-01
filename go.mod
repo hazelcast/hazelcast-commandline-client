@@ -58,5 +58,3 @@ require (
 	github.com/apache/thrift v0.14.1
 	github.com/fatih/color v1.13.0
 )
-
-replace github.com/gohxs/readline v0.0.0-20171011095936-a780388e6e7c => github.com/yuce/readline v0.0.0-20221113171008-e66eb6697a73

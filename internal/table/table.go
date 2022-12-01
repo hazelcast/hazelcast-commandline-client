@@ -25,6 +25,7 @@ type Table struct {
 	rowIdx int64
 	width  []int
 	rwf    []runeWidthFn
+	sep    string
 }
 
 func New(cfg Config) *Table {
@@ -36,13 +37,12 @@ func (t *Table) WriteHeader(cs Row) {
 	t.width = make([]int, len(cs))
 	t.rwf = make([]runeWidthFn, len(cs))
 	t.updateAlignment(cs)
-	var sep string
 	if t.cfg.HeaderSeperator != "" {
-		sep = t.makeSeparator(cs)
+		t.sep = t.makeSeparator(cs)
 	}
-	if sep != "" {
+	if t.sep != "" {
 		withColor(t.cfg.TitleColor, func() {
-			t.printf("%s", sep)
+			t.printf("%s", t.sep)
 		})
 		t.printf("\n")
 	}
@@ -54,9 +54,9 @@ func (t *Table) WriteHeader(cs Row) {
 		t.printRow(row)
 	})
 	t.printf("\n")
-	if sep != "" {
+	if t.sep != "" {
 		withColor(t.cfg.TitleColor, func() {
-			t.printf("%s", sep)
+			t.printf("%s", t.sep)
 		})
 		t.printf("\n")
 	}
@@ -67,6 +67,15 @@ func (t *Table) WriteRow(row []string) {
 	withColor(t.cfg.RowColors[idx&1], func() {
 		t.printRow(row)
 	})
+	t.printf("\n")
+}
+
+func (t *Table) End() {
+	if t.sep != "" {
+		withColor(t.cfg.TitleColor, func() {
+			t.printf("%s", t.sep)
+		})
+	}
 	t.printf("\n")
 }
 

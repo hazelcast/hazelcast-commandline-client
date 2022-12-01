@@ -59,8 +59,7 @@ func (pr *TablePrinter) PrintStream(ctx context.Context, w io.Writer, rp output.
 func (pr *TablePrinter) PrintRows(ctx context.Context, w io.Writer, rows []output.Row) error {
 	header, rows := output.MakeTableFromRows(rows)
 	rp := output.NewSimpleRows(rows)
-	maxCols, _ := consolesize.GetConsoleSize()
-	tr := output.NewTableResult(header, rp, maxCols)
+	tr := output.NewTableResult(header, rp, 0)
 	_, err := tr.Serialize(ctx, w)
 	return err
 }
