@@ -136,9 +136,9 @@ func alignmentForType(t int32) int {
 		serialization.TypeInt32, serialization.TypeInt64,
 		serialization.TypeFloat32, serialization.TypeFloat64,
 		serialization.TypeJavaBigInteger, serialization.TypeJavaDecimal:
-		return -1
+		return -1 // align right
 	default:
-		return 1
+		return 1 // align left
 	}
 }
 
