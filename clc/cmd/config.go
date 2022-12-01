@@ -4,7 +4,9 @@ import (
 	"crypto/tls"
 	"fmt"
 	"os"
+	"os/user"
 	"path/filepath"
+	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
 
@@ -13,6 +15,10 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
+)
+
+const (
+	envClientMame = "CLC_CLIENT_NAME"
 )
 
 func makeConfiguration(props plug.ReadOnlyProperties, lg *logger.Logger) (hazelcast.Config, error) {
@@ -85,5 +91,29 @@ func makeConfiguration(props plug.ReadOnlyProperties, lg *logger.Logger) (hazelc
 			}
 		}
 	}
+	cfg.ClientName = makeClientName()
 	return cfg, nil
+}
+
+func makeClientName() string {
+	cn := os.Getenv(envClientMame)
+	if cn != "" {
+		return cn
+	}
+	var userName string
+	u, err := user.Current()
+	if err != nil {
+		userName = "UNKNOWN"
+	} else {
+		userName = u.Username
+	}
+	var hostName string
+	host, err := os.Hostname()
+	if err != nil {
+		host = "UNKNOWN"
+	} else {
+		hostName = host
+	}
+	t := time.Now().Unix()
+	return fmt.Sprintf("%s@%s-%d", userName, hostName, t)
 }

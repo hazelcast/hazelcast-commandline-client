@@ -28,11 +28,15 @@ const (
 	envHzCloudCoordinatorBaseURL = "HZ_CLOUD_COORDINATOR_BASE_URL"
 )
 
+// client is currently global in order to have a single client.
+// This is bad.
+// TODO: make the client unique without making it global.
+var clientInternal *hazelcast.ClientInternal
+
 type Main struct {
 	root          *cobra.Command
 	cmds          map[string]*cobra.Command
 	vpr           *viper.Viper
-	client        *hazelcast.Client
 	lg            *logger.Logger
 	stdout        io.WriteCloser
 	stderr        io.WriteCloser
@@ -40,7 +44,6 @@ type Main struct {
 	outputFormat  string
 	configLoaded  bool
 	props         *plug.Properties
-	ec            *ExecContext
 	cc            *CommandContext
 }
 
@@ -84,11 +87,6 @@ func NewMain(cfgPath, logPath, logLevel string, stdout, stderr io.Writer) (*Main
 	if err := m.runInitializers(m.cc); err != nil {
 		return nil, err
 	}
-	cf := func(ctx context.Context) (*hazelcast.Client, error) {
-		return m.ensureClient(ctx, m.props)
-	}
-	m.ec = NewExecContext(m.lg, m.stdout, m.stderr, m.props, cf, m.isInteractive)
-	m.ec.SetMain(m)
 	if err := m.createCommands(); err != nil {
 		return nil, err
 	}
@@ -117,11 +115,6 @@ func (m *Main) CloneForInteractiveMode() (*Main, error) {
 	if err := mc.runInitializers(mc.cc); err != nil {
 		return nil, err
 	}
-	cf := func(ctx context.Context) (*hazelcast.Client, error) {
-		return mc.ensureClient(ctx, mc.props)
-	}
-	mc.ec = NewExecContext(mc.lg, mc.stdout, mc.stderr, mc.props, cf, mc.isInteractive)
-	mc.ec.SetMain(&mc)
 	if err := mc.createCommands(); err != nil {
 		return nil, err
 	}
@@ -159,6 +152,8 @@ func (m *Main) Execute(args []string) error {
 				args = append([]string{"shell"}, cmdArgs...)
 			}
 		}
+	} else {
+		cm, _, _ = m.root.Find(args)
 	}
 	m.root.SetArgs(args)
 	m.props.Push()
@@ -292,7 +287,16 @@ func (m *Main) createCommands() error {
 					}
 					props.Set(f.Name, convertFlagValue(cfs, f.Name, f.Value))
 				})
-				ec := m.ec
+				ec, err := NewExecContext(m.lg, m.stdout, m.stderr, m.props, func(ctx context.Context) (*hazelcast.ClientInternal, error) {
+					if err := m.ensureClient(ctx, m.props); err != nil {
+						return nil, err
+					}
+					return clientInternal, nil
+				}, m.isInteractive)
+				if err != nil {
+					return err
+				}
+				ec.SetMain(m)
 				ec.SetArgs(args)
 				ec.SetCmd(cmd)
 				if err := m.runAugmentors(ec, props); err != nil {
@@ -309,7 +313,7 @@ func (m *Main) createCommands() error {
 					}
 					return err
 				}
-				return ec.FlushOutput()
+				return nil
 			}
 		}
 		parent.AddCommand(cmd)
@@ -318,18 +322,19 @@ func (m *Main) createCommands() error {
 	return nil
 }
 
-func (m *Main) ensureClient(ctx context.Context, props plug.ReadOnlyProperties) (*hazelcast.Client, error) {
-	if m.client == nil {
+func (m *Main) ensureClient(ctx context.Context, props plug.ReadOnlyProperties) error {
+	if clientInternal == nil {
 		cfg, err := makeConfiguration(props, m.lg)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		m.client, err = hazelcast.StartNewClientWithConfig(ctx, cfg)
+		client, err := hazelcast.StartNewClientWithConfig(ctx, cfg)
 		if err != nil {
-			return nil, err
+			return err
 		}
+		clientInternal = hazelcast.NewClientInternal(client)
 	}
-	return m.client, nil
+	return nil
 }
 
 func (m *Main) loadConfig(path string) (bool, error) {
@@ -337,10 +342,10 @@ func (m *Main) loadConfig(path string) (bool, error) {
 		return true, nil
 	}
 	m.configLoaded = true
-	defaultPath := paths.DefaultConfigPath()
 	m.vpr.SetConfigFile(path)
 	if err := m.vpr.ReadInConfig(); err != nil {
 		// ignore the errors if the path is the default path, it is possible that it does not exist.
+		defaultPath := paths.DefaultConfigPath()
 		var pe *fs.PathError
 		if errors.As(err, &pe) {
 			if path == defaultPath {

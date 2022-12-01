@@ -25,7 +25,8 @@ type InitContext interface {
 }
 
 type ExecContext interface {
-	AddOutputRows(row ...output.Row)
+	AddOutputRows(ctx context.Context, rows ...output.Row) error
+	AddOutputStream(ctx context.Context, ch <-chan output.Row) error
 	Args() []string
 	ClientInternal(ctx context.Context) (*hazelcast.ClientInternal, error)
 	CommandName() string
@@ -35,6 +36,5 @@ type ExecContext interface {
 	ShowHelpAndExit()
 	Stderr() io.Writer
 	Stdout() io.Writer
-	FlushOutput() error
-	ExecuteBlocking(ctx context.Context, hint string, f func(context.Context) (any, error)) (any, error)
+	ExecuteBlocking(ctx context.Context, hint string, f func(context.Context) (any, error)) (any, context.CancelFunc, error)
 }

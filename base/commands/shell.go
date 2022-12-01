@@ -16,6 +16,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/shell"
 	puberrors "github.com/hazelcast/hazelcast-commandline-client/errors"
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
@@ -51,6 +52,20 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 	if err != nil {
 		return fmt.Errorf("cloning Main: %w", err)
 	}
+	var cfgText string
+	cfgPath := ec.Props().GetString(clc.PropertyConfig)
+	if cfgPath != "" {
+		cfgText = fmt.Sprintf("Using configuration at: %s\n", cfgPath)
+	}
+	if !shell.IsPipe() {
+		I2(fmt.Fprintf(ec.Stdout(), `Hazelcast CLC %s (c) 2022 Hazelcast Inc.
+		
+Participate in our survey at: https://forms.gle/rPFywdQjvib1QCe49
+
+%sType 'help' for help information. Prefix non-SQL commands with \
+	
+	`, internal.Version, cfgText))
+	}
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	clcMultilineContinue := false
 	endLineFn := func(line string, multiline bool) (string, bool) {
@@ -78,7 +93,7 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 			if _, ok := cm.shortcuts[parts[0]]; !ok {
 				// this is a CLC command
 				text = strings.TrimSpace(text)
-				text = strings.TrimLeft(text, "\\")
+				text = strings.TrimPrefix(text, "\\")
 				args, err := shlex.Split(text)
 				if err != nil {
 					return err
@@ -95,14 +110,12 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 			}
 			return err
 		}
-		res, err := sql.ExecSQL(ctx, ec, text)
+		res, stop, err := sql.ExecSQL(ctx, ec, text)
 		if err != nil {
 			return err
 		}
-		if err := sql.UpdateOutput(ec, res, verbose); err != nil {
-			return err
-		}
-		if err := ec.FlushOutput(); err != nil {
+		defer stop()
+		if err := sql.UpdateOutput(ctx, ec, res, verbose); err != nil {
 			return err
 		}
 		return nil

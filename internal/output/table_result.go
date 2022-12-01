@@ -2,87 +2,68 @@ package output
 
 import (
 	"context"
+	"fmt"
 	"io"
 
-	"github.com/jedib0t/go-pretty/v6/table"
-	"github.com/jedib0t/go-pretty/v6/text"
+	"github.com/fatih/color"
 
-	iserialization "github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
-)
-
-type TableOutputMode int
-
-const (
-	TableOutModeDefault TableOutputMode = iota
-	TableOutputModeCSV
-	TableOutputModeHTML
-	TableOutputModeMarkDown
+	"github.com/hazelcast/hazelcast-commandline-client/internal/table"
 )
 
 type TableResult struct {
-	header []string
-	rp     RowProducer
+	header   []table.Column
+	rp       RowProducer
+	maxWidth int
 }
 
-func NewTableResult(header []string, rp RowProducer) *TableResult {
+// NewTableResult creates a table result from the row producer and (optional) header.
+// If header is not given, then it is assumed the first row in the row producer is the header, and alignment is auto-calculated.
+// In this case maxWidth is required.
+func NewTableResult(header []table.Column, rp RowProducer, maxWidth int) *TableResult {
+	if header == nil && maxWidth <= 0 {
+		panic("maxWidth should be positive if header is nil")
+	}
 	return &TableResult{
-		header: header,
-		rp:     rp,
+		header:   header,
+		rp:       rp,
+		maxWidth: maxWidth,
 	}
 }
 
-func (tr *TableResult) Serialize(ctx context.Context, w io.Writer, mode TableOutputMode) (int, error) {
+func (tr *TableResult) Serialize(ctx context.Context, w io.Writer) (int, error) {
 	var n int
-	t := table.NewWriter()
-	t.SetOutputMirror(w)
-	t.Style().Format.Header = text.FormatDefault
-	if tr.header != nil {
-		header := make(table.Row, len(tr.header))
-		for i, h := range tr.header {
-			header[i] = h
-		}
-		t.AppendHeader(header)
+	cfg := table.Config{
+		Stdout:     w,
+		CellFormat: [2]string{" %s ", "| %s "},
 	}
+	// use the header separator if color is not enabled
+	if color.NoColor {
+		cfg.HeaderSeperator = "-"
+	}
+	t := table.New(cfg)
+	wroteHeader := false
 	for {
 		if ctx.Err() != nil {
-			return 0, nil
+			return 0, ctx.Err()
 		}
-		vr, ok := tr.rp.NextRow()
+		vr, ok := tr.rp.NextRow(ctx)
 		if !ok {
 			break
 		}
-		row := make(table.Row, len(vr))
-		for i, v := range vr {
-			row[i] = tr.convertColumn(v)
+		if !wroteHeader {
+			if tr.header != nil {
+				t.WriteHeader(tr.header)
+			} else {
+				t.WriteHeader(makeTableHeaderFromRow(vr, tr.maxWidth))
+			}
+			wroteHeader = true
 		}
-		t.AppendRow(row)
+		row := make([]string, len(vr))
+		for i, v := range vr {
+			row[i] = fmt.Sprint(convertColumn(v))
+		}
+		t.WriteRow(row)
 	}
-	switch mode {
-	case TableOutputModeCSV:
-		t.RenderCSV()
-	case TableOutputModeHTML:
-		t.RenderHTML()
-	case TableOutputModeMarkDown:
-		t.RenderMarkdown()
-	default:
-		t.Render()
-	}
+	t.End()
 	return n, nil
-}
-
-func (tr *TableResult) convertColumn(col Column) any {
-	switch col.Type {
-	case iserialization.TypeByte, iserialization.TypeBool, iserialization.TypeUInt16,
-		iserialization.TypeInt16, iserialization.TypeInt32, iserialization.TypeInt64,
-		iserialization.TypeFloat32, iserialization.TypeFloat64, iserialization.TypeString:
-		return col.Value
-	case iserialization.TypeNil:
-		return ValueNil
-	case iserialization.TypeUnknown:
-		return ValueUnknown
-	case iserialization.TypeSkip:
-		return ValueSkip
-	default:
-		return col.SingleLine()
-	}
 }

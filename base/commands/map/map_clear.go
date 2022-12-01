@@ -29,7 +29,7 @@ func (mc *MapClearCommand) Exec(ctx context.Context, ec plug.ExecContext) error 
 	}
 	m := mv.(*hazelcast.Map)
 	hint := fmt.Sprintf("Clearing map %s", m.Name())
-	_, err = ec.ExecuteBlocking(ctx, hint, func(ctx context.Context) (any, error) {
+	_, stop, err := ec.ExecuteBlocking(ctx, hint, func(ctx context.Context) (any, error) {
 		if err := m.Clear(ctx); err != nil {
 			return nil, err
 		}
@@ -38,6 +38,7 @@ func (mc *MapClearCommand) Exec(ctx context.Context, ec plug.ExecContext) error 
 	if err != nil {
 		return err
 	}
+	stop()
 	return nil
 }
 

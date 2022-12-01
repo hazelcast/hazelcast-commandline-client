@@ -29,7 +29,7 @@ func (jr *JSONResult) Serialize(ctx context.Context, w io.Writer) (int, error) {
 		if ctx.Err() != nil {
 			return 0, ctx.Err()
 		}
-		row, ok := jr.rp.NextRow()
+		row, ok := jr.rp.NextRow(ctx)
 		if !ok {
 			return n, nil
 		}

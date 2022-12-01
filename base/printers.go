@@ -4,6 +4,8 @@ import (
 	"context"
 	"io"
 
+	"github.com/nathan-fiscaletti/consolesize-go"
+
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
@@ -17,30 +19,63 @@ const (
 
 type DelimitedPrinter struct{}
 
-func (pr DelimitedPrinter) Print(w io.Writer, rp output.RowProducer) error {
+func (pr DelimitedPrinter) PrintStream(ctx context.Context, w io.Writer, rp output.RowProducer) error {
 	dr := output.NewDelimitedResult("\t", rp, true)
-	_, err := dr.Serialize(context.Background(), w)
+	_, err := dr.Serialize(ctx, w)
+	return err
+}
+
+func (pr DelimitedPrinter) PrintRows(ctx context.Context, w io.Writer, rows []output.Row) error {
+	rp := output.NewSimpleRows(rows)
+	dr := output.NewDelimitedResult("\t", rp, true)
+	_, err := dr.Serialize(ctx, w)
 	return err
 }
 
 type JSONPrinter struct{}
 
-func (pr JSONPrinter) Print(w io.Writer, rp output.RowProducer) error {
+func (pr JSONPrinter) PrintStream(ctx context.Context, w io.Writer, rp output.RowProducer) error {
 	jr := output.NewJSONResult(rp)
-	_, err := jr.Serialize(context.Background(), w)
+	_, err := jr.Serialize(ctx, w)
 	return err
 }
 
-type TablePrinter struct {
-	Mode output.TableOutputMode
+func (pr JSONPrinter) PrintRows(ctx context.Context, w io.Writer, rows []output.Row) error {
+	rp := output.NewSimpleRows(rows)
+	jr := output.NewJSONResult(rp)
+	_, err := jr.Serialize(ctx, w)
+	return err
 }
 
-func (pr *TablePrinter) Print(w io.Writer, rp output.RowProducer) error {
-	rows := output.MaterializeRows(rp)
-	header, rows := output.MakeTable(rows)
-	rp = output.NewSimpleRows(rows)
-	tr := output.NewTableResult(header, rp)
-	_, err := tr.Serialize(context.Background(), w, pr.Mode)
+type TablePrinter struct{}
+
+func (pr *TablePrinter) PrintStream(ctx context.Context, w io.Writer, rp output.RowProducer) error {
+	maxCols, _ := consolesize.GetConsoleSize()
+	tr := output.NewTableResult(nil, rp, maxCols)
+	_, err := tr.Serialize(ctx, w)
+	return err
+}
+
+func (pr *TablePrinter) PrintRows(ctx context.Context, w io.Writer, rows []output.Row) error {
+	header, rows := output.MakeTableFromRows(rows)
+	rp := output.NewSimpleRows(rows)
+	tr := output.NewTableResult(header, rp, 0)
+	_, err := tr.Serialize(ctx, w)
+	return err
+}
+
+type CSVPrinter struct{}
+
+func (pr *CSVPrinter) PrintStream(ctx context.Context, w io.Writer, rp output.RowProducer) error {
+	cr := output.NewCSVResult(rp)
+	_, err := cr.Serialize(ctx, w)
+	return err
+}
+
+func (pr *CSVPrinter) PrintRows(ctx context.Context, w io.Writer, rows []output.Row) error {
+	rp := output.NewSimpleRows(rows)
+	cr := output.NewCSVResult(rp)
+	_, err := cr.Serialize(ctx, w)
 	return err
 }
 
@@ -48,5 +83,5 @@ func init() {
 	plug.Registry.RegisterPrinter(PrinterDelimited, &DelimitedPrinter{})
 	plug.Registry.RegisterPrinter(PrinterJSON, &JSONPrinter{})
 	plug.Registry.RegisterPrinter(PrinterTable, &TablePrinter{})
-	plug.Registry.RegisterPrinter(PrinterCSV, &TablePrinter{Mode: output.TableOutputModeCSV})
+	plug.Registry.RegisterPrinter(PrinterCSV, &CSVPrinter{})
 }

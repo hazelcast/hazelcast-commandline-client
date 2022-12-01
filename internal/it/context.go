@@ -73,16 +73,6 @@ type ExecContext struct {
 	Rows   []output.Row
 }
 
-func (ec *ExecContext) FlushOutput() error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (ec *ExecContext) ExecuteBlocking(ctx context.Context, hint string, f func(context.Context) (any, error)) (any, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
 func NewExecuteContext(args []string) *ExecContext {
 	return &ExecContext{
 		lg:     NewLogger(),
@@ -91,6 +81,10 @@ func NewExecuteContext(args []string) *ExecContext {
 		args:   args,
 		props:  plug.NewProperties(),
 	}
+}
+func (ec *ExecContext) ExecuteBlocking(ctx context.Context, hint string, f func(context.Context) (any, error)) (any, context.CancelFunc, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (ec *ExecContext) Props() plug.ReadOnlyProperties {
@@ -106,8 +100,14 @@ func (ec *ExecContext) Interactive() bool {
 	return false
 }
 
-func (ec *ExecContext) AddOutputRows(row ...output.Row) {
-	ec.Rows = append(ec.Rows, row...)
+func (ec *ExecContext) AddOutputStream(ctx context.Context, ch <-chan output.Row) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (ec *ExecContext) AddOutputRows(ctx context.Context, rows ...output.Row) error {
+	ec.Rows = append(ec.Rows, rows...)
+	return nil
 }
 
 func (ec *ExecContext) Logger() log.Logger {

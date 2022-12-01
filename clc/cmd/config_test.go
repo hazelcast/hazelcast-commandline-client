@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"crypto/tls"
+	"os"
 	"testing"
 
 	"github.com/hazelcast/hazelcast-go-client"
@@ -19,9 +20,11 @@ func TestMakeConfiguration_Default(t *testing.T) {
 	props := plug.NewProperties()
 	w := nopWriteCloser{bytes.NewBuffer(nil)}
 	lg := MustValue(logger.New(w, hzlogger.WeightDebug))
+	Must(os.Setenv("CLC_CLIENT_NAME", "my-client"))
 	cfg, err := makeConfiguration(props, lg)
 	require.NoError(t, err)
 	var target hazelcast.Config
+	target.ClientName = "my-client"
 	target.Cluster.Unisocket = true
 	target.Stats.Enabled = true
 	target.Logger.CustomLogger = lg
@@ -42,9 +45,12 @@ func TestMakeConfiguration_Viridian(t *testing.T) {
 	*/
 	w := nopWriteCloser{bytes.NewBuffer(nil)}
 	lg := MustValue(logger.New(w, hzlogger.WeightDebug))
+	// set the client name to a known value
+	Must(os.Setenv("CLC_CLIENT_NAME", "my-client"))
 	cfg, err := makeConfiguration(props, lg)
 	require.NoError(t, err)
 	var target hazelcast.Config
+	target.ClientName = "my-client"
 	target.Cluster.Unisocket = true
 	target.Cluster.Name = "pr-3066"
 	target.Cluster.Cloud.Enabled = true

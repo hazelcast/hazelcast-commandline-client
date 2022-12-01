@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"os/signal"
-	"sync"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
@@ -22,7 +21,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-type ClientFn func(ctx context.Context) (*hazelcast.Client, error)
+type ClientFn func(ctx context.Context) (*hazelcast.ClientInternal, error)
 
 type ExecContext struct {
 	lg            log.Logger
@@ -31,16 +30,14 @@ type ExecContext struct {
 	args          []string
 	props         *plug.Properties
 	clientFn      ClientFn
-	mu            *sync.Mutex
-	rows          []output.Row
-	ci            *hazelcast.ClientInternal
 	isInteractive bool
 	cmd           *cobra.Command
 	main          *Main
 	spinnerWait   time.Duration
+	printer       plug.Printer
 }
 
-func NewExecContext(lg log.Logger, stdout, stderr io.Writer, props *plug.Properties, clientFn ClientFn, interactive bool) *ExecContext {
+func NewExecContext(lg log.Logger, stdout, stderr io.Writer, props *plug.Properties, clientFn ClientFn, interactive bool) (*ExecContext, error) {
 	return &ExecContext{
 		lg:            lg,
 		stdout:        stdout,
@@ -48,9 +45,8 @@ func NewExecContext(lg log.Logger, stdout, stderr io.Writer, props *plug.Propert
 		props:         props,
 		clientFn:      clientFn,
 		isInteractive: interactive,
-		mu:            &sync.Mutex{},
 		spinnerWait:   1 * time.Second,
-	}
+	}, nil
 }
 
 func (ec *ExecContext) SetArgs(args []string) {
@@ -90,25 +86,42 @@ func (ec *ExecContext) Props() plug.ReadOnlyProperties {
 }
 
 func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInternal, error) {
-	if ec.ci != nil {
-		return ec.ci, nil
+	if clientInternal != nil {
+		return clientInternal, nil
 	}
-	client, err := ec.ExecuteBlocking(ctx, "Connecting to the cluster", func(ctx context.Context) (any, error) {
+	ci, stop, err := ec.ExecuteBlocking(ctx, "Connecting to the cluster", func(ctx context.Context) (any, error) {
 		return ec.clientFn(ctx)
 	})
 	if err != nil {
 		return nil, err
 	}
-	ec.ci = hazelcast.NewClientInternal(client.(*hazelcast.Client))
-	return ec.ci, nil
+	stop()
+	clientInternal = ci.(*hazelcast.ClientInternal)
+	if ec.Interactive() && !shell.IsPipe() {
+		I2(fmt.Fprintf(ec.stdout, "Connected to cluster: %s\n\n", clientInternal.ClusterService().FailoverService().Current().ClusterName))
+	}
+	return clientInternal, nil
 }
 
 func (ec *ExecContext) Interactive() bool {
 	return ec.isInteractive
 }
 
-func (ec *ExecContext) AddOutputRows(row ...output.Row) {
-	ec.rows = append(ec.rows, row...)
+func (ec *ExecContext) AddOutputRows(ctx context.Context, rows ...output.Row) error {
+	if len(rows) == 0 {
+		return nil
+	}
+	if err := ec.ensurePrinter(); err != nil {
+		return err
+	}
+	return ec.printer.PrintRows(ctx, ec.stdout, rows)
+}
+
+func (ec *ExecContext) AddOutputStream(ctx context.Context, ch <-chan output.Row) error {
+	if err := ec.ensurePrinter(); err != nil {
+		return err
+	}
+	return ec.printer.PrintStream(ctx, ec.stdout, output.NewChanRows(ch))
 }
 
 func (ec *ExecContext) ShowHelpAndExit() {
@@ -122,23 +135,17 @@ func (ec *ExecContext) CommandName() string {
 	return ec.cmd.CommandPath()
 }
 
-func (ec *ExecContext) FlushOutput() error {
-	ec.mu.Lock()
-	defer ec.mu.Unlock()
-	rows := ec.outputRows()
-	pn := ec.props.GetString(clc.PropertyFormat)
-	pr, ok := plug.Registry.Printers()[pn]
-	if !ok {
-		return fmt.Errorf("printer %s is not available", pn)
-	}
-	return pr.Print(os.Stdout, output.NewSimpleRows(rows))
-}
-
 func (ec *ExecContext) SetInteractive(value bool) {
 	ec.isInteractive = value
 }
 
-func (ec *ExecContext) ExecuteBlocking(ctx context.Context, hint string, f func(context.Context) (any, error)) (any, error) {
+// ExecuteBlocking runs the given blocking function.
+// It displays a spinner in the interactive mode after a timeout.
+// The returned stop function must be called at least once to prevent leaks if there's no error.
+// Calling returned stop more than once has no effect.
+func (ec *ExecContext) ExecuteBlocking(ctx context.Context, hint string, f func(context.Context) (any, error)) (value any, stop context.CancelFunc, err error) {
+	// setup the Ctrl+C handler
+	ctx, stop = signal.NotifyContext(ctx, os.Interrupt, os.Kill)
 	ch := make(chan any)
 	go func() {
 		v, err := f(ctx)
@@ -148,9 +155,6 @@ func (ec *ExecContext) ExecuteBlocking(ctx context.Context, hint string, f func(
 		}
 		ch <- v
 	}()
-	// setup the Ctrl+C handler
-	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, os.Kill)
-	defer stop()
 	timer := time.NewTimer(ec.spinnerWait)
 	defer timer.Stop()
 	var s *yacspin.Spinner
@@ -172,12 +176,17 @@ func (ec *ExecContext) ExecuteBlocking(ctx context.Context, hint string, f func(
 	for {
 		select {
 		case <-ctx.Done():
-			return nil, errors.ErrUserCancelled
+			// calling stop but also returning no-op just in case...
+			stop()
+			return nil, func() {}, errors.ErrUserCancelled
 		case v := <-ch:
 			if err, ok := v.(error); ok {
-				return nil, err
+				// if an error came out from the channel, return that as the error
+				// calling stop but also returning no-op just in case...
+				stop()
+				return nil, func() {}, err
 			}
-			return v, nil
+			return v, stop, nil
 		case <-timer.C:
 			if ec.isInteractive && s != nil {
 				// ignoring the error here
@@ -187,9 +196,15 @@ func (ec *ExecContext) ExecuteBlocking(ctx context.Context, hint string, f func(
 	}
 }
 
-func (ec *ExecContext) outputRows() []output.Row {
-	// assumes called under lock
-	r := ec.rows
-	ec.rows = nil
-	return r
+func (ec *ExecContext) ensurePrinter() error {
+	if ec.printer != nil {
+		return nil
+	}
+	pn := ec.props.GetString(clc.PropertyFormat)
+	pr, ok := plug.Registry.Printers()[pn]
+	if !ok {
+		return fmt.Errorf("printer %s is not available", pn)
+	}
+	ec.printer = pr
+	return nil
 }

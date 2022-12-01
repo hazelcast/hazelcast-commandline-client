@@ -37,6 +37,9 @@ func Logs() string {
 }
 
 func DefaultConfigPath() string {
+	if p := nearbyConfigPath(); p != "" {
+		return p
+	}
 	return filepath.Join(ResolveConfigDir("default"), "config.yaml")
 }
 
@@ -52,10 +55,11 @@ func ResolveConfigDir(name string) string {
 /*
 ResolveConfigPath returns the normalized configuration path
 The user has several ways of specifying the configuration:
- 1. No configuration: The default configuration at $CLC_HOME/config.yaml is used
- 2. Absolute path
- 3. Relative path $PATH: $PATH in current working directory
- 4. Relative path $PATH without extension: The configuration file at $CLC_HOME/$PATH/config.yaml is used.
+ 1. No configuration specified and there's config.yaml next to clc binary: config.yaml is used
+ 2. No configuration specified: The default configuration at $CLC_HOME/config.yaml is used
+ 3. Absolute path
+ 4. Relative path $PATH: $PATH in current working directory
+ 5. Relative path $PATH without extension: The configuration file at $CLC_HOME/$PATH/config.yaml is used.
 */
 func ResolveConfigPath(path string) string {
 	if path == "" {
@@ -95,4 +99,19 @@ func Exists(path string) bool {
 		return false
 	}
 	return true
+}
+
+func nearbyConfigPath() string {
+	e, err := os.Executable()
+	if err != nil {
+		// ignore the error and return early
+		return ""
+	}
+	dir := filepath.Dir(e)
+	// check whether config.yaml exists in this dir
+	path := Join(dir, DefaultConfig)
+	if Exists(path) {
+		return path
+	}
+	return ""
 }

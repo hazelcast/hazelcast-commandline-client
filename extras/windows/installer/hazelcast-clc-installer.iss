@@ -1,8 +1,8 @@
 #define MyAppName "Hazelcast CLC"
-#define MyAppVersion "v5.2.0-beta2"
+#define MyAppVersion "v5.2.0-beta3"
 #define MyAppPublisher "Hazelcast, Inc."
 #define MyAppURL "https://www.hazelcast.com/"
-#define MyAppExeName "hzc.exe"
+#define MyAppExeName "clc.exe"
 
 #ifndef SourceDir
 #define SourceDir "NOT-SPECIFIED"
@@ -42,7 +42,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "{#SourceDir}\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#SourceDir}\build\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourceDir}\extras\windows\installer\README.txt"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
@@ -62,7 +62,7 @@ Name: "{autoprograms}\{#MyAppName}\{#MyAppName}"; Filename: "{app}\{#MyAppExeNam
 Name: "{autoprograms}\{#MyAppName}\README.txt"; Filename: "{app}\README.txt"
 Name: "{autoprograms}\{#MyAppName}\Documentation"; Filename: "https://docs.hazelcast.com/hazelcast/latest-dev/clients/clc"
 Name: "{autoprograms}\{#MyAppName}\Get Started with Hazelcast"; Filename: "https://docs.hazelcast.com/hazelcast/latest/getting-started/get-started-cli"
-Name: "{autoprograms}\{#MyAppName}\Survey"; Filename: "https://forms.gle/RdCHAwYayqpcCgft8"
+Name: "{autoprograms}\{#MyAppName}\Survey"; Filename: "https://forms.gle/rPFywdQjvib1QCe49"
 ; Desktop
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 

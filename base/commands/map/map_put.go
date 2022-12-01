@@ -48,12 +48,13 @@ func (mc *MapPutCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	}
 	req := codec.EncodeMapPutRequest(mapName, kd, vd, 0, ttl)
 	hint := fmt.Sprintf("Putting into map %s", mapName)
-	rv, err := ec.ExecuteBlocking(ctx, hint, func(ctx context.Context) (any, error) {
+	rv, stop, err := ec.ExecuteBlocking(ctx, hint, func(ctx context.Context) (any, error) {
 		return ci.InvokeOnKey(ctx, req, kd, nil)
 	})
 	if err != nil {
 		return err
 	}
+	stop()
 	raw := codec.DecodeMapPutResponse(rv.(*hazelcast.ClientMessage))
 	vt := raw.Type()
 	value, err := ci.DecodeData(raw)
@@ -74,8 +75,7 @@ func (mc *MapPutCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 			Value: serialization.TypeToString(vt),
 		})
 	}
-	ec.AddOutputRows(row)
-	return nil
+	return ec.AddOutputRows(ctx, row)
 }
 
 func init() {

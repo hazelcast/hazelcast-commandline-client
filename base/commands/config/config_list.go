@@ -40,14 +40,15 @@ func (cm ListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 		I2(fmt.Fprintln(ec.Stderr(), "No configuration was found."))
 		return nil
 	}
+	var rows []output.Row
 	for _, c := range cs {
-		ec.AddOutputRows(output.Row{output.Column{
+		rows = append(rows, output.Row{output.Column{
 			Name:  "Config Name",
 			Type:  serialization.TypeString,
 			Value: c,
 		}})
 	}
-	return nil
+	return ec.AddOutputRows(ctx, rows...)
 }
 
 func (cm ListCmd) findConfigs(cd string) ([]string, error) {

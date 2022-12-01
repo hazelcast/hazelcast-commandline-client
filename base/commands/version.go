@@ -31,18 +31,17 @@ func (vc VersionCommand) Init(cc plug.InitContext) error {
 
 func (vc VersionCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if ec.Props().GetBool(clc.PropertyVerbose) {
-		ec.AddOutputRows(
+		return ec.AddOutputRows(ctx,
 			vc.row("Hazelcast CLC", internal.Version),
 			vc.row("Latest Git Commit Hash", internal.GitCommit),
 			vc.row("Hazelcast Go Client", hazelcast.ClientVersion),
 			vc.row("Go", fmt.Sprintf("%s %s/%s", runtime.Version(), runtime.GOOS, runtime.GOARCH)),
 		)
-		return nil
 	}
 	if ec.Props().GetString(clc.PropertyFormat) == base.PrinterDelimited {
 		I2(fmt.Fprintln(ec.Stdout(), internal.Version))
 	} else {
-		ec.AddOutputRows(vc.row("Hazelcast CLC", internal.Version))
+		return ec.AddOutputRows(ctx, vc.row("Hazelcast CLC", internal.Version))
 	}
 	ec.Logger().Debugf("version command ran OK")
 	return nil
