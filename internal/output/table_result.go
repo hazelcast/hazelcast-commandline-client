@@ -17,7 +17,7 @@ type TableResult struct {
 }
 
 // NewTableResult creates a table result from the row producer and (optional) header.
-// If header is not given, then it is assumed the first row in the row producer is the header, and alignment is auto-calculatd.
+// If header is not given, then it is assumed the first row in the row producer is the header, and alignment is auto-calculated.
 // In this case maxWidth is required.
 func NewTableResult(header []table.Column, rp RowProducer, maxWidth int) *TableResult {
 	if header == nil && maxWidth <= 0 {
