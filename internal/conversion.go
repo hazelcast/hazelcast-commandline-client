@@ -13,7 +13,7 @@ import (
 
 // supported types
 const (
-	TypeNameString  = "str"
+	TypeNameString  = "string"
 	TypeNameBoolean = "bool"
 	TypeNameJSON    = "json"
 	TypeNameInt8    = "i8"
@@ -80,7 +80,7 @@ func ConvertString(value, valueType string) (interface{}, error) {
 	case TypeNameFloat64:
 		cv, err = strconv.ParseFloat(value, 64)
 	default:
-		err = fmt.Errorf("unknown type, provide one of %s", strings.Join(SupportedTypeNames, ", "))
+		err = fmt.Errorf("unknown type '%s', provide one of %s", valueType, strings.Join(SupportedTypeNames, ", "))
 	}
 	if errors.Is(err, strconv.ErrSyntax) {
 		err = fmt.Errorf(`can not convert "%s" to %s, unknown syntax`, value, valueType)
