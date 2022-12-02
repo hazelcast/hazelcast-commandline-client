@@ -56,7 +56,7 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 	if !shell.IsPipe() {
 		cfgPath := ec.Props().GetString(clc.PropertyConfig)
 		if cfgPath != "" {
-			cfgText = fmt.Sprintf("Using configuration at: %s\n", cfgPath)
+			cfgText = fmt.Sprintf("Configuration: %s\n", cfgPath)
 		}
 		I2(fmt.Fprintf(ec.Stdout(), `Hazelcast CLC %s (c) 2022 Hazelcast Inc.
 		
