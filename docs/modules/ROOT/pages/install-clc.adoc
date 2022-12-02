@@ -3,50 +3,18 @@
 
 // See https://docs.hazelcast.com/hazelcast/5.2-snapshot/clients/clc#installing-the-hazelcast-clc
 
-{description} You can install the Hazelcast CLC, using one of the following:
+{description} You can install Hazelcast CLC, using one of the following:
 
-* Homebrew (recommended)
-* Installer script
+* Downloading a pre-built binary
+* Windows installer
 * Building from source
 
 == Installing on macOS
 
 The Hazelcast CLC is supported on macOS 12 or newer versions.
 
-[tabs] 
-==== 
-Installer Script::
-+
---
-macOS 12 or newer comes with cURL bundled with the operating system. You can directly run the following command.
-
-[source,bash]
-----
-curl https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/scripts/install.sh | bash
-----
---
-
-Homebrew::
-+
-. Make sure Homebrew is installed using the following command.
-+
-[source,bash]
-----
-brew -v
-----
-+
-If installed, you'll get its version information. Otherwise, you'll receive an error stating the command is not found; install it following the https://docs.brew.sh/Installation[Homebrew documentation].
-+
-. Run the following commands on a terminal.
-+
-[source,bash]
-----
-brew tap hazelcast/homebrew-hz
-brew install hazelcast-commandline-client
-----
-+
-NOTE: To take advantage of auto-completion support, follow the instructions that appear during installation.
-
+[tabs]
+====
 Build from Source::
 +
 . Make sure the following are installed:
@@ -72,6 +40,7 @@ cd hazelcast-commandline-client
 ----
 make
 ----
+`clc` binary is created in the `build` directory.
 ====
 
 == Installing on Linux
@@ -80,47 +49,6 @@ The Hazelcast CLC is supported on Ubuntu 18.04 or newer versions.
 
 [tabs] 
 ==== 
-Installer Script:: 
-+ 
---
-. Make sure cURL is installed using the following command.
-+
-[source,bash]
-----
-curl -V
-----
-+
-Note the capital `V` in the command. If installed, you'll get its version information. Otherwise, you'll receive an error stating the command is not found; install it following the https://everything.curl.dev/get/linux[cURL documentation].
-+
-. Run the following command on a terminal.
-+
-[source,bash]
-----
-curl https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/scripts/install.sh | bash
-----
---
-
-Homebrew::
-+
-. Make sure Homebrew is installed using the following command.
-+
-[source,bash]
-----
-brew -v
-----
-+
-If installed, you'll get its version information. Otherwise, you'll receive an error stating the command is not found; install it following the https://docs.brew.sh/Installation[Homebrew documentation].
-+
-. Run the following commands on a terminal.
-+
-[source,bash]
-----
-brew tap hazelcast/homebrew-hz
-brew install hazelcast-commandline-client
-----
-+
-NOTE: To take advantage of auto-completion support, follow the instructions that appear during installation.
-
 Build from Source::
 +
 . Make sure the following are installed:
@@ -173,29 +101,12 @@ Choose the option that corresponds to your installation method.
 
 [tabs] 
 ==== 
-macOS and Linux:: 
-+ 
--- 
-[source,bash]
-----
-~/.local/share/hz-cli/bin/uninstall.sh
-----
---
-
 Windows::
 +
 . Go to *Apps & Features* setting (*Start menu* -> *Windows Settings* -> *Apps*).
 . Locate *Hazelcast CLC version {full-version}* under *Apps & Features* list.
 . Right-click on it and select *Uninstall*.
 . Press kbd:[Yes] on the uninstallation dialog.
-
-Homebrew::
-+
-[source,bash]
-----
-brew uninstall hazelcast-commandline-client
-brew untap hazelcast/homebrew-hz
-----
 
 Source::
 +

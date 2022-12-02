@@ -45,15 +45,11 @@ Non-Interactive mode::
 --
 [source,bash]
 ----
-clc sql "SELECT * FROM employees"
-+-----------------------------------------------------------------+
-|        __key        |         age         |         name        |
-+-----------------------------------------------------------------+
-| 12                  | 41                  | Jane Brown          |
-| 5                   | 33                  | Mandy Bronson       |
-| 21                  | 30                  | Mike McGregor       |
-| 3                   | 22                  | Joe Taylor          |
-| 75                  | 33                  | Mandy Bronson       |
+$ clc sql -c prod "SELECT * from cities"
+1	United Kingdom	London	9540576
+4	United States	Los Angeles	3985520
+5	Turkey	Ankara	5309690
+7	Brazil	Sao Paulo	22429800
 ----
 --
 Interactive mode::
@@ -62,15 +58,15 @@ Interactive mode::
 [source,bash]
 ----
 clc
-CLC> sql "SELECT * FROM employees"
-+-----------------------------------------------------------------+
-|        __key        |         age         |         name        |
-+-----------------------------------------------------------------+
-| 12                  | 41                  | Jane Brown          |
-| 5                   | 33                  | Mandy Bronson       |
-| 21                  | 30                  | Mike McGregor       |
-| 3                   | 22                  | Joe Taylor          |
-| 75                  | 33                  | Mandy Bronson       |
+CLC> SELECT * FROM cities
+---------------------------------------------------------------------------------
+      __key | country                   | city                      | population
+---------------------------------------------------------------------------------
+          1 | United Kingdom            | London                    |    9540576
+          4 | United States             | Los Angeles               |    3985520
+          5 | Turkey                    | Ankara                    |    5309690
+          7 | Brazil                    | Sao Paulo                 |   22429800
+---------------------------------------------------------------------------------
 ----
 --
 ====

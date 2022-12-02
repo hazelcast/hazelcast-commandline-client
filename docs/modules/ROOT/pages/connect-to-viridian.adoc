@@ -20,15 +20,15 @@ TIP: You can find all connection credentials such as the cluster name and discov
 
 . Download the Go Client sample from {hazelcast-cloud} console.
 
-. Import the configuration from the sample:
+. Import the configuration from the sample as `dev`:
 +
 ```bash
-clc config import PATH-TO-GO-CLIENT-SAMPLE.zip -c CONFIG-NAME
+clc config dev import PATH-TO-GO-CLIENT-SAMPLE.zip
 ```
 . Start an interactive shell session.
 +
 ```bash
-clc -c CONFIG-NAME
+clc -c dev
 ```
 
 CLC will start in the interactive mode, and you should see a command prompt.

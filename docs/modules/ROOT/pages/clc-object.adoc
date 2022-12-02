@@ -69,6 +69,5 @@ Assuming you have a map named `currency` in your cluster:
 [source,bash]
 ----
 clc object list
-
-  map currency
+map currency
 ----
