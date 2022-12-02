@@ -12,7 +12,7 @@ Example use cases for the Hazelcast CLC.
 
 === Access Data for Debugging
 
-Get xref:clc-map.adoc[direct access to map data] for quick debugging of prototypes or production applications. Easily read or query data on a cluster using <<sql-mode, SQL mode>> to view query results, and then perform updates without changing tools.
+Get xref:clc-map.adoc[direct access to map data] for quick debugging of prototypes or production applications. Easily read or query data on a cluster using SQL queries.
 
 === Scripting for Automation
 
