@@ -37,7 +37,7 @@ func (g GlobalInitializer) Init(cc plug.InitContext) error {
 	cc.AddBoolFlag(clc.PropertyVerbose, "", false, false, "enable verbose output")
 	lp := paths.DefaultLogPath(time.Now())
 	if !cc.Interactive() {
-		cc.AddStringFlag(clc.PropertyConfig, "", "", false, "set the configuration")
+		cc.AddStringFlag(clc.PropertyConfig, clc.ShortcutConfig, "", false, "set the configuration")
 		cc.AddStringFlag(clc.PropertyLogPath, "", lp, false, "set the log path, use stderr to log to stderr")
 		cc.AddStringFlag(clc.PropertyLogLevel, "", "info", false, "set the log level")
 	}
