@@ -22,7 +22,7 @@ Usage:
 
 [source,bash]
 ----
-clc config import [source]
+clc config import [target] [source]
 ----
 
 Parameters:
@@ -30,6 +30,11 @@ Parameters:
 [cols="1m,1a,2a,1a"]
 |===
 |Parameter|Required|Description|Default
+
+|`target`
+|Required
+|Name of the configuration or its path. If a name is used, the configuration is saved to `$CLC_HOME/configs/NAME`
+|N/A
 
 |`source`
 |Required
@@ -46,7 +51,7 @@ Example output:
 
 [source,bash]
 ----
-clc config import ~/Downloads/hazelcast-cloud-go-sample-client-pr-3814-default.zip
+clc config import production ~/Downloads/hazelcast-cloud-go-sample-client-pr-3814-default.zip
 ----
 
 == clc config list
@@ -66,5 +71,5 @@ Example output:
 ----
 clc config list
 default
-pr-3814
+production
 ----

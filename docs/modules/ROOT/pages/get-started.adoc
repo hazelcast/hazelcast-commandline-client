@@ -27,13 +27,13 @@ Assuming the Go client sample for your Viridian cluster was saved to the `Downlo
 On Linux and MacOS:
 [source, bash]
 ----
-clc config import -c dev ~/Downloads/hazelcast-cloud-go-sample-client-pr-XXXX-default.zip
+clc config import dev ~/Downloads/hazelcast-cloud-go-sample-client-pr-XXXX-default.zip
 ----
 
 On Windows:
 [source, bash]
 ----
-clc config import -c dev %USERPROFILE%/Downloads/hazelcast-cloud-go-sample-client-pr-XXXX-default.zip
+clc config import dev %USERPROFILE%/Downloads/hazelcast-cloud-go-sample-client-pr-XXXX-default.zip
 ----
 
 You can use the `clc config list` command to confirm that the configuration was imported.
@@ -57,7 +57,7 @@ You're ready to connect the Hazelcast CLC to your development cluster. Make sure
 +
 [source, bash]
 ----
-clc config import -c dev PATH-TO-SAMPLE.zip
+clc config import dev PATH-TO-SAMPLE.zip
 clc -c dev
 ----
 
@@ -96,7 +96,7 @@ Make sure that your Viridian production cluster is running before you start.
 +
 [source, bash]
 ----
-clc config import -c prod PATH-TO-SAMPLE.zip
+clc config import prod PATH-TO-SAMPLE.zip
 clc -c prod
 ----
 
