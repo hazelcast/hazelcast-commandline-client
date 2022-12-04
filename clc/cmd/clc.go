@@ -52,8 +52,9 @@ func NewMain(arg0, cfgPath, logPath, logLevel string, stdout, stderr io.Writer) 
 		Use:               arg0,
 		Short:             "Hazelcast CLC",
 		Long:              "Hazelcast CLC",
-		Args:              cobra.ExactArgs(0),
+		Args:              cobra.NoArgs,
 		CompletionOptions: cobra.CompletionOptions{DisableDescriptions: true},
+		SilenceErrors:     true,
 	}
 	m := &Main{
 		root:   rc,
@@ -143,7 +144,7 @@ func (m *Main) Execute(args []string) error {
 					useShell = false
 					break
 				}
-				if i == 0 && (arg == "help" || arg == cobra.ShellCompRequestCmd || arg == cobra.ShellCompNoDescRequestCmd) {
+				if i == 0 && (arg == "help" || arg == "completion" || arg == cobra.ShellCompRequestCmd || arg == cobra.ShellCompNoDescRequestCmd) {
 					useShell = false
 					break
 				}
