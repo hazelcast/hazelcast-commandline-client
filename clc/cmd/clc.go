@@ -47,12 +47,13 @@ type Main struct {
 	cc            *CommandContext
 }
 
-func NewMain(cfgPath, logPath, logLevel string, stdout, stderr io.Writer) (*Main, error) {
+func NewMain(arg0, cfgPath, logPath, logLevel string, stdout, stderr io.Writer) (*Main, error) {
 	rc := &cobra.Command{
-		Use:   "clc",
-		Short: "Hazelcast CLC",
-		Long:  "Hazelcast CLC",
-		Args:  cobra.ExactArgs(0),
+		Use:               arg0,
+		Short:             "Hazelcast CLC",
+		Long:              "Hazelcast CLC",
+		Args:              cobra.ExactArgs(0),
+		CompletionOptions: cobra.CompletionOptions{DisableDescriptions: true},
 	}
 	m := &Main{
 		root:   rc,
@@ -142,7 +143,7 @@ func (m *Main) Execute(args []string) error {
 					useShell = false
 					break
 				}
-				if i == 0 && (arg == "help" || arg == "completion") {
+				if i == 0 && (arg == "help" || arg == cobra.ShellCompRequestCmd || arg == cobra.ShellCompNoDescRequestCmd) {
 					useShell = false
 					break
 				}

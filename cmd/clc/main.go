@@ -25,7 +25,7 @@ func main() {
 	if err != nil {
 		bye(err)
 	}
-	m, err := clc.NewMain(cfgPath, logPath, logLevel, os.Stdout, os.Stderr)
+	m, err := clc.NewMain(os.Args[0], cfgPath, logPath, logLevel, os.Stdout, os.Stderr)
 	if err != nil {
 		bye(err)
 	}
