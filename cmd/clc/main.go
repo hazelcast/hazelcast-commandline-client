@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -26,8 +25,7 @@ func main() {
 	if err != nil {
 		bye(err)
 	}
-	_, arg0 := filepath.Split(os.Args[0])
-	m, err := clc.NewMain(arg0, cfgPath, logPath, logLevel, os.Stdout, os.Stderr)
+	m, err := clc.NewMain("clc", cfgPath, logPath, logLevel, os.Stdout, os.Stderr)
 	if err != nil {
 		bye(err)
 	}
