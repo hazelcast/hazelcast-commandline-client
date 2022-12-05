@@ -9,6 +9,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/shell"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
@@ -27,7 +28,7 @@ func (g GlobalInitializer) Init(cc plug.InitContext) error {
 		format = PrinterDelimited
 	}
 	// format is table for the interactive mode.
-	if cc.Interactive() {
+	if cc.Interactive() && !shell.IsPipe() {
 		if slices.Contains(pns, PrinterTable) {
 			format = PrinterTable
 		}

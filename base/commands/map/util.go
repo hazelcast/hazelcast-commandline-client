@@ -12,3 +12,10 @@ func GetTTL(ec plug.ExecContext) int64 {
 	}
 	return ttlUnset
 }
+
+func GetMaxIdle(ec plug.ExecContext) int64 {
+	if _, ok := ec.Props().Get(mapMaxIdle); ok {
+		return ec.Props().GetInt(mapMaxIdle)
+	}
+	return ttlUnset
+}
