@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -164,15 +165,13 @@ func (cm ImportCmd) makeConfigFromZip(ctx context.Context, ec plug.ExecContext, 
 		if !cfgFound {
 			return nil, errors.New("go file with configuration not found")
 		}
-		outDir, f, err := configDirFile(target, clusterName)
+		opts := makeViridianOpts(clusterName, token, pw)
+		path = target
+		if target == "" {
+			path = clusterName
+		}
+		outDir, cfgPath, err := config.Create(path, opts)
 		if err != nil {
-			return nil, err
-		}
-		if err := os.MkdirAll(outDir, 0700); err != nil {
-			return nil, err
-		}
-		cfgPath := paths.Join(outDir, f)
-		if err := cm.createConfigYAML(cfgPath, clusterName, token, pw); err != nil {
 			return nil, err
 		}
 		// copy pem files
@@ -188,18 +187,15 @@ func (cm ImportCmd) makeConfigFromZip(ctx context.Context, ec plug.ExecContext, 
 	return p.(string), nil
 }
 
-func (cm ImportCmd) createConfigYAML(path, clusterName, token, password string) error {
-	text := fmt.Sprintf(`
-cluster:
-  name: "%s"
-  discovery-token: "%s"
-ssl:
-  ca-path: "ca.pem"
-  cert-path: "cert.pem"
-  key-path: "key.pem"
-  key-password: "%s"
-`, clusterName, token, password)
-	return os.WriteFile(path, []byte(text), 0600)
+func makeViridianOpts(clusterName, token, password string) clc.KeyValues[string, string] {
+	return clc.KeyValues[string, string]{
+		{Key: "cluster.name", Value: clusterName},
+		{Key: "cluster.discovery-token", Value: token},
+		{Key: "ssl.ca-path", Value: "ca.pem"},
+		{Key: "ssl.cert-path", Value: "cert.pem"},
+		{Key: "ssl.key-path", Value: "key.pem"},
+		{Key: "ssl.key-password", Value: password},
+	}
 }
 
 func extractConfigFields(reader *zip.ReadCloser, goPaths []string) (token, clusterName, pw string, cfgFound bool) {
@@ -269,42 +265,6 @@ func extractKeyPassword(text string) string {
 	const re = `config.Cluster.Network.SSL.AddClientCertAndEncryptedKeyPath\(certFile,\s+keyFile,\s+"([^"]+)"`
 	return extractSimpleString(re, text)
 }
-
-// configDirFile returns the configuration directory and file separately
-func configDirFile(cfgPath, defaultPath string) (string, string, error) {
-	path := cfgPath
-	if path == "" {
-		path = defaultPath
-	}
-	path = filepath.ToSlash(path)
-	// easy case, path is just a config name
-	if strings.Index(path, "/") < 0 {
-		return paths.ResolveConfigDir(path), paths.DefaultConfig, nil
-	}
-	fi, err := os.Stat(path)
-	if err != nil && !errors.Is(err, os.ErrNotExist) {
-		return "", "", err
-	}
-	// if path exists, return early
-	if !errors.Is(err, os.ErrNotExist) {
-		if fi.IsDir() {
-			return path, paths.DefaultConfig, nil
-		}
-		// path is a directory, split and send
-		d, f := filepath.Split(path)
-		return strings.TrimSuffix(d, "/"), f, err
-	}
-	// if path doesn't exist, check whether it's file like
-	ext := filepath.Ext(path)
-	if ext == "" {
-		// this is probably a directory
-		return path, paths.DefaultConfig, nil
-	}
-	// this is a file
-	d, f := filepath.Split(path)
-	return strings.TrimSuffix(d, "/"), f, nil
-}
-
 func extractSimpleString(pattern, text string) string {
 	re, err := regexp.Compile(pattern)
 	if err != nil {

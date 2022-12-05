@@ -1,11 +1,13 @@
-package cmd
+package config
 
 import (
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"os"
 	"os/user"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
@@ -18,10 +20,26 @@ import (
 )
 
 const (
-	envClientMame = "CLC_CLIENT_NAME"
+	envClientName = "CLC_CLIENT_NAME"
 )
 
-func makeConfiguration(props plug.ReadOnlyProperties, lg *logger.Logger) (hazelcast.Config, error) {
+func Create(path string, opts clc.KeyValues[string, string]) (dir, cfgPath string, err error) {
+	dir, cfgPath, err = DirAndFile(path)
+	if err != nil {
+		return "", "", err
+	}
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		return "", "", err
+	}
+	text := CreateYAML(opts)
+	path = filepath.Join(dir, cfgPath)
+	if err := os.WriteFile(path, []byte(text), 0600); err != nil {
+		return "", "", err
+	}
+	return dir, cfgPath, nil
+}
+
+func MakeHzConfig(props plug.ReadOnlyProperties, lg *logger.Logger) (hazelcast.Config, error) {
 	// if the path is not absolute, assume it is in the parent directory of the configuration
 	wd := filepath.Dir(props.GetString(clc.PropertyConfig))
 	var cfg hazelcast.Config
@@ -47,7 +65,7 @@ func makeConfiguration(props plug.ReadOnlyProperties, lg *logger.Logger) (hazelc
 	var viridianEnabled bool
 	if vt := props.GetString(clc.PropertyClusterDiscoveryToken); vt != "" {
 		lg.Debugf("Viridan token: XXX")
-		if err := os.Setenv(envHzCloudCoordinatorBaseURL, viridianCoordinatorURL); err != nil {
+		if err := os.Setenv(clc.EnvHzCloudCoordinatorBaseURL, clc.ViridianCoordinatorURL); err != nil {
 			return cfg, fmt.Errorf("setting coordinator URL")
 		}
 		cfg.Cluster.Cloud.Enabled = true
@@ -111,7 +129,7 @@ func makeConfiguration(props plug.ReadOnlyProperties, lg *logger.Logger) (hazelc
 }
 
 func makeClientName() string {
-	cn := os.Getenv(envClientMame)
+	cn := os.Getenv(envClientName)
 	if cn != "" {
 		return cn
 	}
@@ -131,4 +149,92 @@ func makeClientName() string {
 	}
 	t := time.Now().Unix()
 	return fmt.Sprintf("%s@%s-%d", userName, hostName, t)
+}
+
+// DirAndFile returns the configuration directory and file separately
+func DirAndFile(path string) (string, string, error) {
+	path = filepath.ToSlash(path)
+	// easy case, path is just a config name
+	if strings.Index(path, "/") < 0 {
+		return paths.ResolveConfigDir(path), paths.DefaultConfig, nil
+	}
+	fi, err := os.Stat(path)
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return "", "", err
+	}
+	// if path exists, return early
+	if !errors.Is(err, os.ErrNotExist) {
+		if fi.IsDir() {
+			return path, paths.DefaultConfig, nil
+		}
+		// path is a directory, split and send
+		d, f := filepath.Split(path)
+		return strings.TrimSuffix(d, "/"), f, err
+	}
+	// if path doesn't exist, check whether it's file like
+	ext := filepath.Ext(path)
+	if ext == "" {
+		// this is probably a directory
+		return path, paths.DefaultConfig, nil
+	}
+	// this is a file
+	d, f := filepath.Split(path)
+	return strings.TrimSuffix(d, "/"), f, nil
+}
+
+func CreateYAML(opts clc.KeyValues[string, string]) string {
+	// TODO: refactor this function to be more robust, probably using Viper
+	sb := &strings.Builder{}
+	copySection("", 0, sb, opts)
+	return sb.String()
+}
+
+func copySection(name string, level int, sb *strings.Builder, opts clc.KeyValues[string, string]) {
+	if len(opts) == 0 {
+		return
+	}
+	var leaves clc.KeyValues[string, string]
+	var sect clc.KeyValues[string, string]
+	sub := map[string]clc.KeyValues[string, string]{}
+	for _, opt := range opts {
+		idx := strings.Index(opt.Key, ".")
+		if idx < 0 {
+			leaves = append(leaves, opt)
+			continue
+		}
+		if name == "" {
+			key := opt.Key[:idx]
+			sub[key] = append(sub[key], opt)
+			continue
+		}
+		opt.Key = opt.Key[idx+1:]
+		if strings.Index(opt.Key, ".") < 0 {
+			sect = append(sect, opt)
+			continue
+		}
+		sub[opt.Key] = append(sub[opt.Key], opt)
+	}
+	if name != "" {
+		sb.WriteString(strings.Repeat(" ", level*2))
+		sb.WriteString(name)
+		sb.WriteString(":\n")
+		level++
+	}
+	for _, opt := range leaves {
+		copyOpt(level, sb, opt)
+	}
+	for _, opt := range sect {
+		copyOpt(level, sb, opt)
+	}
+	for sn, ss := range sub {
+		copySection(sn, level, sb, ss)
+	}
+}
+
+func copyOpt(level int, sb *strings.Builder, opt clc.KeyValue[string, string]) {
+	sb.WriteString(strings.Repeat(" ", level*2))
+	sb.WriteString(opt.Key)
+	sb.WriteString(": ")
+	sb.WriteString(opt.Value)
+	sb.WriteString("\n")
 }

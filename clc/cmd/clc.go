@@ -16,16 +16,12 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/logger"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	puberrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-)
-
-const (
-	viridianCoordinatorURL       = "https://api.viridian.hazelcast.com"
-	envHzCloudCoordinatorBaseURL = "HZ_CLOUD_COORDINATOR_BASE_URL"
 )
 
 // client is currently global in order to have a single client.
@@ -60,8 +56,8 @@ func NewMain(arg0, cfgPath, logPath, logLevel string, stdout, stderr io.Writer) 
 		root:   rc,
 		cmds:   map[string]*cobra.Command{},
 		vpr:    viper.New(),
-		stdout: nopWriteCloser{W: stdout},
-		stderr: nopWriteCloser{W: stderr},
+		stdout: clc.NopWriteCloser{W: stdout},
+		stderr: clc.NopWriteCloser{W: stderr},
 		props:  plug.NewProperties(),
 	}
 	cfgPath = paths.ResolveConfigPath(cfgPath)
@@ -326,7 +322,7 @@ func (m *Main) createCommands() error {
 
 func (m *Main) ensureClient(ctx context.Context, props plug.ReadOnlyProperties) error {
 	if clientInternal == nil {
-		cfg, err := makeConfiguration(props, m.lg)
+		cfg, err := config.MakeHzConfig(props, m.lg)
 		if err != nil {
 			return err
 		}
@@ -373,18 +369,6 @@ func (m *Main) setConfigProps(props *plug.Properties, key string, value any) {
 	default:
 		props.Set(key, value)
 	}
-}
-
-type nopWriteCloser struct {
-	W io.Writer
-}
-
-func (nc nopWriteCloser) Write(p []byte) (n int, err error) {
-	return nc.W.Write(p)
-}
-
-func (nc nopWriteCloser) Close() error {
-	return nil
 }
 
 func convertFlagValue(fs *pflag.FlagSet, name string, v pflag.Value) any {
