@@ -20,13 +20,16 @@ type AddCmd struct{}
 func (cm AddCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("add TARGET")
 	short := "Adds a configuration"
-	long := "Adds a configuration with the given name/path and KEY=VALUE pairs"
+	long := `Adds a configuration with the given name/path and KEY=VALUE pairs
+	
+Overrides the previous configuration if it exists.
+`
 	cc.SetCommandHelp(long, short)
 	cc.SetPositionalArgCount(1, math.MaxInt)
 	return nil
 }
 
-func (cm AddCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (cm AddCmd) Exec(_ context.Context, ec plug.ExecContext) error {
 	target := ec.Args()[0]
 	var opts clc.KeyValues[string, string]
 	for _, arg := range ec.Args()[1:] {
