@@ -1,6 +1,7 @@
 = clc home
+:description: Outputs the home directory of Hazelcast CLC.
 
-CLC stores all configuration, logs and other files in its home directory (`$CLC_HOME`).
+Hazelcast CLC stores all configuration, logs and other files in its home directory (`$CLC_HOME`).
 This command outputs the CLC home directory.
 
 Usage:
@@ -18,7 +19,7 @@ Parameters:
 
 |`subdirectory`
 |Optional
-|If specified, CLC joins the given subdirectories with `$CLC_HOME`
+|If specified, Hazelcast CLC joins the given subdirectories with `$CLC_HOME`
 |N/A
 
 |===

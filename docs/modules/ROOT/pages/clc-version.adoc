@@ -5,9 +5,9 @@
 
 The following are printed:
 
-* Hazelcast Command-line Client Version
-* Latest Git commit hash to CLC
-* Hazelcast Go Client Version
+* Hazelcast CLC version
+* Latest Git commit hash to Hazelcast CLC
+* Hazelcast Go client Version
 * Go Version
 
 Usage:

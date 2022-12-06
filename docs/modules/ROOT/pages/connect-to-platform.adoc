@@ -50,7 +50,7 @@ ssl:
 clc
 ```
 
-CLC will start in the interactive mode, and you should see a command prompt.
+Hazelcast CLC starts in interactive mode at a command prompt.
 
 Note that, CLC connects to the cluster on demand, that is when you issue a command that requires the connection, such as running SQL queries.
 
@@ -82,9 +82,9 @@ ssl:
 clc
 ```
 
-CLC will start in the interactive mode, and you should see a command prompt.
+Hazelcast CLC starts in interactive mode at a command prompt.
 
-Note that, CLC connects to the cluster on demand, that is when you issue a command that requires the connection, such as running SQL queries.
+NOTE: Hazelcast CLC connects to the cluster on demand, that is when you issue a command that requires the connection, such as running a SQL query.
 
 [[no-verify]]
 == Connecting to Clusters with Self-Signed TLS Certificates
@@ -110,13 +110,14 @@ ssl:
 
 . Start an interactive shell session.
 +
-```bash
+[source,bash]
+----
 clc
-```
+----
 
 CLC will start in the interactive mode, and you should see a command prompt.
 
-Note that, CLC connects to the cluster on demand, that is when you issue a command that requires the connection, such as running SQL queries.
+NOTE: Hazelcast CLC connects to the cluster on demand, that is when you issue a command that requires the connection, such as running a SQL query.
 
 [[none]]
 == Connecting to Clusters with TLS Disabled
@@ -139,9 +140,9 @@ credentials:
 clc
 ```
 
-CLC will start in the interactive mode, and you should see a command prompt.
+Hazelcast CLC starts in the interactive mode at a command prompt.
 
-Note that, CLC connects to the cluster on demand, that is when you issue a command that requires the connection, such as running SQL queries.
+NOTE: Hazelcast CLC connects to the cluster on demand, that is when you issue a command that requires the connection, such as running a SQL query.
 
 == Next Steps
 

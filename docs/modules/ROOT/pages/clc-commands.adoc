@@ -23,7 +23,7 @@ include::partial$global-parameters.adoc[]
 |Command|Description
 
 |clc help
-|Display help for the `clc` command.
+|Display help information for the `clc` command.
 
 |xref:clc-completion.adoc[clc completion]
 |Generate shell autocompletion.
@@ -32,19 +32,19 @@ include::partial$global-parameters.adoc[]
 |Print CLC home directory.
 
 |xref:clc-config.adoc[clc config]
-|Manage the configuration.
+|Manage the configuration used by Hazelcast CLC.
 
 |xref:clc-map.adoc[clc map]
 |Manage map data structures.
 
 |xref:clc-shell.adoc[clc shell]
-|Start CLC shell.
+|Start a Hazelcast CLC shell.
 
 |xref:clc-sql.adoc[clc sql]
 |Execute SQL queries.
 
 |xref:clc-object.adoc[clc object]
-|Generic distributed data structure commands.
+|Commands for generic distributed data structures.
 
 |xref:clc-version.adoc[clc version]
 |Get version information.

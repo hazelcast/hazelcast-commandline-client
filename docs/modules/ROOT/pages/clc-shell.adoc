@@ -1,8 +1,16 @@
 = clc shell
+:description: The interactive shell of Hazelcast CLC allows you to run SQL queries and CLC commands.
 
-Starts the interactive shell for running SQL queries and CLC commands.
+Usage:
 
-The shell defaults to running SQL queries, you can directly enter and get the result. The query should end with a semicolumn:
+[source,bash]
+----
+clc shell
+----
+
+Starts the interactive shell for running SQL queries and Hazelcast CLC commands.
+
+The shell defaults to running SQL queries, which you can execute from a command prompt and get the result. The query should end with a semicolon:
 
 [source,clc]
 ----
@@ -16,7 +24,7 @@ CLC> select * from cities;
 ---------------------------------------------------------------------------------
 ----
 
-In order to run CLC commands, prefix them with a backslash (`\`):
+In order to run Hazelcast CLC commands, prefix them with a backslash (`\`):
 [source,clc]
 ----
 CLC> \object list --show-hidden
@@ -43,11 +51,4 @@ CLC> \object list \
  map              | cities
  replicatedmap    | __sql.catalog
 -------------------------------------------------
-----
-
-Usage:
-
-[source,bash]
-----
-clc shell
 ----

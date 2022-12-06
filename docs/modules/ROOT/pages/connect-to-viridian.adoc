@@ -1,10 +1,11 @@
 == Connecting to {hazelcast-cloud} with Hazelcast CLC
-:description: To use Hazelcast CLC with {hazelcast-cloud}, you need to configure it with the correct connection credentials.
+:description: To use the Hazelcast CLC with {hazelcast-cloud}, you can download a preconfigured client, you don't need to do any configuration.
+
 :page-product: cloud
 
 {description}
 
-The configuration examples in this topic use a xref:configuration.adoc[configuration file] to configure Hazelcast CLC.
+The xref:configuration.adoc[configuration file] in a sample client provides the Hazelcast CLC with with the correct connection credentials.
 
 == Before you Begin
 
@@ -33,4 +34,4 @@ clc -c dev
 
 CLC will start in the interactive mode, and you should see a command prompt.
 
-Note that, CLC connects to the cluster on demand, that is when you issue a command that requires the connection, such as running SQL queries.
+NOTE: Hazelcast CLC connects to the cluster on demand, that is when you issue a command that requires the connection, such as running a SQL query.
