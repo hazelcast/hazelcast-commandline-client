@@ -182,10 +182,14 @@ ssl:
 				{Key: "cluster.name", Value: "pr-3814"},
 				{Key: "ssl.ca-path", Value: "ca.pem"},
 				{Key: "ssl.cert-path", Value: "cert.pem"},
+				{Key: "aaa.bbb.ccc", Value: "ddd.eee"},
 				{Key: "key2", Value: "value2"},
 			},
 			want: `key1: value1
 key2: value2
+aaa:
+  bbb:
+    ccc: ddd.eee
 cluster:
   name: pr-3814
 ssl:

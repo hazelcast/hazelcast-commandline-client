@@ -206,17 +206,18 @@ func copySection(name string, level int, sb *strings.Builder, opts clc.KeyValues
 			leaves = append(leaves, opt)
 			continue
 		}
+		kh, kr := opt.Key[:idx], opt.Key[idx+1:]
 		if name == "" {
-			key := opt.Key[:idx]
-			sub[key] = append(sub[key], opt)
+			opt.Key = kr
+			sub[kh] = append(sub[kh], opt)
 			continue
 		}
-		opt.Key = opt.Key[idx+1:]
 		if strings.Index(opt.Key, ".") < 0 {
 			sect = append(sect, opt)
 			continue
 		}
-		sub[opt.Key] = append(sub[opt.Key], opt)
+		opt.Key = kr
+		sub[kh] = append(sub[kh], opt)
 	}
 	if name != "" {
 		sb.WriteString(strings.Repeat(" ", level*2))
