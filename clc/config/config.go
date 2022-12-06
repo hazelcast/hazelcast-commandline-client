@@ -184,9 +184,6 @@ func DirAndFile(path string) (string, string, error) {
 }
 
 func CreateYAML(opts clc.KeyValues[string, string]) string {
-	slices.SortFunc(opts, func(a clc.KeyValue[string, string], b clc.KeyValue[string, string]) bool {
-		return a.Key < b.Key
-	})
 	// TODO: refactor this function to be more robust, probably using Viper
 	sb := &strings.Builder{}
 	copySection("", 0, sb, opts)
@@ -194,6 +191,9 @@ func CreateYAML(opts clc.KeyValues[string, string]) string {
 }
 
 func copySection(name string, level int, sb *strings.Builder, opts clc.KeyValues[string, string]) {
+	slices.SortFunc(opts, func(a, b clc.KeyValue[string, string]) bool {
+		return a.Key < b.Key
+	})
 	if len(opts) == 0 {
 		return
 	}
@@ -230,8 +230,21 @@ func copySection(name string, level int, sb *strings.Builder, opts clc.KeyValues
 	for _, opt := range sect {
 		copyOpt(level, sb, opt)
 	}
-	for sn, ss := range sub {
-		copySection(sn, level, sb, ss)
+	subSlice := make([]clc.KeyValue[string, clc.KeyValues[string, string]], 0, len(sub))
+	for k, v := range sub {
+		slices.SortFunc(v, func(a, b clc.KeyValue[string, string]) bool {
+			return a.Key < b.Key
+		})
+		subSlice = append(subSlice, clc.KeyValue[string, clc.KeyValues[string, string]]{
+			Key:   k,
+			Value: v,
+		})
+	}
+	slices.SortFunc(subSlice, func(a, b clc.KeyValue[string, clc.KeyValues[string, string]]) bool {
+		return a.Key < b.Key
+	})
+	for _, ss := range subSlice {
+		copySection(ss.Key, level, sb, ss.Value)
 	}
 }
 
