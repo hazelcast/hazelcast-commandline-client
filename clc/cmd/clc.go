@@ -377,8 +377,8 @@ func convertFlagValue(fs *pflag.FlagSet, name string, v pflag.Value) any {
 		return MustValue(fs.GetString(name))
 	case "bool":
 		return MustValue(fs.GetBool(name))
-	case "int":
-		return MustValue(fs.GetInt(name))
+	case "int64":
+		return MustValue(fs.GetInt64(name))
 	}
-	return v
+	panic(fmt.Errorf("cannot convert type: %s", v.Type()))
 }
