@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/alecthomas/chroma/quick"
+	"github.com/fatih/color"
 	"github.com/gohxs/readline"
 
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -41,7 +42,13 @@ type Shell struct {
 }
 
 func New(prompt1, prompt2, historyPath, lexer string, stdout, stderr io.Writer, endLineFn EndLineFn, textFn TextFn) (*Shell, error) {
-	styler := os.Getenv(envStyler)
+	var styler string
+	if !color.NoColor {
+		styler = os.Getenv(envStyler)
+		if styler == "" {
+			styler = "clc-default"
+		}
+	}
 	formatter := os.Getenv(envFormatter)
 	if formatter == "" || !strings.HasPrefix(formatter, "terminal") {
 		formatter = "terminal"
