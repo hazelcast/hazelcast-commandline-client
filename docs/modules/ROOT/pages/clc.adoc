@@ -1,11 +1,11 @@
-= clc shell
+= clc
 :description: The interactive shell of Hazelcast CLC allows you to run SQL queries and CLC commands.
 
 Usage:
 
 [source,bash]
 ----
-clc shell
+clc
 ----
 
 Starts the interactive shell for running SQL queries and Hazelcast CLC commands.

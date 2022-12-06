@@ -16,7 +16,7 @@
 ** xref:clc-home.adoc[]
 ** xref:clc-object.adoc[]
 ** xref:clc-map.adoc[]
-** xref:clc-shell.adoc[]
+** xref:clc.adoc[]
 ** xref:clc-sql.adoc[]
 ** xref:clc-version.adoc[]
 * xref:keyboard-shortcuts.adoc[]

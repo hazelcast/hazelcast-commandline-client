@@ -22,6 +22,9 @@ include::partial$global-parameters.adoc[]
 |===
 |Command|Description
 
+|xref:clc.adoc[clc shell]
+|Start a Hazelcast CLC shell.
+
 |clc help
 |Display help information for the `clc` command.
 
@@ -36,9 +39,6 @@ include::partial$global-parameters.adoc[]
 
 |xref:clc-map.adoc[clc map]
 |Manage map data structures.
-
-|xref:clc-shell.adoc[clc shell]
-|Start a Hazelcast CLC shell.
 
 |xref:clc-sql.adoc[clc sql]
 |Execute SQL queries.
