@@ -34,7 +34,7 @@ This is the default mode for the Hazelcast CLC. You need to manually enter and e
 
 [source,bash,subs="attributes+"]
 ----
-clc map -c dev --name myMap put myKey myValue
+clc map -c dev --name myMap set myKey myValue
 ----
 
 [[interactive-mode]]

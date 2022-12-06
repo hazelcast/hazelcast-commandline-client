@@ -103,7 +103,7 @@ $ clc object list --log.level error
 
 Run commands:
 ```
-$ clc map put my-key my-value
+$ clc map set my-key my-value
 ```
 
 Get help:
@@ -125,7 +125,7 @@ CLC> select * from cities;
 
 Run CLC commands:
 ```
-CLC> \map put my-key my-value
+CLC> \map set my-key my-value
 ```
  
 ### Keyboard Shortcuts
@@ -165,7 +165,7 @@ The following keyboard shortcuts are available in the interactive-mode:
   ```
 5. In order to use this configuration, use `-c CONFIG_NAME` flag whenever you run CLC:
   ```
-  $ clc -c pr-3814 map put my-key my-value
+  $ clc -c pr-3814 map set my-key my-value
   ```
 
 ## Generating auto-completion

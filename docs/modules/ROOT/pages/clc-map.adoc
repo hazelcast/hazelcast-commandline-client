@@ -13,7 +13,7 @@ clc map [command] [options]
 
 * <<clc-map-clear, clc map clear>>
 * <<clc-map-get, clc map get>>
-* <<clc-map-put, clc map put>>
+* <<clc-map-set, clc map set>>
 * <<clc-map-entry-set, clc map entries>>
 * <<clc-map-size, clc map size>>
 * <<clc-map-remove, clc map remove>>
@@ -85,15 +85,15 @@ Example:
 clc map get --name yearbook 2012 --key-type i16
 ----
 
-== clc map put
+== clc map set
 
-Adds the given key-value entry pair to a map.
+Sets the given key-value entry pair in a map.
 
 Usage:
 
 [source,bash]
 ----
-clc map put --name <name of your map>
+clc map set --name <name of your map>
             [key]
             [value]
             [--key-type {string (default), bool, json, i8, i16, i32, i64, f32, f64}]
@@ -143,7 +143,7 @@ Example:
 
 [source,bash]
 ----
-clc map put --key-type string hello --value-type f32 19.94 --name myMap --ttl 1300ms
+clc map set --key-type string hello --value-type f32 19.94 --name myMap --ttl 1300ms
 ----
 
 == clc map entry-set
