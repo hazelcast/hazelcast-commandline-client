@@ -16,6 +16,7 @@ type InitContext interface {
 	AddIntFlag(long, short string, value int64, required bool, help string)
 	AddStringConfig(name, value, flag string, help string)
 	AddStringFlag(long, short, value string, required bool, help string)
+	Hide()
 	Interactive() bool
 	SetCommandGroup(id string)
 	SetCommandHelp(long, short string)

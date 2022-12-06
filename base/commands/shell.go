@@ -34,6 +34,7 @@ func (cm *ShellCommand) Init(cc plug.InitContext) error {
 	help := "Start the interactive shell"
 	cc.SetCommandHelp(help, help)
 	cc.SetPositionalArgCount(0, 0)
+	cc.Hide()
 	cm.shortcuts = map[string]struct{}{
 		`\dm`:   {},
 		`\dm+`:  {},
