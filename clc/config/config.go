@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	"golang.org/x/exp/slices"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/logger"
@@ -183,6 +184,9 @@ func DirAndFile(path string) (string, string, error) {
 }
 
 func CreateYAML(opts clc.KeyValues[string, string]) string {
+	slices.SortFunc(opts, func(a clc.KeyValue[string, string], b clc.KeyValue[string, string]) bool {
+		return a.Key < b.Key
+	})
 	// TODO: refactor this function to be more robust, probably using Viper
 	sb := &strings.Builder{}
 	copySection("", 0, sb, opts)

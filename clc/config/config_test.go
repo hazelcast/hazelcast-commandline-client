@@ -157,8 +157,8 @@ func TestCreateYAML(t *testing.T) {
 				{Key: "cluster.discovery-token", Value: "TOK123123"},
 			},
 			want: `cluster:
-  name: pr-3814
   discovery-token: TOK123123
+  name: pr-3814
 `,
 		},
 		{
