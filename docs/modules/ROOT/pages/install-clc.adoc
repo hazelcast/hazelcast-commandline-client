@@ -90,7 +90,7 @@ To check whether the Hazelcast CLC is installed properly, run the following comm
 
 [source,shell]
 ----
-hzc version
+clc version
 ----
 
 You should see the Hazelcast CLC version information.

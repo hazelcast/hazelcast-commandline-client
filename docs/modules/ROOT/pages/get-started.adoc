@@ -9,50 +9,20 @@ You need the following:
 
 - The xref:install-clc.adoc[Hazelcast CLC] installed on your local machine
 - Two xref:cloud:ROOT:create-serverless-cluster.adoc[Hazelcast {hazelcast-cloud} Serverless clusters]. For this tutorial, you'll use one development and one production cluster, to show how you might use the CLC for basic administration and deployment tasks.
-- Go Client samples for your clusters.
 
 TIP: You can download Go client samples from Hazelcast {hazelcast-cloud} console. For details, see xref:cloud:ROOT:connect-to-cluster.adoc[].
 
-[[step-1-dev-config]]
-== Step 1. Configure the Hazelcast CLC for a Viridian Cluster
+[[step-1-dev-configure]]
+== Step 1. Add Configuration for the Development Cluster
 
-Before you can connect the Hazelcast CLC to your Viridian cluster, you need to add cluster's configuration.
+Make sure that your Viridian production cluster is running before you start.
 
-CLC can use a Viridian Go Client sample to discover the configuration for your Viridian cluster.
-Simply download the Go Client sample from Viridian console.
+Hazelcast CLC can use a Viridian Go Client sample to discover the configuration for your Viridian cluster.
+
+. Download the Go client sample for your development cluster from the Viridian console.
 Once the sample is downloaded, you can use the `clc config import` command to import the configuration.
 
-Assuming the Go client sample for your Viridian cluster was saved to the `Downloads` folder in your home directory, run the following command to create the `dev` configuration:
-
-On Linux and MacOS:
-[source, bash]
-----
-clc config import dev ~/Downloads/hazelcast-cloud-go-sample-client-pr-XXXX-default.zip
-----
-
-On Windows:
-[source, bash]
-----
-clc config import dev %USERPROFILE%/Downloads/hazelcast-cloud-go-sample-client-pr-XXXX-default.zip
-----
-
-You can use the `clc config list` command to confirm that the configuration was imported.
-[source, bash]
-----
-clc config list
-default
-dev
-----
-
-From now on, use the `-c` flag with the name of the configuration to tell CLC to use your Viridian cluster.
-
-[[step-2-dev-connect]]
-== Step 2. Connect the Hazelcast CLC to the Development Cluster
-
-You're ready to connect the Hazelcast CLC to your development cluster. Make sure that the cluster is running before you start.
-
-. Download the Go Client sample for your development cluster from the Viridian cluster.
-. From the command line, execute the following command, replacinf `PATH-TO-SAMPLE.zip` with the path to the downloaded sample:
+. From the command line, execute the following command, replacing `PATH-TO-SAMPLE.zip` with the path to the downloaded sample:
 
 +
 [source, bash]
@@ -62,7 +32,17 @@ clc -c dev
 ----
 
 +
-CLC connects to the cluster only when necessary.
+. You can use the `clc config list` command to confirm that the configuration was imported.
++
+[source, bash]
+----
+clc config list
+default
+dev
+----
+
++
+. CLC only connects to the cluster when necessary.
 Run a command that requires a connection to the cluster, such as `object list`:
 
 +
@@ -75,23 +55,21 @@ Connected to cluster: pr-3814
  Service Name | Object Name
 ------------------------------------
  executor     | hot-backup-executor
- map          | cities
- map          | default
 ------------------------------------
 ----
 
 +
 . Press kbd:[Ctrl+D] or type `\exit` to shut down Hazelcast CLC while you complete the configuration for your production cluster.
 
-[[step-3-prod-configure]]
-== Step 3. Add Configuration for the Production Cluster
+[[step-2-prod-configure]]
+== Step 2. Add Configuration for the Production Cluster
 
 The configuration of the production cluster is the same as the previous step, but using the production cluster configuration.
 
 Make sure that your Viridian production cluster is running before you start.
 
-. Download the Go Client sample for your production cluster from the Viridian cluster.
-. From the command line, execute the following command, replacinf `PATH-TO-SAMPLE.zip` with the path to the downloaded sample:
+. Download the Go client sample for your production cluster from the Viridian console.
+. From the command line, execute the following command, replacing `PATH-TO-SAMPLE.zip` with the path to the downloaded sample:
 
 +
 [source, bash]
@@ -101,7 +79,7 @@ clc -c prod
 ----
 
 +
-CLC connects to the cluster only when necessary.
+. CLC only connects to the cluster when necessary.
 Run a command that requires a connection to the cluster, such as `object list`:
 
 +
@@ -117,8 +95,8 @@ Connected to cluster: pr-3690
 ------------------------------------
 ----
 
-[[step-4-cluster-switch]]
-== Step 4. Switch Between Clusters
+[[step-3-cluster-switch]]
+== Step 3. Switch Between Clusters
 
 Having separate local configurations for your development and production clusters allows you to switch between them without leaving the command line. Make sure both clusters are running before you start.
 
@@ -141,26 +119,26 @@ clc -c prod
 +
 The Hazelcast CLC shell is started, using the configuration for the production cluster.
 
-[[step-5-write-data]]
-== Step 5. Write Data to a Map
+[[step-4-write-data]]
+== Step 4. Write Data to a Map
 
 Now that you've connected to both your clusters, try using the Hazelcast CLC to write data to a map on your development cluster.
 Let's write a script that adds some data to a map.
 
-. Copy the following lines to a file in `data.sql`.
+. Create a file called `data.sql` on your local machine and copy in the following lines.
 +
 .data.sql
 [source]
 ----
-\map put -c dev -n currency -k i32 1 -v json '{"Code": "CAD", "Currency": "Canadian Dollar"}'
-\map put -c dev -n currency -k i32 2 -v json '{"Code": "INR", "Currency": "Indian Rupee"}'
-\map put -c dev -n currency -k i32 3 -v json '{"Code": "MXN", "Currency": "Mexican Peso"}'
-\map put -c dev -n currency -k i32 4 -v json '{"Code": "GBP", "Currency": "Pounds Sterling"}'
-\map put -c dev -n currency -k i32 5 -v json '{"Code": "TRY", "Currency": "Turkish Lira"}'
-\map put -c dev -n currency -k i32 6 -v json '{"Code": "USD", "Currency": "United States Dollar"}'
+\map set -n currencydata -k i32 1 -v json '{"Code": "CAD", "Currency": "Canadian Dollar"}'
+\map set -n currencydata -k i32 2 -v json '{"Code": "INR", "Currency": "Indian Rupee"}'
+\map set -n currencydata -k i32 3 -v json '{"Code": "MXN", "Currency": "Mexican Peso"}'
+\map set -n currencydata -k i32 4 -v json '{"Code": "GBP", "Currency": "Pounds Sterling"}'
+\map set -n currencydata -k i32 5 -v json '{"Code": "TRY", "Currency": "Turkish Lira"}'
+\map set -n currencydata -k i32 6 -v json '{"Code": "USD", "Currency": "United States Dollar"}'
 ----
 
-. Run the script in `data.sql` to update the `currency` map:
+. Run the script in the `data.sql` file to update the `currency` map:
 +
 On Linux and MacOS:
 +
@@ -175,13 +153,15 @@ On Windows:
 ----
 type data.sql | clc -c dev
 ----
-+
-. Do a quick check on your cluster to make sure that your data has been written successfully.
+
+
+Do a quick check on your cluster to make sure that your data has been written successfully.
+
 . Open the dashboard of the development cluster and click *Management Center*.
 . Go to *Storage* > *Maps*. You'll see that your cluster has a map called `currency` with six entries. 
 
-[[step-6-query-map]]
-== Step 6. Query Map Data
+[[step-5-query-map]]
+== Step 5. Query Map Data
 You can use SQL to query the data in your `currency` map.
 
 . Start by creating a mapping to the `currency` map.
@@ -189,7 +169,7 @@ You can use SQL to query the data in your `currency` map.
 +
 [source,bash]
 ----
-clc sql -c dev "CREATE MAPPING currency (__key VARCHAR, Code VARCHAR, Currency VARCHAR) TYPE IMap OPTIONS('keyFormat'='varchar', 'valueFormat'='json-flat')"
+clc sql -c dev "CREATE OR REPLACE MAPPING currencydata (__key INT, Code VARCHAR, Currency VARCHAR) TYPE IMap OPTIONS('keyFormat'='int', 'valueFormat'='json-flat')"
 ----
 The SQL mapping statement does a number of things:
 
@@ -201,7 +181,7 @@ The SQL mapping statement does a number of things:
 +
 [source,bash]
 ----
-clc sql "SELECT * FROM currency ORDER BY Code"
+clc sql -c dev "SELECT * FROM currencydata ORDER BY Code" -f table
 ----
 +
 The results look like this:
@@ -209,101 +189,87 @@ The results look like this:
 +
 [source,shell]
 ----
-+------------+--------------------+--------------------+
-|__key       |Code                |Currency            |
-+------------+--------------------+--------------------+
-|1           |CAD                 |Canadian Dollar     |
-|4           |GBP                 |Pounds Sterling     |
-|2           |INR                 |Indian Rupee        |
-|3           |MXN                 |Mexican Peso        |
-|5           |TRY                 |Turkish Lira        |
-|6           |USD                 |United States Dollar|
-+------------+--------------------+--------------------+
-
+--------------------------------------------------------------------------------
+      __key | Code                            | Currency
+--------------------------------------------------------------------------------
+          1 | CAD                             | Canadian Dollar
+          4 | GBP                             | Pounds Sterling
+          2 | INR                             | Indian Rupee
+          3 | MXN                             | Mexican Peso
+          5 | TRY                             | Turkish Lira
+          6 | USD                             | United States Dollar
+--------------------------------------------------------------------------------
 ----
 
-[[step-7-automate]]
-== Step 7. Automate Actions
+[[step-6-automate]]
+== Step 6. Automate Actions
 
-When you're ready, combine the commands that you've learned about so far into a shell script and run them from the command line. 
+When you're ready, combine the commands that you've learned about so far into a script and run them from the command line.
 
 The script first writes the currency data to a new map called `currencydata` on your development server, queries it and then switches to your production cluster to perform the same actions.
+
+. Copy the following commands into a script.
++
+.myscript.sql
+[source,bash]
+----
+\map set -n currencydata -k i32 1 -v json '{"Code": "CAD", "Currency": "Canadian Dollar"}'
+\map set -n currencydata -k i32 2 -v json '{"Code": "INR", "Currency": "Indian Rupee"}'
+\map set -n currencydata -k i32 3 -v json '{"Code": "MXN", "Currency": "Mexican Peso"}'
+\map set -n currencydata -k i32 4 -v json '{"Code": "GBP", "Currency": "Pounds Sterling"}'
+\map set -n currencydata -k i32 5 -v json '{"Code": "TRY", "Currency": "Turkish Lira"}'
+\map set -n currencydata -k i32 6 -v json '{"Code": "USD", "Currency": "United States Dollar"}'
+
+CREATE OR REPLACE MAPPING currencydata (
+  __key INT,
+  Code VARCHAR,
+  Currency VARCHAR
+) TYPE IMap OPTIONS(
+    'keyFormat'='int',
+    'valueFormat'='json-flat'
+);
+
+SELECT * FROM currencydata ORDER BY Code;
+----
++
+. Save your script as `myscript.sql`.
 
 [tabs] 
 ==== 
 Linux and MacOS::
 + 
 --
-. Copy the following commands into a shell script.
+. To run the script on your development cluster, execute the following command:
 +
-.myscript.sh
 [source,bash]
 ----
-#!/usr/bin/bash
-map put -c dev -n currency -k i32 1 -v json '{"Code": "CAD", "Currency": "Canadian Dollar"}'
-map put -c dev -n currency -k i32 2 -v json '{"Code": "INR", "Currency": "Indian Rupee"}'
-map put -c dev -n currency -k i32 3 -v json '{"Code": "MXN", "Currency": "Mexican Peso"}'
-map put -c dev -n currency -k i32 4 -v json '{"Code": "GBP", "Currency": "Pounds Sterling"}'
-map put -c dev -n currency -k i32 5 -v json '{"Code": "TRY", "Currency": "Turkish Lira"}'
-map put -c dev -n currency -k i32 6 -v json '{"Code": "USD", "Currency": "United States Dollar"}'
-hzc sql -c dev "CREATE MAPPING currencydata (__key VARCHAR, Code VARCHAR, Currency VARCHAR) TYPE IMap OPTIONS('keyFormat'='varchar', 'valueFormat'='json-flat')"
-hzc sql -c dev "SELECT * FROM currencydata ORDER BY Code"
-
-map put -c prod -n currency -k i32 1 -v json '{"Code": "CAD", "Currency": "Canadian Dollar"}'
-map put -c prod -n currency -k i32 2 -v json '{"Code": "INR", "Currency": "Indian Rupee"}'
-map put -c prod -n currency -k i32 3 -v json '{"Code": "MXN", "Currency": "Mexican Peso"}'
-map put -c prod -n currency -k i32 4 -v json '{"Code": "GBP", "Currency": "Pounds Sterling"}'
-map put -c prod -n currency -k i32 5 -v json '{"Code": "TRY", "Currency": "Turkish Lira"}'
-map put -c prod -n currency -k i32 6 -v json '{"Code": "USD", "Currency": "United States Dollar"}'
-hzc -c prod sql "CREATE MAPPING currencydata (__key VARCHAR, Code VARCHAR, Currency VARCHAR) TYPE IMap OPTIONS('keyFormat'='varchar', 'valueFormat'='json-flat')"
-hzc -c prod sql "SELECT * FROM currencydata ORDER BY Code"
+cat myscript.sql | clc -c dev
+----
++
+. Then, to run the script on your production cluster, execute the following command:
++
+[source,bash]
+----
+cat myscript.sql | clc -c prod
 ----
 
-. Save your script as `myscript.sh`.
-. Use the following command to make sure that the script is executable:
-+
-```bash
-chmod 777 myscript.sh
-```
-. Then, to run the script, execute the following command:
-+
-```bash
-./myscript.sh
-```
 --
 Windows::
-+ 
---
-. Copy the following commands into a batch file.
 +
-.myscript.bat
+--
+. To run the script on your development cluster, execute the following command:
++
 [source,bash]
 ----
-map put -c dev -n currency -k i32 1 -v json '{"Code": "CAD", "Currency": "Canadian Dollar"}'
-map put -c dev -n currency -k i32 2 -v json '{"Code": "INR", "Currency": "Indian Rupee"}'
-map put -c dev -n currency -k i32 3 -v json '{"Code": "MXN", "Currency": "Mexican Peso"}'
-map put -c dev -n currency -k i32 4 -v json '{"Code": "GBP", "Currency": "Pounds Sterling"}'
-map put -c dev -n currency -k i32 5 -v json '{"Code": "TRY", "Currency": "Turkish Lira"}'
-map put -c dev -n currency -k i32 6 -v json '{"Code": "USD", "Currency": "United States Dollar"}'
-hzc sql -c dev "CREATE MAPPING currencydata (__key VARCHAR, Code VARCHAR, Currency VARCHAR) TYPE IMap OPTIONS('keyFormat'='varchar', 'valueFormat'='json-flat')"
-hzc sql -c dev "SELECT * FROM currencydata ORDER BY Code"
-
-map put -c prod -n currency -k i32 1 -v json '{"Code": "CAD", "Currency": "Canadian Dollar"}'
-map put -c prod -n currency -k i32 2 -v json '{"Code": "INR", "Currency": "Indian Rupee"}'
-map put -c prod -n currency -k i32 3 -v json '{"Code": "MXN", "Currency": "Mexican Peso"}'
-map put -c prod -n currency -k i32 4 -v json '{"Code": "GBP", "Currency": "Pounds Sterling"}'
-map put -c prod -n currency -k i32 5 -v json '{"Code": "TRY", "Currency": "Turkish Lira"}'
-map put -c prod -n currency -k i32 6 -v json '{"Code": "USD", "Currency": "United States Dollar"}'
-hzc -c prod sql "CREATE MAPPING currencydata (__key VARCHAR, Code VARCHAR, Currency VARCHAR) TYPE IMap OPTIONS('keyFormat'='varchar', 'valueFormat'='json-flat')"
-hzc -c prod sql "SELECT * FROM currencydata ORDER BY Code"
+type myscript.sql | clc -c dev
 ----
-
-. Save your script as `myscript.bat`.
-. Run the script:
 +
-```bash
-myscript.bat
-```
+. Then, to run the script on your production cluster, execute the following command:
++
+[source,bash]
+----
+type myscript.sql | clc -c prod
+----
 
 --
 ====
