@@ -17,7 +17,7 @@ TIP: You can download Go client samples from Hazelcast {hazelcast-cloud} console
 
 Make sure that your Viridian development cluster is running before you start.
 
-Hazelcast CLC can use a Go client sample for Viridian to discover the configuration for your Viridian cluster.
+The Hazelcast CLC can use a Go client sample for Viridian to discover the configuration for your Viridian cluster.
 
 . Download the sample for Go client for your development cluster from the Viridian console.
 Once the sample is downloaded, you can use the `clc config import` command to import the configuration.

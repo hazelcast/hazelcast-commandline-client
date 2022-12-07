@@ -34,9 +34,9 @@ Parameters:
 include::partial$global-parameters.adoc[]
 ====
 
-== Querying with SQL using Hazelcast CLC
+== Querying with SQL using the Hazelcast CLC
 
-You can run SQL queries in both interactive and non-interactive mode of Hazelcast CLC.
+You can run SQL queries in both interactive and non-interactive mode of the Hazelcast CLC.
 
 [tabs]
 ====

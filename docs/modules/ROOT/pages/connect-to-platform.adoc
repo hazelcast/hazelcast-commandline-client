@@ -1,5 +1,5 @@
 = Connecting to Hazelcast Platform with Hazelcast CLC
-:description: To use Hazelcast CLC with Hazelcast Platform, you need to configure it with the correct connection credentials.
+:description: To use the Hazelcast CLC with Hazelcast Platform, you need to configure it with the correct connection credentials.
 :page-product: platform
 
 {description}

@@ -35,7 +35,7 @@ include::partial$global-parameters.adoc[]
 |Print CLC home directory.
 
 |xref:clc-config.adoc[clc config]
-|Manage the configuration used by Hazelcast CLC.
+|Manage the configuration used by the Hazelcast CLC.
 
 |xref:clc-map.adoc[clc map]
 |Manage map data structures.

@@ -1,12 +1,12 @@
 = clc version
-:description: Prints the version information about Hazelcast CLC.
+:description: Prints the version information about the Hazelcast CLC.
 
 {description}
 
 The following are printed:
 
-* Hazelcast CLC version
-* Latest Git commit hash to Hazelcast CLC
+* The Hazelcast CLC version
+* Latest Git commit hash to the Hazelcast CLC
 * Hazelcast Go client Version
 * Go Version
 
@@ -21,7 +21,7 @@ Example output:
 
 [source,bash]
 ----
-Hazelcast Command Line Client Version: 5.2.0-beta3
+Hazelcast CLC: 5.2.0-beta3
 Latest Git Commit Hash: 1ff0a2d73326a266fcc829020cd77296ca9126f5
 Hazelcast Go Client Version: 1.4.0
 Go Version: go1.19.3

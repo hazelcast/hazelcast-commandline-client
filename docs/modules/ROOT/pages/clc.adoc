@@ -1,5 +1,5 @@
 = clc
-:description: The interactive shell of Hazelcast CLC allows you to run SQL queries and CLC commands.
+:description: The interactive shell of the Hazelcast CLC allows you to run SQL queries and CLC commands.
 
 Usage:
 

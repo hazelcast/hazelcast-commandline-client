@@ -1,4 +1,4 @@
-= Upgrading Hazelcast CLC
+= Upgrading the Hazelcast CLC
 
 To upgrade to the latest version, reinstall the Hazelcast CLC after each new release.
 

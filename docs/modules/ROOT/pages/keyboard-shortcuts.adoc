@@ -1,5 +1,5 @@
 = Keyboard Shortcuts
-:description: Hazelcast CLC supports the following keyboard shortcuts.
+:description: The Hazelcast CLC supports the following keyboard shortcuts.
 
 {description}
 
