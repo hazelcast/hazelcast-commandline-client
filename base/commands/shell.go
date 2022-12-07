@@ -22,6 +22,13 @@ import (
 )
 
 const cmdPrefix = `\`
+const banner = `Hazelcast CLC %s (c) 2022 Hazelcast Inc.
+		
+* Participate in our survey at: https://forms.gle/rPFywdQjvib1QCe49
+* Type 'help' for help information. Prefix non-SQL commands with \
+		
+%s	
+`
 
 var errHelp = errors.New("interactive help")
 
@@ -61,13 +68,7 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 		if cfgPath != "" {
 			cfgText = fmt.Sprintf("Configuration: %s\n", cfgPath)
 		}
-		I2(fmt.Fprintf(ec.Stdout(), `Hazelcast CLC %s (c) 2022 Hazelcast Inc.
-		
-* Participate in our survey at: https://forms.gle/rPFywdQjvib1QCe49
-* Type 'help' for help information. Prefix non-SQL commands with \
-		
-%s	
-`, internal.Version, cfgText))
+		I2(fmt.Fprintf(ec.Stdout(), banner, internal.Version, cfgText))
 	}
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	clcMultilineContinue := false
