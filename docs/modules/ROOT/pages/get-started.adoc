@@ -125,33 +125,33 @@ The Hazelcast CLC shell is started, using the configuration for the production c
 Now that you've connected to both your clusters, try using the Hazelcast CLC to write data to a map on your development cluster.
 Let's write a script that adds some data to a map.
 
-. Create a file called `data.sql` on your local machine and copy in the following lines.
+. Create a file called `data.script` on your local machine and copy in the following lines.
 +
-.data.sql
+.data.script
 [source]
 ----
-\map set -n currencydata -k i32 1 -v json '{"Code": "CAD", "Currency": "Canadian Dollar"}'
-\map set -n currencydata -k i32 2 -v json '{"Code": "INR", "Currency": "Indian Rupee"}'
-\map set -n currencydata -k i32 3 -v json '{"Code": "MXN", "Currency": "Mexican Peso"}'
-\map set -n currencydata -k i32 4 -v json '{"Code": "GBP", "Currency": "Pounds Sterling"}'
-\map set -n currencydata -k i32 5 -v json '{"Code": "TRY", "Currency": "Turkish Lira"}'
-\map set -n currencydata -k i32 6 -v json '{"Code": "USD", "Currency": "United States Dollar"}'
+\map set -n currency -k i32 1 -v json '{"Code": "CAD", "Currency": "Canadian Dollar"}'
+\map set -n currency -k i32 2 -v json '{"Code": "INR", "Currency": "Indian Rupee"}'
+\map set -n currency -k i32 3 -v json '{"Code": "MXN", "Currency": "Mexican Peso"}'
+\map set -n currency -k i32 4 -v json '{"Code": "GBP", "Currency": "Pounds Sterling"}'
+\map set -n currency -k i32 5 -v json '{"Code": "TRY", "Currency": "Turkish Lira"}'
+\map set -n currency -k i32 6 -v json '{"Code": "USD", "Currency": "United States Dollar"}'
 ----
 
-. Run the script in the `data.sql` file to update the `currency` map:
+. Run the script in the `data.script` file to update the `currency` map:
 +
 On Linux and MacOS:
 +
 [source,bash]
 ----
-cat data.sql | clc -c dev
+cat data.script | clc -c dev
 ----
 +
 On Windows:
 +
 [source,bash]
 ----
-type data.sql | clc -c dev
+type data.script | clc -c dev
 ----
 
 
@@ -169,7 +169,7 @@ You can use SQL to query the data in your `currency` map.
 +
 [source,bash]
 ----
-clc sql -c dev "CREATE OR REPLACE MAPPING currencydata (__key INT, Code VARCHAR, Currency VARCHAR) TYPE IMap OPTIONS('keyFormat'='int', 'valueFormat'='json-flat')"
+clc sql -c dev "CREATE OR REPLACE MAPPING currency (__key INT, Code VARCHAR, Currency VARCHAR) TYPE IMap OPTIONS('keyFormat'='int', 'valueFormat'='json-flat')"
 ----
 The SQL mapping statement does a number of things:
 
@@ -181,7 +181,7 @@ The SQL mapping statement does a number of things:
 +
 [source,bash]
 ----
-clc sql -c dev "SELECT * FROM currencydata ORDER BY Code" -f table
+clc sql -c dev "SELECT * FROM currency ORDER BY Code" -f table
 ----
 +
 The results look like this:
@@ -213,12 +213,6 @@ The script first writes the currency data to a new map called `currencydata` on 
 .myscript.sql
 [source,bash]
 ----
-\map set -n currencydata -k i32 1 -v json '{"Code": "CAD", "Currency": "Canadian Dollar"}'
-\map set -n currencydata -k i32 2 -v json '{"Code": "INR", "Currency": "Indian Rupee"}'
-\map set -n currencydata -k i32 3 -v json '{"Code": "MXN", "Currency": "Mexican Peso"}'
-\map set -n currencydata -k i32 4 -v json '{"Code": "GBP", "Currency": "Pounds Sterling"}'
-\map set -n currencydata -k i32 5 -v json '{"Code": "TRY", "Currency": "Turkish Lira"}'
-\map set -n currencydata -k i32 6 -v json '{"Code": "USD", "Currency": "United States Dollar"}'
 
 CREATE OR REPLACE MAPPING currencydata (
   __key INT,
@@ -228,6 +222,14 @@ CREATE OR REPLACE MAPPING currencydata (
     'keyFormat'='int',
     'valueFormat'='json-flat'
 );
+
+INSERT INTO currencydata VALUES
+        (1, 'CAD', 'Canadian Dollar'),
+        (2, 'INR', 'Indian Rupee'),
+        (3, 'MXN', 'Mexican Peso'),
+        (4, 'GBP', 'Pounds Sterling'),
+        (5, 'TRY', 'Turkish Lira'),
+        (6, 'USD', 'United States Dollar');
 
 SELECT * FROM currencydata ORDER BY Code;
 ----
