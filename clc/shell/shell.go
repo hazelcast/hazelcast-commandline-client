@@ -19,8 +19,10 @@ import (
 )
 
 const (
-	envStyler    = "CLC_EXPERIMENTAL_STYLER"
-	envFormatter = "CLC_EXPERIMENTAL_FORMATTER"
+	CmdPrefix     = `\`
+	envStyler     = "CLC_EXPERIMENTAL_STYLER"
+	envFormatter  = "CLC_EXPERIMENTAL_FORMATTER"
+	maxErrorLines = 5
 )
 
 var ErrExit = errors.New("exit")
@@ -106,7 +108,7 @@ func (sh *Shell) Start(ctx context.Context) error {
 				return nil
 			}
 			if !errors.Is(err, context.DeadlineExceeded) && !errors.Is(err, context.Canceled) {
-				I2(fmt.Fprintf(sh.stderr, color.RedString("Error: %s\n", err.Error())))
+				I2(fmt.Fprintf(sh.stderr, color.RedString("Error: %s\n", trimError(err, maxErrorLines))))
 			}
 		}
 		stop()
@@ -157,4 +159,13 @@ func (c *SQLColoring) Init() int {
 
 func (c *SQLColoring) Next(r rune) int {
 	return ny.DefaultForeGroundColor
+}
+
+// trimErrorString trims the string so it's at most n lines
+func trimError(err error, n int) string {
+	lines := strings.Split(err.Error(), "\n")
+	if len(lines) > n {
+		lines = append(lines[:5], "(Rest of the error message is trimmed.)")
+	}
+	return strings.Join(lines, "\n")
 }

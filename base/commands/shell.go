@@ -21,7 +21,6 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-const cmdPrefix = `\`
 const banner = `Hazelcast CLC %s (c) 2022 Hazelcast Inc.
 		
 * Participate in our survey at: https://forms.gle/rPFywdQjvib1QCe49
@@ -74,7 +73,7 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 	clcMultilineContinue := false
 	endLineFn := func(line string, multiline bool) (string, bool) {
 		// not caching trimmed line, since we want the backslash at the very end of the line. --YT
-		clcCmd := strings.HasPrefix(strings.TrimSpace(line), cmdPrefix)
+		clcCmd := strings.HasPrefix(strings.TrimSpace(line), shell.CmdPrefix)
 		if clcCmd || multiline && clcMultilineContinue {
 			clcMultilineContinue = true
 			end := !strings.HasSuffix(line, "\\")
@@ -85,24 +84,24 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 		}
 		clcMultilineContinue = false
 		line = strings.TrimSpace(line)
-		end := strings.HasPrefix(line, "help") || strings.HasPrefix(line, cmdPrefix) || strings.HasSuffix(line, ";")
+		end := strings.HasPrefix(line, "help") || strings.HasPrefix(line, shell.CmdPrefix) || strings.HasSuffix(line, ";")
 		if !end {
 			line = fmt.Sprintf("%s\n", line)
 		}
 		return line, end
 	}
 	textFn := func(ctx context.Context, text string) error {
-		if strings.HasPrefix(strings.TrimSpace(text), cmdPrefix) {
+		if strings.HasPrefix(strings.TrimSpace(text), shell.CmdPrefix) {
 			parts := strings.Fields(text)
 			if _, ok := cm.shortcuts[parts[0]]; !ok {
 				// this is a CLC command
 				text = strings.TrimSpace(text)
-				text = strings.TrimPrefix(text, cmdPrefix)
+				text = strings.TrimPrefix(text, shell.CmdPrefix)
 				args, err := shlex.Split(text)
 				if err != nil {
 					return err
 				}
-				args[0] = fmt.Sprintf("%s%s", cmdPrefix, args[0])
+				args[0] = fmt.Sprintf("%s%s", shell.CmdPrefix, args[0])
 				return m.Execute(args)
 			}
 		}
@@ -144,7 +143,7 @@ func convertStatement(stmt string) (string, error) {
 	if strings.HasPrefix(stmt, "help") {
 		return "", errHelp
 	}
-	if strings.HasPrefix(stmt, cmdPrefix) {
+	if strings.HasPrefix(stmt, shell.CmdPrefix) {
 		// this is a shell command
 		stmt = strings.TrimPrefix(stmt, "\\")
 		parts := strings.Fields(stmt)
@@ -161,7 +160,7 @@ func convertStatement(stmt string) (string, error) {
 					WHERE table_name = '%s';
 				`, mn), nil
 			}
-			return "", fmt.Errorf("Usage: %sdm [mapping]", cmdPrefix)
+			return "", fmt.Errorf("Usage: %sdm [mapping]", shell.CmdPrefix)
 		case "dm+":
 			if len(parts) == 1 {
 				return "show mappings;", nil
@@ -174,7 +173,7 @@ func convertStatement(stmt string) (string, error) {
 					WHERE table_name = '%s';
 				`, mn), nil
 			}
-			return "", fmt.Errorf("Usage: %sdm+ [mapping]", cmdPrefix)
+			return "", fmt.Errorf("Usage: %sdm+ [mapping]", shell.CmdPrefix)
 		case "exit":
 			return "", shell.ErrExit
 		}

@@ -68,14 +68,15 @@ func (sh *Shell) createUnixLineReader(prompt string) error {
 	if formatter == "" || !strings.HasPrefix(formatter, "terminal") {
 		formatter = "terminal"
 	}
+	cmdColor := color.New(color.Bold)
 	cfg := &gohxs.Config{
 		Prompt:          prompt,
 		HistoryFile:     sh.historyPath,
 		InterruptPrompt: "^C",
 		EOFPrompt:       `\exit`,
 		Output: func(input string) string {
-			if styler == "" {
-				return input
+			if strings.HasPrefix(input, CmdPrefix) {
+				return cmdColor.Sprint(input)
 			}
 			buf := bytes.NewBuffer([]byte{})
 			err := quick.Highlight(buf, input, "sql", formatter, styler)
