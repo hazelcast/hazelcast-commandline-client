@@ -89,4 +89,4 @@ Install, configure, and explore Hazelcast CLC:
 
 - xref:get-started.adoc[].
 - xref:configuration.adoc[].
-- xref:clc-commands.adoc[hzc commands].
+- xref:clc-commands.adoc[clc commands].
