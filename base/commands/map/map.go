@@ -26,7 +26,7 @@ type MapCommand struct {
 
 func (mc *MapCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandGroup(clc.GroupDDSID)
-	cc.AddStringFlag(mapFlagName, "n", defaultMapName, false, "Map name")
+	cc.AddStringFlag(mapFlagName, "n", defaultMapName, false, "map name")
 	cc.AddBoolFlag(mapFlagShowType, "", false, false, "add the type names to the output")
 	if !cc.Interactive() {
 		cc.AddStringFlag(clc.PropertySchemaDir, "", paths.Schemas(), false, "set the schema directory")

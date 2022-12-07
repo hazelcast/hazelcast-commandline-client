@@ -16,16 +16,12 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/logger"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	puberrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-)
-
-const (
-	viridianCoordinatorURL       = "https://api.viridian.hazelcast.com"
-	envHzCloudCoordinatorBaseURL = "HZ_CLOUD_COORDINATOR_BASE_URL"
 )
 
 // client is currently global in order to have a single client.
@@ -47,19 +43,21 @@ type Main struct {
 	cc            *CommandContext
 }
 
-func NewMain(cfgPath, logPath, logLevel string, stdout, stderr io.Writer) (*Main, error) {
+func NewMain(arg0, cfgPath, logPath, logLevel string, stdout, stderr io.Writer) (*Main, error) {
 	rc := &cobra.Command{
-		Use:   "clc",
-		Short: "Hazelcast CLC",
-		Long:  "Hazelcast CLC",
-		Args:  cobra.ExactArgs(0),
+		Use:               arg0,
+		Short:             "Hazelcast CLC",
+		Long:              "Hazelcast CLC",
+		Args:              cobra.NoArgs,
+		CompletionOptions: cobra.CompletionOptions{DisableDescriptions: true},
+		SilenceErrors:     true,
 	}
 	m := &Main{
 		root:   rc,
 		cmds:   map[string]*cobra.Command{},
 		vpr:    viper.New(),
-		stdout: nopWriteCloser{W: stdout},
-		stderr: nopWriteCloser{W: stderr},
+		stdout: clc.NopWriteCloser{W: stdout},
+		stderr: clc.NopWriteCloser{W: stderr},
 		props:  plug.NewProperties(),
 	}
 	cfgPath = paths.ResolveConfigPath(cfgPath)
@@ -142,7 +140,7 @@ func (m *Main) Execute(args []string) error {
 					useShell = false
 					break
 				}
-				if i == 0 && (arg == "help" || arg == "completion") {
+				if i == 0 && (arg == "help" || arg == "completion" || arg == cobra.ShellCompRequestCmd || arg == cobra.ShellCompNoDescRequestCmd) {
 					useShell = false
 					break
 				}
@@ -324,7 +322,7 @@ func (m *Main) createCommands() error {
 
 func (m *Main) ensureClient(ctx context.Context, props plug.ReadOnlyProperties) error {
 	if clientInternal == nil {
-		cfg, err := makeConfiguration(props, m.lg)
+		cfg, err := config.MakeHzConfig(props, m.lg)
 		if err != nil {
 			return err
 		}
@@ -373,26 +371,14 @@ func (m *Main) setConfigProps(props *plug.Properties, key string, value any) {
 	}
 }
 
-type nopWriteCloser struct {
-	W io.Writer
-}
-
-func (nc nopWriteCloser) Write(p []byte) (n int, err error) {
-	return nc.W.Write(p)
-}
-
-func (nc nopWriteCloser) Close() error {
-	return nil
-}
-
 func convertFlagValue(fs *pflag.FlagSet, name string, v pflag.Value) any {
 	switch v.Type() {
 	case "string":
 		return MustValue(fs.GetString(name))
 	case "bool":
 		return MustValue(fs.GetBool(name))
-	case "int":
-		return MustValue(fs.GetInt(name))
+	case "int64":
+		return MustValue(fs.GetInt64(name))
 	}
-	return v
+	panic(fmt.Errorf("cannot convert type: %s", v.Type()))
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -15,12 +16,12 @@ const (
 	TypeNameString  = "string"
 	TypeNameBoolean = "bool"
 	TypeNameJSON    = "json"
-	TypeNameInt8    = "int8"
-	TypeNameInt16   = "int16"
-	TypeNameInt32   = "int32"
-	TypeNameInt64   = "int64"
-	TypeNameFloat32 = "float32"
-	TypeNameFloat64 = "float64"
+	TypeNameInt8    = "i8"
+	TypeNameInt16   = "i16"
+	TypeNameInt32   = "i32"
+	TypeNameInt64   = "i64"
+	TypeNameFloat32 = "f32"
+	TypeNameFloat64 = "f64"
 )
 
 var SupportedTypeNames = []string{
@@ -79,7 +80,7 @@ func ConvertString(value, valueType string) (interface{}, error) {
 	case TypeNameFloat64:
 		cv, err = strconv.ParseFloat(value, 64)
 	default:
-		err = fmt.Errorf("unknown type, provide one of %s", strings.Join(SupportedTypeNames, ", "))
+		err = fmt.Errorf("unknown type '%s', provide one of %s", valueType, strings.Join(SupportedTypeNames, ", "))
 	}
 	if errors.Is(err, strconv.ErrSyntax) {
 		err = fmt.Errorf(`can not convert "%s" to %s, unknown syntax`, value, valueType)
@@ -87,4 +88,10 @@ func ConvertString(value, valueType string) (interface{}, error) {
 		err = fmt.Errorf(`%s can not be represented with specified bit number (max val:%v)`, value, cv)
 	}
 	return cv, err
+}
+
+func init() {
+	sort.Slice(SupportedTypeNames, func(i, j int) bool {
+		return SupportedTypeNames[i] < SupportedTypeNames[j]
+	})
 }
