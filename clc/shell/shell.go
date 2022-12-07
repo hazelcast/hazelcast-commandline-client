@@ -119,7 +119,7 @@ func (sh *Shell) Start(ctx context.Context) error {
 				return nil
 			}
 			if !errors.Is(err, context.DeadlineExceeded) && !errors.Is(err, context.Canceled) {
-				I2(fmt.Fprintf(sh.stderr, "Error: %s\n", err.Error()))
+				I2(fmt.Fprintf(sh.stderr, color.RedString("Error: %s\n", err.Error())))
 			}
 		}
 		stop()
