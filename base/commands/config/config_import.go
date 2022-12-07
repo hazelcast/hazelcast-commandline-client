@@ -166,7 +166,7 @@ func (cm ImportCmd) makeConfigFromZip(ctx context.Context, ec plug.ExecContext, 
 			return nil, errors.New("go file with configuration not found")
 		}
 		opts := makeViridianOpts(clusterName, token, pw)
-		outDir, cfgPath, err := config.Create(path, opts)
+		outDir, cfgPath, err := config.Create(target, opts)
 		if err != nil {
 			return nil, err
 		}
