@@ -1,19 +1,18 @@
 package shell
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"os/signal"
 	"strings"
 
-	"github.com/alecthomas/chroma/quick"
 	"github.com/fatih/color"
-	"github.com/gohxs/readline"
+	"github.com/mattn/go-colorable"
+	"github.com/nyaosorg/go-readline-ny"
+	"github.com/nyaosorg/go-readline-ny/simplehistory"
 
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 )
@@ -30,7 +29,7 @@ type EndLineFn func(line string, multiline bool) (string, bool)
 type TextFn func(ctx context.Context, text string) error
 
 type Shell struct {
-	rl            *readline.Instance
+	rl            *readline.Editor
 	endLineFn     EndLineFn
 	textFn        TextFn
 	prompt1       string
@@ -39,6 +38,7 @@ type Shell struct {
 	stderr        io.Writer
 	stdout        io.Writer
 	commentPrefix string
+	history       *simplehistory.Container
 }
 
 func New(prompt1, prompt2, historyPath, lexer string, stdout, stderr io.Writer, endLineFn EndLineFn, textFn TextFn) (*Shell, error) {
@@ -53,48 +53,43 @@ func New(prompt1, prompt2, historyPath, lexer string, stdout, stderr io.Writer, 
 	if formatter == "" || !strings.HasPrefix(formatter, "terminal") {
 		formatter = "terminal"
 	}
-	cfg := &readline.Config{
-		Prompt:          prompt1,
-		HistoryFile:     historyPath,
-		InterruptPrompt: "^C",
-		EOFPrompt:       `\exit`,
-		Output: func(input string) string {
-			if lexer == "" || styler == "" {
-				return input
-			}
-			buf := bytes.NewBuffer([]byte{})
-			err := quick.Highlight(buf, input, lexer, formatter, styler)
-			if err != nil {
-				log.Fatal(err)
-			}
-			return buf.String()
+	history := simplehistory.New()
+	w := colorable.NewColorableStdout()
+	/*
+		// TODO:
+		var w io.Writer
+		if color.NoColor {
+			w = colorable.NewNonColorable(stdout)
+		} else {
+			w = colorable.NewColorableStdout()
+		}
+	*/
+	rl := readline.Editor{
+		Prompt: func() (int, error) {
+			return fmt.Fprint(stdout, prompt1)
 		},
-		HistorySearchFold: true,
-		Stdout:            stdout,
-		Stderr:            stderr,
-	}
-	if historyPath != "" {
-		cfg.HistoryFile = historyPath
-	}
-	rl, err := readline.NewEx(cfg)
-	if err != nil {
-		return nil, err
+		Writer:         w,
+		History:        history,
+		HistoryCycling: true,
+		Coloring:       &SQLColoring{},
 	}
 	return &Shell{
-		rl:            rl,
+		rl:            &rl,
 		endLineFn:     endLineFn,
 		textFn:        textFn,
 		prompt1:       prompt1,
 		prompt2:       prompt2,
 		historyPath:   historyPath,
 		stderr:        stderr,
-		stdout:        stdout,
+		stdout:        w,
 		commentPrefix: "",
+		history:       history,
 	}, nil
 }
 
 func (sh *Shell) Close() error {
-	return sh.rl.Close()
+	//return sh.rl.Close()
+	return nil
 }
 
 func (sh *Shell) SetCommentPrefix(pfx string) {
@@ -104,7 +99,7 @@ func (sh *Shell) SetCommentPrefix(pfx string) {
 func (sh *Shell) Start(ctx context.Context) error {
 	for {
 		text, err := sh.readTextReadline()
-		if err == readline.ErrInterrupt || err == io.EOF {
+		if err == io.EOF {
 			return nil
 		}
 		if err != nil {
@@ -113,6 +108,7 @@ func (sh *Shell) Start(ctx context.Context) error {
 		if text == "" {
 			continue
 		}
+		sh.history.Add(text)
 		ctx, stop := signal.NotifyContext(ctx, os.Interrupt, os.Kill)
 		if err := sh.textFn(ctx, text); err != nil {
 			if errors.Is(err, ErrExit) {
@@ -133,8 +129,10 @@ func (sh *Shell) readTextReadline() (string, error) {
 	multiline := false
 	var sb strings.Builder
 	for {
-		sh.rl.SetPrompt(prompt)
-		p, err := sh.rl.Readline()
+		sh.rl.Prompt = func() (int, error) {
+			return fmt.Fprint(sh.stdout, prompt)
+		}
+		p, err := sh.rl.ReadLine(context.Background())
 		if err != nil {
 			return "", err
 		}
@@ -157,4 +155,17 @@ func (sh *Shell) readTextReadline() (string, error) {
 	}
 	text := sb.String()
 	return text, nil
+}
+
+type SQLColoring struct {
+	text []rune
+}
+
+func (c *SQLColoring) Init() int {
+	c.text = nil
+	return readline.DefaultForeGroundColor
+}
+
+func (c *SQLColoring) Next(r rune) int {
+	return readline.DefaultForeGroundColor
 }

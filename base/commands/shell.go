@@ -67,7 +67,7 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 * Type 'help' for help information. Prefix non-SQL commands with \
 		
 %s	
-	`, internal.Version, cfgText))
+`, internal.Version, cfgText))
 	}
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	clcMultilineContinue := false
