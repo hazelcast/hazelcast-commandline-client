@@ -35,6 +35,10 @@ func (c CommandContext) SetPositionalArgCount(min, max int) {
 	//TODO implement me
 }
 
+func (c CommandContext) Hide() {
+	//TODO implement me
+}
+
 func (c CommandContext) Interactive() bool {
 	return c.IsInteractive
 }

@@ -74,6 +74,10 @@ func (cc *CommandContext) SetPositionalArgCount(min, max int) {
 	cc.Cmd.Args = cobra.RangeArgs(min, max)
 }
 
+func (cc *CommandContext) Hide() {
+	cc.Cmd.Hidden = true
+}
+
 func (cc *CommandContext) Interactive() bool {
 	return cc.isInteractive
 }

@@ -28,7 +28,7 @@ func (c *Config) updateWithDefaults() {
 		c.RowColors[0] = color.New()
 	}
 	if c.RowColors[1] == nil {
-		c.RowColors[1] = color.New(color.BgWhite, color.FgBlack)
+		c.RowColors[1] = color.New()
 	}
 	if c.CellFormat[0] == "" {
 		c.CellFormat[0] = " %s "

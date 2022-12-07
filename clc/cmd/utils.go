@@ -13,7 +13,7 @@ func ExtractStartupArgs(args []string) (cfgPath, logFile, logLevel string, err e
 		switch args[i] {
 		case fmt.Sprintf("--%s", clc.PropertyConfig), fmt.Sprintf("-%s", clc.ShortcutConfig):
 			if ln <= i+1 {
-				return cfgPath, logFile, logLevel, fmt.Errorf("%s requires a path", args[i])
+				return cfgPath, logFile, logLevel, fmt.Errorf("%s requires the configuration name or path", args[i])
 			}
 			cfgPath = args[i+1]
 			i++
@@ -25,7 +25,7 @@ func ExtractStartupArgs(args []string) (cfgPath, logFile, logLevel string, err e
 			i++
 		case fmt.Sprintf("--%s", clc.PropertyLogLevel):
 			if ln <= i+1 {
-				return cfgPath, logFile, logLevel, fmt.Errorf("%s requires a path", args[i])
+				return cfgPath, logFile, logLevel, fmt.Errorf("%s requires a level", args[i])
 			}
 			logLevel = args[i+1]
 			i++
