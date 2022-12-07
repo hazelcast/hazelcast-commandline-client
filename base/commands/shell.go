@@ -129,7 +129,7 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 		sh.SetCommentPrefix("--")
 		return sh.Run(context.Background())
 	}
-	sh, err := shell.New("CLC> ", " ... ", path, "sql", ec.Stdout(), ec.Stderr(), endLineFn, textFn)
+	sh, err := shell.New("CLC> ", " ... ", path, ec.Stdout(), ec.Stderr(), endLineFn, textFn)
 	if err != nil {
 		return err
 	}

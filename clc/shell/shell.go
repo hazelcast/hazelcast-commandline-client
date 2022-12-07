@@ -7,11 +7,12 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"runtime"
 	"strings"
 
 	"github.com/fatih/color"
 	"github.com/mattn/go-colorable"
-	"github.com/nyaosorg/go-readline-ny"
+	ny "github.com/nyaosorg/go-readline-ny"
 	"github.com/nyaosorg/go-readline-ny/simplehistory"
 
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -29,7 +30,7 @@ type EndLineFn func(line string, multiline bool) (string, bool)
 type TextFn func(ctx context.Context, text string) error
 
 type Shell struct {
-	rl            *readline.Editor
+	lr            LineReader
 	endLineFn     EndLineFn
 	textFn        TextFn
 	prompt1       string
@@ -41,20 +42,7 @@ type Shell struct {
 	history       *simplehistory.Container
 }
 
-func New(prompt1, prompt2, historyPath, lexer string, stdout, stderr io.Writer, endLineFn EndLineFn, textFn TextFn) (*Shell, error) {
-	var styler string
-	if !color.NoColor {
-		styler = os.Getenv(envStyler)
-		if styler == "" {
-			styler = "clc-default"
-		}
-	}
-	formatter := os.Getenv(envFormatter)
-	if formatter == "" || !strings.HasPrefix(formatter, "terminal") {
-		formatter = "terminal"
-	}
-	history := simplehistory.New()
-	w := colorable.NewColorableStdout()
+func New(prompt1, prompt2, historyPath string, stdout, stderr io.Writer, endLineFn EndLineFn, textFn TextFn) (*Shell, error) {
 	/*
 		// TODO:
 		var w io.Writer
@@ -64,32 +52,35 @@ func New(prompt1, prompt2, historyPath, lexer string, stdout, stderr io.Writer, 
 			w = colorable.NewColorableStdout()
 		}
 	*/
-	rl := readline.Editor{
-		Prompt: func() (int, error) {
-			return fmt.Fprint(stdout, prompt1)
-		},
-		Writer:         w,
-		History:        history,
-		HistoryCycling: true,
-		Coloring:       &SQLColoring{},
+	if stdout == os.Stdout {
+		stdout = colorable.NewColorableStdout()
 	}
-	return &Shell{
-		rl:            &rl,
+	history := simplehistory.New()
+	sh := &Shell{
 		endLineFn:     endLineFn,
 		textFn:        textFn,
 		prompt1:       prompt1,
 		prompt2:       prompt2,
 		historyPath:   historyPath,
 		stderr:        stderr,
-		stdout:        w,
+		stdout:        stdout,
 		commentPrefix: "",
 		history:       history,
-	}, nil
+	}
+	if runtime.GOOS == "windows" {
+		if err := sh.createWindowsLineReader(prompt1); err != nil {
+			return nil, err
+		}
+		return sh, nil
+	}
+	if err := sh.createUnixLineReader(prompt1); err != nil {
+		return nil, err
+	}
+	return sh, nil
 }
 
 func (sh *Shell) Close() error {
-	//return sh.rl.Close()
-	return nil
+	return sh.lr.Close()
 }
 
 func (sh *Shell) SetCommentPrefix(pfx string) {
@@ -129,10 +120,8 @@ func (sh *Shell) readTextReadline() (string, error) {
 	multiline := false
 	var sb strings.Builder
 	for {
-		sh.rl.Prompt = func() (int, error) {
-			return fmt.Fprint(sh.stdout, prompt)
-		}
-		p, err := sh.rl.ReadLine(context.Background())
+		sh.lr.SetPrompt(prompt)
+		p, err := sh.lr.ReadLine(context.Background())
 		if err != nil {
 			return "", err
 		}
@@ -163,9 +152,9 @@ type SQLColoring struct {
 
 func (c *SQLColoring) Init() int {
 	c.text = nil
-	return readline.DefaultForeGroundColor
+	return ny.DefaultForeGroundColor
 }
 
 func (c *SQLColoring) Next(r rune) int {
-	return readline.DefaultForeGroundColor
+	return ny.DefaultForeGroundColor
 }
