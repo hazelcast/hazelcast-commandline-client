@@ -4,23 +4,15 @@
 
 {description}
 
-The Hazelcast CLC simplifies the client setup process for Unix-like local environments. Within minutes of installation, you can start to perform common tasks on clusters.
+The Hazelcast CLC simplifies the client setup process for Windows and Unix-like local environments. Within minutes of installation, you can start to perform common tasks on clusters.
 
 == Use Cases
 
 Example use cases for the Hazelcast CLC.
 
-=== Basic Cluster Management for Hazelcast Platform
-
-Perform xref:hzc-cluster.adoc[administration tasks] on multiple clusters without writing code. Instead, use <<interactive-mode, interactive mode>> to explore available commands.
-
-Check or change the state of a cluster, update a configuration option, then switch to another cluster, all from the command line. For maximum flexibility, you can set cluster connection details at the command line or using a xref:configuration.adoc[custom configuration file]. 
-
-NOTE: {hazelcast-cloud} has a separate link:{url-github-clc}[CLI for cluster management].
-
 === Access Data for Debugging
 
-Get xref:hzc-map.adoc[direct access to map data] for quick debugging of prototypes or production applications. Easily read or query data on a cluster using <<sql-mode, SQL mode>> to view query results, and then perform updates without changing tools.
+Get xref:clc-map.adoc[direct access to map data] for quick debugging of prototypes or production applications. Easily read or query data on a cluster using SQL queries.
 
 === Scripting for Automation
 
@@ -32,7 +24,6 @@ The Hazelcast CLC works in three modes:
 
 - Non-interactive
 - Interactive
-- SQL
 
 You can easily switch between modes to suit the context in which you're working.
 
@@ -43,7 +34,7 @@ This is the default mode for the Hazelcast CLC. You need to manually enter and e
 
 [source,bash,subs="attributes+"]
 ----
-hzc map --cluster-name cluster1 --name myMap put --key myKey --value myValue
+clc map -c dev --name myMap set myKey myValue
 ----
 
 [[interactive-mode]]
@@ -51,46 +42,43 @@ hzc map --cluster-name cluster1 --name myMap put --key myKey --value myValue
 
 Interactive mode uses auto-completion to display matching commands, subcommands, and parameters. This mode is useful for exploring CLC commands, and for manual tasks. 
 
-image:ROOT:hzc-interactive-screenshot.png[HZC interactive]
-
-In interactive mode, you can run the xref:hzc-map.adoc[`hzc map use` command] to avoid re-typing the object name on each command. In this example, the developer only needed to type `m1` once.
-
-----
-hzc
-Connecting to the cluster ...
-hzc localhost:5701@dev> map use m1
-hzc localhost:5701@dev&m:m1> map put -k k1 -v v1
-hzc localhost:5701@dev&m:m1> map get -k k1
-v1
-hzc localhost:5701@dev&m:m1>
-----
-
-You can xref:install-clc.adoc[enable interactive mode] for bash and zsh shells after installation. To start Hazelcast CLC in interactive mode, do the following:
+To start the Hazelcast CLC in interactive mode, do the following:
 
 [source,bash,subs="attributes+"]
 ----
-hzc
+clc
+----
+
+In the interactive mode, you can run SQL queries directly. Make sure to add a semicolumn (`;`) to the end of the query, otherwise it is assumed that you want to enter a multiline query.
+
+----
+CLC> select * from cities;
+---------------------------------------------------------------------------------
+      __key | country                   | city                      | population
+---------------------------------------------------------------------------------
+          1 | United Kingdom            | London                    |    9540576
+          6 | Turkey                    | Istanbul                  |   15636243
+          4 | United States             | Los Angeles               |    3985520
+---------------------------------------------------------------------------------
+----
+
+In order to run CLC commands, prefix them with a backslash `\`:
+----
+CLC> \object list
+------------------------------------
+ Service Name | Object Name
+------------------------------------
+ executor     | hot-backup-executor
+ map          | cities
+ map          | currency
+ map          | default
+------------------------------------
 ----
 
 To return to non-interactive mode, use either of the following methods:
 
-- Press kbd:[Ctrl + C]
-- Type `exit`.
-
-To switch to SQL mode, just type `sql`.
-
-[[sql-mode]]
-=== SQL Mode
-You can execute SQL statements in all modes, but SQL mode also gives you access to an interactive SQL browser to navigate query results.
-
-image:ROOT:hzc-sql-browser-screenshot.png[HZC interactive]
-
-To start the Hazelcast CLC in SQL mode, do the following:
-
-[source,bash,subs="attributes+"]
-----
-hzc sql
-----
+- Press kbd:[Ctrl + D]
+- Type `\exit`.
 
 == Limitations
 
@@ -101,4 +89,4 @@ Install, configure, and explore Hazelcast CLC:
 
 - xref:get-started.adoc[].
 - xref:configuration.adoc[].
-- xref:clc-commands.adoc[hzc commands].
+- xref:clc-commands.adoc[clc commands].

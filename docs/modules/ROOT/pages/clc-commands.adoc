@@ -1,5 +1,5 @@
-= hzc
-:description: pass:q[The `hzc` command comes with subcommands for managing many aspects of a Hazelcast cluster.]
+= clc
+:description: pass:q[The `clc` command comes with subcommands for managing many aspects of a Hazelcast cluster.]
 
 {description}
 
@@ -7,10 +7,10 @@
 
 [source,bash]
 ----
-hzc [command] [subcommand] [options]
+clc [command] [subcommand] [options]
 ----
 
-You can use `hzc [command] help` for information on a specific command. The synopsis for each command shows its parameters and their usage.
+You can use `clc [command] help` for information on a specific command. The synopsis for each command shows its parameters and their usage.
 
 == Global Options
 
@@ -22,40 +22,31 @@ include::partial$global-parameters.adoc[]
 |===
 |Command|Description
 
-|xref:hzc-cluster.adoc[hzc cluster]
-|Manage a Hazelcast cluster.
+|xref:clc.adoc[clc shell]
+|Start a Hazelcast CLC shell.
 
-|hzc help
-|Display help for the `hzc` command.
+|clc help
+|Display help information for the `clc` command.
 
-|xref:hzc-map.adoc[hzc map]
+|xref:clc-completion.adoc[clc completion]
+|Generate shell autocompletion.
+
+|xref:clc-home.adoc[clc home]
+|Print CLC home directory.
+
+|xref:clc-config.adoc[clc config]
+|Manage the configuration used by the Hazelcast CLC.
+
+|xref:clc-map.adoc[clc map]
 |Manage map data structures.
 
-|xref:hzc-sql.adoc[hzc sql]
+|xref:clc-sql.adoc[clc sql]
 |Execute SQL queries.
 
-|xref:hzc-list-objects.adoc[hzc list-objects]
-|List data structures in the cluster.
+|xref:clc-object.adoc[clc object]
+|Commands for generic distributed data structures.
 
-|xref:hzc-replicatedmap.adoc[hzc replicatedmap]
-|Manage replicated map data structures.
-
-|xref:hzc-multimap.adoc[hzc multimap]
-|Manage multimap data structures.
-
-|xref:hzc-queue.adoc[hzc queue]
-|Manage queue data structures.
-
-|xref:hzc-set.adoc[hzc set]
-|Manage set data structures.
-
-|xref:hzc-list.adoc[hzc list]
-|Manage list data structures.
-
-|xref:hzc-topic.adoc[hzc topic]
-|Manage topic data structures.
-
-|xref:hzc-version.adoc[hzc version]
+|xref:clc-version.adoc[clc version]
 |Get version information.
 
 |===

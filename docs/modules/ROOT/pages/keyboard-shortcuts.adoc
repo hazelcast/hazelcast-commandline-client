@@ -1,5 +1,5 @@
 = Keyboard Shortcuts
-:description: Hazelcast CLC supports the following keyboard shortcuts.
+:description: The Hazelcast CLC supports the following keyboard shortcuts.
 
 {description}
 
@@ -45,11 +45,5 @@
 
 |kbd:[Ctrl + C]
 |Cancel running command or close the app.
-
-|kbd:[Ctrl + ->]
-|Go to the end of to next word.
-
-|kbd:[Ctrl + <-]
-|Go to the start of the previous word.
 
 |===

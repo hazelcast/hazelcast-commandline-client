@@ -11,16 +11,14 @@
 
 .Reference
 * xref:clc-commands.adoc[Command Reference]
-** xref:hzc-cluster.adoc[]
-** xref:hzc-map.adoc[]
-** xref:hzc-sql.adoc[]
-# ** xref:hzc-queue.adoc[]
-# ** xref:hzc-set.adoc[]
-# ** xref:hzc-list.adoc[]
-# ** xref:hzc-multimap.adoc[]
-# ** xref:hzc-replicatedmap.adoc[]
-# ** xref:hzc-topic.adoc[]
-** xref:hzc-version.adoc[]
+** xref:clc-completion.adoc[]
+** xref:clc-config.adoc[]
+** xref:clc-home.adoc[]
+** xref:clc-object.adoc[]
+** xref:clc-map.adoc[]
+** xref:clc.adoc[]
+** xref:clc-sql.adoc[]
+** xref:clc-version.adoc[]
 * xref:keyboard-shortcuts.adoc[]
 
 .Release Notes

@@ -1,32 +1,51 @@
 = Configuration for Hazelcast CLC
-:description: Hazelcast CLC allows you to configure settings for cluster connection credentials, using a configuration file. You can also override those settings, using global command-line parameters.
+:description: Hazelcast CLC allows you to configure settings for cluster connection credentials, using a configuration file. Some of those settings may be overriden using global command-line parameters.
 
 {description}
 
-Hazelcast CLC evaluates configuration settings in the following precedence, with items higher on the list taking priority:
+CLC has a simple YAML configuration, usually named `config.yaml`.
+This file can exist anywhere in the file system, and can be used with the `--config` (or `-c`) flag:
+[source, bash]
+----
+clc -c test/config.yaml
+----
 
-. Command-line parameters
-. Values in the configuration file
+If there is a `config.yaml` in the same directory with the CLC binary and the configuration was not explicitly set, CLC tries to load that configuration file:
+[source, bash]
+----
+ls -lh
+total 17M
+-rwxrwxr-x 1 yuce yuce  17M Nov 26 23:11 clc*
+-rw------- 1 yuce yuce  200 Nov 26 23:12 config.yaml
+----
 
-== CLC Configuration File
+`configs` directory in `$CLC_HOME` is special, it contains all the configurations known to CLC. You can use the `clc home` command in order to see where `$CLC_HOME` is:
+[source, bash]
+----
+clc home
+/home/me/.local/share/clc
+----
 
-The CLC configuration file contains all settings for connecting Hazelcast CLC to either a Hazelcast Platform or {hazelcast-cloud} cluster.
+Known configurations can be directly specified by their names, instead of the full path.
+`clc config list` command lists the configurations known to CLC:
+[source, bash]
+----
+# List configurations
+$ clc config list
+default
+pr-3066
 
-The configuration file is written in the YAML file format.
+# Start CLC shell with configuration named pr-3066
+$ clc -c pr-3066
+----
 
-The default configuration file is located at `$HOME/.local/share/hz-cli/config.yaml`. The default settings configure Hazelcast CLC to open an unencrypted connection to a cluster called `dev` at localhost:5701.
-
-To change the configuration settings, you can either edit the default configuration file, or create your own and use the `-c` flag to pass it to Hazelcast CLC:
-
-```bash
-hzc -c /<PATH>/<FILENAME>.yaml
-```
+If no configuration is specified, the `default` configuration is used.
 
 == CLC Configuration with Command-Line Parameters
 
-Command-line parameters are for overriding some configuration settings in the configuration file.
+Command-line parameters are for overriding some configuration settings in the configuration file, such as the log settings.
 
-You can override the values in the configuration file by providing the following command-line parameters to any `hzc` command:
+You can override the values in the configuration file by providing the following command-line parameters to any `clc` command:
 
 include::partial$global-parameters.adoc[]
 

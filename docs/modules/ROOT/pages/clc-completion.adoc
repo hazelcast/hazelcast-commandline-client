@@ -1,0 +1,35 @@
+= clc completion
+:description: Generates the autocompletion script for the specified shell. See each sub-command's help for details on how to use the generated script.
+
+{description}
+
+Usage:
+
+[source,bash]
+----
+clc completion [shell] [--no-descriptions]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`shell`
+|Required
+|One of:
+
+* bash
+* fish
+* powershell
+* zsh
+
+|All types
+
+|`--no-descriptions`
+|Optional
+|Disables completion descriptions
+|N/A
+
+|===

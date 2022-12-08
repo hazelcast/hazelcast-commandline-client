@@ -1,0 +1,245 @@
+= clc map
+
+Map commands are a group of map operations.
+
+Usage:
+
+[source,bash]
+----
+clc map [command] [options]
+----
+
+== Commands
+
+* <<clc-map-clear, clc map clear>>
+* <<clc-map-get, clc map get>>
+* <<clc-map-set, clc map set>>
+* <<clc-map-entry-set, clc map entries>>
+* <<clc-map-size, clc map size>>
+* <<clc-map-remove, clc map remove>>
+
+== clc map clear
+
+Removes all entries from the map.
+
+Usage:
+
+[source,bash]
+----
+clc map clear --name <name of your map>
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Required
+|Name of the map.
+|`default`
+
+|===
+
+== clc map get
+
+Prints a single entry from the map as a key-value pair.
+
+Usage:
+
+[source,bash]
+----
+clc map get --name <name of your map>
+            [--key-type {string (default), bool, json, i8, i16, i32, i64, f32, f64}]
+            [key]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Required
+|Name of the map.
+|`dev`
+
+|`key`
+|Required
+|Key of the map entry.
+|N/A
+
+|`--key-type`, `-k`
+|Optional
+|Data type of the key.
+|String
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc map get --name yearbook 2012 --key-type i16
+----
+
+== clc map set
+
+Sets the given key-value entry pair in a map.
+
+Usage:
+
+[source,bash]
+----
+clc map set --name <name of your map>
+            [key]
+            [value]
+            [--key-type {string (default), bool, json, i8, i16, i32, i64, f32, f64}]
+            [--value-type {string (default), bool, json, i8, i16, i32, i64, f32, f64}]
+            [--ttl {ns, us, ms, s, m, h (nanosecond, microsecond, millisecond, second, minute, hour)}]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Required
+|Name of the map.
+|`dev`
+
+|`key`
+|Required
+|Key of the map entry.
+|N/A
+
+|`value`
+|Required
+|Value to set for the key. Mutually exclusive with `--value-file`.
+|N/A
+
+|`--key-type`, `-k`
+|Optional
+|Data type of the key.
+|String
+
+|`--value-type`, `-v`
+|Optional
+|Data type of the value.
+|String
+
+|`--ttl`
+|Optional
+|Duration in milliseconds after which the entry will expire and be evicted. It cannot be shorter than 1 second (1000 ms).
+|N/A
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc map set --key-type string hello --value-type f32 19.94 --name myMap --ttl 1300ms
+----
+
+== clc map entry-set
+
+Gets all the entries of the specified map.
+
+Usage:
+
+[source,bash]
+----
+clc map entry-set --name <name of your map>
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Required
+|Name of the map.
+|`dev`
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc map entry-set -n myMap
+----
+
+== clc map size
+
+Prints the size of the given the map.
+
+Usage:
+
+[source,bash]
+----
+clc map size --name <name of your map>
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Required
+|Name of the map.
+|`dev`
+
+|===
+
+== clc map remove
+
+Deletes the value of a given key in a map.
+
+Usage:
+
+[source,bash]
+----
+clc map remove --name <name of your map>
+               [key]
+               [--key-type {string (default), bool, json, i8, i16, i32, i64, f32, f64}]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Required
+|Name of the map.
+|`dev`
+
+|`key`
+|Required
+|Key of the map entry.
+|N/A
+
+|`--key-type`, `-k`
+|Optional
+|Data type of the key.
+|String
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc map remove --name myMap --key-type string k1
+----

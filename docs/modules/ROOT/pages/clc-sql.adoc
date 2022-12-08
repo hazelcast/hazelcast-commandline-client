@@ -1,0 +1,74 @@
+= clc sql
+:description: Executes a SQL statement.
+
+{description}
+
+Usage:
+
+[source,bash]
+----
+clc sql "[query]" [--format OUTPUT-FORMAT]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--format`, `-f`
+|Optional
+|Output format. Supported formats:
+
+- `csv`
+- `delimited`
+- `json`
+- `table`
+|`delimited` in non-interactive mode, `table` in interactive mode.
+
+|===
+
+.Global parameters
+[%collapsible]
+====
+include::partial$global-parameters.adoc[]
+====
+
+== Querying with SQL using the Hazelcast CLC
+
+You can run SQL queries in both interactive and non-interactive mode of the Hazelcast CLC.
+
+[tabs]
+====
+Non-Interactive mode::
++
+--
+[source,bash]
+----
+$ clc sql -c prod "SELECT * from cities"
+1	United Kingdom	London	9540576
+4	United States	Los Angeles	3985520
+5	Turkey	Ankara	5309690
+7	Brazil	Sao Paulo	22429800
+----
+--
+Interactive mode::
++
+--
+[source,bash]
+----
+clc
+CLC> SELECT * FROM cities
+---------------------------------------------------------------------------------
+      __key | country                   | city                      | population
+---------------------------------------------------------------------------------
+          1 | United Kingdom            | London                    |    9540576
+          4 | United States             | Los Angeles               |    3985520
+          5 | Turkey                    | Ankara                    |    5309690
+          7 | Brazil                    | Sao Paulo                 |   22429800
+---------------------------------------------------------------------------------
+----
+--
+====
+
+
