@@ -22,4 +22,4 @@
 * xref:keyboard-shortcuts.adoc[]
 
 .Release Notes
-* xref:release-notes.adoc[0.1]
+* xref:release-notes.adoc[0.3]
