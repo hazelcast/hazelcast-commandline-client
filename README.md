@@ -42,7 +42,7 @@ pr-3066
 $ clc -c pr-3066
 ```
 
-If no configuration is specified, the `default` configuration is used.
+If no configuration is specified, the `default` configuration is used if it exists.
 
 #### Configuration format
 
@@ -51,7 +51,7 @@ All paths in the configuration are relative to the parent directory of the confi
 * cluster
   * name: Name of the cluster. By default `dev`.
   * address: Address of a member in the cluster. By default `localhost:5701`.
-  * discovery-token: Viridian Serverless Token.
+  * discovery-token: Viridian Serverless discovery token.
 
 * ssl
   * ca-path: TLS CA certificate path.
@@ -67,7 +67,7 @@ Here's a sample Viridian Serverless configuration:
 ```
 cluster:
   name: "pr-3814"  
-  viridian-token: "HY8eR7X...."
+  discovery-token: "HY8eR7X...."
 ssl:
   ca-path: "ca.pem"
   cert-path: "cert.pem"
@@ -146,26 +146,26 @@ The following keyboard shortcuts are available in the interactive-mode:
 | <kbd>Ctrl + K</kbd> | Cut the line after the cursor                  |
 | <kbd>Ctrl + U</kbd> | Cut the line before the cursor                 |
 | <kbd>Ctrl + L</kbd> | Clear the screen                               |
-| <kbd>Ctrl + C</kbd> | Cancel running command or close the app        |
+| <kbd>Ctrl + C</kbd> | Cancel running command        |
 
 ## Connecting to Viridian Serverless
 
 1. If you don't have a running Viridian Serverless cluster, follow the steps in [Step 1. Start a Viridian Serverless Development Cluster](https://docs.hazelcast.com/cloud/get-started#step-1-start-a-viridian-serverless-development-cluster) to create a cluster.
   Both development and production clusters will work very well.
 2. Download the Go client sample for your cluster from the Viridian Console. The sample is typically a Zip file with the following name format: "hazelcast-cloud-go-sample-client-CLUSTER-ID-default.zip". For instance: `hazelcast-cloud-csharp-sample-client-pr-3814-default.zip` 
-3. Import the configuration with CLC:
+3. Import the configuration with CLC with `my-cluster` as the name:
   ```
-  $ clc config import ~/hazelcast-cloud-go-sample-client-pr-3814-default.zip
+  $ clc config import my-cluster ~/hazelcast-cloud-go-sample-client-pr-3814-default.zip
   ```
-4. The configuration will be imported with the name as the cluster ID. Check that the configuration is known to CLC:
+4. Check that the configuration is known to CLC:
   ```
   $ clc config list
   default
-  pr-3814
+  my-cluster
   ```
 5. In order to use this configuration, use `-c CONFIG_NAME` flag whenever you run CLC:
   ```
-  $ clc -c pr-3814 map set my-key my-value
+  $ clc -c my-cluster map set my-key my-value
   ```
 
 ## Generating auto-completion
@@ -191,7 +191,7 @@ $ clc completion bash > clc.bash
 The following targets are tested and supported.
 The prior versions of the given targets would also work, but that's not tested. 
 
-* Ubuntu 18.04 or better.
+* Ubuntu 22.04 or better.
 * MacOS 12 or better.
 * Windows 10 or better.
 
@@ -224,7 +224,7 @@ The `clc` or `clc.exe` binary is created in the `build` directory.
 
 ### Finally, run the project
 
-CLC starts the interactive mode by default.
+CLC starts the in interactive mode by default.
 
 On Linux and MacOS:
 ```
