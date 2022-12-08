@@ -12,21 +12,24 @@ import (
 	"github.com/fatih/color"
 	gohxs "github.com/gohxs/readline"
 	ny "github.com/nyaosorg/go-readline-ny"
+	"github.com/nyaosorg/go-readline-ny/simplehistory"
 )
 
 type LineReader interface {
 	SetPrompt(prompt string)
 	ReadLine(ctx context.Context) (string, error)
 	Close() error
+	AddToHistory(item string)
 }
 
-func (sh *Shell) createWindowsLineReader(prompt string) error {
+func (sh *Shell) createNyLineReader(prompt string) error {
+	history := simplehistory.New()
 	ed := ny.Editor{
 		Prompt: func() (int, error) {
 			return fmt.Fprint(sh.stdout, prompt)
 		},
 		Writer:         sh.stdout,
-		History:        sh.history,
+		History:        history,
 		HistoryCycling: true,
 		Coloring:       &SQLColoring{},
 	}
@@ -35,11 +38,15 @@ func (sh *Shell) createWindowsLineReader(prompt string) error {
 }
 
 type NyLineReader struct {
-	ed *ny.Editor
+	ed   *ny.Editor
+	hist *simplehistory.Container
 }
 
 func NewNyLineReader(ed *ny.Editor) *NyLineReader {
-	return &NyLineReader{ed: ed}
+	return &NyLineReader{
+		ed:   ed,
+		hist: simplehistory.New(),
+	}
 }
 
 func (lr *NyLineReader) SetPrompt(prompt string) {
@@ -56,7 +63,11 @@ func (lr *NyLineReader) Close() error {
 	return nil
 }
 
-func (sh *Shell) createUnixLineReader(prompt string) error {
+func (lr *NyLineReader) AddToHistory(item string) {
+	lr.hist.Add(item)
+}
+
+func (sh *Shell) createGohxsLineReader(prompt string) error {
 	var styler string
 	if !color.NoColor {
 		styler = os.Getenv(envStyler)
@@ -112,10 +123,14 @@ func (lr *GohxsLineReader) SetPrompt(prompt string) {
 	lr.rl.SetPrompt(prompt)
 }
 
-func (lr *GohxsLineReader) ReadLine(_ context.Context) (string, error) {
+func (lr *GohxsLineReader) ReadLine(context.Context) (string, error) {
 	return lr.rl.Readline()
 }
 
 func (lr *GohxsLineReader) Close() error {
 	return lr.rl.Close()
+}
+
+func (lr *GohxsLineReader) AddToHistory(string) {
+	// pass
 }

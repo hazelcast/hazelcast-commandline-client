@@ -7,25 +7,22 @@ import (
 	"io"
 	"os"
 	"os/signal"
-	"runtime"
 	"strings"
 
 	"github.com/fatih/color"
 	"github.com/mattn/go-colorable"
 	ny "github.com/nyaosorg/go-readline-ny"
-	"github.com/nyaosorg/go-readline-ny/simplehistory"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 )
 
 const (
-	CmdPrefix       = `\`
-	envStyler       = "CLC_EXPERIMENTAL_STYLER"
-	envFormatter    = "CLC_EXPERIMENTAL_FORMATTER"
-	envForceWindows = "CLC_FORCE_WINDOWS"
-	envWtSession    = "WT_SESSION"
-	maxErrorLines   = 5
+	CmdPrefix     = `\`
+	envStyler     = "CLC_EXPERIMENTAL_STYLER"
+	envFormatter  = "CLC_EXPERIMENTAL_FORMATTER"
+	envReadline   = "CLC_EXPERIMENTAL_READLINE"
+	maxErrorLines = 5
 )
 
 var ErrExit = errors.New("exit")
@@ -44,12 +41,10 @@ type Shell struct {
 	stderr        io.Writer
 	stdout        io.Writer
 	commentPrefix string
-	history       *simplehistory.Container
 }
 
 func New(prompt1, prompt2, historyPath string, stdout, stderr io.Writer, endLineFn EndLineFn, textFn TextFn) (*Shell, error) {
 	stdout, stderr = fixStdoutStderr(stdout, stderr)
-	history := simplehistory.New()
 	sh := &Shell{
 		endLineFn:     endLineFn,
 		textFn:        textFn,
@@ -59,15 +54,12 @@ func New(prompt1, prompt2, historyPath string, stdout, stderr io.Writer, endLine
 		stderr:        stderr,
 		stdout:        stdout,
 		commentPrefix: "",
-		history:       history,
 	}
-	if windowsCommandPrompt() {
-		if err := sh.createWindowsLineReader(prompt1); err != nil {
+	if os.Getenv(envReadline) == "ny" {
+		if err := sh.createNyLineReader(prompt1); err != nil {
 			return nil, err
 		}
-		return sh, nil
-	}
-	if err := sh.createUnixLineReader(prompt1); err != nil {
+	} else if err := sh.createGohxsLineReader(prompt1); err != nil {
 		return nil, err
 	}
 	return sh, nil
@@ -93,7 +85,7 @@ func (sh *Shell) Start(ctx context.Context) error {
 		if text == "" {
 			continue
 		}
-		sh.history.Add(text)
+		sh.lr.AddToHistory(text)
 		ctx, stop := signal.NotifyContext(ctx, os.Interrupt, os.Kill)
 		if err := sh.textFn(ctx, text); err != nil {
 			if errors.Is(err, ErrExit) {
@@ -163,33 +155,23 @@ func trimError(err error, n int) string {
 }
 
 func isStdout(w io.Writer) bool {
-	if wc, ok := w.(*clc.NopWriteCloser); ok {
+	if wc, ok := w.(clc.NopWriteCloser); ok {
 		return wc.W == os.Stdout
 	}
 	return false
 }
 
 func isStderr(w io.Writer) bool {
-	if wc, ok := w.(*clc.NopWriteCloser); ok {
+	if wc, ok := w.(clc.NopWriteCloser); ok {
 		return wc.W == os.Stderr
 	}
 	return false
 }
 
-// windowsCommandPrompt tries to determine if CLC is running in Command Prompt
-func windowsCommandPrompt() bool {
-	// WT_SESSION is a special environment variable set by Windows Terminal and it contains a GUID.
-	wt := os.Getenv(envWtSession)
-	isWt := len(wt) == 36 || wt == "clc"
-	force := os.Getenv(envForceWindows) == "1"
-	return (runtime.GOOS == "windows" || force) && !isWt
-}
-
 // fixStdoutStderr fixes stdout and stderr on Windows, so escape codes are not printed.
 func fixStdoutStderr(stdout, stderr io.Writer) (io.Writer, io.Writer) {
-	isCp := windowsCommandPrompt()
 	if isStdout(stdout) {
-		if isCp && color.NoColor {
+		if color.NoColor {
 			stdout = colorable.NewNonColorable(stdout)
 		} else {
 			// colorable.NewNonColorable doesn't work well on non-Windows
@@ -197,7 +179,7 @@ func fixStdoutStderr(stdout, stderr io.Writer) (io.Writer, io.Writer) {
 		}
 	}
 	if isStderr(stderr) {
-		if isCp && color.NoColor {
+		if color.NoColor {
 			stderr = colorable.NewNonColorable(stderr)
 		} else {
 			// colorable.NewNonColorable doesn't work well on non-Windows
