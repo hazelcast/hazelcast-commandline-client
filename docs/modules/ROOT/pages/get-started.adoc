@@ -32,7 +32,7 @@ clc -c dev
 ----
 
 +
-. You can use the `clc config list` command to confirm that the configuration was imported.
+. You can use the `clc config list` command to confirm that the configuration was imported. The output will look something like this:
 +
 [source, bash]
 ----
@@ -64,7 +64,7 @@ The configuration of the production cluster is the same as the previous step, bu
 
 Make sure that your Viridian production cluster is running before you start.
 
-. Download the sample for Go client for your production cluster from the Viridian console.
+. Download the Go client sample for your production cluster from the Viridian console.
 . From the command line, execute the following command, replacing `PATH-TO-SAMPLE.zip` with the path to the downloaded sample:
 
 +
