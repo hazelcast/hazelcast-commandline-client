@@ -31,10 +31,8 @@ require (
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
-	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
-	github.com/nyaosorg/go-readline-ny v0.8.3 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.5 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
@@ -59,4 +57,6 @@ require (
 require (
 	github.com/apache/thrift v0.14.1
 	github.com/fatih/color v1.13.0
+	github.com/mattn/go-colorable v0.1.12
+	github.com/nyaosorg/go-readline-ny v0.8.3
 )

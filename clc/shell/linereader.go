@@ -23,13 +23,11 @@ type LineReader interface {
 }
 
 func (sh *Shell) createNyLineReader(prompt string) error {
-	history := simplehistory.New()
 	ed := ny.Editor{
 		Prompt: func() (int, error) {
 			return fmt.Fprint(sh.stdout, prompt)
 		},
 		Writer:         sh.stdout,
-		History:        history,
 		HistoryCycling: true,
 		Coloring:       &SQLColoring{},
 	}
@@ -43,9 +41,11 @@ type NyLineReader struct {
 }
 
 func NewNyLineReader(ed *ny.Editor) *NyLineReader {
+	hist := simplehistory.New()
+	ed.History = hist
 	return &NyLineReader{
 		ed:   ed,
-		hist: simplehistory.New(),
+		hist: hist,
 	}
 }
 
