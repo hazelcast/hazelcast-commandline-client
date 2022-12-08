@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/gohxs/readline"
 	"github.com/mattn/go-colorable"
 	ny "github.com/nyaosorg/go-readline-ny"
 
@@ -79,8 +80,12 @@ func (sh *Shell) Start(ctx context.Context) error {
 		if err == io.EOF {
 			return nil
 		}
+		if err == readline.ErrInterrupt || err != nil && err.Error() == "^C" {
+			I2(fmt.Fprintf(sh.stderr, color.RedString("Press Ctrl+D or type \\exit to exit.\n")))
+			continue
+		}
 		if err != nil {
-			I2(fmt.Fprintf(sh.stderr, "%s\n", err.Error()))
+			I2(fmt.Fprintf(sh.stderr, color.RedString("Error: %s\n", err.Error())))
 		}
 		if text == "" {
 			continue
