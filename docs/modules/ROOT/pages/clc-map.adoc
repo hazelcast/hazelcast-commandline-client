@@ -14,7 +14,7 @@ clc map [command] [options]
 * <<clc-map-clear, clc map clear>>
 * <<clc-map-get, clc map get>>
 * <<clc-map-set, clc map set>>
-* <<clc-map-entry-set, clc map entries>>
+* <<clc-map-entry-set, clc map entry-set>>
 * <<clc-map-size, clc map size>>
 * <<clc-map-remove, clc map remove>>
 
@@ -99,6 +99,8 @@ clc map set --name <name of your map>
             [--key-type {string (default), bool, json, i8, i16, i32, i64, f32, f64}]
             [--value-type {string (default), bool, json, i8, i16, i32, i64, f32, f64}]
             [--ttl {ns, us, ms, s, m, h (nanosecond, microsecond, millisecond, second, minute, hour)}]
+            [--max-idle {ns, us, ms, s, m, h (nanosecond, microsecond, millisecond, second, minute, hour)}]
+
 ----
 
 Parameters:
@@ -135,6 +137,11 @@ Parameters:
 |`--ttl`
 |Optional
 |Duration in milliseconds after which the entry will expire and be evicted. It cannot be shorter than 1 second (1000 ms).
+|N/A
+
+|`--max-idle`
+|Optional
+|Maximum time for this entry to stay idle in the map. It cannot be shorter than 1 second (1000 ms).
 |N/A
 
 |===

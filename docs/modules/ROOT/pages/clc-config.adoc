@@ -11,8 +11,47 @@ clc config [command] [options]
 
 == Commands
 
+* <<clc-config-add, clc config add>>
 * <<clc-config-import, clc config import>>
 * <<clc-config-list, clc config list>>
+
+== clc config add
+
+Adds a named configuration with the given values. Specify the configurations as `KEY=VALUE` pairs.
+
+It overwrites the previous configuration if it exists.
+
+Usage:
+
+[source,bash]
+----
+clc config add [target] [source] [key=value...]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`target`
+|Required
+|Name of the configuration or its path. If a name is used, the configuration is saved to `$CLC_HOME/configs/NAME`
+|N/A
+
+|`key=value`
+|Optional
+|Zero or more `config_item=value` pairs.
+|N/A
+
+|===
+
+Example output:
+
+[source,bash]
+----
+clc config add dev cluster.name=dev cluster.address=localhost:5701
+----
 
 == clc config import
 

@@ -25,17 +25,11 @@
 |kbd:[Ctrl + B]
 |Backward one character.
 
-|kbd:[Ctrl + D]
-|Delete character under the cursor.
-
 |kbd:[Ctrl + H]
 |Delete character before the cursor.
 
 |kbd:[Ctrl + W]
 |Cut the word before the cursor to the clipboard.
-
-|kbd:[Ctrl + K]
-|Cut the line after the cursor to the clipboard.
 
 |kbd:[Ctrl + U]
 |Cut the line before the cursor to the clipboard.
@@ -44,6 +38,6 @@
 |Clear the screen.
 
 |kbd:[Ctrl + C]
-|Cancel running command or close the app.
+|Cancel running command.
 
 |===
