@@ -207,7 +207,7 @@ The script first writes the currency data to a new map called `currencydata` on 
 . Copy the following commands into a script.
 +
 .myscript.sql
-[source,bash]
+[source,sql]
 ----
 
 CREATE OR REPLACE MAPPING currencydata (
