@@ -7,7 +7,7 @@ The following are printed:
 
 * The Hazelcast CLC version
 * Latest Git commit hash to the Hazelcast CLC
-* Hazelcast Go client Version
+* Hazelcast Go client version
 * Go Version
 
 Usage:

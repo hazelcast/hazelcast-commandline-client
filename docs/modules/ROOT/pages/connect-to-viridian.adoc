@@ -1,5 +1,5 @@
 == Connecting to {hazelcast-cloud} with Hazelcast CLC
-:description: To use the Hazelcast CLC with {hazelcast-cloud}, you can download a preconfigured client, you don't need to do any configuration.
+:description: To use the Hazelcast CLC with {hazelcast-cloud}, you can download a preconfigured client. You don’t need to do any configuration.
 
 :page-product: cloud
 

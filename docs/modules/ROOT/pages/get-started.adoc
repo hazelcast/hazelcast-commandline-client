@@ -42,24 +42,20 @@ dev
 ----
 
 +
-. CLC only connects to the cluster when necessary.
-Run a command that requires a connection to the cluster, such as `object list`:
+. The CLC only connects to the cluster when necessary. Run a command that requires a connection to the cluster, such as `object list`:
 
 +
 [source, clc]
 ----
 CLC> \object list
 Connected to cluster: pr-3814
-
-------------------------------------
- Service Name | Object Name
-------------------------------------
- executor     | hot-backup-executor
-------------------------------------
 ----
 
 +
-. Press kbd:[Ctrl+D] or type `\exit` to shut down Hazelcast CLC while you complete the configuration for your production cluster.
+As this is a new cluster, no objects are returned.
+
++
+. Press kbd:[Ctrl+D] or type `\exit` to shut down the Hazelcast CLC while you complete the configuration for your production cluster.
 
 [[step-2-prod-configure]]
 == Step 2. Add Configuration for the Production Cluster
@@ -117,7 +113,7 @@ As before, the Hazelcast CLC connects to your development cluster.
 clc -c prod
 ----
 +
-The Hazelcast CLC shell is started, using the configuration for the production cluster.
+The Hazelcast CLC shell is started, using the configuration for the production cluster. You can exit the shell by typing `\exit`.
 
 [[step-4-write-data]]
 == Step 4. Write Data to a Map

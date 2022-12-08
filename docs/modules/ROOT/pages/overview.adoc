@@ -42,7 +42,7 @@ clc map -c dev --name myMap set myKey myValue
 
 Interactive mode uses auto-completion to display matching commands, subcommands, and parameters. This mode is useful for exploring CLC commands, and for manual tasks. 
 
-To start Hazelcast CLC in interactive mode, do the following:
+To start the Hazelcast CLC in interactive mode, do the following:
 
 [source,bash,subs="attributes+"]
 ----

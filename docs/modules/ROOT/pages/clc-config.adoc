@@ -40,8 +40,8 @@ Parameters:
 |Required
 |The following configuration sources are supported:
 
-* Viridian Go Client sample zip file, e.g., `hazelcast-cloud-go-sample-client-pr-3814-default.zip`. Use this if you have downloaded the sample yourself.
-* Viridian Go Client sample cURL command line, such as: `curl https://api.viridian.hazelcast.com/client_samples/download/XXX -o hazelcast-cloud-go-sample-client-pr-3814-default.zip`. Use this for CLC to download the sample. Do not forget to wrap the line with quotes.
+* Zip file for the Viridian Go client, e.g., `hazelcast-cloud-go-sample-client-pr-3814-default.zip`. Use this if you have downloaded the sample yourself.
+* cURL command line for the Viridian Go client sample, such as: `curl https://api.viridian.hazelcast.com/client_samples/download/XXX -o hazelcast-cloud-go-sample-client-pr-3814-default.zip`. Use this command to allow the Hazelcast CLC to download the sample. Do not forget to wrap the line with quotes.
 
 |N/A
 

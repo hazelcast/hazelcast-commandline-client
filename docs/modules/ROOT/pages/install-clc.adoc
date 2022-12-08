@@ -3,7 +3,7 @@
 
 // See https://docs.hazelcast.com/hazelcast/5.2-snapshot/clients/clc#installing-the-hazelcast-clc
 
-{description} You can install Hazelcast CLC, using one of the following:
+{description} You can install the Hazelcast CLC, using one of the following:
 
 * Downloading a pre-built binary
 * Windows installer
