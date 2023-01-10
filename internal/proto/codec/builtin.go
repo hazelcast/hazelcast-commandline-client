@@ -6,6 +6,7 @@ import (
 
 	iserialization "github.com/hazelcast/hazelcast-go-client"
 	proto "github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 // Encoder for ClientMessage and value
@@ -198,4 +199,19 @@ func DecodeEntryListForDataAndData(frameIterator *proto.ForwardFrameIterator) []
 	}
 	frameIterator.Next()
 	return result
+}
+
+func EncodeUUID(buffer []byte, offset int32, uuid types.UUID) {
+	isNullEncode := uuid.Default()
+	EncodeBoolean(buffer, offset, isNullEncode)
+	if isNullEncode {
+		return
+	}
+	bufferOffset := offset + proto.BooleanSizeInBytes
+	EncodeLong(buffer, bufferOffset, int64(uuid.MostSignificantBits()))
+	EncodeLong(buffer, bufferOffset+proto.LongSizeInBytes, int64(uuid.LeastSignificantBits()))
+}
+
+func EncodeByteArray(message *proto.ClientMessage, value []byte) {
+	message.AddFrame(proto.NewFrame(value))
 }

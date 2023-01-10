@@ -24,6 +24,7 @@ const (
 	PropertySSLKeyPassword       = "ssl.key-password"
 	PropertySSLSkipVerify        = "ssl.skip-verify"
 	GroupDDSID                   = "dds"
+	GroupJetID                   = "jet"
 	ViridianCoordinatorURL       = "https://api.viridian.hazelcast.com"
 	EnvHzCloudCoordinatorBaseURL = "HZ_CLOUD_COORDINATOR_BASE_URL"
 )

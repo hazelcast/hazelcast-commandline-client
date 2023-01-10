@@ -18,6 +18,7 @@ type GlobalInitializer struct{}
 func (g GlobalInitializer) Init(cc plug.InitContext) error {
 	// base group IDs
 	cc.AddCommandGroup(clc.GroupDDSID, "Distributed Data Structures")
+	cc.AddCommandGroup(clc.GroupJetID, "Jet")
 	// output type flag
 	pns := plug.Registry.PrinterNames()
 	slices.Sort(pns)
