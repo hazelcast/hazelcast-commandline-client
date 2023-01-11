@@ -5,11 +5,14 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/types"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
@@ -54,8 +57,12 @@ func submitJar(ctx context.Context, ci *hazelcast.ClientInternal, ec plug.ExecCo
 	_, fn := filepath.Split(path)
 	fn = strings.TrimSuffix(fn, ".jar")
 	req := codec.EncodeJetUploadJobMetaDataRequest(sid, fn, hash, "", "", "", nil)
-	_, cancel, err := ec.ExecuteBlocking(ctx, "Uploading metadata", func(ctx context.Context) (any, error) {
-		resp, err := ci.InvokeOnRandomTarget(ctx, req, nil)
+	mi, cancel, err := ec.ExecuteBlocking(ctx, "Uploading metadata", func(ctx context.Context) (any, error) {
+		mem, err := randomMember(ctx, ci)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := ci.InvokeOnMember(ctx, req, mem, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -63,15 +70,16 @@ func submitJar(ctx context.Context, ci *hazelcast.ClientInternal, ec plug.ExecCo
 		if !ok {
 			return nil, errors.New("cannot upload job metadata")
 		}
-		return nil, nil
+		return mem, nil
 	})
 	if err != nil {
 		return fmt.Errorf("uploading metadata: %w", err)
 	}
 	defer cancel()
+	mem := mi.(types.UUID)
 	_, cancel, err = ec.ExecuteBlocking(ctx, "Uploading Jar", func(ctx context.Context) (any, error) {
 		req = codec.EncodeJetUploadJobMultipartRequest(sid, 1, 1, bin, int32(len(bin)))
-		resp, err := ci.InvokeOnRandomTarget(ctx, req, nil)
+		resp, err := ci.InvokeOnMember(ctx, req, mem, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -86,6 +94,23 @@ func submitJar(ctx context.Context, ci *hazelcast.ClientInternal, ec plug.ExecCo
 	}
 	defer cancel()
 	return nil
+}
+
+func randomMember(ctx context.Context, ci *hazelcast.ClientInternal) (types.UUID, error) {
+	var mi cluster.MemberInfo
+	for {
+		if ctx.Err() != nil {
+			return types.UUID{}, ctx.Err()
+		}
+		mems := ci.OrderedMembers()
+		if len(mems) != 0 {
+			mi = mems[rand.Intn(len(mems))]
+			if ci.ConnectedToMember(mi.UUID) {
+				return mi.UUID, nil
+			}
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
 }
 
 func init() {

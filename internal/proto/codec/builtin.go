@@ -7,6 +7,8 @@ import (
 	iserialization "github.com/hazelcast/hazelcast-go-client"
 	proto "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/types"
+
+	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec/control"
 )
 
 // Encoder for ClientMessage and value
@@ -214,4 +216,22 @@ func EncodeUUID(buffer []byte, offset int32, uuid types.UUID) {
 
 func EncodeByteArray(message *proto.ClientMessage, value []byte) {
 	message.AddFrame(proto.NewFrame(value))
+}
+
+func DecodeNullableForSqlSummary(it *proto.ForwardFrameIterator) (control.SqlSummary, bool) {
+	if NextFrameIsNullFrame(it) {
+		return control.SqlSummary{}, false
+	}
+	ss := DecodeSqlSummary(it)
+	return ss, true
+}
+
+func DecodeListMultiFrameForJobAndSqlSummary(frameIterator *proto.ForwardFrameIterator) []control.JobAndSqlSummary {
+	result := []control.JobAndSqlSummary{}
+	frameIterator.Next()
+	for !NextFrameIsDataStructureEndFrame(frameIterator) {
+		result = append(result, DecodeJobAndSqlSummary(frameIterator))
+	}
+	frameIterator.Next()
+	return result
 }

@@ -17,33 +17,34 @@
 package codec
 
 import (
-	iserialization "github.com/hazelcast/hazelcast-go-client"
 	proto "github.com/hazelcast/hazelcast-go-client"
+
+	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec/control"
 )
 
 const (
-	JetGetJobSummaryListCodecRequestMessageType  = int32(0xFE0B00)
-	JetGetJobSummaryListCodecResponseMessageType = int32(0xFE0B01)
+	JetGetJobAndSqlSummaryListCodecRequestMessageType  = int32(0xFE0F00)
+	JetGetJobAndSqlSummaryListCodecResponseMessageType = int32(0xFE0F01)
 
-	JetGetJobSummaryListCodecRequestInitialFrameSize = proto.PartitionIDOffset + proto.IntSizeInBytes
+	JetGetJobAndSqlSummaryListCodecRequestInitialFrameSize = proto.PartitionIDOffset + proto.IntSizeInBytes
 )
 
-func EncodeJetGetJobSummaryListRequest() *proto.ClientMessage {
+func EncodeJetGetJobAndSqlSummaryListRequest() *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrameWith(make([]byte, JetGetJobSummaryListCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
+	initialFrame := proto.NewFrameWith(make([]byte, JetGetJobAndSqlSummaryListCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
-	clientMessage.SetMessageType(JetGetJobSummaryListCodecRequestMessageType)
+	clientMessage.SetMessageType(JetGetJobAndSqlSummaryListCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
 	return clientMessage
 }
 
-func DecodeJetGetJobSummaryListResponse(clientMessage *proto.ClientMessage) iserialization.Data {
+func DecodeJetGetJobAndSqlSummaryListResponse(clientMessage *proto.ClientMessage) []control.JobAndSqlSummary {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()
 
-	return DecodeData(frameIterator)
+	return DecodeListMultiFrameForJobAndSqlSummary(frameIterator)
 }
