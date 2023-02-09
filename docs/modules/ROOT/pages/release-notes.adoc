@@ -1,4 +1,4 @@
-= Release Notes Hazelcast CLC {page-component-version}
+= Release Notes Hazelcast CLC {full-version}
 
 == New Features
 
