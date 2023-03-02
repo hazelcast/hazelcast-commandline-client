@@ -41,6 +41,16 @@ cd hazelcast-commandline-client
 make
 ----
 `clc` binary is created in the `build` directory.
+
+ZIP (AMD)::
++
+. Go to the https://github.com/hazelcast/hazelcast-commandline-client/releases/latest[latest release page], and locate the AMD compressed file (`hazelcast-clc-setup-{full-version}_darwin_amd64.zip`).
+. Download and unzip the file, and then add `clc` to the `$PATH` environment variable.
+
+ZIP (ARM)::
++
+. Go to the https://github.com/hazelcast/hazelcast-commandline-client/releases/latest[latest release page], and locate the ARM compressed file (`hazelcast-clc-setup-{full-version}_darwin_arm64.zip`).
+. Download and unzip the file, and then add `clc` to the `$PATH` environment variable.
 ====
 
 == Installing on Linux
@@ -74,15 +84,30 @@ cd hazelcast-commandline-client
 ----
 make
 ----
+
+TAR GZ::
++
+. Go to the https://github.com/hazelcast/hazelcast-commandline-client/releases/latest[latest release page], and locate the Linux compressed file (`hazelcast-clc-setup-{full-version}_linux.tar.gz`).
+. Download and unzip the file, and then add `clc` to the `$PATH` environment variable.
 ====
 
 == Installing on Windows
 
 The Hazelcast CLC is supported on Windows 10 or newer versions.
 
-. Go to the https://github.com/hazelcast/hazelcast-commandline-client/releases/latest[latest release page], and locate the Windows installer file (hazelcast-clc-setup-{full-version}.exe).
+[tabs] 
+==== 
+Installer::
++
+. Go to the https://github.com/hazelcast/hazelcast-commandline-client/releases/latest[latest release page], and locate the Windows installer file (`hazelcast-clc-setup-{full-version}.exe`).
 . Download and the run the installer on your system to start the installation wizard.
 . Follow the steps on the wizard; when you see the "Completing the Hazelcast CLC Setup Wizard" dialog, press kbd:[Finish] to complete the installation.
+
+ZIP::
++
+. Go to the https://github.com/hazelcast/hazelcast-commandline-client/releases/latest[latest release page], and locate the Windows ZIP file (`hazelcast-clc-setup-{full-version}_windows.zip`).
+. Download and unzip the file, and then add the `clc.exe` executable to the `$PATH` environment variable.
+====
 
 == Verifying the Hazelcast CLC Installation
 
