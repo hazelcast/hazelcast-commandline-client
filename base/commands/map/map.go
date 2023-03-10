@@ -45,10 +45,10 @@ func (mc *MapCommand) Exec(context.Context, plug.ExecContext) error {
 func (mc *MapCommand) Augment(ec plug.ExecContext, props *plug.Properties) error {
 	ctx := context.TODO()
 	props.SetBlocking(mapPropertyName, func() (any, error) {
-		if mc.m != nil {
+		mapName := ec.Props().GetString(mapFlagName)
+		if mc.m != nil && mc.m.Name() == mapName {
 			return mc.m, nil
 		}
-		mapName := ec.Props().GetString(mapFlagName)
 		// empty map name is allowed
 		ci, err := ec.ClientInternal(ctx)
 		if err != nil {

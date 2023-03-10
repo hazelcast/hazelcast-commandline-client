@@ -34,7 +34,6 @@ func (mc *MapSizeCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	hint := fmt.Sprintf("Getting the size of the map %s", mapName)
 	sv, stop, err := ec.ExecuteBlocking(ctx, hint, func(ctx context.Context) (any, error) {
 		return m.Size(ctx)
-
 	})
 	if err != nil {
 		return err
