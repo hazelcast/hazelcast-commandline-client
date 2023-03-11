@@ -67,9 +67,11 @@ func (cc *CommandContext) SetPositionalArgCount(min, max int) {
 	}
 	if min == 0 {
 		cc.Cmd.Args = cobra.MaximumNArgs(max)
+		return
 	}
 	if max == 0 {
 		cc.Cmd.Args = cobra.MinimumNArgs(min)
+		return
 	}
 	cc.Cmd.Args = cobra.RangeArgs(min, max)
 }
