@@ -1,0 +1,5 @@
+.idea/*
+build/*
+coverage.*
+Dockerfile
+make.cmd

@@ -1,4 +1,4 @@
-.PHONY: build test test-cover view-cover
+.PHONY: build docker test test-cover view-cover
 
 GIT_COMMIT = $(shell git rev-parse HEAD 2> /dev/null || echo unknown)
 CLC_VERSION ?= v0.0.0
@@ -12,9 +12,13 @@ GOARCH ?= amd64
 RELEASE_BASE ?= hazelcast-clc_$(CLC_VERSION)_$(GOOS)_$(GOARCH)
 RELEASE_FILE ?= release.txt
 TARGZ ?= true
+DOCKER ?= docker
 
 build:
 	CGO_ENABLED=0 go build -tags base,hazelcastinternal,hazelcastinternaltest -ldflags $(LDFLAGS)  -o build/$(BINARY_NAME) ./cmd/clc
+
+docker:
+	$(DOCKER) build --build-arg CLC_VERSION=$(CLC_VERSION) -t hazelcast/clc:${CLC_VERSION} .
 
 test:
 	go test -tags base,hazelcastinternal,hazelcastinternaltest $(TEST_FLAGS) ./...
