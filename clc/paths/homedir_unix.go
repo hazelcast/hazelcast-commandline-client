@@ -7,5 +7,5 @@ import (
 )
 
 func homeDir(userHomeDir string) string {
-	return filepath.Join(userHomeDir, ".local/share/clc")
+	return filepath.Join(userHomeDir, ".hazelcast")
 }
