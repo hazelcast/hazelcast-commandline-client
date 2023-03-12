@@ -5,6 +5,7 @@ package config
 import (
 	"context"
 	"fmt"
+	"math"
 	"path/filepath"
 	"strings"
 
@@ -24,7 +25,7 @@ func (cm AddCmd) Init(cc plug.InitContext) error {
 Overrides the previous configuration if it exists.
 `
 	cc.SetCommandHelp(long, short)
-	cc.SetPositionalArgCount(1, 0)
+	cc.SetPositionalArgCount(1, math.MaxInt)
 	return nil
 }
 

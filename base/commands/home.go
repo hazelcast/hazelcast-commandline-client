@@ -5,6 +5,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"math"
 	"path/filepath"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
@@ -17,7 +18,7 @@ type HomeCommand struct{}
 func (hc HomeCommand) Init(cc plug.InitContext) error {
 	help := "Print the CLC home directory, optionally by joining the given sub-paths"
 	cc.SetCommandHelp(help, help)
-	cc.SetPositionalArgCount(0, 0)
+	cc.SetPositionalArgCount(0, math.MaxInt)
 	cc.SetCommandUsage("home [SUBPATH ...] [flags]")
 	return nil
 }

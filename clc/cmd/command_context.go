@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"math"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -60,17 +62,22 @@ func (cc *CommandContext) AddBoolFlag(long, short string, value bool, required b
 	cc.boolValues[long] = &b
 }
 
+// SetPositionalArgCount sets the number minimum and maximum positional arguments.
+// if min and max are the same, the pos args are set as the exact num of args.
+// otherwise, if max == math.MaxInt, num of pos args are set as the minumum of min args.
+// otherwise, if min == 0, num of pos args are set as the maximum of max args.
+// otherwise num of pos args is the range of min, max args.
 func (cc *CommandContext) SetPositionalArgCount(min, max int) {
 	if min == max {
 		cc.Cmd.Args = cobra.ExactArgs(min)
 		return
 	}
-	if min == 0 {
-		cc.Cmd.Args = cobra.MaximumNArgs(max)
+	if max == math.MaxInt {
+		cc.Cmd.Args = cobra.MinimumNArgs(min)
 		return
 	}
-	if max == 0 {
-		cc.Cmd.Args = cobra.MinimumNArgs(min)
+	if min == 0 {
+		cc.Cmd.Args = cobra.MaximumNArgs(max)
 		return
 	}
 	cc.Cmd.Args = cobra.RangeArgs(min, max)
