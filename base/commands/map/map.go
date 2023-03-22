@@ -5,7 +5,6 @@ package _map
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"github.com/hazelcast/hazelcast-go-client"
 
@@ -22,8 +21,6 @@ const (
 )
 
 type MapCommand struct {
-	mu *sync.RWMutex
-	ms map[string]*hazelcast.Map
 }
 
 func (mc *MapCommand) Init(cc plug.InitContext) error {
@@ -36,8 +33,6 @@ func (mc *MapCommand) Init(cc plug.InitContext) error {
 	cc.SetTopLevel(true)
 	cc.SetCommandUsage("map COMMAND [flags]")
 	help := "Map operations"
-	mc.mu = &sync.RWMutex{}
-	mc.ms = map[string]*hazelcast.Map{}
 	cc.SetCommandHelp(help, help)
 	return nil
 }
@@ -50,12 +45,6 @@ func (mc *MapCommand) Augment(ec plug.ExecContext, props *plug.Properties) error
 	ctx := context.TODO()
 	props.SetBlocking(mapPropertyName, func() (any, error) {
 		mapName := ec.Props().GetString(mapFlagName)
-		mc.mu.RLock()
-		m, ok := mc.ms[mapName]
-		mc.mu.RUnlock()
-		if ok {
-			return m, nil
-		}
 		// empty map name is allowed
 		ci, err := ec.ClientInternal(ctx)
 		if err != nil {
@@ -73,9 +62,6 @@ func (mc *MapCommand) Augment(ec plug.ExecContext, props *plug.Properties) error
 			return nil, err
 		}
 		stop()
-		mc.mu.Lock()
-		mc.ms[mapName] = mv.(*hazelcast.Map)
-		mc.mu.Unlock()
 		return mv.(*hazelcast.Map), nil
 	})
 	return nil
