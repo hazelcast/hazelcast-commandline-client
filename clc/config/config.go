@@ -117,6 +117,7 @@ func MakeHzConfig(props plug.ReadOnlyProperties, lg *logger.Logger) (hazelcast.C
 			}
 		}
 	}
+	cfg.Labels = []string{"CLC"}
 	cfg.ClientName = makeClientName()
 	usr := props.GetString(clc.PropertyClusterUser)
 	pass := props.GetString(clc.PropertyClusterPassword)
