@@ -29,6 +29,7 @@ func TestMakeConfiguration_Default(t *testing.T) {
 	require.NoError(t, err)
 	var target hazelcast.Config
 	target.ClientName = "my-client"
+	target.Labels = []string{"CLC"}
 	target.Cluster.Unisocket = true
 	target.Stats.Enabled = true
 	target.Logger.CustomLogger = lg
@@ -55,6 +56,7 @@ func TestMakeConfiguration_Viridian(t *testing.T) {
 	require.NoError(t, err)
 	var target hazelcast.Config
 	target.ClientName = "my-client"
+	target.Labels = []string{"CLC"}
 	target.Cluster.Unisocket = true
 	target.Cluster.Name = "pr-3066"
 	target.Cluster.Cloud.Enabled = true
