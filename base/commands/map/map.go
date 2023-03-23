@@ -21,7 +21,6 @@ const (
 )
 
 type MapCommand struct {
-	m *hazelcast.Map
 }
 
 func (mc *MapCommand) Init(cc plug.InitContext) error {
@@ -45,9 +44,6 @@ func (mc *MapCommand) Exec(context.Context, plug.ExecContext) error {
 func (mc *MapCommand) Augment(ec plug.ExecContext, props *plug.Properties) error {
 	ctx := context.TODO()
 	props.SetBlocking(mapPropertyName, func() (any, error) {
-		if mc.m != nil {
-			return mc.m, nil
-		}
 		mapName := ec.Props().GetString(mapFlagName)
 		// empty map name is allowed
 		ci, err := ec.ClientInternal(ctx)
@@ -66,8 +62,7 @@ func (mc *MapCommand) Augment(ec plug.ExecContext, props *plug.Properties) error
 			return nil, err
 		}
 		stop()
-		mc.m = mv.(*hazelcast.Map)
-		return mc.m, nil
+		return mv.(*hazelcast.Map), nil
 	})
 	return nil
 }
