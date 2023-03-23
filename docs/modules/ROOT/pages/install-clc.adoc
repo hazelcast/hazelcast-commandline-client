@@ -49,7 +49,7 @@ The `clc` binary is created in the `build` directory.
 ./build/clc
 ----
 
-ZIP (AMD)::
+ZIP (AMD64)::
 +
 . Go to the https://github.com/hazelcast/hazelcast-commandline-client/releases/latest[latest release page], and locate the AMD compressed file (`hazelcast-clc-setup-{full-version}_darwin_amd64.zip`).
 . Download and unzip the file, and then add `clc` to the `$PATH` environment variable.
