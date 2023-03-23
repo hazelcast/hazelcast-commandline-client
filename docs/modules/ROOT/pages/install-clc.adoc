@@ -40,7 +40,14 @@ cd hazelcast-commandline-client
 ----
 make
 ----
-`clc` binary is created in the `build` directory.
+
+The `clc` binary is created in the `build` directory.
+. Run the following command to start the Hazelcast CLC.
++
+[source,shell]
+----
+./build/clc
+----
 
 ZIP (AMD)::
 +
@@ -85,6 +92,14 @@ cd hazelcast-commandline-client
 make
 ----
 
+The `clc` binary is created in the build directory.
+. Run the following command to start the Hazelcast CLC.
++
+[source,shell]
+----
+./build/clc
+----
+
 TAR GZ::
 +
 . Go to the https://github.com/hazelcast/hazelcast-commandline-client/releases/latest[latest release page], and locate the Linux compressed file (`hazelcast-clc-setup-{full-version}_linux.tar.gz`).
@@ -102,6 +117,12 @@ Installer::
 . Go to the https://github.com/hazelcast/hazelcast-commandline-client/releases/latest[latest release page], and locate the Windows installer file (`hazelcast-clc-setup-{full-version}.exe`).
 . Download and the run the installer on your system to start the installation wizard.
 . Follow the steps on the wizard; when you see the "Completing the Hazelcast CLC Setup Wizard" dialog, press kbd:[Finish] to complete the installation.
+. Start the Hazelcast CLC from the shortcut or by running the following command.
++
+[source,shell]
+----
+.\hazelcast-commandline-client\build\clc.exe
+----
 
 ZIP::
 +
