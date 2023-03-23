@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 
 	clc "github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
 func bye(err error) {
@@ -22,6 +24,8 @@ func main() {
 	if err != nil {
 		bye(err)
 	}
+	hazelcast.SetDefaultCompactDeserializer(serialization.NewGenericCompactDeserializer())
+	hazelcast.SetDefaultPortableDeserializer(serialization.NewGenericPortableSerializer())
 	m, err := clc.NewMain("clc", cfgPath, logPath, logLevel, os.Stdout, os.Stderr)
 	if err != nil {
 		bye(err)

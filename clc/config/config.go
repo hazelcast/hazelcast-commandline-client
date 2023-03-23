@@ -17,7 +17,6 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc/logger"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
 const (
@@ -58,10 +57,6 @@ func MakeHzConfig(props plug.ReadOnlyProperties, lg *logger.Logger) (hazelcast.C
 	sd := props.GetString(clc.PropertySchemaDir)
 	if sd == "" {
 		sd = paths.Join(paths.Home(), "schemas")
-	}
-	lg.Info("Loading schemas recursively from directory: %s", sd)
-	if err := serialization.UpdateSerializationConfigWithRecursivePaths(&cfg, lg, sd); err != nil {
-		lg.Error(fmt.Errorf("loading serialization paths: %w", err))
 	}
 	var viridianEnabled bool
 	if vt := props.GetString(clc.PropertyClusterDiscoveryToken); vt != "" {
