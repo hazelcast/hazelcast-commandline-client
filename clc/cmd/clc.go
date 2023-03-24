@@ -70,6 +70,9 @@ func NewMain(arg0, cfgPath, logPath, logLevel string, stdout, stderr io.Writer) 
 	logPath = paths.ResolveLogPath(logPath)
 	if logLevel == "" {
 		logLevel = m.vpr.GetString(clc.PropertyLogLevel)
+		if logLevel == "" {
+			logLevel = "info"
+		}
 	}
 	if err := m.createLogger(logPath, logLevel); err != nil {
 		return nil, err
