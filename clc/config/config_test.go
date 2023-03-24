@@ -33,7 +33,6 @@ func TestMakeConfiguration_Default(t *testing.T) {
 	target.Cluster.Unisocket = true
 	target.Stats.Enabled = true
 	target.Logger.CustomLogger = lg
-	target.Serialization.Compact.SetSerializers()
 	require.Equal(t, target, cfg)
 }
 
@@ -65,7 +64,6 @@ func TestMakeConfiguration_Viridian(t *testing.T) {
 	target.Cluster.Network.SSL.SetTLSConfig(&tls.Config{ServerName: "hazelcast.cloud"})
 	target.Stats.Enabled = true
 	target.Logger.CustomLogger = lg
-	target.Serialization.Compact.SetSerializers()
 	require.Equal(t, target, cfg)
 }
 
