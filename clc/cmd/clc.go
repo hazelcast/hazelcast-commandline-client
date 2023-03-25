@@ -22,6 +22,7 @@ import (
 	puberrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
 // client is currently global in order to have a single client.
@@ -384,4 +385,9 @@ func convertFlagValue(fs *pflag.FlagSet, name string, v pflag.Value) any {
 		return MustValue(fs.GetInt64(name))
 	}
 	panic(fmt.Errorf("cannot convert type: %s", v.Type()))
+}
+
+func init() {
+	hazelcast.SetDefaultCompactDeserializer(serialization.NewGenericCompactDeserializer())
+	hazelcast.SetDefaultPortableDeserializer(serialization.NewGenericPortableSerializer())
 }
