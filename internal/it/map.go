@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -70,7 +70,9 @@ func (tcx MapTestContext) Tester(f func(MapTestContext)) {
 			tcx.ConfigCallback(tcx)
 		}
 		tcx.T.Logf("map name: %s", tcx.MapName)
-		tcx.T.Logf("cluster address: %s", tcx.Config.Cluster.Network.Addresses[0])
+		if len(tcx.Config.Cluster.Network.Addresses) > 0 {
+			tcx.T.Logf("cluster address: %s", tcx.Config.Cluster.Network.Addresses[0])
+		}
 		tcx.Config.Cluster.Unisocket = !tcx.Smart
 		if tcx.Client == nil {
 			tcx.Client = getDefaultClient(tcx.Config)
@@ -123,62 +125,6 @@ func (tcx *MapTestContext) ExecuteScript(ctx context.Context, script string) {
 	if err != nil {
 		panic(err)
 	}
-}
-
-func (tcx MapTestContext) WithNameFlag(args string) string {
-	return fmt.Sprintf(`%s --name %s`, args, tcx.MapName)
-}
-
-func MapTester(t *testing.T, f func(t *testing.T, m *hz.Map)) {
-	MapTesterWithConfig(t, nil, f)
-}
-
-func MapTesterWithConfig(t *testing.T, configCallback func(*hz.Config), f func(t *testing.T, m *hz.Map)) {
-	makeMapName := func(labels ...string) string {
-		return NewUniqueObjectName("map", labels...)
-	}
-	MapTesterWithConfigAndName(t, makeMapName, configCallback, f)
-}
-
-func MapTesterWithConfigAndMapName(t *testing.T, f func(t *testing.T, c *hz.Config, m *hz.Map, n string)) {
-	makeMapName := func(labels ...string) string {
-		return NewUniqueObjectName("map", labels...)
-	}
-	var cb func(testContext MapTestContext)
-	tcx := &MapTestContext{
-		T:              t,
-		NameMaker:      makeMapName,
-		ConfigCallback: cb,
-	}
-	tcx.Tester(func(tcx MapTestContext) {
-		f(tcx.T, tcx.Config, tcx.M, tcx.MapName)
-	})
-}
-
-func MapTesterWithConfigAndName(t *testing.T, makeMapName func(...string) string, configCallback func(*hz.Config), f func(t *testing.T, m *hz.Map)) {
-	var cb func(testContext MapTestContext)
-	if configCallback != nil {
-		cb = func(tcx MapTestContext) {
-			configCallback(tcx.Config)
-		}
-	}
-	tcx := &MapTestContext{
-		T:              t,
-		NameMaker:      makeMapName,
-		ConfigCallback: cb,
-	}
-	tcx.Tester(func(tcx MapTestContext) {
-		f(tcx.T, tcx.M)
-	})
-}
-
-func MapTesterWithNameFlag(t *testing.T, f func(t *testing.T, c *hz.Config, m *hz.Map, withNameFlag func(string) string)) {
-	tcx := &MapTestContext{
-		T: t,
-	}
-	tcx.Tester(func(tcx MapTestContext) {
-		f(tcx.T, tcx.Config, tcx.M, tcx.WithNameFlag)
-	})
 }
 
 func GetClientMapWithConfig(mapName string, config *hz.Config) (*hz.Client, *hz.Map) {

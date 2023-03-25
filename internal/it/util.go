@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package it
 import (
 	"context"
 	"crypto/tls"
-	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net"
@@ -33,14 +32,9 @@ import (
 	"time"
 
 	"github.com/apache/thrift/lib/go/thrift"
-	"github.com/stretchr/testify/assert"
-
 	hz "github.com/hazelcast/hazelcast-go-client"
-
 	"github.com/hazelcast/hazelcast-go-client/logger"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
-
-	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -52,7 +46,10 @@ const (
 	EnvHzVersion          = "HZ_VERSION"
 )
 
-const DefaultClusterName = "integration-test"
+const (
+	DefaultClusterName = "integration-test"
+	RingbufferCapacity = 10
+)
 
 var rc *RemoteControllerClientWrapper
 var rcMu = &sync.RWMutex{}
@@ -63,12 +60,14 @@ var defaultTestCluster = NewSingletonTestCluster("default", func() *TestCluster 
 	}
 	return rc.startNewCluster(MemberCount(), xmlConfig(DefaultClusterName, port), port)
 })
-
-// from hazelcast-go-client/internal/proxy/reference_id_generator.go
 var idGen = ReferenceIDGenerator{}
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
+}
+
+func Tester(t *testing.T, f func(t *testing.T, client *hz.Client)) {
+	TesterWithConfigBuilder(t, nil, f)
 }
 
 func TesterWithConfigBuilder(t *testing.T, cbCallback func(config *hz.Config), f func(t *testing.T, client *hz.Client)) {
@@ -86,7 +85,7 @@ func TesterWithConfigBuilder(t *testing.T, cbCallback func(config *hz.Config), f
 		config.Logger.Level = logLevel
 		config.Cluster.Unisocket = !smart
 		ctx := context.Background()
-		client := MustClient(hz.StartNewClientWithConfig(ctx, config))
+		client := MustValue(hz.StartNewClientWithConfig(ctx, config))
 		defer func() {
 			if err := client.Shutdown(ctx); err != nil {
 				t.Logf("Test warning, client did not shut down: %s", err.Error())
@@ -106,60 +105,19 @@ func TesterWithConfigBuilder(t *testing.T, cbCallback func(config *hz.Config), f
 	}
 }
 
-const SamplePortableFactoryID = 1
-const SamplePortableClassID = 1
-
-type SamplePortable struct {
-	A string
-	B int32
-}
-
-func (s SamplePortable) FactoryID() int32 {
-	return SamplePortableFactoryID
-}
-
-func (s SamplePortable) ClassID() int32 {
-	return SamplePortableClassID
-}
-
-func (s SamplePortable) WritePortable(writer serialization.PortableWriter) {
-	writer.WriteString("A", s.A)
-	writer.WriteInt32("B", s.B)
-}
-
-func (s *SamplePortable) ReadPortable(reader serialization.PortableReader) {
-	s.A = reader.ReadString("A")
-	s.B = reader.ReadInt32("B")
-}
-
-func (s SamplePortable) Json() serialization.JSON {
-	byteArr, err := json.Marshal(s)
+// Must panics if err is not nil.
+func Must(err error) {
 	if err != nil {
 		panic(err)
 	}
-	return byteArr
 }
 
-type SamplePortableFactory struct {
-}
-
-func (f SamplePortableFactory) Create(classID int32) serialization.Portable {
-	if classID == SamplePortableClassID {
-		return &SamplePortable{}
-	}
-	return nil
-}
-
-func (f SamplePortableFactory) FactoryID() int32 {
-	return SamplePortableFactoryID
-}
-
-// MustClient returns client if err is nil, otherwise it panics.
-func MustClient(client *hz.Client, err error) *hz.Client {
+// MustValue returns value if err is nil, otherwise it panics.
+func MustValue[T any](value T, err error) T {
 	if err != nil {
 		panic(err)
 	}
-	return client
+	return value
 }
 
 func NewUniqueObjectName(service string, labels ...string) string {
@@ -210,12 +168,12 @@ func CreateDefaultRemoteController() *RemoteControllerClientWrapper {
 }
 
 func CreateRemoteController(addr string) *RemoteControllerClient {
-	transport := check.MustAnyValue[*thrift.TSocket](thrift.NewTSocketConf(addr, nil))
+	transport := MustValue(thrift.NewTSocketConf(addr, nil))
 	bufferedTransport := thrift.NewTBufferedTransport(transport, 4096)
 	protocol := thrift.NewTBinaryProtocolConf(bufferedTransport, nil)
 	client := thrift.NewTStandardClient(protocol, protocol)
 	rc := NewRemoteControllerClient(client)
-	check.Must(transport.Open())
+	Must(transport.Open())
 	return rc
 }
 
@@ -260,10 +218,10 @@ func newRemoteControllerClientWrapper(rc *RemoteControllerClient) *RemoteControl
 }
 
 func (rcw *RemoteControllerClientWrapper) startNewCluster(memberCount int, config string, port int) *TestCluster {
-	cluster := check.MustAnyValue[*Cluster](rcw.CreateClusterKeepClusterName(context.Background(), HzVersion(), config))
+	cluster := MustValue(rcw.CreateClusterKeepClusterName(context.Background(), HzVersion(), config))
 	memberUUIDs := make([]string, 0, memberCount)
 	for i := 0; i < memberCount; i++ {
-		member := check.MustAnyValue[*Member](rcw.StartMember(context.Background(), cluster.ID))
+		member := MustValue(rcw.StartMember(context.Background(), cluster.ID))
 		memberUUIDs = append(memberUUIDs, member.UUID)
 	}
 	return &TestCluster{
@@ -348,6 +306,10 @@ func (c TestCluster) DefaultConfigWithNoSSL() hz.Config {
 	return config
 }
 
+func (c TestCluster) StartMember(ctx context.Context) (*Member, error) {
+	return c.RC.StartMember(ctx, c.ClusterID)
+}
+
 func xmlConfig(clusterName string, port int) string {
 	return fmt.Sprintf(`
         <hazelcast xmlns="http://www.hazelcast.com/schema/config"
@@ -379,8 +341,11 @@ func xmlConfig(clusterName string, port int) string {
 					<data-serializable-factory factory-id="666">com.hazelcast.client.test.IdentifiedDataSerializableFactory</data-serializable-factory>
 				</data-serializable-factories>
 			</serialization>
+			<ringbuffer name="test*">
+        			<capacity>%d</capacity>
+    		</ringbuffer>
         </hazelcast>
-	`, clusterName, port)
+	`, clusterName, port, RingbufferCapacity)
 }
 
 func xmlSSLConfig(clusterName string, port int) string {
@@ -415,8 +380,11 @@ func xmlSSLConfig(clusterName string, port int) string {
 					<data-serializable-factory factory-id="666">com.hazelcast.client.test.IdentifiedDataSerializableFactory</data-serializable-factory>
 				</data-serializable-factories>
 			</serialization>
+			<ringbuffer name="test*">
+        			<capacity>%d</capacity>
+    		</ringbuffer>
 		</hazelcast>
-			`, clusterName, port)
+			`, clusterName, port, RingbufferCapacity)
 }
 
 func xmlSSLMutualAuthenticationConfig(clusterName string, port int) string {
