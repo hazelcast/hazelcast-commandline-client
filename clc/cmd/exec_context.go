@@ -27,6 +27,7 @@ type ExecContext struct {
 	lg            log.Logger
 	stdout        io.Writer
 	stderr        io.Writer
+	stdin         io.Reader
 	args          []string
 	props         *plug.Properties
 	clientFn      ClientFn
@@ -37,11 +38,12 @@ type ExecContext struct {
 	printer       plug.Printer
 }
 
-func NewExecContext(lg log.Logger, stdout, stderr io.Writer, props *plug.Properties, clientFn ClientFn, interactive bool) (*ExecContext, error) {
+func NewExecContext(lg log.Logger, sio clc.IO, props *plug.Properties, clientFn ClientFn, interactive bool) (*ExecContext, error) {
 	return &ExecContext{
 		lg:            lg,
-		stdout:        stdout,
-		stderr:        stderr,
+		stdout:        sio.Stdout,
+		stderr:        sio.Stderr,
+		stdin:         sio.Stdin,
 		props:         props,
 		clientFn:      clientFn,
 		isInteractive: interactive,
@@ -75,6 +77,10 @@ func (ec *ExecContext) Stdout() io.Writer {
 
 func (ec *ExecContext) Stderr() io.Writer {
 	return ec.stderr
+}
+
+func (ec *ExecContext) Stdin() io.Reader {
+	return ec.stdin
 }
 
 func (ec *ExecContext) Args() []string {

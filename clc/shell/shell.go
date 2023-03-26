@@ -30,7 +30,7 @@ var ErrExit = errors.New("exit")
 
 type EndLineFn func(line string, multiline bool) (string, bool)
 
-type TextFn func(ctx context.Context, text string) error
+type TextFn func(ctx context.Context, stdout io.Writer, text string) error
 
 type Shell struct {
 	lr            LineReader
@@ -41,10 +41,11 @@ type Shell struct {
 	historyPath   string
 	stderr        io.Writer
 	stdout        io.Writer
+	stdin         io.Reader
 	commentPrefix string
 }
 
-func New(prompt1, prompt2, historyPath string, stdout, stderr io.Writer, endLineFn EndLineFn, textFn TextFn) (*Shell, error) {
+func New(prompt1, prompt2, historyPath string, stdout, stderr io.Writer, stdin io.Reader, endLineFn EndLineFn, textFn TextFn) (*Shell, error) {
 	stdout, stderr = fixStdoutStderr(stdout, stderr)
 	sh := &Shell{
 		endLineFn:     endLineFn,
@@ -54,6 +55,7 @@ func New(prompt1, prompt2, historyPath string, stdout, stderr io.Writer, endLine
 		historyPath:   historyPath,
 		stderr:        stderr,
 		stdout:        stdout,
+		stdin:         stdin,
 		commentPrefix: "",
 	}
 	if os.Getenv(envReadline) == "ny" {
@@ -92,7 +94,7 @@ func (sh *Shell) Start(ctx context.Context) error {
 		}
 		sh.lr.AddToHistory(text)
 		ctx, stop := signal.NotifyContext(ctx, os.Interrupt, os.Kill)
-		if err := sh.textFn(ctx, text); err != nil {
+		if err := sh.textFn(ctx, sh.stdout, text); err != nil {
 			if errors.Is(err, ErrExit) {
 				return nil
 			}

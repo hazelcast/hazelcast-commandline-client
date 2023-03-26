@@ -72,6 +72,7 @@ type ExecContext struct {
 	lg     *Logger
 	stdout *bytes.Buffer
 	stderr *bytes.Buffer
+	stdin  *bytes.Buffer
 	args   []string
 	props  *plug.Properties
 	Rows   []output.Row
@@ -82,6 +83,7 @@ func NewExecuteContext(args []string) *ExecContext {
 		lg:     NewLogger(),
 		stdout: &bytes.Buffer{},
 		stderr: &bytes.Buffer{},
+		stdin:  &bytes.Buffer{},
 		args:   args,
 		props:  plug.NewProperties(),
 	}
@@ -124,6 +126,10 @@ func (ec *ExecContext) Stdout() io.Writer {
 
 func (ec *ExecContext) Stderr() io.Writer {
 	return ec.stderr
+}
+
+func (ec *ExecContext) Stdin() io.Reader {
+	return ec.stdin
 }
 
 func (ec *ExecContext) Args() []string {

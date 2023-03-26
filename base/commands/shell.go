@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/google/shlex"
@@ -96,7 +97,7 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 		}
 		return line, end
 	}
-	textFn := func(ctx context.Context, text string) error {
+	textFn := func(ctx context.Context, stdout io.Writer, text string) error {
 		if strings.HasPrefix(strings.TrimSpace(text), shell.CmdPrefix) {
 			parts := strings.Fields(text)
 			if _, ok := cm.shortcuts[parts[0]]; !ok {
@@ -108,13 +109,13 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 					return err
 				}
 				args[0] = fmt.Sprintf("%s%s", shell.CmdPrefix, args[0])
-				return m.Execute(args)
+				return m.Execute(args...)
 			}
 		}
 		text, err := convertStatement(text)
 		if err != nil {
 			if errors.Is(err, errHelp) {
-				I2(fmt.Fprintln(ec.Stdout(), interactiveHelp()))
+				I2(fmt.Fprintln(stdout, interactiveHelp()))
 				return nil
 			}
 			return err
@@ -124,6 +125,7 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 			return err
 		}
 		defer stop()
+		// TODO: update sql.UpdateOutput to use stdout
 		if err := sql.UpdateOutput(ctx, ec, res, verbose); err != nil {
 			return err
 		}
@@ -131,11 +133,16 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 	}
 	path := paths.Join(paths.Home(), "shell.history")
 	if shell.IsPipe() {
-		sh := shell.NewOneshot(endLineFn, textFn)
+		sio := clc.IO{
+			Stdin:  ec.Stdin(),
+			Stderr: ec.Stderr(),
+			Stdout: ec.Stdout(),
+		}
+		sh := shell.NewOneshot(endLineFn, sio, textFn)
 		sh.SetCommentPrefix("--")
 		return sh.Run(context.Background())
 	}
-	sh, err := shell.New("CLC> ", " ... ", path, ec.Stdout(), ec.Stderr(), endLineFn, textFn)
+	sh, err := shell.New("CLC> ", " ... ", path, ec.Stdout(), ec.Stderr(), ec.Stdin(), endLineFn, textFn)
 	if err != nil {
 		return err
 	}

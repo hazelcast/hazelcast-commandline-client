@@ -37,5 +37,6 @@ type ExecContext interface {
 	ShowHelpAndExit()
 	Stderr() io.Writer
 	Stdout() io.Writer
+	Stdin() io.Reader
 	ExecuteBlocking(ctx context.Context, hint string, f func(context.Context) (any, error)) (any, context.CancelFunc, error)
 }
