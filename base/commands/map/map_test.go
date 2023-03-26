@@ -13,49 +13,70 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
 )
 
-func TestMapSizeCommand_Noninteractive(t *testing.T) {
-	tcx := it.TestContext{
-		T: t,
+func TestMap(t *testing.T) {
+	testCases := []struct {
+		name string
+		f    func(t *testing.T)
+	}{
+		{name: "Get_Noninteractive", f: get_NonInteractiveTest},
+		{name: "Set_NonInteractive", f: set_NonInteractiveTest},
+		{name: "Size_Noninteractive", f: size_NoninteractiveTest},
+		{name: "Size_Interactive", f: size_InteractiveTest},
 	}
-	tcx.Tester(func(tcx it.TestContext) {
-		withMap(tcx, func(m *hz.Map) {
-			t := tcx.T
-			// no key set
-			require.NoError(t, tcx.CLC().Execute("map", "-n", m.Name(), "size"))
-			require.Equal(t, "0\n", string(tcx.ReadStdout()))
-			require.Equal(t, "", string(tcx.ReadStderr()))
-			// set the first key
-			check.Must(m.Set(context.Background(), "foo", "bar"))
-			require.NoError(t, tcx.CLC().Execute("map", "-n", m.Name(), "size"))
-			require.Equal(t, "1\n", string(tcx.ReadStdout()))
-			require.Equal(t, "", string(tcx.ReadStderr()))
-			// set the second key
-			check.Must(m.Set(context.Background(), "zoo", "quux"))
-			require.NoError(t, tcx.CLC().Execute("map", "-n", m.Name(), "size"))
-			require.Equal(t, "2\n", string(tcx.ReadStdout()))
-			require.Equal(t, "", string(tcx.ReadStderr()))
-		})
+	for _, tc := range testCases {
+		t.Run(tc.name, tc.f)
+	}
+}
+
+func get_NonInteractiveTest(t *testing.T) {
+	mapTester(t, func(tcx it.TestContext, m *hz.Map) {
+		t := tcx.T
+		// no entry
+		check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "get", "foo"))
+		tcx.AssertStdoutEquals(t, "-\n")
+		// set an entry
+		check.Must(m.Set(context.Background(), "foo", "bar"))
+		check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "get", "foo"))
+		tcx.AssertStdoutEquals(t, "bar\n")
 	})
 }
 
-func TestMapSizeCommand_Interactive(t *testing.T) {
-	tcx := it.TestContext{
-		T: t,
-	}
-	tcx.Tester(func(tcx it.TestContext) {
-		withMap(tcx, func(m *hz.Map) {
-			t := tcx.T
-			ctx := context.Background()
-			go func(t *testing.T) {
-				require.NoError(t, tcx.CLC().Execute())
-			}(t)
-			tcx.WriteStdin([]byte(fmt.Sprintf("\\map -n %s size\n", m.Name())))
-			tcx.AssertStdoutContainsWithPath(t, "testdata/map_size_0.txt")
-			check.Must(m.Set(ctx, "foo", "bar"))
-			tcx.WriteStdin([]byte(fmt.Sprintf("\\map -n %s size\n", m.Name())))
-			tcx.AssertStdoutContainsWithPath(t, "testdata/map_size_1.txt")
-			tcx.WriteStdin([]byte(fmt.Sprintf("\\map -n %s size -f json\n", m.Name())))
-		})
+func set_NonInteractiveTest(t *testing.T) {
+	mapTester(t, func(tcx it.TestContext, m *hz.Map) {
+		t := tcx.T
+		check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "set", "foo", "bar"))
+		tcx.AssertStdoutEquals(t, "")
+		v := check.MustValue(m.Get(context.Background(), "foo"))
+		require.Equal(t, "bar", v)
+	})
+}
+
+func size_NoninteractiveTest(t *testing.T) {
+	mapTester(t, func(tcx it.TestContext, m *hz.Map) {
+		t := tcx.T
+		// no entry
+		check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "size"))
+		tcx.AssertStdoutEquals(t, "0\n")
+		// set an entry
+		check.Must(m.Set(context.Background(), "foo", "bar"))
+		check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "size"))
+		tcx.AssertStdoutEquals(t, "1\n")
+	})
+}
+
+func size_InteractiveTest(t *testing.T) {
+	mapTester(t, func(tcx it.TestContext, m *hz.Map) {
+		t := tcx.T
+		ctx := context.Background()
+		go func(t *testing.T) {
+			check.Must(tcx.CLC().Execute())
+		}(t)
+		tcx.WriteStdin([]byte(fmt.Sprintf("\\map -n %s size\n", m.Name())))
+		tcx.AssertStdoutContainsWithPath(t, "testdata/map_size_0.txt")
+		check.Must(m.Set(ctx, "foo", "bar"))
+		tcx.WriteStdin([]byte(fmt.Sprintf("\\map -n %s size\n", m.Name())))
+		tcx.AssertStdoutContainsWithPath(t, "testdata/map_size_1.txt")
+		tcx.WriteStdin([]byte(fmt.Sprintf("\\map -n %s size -f json\n", m.Name())))
 	})
 }
 
@@ -64,4 +85,13 @@ func withMap(tcx it.TestContext, fn func(m *hz.Map)) {
 	ctx := context.Background()
 	m := check.MustValue(tcx.Client.GetMap(ctx, name))
 	fn(m)
+}
+
+func mapTester(t *testing.T, fn func(tcx it.TestContext, m *hz.Map)) {
+	tcx := it.TestContext{T: t}
+	tcx.Tester(func(tcx it.TestContext) {
+		withMap(tcx, func(m *hz.Map) {
+			fn(tcx, m)
+		})
+	})
 }

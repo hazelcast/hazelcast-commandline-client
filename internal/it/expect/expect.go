@@ -52,7 +52,7 @@ func (e *Expect) String() string {
 	return string(e.bufReader.Bytes())
 }
 
-func (e *Expect) MatchText(text string, timeout time.Duration) bool {
+func (e *Expect) EqualsText(text string, timeout time.Duration) bool {
 	return e.match(timeout, func() bool {
 		return e.String() == text
 	})

@@ -164,9 +164,23 @@ func (tcx TestContext) IO() clc.IO {
 	}
 }
 
+func (tcx TestContext) AssertStdoutEquals(t *testing.T, text string) {
+	if !tcx.ExpectStdout.EqualsText(text, 1*time.Second) {
+		t.Log("STDOUT:", tcx.ExpectStdout.String())
+		t.Fatalf("expect failed, no match for: %s", text)
+	}
+}
+
+func (tcx TestContext) AssertStderrEquals(t *testing.T, text string) {
+	if !tcx.ExpectStderr.EqualsText(text, 1*time.Second) {
+		t.Log("STDERR:", tcx.ExpectStderr.String())
+		t.Fatalf("expect failed, no match for: %s", text)
+	}
+}
+
 func (tcx TestContext) AssertStdoutContains(t *testing.T, text string) {
 	if !tcx.ExpectStdout.ContainsText(text, 1*time.Second) {
-		t.Log("STDOUT", tcx.ExpectStdout.String())
+		t.Log("STDOUT:", tcx.ExpectStdout.String())
 		t.Fatalf("expect failed, no match for: %s", text)
 	}
 }
