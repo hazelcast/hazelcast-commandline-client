@@ -26,4 +26,5 @@ const (
 	GroupDDSID                   = "dds"
 	ViridianCoordinatorURL       = "https://api.viridian.hazelcast.com"
 	EnvHzCloudCoordinatorBaseURL = "HZ_CLOUD_COORDINATOR_BASE_URL"
+	EnvMaxCols                   = "CLC_MAX_COLS"
 )

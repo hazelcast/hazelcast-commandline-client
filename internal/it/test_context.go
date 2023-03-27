@@ -94,7 +94,7 @@ func (tcx TestContext) WriteStdin(b []byte) {
 	}
 }
 
-func (tcx TestContext) Tester(f func(TestContext)) {
+func (tcx TestContext) Tester(f func(tcx TestContext)) {
 	ensureRemoteController(true)
 	runner := func(tcx TestContext) {
 		if tcx.Cluster == nil {
@@ -137,13 +137,15 @@ func (tcx TestContext) Tester(f func(TestContext)) {
 		tcx.ExpectStderr = expect.New(tcx.stderr)
 		defer tcx.ExpectStderr.Stop()
 		withEnv(paths.EnvCLCHome, tcx.homePath, func() {
-			p := paths.ResolveConfigPath(tcx.ConfigPath)
-			d, _ := filepath.Split(p)
-			check.Must(os.MkdirAll(d, 0700))
-			home.WithFile(p, bytesConfig, func(_ string) {
-				tcx.main = check.MustValue(cmd.NewMain("clc", tcx.ConfigPath, tcx.LogPath, tcx.LogLevel, tcx.IO()))
-				defer tcx.main.Exit()
-				f(tcx)
+			withEnv(clc.EnvMaxCols, "50", func() {
+				p := paths.ResolveConfigPath(tcx.ConfigPath)
+				d, _ := filepath.Split(p)
+				check.Must(os.MkdirAll(d, 0700))
+				home.WithFile(p, bytesConfig, func(_ string) {
+					tcx.main = check.MustValue(cmd.NewMain("clc", tcx.ConfigPath, tcx.LogPath, tcx.LogLevel, tcx.IO()))
+					defer tcx.main.Exit()
+					f(tcx)
+				})
 			})
 		})
 	}
