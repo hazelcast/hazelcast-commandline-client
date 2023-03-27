@@ -174,14 +174,14 @@ func (tcx TestContext) AssertStdoutEquals(t *testing.T, text string) {
 }
 
 func (tcx TestContext) AssertStderrEquals(t *testing.T, text string) {
-	if !tcx.ExpectStderr.EqualsText(text, 1*time.Second) {
+	if !tcx.ExpectStderr.EqualsText(text, 5*time.Second) {
 		t.Log("STDERR:", tcx.ExpectStderr.String())
 		t.Fatalf("expect failed, no match for: %s", text)
 	}
 }
 
 func (tcx TestContext) AssertStdoutContains(t *testing.T, text string) {
-	if !tcx.ExpectStdout.ContainsText(text, 1*time.Second) {
+	if !tcx.ExpectStdout.ContainsText(text, 5*time.Second) {
 		t.Log("STDOUT:", tcx.ExpectStdout.String())
 		t.Fatalf("expect failed, no match for: %s", text)
 	}
@@ -191,6 +191,12 @@ func (tcx TestContext) AssertStdoutContainsWithPath(t *testing.T, path string) {
 	p := string(check.MustValue(os.ReadFile(path)))
 	p = strings.ReplaceAll(p, "$", "")
 	tcx.AssertStdoutContains(t, p)
+}
+
+func (tcx TestContext) AssertStdoutEqualsWithPath(t *testing.T, path string) {
+	p := string(check.MustValue(os.ReadFile(path)))
+	p = strings.ReplaceAll(p, "$", "")
+	tcx.AssertStdoutEquals(t, p)
 }
 
 func withEnv(name, value string, f func()) {

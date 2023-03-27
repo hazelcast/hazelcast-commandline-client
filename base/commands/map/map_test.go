@@ -18,6 +18,7 @@ func TestMap(t *testing.T) {
 		name string
 		f    func(t *testing.T)
 	}{
+		{name: "EntrySet_NonInteractive", f: entrySet_NonInteractiveTest},
 		{name: "Get_Noninteractive", f: get_NonInteractiveTest},
 		{name: "Set_NonInteractive", f: set_NonInteractiveTest},
 		{name: "Size_Noninteractive", f: size_NoninteractiveTest},
@@ -26,6 +27,21 @@ func TestMap(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, tc.f)
 	}
+}
+
+func entrySet_NonInteractiveTest(t *testing.T) {
+	mapTester(t, func(tcx it.TestContext, m *hz.Map) {
+		t := tcx.T
+		// no entry
+		check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "entry-set"))
+		tcx.AssertStdoutEquals(t, "")
+		// set an entry
+		check.Must(m.Set(context.Background(), "foo", "bar"))
+		check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "entry-set"))
+		tcx.AssertStdoutEquals(t, "foo\tbar\n")
+		check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "entry-set", "--show-type"))
+		tcx.AssertStdoutEquals(t, "foo\tSTRING\tbar\tSTRING\n")
+	})
 }
 
 func get_NonInteractiveTest(t *testing.T) {
