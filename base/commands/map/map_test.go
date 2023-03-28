@@ -92,7 +92,6 @@ func size_InteractiveTest(t *testing.T) {
 		check.Must(m.Set(ctx, "foo", "bar"))
 		tcx.WriteStdin([]byte(fmt.Sprintf("\\map -n %s size\n", m.Name())))
 		tcx.AssertStdoutContainsWithPath(t, "testdata/map_size_1.txt")
-		tcx.WriteStdin([]byte(fmt.Sprintf("\\map -n %s size -f json\n", m.Name())))
 	})
 }
 
