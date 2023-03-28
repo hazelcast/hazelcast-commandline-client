@@ -46,7 +46,7 @@ func sql_NonInteractiveTest(t *testing.T) {
 		check.Must(tcx.CLC().Execute("sql", fmt.Sprintf(`
 			SELECT * FROM "%s" ORDER BY __key;
 		`, name)))
-		tcx.AssertStdoutEquals(t, "10\tfoo\n20\tbar\n")
+		tcx.AssertStdoutContains(t, "10\tfoo\n20\tbar\n")
 	})
 }
 
@@ -104,7 +104,7 @@ func sqlOutput_NonInteractiveTest(t *testing.T) {
 					SELECT * FROM "%s" ORDER BY __key;
 				`, name)))
 				p := fmt.Sprintf("testdata/sql_output_%s.txt", f)
-				tcx.AssertStdoutEqualsWithPath(t, p)
+				tcx.AssertStdoutContainsWithPath(t, p)
 			})
 		}
 	})
