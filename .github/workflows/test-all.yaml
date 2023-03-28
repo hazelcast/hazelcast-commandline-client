@@ -40,7 +40,7 @@ jobs:
       - name: "Start Hazelcast Remote Controller (Windows)"
         if: "contains(matrix.os, 'windows')"
         run: |
-          .\\rcd-${{ matrix.os }}.exe -version $env:HZ_VERSION -dir $env:HOMEPATH &
+          .\\rcd-${{ matrix.os }}.exe -version $env:HZ_VERSION &
           sleep 10
 
       - name: "Setup Go"
