@@ -2,5 +2,5 @@
 * text eol=lf
 
 # Except these Inno Setup files
-* .iss eol=crlf
+* .iss text eol=crlf
 
