@@ -3,10 +3,13 @@ name: "Test Hazelcast CLC"
 on: ["push", "pull_request"]
 jobs:
   test:
-    runs-on: "ubuntu-latest"
+    strategy:
+      matrix:
+        os: ["ubuntu-latest", "macos-latest"]
+    runs-on: ${{ matrix.os }}
     env:
       GOPATH: "${{ github.workspace }}"
-      HZ_VERSION: "5.2.1"
+      HZ_VERSION: "5.2.2"
     defaults:
       run:
         shell: "bash"
@@ -17,14 +20,13 @@ jobs:
         with:
           path: "$HOME/hazelcast-commandline-client"
 
-      - name: "Install Dependencies"
+      - name: "Download RCD"
         run: |
-          sudo apt-get update &&\
-          sudo apt-get install -y openjdk-8-jdk-headless maven
+          wget https://rcd-download.s3.us-east-2.amazonaws.com/rcd-${{ matrix.os }}
 
       - name: "Start Hazelcast Remote Controller"
         run: |
-          bash ./rc.sh start
+          ./rcd --version $HZ_VERSION &
           sleep 2
 
       - name: "Setup Go"
