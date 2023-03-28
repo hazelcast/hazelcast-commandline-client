@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/spf13/cobra"
-
 	clc "github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
+	"github.com/spf13/cobra"
 )
 
 func bye(err error) {

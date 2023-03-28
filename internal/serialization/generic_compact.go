@@ -4,73 +4,36 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
+	"sync"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 type compactFieldReader func(r serialization.CompactReader, field string) any
 
-type compactFieldWriter func(w serialization.CompactWriter, field string, value any)
-
-type GenericCompact struct {
-	ValueType     reflect.Type
-	ValueTypeName string
-	Fields        []CompactField
-	readers       []compactFieldReader
-	writers       []compactFieldWriter
+type SchemaInfo struct {
+	Type     reflect.Type
+	TypeName string
 }
 
-func NewGenericCompact(value GenericCompact) (*GenericCompact, error) {
-	rs := make([]compactFieldReader, len(value.Fields))
-	ws := make([]compactFieldWriter, len(value.Fields))
-	for i, f := range value.Fields {
-		if f.Type < CompactFieldType(serialization.FieldKindNotAvailable) || f.Type > CompactFieldType(serialization.FieldKindArrayOfNullableFloat64) {
-			return nil, fmt.Errorf("invalid portable type: %d", f.Type)
-		}
-		r, ok := compactReaders[serialization.FieldKind(f.Type)]
-		if !ok {
-			return nil, fmt.Errorf("reader not found for compact type: %d", f.Type)
-		}
-		rs[i] = r
-		// writing is disabled for now --YT
+type GenericCompactDeserializer struct {
+	SchemaInfos *sync.Map
+}
+
+func NewGenericCompactDeserializer() *GenericCompactDeserializer {
+	return &GenericCompactDeserializer{
+		SchemaInfos: &sync.Map{},
 	}
-	return &GenericCompact{
-		Fields:        value.Fields,
-		ValueType:     value.makeType(),
-		ValueTypeName: value.ValueTypeName,
-		readers:       rs,
-		writers:       ws,
-	}, nil
-
 }
 
-func (cm GenericCompact) makeType() reflect.Type {
-	fs := make([]reflect.StructField, len(cm.Fields))
-	for i, f := range cm.Fields {
-		fs[i] = reflect.StructField{
-			Name: fmt.Sprintf("Field%03d", i),
-			Type: fieldKindToType[serialization.FieldKind(f.Type)],
-			Tag:  reflect.StructTag(fmt.Sprintf("json:\"%s\"", f.Name)),
-		}
-	}
-	return reflect.StructOf(fs)
-}
-
-func (cm GenericCompact) Type() reflect.Type {
-	return cm.ValueType
-}
-
-func (cm GenericCompact) TypeName() string {
-	return cm.ValueTypeName
-}
-
-func (cm GenericCompact) Read(reader serialization.CompactReader) interface{} {
-	rs := cm.readers
-	v := reflect.New(cm.ValueType)
-	for i, f := range cm.Fields {
-		value := reflect.ValueOf(rs[i](reader, f.Name))
+func (cm *GenericCompactDeserializer) Read(schema *hazelcast.Schema, reader serialization.CompactReader) interface{} {
+	v := reflect.New(cm.makeType(schema))
+	for i, fd := range schema.FieldDefinitions() {
+		r := compactReaders[fd.Kind]
+		value := reflect.ValueOf(r(reader, fd.Name))
 		if value.Interface() == nil {
 			continue
 		}
@@ -79,9 +42,29 @@ func (cm GenericCompact) Read(reader serialization.CompactReader) interface{} {
 	return v.Interface()
 }
 
-func (cm GenericCompact) Write(writer serialization.CompactWriter, value interface{}) {
-	// TODO: implement me when compact write is supported
-	panic("implement me")
+func (cm *GenericCompactDeserializer) makeType(schema *hazelcast.Schema) reflect.Type {
+	var t reflect.Type
+	vi, ok := cm.SchemaInfos.Load(schema.ID())
+	if ok {
+		v := vi.(SchemaInfo)
+		t = v.Type
+	} else {
+		fds := schema.FieldDefinitions()
+		fs := make([]reflect.StructField, len(fds))
+		for i, f := range fds {
+			fs[i] = reflect.StructField{
+				Name: fmt.Sprintf("Field%03d", i),
+				Type: fieldKindToType[f.Kind],
+				Tag:  reflect.StructTag(fmt.Sprintf("json:\"%s\"", f.Name)),
+			}
+		}
+		t = reflect.StructOf(fs)
+		cm.SchemaInfos.Store(schema.ID(), SchemaInfo{
+			Type:     t,
+			TypeName: schema.TypeName,
+		})
+	}
+	return t
 }
 
 var fieldKindToType map[serialization.FieldKind]reflect.Type

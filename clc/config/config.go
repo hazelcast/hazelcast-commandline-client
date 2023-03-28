@@ -17,11 +17,12 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc/logger"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/str"
 )
 
 const (
-	envClientName = "CLC_CLIENT_NAME"
+	envClientName   = "CLC_CLIENT_NAME"
+	envClientLabels = "CLC_CLIENT_LABELS"
 )
 
 func Create(path string, opts clc.KeyValues[string, string]) (dir, cfgPath string, err error) {
@@ -58,10 +59,6 @@ func MakeHzConfig(props plug.ReadOnlyProperties, lg *logger.Logger) (hazelcast.C
 	sd := props.GetString(clc.PropertySchemaDir)
 	if sd == "" {
 		sd = paths.Join(paths.Home(), "schemas")
-	}
-	lg.Info("Loading schemas recursively from directory: %s", sd)
-	if err := serialization.UpdateSerializationConfigWithRecursivePaths(&cfg, lg, sd); err != nil {
-		lg.Error(fmt.Errorf("loading serialization paths: %w", err))
 	}
 	var viridianEnabled bool
 	if vt := props.GetString(clc.PropertyClusterDiscoveryToken); vt != "" {
@@ -117,7 +114,7 @@ func MakeHzConfig(props plug.ReadOnlyProperties, lg *logger.Logger) (hazelcast.C
 			}
 		}
 	}
-	cfg.Labels = []string{"CLC"}
+	cfg.Labels = makeClientLabels()
 	cfg.ClientName = makeClientName()
 	usr := props.GetString(clc.PropertyClusterUser)
 	pass := props.GetString(clc.PropertyClusterPassword)
@@ -135,22 +132,36 @@ func makeClientName() string {
 	if cn != "" {
 		return cn
 	}
-	var userName string
+	t := time.Now().Unix()
+	return fmt.Sprintf("%s-%d", userHostName(), t)
+}
+
+func makeClientLabels() []string {
+	lss, ok := os.LookupEnv(envClientLabels)
+	if ok {
+		return str.SplitByComma(lss, true)
+	}
+	return []string{"CLC", fmt.Sprintf("User:%s", userHostName())}
+}
+
+func userName() string {
 	u, err := user.Current()
 	if err != nil {
-		userName = "UNKNOWN"
-	} else {
-		userName = u.Username
+		return "UNKNOWN"
 	}
-	var hostName string
+	return u.Username
+}
+
+func hostName() string {
 	host, err := os.Hostname()
 	if err != nil {
-		host = "UNKNOWN"
-	} else {
-		hostName = host
+		return "UNKNOWN"
 	}
-	t := time.Now().Unix()
-	return fmt.Sprintf("%s@%s-%d", userName, hostName, t)
+	return host
+}
+
+func userHostName() string {
+	return fmt.Sprintf("%s@%s", userName(), hostName())
 }
 
 // DirAndFile returns the configuration directory and file separately
