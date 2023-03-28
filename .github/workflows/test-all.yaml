@@ -26,7 +26,7 @@ jobs:
 
       - name: "Start Hazelcast Remote Controller"
         run: |
-          ./rcd --version $HZ_VERSION &
+          ./rcd-${{ matrix.os }} --version $HZ_VERSION &
           sleep 2
 
       - name: "Setup Go"
