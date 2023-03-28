@@ -26,6 +26,7 @@ jobs:
 
       - name: "Start Hazelcast Remote Controller"
         run: |
+          chmod +x rcd-${{ matrix.os }} 
           ./rcd-${{ matrix.os }} --version $HZ_VERSION &
           sleep 2
 
