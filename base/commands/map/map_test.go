@@ -11,6 +11,7 @@ import (
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/it/skip"
 )
 
 func TestMap(t *testing.T) {
@@ -81,6 +82,7 @@ func size_NoninteractiveTest(t *testing.T) {
 }
 
 func size_InteractiveTest(t *testing.T) {
+	skip.If(t, "os = windows")
 	mapTester(t, func(tcx it.TestContext, m *hz.Map) {
 		t := tcx.T
 		ctx := context.Background()
