@@ -20,12 +20,15 @@ jobs:
         with:
           path: "$HOME/hazelcast-commandline-client"
 
-      - name: "Download and start RCD"
+      - name: "Download RCD"
         run: |
           wget https://rcd-download.s3.us-east-2.amazonaws.com/rcd-${{ matrix.os }}
+
+      - name: "Start Hazelcast Remote Controller"
+        run: |
           chmod +x rcd-${{ matrix.os }} 
           ./rcd-${{ matrix.os }} -version $HZ_VERSION -dir $HOME &
-          sleep 2
+          sleep 10
 
       - name: "Setup Go"
         uses: "actions/setup-go@v3"
