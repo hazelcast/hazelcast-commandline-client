@@ -18,10 +18,36 @@ package errors
 
 import (
 	"errors"
+	"fmt"
 )
 
 var (
 	ErrUserCancelled = errors.New("cancelled")
 	ErrNotDecoded    = errors.New("not decoded")
 	ErrNotAvailable  = errors.New("not available")
+	ErrExitWithCode  = fmt.Errorf("exit with status")
 )
+
+type ExitWithStatusError struct {
+	Code int
+	Err  error
+}
+
+func (ve *ExitWithStatusError) Error() string {
+	return fmt.Sprintf("value error: %s", ve.Err)
+}
+
+func (ve *ExitWithStatusError) Unwrap() error {
+	return ve.Err
+}
+
+func (ve *ExitWithStatusError) GetCode() int {
+	return ve.Code
+}
+
+func NewExitError(code int) *ExitWithStatusError {
+	return &ExitWithStatusError{
+		Code: code,
+		Err:  ErrExitWithCode,
+	}
+}

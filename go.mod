@@ -59,4 +59,5 @@ require (
 	github.com/fatih/color v1.13.0
 	github.com/mattn/go-colorable v0.1.12
 	github.com/nyaosorg/go-readline-ny v0.8.3
+	github.com/pkg/errors v0.9.1
 )

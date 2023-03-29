@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
 	clc "github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
+	puberrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 )
 
 func bye(err error) {
@@ -27,12 +29,17 @@ func main() {
 		bye(err)
 	}
 	err = m.Execute(args)
-	if err != nil {
+	code := -1
+	if errors.Unwrap(err) == puberrors.ErrExitWithCode {
+		code = err.(*puberrors.ExitWithStatusError).GetCode()
+	} else if err != nil {
 		fmt.Println("Error:", err)
 	}
 	// ignoring the error here
 	_ = m.Exit()
-	if err != nil {
+	if code != -1 {
+		os.Exit(code)
+	} else if err != nil {
 		os.Exit(1)
 	}
 	os.Exit(0)
