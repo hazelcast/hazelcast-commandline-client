@@ -97,10 +97,8 @@ func TestDollarMatcher_Match(t *testing.T) {
 func TestDollarMatcher_normalize(t *testing.T) {
 	p1 := string(check.MustValue(os.ReadFile("testdata/map_size_0.txt")))
 	p2 := DollarMatcher{}.normalize(p1)
-	fmt.Println(p2)
 	p1 = strings.ReplaceAll(p1, "$", "")
-	fmt.Println(p1)
-	fmt.Println(regexp.Match(p2, []byte(p1)))
+	assert.True(t, check.MustValue(regexp.Match(p2, []byte(p1))))
 }
 
 func loadPattern(name string) string {
