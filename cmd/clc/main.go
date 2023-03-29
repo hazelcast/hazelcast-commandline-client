@@ -29,7 +29,7 @@ func main() {
 	}
 	err = m.Execute(args...)
 	if err != nil {
-		fmt.Println("Error:", err)
+		//fmt.Println("Error:", err)
 	}
 	// ignoring the error here
 	_ = m.Exit()

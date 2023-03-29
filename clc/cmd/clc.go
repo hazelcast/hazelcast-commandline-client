@@ -313,12 +313,17 @@ func (m *Main) createCommands() error {
 				if err := m.runAugmentors(ec, props); err != nil {
 					return err
 				}
-				if err := c.Item.Exec(cmd.Context(), ec); err != nil {
+				err = ec.Wrap(func() error {
+					return c.Item.Exec(cmd.Context(), ec)
+				})
+				if err != nil {
 					return err
 				}
 				if ic, ok := c.Item.(plug.InteractiveCommander); ok {
 					ec.SetInteractive(true)
-					err := ic.ExecInteractive(cmd.Context(), ec)
+					err := ec.Wrap(func() error {
+						return ic.ExecInteractive(cmd.Context(), ec)
+					})
 					if errors.Is(err, puberrors.ErrNotAvailable) {
 						return nil
 					}

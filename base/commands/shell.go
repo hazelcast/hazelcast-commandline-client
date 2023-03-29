@@ -120,16 +120,18 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 			}
 			return err
 		}
-		res, stop, err := sql.ExecSQL(ctx, ec, text)
-		if err != nil {
-			return err
-		}
-		defer stop()
-		// TODO: update sql.UpdateOutput to use stdout
-		if err := sql.UpdateOutput(ctx, ec, res, verbose); err != nil {
-			return err
-		}
-		return nil
+		return ec.Wrap(func() error {
+			res, stop, err := sql.ExecSQL(ctx, ec, text)
+			if err != nil {
+				return err
+			}
+			defer stop()
+			// TODO: update sql.UpdateOutput to use stdout
+			if err := sql.UpdateOutput(ctx, ec, res, verbose); err != nil {
+				return err
+			}
+			return nil
+		})
 	}
 	path := paths.Join(paths.Home(), "shell.history")
 	if shell.IsPipe() {

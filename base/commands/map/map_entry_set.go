@@ -8,6 +8,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
@@ -33,8 +34,8 @@ func (mc *MapEntrySetCommand) Exec(ctx context.Context, ec plug.ExecContext) err
 		return err
 	}
 	req := codec.EncodeMapEntrySetRequest(mapName)
-	hint := fmt.Sprintf("Getting entries of %s", mapName)
-	rv, stop, err := ec.ExecuteBlocking(ctx, hint, func(ctx context.Context) (any, error) {
+	rv, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		sp.SetText(fmt.Sprintf("Getting entries of %s", mapName))
 		return ci.InvokeOnRandomTarget(ctx, req, nil)
 	})
 	if err != nil {

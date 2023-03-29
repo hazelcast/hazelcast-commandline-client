@@ -7,6 +7,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -88,7 +89,7 @@ func NewExecuteContext(args []string) *ExecContext {
 		props:  plug.NewProperties(),
 	}
 }
-func (ec *ExecContext) ExecuteBlocking(ctx context.Context, hint string, f func(context.Context) (any, error)) (any, context.CancelFunc, error) {
+func (ec *ExecContext) ExecuteBlocking(context.Context, func(context.Context, clc.Spinner) (any, error)) (any, context.CancelFunc, error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -171,4 +172,8 @@ func (ec *ExecContext) Set(name string, value any) {
 }
 func (ec *ExecContext) Get(name string) (any, bool) {
 	return ec.props.Get(name)
+}
+
+func (ec *ExecContext) Wrap(f func() error) error {
+	return f()
 }
