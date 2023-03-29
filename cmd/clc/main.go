@@ -16,6 +16,7 @@ func bye(err error) {
 
 func main() {
 	// do not exit prematurely on Windows
+	fmt.Println("Starting to execution from here!")
 	cobra.MousetrapHelpText = ""
 	args := os.Args[1:]
 	cfgPath, logPath, logLevel, err := clc.ExtractStartupArgs(args)

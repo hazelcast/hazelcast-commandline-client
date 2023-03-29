@@ -39,16 +39,22 @@ func (wc WizardCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	l.SetShowTitle(false)
 	l.SetShowHelp(false)
 	m := model{list: l}
-
-	model, err := tea.NewProgram(m).Run()
-	if err != nil {
-		fmt.Println("Error running program:", err)
-		os.Exit(1)
-	} else {
-		if model.View() != "" {
-			I2(fmt.Fprintln(ec.Stdout(), model.View()))
+	if len(items) == 0 {
+		if _, err := tea.NewProgram(initialModel()).Run(); err != nil {
+			fmt.Printf("could not start program: %s\n", err)
+			os.Exit(1)
 		}
+	} else {
+		model, err := tea.NewProgram(m).Run()
+		if err != nil {
+			fmt.Println("Error running program:", err)
+			os.Exit(1)
+		} else {
+			if model.View() != "" {
+				I2(fmt.Fprintln(ec.Stdout(), model.View()))
+			}
 
+		}
 	}
 	return nil
 }
