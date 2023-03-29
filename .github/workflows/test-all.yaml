@@ -23,7 +23,7 @@ jobs:
       - name: "Setup JRE"
         uses: actions/setup-java@v2
         with:
-          distribution: azul
+          distribution: zulu
           java-version: 8
 
       - name: "Download RCD (Linux/MacOS)"
