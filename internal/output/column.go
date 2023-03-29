@@ -96,8 +96,6 @@ func (co Column) SingleLine() (s string) {
 		s = co.Value.(time.Time).Format(time.RFC3339)
 	case iserialization.TypeJavaBigInteger:
 		s = co.Value.(*big.Int).String()
-	case iserialization.TypeJavaDecimal:
-		s = iserialization.MarshalDecimal(co.Value)
 	case iserialization.TypeJavaArray, iserialization.TypeJavaArrayList, iserialization.TypeJavaLinkedList:
 		s = fmt.Sprintf("%v", co.Value)
 	case iserialization.TypeJavaDefaultTypeCopyOnWriteArrayList, iserialization.TypeJavaDefaultTypeHashMap,
@@ -111,6 +109,13 @@ func (co Column) SingleLine() (s string) {
 		iserialization.TypeJavaDefaultTypeSynchronousQueue, iserialization.TypeJavaDefaultTypeLinkedTransferQueue,
 		iserialization.TypeJavaDefaultTypePriorityQueue, iserialization.TypeJavaDefaultTypeOptional:
 		s = ValueNotDecoded
+	case iserialization.TypeJavaDecimal:
+		sr, err := iserialization.MarshalDecimal(co.Value)
+		if err != nil {
+			s = ValueNotDecoded
+		} else {
+			s = sr
+		}
 	case iserialization.TypeJavaLocalDate:
 		sr, err := iserialization.MarshalLocalDate(co.Value)
 		if err != nil {

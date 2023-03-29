@@ -21,12 +21,13 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-const banner = `Hazelcast CLC %s (c) 2022 Hazelcast Inc.
+const banner = `Hazelcast CLC %s (c) 2023 Hazelcast Inc.
 		
 * Participate in our survey at: https://forms.gle/rPFywdQjvib1QCe49
 * Type 'help' for help information. Prefix non-SQL commands with \
 		
-%s	
+%s%s
+
 `
 
 var errHelp = errors.New("interactive help")
@@ -61,13 +62,18 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 	if err != nil {
 		return fmt.Errorf("cloning Main: %w", err)
 	}
-	var cfgText string
+	var cfgText, logText string
 	if !shell.IsPipe() {
 		cfgPath := ec.Props().GetString(clc.PropertyConfig)
 		if cfgPath != "" {
-			cfgText = fmt.Sprintf("Configuration: %s\n", cfgPath)
+			cfgText = fmt.Sprintf("Configuration : %s\n", cfgPath)
 		}
-		I2(fmt.Fprintf(ec.Stdout(), banner, internal.Version, cfgText))
+		logPath := ec.Props().GetString(clc.PropertyLogPath)
+		if logPath != "" {
+			logLevel := strings.ToUpper(ec.Props().GetString(clc.PropertyLogLevel))
+			logText = fmt.Sprintf("Log %9s : %s", logLevel, logPath)
+		}
+		I2(fmt.Fprintf(ec.Stdout(), banner, internal.Version, cfgText, logText))
 	}
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	clcMultilineContinue := false

@@ -22,6 +22,7 @@ import (
 	puberrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
 // client is currently global in order to have a single client.
@@ -70,6 +71,9 @@ func NewMain(arg0, cfgPath, logPath, logLevel string, stdout, stderr io.Writer) 
 	logPath = paths.ResolveLogPath(logPath)
 	if logLevel == "" {
 		logLevel = m.vpr.GetString(clc.PropertyLogLevel)
+		if logLevel == "" {
+			logLevel = "info"
+		}
 	}
 	if err := m.createLogger(logPath, logLevel); err != nil {
 		return nil, err
@@ -381,4 +385,9 @@ func convertFlagValue(fs *pflag.FlagSet, name string, v pflag.Value) any {
 		return MustValue(fs.GetInt64(name))
 	}
 	panic(fmt.Errorf("cannot convert type: %s", v.Type()))
+}
+
+func init() {
+	hazelcast.SetDefaultCompactDeserializer(serialization.NewGenericCompactDeserializer())
+	hazelcast.SetDefaultPortableDeserializer(serialization.NewGenericPortableSerializer())
 }
