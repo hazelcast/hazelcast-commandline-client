@@ -100,7 +100,7 @@ func sqlOutput_NonInteractiveTest(t *testing.T) {
 		for _, f := range testCases {
 			f := f
 			t.Run(f, func(t *testing.T) {
-				check.Must(tcx.CLC().Execute("sql", "--format", f, fmt.Sprintf(`
+				check.Must(tcx.CLC().Execute("sql", "--format", f, "--quite", fmt.Sprintf(`
 					SELECT * FROM "%s" ORDER BY __key;
 				`, name)))
 				p := fmt.Sprintf("testdata/sql_output_%s.txt", f)
