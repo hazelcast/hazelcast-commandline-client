@@ -74,7 +74,7 @@ func sql_InteractiveTest(t *testing.T) {
 		tcx.WriteStdin([]byte(fmt.Sprintf(`
 			SELECT * FROM "%s" ORDER BY __key;
 		`+"\n", name)))
-		tcx.AssertStdoutContainsWithPath(t, "testdata/sql_1.txt")
+		tcx.AssertStdoutDollarWithPath(t, "testdata/sql_1.txt")
 	})
 }
 
@@ -104,7 +104,7 @@ func sqlOutput_NonInteractiveTest(t *testing.T) {
 					SELECT * FROM "%s" ORDER BY __key;
 				`, name)))
 				p := fmt.Sprintf("testdata/sql_output_%s.txt", f)
-				tcx.AssertStdoutContainsWithPath(t, p)
+				tcx.AssertStdoutDollarWithPath(t, p)
 			})
 		}
 	})

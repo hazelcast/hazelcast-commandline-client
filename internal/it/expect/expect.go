@@ -1,9 +1,8 @@
 package expect
 
 import (
+	"fmt"
 	"io"
-	"regexp"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -52,40 +51,29 @@ func (e *Expect) String() string {
 	return string(e.bufReader.Bytes())
 }
 
-func (e *Expect) EqualsText(text string, timeout time.Duration) bool {
-	return e.match(timeout, func() bool {
-		return e.String() == text
-	})
-}
-
-func (e *Expect) MatchTextRegex(pattern string, timeout time.Duration) bool {
-	re := check.MustValue(regexp.Compile(pattern))
-	return e.match(timeout, func() bool {
-		s := e.String()
-		return re.MatchString(s)
-	})
-}
-
-func (e *Expect) ContainsText(text string, timeout time.Duration) bool {
-	return e.match(timeout, func() bool {
-		s := e.String()
-		return strings.Contains(s, text)
-	})
-}
-
-func (e *Expect) match(timeout time.Duration, fn func() bool) bool {
+func (e *Expect) Match(m Matcher, options ...Option) bool {
 	e.Reset()
+	o := Options{}
+	for _, opt := range options {
+		if err := opt(&o); err != nil {
+			panic(fmt.Errorf("creating Match options: %w", err))
+		}
+	}
 	ch := make(chan struct{})
 	var done atomic.Bool
 	go func() {
 		for !done.Load() {
-			if fn() {
+			if m.Match(e.String()) {
 				ch <- struct{}{}
 				return
 			}
 			time.Sleep(10 * time.Millisecond)
 		}
 	}()
+	timeout := time.Duration(1<<63 - 1)
+	if o.timeout > 0 {
+		timeout = o.timeout
+	}
 	timer := time.NewTimer(timeout)
 	defer timer.Stop()
 	select {
