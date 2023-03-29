@@ -20,6 +20,11 @@ jobs:
         with:
           path: "$HOME/hazelcast-commandline-client"
 
+      - name: "Setup JRE"
+        uses: actions/setup-java@v2
+        with:
+          java-version: 8
+
       - name: "Download RCD (Linux/MacOS)"
         if: "!contains(matrix.os, 'windows')"
         run: |
