@@ -1,6 +1,0 @@
-# By default use UNIX style line endings
-* text eol=lf
-
-# Except these Inno Setup files
-* .iss text eol=crlf
-
