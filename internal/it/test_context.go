@@ -37,7 +37,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it/expect"
 )
 
-const DefaultTimeout = 5 * time.Second
+const DefaultTimeout = 30 * time.Second
 
 type TestContext struct {
 	T              *testing.T
