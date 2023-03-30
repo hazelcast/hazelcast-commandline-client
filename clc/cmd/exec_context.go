@@ -216,10 +216,9 @@ func (ec *ExecContext) ExecuteBlocking(ctx context.Context, f func(context.Conte
 }
 
 func (ec *ExecContext) Wrap(f func() error) error {
-	tic := time.Now()
+	t := time.Now()
 	err := f()
-	toc := time.Now()
-	took := toc.Sub(tic)
+	took := time.Since(t)
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	quite := ec.Props().GetBool(clc.PropertyQuite) || shell.IsPipe()
 	if err != nil {
