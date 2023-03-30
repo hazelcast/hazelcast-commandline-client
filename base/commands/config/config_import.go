@@ -118,12 +118,14 @@ func (cm ImportCmd) tryImportViridianZipSource(ctx context.Context, ec plug.Exec
 }
 
 func (cm ImportCmd) download(ctx context.Context, ec plug.ExecContext, url string) (string, error) {
-	p, stop, err := ec.ExecuteBlocking(ctx, "Downloading the sample", func(ctx context.Context) (any, error) {
+	p, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		sp.SetText("Creating temporary directory")
 		f, err := os.CreateTemp("", "clc-download-*")
 		if err != nil {
 			return "", err
 		}
 		defer f.Close()
+		sp.SetText("Downloading the sample")
 		resp, err := http.Get(url)
 		defer resp.Body.Close()
 		if _, err := io.Copy(f, resp.Body); err != nil {
@@ -139,7 +141,8 @@ func (cm ImportCmd) download(ctx context.Context, ec plug.ExecContext, url strin
 }
 
 func (cm ImportCmd) makeConfigFromZip(ctx context.Context, ec plug.ExecContext, target, path string) (string, error) {
-	p, stop, err := ec.ExecuteBlocking(ctx, "Extracting files from the sample", func(ctx context.Context) (any, error) {
+	p, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		sp.SetText("Extracting files from the sample")
 		reader, err := zip.OpenReader(path)
 		if err != nil {
 			return nil, err
