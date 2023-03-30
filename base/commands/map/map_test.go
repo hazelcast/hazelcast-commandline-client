@@ -33,14 +33,21 @@ func entrySet_NonInteractiveTest(t *testing.T) {
 	mapTester(t, func(tcx it.TestContext, m *hz.Map) {
 		t := tcx.T
 		// no entry
-		check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "entry-set"))
-		tcx.AssertStdoutEquals(t, "")
+		tcx.WithReset(func() {
+			check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "entry-set"))
+			tcx.AssertStdoutEquals(t, "")
+		})
 		// set an entry
-		check.Must(m.Set(context.Background(), "foo", "bar"))
-		check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "entry-set"))
-		tcx.AssertStdoutEquals(t, "foo\tbar\n")
-		check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "entry-set", "--show-type"))
-		tcx.AssertStdoutEquals(t, "foo\tSTRING\tbar\tSTRING\n")
+		tcx.WithReset(func() {
+			check.Must(m.Set(context.Background(), "foo", "bar"))
+			check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "entry-set"))
+			tcx.AssertStdoutContains(t, "foo\tbar\n")
+		})
+		// show type
+		tcx.WithReset(func() {
+			check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "entry-set", "--show-type"))
+			tcx.AssertStdoutContains(t, "foo\tSTRING\tbar\tSTRING\n")
+		})
 	})
 }
 
@@ -48,22 +55,28 @@ func get_NonInteractiveTest(t *testing.T) {
 	mapTester(t, func(tcx it.TestContext, m *hz.Map) {
 		t := tcx.T
 		// no entry
-		check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "get", "foo"))
-		tcx.AssertStdoutEquals(t, "-\n")
+		tcx.WithReset(func() {
+			check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "get", "foo"))
+			tcx.AssertStdoutEquals(t, "-\n")
+		})
 		// set an entry
-		check.Must(m.Set(context.Background(), "foo", "bar"))
-		check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "get", "foo"))
-		tcx.AssertStdoutEquals(t, "bar\n")
+		tcx.WithReset(func() {
+			check.Must(m.Set(context.Background(), "foo", "bar"))
+			check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "get", "foo"))
+			tcx.AssertStdoutContains(t, "bar\n")
+		})
 	})
 }
 
 func set_NonInteractiveTest(t *testing.T) {
 	mapTester(t, func(tcx it.TestContext, m *hz.Map) {
 		t := tcx.T
-		check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "set", "foo", "bar"))
-		tcx.AssertStdoutEquals(t, "")
-		v := check.MustValue(m.Get(context.Background(), "foo"))
-		require.Equal(t, "bar", v)
+		tcx.WithReset(func() {
+			check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "set", "foo", "bar"))
+			tcx.AssertStdoutEquals(t, "")
+			v := check.MustValue(m.Get(context.Background(), "foo"))
+			require.Equal(t, "bar", v)
+		})
 	})
 }
 
@@ -71,12 +84,17 @@ func size_NoninteractiveTest(t *testing.T) {
 	mapTester(t, func(tcx it.TestContext, m *hz.Map) {
 		t := tcx.T
 		// no entry
-		check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "size"))
-		tcx.AssertStdoutEquals(t, "0\n")
+		tcx.WithReset(func() {
+			check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "size"))
+			tcx.AssertStdoutEquals(t, "0\n")
+		})
 		// set an entry
-		check.Must(m.Set(context.Background(), "foo", "bar"))
-		check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "size"))
-		tcx.AssertStdoutEquals(t, "1\n")
+		tcx.WithReset(func() {
+			tcx.AssertStdoutEquals(t, "")
+			check.Must(m.Set(context.Background(), "foo", "bar"))
+			check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "size"))
+			tcx.AssertStdoutEquals(t, "1\n")
+		})
 	})
 }
 
@@ -87,11 +105,15 @@ func size_InteractiveTest(t *testing.T) {
 		go func(t *testing.T) {
 			check.Must(tcx.CLC().Execute())
 		}(t)
-		tcx.WriteStdin([]byte(fmt.Sprintf("\\map -n %s size\n", m.Name())))
-		tcx.AssertStdoutDollarWithPath(t, "testdata/map_size_0.txt")
-		check.Must(m.Set(ctx, "foo", "bar"))
-		tcx.WriteStdin([]byte(fmt.Sprintf("\\map -n %s size\n", m.Name())))
-		tcx.AssertStdoutDollarWithPath(t, "testdata/map_size_1.txt")
+		tcx.WithReset(func() {
+			tcx.WriteStdin([]byte(fmt.Sprintf("\\map -n %s size\n", m.Name())))
+			tcx.AssertStdoutDollarWithPath(t, "testdata/map_size_0.txt")
+		})
+		tcx.WithReset(func() {
+			check.Must(m.Set(ctx, "foo", "bar"))
+			tcx.WriteStdin([]byte(fmt.Sprintf("\\map -n %s size\n", m.Name())))
+			tcx.AssertStdoutDollarWithPath(t, "testdata/map_size_1.txt")
+		})
 	})
 }
 

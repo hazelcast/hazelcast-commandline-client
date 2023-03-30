@@ -37,6 +37,8 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it/expect"
 )
 
+const DefaultTimeout = 5 * time.Second
+
 type TestContext struct {
 	T              *testing.T
 	Cluster        *TestCluster
@@ -167,21 +169,21 @@ func (tcx TestContext) IO() clc.IO {
 }
 
 func (tcx TestContext) AssertStdoutEquals(t *testing.T, text string) {
-	if !tcx.ExpectStdout.Match(expect.Exact(text), expect.WithTimeout(30*time.Second)) {
+	if !tcx.ExpectStdout.Match(expect.Exact(text), expect.WithTimeout(DefaultTimeout)) {
 		t.Log("STDOUT:", tcx.ExpectStdout.String())
 		t.Fatalf("expect failed, no match for: %s", text)
 	}
 }
 
 func (tcx TestContext) AssertStderrEquals(t *testing.T, text string) {
-	if !tcx.ExpectStderr.Match(expect.Exact(text), expect.WithTimeout(30*time.Second)) {
+	if !tcx.ExpectStderr.Match(expect.Exact(text), expect.WithTimeout(DefaultTimeout)) {
 		t.Log("STDERR:", tcx.ExpectStderr.String())
 		t.Fatalf("expect failed, no match for: %s", text)
 	}
 }
 
 func (tcx TestContext) AssertStdoutContains(t *testing.T, text string) {
-	if !tcx.ExpectStdout.Match(expect.Contains(text), expect.WithTimeout(30*time.Second)) {
+	if !tcx.ExpectStdout.Match(expect.Contains(text), expect.WithTimeout(DefaultTimeout)) {
 		t.Log("STDOUT:", tcx.ExpectStdout.String())
 		t.Fatalf("expect failed, no match for: %s", text)
 	}
@@ -193,7 +195,7 @@ func (tcx TestContext) AssertStdoutContainsWithPath(t *testing.T, path string) {
 }
 
 func (tcx TestContext) AssertStdoutDollar(t *testing.T, text string) {
-	if !tcx.ExpectStdout.Match(expect.Dollar(text), expect.WithTimeout(30*time.Second)) {
+	if !tcx.ExpectStdout.Match(expect.Dollar(text), expect.WithTimeout(DefaultTimeout)) {
 		t.Log("STDOUT:", tcx.ExpectStdout.String())
 		t.Fatalf("expect failed, no match for: %s", text)
 	}
@@ -208,6 +210,14 @@ func (tcx TestContext) AssertStdoutEqualsWithPath(t *testing.T, path string) {
 	p := string(check.MustValue(os.ReadFile(path)))
 	p = strings.ReplaceAll(p, "$", "")
 	tcx.AssertStdoutEquals(t, p)
+}
+
+func (tcx TestContext) WithReset(f func()) {
+	tcx.ExpectStdout.Reset()
+	tcx.ExpectStderr.Reset()
+	tcx.stdout.Reset()
+	tcx.stderr.Reset()
+	f()
 }
 
 func withEnv(name, value string, f func()) {
