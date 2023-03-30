@@ -15,9 +15,9 @@ func TestSQL(t *testing.T) {
 		name string
 		f    func(t *testing.T)
 	}{
+		{name: "SQLOutput_NonInteractive", f: sqlOutput_NonInteractiveTest},
 		{name: "SQL_Interactive", f: sql_InteractiveTest},
 		{name: "SQL_NonInteractive", f: sql_NonInteractiveTest},
-		{name: "SQLOutput_NonInteractive", f: sqlOutput_NonInteractiveTest},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, tc.f)

@@ -21,8 +21,8 @@ func TestMap(t *testing.T) {
 		{name: "EntrySet_NonInteractive", f: entrySet_NonInteractiveTest},
 		{name: "Get_Noninteractive", f: get_NonInteractiveTest},
 		{name: "Set_NonInteractive", f: set_NonInteractiveTest},
-		{name: "Size_Noninteractive", f: size_NoninteractiveTest},
 		{name: "Size_Interactive", f: size_InteractiveTest},
+		{name: "Size_Noninteractive", f: size_NoninteractiveTest},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, tc.f)
