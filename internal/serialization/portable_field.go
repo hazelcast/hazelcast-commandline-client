@@ -40,7 +40,11 @@ func (f PortableField) formatValue() (v string) {
 		PortableTypeStringArray:
 		return fmt.Sprintf("%v", f.Value)
 	case PortableTypeDecimal:
-		return MarshalDecimal(f.Value)
+		sr, err := MarshalDecimal(f.Value)
+		if err != nil {
+			return ValueNotDecoded
+		}
+		return sr
 	case PortableTypeDecimalArray:
 		return ValueNotDecoded
 	case PortableTypeTime:

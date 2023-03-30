@@ -3,7 +3,9 @@ package config_test
 import (
 	"bytes"
 	"crypto/tls"
+	"fmt"
 	"os"
+	"os/user"
 	"path/filepath"
 	"testing"
 
@@ -29,11 +31,10 @@ func TestMakeConfiguration_Default(t *testing.T) {
 	require.NoError(t, err)
 	var target hazelcast.Config
 	target.ClientName = "my-client"
-	target.Labels = []string{"CLC"}
+	target.Labels = []string{"CLC", fmt.Sprintf("User:%s", userHostName())}
 	target.Cluster.Unisocket = true
 	target.Stats.Enabled = true
 	target.Logger.CustomLogger = lg
-	target.Serialization.Compact.SetSerializers()
 	require.Equal(t, target, cfg)
 }
 
@@ -56,7 +57,7 @@ func TestMakeConfiguration_Viridian(t *testing.T) {
 	require.NoError(t, err)
 	var target hazelcast.Config
 	target.ClientName = "my-client"
-	target.Labels = []string{"CLC"}
+	target.Labels = []string{"CLC", fmt.Sprintf("User:%s", userHostName())}
 	target.Cluster.Unisocket = true
 	target.Cluster.Name = "pr-3066"
 	target.Cluster.Cloud.Enabled = true
@@ -65,7 +66,6 @@ func TestMakeConfiguration_Viridian(t *testing.T) {
 	target.Cluster.Network.SSL.SetTLSConfig(&tls.Config{ServerName: "hazelcast.cloud"})
 	target.Stats.Enabled = true
 	target.Logger.CustomLogger = lg
-	target.Serialization.Compact.SetSerializers()
 	require.Equal(t, target, cfg)
 }
 
@@ -211,4 +211,11 @@ ssl:
 			assert.Equalf(t, tc.want, s, "CreateYAML(%v)", tc.kvs)
 		})
 	}
+}
+
+func userHostName() string {
+	u := MustValue(user.Current())
+	host := MustValue(os.Hostname())
+	return fmt.Sprintf("%s@%s", u.Username, host)
+
 }

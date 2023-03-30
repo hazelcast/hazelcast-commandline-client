@@ -61,17 +61,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
-		case "ctrl+c":
-			m.quit = true
-			return m, tea.Quit
 		case "enter":
 			i, ok := m.list.SelectedItem().(item)
 			if ok {
 				m.choice = string(i)
 			}
 			return m, tea.Quit
-		case "esc":
+		case "ctrl+c", "esc":
 			m.quit = true
+			m.choice = "esc"
 			return m, tea.Quit
 		}
 	}

@@ -21,12 +21,15 @@ var (
 type textModel struct {
 	focusIndex int
 	quitting   bool
+	choice     string
 	inputs     []textinput.Model
 }
 
 func initialModel() textModel {
 	m := textModel{
-		inputs: make([]textinput.Model, 2),
+		inputs:   make([]textinput.Model, 2),
+		quitting: false,
+		choice:   "",
 	}
 	var t textinput.Model
 	for i := range m.inputs {
@@ -44,7 +47,6 @@ func initialModel() textModel {
 		}
 		m.inputs[i] = t
 	}
-
 	return m
 }
 
@@ -55,76 +57,74 @@ func (m textModel) Init() tea.Cmd {
 func (m textModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c", "esc":
+		switch msg.Type {
+		case tea.KeyCtrlC, tea.KeyEsc:
+			m.choice = "esc"
 			m.quitting = true
 			return m, tea.Quit
-
-		// Set focus to next input
-		case "tab", "shift+tab", "enter", "up", "down":
+		case tea.KeyTab, tea.KeyShiftTab, tea.KeyEnter, tea.KeyUp, tea.KeyDown:
 			s := msg.String()
-
-			// Did the user press enter while the submit button was focused?
-			// If so, exit.
 			if s == "enter" && m.focusIndex == len(m.inputs) {
+				m.quitting = true
+				if m.inputs[0].Value() == "" {
+					m.inputs[0].SetValue("default")
+				}
+				m.choice = "enter"
 				return m, tea.Quit
 			}
-
-			// Cycle indexes
 			if s == "up" || s == "shift+tab" {
 				m.focusIndex--
 			} else {
 				m.focusIndex++
 			}
-
 			if m.focusIndex > len(m.inputs) {
 				m.focusIndex = 0
 			} else if m.focusIndex < 0 {
 				m.focusIndex = len(m.inputs)
 			}
-
 			cmds := make([]tea.Cmd, len(m.inputs))
 			for i := 0; i <= len(m.inputs)-1; i++ {
 				if i == m.focusIndex {
-					// Set focused state
 					cmds[i] = m.inputs[i].Focus()
 					m.inputs[i].PromptStyle = focusedStyle
 					m.inputs[i].TextStyle = focusedStyle
 					continue
 				}
-				// Remove focused state
 				m.inputs[i].Blur()
 				m.inputs[i].PromptStyle = noStyle
 				m.inputs[i].TextStyle = noStyle
 			}
-
 			return m, tea.Batch(cmds...)
 		}
 	}
-
-	// Handle character input and blinking
 	cmd := m.updateInputs(msg)
-
 	return m, cmd
 }
 
 func (m *textModel) updateInputs(msg tea.Msg) tea.Cmd {
 	cmds := make([]tea.Cmd, len(m.inputs))
-
-	// Only text inputs with Focus() set will respond, so it's safe to simply
-	// update all of them here without any further logic.
 	for i := range m.inputs {
 		m.inputs[i], cmds[i] = m.inputs[i].Update(msg)
 	}
-
 	return tea.Batch(cmds...)
 }
 
+func (m textModel) GetInputs() []string {
+	return []string{m.inputs[0].Value(), m.inputs[1].Value()}
+}
+
 func (m textModel) View() string {
+	if m.choice != "" {
+		return m.choice
+	}
 	if m.quitting {
 		return ""
 	}
 	var b strings.Builder
+	b.WriteString(
+		"There is no configuration detected. You can register a new configuration to connect Hazelcast cluster.\n" +
+			"You can connect to Viridian cluster using curl request from `Dashboard -> Connect Client -> Quick connection guide -> Go` tab.\n" +
+			"Paste the link to source field below and it will download the config and TLS files.\n\n")
 	for i := range m.inputs {
 		b.WriteString(m.inputs[i].View())
 		if i < len(m.inputs)-1 {
@@ -136,6 +136,5 @@ func (m textModel) View() string {
 		button = &focusedButton
 	}
 	fmt.Fprintf(&b, "\n\n%s\n", *button)
-
 	return b.String()
 }

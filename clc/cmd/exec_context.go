@@ -12,10 +12,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/theckman/yacspin"
 
-	"github.com/hazelcast/hazelcast-commandline-client/base/commands/wizard"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/shell"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/wizard"
 	"github.com/hazelcast/hazelcast-commandline-client/errors"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
@@ -95,9 +95,11 @@ func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInt
 	if clientInternal != nil {
 		return clientInternal, nil
 	}
-	if ec.Interactive() && !paths.Exists(ec.Props().GetString(clc.PropertyConfig)) {
-		wiz := wizard.WizardCommand{}
-		wiz.Exec(ctx, ec)
+	if ec.Interactive() && (!paths.Exists(paths.Configs()) || !paths.Exists(ec.Props().GetString(clc.PropertyConfig))) {
+		err := wizard.RunWizard(ctx, ec)
+		if err != nil {
+			return nil, err
+		}
 	}
 	ci, stop, err := ec.ExecuteBlocking(ctx, "Connecting to the cluster", func(ctx context.Context) (any, error) {
 		return ec.clientFn(ctx)

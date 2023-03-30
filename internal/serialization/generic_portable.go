@@ -2,7 +2,6 @@ package serialization
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -13,72 +12,25 @@ type portableFieldReader func(r serialization.PortableReader, field string) any
 type portableFieldWriter func(w serialization.PortableWriter, field string, value any)
 
 type GenericPortable struct {
-	Fields  []PortableField
-	Name    string
-	FID     int32
-	CID     int32
-	readers []portableFieldReader
-	writers []portableFieldWriter
+	Fields []PortableField
+	FID    int32
+	CID    int32
 }
 
-func NewGenericPortable(value GenericPortable) (*GenericPortable, error) {
-	rs := make([]portableFieldReader, len(value.Fields))
-	ws := make([]portableFieldWriter, len(value.Fields))
-	for i, f := range value.Fields {
-		pt := serialization.FieldDefinitionType(f.Type - 1)
-		if pt < serialization.TypePortable || pt > serialization.TypeTimestampWithTimezoneArray {
-			return nil, fmt.Errorf("invalid portable type: %d", f.Type)
-		}
-		r, ok := portableReaders[pt]
-		if !ok {
-			return nil, fmt.Errorf("reader not found for portable type: %d", f.Type)
-		}
-		rs[i] = r
-		// writing is disabled for now --YT
-	}
-	return &GenericPortable{
-		Fields:  value.Fields,
-		Name:    value.Name,
-		FID:     value.FID,
-		CID:     value.CID,
-		readers: rs,
-		writers: ws,
-	}, nil
+func (p *GenericPortable) FactoryID() int32 {
+	return p.FID
 }
 
-func (g *GenericPortable) Clone() *GenericPortable {
-	fs := make([]PortableField, len(g.Fields))
-	copy(fs, g.Fields)
-	return &GenericPortable{
-		Fields:  fs,
-		Name:    g.Name,
-		FID:     g.FID,
-		CID:     g.CID,
-		readers: g.readers,
-		writers: g.writers,
-	}
+func (p *GenericPortable) ClassID() int32 {
+	return p.CID
 }
 
-func (g *GenericPortable) FactoryID() int32 {
-	return g.FID
-}
-
-func (g *GenericPortable) ClassID() int32 {
-	return g.CID
-}
-
-func (g *GenericPortable) WritePortable(pw serialization.PortableWriter) {
-	ws := g.writers
-	for i, v := range g.Fields {
-		ws[i](pw, v.Name, v.Value)
-	}
+func (p *GenericPortable) WritePortable(writer serialization.PortableWriter) {
+	panic("serialization.GenericPortable.WritePortable is not supposed to be called")
 }
 
 func (g *GenericPortable) ReadPortable(r serialization.PortableReader) {
-	rs := g.readers
-	for i, v := range g.Fields {
-		g.Fields[i].Value = rs[i](r, v.Name)
-	}
+	panic("serialization.GenericPortable.ReadPortable is not supposed to be called")
 }
 
 func (g *GenericPortable) String() string {
@@ -138,53 +90,26 @@ func (g *GenericPortable) marshalField(f PortableField) any {
 	return f.Value
 }
 
-type GenericPortableFactory struct {
-	classes   map[int32]*GenericPortable
-	factoryID int32
+type GenericPortableSerializer struct{}
+
+func NewGenericPortableSerializer() *GenericPortableSerializer {
+	return &GenericPortableSerializer{}
 }
 
-func NewGenericPortableFactory(factoryID int32, items ...*GenericPortable) (*GenericPortableFactory, error) {
-	cs := make(map[int32]*GenericPortable, len(items))
-	for _, item := range items {
-		if item.FID != factoryID {
-			return nil, fmt.Errorf("serializer factoryID does not match factory ID")
-		}
-		cs[item.CID] = item
+func (gs GenericPortableSerializer) CreatePortableValue(factoryID, classID int32) serialization.Portable {
+	return &GenericPortable{
+		FID: factoryID,
+		CID: classID,
 	}
-	return &GenericPortableFactory{
-		classes:   cs,
-		factoryID: factoryID,
-	}, nil
 }
 
-func (g GenericPortableFactory) Create(classID int32) serialization.Portable {
-	cls, ok := g.classes[classID]
-	if !ok {
-		panic(fmt.Errorf("portable type for classID %d not found", classID))
+func (gs GenericPortableSerializer) ReadPortableWithClassDefinition(portable serialization.Portable, cd *serialization.ClassDefinition, reader serialization.PortableReader) {
+	for name, f := range cd.Fields {
+		v := portable.(*GenericPortable)
+		v.Fields = append(v.Fields, PortableField{
+			Name:  f.Name,
+			Type:  PortableFieldType(f.Type + 1),
+			Value: portableReaders[f.Type](reader, name),
+		})
 	}
-	return cls.Clone()
-}
-
-func (g GenericPortableFactory) FactoryID() int32 {
-	return g.factoryID
-}
-
-func NewPortableFactoriesFromItems(items ...GenericPortable) ([]*GenericPortableFactory, error) {
-	m := map[int32][]*GenericPortable{}
-	for _, item := range items {
-		gps, err := NewGenericPortable(item)
-		if err != nil {
-			return nil, err
-		}
-		m[item.FID] = append(m[item.FID], gps)
-	}
-	fs := make([]*GenericPortableFactory, 0, len(items))
-	for fid, ss := range m {
-		f, err := NewGenericPortableFactory(fid, ss...)
-		if err != nil {
-			return nil, err
-		}
-		fs = append(fs, f)
-	}
-	return fs, nil
 }

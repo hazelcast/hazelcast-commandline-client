@@ -80,7 +80,16 @@ func MarshalOffsetDateTime(v any) (*string, error) {
 	}
 }
 
-func MarshalDecimal(v any) string {
-	d := v.(types.Decimal)
-	return fmt.Sprintf("%s ^%d", d.UnscaledValue().String(), d.Scale())
+func MarshalDecimal(v any) (string, error) {
+	switch vv := v.(type) {
+	case types.Decimal:
+		return fmt.Sprintf("%s ^%d", vv.UnscaledValue().String(), vv.Scale()), nil
+	case *types.Decimal:
+		if vv == (*types.Decimal)(nil) {
+			return ValueNil, nil
+		}
+		return fmt.Sprintf("%s ^%d", vv.UnscaledValue().String(), vv.Scale()), nil
+	default:
+		return "", errors.ErrNotDecoded
+	}
 }

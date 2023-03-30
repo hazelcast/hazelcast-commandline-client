@@ -83,7 +83,7 @@ func columnToJSONValue(col Column) (any, error) {
 	case iserialization.TypeJavaBigInteger:
 		return col.Value.(*big.Int).String(), nil
 	case iserialization.TypeJavaDecimal:
-		return iserialization.MarshalDecimal(col.Value), nil
+		return iserialization.MarshalDecimal(col.Value)
 	case iserialization.TypeJavaArray, iserialization.TypeJavaArrayList, iserialization.TypeJavaLinkedList:
 		return col.Value, nil
 	case iserialization.TypeJavaLocalDate:

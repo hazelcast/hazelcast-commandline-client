@@ -163,8 +163,8 @@ github.com/hashicorp/golang-lru v0.5.0/go.mod h1:/m3WP610KZHVQ1SGc6re/UDhFvYD7pJ
 github.com/hashicorp/golang-lru v0.5.1/go.mod h1:/m3WP610KZHVQ1SGc6re/UDhFvYD7pJ4Ao+sR/qLZy8=
 github.com/hashicorp/hcl v1.0.0 h1:0Anlzjpi4vEasTeNFn2mLJgTSwt0+6sfsiTG8qcWGx4=
 github.com/hashicorp/hcl v1.0.0/go.mod h1:E5yfLk+7swimpb2L/Alb/PJmXilQ/rhwaUYs4T20WEQ=
-github.com/hazelcast/hazelcast-go-client v1.3.1-0.20221124052338-ac06848426c2 h1:cMmPNkvbBWS9AQBYCTGBGj8nxHxkEnbdbaWpfxdE+os=
-github.com/hazelcast/hazelcast-go-client v1.3.1-0.20221124052338-ac06848426c2/go.mod h1:JH7sI0kvMSlJJ5D+YFRg/J/P41MRPffzCt0bN9LYd0M=
+github.com/hazelcast/hazelcast-go-client v1.4.1-0.20230329124727-d0ecca63538d h1:clvXDLbvF8mE9KK7Bwiyg+r6grbz4+E1zOU8JRXl3sA=
+github.com/hazelcast/hazelcast-go-client v1.4.1-0.20230329124727-d0ecca63538d/go.mod h1:PJ38lqXJ18S0YpkrRznPDlUH8GnnMAQCx3jpQtBPZ6Q=
 github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
 github.com/ianlancetaylor/demangle v0.0.0-20200824232613-28f6c0f3b639/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
 github.com/inconshreveable/mousetrap v1.0.1 h1:U3uMjPSQEBMNp1lFxmllqCPM6P5u/Xq7Pgzkat/bFNc=
