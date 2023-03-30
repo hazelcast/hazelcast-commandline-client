@@ -112,8 +112,8 @@ func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInt
 	}
 	stop()
 	clientInternal = ci.(*hazelcast.ClientInternal)
-	quite := ec.Props().GetBool(clc.PropertyQuite)
-	if !quite && !shell.IsPipe() {
+	quite := ec.Props().GetBool(clc.PropertyQuite) || shell.IsPipe()
+	if !quite {
 		I2(fmt.Fprintf(ec.stdout, "Connected to cluster: %s\n\n", clientInternal.ClusterService().FailoverService().Current().ClusterName))
 	}
 	return clientInternal, nil
@@ -160,12 +160,12 @@ func (ec *ExecContext) SetInteractive(value bool) {
 // The returned stop function must be called at least once to prevent leaks if there's no error.
 // Calling returned stop more than once has no effect.
 func (ec *ExecContext) ExecuteBlocking(ctx context.Context, f func(context.Context, clc.Spinner) (any, error)) (value any, stop context.CancelFunc, err error) {
-	quite := ec.Props().GetBool(clc.PropertyQuite)
+	quite := ec.Props().GetBool(clc.PropertyQuite) || shell.IsPipe()
 	// setup the Ctrl+C handler
 	ctx, stop = signal.NotifyContext(ctx, os.Interrupt, os.Kill)
 	ch := make(chan any)
 	var sp clc.Spinner
-	if !quite && !shell.IsPipe() {
+	if !quite {
 		sc := yacspin.Config{
 			Frequency:    100 * time.Millisecond,
 			CharSet:      yacspin.CharSets[59],
@@ -221,7 +221,7 @@ func (ec *ExecContext) Wrap(f func() error) error {
 	toc := time.Now()
 	took := toc.Sub(tic)
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
-	quite := ec.Props().GetBool(clc.PropertyQuite)
+	quite := ec.Props().GetBool(clc.PropertyQuite) || shell.IsPipe()
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
 			I2(fmt.Fprintln(ec.stderr, "User cancelled"))
