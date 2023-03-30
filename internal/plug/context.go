@@ -30,6 +30,7 @@ type ExecContext interface {
 	AddOutputStream(ctx context.Context, ch <-chan output.Row) error
 	Args() []string
 	ClientInternal(ctx context.Context) (*hazelcast.ClientInternal, error)
+	ChangeConfig(ctx context.Context, path string) error
 	CommandName() string
 	Interactive() bool
 	Logger() log.Logger

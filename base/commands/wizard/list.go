@@ -12,7 +12,6 @@ import (
 const listHeight = 14
 
 var (
-	titleStyle        = lipgloss.NewStyle()
 	itemStyle         = lipgloss.NewStyle()
 	selectedItemStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#00E1E1"))
 )
@@ -31,23 +30,20 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 	if !ok {
 		return
 	}
-
 	str := fmt.Sprintf("%d. %s", index+1, i)
-
 	fn := itemStyle.Render
 	if index == m.Index() {
 		fn = func(s ...string) string {
 			return selectedItemStyle.Render(s[0])
 		}
 	}
-
 	fmt.Fprint(w, fn(str))
 }
 
 type model struct {
-	list     list.Model
-	choice   string
-	quitting bool
+	list   list.Model
+	choice string
+	quit   bool
 }
 
 func (m model) Init() tea.Cmd {
@@ -63,11 +59,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.list.SetWidth(msg.Width)
 		return m, nil
-
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "ctrl+c":
-			m.quitting = true
+			m.quit = true
 			return m, tea.Quit
 		case "enter":
 			i, ok := m.list.SelectedItem().(item)
@@ -76,11 +71,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, tea.Quit
 		case "esc":
-			m.quitting = true
+			m.quit = true
 			return m, tea.Quit
 		}
 	}
-
 	var cmd tea.Cmd
 	m.list, cmd = m.list.Update(msg)
 	return m, cmd
@@ -90,8 +84,21 @@ func (m model) View() string {
 	if m.choice != "" {
 		return m.choice
 	}
-	if m.quitting {
+	if m.quit {
 		return ""
 	}
 	return m.list.View()
+}
+
+func initializeList(dirs map[string]string) model {
+	var items []list.Item
+	for k, _ := range dirs {
+		items = append(items, item(k))
+	}
+	l := list.New(items, itemDelegate{}, 20, listHeight)
+	l.SetShowStatusBar(false)
+	l.SetFilteringEnabled(false)
+	l.SetShowTitle(false)
+	l.SetShowHelp(false)
+	return model{list: l}
 }

@@ -131,7 +131,6 @@ func (m textModel) View() string {
 			b.WriteRune('\n')
 		}
 	}
-
 	button := &blurredButton
 	if m.focusIndex == len(m.inputs) {
 		button = &focusedButton

@@ -290,6 +290,11 @@ func (m *Main) createCommands() error {
 						return nil, err
 					}
 					return clientInternal, nil
+				}, func(ctx context.Context, path string) error {
+					if err := m.changeConfig(path); err != nil {
+						return err
+					}
+					return nil
 				}, m.isInteractive)
 				if err != nil {
 					return err
@@ -316,6 +321,23 @@ func (m *Main) createCommands() error {
 		}
 		parent.AddCommand(cmd)
 		m.cmds[c.Name] = cmd
+	}
+	return nil
+}
+
+func (m *Main) changeConfig(path string) error {
+	if path != "" {
+		m.configLoaded = false
+		m.setConfigProps(m.props, clc.PropertyConfig, path)
+		for k, _ := range m.vpr.AllSettings() {
+			m.setConfigProps(m.props, k, "")
+		}
+		if _, err := m.loadConfig(path); err != nil {
+			return err
+		}
+		for k, v := range m.vpr.AllSettings() {
+			m.setConfigProps(m.props, k, v)
+		}
 	}
 	return nil
 }
