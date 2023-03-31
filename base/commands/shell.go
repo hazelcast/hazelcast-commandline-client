@@ -67,6 +67,7 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 	if !shell.IsPipe() {
 		cfgPath := ec.Props().GetString(clc.PropertyConfig)
 		if cfgPath != "" {
+			cfgPath = paths.ResolveConfigPath(cfgPath)
 			cfgText = fmt.Sprintf("Configuration : %s\n", cfgPath)
 		}
 		logPath := ec.Props().GetString(clc.PropertyLogPath)
