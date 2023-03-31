@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v2"
 
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -33,6 +34,7 @@ type FileProvider struct {
 	canUseClientConfig bool
 	hasClientConfig    bool
 	clientCfg          hazelcast.Config
+	path               string
 }
 
 func NewFileProvider(path string) (*FileProvider, error) {
@@ -58,6 +60,8 @@ func (p *FileProvider) load(path string) error {
 		}
 		return fmt.Errorf("configuration does not exist %s: %w", path, os.ErrNotExist)
 	}
+	p.path = path
+	p.keys[path] = struct{}{}
 	b, err := os.ReadFile(path)
 	if err != nil {
 		return fmt.Errorf("reading configuration: %w", err)
@@ -72,6 +76,9 @@ func (p *FileProvider) load(path string) error {
 }
 
 func (p *FileProvider) GetString(key string) string {
+	if key == clc.PropertyConfig {
+		return p.path
+	}
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	f, ok := p.boundFlags[key]
