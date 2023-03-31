@@ -243,11 +243,15 @@ func (ec *ExecContext) Wrap(f func() error) error {
 				errStr = trimError(err, maxErrorLines)
 			}
 			if verbose {
-				msg = fmt.Sprintf("\nFailed in %d ms: %s", took.Milliseconds(), errStr)
+				msg = fmt.Sprintf("\nError in %d ms: %s", took.Milliseconds(), errStr)
 			} else {
-				msg = fmt.Sprintf("\nFailed: %s", errStr)
+				msg = fmt.Sprintf("\nError: %s", errStr)
 			}
-			I2(fmt.Fprintln(ec.stderr, color.RedString(msg)))
+			if ec.Interactive() {
+				I2(fmt.Fprintln(ec.stderr, color.RedString(msg)))
+			} else {
+				I2(fmt.Fprintln(ec.stderr, msg))
+			}
 		}
 		return cmderrors.WrappedError{Err: err}
 	}
