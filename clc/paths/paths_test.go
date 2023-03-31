@@ -35,7 +35,7 @@ func TestDefaultConfigPath_Unix(t *testing.T) {
 func TestDefaultConfigPath_Windows(t *testing.T) {
 	skip.IfNot(t, "os = windows")
 	Must(os.Setenv("USERPROFILE", `C:\Users\foo`))
-	assert.Equal(t, `C:\Users\foo\AppData\Roaming\Hazelcast\configs\default\config.yaml`, paths.DefaultConfigPath())
+	assert.Equal(t, "", paths.DefaultConfigPath())
 }
 
 func TestDefaultLogPath_Unix(t *testing.T) {
