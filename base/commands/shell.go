@@ -67,6 +67,7 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 	if !shell.IsPipe() {
 		cfgPath := ec.Props().GetString(clc.PropertyConfig)
 		if cfgPath != "" {
+			cfgPath = paths.ResolveConfigPath(cfgPath)
 			cfgText = fmt.Sprintf("Configuration : %s\n", cfgPath)
 		}
 		logPath := ec.Props().GetString(clc.PropertyLogPath)
@@ -152,6 +153,8 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 	defer sh.Close()
 	return sh.Start(ctx)
 }
+
+func (ShellCommand) Unwrappable() {}
 
 func convertStatement(stmt string) (string, error) {
 	stmt = strings.TrimSpace(stmt)

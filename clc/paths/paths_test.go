@@ -29,13 +29,13 @@ func TestHomeDir_Windows(t *testing.T) {
 func TestDefaultConfigPath_Unix(t *testing.T) {
 	skip.If(t, "os = windows")
 	Must(os.Setenv("HOME", "/dev/shm"))
-	assert.Equal(t, "/dev/shm/.hazelcast/configs/default/config.yaml", paths.DefaultConfigPath())
+	assert.Equal(t, "", paths.DefaultConfigPath())
 }
 
 func TestDefaultConfigPath_Windows(t *testing.T) {
 	skip.IfNot(t, "os = windows")
 	Must(os.Setenv("USERPROFILE", `C:\Users\foo`))
-	assert.Equal(t, `C:\Users\foo\AppData\Roaming\Hazelcast\configs\default\config.yaml`, paths.DefaultConfigPath())
+	assert.Equal(t, "", paths.DefaultConfigPath())
 }
 
 func TestDefaultLogPath_Unix(t *testing.T) {
@@ -68,7 +68,7 @@ func TestResolveConfigPath_Unix(t *testing.T) {
 	skip.If(t, "os = windows")
 	Must(os.Setenv("HOME", "/dev/shm"))
 	// default config
-	assert.Equal(t, "/dev/shm/.hazelcast/configs/default/config.yaml", paths.ResolveConfigPath(""))
+	assert.Equal(t, "", paths.ResolveConfigPath(""))
 	// path to the configuration file
 	assert.Equal(t, "/etc/hz.yaml", paths.ResolveConfigPath("/etc/hz.yaml"))
 	// configuration name
@@ -78,7 +78,7 @@ func TestResolveConfigPath_Unix(t *testing.T) {
 func TestResolveConfigPath_Windows(t *testing.T) {
 	skip.IfNot(t, "os = windows")
 	// default config
-	assert.Equal(t, `C:\Users\foo\AppData\Roaming\Hazelcast\configs\default\config.yaml`, paths.ResolveConfigPath(""))
+	assert.Equal(t, "", paths.ResolveConfigPath(""))
 	// path to the configuration file
 	assert.Equal(t, `C:\hz.yaml`, paths.ResolveConfigPath(`C:\hz.yaml`))
 	// configuration name
