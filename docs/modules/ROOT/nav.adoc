@@ -7,6 +7,7 @@
 * xref:configuration.adoc[Configure]
 ** xref:connect-to-viridian.adoc[Connect to Viridian]
 ** xref:connect-to-platform.adoc[Connect to Platform]
+** xref:config-wizard.adoc[CLC Configuration Wizard ]
 * xref:upgrade-clc.adoc[Upgrade]
 
 .Reference
