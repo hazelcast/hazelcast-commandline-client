@@ -4,6 +4,8 @@ package wizard
 
 import (
 	"context"
+	"errors"
+	"os"
 	"sync/atomic"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -12,7 +14,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
-	"github.com/hazelcast/hazelcast-commandline-client/errors"
+	clcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
@@ -71,7 +73,12 @@ func (p *Provider) ClientConfig(ec plug.ExecContext) (hazelcast.Config, error) {
 func (p *Provider) runWizard(ctx context.Context, ec plug.ExecContext) (string, error) {
 	cs, err := config.FindAll(paths.Configs())
 	if err != nil {
-		return "", err
+		if errors.Is(err, os.ErrNotExist) {
+			err = os.MkdirAll(paths.Configs(), 0700)
+		}
+		if err != nil {
+			return "", err
+		}
 	}
 	if len(cs) == 0 {
 		m := initialModel()
@@ -80,7 +87,7 @@ func (p *Provider) runWizard(ctx context.Context, ec plug.ExecContext) (string, 
 			return "", err
 		}
 		if mv.View() == "" {
-			return "", errors.ErrNoClusterConfig
+			return "", clcerrors.ErrNoClusterConfig
 		}
 		args := m.GetInputs()
 		_, err = config.ImportSource(ctx, ec, args[0], args[1])
@@ -95,7 +102,7 @@ func (p *Provider) runWizard(ctx context.Context, ec plug.ExecContext) (string, 
 		return "", err
 	}
 	if model.View() == "" {
-		return "", errors.ErrNoClusterConfig
+		return "", clcerrors.ErrNoClusterConfig
 	}
 	return model.View(), nil
 }
