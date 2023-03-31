@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package it
 import (
 	"context"
 	"crypto/tls"
-	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net"
@@ -33,133 +32,36 @@ import (
 	"time"
 
 	"github.com/apache/thrift/lib/go/thrift"
-	"github.com/stretchr/testify/assert"
-
 	hz "github.com/hazelcast/hazelcast-go-client"
-
 	"github.com/hazelcast/hazelcast-go-client/logger"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/stretchr/testify/assert"
+	"gopkg.in/yaml.v2"
 
+	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 )
 
 const (
-	EnvDisableSmart       = "DISABLE_SMART"
-	EnvDisableNonsmart    = "DISABLE_NONSMART"
 	EnvEnableTraceLogging = "ENABLE_TRACE"
 	EnvMemberCount        = "MEMBER_COUNT"
 	EnvEnableSSL          = "ENABLE_SSL"
 	EnvHzVersion          = "HZ_VERSION"
 )
 
-const DefaultClusterName = "integration-test"
+const (
+	DefaultClusterName = "clc-test"
+)
 
 var rc *RemoteControllerClientWrapper
 var rcMu = &sync.RWMutex{}
 var defaultTestCluster = NewSingletonTestCluster("default", func() *TestCluster {
 	port := NextPort()
-	if SSLEnabled() {
-		return rc.startNewCluster(MemberCount(), xmlSSLConfig(DefaultClusterName, port), port)
-	}
 	return rc.startNewCluster(MemberCount(), xmlConfig(DefaultClusterName, port), port)
 })
-
-// from hazelcast-go-client/internal/proxy/reference_id_generator.go
 var idGen = ReferenceIDGenerator{}
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
-}
-
-func TesterWithConfigBuilder(t *testing.T, cbCallback func(config *hz.Config), f func(t *testing.T, client *hz.Client)) {
-	ensureRemoteController(true)
-	runner := func(t *testing.T, smart bool) {
-		cls := defaultTestCluster.Launch(t)
-		config := cls.DefaultConfig()
-		if cbCallback != nil {
-			cbCallback(&config)
-		}
-		logLevel := logger.WarnLevel
-		if TraceLoggingEnabled() {
-			logLevel = logger.TraceLevel
-		}
-		config.Logger.Level = logLevel
-		config.Cluster.Unisocket = !smart
-		ctx := context.Background()
-		client := MustClient(hz.StartNewClientWithConfig(ctx, config))
-		defer func() {
-			if err := client.Shutdown(ctx); err != nil {
-				t.Logf("Test warning, client did not shut down: %s", err.Error())
-			}
-		}()
-		f(t, client)
-	}
-	if SmartEnabled() {
-		t.Run("Smart Client", func(t *testing.T) {
-			runner(t, true)
-		})
-	}
-	if NonSmartEnabled() {
-		t.Run("Non-Smart Client", func(t *testing.T) {
-			runner(t, false)
-		})
-	}
-}
-
-const SamplePortableFactoryID = 1
-const SamplePortableClassID = 1
-
-type SamplePortable struct {
-	A string
-	B int32
-}
-
-func (s SamplePortable) FactoryID() int32 {
-	return SamplePortableFactoryID
-}
-
-func (s SamplePortable) ClassID() int32 {
-	return SamplePortableClassID
-}
-
-func (s SamplePortable) WritePortable(writer serialization.PortableWriter) {
-	writer.WriteString("A", s.A)
-	writer.WriteInt32("B", s.B)
-}
-
-func (s *SamplePortable) ReadPortable(reader serialization.PortableReader) {
-	s.A = reader.ReadString("A")
-	s.B = reader.ReadInt32("B")
-}
-
-func (s SamplePortable) Json() serialization.JSON {
-	byteArr, err := json.Marshal(s)
-	if err != nil {
-		panic(err)
-	}
-	return byteArr
-}
-
-type SamplePortableFactory struct {
-}
-
-func (f SamplePortableFactory) Create(classID int32) serialization.Portable {
-	if classID == SamplePortableClassID {
-		return &SamplePortable{}
-	}
-	return nil
-}
-
-func (f SamplePortableFactory) FactoryID() int32 {
-	return SamplePortableFactoryID
-}
-
-// MustClient returns client if err is nil, otherwise it panics.
-func MustClient(client *hz.Client, err error) *hz.Client {
-	if err != nil {
-		panic(err)
-	}
-	return client
 }
 
 func NewUniqueObjectName(service string, labels ...string) string {
@@ -172,14 +74,6 @@ func NewUniqueObjectName(service string, labels ...string) string {
 
 func TraceLoggingEnabled() bool {
 	return os.Getenv(EnvEnableTraceLogging) == "1"
-}
-
-func SmartEnabled() bool {
-	return os.Getenv(EnvDisableSmart) != "1"
-}
-
-func NonSmartEnabled() bool {
-	return os.Getenv(EnvDisableNonsmart) != "1"
 }
 
 func SSLEnabled() bool {
@@ -196,11 +90,11 @@ func HzVersion() string {
 
 func MemberCount() int {
 	if memberCountStr := os.Getenv(EnvMemberCount); memberCountStr != "" {
-		if memberCount, err := strconv.Atoi(memberCountStr); err != nil {
+		memberCount, err := strconv.Atoi(memberCountStr)
+		if err != nil {
 			panic(err)
-		} else {
-			return memberCount
 		}
+		return memberCount
 	}
 	return 1
 }
@@ -210,7 +104,7 @@ func CreateDefaultRemoteController() *RemoteControllerClientWrapper {
 }
 
 func CreateRemoteController(addr string) *RemoteControllerClient {
-	transport := check.MustAnyValue[*thrift.TSocket](thrift.NewTSocketConf(addr, nil))
+	transport := check.MustValue(thrift.NewTSocketConf(addr, nil))
 	bufferedTransport := thrift.NewTBufferedTransport(transport, 4096)
 	protocol := thrift.NewTBinaryProtocolConf(bufferedTransport, nil)
 	client := thrift.NewTStandardClient(protocol, protocol)
@@ -236,9 +130,6 @@ func ensureRemoteController(launchDefaultCluster bool) *RemoteControllerClientWr
 func StartNewClusterWithOptions(clusterName string, port, memberCount int) *TestCluster {
 	ensureRemoteController(false)
 	config := xmlConfig(clusterName, port)
-	if SSLEnabled() {
-		config = xmlSSLConfig(clusterName, port)
-	}
 	return rc.startNewCluster(memberCount, config, port)
 }
 
@@ -260,10 +151,10 @@ func newRemoteControllerClientWrapper(rc *RemoteControllerClient) *RemoteControl
 }
 
 func (rcw *RemoteControllerClientWrapper) startNewCluster(memberCount int, config string, port int) *TestCluster {
-	cluster := check.MustAnyValue[*Cluster](rcw.CreateClusterKeepClusterName(context.Background(), HzVersion(), config))
+	cluster := check.MustValue(rcw.CreateClusterKeepClusterName(context.Background(), HzVersion(), config))
 	memberUUIDs := make([]string, 0, memberCount)
 	for i := 0; i < memberCount; i++ {
-		member := check.MustAnyValue[*Member](rcw.StartMember(context.Background(), cluster.ID))
+		member := check.MustValue(rcw.StartMember(context.Background(), cluster.ID))
 		memberUUIDs = append(memberUUIDs, member.UUID)
 	}
 	return &TestCluster{
@@ -348,6 +239,10 @@ func (c TestCluster) DefaultConfigWithNoSSL() hz.Config {
 	return config
 }
 
+func (c TestCluster) StartMember(ctx context.Context) (*Member, error) {
+	return c.RC.StartMember(ctx, c.ClusterID)
+}
+
 func xmlConfig(clusterName string, port int) string {
 	return fmt.Sprintf(`
         <hazelcast xmlns="http://www.hazelcast.com/schema/config"
@@ -358,106 +253,9 @@ func xmlConfig(clusterName string, port int) string {
             <network>
                <port>%d</port>
             </network>
-			<map name="test-map">
-				<map-store enabled="true">
-					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
-				</map-store>
-			</map>
-			<map name="test-map-smart">
-				<map-store enabled="true">
-					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
-				</map-store>
-			</map>
-			<map name="test-map-unisocket">
-				<map-store enabled="true">
-					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
-				</map-store>
-			</map>
-			<serialization>
-				<data-serializable-factories>
-					<data-serializable-factory factory-id="66">com.hazelcast.client.test.IdentifiedFactory</data-serializable-factory>
-					<data-serializable-factory factory-id="666">com.hazelcast.client.test.IdentifiedDataSerializableFactory</data-serializable-factory>
-				</data-serializable-factories>
-			</serialization>
+			<jet enabled="true" />
         </hazelcast>
 	`, clusterName, port)
-}
-
-func xmlSSLConfig(clusterName string, port int) string {
-	return fmt.Sprintf(`
-		<hazelcast xmlns="http://www.hazelcast.com/schema/config"
-           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-           xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
-			<cluster-name>%s</cluster-name>
-			<network>
-			   <port>%d</port>
-				<ssl enabled="true">
-					<factory-class-name>
-						com.hazelcast.nio.ssl.ClasspathSSLContextFactory
-					</factory-class-name>
-					<properties>
-						<property name="keyStore">com/hazelcast/nio/ssl-mutual-auth/server1.keystore</property>
-						<property name="keyStorePassword">password</property>
-						<property name="keyManagerAlgorithm">SunX509</property>
-						<property name="protocol">TLSv1.2</property>
-					</properties>
-				</ssl>
-			</network>
-			<map name="test-map">
-				<map-store enabled="true">
-					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
-				</map-store>
-			</map>
-			<serialization>
-				<data-serializable-factories>
-					<data-serializable-factory factory-id="66">com.hazelcast.client.test.IdentifiedFactory</data-serializable-factory>
-					<data-serializable-factory factory-id="666">com.hazelcast.client.test.IdentifiedDataSerializableFactory</data-serializable-factory>
-				</data-serializable-factories>
-			</serialization>
-		</hazelcast>
-			`, clusterName, port)
-}
-
-func xmlSSLMutualAuthenticationConfig(clusterName string, port int) string {
-	return fmt.Sprintf(`
-		<hazelcast xmlns="http://www.hazelcast.com/schema/config"
-           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-           xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
-			<cluster-name>%s</cluster-name>
-			<network>
-				<port>%d</port>
-				<ssl enabled="true">
-					<factory-class-name>
-						com.hazelcast.nio.ssl.ClasspathSSLContextFactory
-					</factory-class-name>
-					<properties>
-						<property name="keyStore">com/hazelcast/nio/ssl-mutual-auth/server1.keystore</property>
-						<property name="keyStorePassword">password</property>
-						<property name="trustStore">com/hazelcast/nio/ssl-mutual-auth/server1_knows_client1/server1.truststore
-						</property>
-						<property name="trustStorePassword">password</property>
-						<property name="trustManagerAlgorithm">SunX509</property>
-						<property name="javax.net.ssl.mutualAuthentication">REQUIRED</property>
-						<property name="keyManagerAlgorithm">SunX509</property>
-						<property name="protocol">TLSv1.2</property>
-					</properties>
-				</ssl>
-			</network>
-			<map name="test-map">
-				<map-store enabled="true">
-					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
-				</map-store>
-			</map>
-			<serialization>
-				<data-serializable-factories>
-					<data-serializable-factory factory-id="66">com.hazelcast.client.test.IdentifiedFactory</data-serializable-factory>
-					<data-serializable-factory factory-id="666">com.hazelcast.client.test.IdentifiedDataSerializableFactory</data-serializable-factory>
-				</data-serializable-factories>
-			</serialization>
-		</hazelcast>
-			`, clusterName, port)
 }
 
 func getLoggerLevel() logger.Level {
@@ -601,4 +399,84 @@ func (c *SingletonTestCluster) Launch(t testLogger) *TestCluster {
 	t.Logf("Launching the auto-shutdown test cluster: %s", c.name)
 	c.cls = c.launcher()
 	return c.cls
+}
+
+type CLCHome struct {
+	home string
+}
+
+func NewCLCHome() (*CLCHome, error) {
+	home, err := os.MkdirTemp("", "clc-")
+	if err != nil {
+		return nil, err
+	}
+	return &CLCHome{home: home}, err
+}
+
+func (h *CLCHome) Path() string {
+	return h.home
+}
+
+func (h *CLCHome) Destroy() error {
+	if h.home != "" {
+		return os.RemoveAll(h.home)
+	}
+	return nil
+}
+
+func (h *CLCHome) WithFile(path string, data []byte, fn func(path string)) {
+	path = paths.Join(h.home, path)
+	if err := os.WriteFile(path, data, 0600); err != nil {
+		panic(fmt.Errorf("writing file: %w", err))
+	}
+	fn(path)
+}
+
+func WithTempFile(fn func(*os.File)) {
+	f, err := os.CreateTemp("", "clc-*")
+	if err != nil {
+		panic(fmt.Errorf("creating temp file: %w", err))
+	}
+	defer func() {
+		// errors are ignored
+		f.Close()
+		os.Remove(f.Name())
+	}()
+	fn(f)
+}
+
+func WithTempConfigFile(m map[string]any, fn func(path string)) {
+	b, err := yaml.Marshal(m)
+	if err != nil {
+		panic(fmt.Errorf("marhaling YAML: %w", err))
+	}
+	WithTempFile(func(f *os.File) {
+		if err := os.WriteFile(f.Name(), b, 0600); err != nil {
+			panic(fmt.Errorf("writing temp file: %w", err))
+		}
+		fn(f.Name())
+	})
+}
+
+func ConfigToMap(c hz.Config) map[string]any {
+	mc := map[string]any{}
+	var addr string
+	if len(c.Cluster.Network.Addresses) > 0 {
+		addr = c.Cluster.Network.Addresses[0]
+	}
+	mc["cluster"] = map[string]any{
+		"name":    c.Cluster.Name,
+		"address": addr,
+	}
+	if c.Cluster.Network.SSL.Enabled {
+		// TODO: proper SSL settings
+		mc["ssl"] = map[string]any{
+			"enabled":     true,
+			"skip-verify": true,
+		}
+	}
+	mc["log"] = map[string]any{
+		"level": c.Logger.Level,
+	}
+	return mc
 }

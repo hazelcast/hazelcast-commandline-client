@@ -6,6 +6,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 )
@@ -30,7 +31,6 @@ type ExecContext interface {
 	AddOutputStream(ctx context.Context, ch <-chan output.Row) error
 	Args() []string
 	ClientInternal(ctx context.Context) (*hazelcast.ClientInternal, error)
-	ChangeConfig(ctx context.Context, path string) error
 	CommandName() string
 	Interactive() bool
 	Logger() log.Logger
@@ -38,5 +38,7 @@ type ExecContext interface {
 	ShowHelpAndExit()
 	Stderr() io.Writer
 	Stdout() io.Writer
-	ExecuteBlocking(ctx context.Context, hint string, f func(context.Context) (any, error)) (any, context.CancelFunc, error)
+	Stdin() io.Reader
+	ExecuteBlocking(ctx context.Context, f func(context.Context, clc.Spinner) (any, error)) (value any, stop context.CancelFunc, err error)
+	Wrap(f func() error) error
 }

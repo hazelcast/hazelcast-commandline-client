@@ -19,18 +19,17 @@ import (
 )
 
 const (
-	CmdPrefix     = `\`
-	envStyler     = "CLC_EXPERIMENTAL_STYLER"
-	envFormatter  = "CLC_EXPERIMENTAL_FORMATTER"
-	envReadline   = "CLC_EXPERIMENTAL_READLINE"
-	maxErrorLines = 5
+	CmdPrefix    = `\`
+	envStyler    = "CLC_EXPERIMENTAL_STYLER"
+	envFormatter = "CLC_EXPERIMENTAL_FORMATTER"
+	envReadline  = "CLC_EXPERIMENTAL_READLINE"
 )
 
 var ErrExit = errors.New("exit")
 
 type EndLineFn func(line string, multiline bool) (string, bool)
 
-type TextFn func(ctx context.Context, text string) error
+type TextFn func(ctx context.Context, stdout io.Writer, text string) error
 
 type Shell struct {
 	lr            LineReader
@@ -41,10 +40,11 @@ type Shell struct {
 	historyPath   string
 	stderr        io.Writer
 	stdout        io.Writer
+	stdin         io.Reader
 	commentPrefix string
 }
 
-func New(prompt1, prompt2, historyPath string, stdout, stderr io.Writer, endLineFn EndLineFn, textFn TextFn) (*Shell, error) {
+func New(prompt1, prompt2, historyPath string, stdout, stderr io.Writer, stdin io.Reader, endLineFn EndLineFn, textFn TextFn) (*Shell, error) {
 	stdout, stderr = fixStdoutStderr(stdout, stderr)
 	sh := &Shell{
 		endLineFn:     endLineFn,
@@ -54,6 +54,7 @@ func New(prompt1, prompt2, historyPath string, stdout, stderr io.Writer, endLine
 		historyPath:   historyPath,
 		stderr:        stderr,
 		stdout:        stdout,
+		stdin:         stdin,
 		commentPrefix: "",
 	}
 	if os.Getenv(envReadline) == "ny" {
@@ -92,12 +93,9 @@ func (sh *Shell) Start(ctx context.Context) error {
 		}
 		sh.lr.AddToHistory(text)
 		ctx, stop := signal.NotifyContext(ctx, os.Interrupt, os.Kill)
-		if err := sh.textFn(ctx, text); err != nil {
+		if err := sh.textFn(ctx, sh.stdout, text); err != nil {
 			if errors.Is(err, ErrExit) {
 				return nil
-			}
-			if !errors.Is(err, context.DeadlineExceeded) && !errors.Is(err, context.Canceled) {
-				I2(fmt.Fprintf(sh.stderr, color.RedString("Error: %s\n", trimError(err, maxErrorLines))))
 			}
 		}
 		stop()
@@ -148,15 +146,6 @@ func (c *SQLColoring) Init() int {
 
 func (c *SQLColoring) Next(_ rune) int {
 	return ny.DefaultForeGroundColor
-}
-
-// trimErrorString trims the string so it's at most n lines
-func trimError(err error, n int) string {
-	lines := strings.Split(err.Error(), "\n")
-	if len(lines) > n {
-		lines = append(lines[:5], "(Rest of the error message is trimmed.)")
-	}
-	return strings.Join(lines, "\n")
 }
 
 func isStdout(w io.Writer) bool {

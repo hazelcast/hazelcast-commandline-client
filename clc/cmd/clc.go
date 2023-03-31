@@ -35,8 +35,9 @@ type Main struct {
 	cmds          map[string]*cobra.Command
 	vpr           *viper.Viper
 	lg            *logger.Logger
-	stdout        io.WriteCloser
 	stderr        io.WriteCloser
+	stdout        io.WriteCloser
+	stdin         io.Reader
 	isInteractive bool
 	outputFormat  string
 	configLoaded  bool
@@ -44,7 +45,7 @@ type Main struct {
 	cc            *CommandContext
 }
 
-func NewMain(arg0, cfgPath, logPath, logLevel string, stdout, stderr io.Writer) (*Main, error) {
+func NewMain(arg0, cfgPath, logPath, logLevel string, sio clc.IO) (*Main, error) {
 	rc := &cobra.Command{
 		Use:               arg0,
 		Short:             "Hazelcast CLC",
@@ -53,12 +54,15 @@ func NewMain(arg0, cfgPath, logPath, logLevel string, stdout, stderr io.Writer) 
 		CompletionOptions: cobra.CompletionOptions{DisableDescriptions: true},
 		SilenceErrors:     true,
 	}
+	rc.SetOut(sio.Stdout)
+	rc.SetErr(sio.Stderr)
 	m := &Main{
 		root:   rc,
 		cmds:   map[string]*cobra.Command{},
 		vpr:    viper.New(),
-		stdout: clc.NopWriteCloser{W: stdout},
-		stderr: clc.NopWriteCloser{W: stderr},
+		stdout: clc.NopWriteCloser{W: sio.Stdout},
+		stderr: clc.NopWriteCloser{W: sio.Stderr},
+		stdin:  sio.Stdin,
 		props:  plug.NewProperties(),
 	}
 	cfgPath = paths.ResolveConfigPath(cfgPath)
@@ -127,7 +131,7 @@ func (m *Main) Root() *cobra.Command {
 	return m.root
 }
 
-func (m *Main) Execute(args []string) error {
+func (m *Main) Execute(args ...string) error {
 	var cm *cobra.Command
 	var cmdArgs []string
 	var err error
@@ -289,16 +293,16 @@ func (m *Main) createCommands() error {
 					}
 					props.Set(f.Name, convertFlagValue(cfs, f.Name, f.Value))
 				})
-				ec, err := NewExecContext(m.lg, m.stdout, m.stderr, m.props, func(ctx context.Context) (*hazelcast.ClientInternal, error) {
+				sio := clc.IO{
+					Stdin:  m.stdin,
+					Stderr: m.stderr,
+					Stdout: m.stdout,
+				}
+				ec, err := NewExecContext(m.lg, sio, m.props, func(ctx context.Context) (*hazelcast.ClientInternal, error) {
 					if err := m.ensureClient(ctx, m.props); err != nil {
 						return nil, err
 					}
 					return clientInternal, nil
-				}, func(ctx context.Context, path string) error {
-					if err := m.changeConfig(path); err != nil {
-						return err
-					}
-					return nil
 				}, m.isInteractive)
 				if err != nil {
 					return err
@@ -309,12 +313,17 @@ func (m *Main) createCommands() error {
 				if err := m.runAugmentors(ec, props); err != nil {
 					return err
 				}
-				if err := c.Item.Exec(cmd.Context(), ec); err != nil {
+				err = ec.Wrap(func() error {
+					return c.Item.Exec(cmd.Context(), ec)
+				})
+				if err != nil {
 					return err
 				}
 				if ic, ok := c.Item.(plug.InteractiveCommander); ok {
 					ec.SetInteractive(true)
-					err := ic.ExecInteractive(cmd.Context(), ec)
+					err := ec.Wrap(func() error {
+						return ic.ExecInteractive(cmd.Context(), ec)
+					})
 					if errors.Is(err, puberrors.ErrNotAvailable) {
 						return nil
 					}

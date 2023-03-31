@@ -8,6 +8,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -38,8 +39,8 @@ func (mc *MapRemoveCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 		return err
 	}
 	req := codec.EncodeMapRemoveRequest(mapName, keyData, 0)
-	hint := fmt.Sprintf("Removing from map %s", mapName)
-	rv, stop, err := ec.ExecuteBlocking(ctx, hint, func(ctx context.Context) (any, error) {
+	rv, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		sp.SetText(fmt.Sprintf("Removing from map %s", mapName))
 		return ci.InvokeOnKey(ctx, req, keyData, nil)
 	})
 	if err != nil {

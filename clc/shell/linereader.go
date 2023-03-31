@@ -99,6 +99,7 @@ func (sh *Shell) createGohxsLineReader(prompt string) error {
 		HistorySearchFold: true,
 		Stdout:            sh.stdout,
 		Stderr:            sh.stderr,
+		Stdin:             sh.stdin,
 	}
 	if sh.historyPath != "" {
 		cfg.HistoryFile = sh.historyPath
