@@ -5,7 +5,6 @@ import (
 	"os"
 	"strings"
 	"sync"
-	"sync/atomic"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/pflag"
@@ -205,57 +204,4 @@ func (p *FileProvider) traverseMap(root string, m map[any]any) {
 		p.cfg[r] = v
 		p.keys[r] = struct{}{}
 	}
-}
-
-type SelectProvider struct {
-	fp  *atomic.Pointer[FileProvider]
-	cfg hazelcast.Config
-}
-
-func NewSelectProvider(path string) (*SelectProvider, error) {
-	fp, err := NewFileProvider(path)
-	if err != nil {
-		return nil, err
-	}
-	var fpp atomic.Pointer[FileProvider]
-	fpp.Store(fp)
-	return &SelectProvider{fp: &fpp}, nil
-}
-
-func (p *SelectProvider) GetString(key string) string {
-	return p.fp.Load().GetString(key)
-}
-
-func (p *SelectProvider) Set(key string, value any) {
-	p.fp.Load().Set(key, value)
-}
-
-func (p *SelectProvider) All() map[string]any {
-	return p.fp.Load().All()
-}
-
-func (p *SelectProvider) BindFlag(name string, flag *pflag.Flag) {
-	p.fp.Load().BindFlag(name, flag)
-}
-
-func (p *SelectProvider) ClientConfig(ec plug.ExecContext) (hazelcast.Config, error) {
-	cfg, err := p.fp.Load().ClientConfig(ec)
-	if err != nil {
-		if !ec.Interactive() {
-			return hazelcast.Config{}, err
-		}
-		// ask the config to the user
-		var name string
-		fmt.Fprint(ec.Stdout(), "config: ")
-		if _, err := fmt.Fscanln(ec.Stdin(), &name); err != nil {
-			return cfg, err
-		}
-		fp, err := NewFileProvider(name)
-		if err != nil {
-			return cfg, err
-		}
-		p.fp.Store(fp)
-		return fp.ClientConfig(ec)
-	}
-	return cfg, nil
 }

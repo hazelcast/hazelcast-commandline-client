@@ -69,17 +69,17 @@ func (p *Provider) ClientConfig(ec plug.ExecContext) (hazelcast.Config, error) {
 }
 
 func (p *Provider) runWizard(ctx context.Context, ec plug.ExecContext) (string, error) {
-	dirs, err := config.FindAll(paths.Configs())
+	cs, err := config.FindAll(paths.Configs())
 	if err != nil {
 		return "", err
 	}
-	if len(dirs) == 0 {
+	if len(cs) == 0 {
 		m := initialModel()
-		model, err := tea.NewProgram(m).Run()
+		mv, err := tea.NewProgram(m).Run()
 		if err != nil {
 			return "", err
 		}
-		if model.View() == "esc" {
+		if mv.View() == "" {
 			return "", errors.ErrNoClusterConfig
 		}
 		args := m.GetInputs()
@@ -89,12 +89,12 @@ func (p *Provider) runWizard(ctx context.Context, ec plug.ExecContext) (string, 
 		}
 		return args[0], nil
 	}
-	m := initializeList(dirs)
+	m := initializeList(cs)
 	model, err := tea.NewProgram(m).Run()
 	if err != nil {
 		return "", err
 	}
-	if model.View() == "esc" {
+	if model.View() == "" {
 		return "", errors.ErrNoClusterConfig
 	}
 	return model.View(), nil
