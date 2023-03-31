@@ -7,6 +7,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -72,6 +73,7 @@ type ExecContext struct {
 	lg     *Logger
 	stdout *bytes.Buffer
 	stderr *bytes.Buffer
+	stdin  *bytes.Buffer
 	args   []string
 	props  *plug.Properties
 	Rows   []output.Row
@@ -82,11 +84,12 @@ func NewExecuteContext(args []string) *ExecContext {
 		lg:     NewLogger(),
 		stdout: &bytes.Buffer{},
 		stderr: &bytes.Buffer{},
+		stdin:  &bytes.Buffer{},
 		args:   args,
 		props:  plug.NewProperties(),
 	}
 }
-func (ec *ExecContext) ExecuteBlocking(ctx context.Context, hint string, f func(context.Context) (any, error)) (any, context.CancelFunc, error) {
+func (ec *ExecContext) ExecuteBlocking(context.Context, func(context.Context, clc.Spinner) (any, error)) (any, context.CancelFunc, error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -124,6 +127,10 @@ func (ec *ExecContext) Stdout() io.Writer {
 
 func (ec *ExecContext) Stderr() io.Writer {
 	return ec.stderr
+}
+
+func (ec *ExecContext) Stdin() io.Reader {
+	return ec.stdin
 }
 
 func (ec *ExecContext) Args() []string {
@@ -165,4 +172,8 @@ func (ec *ExecContext) Set(name string, value any) {
 }
 func (ec *ExecContext) Get(name string) (any, bool) {
 	return ec.props.Get(name)
+}
+
+func (ec *ExecContext) Wrap(f func() error) error {
+	return f()
 }

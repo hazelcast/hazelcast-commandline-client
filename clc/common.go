@@ -1,6 +1,8 @@
 package clc
 
-import "io"
+import (
+	"io"
+)
 
 type NopWriteCloser struct {
 	W io.Writer
@@ -12,4 +14,9 @@ func (nc NopWriteCloser) Write(p []byte) (n int, err error) {
 
 func (nc NopWriteCloser) Close() error {
 	return nil
+}
+
+type Spinner interface {
+	Start() error
+	SetText(text string)
 }

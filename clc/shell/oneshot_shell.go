@@ -4,8 +4,9 @@ import (
 	"bufio"
 	"context"
 	"io"
-	"os"
 	"strings"
+
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 )
 
 type OneshotShell struct {
@@ -13,14 +14,18 @@ type OneshotShell struct {
 	textFn        TextFn
 	commentPrefix string
 	stderr        io.Writer
+	stdout        io.Writer
+	stdin         io.Reader
 }
 
-func NewOneshot(endLineFn EndLineFn, textFn TextFn) *OneshotShell {
+func NewOneshot(endLineFn EndLineFn, sio clc.IO, textFn TextFn) *OneshotShell {
 	return &OneshotShell{
 		endLineFn:     endLineFn,
 		textFn:        textFn,
 		commentPrefix: "",
-		stderr:        os.Stderr,
+		stderr:        sio.Stderr,
+		stdout:        sio.Stdout,
+		stdin:         sio.Stdin,
 	}
 }
 
@@ -40,7 +45,7 @@ func (sh *OneshotShell) readTextBasic() error {
 	// clc/shell/shell.go:readTextReadline should also change!
 	var sb strings.Builder
 	multiline := false
-	scn := bufio.NewScanner(os.Stdin)
+	scn := bufio.NewScanner(sh.stdin)
 	for scn.Scan() {
 		if scn.Err() != nil {
 			return scn.Err()
@@ -59,7 +64,7 @@ func (sh *OneshotShell) readTextBasic() error {
 		sb.WriteString(text)
 		multiline = !end
 		if end {
-			if err := sh.textFn(context.Background(), sb.String()); err != nil {
+			if err := sh.textFn(context.Background(), sh.stdout, sb.String()); err != nil {
 				return err
 			}
 			sb.Reset()
@@ -67,7 +72,7 @@ func (sh *OneshotShell) readTextBasic() error {
 	}
 	text := sb.String()
 	if text != "" {
-		return sh.textFn(context.Background(), sb.String())
+		return sh.textFn(context.Background(), sh.stdout, sb.String())
 	}
 	return nil
 }

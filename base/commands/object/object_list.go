@@ -10,6 +10,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/types"
 
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -123,7 +124,8 @@ func getObjects(ctx context.Context, ec plug.ExecContext, typeFilter string, sho
 	if err != nil {
 		return nil, err
 	}
-	objs, stop, err := ec.ExecuteBlocking(ctx, "Getting distributed objects", func(ctx context.Context) (any, error) {
+	objs, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		sp.SetText("Getting distributed objects")
 		return ci.Client().GetDistributedObjectsInfo(ctx)
 	})
 	if err != nil {
