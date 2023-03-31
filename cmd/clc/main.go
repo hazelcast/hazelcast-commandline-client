@@ -25,7 +25,7 @@ func main() {
 	if err != nil {
 		bye(err)
 	}
-	cp, err := config.NewSelectProvider(cfgPath)
+	cp, err := config.NewFileProvider(cfgPath)
 	if err != nil {
 		bye(err)
 	}
