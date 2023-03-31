@@ -1,4 +1,5 @@
 == CLC Configuration Wizard
+
 :description: Hazelcast CLC provides a wizard functionlity in the interactice mode to manage multiple configuration easily. It runs when a client connection need and asks for a configuration choice.
 
 :page-product: cloud
@@ -18,7 +19,6 @@ You need the following:
 - Hazelcast CLC
 - A {hazelcast-cloud} cluster
 
-[[mutual]]
 == Connecting to {hazelcast-cloud}
 
 . Start the Hazelcast CLC in interactive mode.
@@ -69,8 +69,6 @@ Source: curl https://api.viridian.hazelcast.com/client_samples/download/...
 . Press `[ Submit ]` and it will automatically connect to your Viridian cluster. Notice that if you didn't specify the
 configuration name or leave it as default, it will automatically connect to this client unless you specify it with `--config` flag.
 
-
-[[mutual]]
 == Multiple Configurations
 
 If you have multiple configurations in the CLC home directory, the configuration wizard will prompt you the list of
