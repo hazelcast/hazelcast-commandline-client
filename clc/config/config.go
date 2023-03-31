@@ -14,8 +14,8 @@ import (
 	"golang.org/x/exp/slices"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/logger"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/str"
 )
@@ -41,7 +41,7 @@ func Create(path string, opts clc.KeyValues[string, string]) (dir, cfgPath strin
 	return dir, cfgPath, nil
 }
 
-func MakeHzConfig(props plug.ReadOnlyProperties, lg *logger.Logger) (hazelcast.Config, error) {
+func MakeHzConfig(props plug.ReadOnlyProperties, lg log.Logger) (hazelcast.Config, error) {
 	// if the path is not absolute, assume it is in the parent directory of the configuration
 	wd := filepath.Dir(props.GetString(clc.PropertyConfig))
 	var cfg hazelcast.Config
@@ -267,4 +267,24 @@ func copyOpt(level int, sb *strings.Builder, opt clc.KeyValue[string, string]) {
 	sb.WriteString(": ")
 	sb.WriteString(opt.Value)
 	sb.WriteString("\n")
+}
+
+func FindAll(cd string) ([]string, error) {
+	var cs []string
+	es, err := os.ReadDir(cd)
+	if err != nil {
+		return nil, err
+	}
+	for _, e := range es {
+		if !e.IsDir() {
+			continue
+		}
+		if strings.HasPrefix(e.Name(), ".") || strings.HasPrefix(e.Name(), "_") {
+			continue
+		}
+		if paths.Exists(paths.Join(cd, e.Name(), "config.yaml")) {
+			cs = append(cs, e.Name())
+		}
+	}
+	return cs, nil
 }

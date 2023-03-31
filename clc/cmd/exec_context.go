@@ -16,9 +16,8 @@ import (
 	"github.com/theckman/yacspin"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/shell"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/wizard"
 	cmderrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
@@ -31,9 +30,7 @@ const (
 	maxErrorLines = 5
 )
 
-type ClientFn func(ctx context.Context) (*hazelcast.ClientInternal, error)
-
-type ConfigFn func(ctx context.Context, path string) error
+type ClientFn func(ctx context.Context, cfg hazelcast.Config) (*hazelcast.ClientInternal, error)
 
 type ExecContext struct {
 	lg            log.Logger
@@ -43,15 +40,15 @@ type ExecContext struct {
 	args          []string
 	props         *plug.Properties
 	clientFn      ClientFn
-	configFn      ConfigFn
 	isInteractive bool
 	cmd           *cobra.Command
 	main          *Main
 	spinnerWait   time.Duration
 	printer       plug.Printer
+	cp            config.Provider
 }
 
-func NewExecContext(lg log.Logger, sio clc.IO, props *plug.Properties, clientFn ClientFn, configFn ConfigFn, interactive bool) (*ExecContext, error) {
+func NewExecContext(lg log.Logger, sio clc.IO, props *plug.Properties, clientFn ClientFn, interactive bool) (*ExecContext, error) {
 	return &ExecContext{
 		lg:            lg,
 		stdout:        sio.Stdout,
@@ -59,10 +56,13 @@ func NewExecContext(lg log.Logger, sio clc.IO, props *plug.Properties, clientFn 
 		stdin:         sio.Stdin,
 		props:         props,
 		clientFn:      clientFn,
-		configFn:      configFn,
 		isInteractive: interactive,
 		spinnerWait:   1 * time.Second,
 	}, nil
+}
+
+func (ec *ExecContext) SetConfigProvider(cfgProvider config.Provider) {
+	ec.cp = cfgProvider
 }
 
 func (ec *ExecContext) SetArgs(args []string) {
@@ -106,40 +106,29 @@ func (ec *ExecContext) Props() plug.ReadOnlyProperties {
 }
 
 func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInternal, error) {
-	if clientInternal != nil {
-		return clientInternal, nil
+	ci := getClientInternal()
+	if ci != nil {
+		return ci, nil
 	}
-	if ec.Interactive() && (!paths.Exists(paths.Configs()) || !paths.Exists(ec.Props().GetString(clc.PropertyConfig))) {
-		err := wizard.RunWizard(ctx, ec)
-		if err != nil {
-			return nil, err
-		}
+	cfg, err := ec.cp.ClientConfig(ec)
+	if err != nil {
+		return nil, err
 	}
-	ci, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+	civ, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Connecting to the cluster")
-		return ec.clientFn(ctx)
+		return ec.clientFn(ctx, cfg)
 	})
 	if err != nil {
 		return nil, err
 	}
 	stop()
-	clientInternal = ci.(*hazelcast.ClientInternal)
+	ci = civ.(*hazelcast.ClientInternal)
+	setClientInternal(ci)
 	quite := ec.Props().GetBool(clc.PropertyQuite) || shell.IsPipe()
 	if !quite {
-		I2(fmt.Fprintf(ec.stdout, "Connected to cluster: %s\n\n", clientInternal.ClusterService().FailoverService().Current().ClusterName))
+		I2(fmt.Fprintf(ec.stdout, "Connected to cluster: %s\n\n", ci.ClusterService().FailoverService().Current().ClusterName))
 	}
-	return clientInternal, nil
-}
-
-func (ec *ExecContext) ChangeConfig(ctx context.Context, path string) error {
-	_, stop, err := ec.ExecuteBlocking(ctx, "", func(ctx context.Context) (any, error) {
-		return nil, ec.configFn(ctx, path)
-	})
-	if err != nil {
-		return err
-	}
-	stop()
-	return nil
+	return ci, nil
 }
 
 func (ec *ExecContext) Interactive() bool {
@@ -254,13 +243,17 @@ func (ec *ExecContext) Wrap(f func() error) error {
 				errStr = trimError(err, maxErrorLines)
 			}
 			if verbose {
-				msg = fmt.Sprintf("\nFailed in %d ms: %s", took.Milliseconds(), errStr)
+				msg = fmt.Sprintf("\nError in %d ms: %s", took.Milliseconds(), errStr)
 			} else {
-				msg = fmt.Sprintf("\nFailed: %s", errStr)
+				msg = fmt.Sprintf("\nError: %s", errStr)
 			}
-			I2(fmt.Fprintln(ec.stderr, color.RedString(msg)))
+			if ec.Interactive() {
+				I2(fmt.Fprintln(ec.stderr, color.RedString(msg)))
+			} else {
+				I2(fmt.Fprintln(ec.stderr, msg))
+			}
 		}
-		return err
+		return cmderrors.WrappedError{Err: err}
 	}
 	if quite {
 		return nil

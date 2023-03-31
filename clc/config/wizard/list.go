@@ -69,7 +69,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case "ctrl+c", "esc":
 			m.quit = true
-			m.choice = "esc"
 			return m, tea.Quit
 		}
 	}
@@ -88,9 +87,9 @@ func (m model) View() string {
 	return m.list.View()
 }
 
-func initializeList(dirs map[string]string) model {
+func initializeList(dirs []string) model {
 	var items []list.Item
-	for k, _ := range dirs {
+	for _, k := range dirs {
 		items = append(items, item(k))
 	}
 	l := list.New(items, itemDelegate{}, 20, listHeight)
