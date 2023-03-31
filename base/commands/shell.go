@@ -153,6 +153,8 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 	return sh.Start(ctx)
 }
 
+func (ShellCommand) Unwrappable() {}
+
 func convertStatement(stmt string) (string, error) {
 	stmt = strings.TrimSpace(stmt)
 	if strings.HasPrefix(stmt, "help") {

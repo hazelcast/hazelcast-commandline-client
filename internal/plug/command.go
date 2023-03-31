@@ -9,3 +9,7 @@ type Commander interface {
 type InteractiveCommander interface {
 	ExecInteractive(ctx context.Context, ec ExecContext) error
 }
+
+type UnwrappableCommander interface {
+	Unwrappable()
+}

@@ -40,7 +40,11 @@ func DefaultConfigPath() string {
 	if p := nearbyConfigPath(); p != "" {
 		return p
 	}
-	return filepath.Join(ResolveConfigDir("default"), DefaultConfig)
+	p := filepath.Join(ResolveConfigDir("default"), DefaultConfig)
+	if Exists(p) {
+		return p
+	}
+	return ""
 }
 
 func DefaultLogPath(now time.Time) string {
@@ -64,6 +68,9 @@ The user has several ways of specifying the configuration:
 func ResolveConfigPath(path string) string {
 	if path == "" {
 		path = DefaultConfigPath()
+	}
+	if path == "" {
+		return path
 	}
 	if filepath.Ext(path) == "" {
 		path = filepath.Join(Configs(), path, DefaultConfig)
