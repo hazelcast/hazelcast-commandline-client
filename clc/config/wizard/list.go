@@ -88,9 +88,9 @@ func (m model) View() string {
 	return m.list.View()
 }
 
-func initializeList(dirs map[string]string) model {
+func initializeList(dirs []string) model {
 	var items []list.Item
-	for k, _ := range dirs {
+	for _, k := range dirs {
 		items = append(items, item(k))
 	}
 	l := list.New(items, itemDelegate{}, 20, listHeight)
