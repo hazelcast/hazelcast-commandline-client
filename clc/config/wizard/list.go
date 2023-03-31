@@ -50,10 +50,6 @@ func (m model) Init() tea.Cmd {
 	return nil
 }
 
-func (m model) Choice() string {
-	return m.choice
-}
-
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
