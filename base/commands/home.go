@@ -33,6 +33,8 @@ func (hc HomeCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	return nil
 }
 
+func (HomeCommand) Unwrappable() {}
+
 func init() {
 	Must(plug.Registry.RegisterCommand("home", &HomeCommand{}))
 }

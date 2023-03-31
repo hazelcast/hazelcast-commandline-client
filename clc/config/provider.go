@@ -1,0 +1,254 @@
+package config
+
+import (
+	"fmt"
+	"os"
+	"strings"
+	"sync"
+	"sync/atomic"
+
+	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/spf13/pflag"
+	"gopkg.in/yaml.v2"
+
+	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
+	"github.com/hazelcast/hazelcast-commandline-client/errors"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+)
+
+type Provider interface {
+	GetString(key string) string
+	Set(key string, value any)
+	All() map[string]any
+	BindFlag(name string, flag *pflag.Flag)
+	ClientConfig(ec plug.ExecContext) (hazelcast.Config, error)
+}
+
+type FileProvider struct {
+	mu                 *sync.RWMutex
+	cfg                map[string]any
+	defaults           map[string]any
+	keys               map[string]struct{}
+	boundFlags         map[string]*pflag.Flag
+	canUseClientConfig bool
+	hasClientConfig    bool
+	clientCfg          hazelcast.Config
+}
+
+func NewFileProvider(path string) (*FileProvider, error) {
+	p := &FileProvider{
+		mu:         &sync.RWMutex{},
+		cfg:        map[string]any{},
+		keys:       map[string]struct{}{},
+		defaults:   map[string]any{},
+		boundFlags: map[string]*pflag.Flag{},
+	}
+	if err := p.load(path); err != nil {
+		return nil, err
+	}
+	return p, nil
+}
+
+func (p *FileProvider) load(path string) error {
+	path = paths.ResolveConfigPath(path)
+	if !paths.Exists(path) {
+		if path == "" {
+			// the user is trying to load the default config.
+			return nil
+		}
+		return fmt.Errorf("configuration does not exist %s: %w", path, os.ErrNotExist)
+	}
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("reading configuration: %w", err)
+	}
+	m := map[any]any{}
+	if err := yaml.Unmarshal(b, m); err != nil {
+		return fmt.Errorf("loading configuration: %w", err)
+	}
+	p.traverseMap("", m)
+	p.canUseClientConfig = true
+	return nil
+}
+
+func (p *FileProvider) GetString(key string) string {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	f, ok := p.boundFlags[key]
+	if ok && f.Changed {
+		return f.Value.String()
+	}
+	v, ok := p.get(key)
+	if ok {
+		return v.(string)
+	}
+	return ""
+}
+
+func (p *FileProvider) Set(key string, value any) {
+	p.mu.Lock()
+	p.defaults[key] = value
+	p.keys[key] = struct{}{}
+	p.mu.Unlock()
+}
+
+func (p *FileProvider) All() map[string]any {
+	p.mu.RLock()
+	m := make(map[string]any, len(p.cfg))
+	for k := range p.keys {
+		v, ok := p.get(k)
+		if ok {
+			m[k] = v
+		}
+	}
+	p.mu.RUnlock()
+	return m
+}
+
+func (p *FileProvider) BindFlag(name string, flag *pflag.Flag) {
+	p.mu.Lock()
+	p.boundFlags[name] = flag
+	p.mu.Unlock()
+}
+
+func (p *FileProvider) ClientConfig(ec plug.ExecContext) (hazelcast.Config, error) {
+	cc, ok := p.clientConfig()
+	if ok {
+		return cc, nil
+	}
+	if !p.canUseClientConfig {
+		return hazelcast.Config{}, errors.ErrNoClusterConfig
+	}
+	cc, err := MakeHzConfig(p, ec.Logger())
+	if err != nil {
+		return hazelcast.Config{}, err
+	}
+	p.mu.Lock()
+	p.clientCfg = cc
+	p.hasClientConfig = true
+	p.mu.Unlock()
+	return cc, nil
+}
+
+func (p *FileProvider) Get(name string) (any, bool) {
+	// XXX: boundFlags is not checked
+	p.mu.RLock()
+	v, ok := p.get(name)
+	p.mu.RUnlock()
+	return v, ok
+}
+
+func (p *FileProvider) get(name string) (any, bool) {
+	// XXX: boundFlags is not checked
+	v, ok := p.cfg[name]
+	if !ok {
+		v, ok = p.defaults[name]
+	}
+	return v, ok
+}
+
+func (p *FileProvider) GetBlocking(name string) (any, error) {
+	panic("config.FileProvider: not implemented")
+}
+
+func (p *FileProvider) GetBool(name string) bool {
+	// XXX: boundFlags is not checked
+	v, ok := p.Get(name)
+	if !ok {
+		return false
+	}
+	return v.(bool)
+}
+
+func (p *FileProvider) GetInt(name string) int64 {
+	// XXX: boundFlags is not checked
+	v, ok := p.Get(name)
+	if !ok {
+		return 0
+	}
+	return v.(int64)
+}
+
+func (p *FileProvider) clientConfig() (hazelcast.Config, bool) {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	if p.hasClientConfig {
+		return p.clientCfg, true
+	}
+	return hazelcast.Config{}, false
+}
+
+func (p *FileProvider) traverseMap(root string, m map[any]any) {
+	for k, v := range m {
+		// skip if the key is not a string
+		ks, ok := k.(string)
+		if !ok {
+			continue
+		}
+		var r string
+		if root == "" {
+			r = ks
+		} else {
+			r = strings.Join([]string{root, ks}, ".")
+		}
+		if mm, ok := v.(map[any]any); ok {
+			p.traverseMap(r, mm)
+			continue
+		}
+		p.cfg[r] = v
+		p.keys[r] = struct{}{}
+	}
+}
+
+type SelectProvider struct {
+	fp  *atomic.Pointer[FileProvider]
+	cfg hazelcast.Config
+}
+
+func NewSelectProvider(path string) (*SelectProvider, error) {
+	fp, err := NewFileProvider(path)
+	if err != nil {
+		return nil, err
+	}
+	var fpp atomic.Pointer[FileProvider]
+	fpp.Store(fp)
+	return &SelectProvider{fp: &fpp}, nil
+}
+
+func (p *SelectProvider) GetString(key string) string {
+	return p.fp.Load().GetString(key)
+}
+
+func (p *SelectProvider) Set(key string, value any) {
+	p.fp.Load().Set(key, value)
+}
+
+func (p *SelectProvider) All() map[string]any {
+	return p.fp.Load().All()
+}
+
+func (p *SelectProvider) BindFlag(name string, flag *pflag.Flag) {
+	p.fp.Load().BindFlag(name, flag)
+}
+
+func (p *SelectProvider) ClientConfig(ec plug.ExecContext) (hazelcast.Config, error) {
+	cfg, err := p.fp.Load().ClientConfig(ec)
+	if err != nil {
+		if !ec.Interactive() {
+			return hazelcast.Config{}, err
+		}
+		// ask the config to the user
+		var name string
+		fmt.Fprint(ec.Stdout(), "config: ")
+		if _, err := fmt.Fscanln(ec.Stdin(), &name); err != nil {
+			return cfg, err
+		}
+		fp, err := NewFileProvider(name)
+		if err != nil {
+			return cfg, err
+		}
+		p.fp.Store(fp)
+		return fp.ClientConfig(ec)
+	}
+	return cfg, nil
+}

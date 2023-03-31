@@ -32,6 +32,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it/expect"
@@ -130,6 +131,7 @@ func (tcx TestContext) Tester(f func(tcx TestContext)) {
 				tcx.T.Logf("Test warning, client not shutdown: %s", err.Error())
 			}
 		}()
+		tcx.ConfigPath = "test-cfg"
 		tcx.stderr = &bytes.Buffer{}
 		tcx.stdout = &bytes.Buffer{}
 		tcx.stdinR, tcx.stdinW = io.Pipe()
@@ -144,7 +146,11 @@ func (tcx TestContext) Tester(f func(tcx TestContext)) {
 				d, _ := filepath.Split(p)
 				check.Must(os.MkdirAll(d, 0700))
 				home.WithFile(p, bytesConfig, func(_ string) {
-					tcx.main = check.MustValue(cmd.NewMain("clc", tcx.ConfigPath, tcx.LogPath, tcx.LogLevel, tcx.IO()))
+					fp, err := config.NewFileProvider(tcx.ConfigPath)
+					if err != nil {
+						panic(err)
+					}
+					tcx.main = check.MustValue(cmd.NewMain("clc", tcx.ConfigPath, fp, tcx.LogPath, tcx.LogLevel, tcx.IO()))
 					defer tcx.main.Exit()
 					f(tcx)
 				})
@@ -218,6 +224,12 @@ func (tcx TestContext) WithReset(f func()) {
 	tcx.stdout.Reset()
 	tcx.stderr.Reset()
 	f()
+}
+
+func (tcx TestContext) CLCExecute(args ...string) {
+	a := []string{"-c", tcx.ConfigPath}
+	a = append(a, args...)
+	check.Must(tcx.CLC().Execute(a...))
 }
 
 func withEnv(name, value string, f func()) {

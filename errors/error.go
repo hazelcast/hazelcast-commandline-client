@@ -21,7 +21,20 @@ import (
 )
 
 var (
-	ErrUserCancelled = errors.New("cancelled")
-	ErrNotDecoded    = errors.New("not decoded")
-	ErrNotAvailable  = errors.New("not available")
+	ErrUserCancelled   = errors.New("cancelled")
+	ErrNotDecoded      = errors.New("not decoded")
+	ErrNotAvailable    = errors.New("not available")
+	ErrNoClusterConfig = errors.New("no configuration was specified")
 )
+
+type WrappedError struct {
+	Err error
+}
+
+func (w WrappedError) Unwrap() error {
+	return w.Err
+}
+
+func (w WrappedError) Error() string {
+	return w.Err.Error()
+}

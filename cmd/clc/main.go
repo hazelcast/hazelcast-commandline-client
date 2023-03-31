@@ -8,6 +8,8 @@ import (
 
 	clc "github.com/hazelcast/hazelcast-commandline-client/clc"
 	cmd "github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
+	"github.com/hazelcast/hazelcast-commandline-client/errors"
 )
 
 func bye(err error) {
@@ -23,13 +25,20 @@ func main() {
 	if err != nil {
 		bye(err)
 	}
-	m, err := cmd.NewMain("clc", cfgPath, logPath, logLevel, clc.StdIO())
+	cp, err := config.NewFileProvider(cfgPath)
+	if err != nil {
+		bye(err)
+	}
+	m, err := cmd.NewMain("clc", cfgPath, cp, logPath, logLevel, clc.StdIO())
 	if err != nil {
 		bye(err)
 	}
 	err = m.Execute(args...)
 	if err != nil {
-		//fmt.Println("Error:", err)
+		// print the error only if it wasn't printed before
+		if _, ok := err.(errors.WrappedError); !ok {
+			fmt.Println("Error:", err)
+		}
 	}
 	// ignoring the error here
 	_ = m.Exit()

@@ -72,8 +72,8 @@ func set_NonInteractiveTest(t *testing.T) {
 	mapTester(t, func(tcx it.TestContext, m *hz.Map) {
 		t := tcx.T
 		tcx.WithReset(func() {
-			check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "set", "foo", "bar", "--quite"))
-			tcx.AssertStdoutEquals(t, "")
+			tcx.CLCExecute("map", "-n", m.Name(), "set", "foo", "bar", "--quite")
+			tcx.AssertStderrEquals(t, "")
 			v := check.MustValue(m.Get(context.Background(), "foo"))
 			require.Equal(t, "bar", v)
 		})
