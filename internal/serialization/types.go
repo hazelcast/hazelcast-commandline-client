@@ -200,6 +200,9 @@ func (co Column) RowExtensions() ([]Column, error) {
 		}
 		return cols, nil
 	case TypeCompact:
+		if v, ok := co.Value.(ColumnList); ok {
+			return v, nil
+		}
 		value, err := structToString(co.Value)
 		if err != nil {
 			return nil, errors.ErrNotDecoded
@@ -399,8 +402,21 @@ func sprintStringer(v any) string {
 	return fmt.Sprint(v)
 }
 
+func sprintNilStringer[T any](v *T) string {
+	if v == (*T)(nil) {
+		return ValueNil
+	}
+	return fmt.Sprint(*v)
+}
+
 func arrayStringer[T any](v any) string {
-	vv := v.([]T)
+	vv, ok := v.([]T)
+	if !ok {
+		if vv, ok := v.([]*T); ok {
+			return arrayPtrStringer[T](vv)
+		}
+		panic(fmt.Errorf("arrayString: cannot handle %v", reflect.TypeOf(v)))
+	}
 	var sb strings.Builder
 	sb.WriteString("[")
 	if len(vv) > 0 {
@@ -408,6 +424,21 @@ func arrayStringer[T any](v any) string {
 		for _, x := range vv[1:] {
 			sb.WriteString(", ")
 			sb.WriteString(fmt.Sprint(x))
+		}
+	}
+	sb.WriteString("]")
+	return sb.String()
+}
+
+func arrayPtrStringer[T any](v any) string {
+	vv := v.([]*T)
+	var sb strings.Builder
+	sb.WriteString("[")
+	if len(vv) > 0 {
+		sb.WriteString(sprintNilStringer(vv[0]))
+		for _, x := range vv[1:] {
+			sb.WriteString(", ")
+			sb.WriteString(sprintNilStringer(x))
 		}
 	}
 	sb.WriteString("]")
@@ -467,7 +498,7 @@ var ValueToText = map[int32]Stringer{
 	TypeFloat32:        sprintStringer,
 	TypeFloat64:        sprintStringer,
 	TypeString:         sprintStringer,
-	TypeByteArray:      arrayStringer[byte],
+	TypeByteArray:      arrayStringer[int8],
 	TypeBoolArray:      arrayStringer[bool],
 	TypeUInt16Array:    arrayStringer[uint16],
 	TypeInt16Array:     arrayStringer[int16],

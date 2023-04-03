@@ -38,7 +38,10 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it/expect"
 )
 
-const DefaultTimeout = 30 * time.Second
+const (
+	DefaultTimeout = 30 * time.Second
+	DefaultDelay   = 10 * time.Millisecond
+)
 
 type TestContext struct {
 	T              *testing.T
@@ -175,14 +178,14 @@ func (tcx TestContext) IO() clc.IO {
 }
 
 func (tcx TestContext) AssertStdoutEquals(t *testing.T, text string) {
-	if !tcx.ExpectStdout.Match(expect.Exact(text), expect.WithTimeout(DefaultTimeout)) {
+	if !tcx.ExpectStdout.Match(expect.Exact(text), expect.WithTimeout(DefaultTimeout), expect.WithDelay(DefaultDelay)) {
 		t.Log("STDOUT:", tcx.ExpectStdout.String())
 		t.Fatalf("expect failed, no match for: %s", text)
 	}
 }
 
 func (tcx TestContext) AssertStderrEquals(t *testing.T, text string) {
-	if !tcx.ExpectStderr.Match(expect.Exact(text), expect.WithTimeout(DefaultTimeout)) {
+	if !tcx.ExpectStderr.Match(expect.Exact(text), expect.WithTimeout(DefaultTimeout), expect.WithDelay(DefaultDelay)) {
 		t.Log("STDERR:", tcx.ExpectStderr.String())
 		t.Fatalf("expect failed, no match for: %s", text)
 	}

@@ -30,7 +30,7 @@ func TestMap(t *testing.T) {
 }
 
 func entrySet_NonInteractiveTest(t *testing.T) {
-	mapTester(t, func(tcx it.TestContext, m *hz.Map) {
+	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
 		t := tcx.T
 		// no entry
 		tcx.WithReset(func() {
@@ -52,7 +52,7 @@ func entrySet_NonInteractiveTest(t *testing.T) {
 }
 
 func get_NonInteractiveTest(t *testing.T) {
-	mapTester(t, func(tcx it.TestContext, m *hz.Map) {
+	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
 		t := tcx.T
 		// no entry
 		tcx.WithReset(func() {
@@ -69,7 +69,7 @@ func get_NonInteractiveTest(t *testing.T) {
 }
 
 func set_NonInteractiveTest(t *testing.T) {
-	mapTester(t, func(tcx it.TestContext, m *hz.Map) {
+	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
 		t := tcx.T
 		tcx.WithReset(func() {
 			tcx.CLCExecute("map", "-n", m.Name(), "set", "foo", "bar", "--quite")
@@ -81,7 +81,7 @@ func set_NonInteractiveTest(t *testing.T) {
 }
 
 func size_NoninteractiveTest(t *testing.T) {
-	mapTester(t, func(tcx it.TestContext, m *hz.Map) {
+	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
 		t := tcx.T
 		// no entry
 		tcx.WithReset(func() {
@@ -99,7 +99,7 @@ func size_NoninteractiveTest(t *testing.T) {
 }
 
 func size_InteractiveTest(t *testing.T) {
-	mapTester(t, func(tcx it.TestContext, m *hz.Map) {
+	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
 		t := tcx.T
 		ctx := context.Background()
 		go func(t *testing.T) {
@@ -113,22 +113,6 @@ func size_InteractiveTest(t *testing.T) {
 			check.Must(m.Set(ctx, "foo", "bar"))
 			tcx.WriteStdin([]byte(fmt.Sprintf("\\map -n %s size\n", m.Name())))
 			tcx.AssertStdoutDollarWithPath(t, "testdata/map_size_1.txt")
-		})
-	})
-}
-
-func withMap(tcx it.TestContext, fn func(m *hz.Map)) {
-	name := it.NewUniqueObjectName("map")
-	ctx := context.Background()
-	m := check.MustValue(tcx.Client.GetMap(ctx, name))
-	fn(m)
-}
-
-func mapTester(t *testing.T, fn func(tcx it.TestContext, m *hz.Map)) {
-	tcx := it.TestContext{T: t}
-	tcx.Tester(func(tcx it.TestContext) {
-		withMap(tcx, func(m *hz.Map) {
-			fn(tcx, m)
 		})
 	})
 }

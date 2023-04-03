@@ -67,6 +67,9 @@ func (e *Expect) Match(m Matcher, options ...Option) bool {
 			panic(fmt.Errorf("creating Match options: %w", err))
 		}
 	}
+	if o.delay > 0 {
+		time.Sleep(o.delay)
+	}
 	ch := make(chan struct{})
 	var done atomic.Bool
 	go func() {
