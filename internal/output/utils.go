@@ -132,8 +132,8 @@ func makeTableHeaderFromRow(row Row, maxWidth int) table.Row {
 
 func alignmentForType(t int32) int {
 	switch t {
-	case serialization.TypeByte, serialization.TypeUInt16, serialization.TypeInt16,
-		serialization.TypeInt32, serialization.TypeInt64,
+	case serialization.TypeByte, serialization.TypeInt8, serialization.TypeUInt16,
+		serialization.TypeInt16, serialization.TypeInt32, serialization.TypeInt64,
 		serialization.TypeFloat32, serialization.TypeFloat64,
 		serialization.TypeJavaBigInteger, serialization.TypeJavaDecimal:
 		return -1 // align right

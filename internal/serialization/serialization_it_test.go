@@ -112,24 +112,21 @@ func primitivesTest(t *testing.T) {
 			}{
 				{
 					format: "delimited",
-					target: "emptyBoolArray:[]; emptyFloat32Array:[]; emptyFloat64Array:[]; emptyInt16Array:[]; emptyInt32Array:[]; emptyInt64Array:[]; emptyInt8Array:[]; emptyNullableBoolArray:[]; emptyNullableInt8Array:[]; fullBoolArray:[true, false]; fullFloat32Array:[]; fullFloat64Array:[]; fullInt16Array:[-32768, 0, 32767]; fullInt32Array:[-2147483648, 0, 2147483647]; fullInt64Array:[-9223372036854775808, 0, -9223372036854775808]; fullInt8Array:[-128, 0, 127]; fullNullableBoolArray:[true]; fullNullableInt8Array:[-, 8]\n",
+					target: "nullInt8NotNull:8; nullInt8Null:-; valueInt8:8\n",
 				},
-				/*
-					{
-						format: "json",
-						target: `{"this":{"emptyBoolArray":null,"emptyFloat32Array":null,"emptyFloat64Array":null,"emptyInt16Array":null,"emptyInt32Array":null,"emptyInt64Array":null,"emptyInt8Array":null,"emptyNullableBoolArray":null,"emptyNullableInt8Array":null,"fullBoolArray":[true,false],"fullFloat32Array":null,"fullFloat64Array":null,"fullInt16Array":[-32768,0,32767],"fullInt32Array":[-2147483648,0,2147483647],"fullInt64Array":[-9223372036854775808,0,-9223372036854775808],"fullInt8Array":[-128,0,127],"fullNullableBoolArray":[true],"fullNullableInt8Array":[null,8]}}` + "\n",
-					},
-					{
-						format: "csv",
-						target: "this\n" + `"emptyBoolArray:[]; emptyFloat32Array:[]; emptyFloat64Array:[]; emptyInt16Array:[]; emptyInt32Array:[]; emptyInt64Array:[]; emptyInt8Array:[]; emptyNullableBoolArray:[]; emptyNullableInt8Array:[]; fullBoolArray:[true, false]; fullFloat32Array:[]; fullFloat64Array:[]; fullInt16Array:[-32768, 0, 32767]; fullInt32Array:[-2147483648, 0, 2147483647]; fullInt64Array:[-9223372036854775808, 0, -9223372036854775808]; fullInt8Array:[-128, 0, 127]; fullNullableBoolArray:[true]; fullNullableInt8Array:[-, 8]"` + "\n",
-					},
+				{
+					format: "json",
+					target: `{"this":{"nullInt8NotNull":8,"nullInt8Null":null,"valueInt8":8}}` + "\n",
+				},
 
-					{
-						format: "table",
-						target: "testdata/primitive_arrays_table.txt",
-					},
-
-				*/
+				{
+					format: "csv",
+					target: "this\n" + `nullInt8NotNull:8; nullInt8Null:-; valueInt8:8` + "\n",
+				},
+				{
+					format: "table",
+					target: "testdata/primitives_table.txt",
+				},
 			}
 			for _, tc := range testCases {
 				tc := tc

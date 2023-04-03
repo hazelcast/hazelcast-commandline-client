@@ -402,7 +402,7 @@ func sprintStringer(v any) string {
 	return fmt.Sprint(v)
 }
 
-func ptrStringer[T any](T) Stringer {
+func ptrStringer[T any]() Stringer {
 	return func(v any) string {
 		if vv, ok := v.(T); ok {
 			return fmt.Sprint(vv)
@@ -504,16 +504,16 @@ func timeStringer(v any) string {
 
 var ValueToText = map[int32]Stringer{
 	TypeNil:            staticStringer(ValueNil),
-	TypeByte:           sprintStringer,
-	TypeBool:           sprintStringer,
-	TypeUInt16:         sprintStringer,
-	TypeInt8:           sprintNilStringer[int8],
-	TypeInt16:          sprintStringer,
-	TypeInt32:          sprintStringer,
-	TypeInt64:          sprintStringer,
-	TypeFloat32:        sprintStringer,
-	TypeFloat64:        sprintStringer,
-	TypeString:         sprintStringer,
+	TypeByte:           ptrStringer[byte](),
+	TypeBool:           ptrStringer[bool](),
+	TypeUInt16:         ptrStringer[uint16](),
+	TypeInt8:           ptrStringer[int8](),
+	TypeInt16:          ptrStringer[int16](),
+	TypeInt32:          ptrStringer[int32](),
+	TypeInt64:          ptrStringer[int64](),
+	TypeFloat32:        ptrStringer[float32](),
+	TypeFloat64:        ptrStringer[float64](),
+	TypeString:         ptrStringer[string](),
 	TypeByteArray:      arrayStringer[uint8],
 	TypeBoolArray:      arrayStringer[bool],
 	TypeInt8Array:      arrayStringer[int8],
