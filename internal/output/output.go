@@ -11,14 +11,6 @@ const (
 
 type Type int
 
-type SingleLiner interface {
-	SingleLine() string
-}
-
-type MultiLiner interface {
-	MultiLine() []string
-}
-
 type RowExtender interface {
 	RowExtensions() []Column
 }

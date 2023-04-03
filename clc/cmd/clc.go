@@ -390,6 +390,6 @@ func convertFlagValue(fs *pflag.FlagSet, name string, v pflag.Value) any {
 }
 
 func init() {
-	hazelcast.SetDefaultCompactDeserializer(serialization.NewGenericCompactDeserializer())
+	hazelcast.SetDefaultCompactDeserializer(serialization.GenericCompactDeserializer{})
 	hazelcast.SetDefaultPortableDeserializer(serialization.NewGenericPortableSerializer())
 }

@@ -31,7 +31,7 @@ func ensureTypeValue(ic *hazelcast.ClientInternal, data hazelcast.Data) (int32, 
 	t := data.Type()
 	v, err := ic.DecodeData(data)
 	if err != nil {
-		v = serialization.NondecodedType(serialization.TypeToString(t))
+		v = serialization.NondecodedType(serialization.TypeToLabel(t))
 	}
 	return t, v
 }

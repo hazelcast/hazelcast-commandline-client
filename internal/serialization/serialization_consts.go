@@ -16,7 +16,9 @@
 
 package serialization
 
-import "fmt"
+import (
+	"fmt"
+)
 
 const (
 	TypeNil                                  = 0
@@ -91,6 +93,16 @@ const (
 	TypeHibernate5TypeHibernateNaturalIDKey  = -206
 	TypeJetSerializerFirst                   = -300
 	TypeJetSerializerLast                    = -399
+
+	// extra types
+
+	TypeDecimalArray            = -500
+	TypeJavaLocalTimeArray      = -501
+	TypeJavaLocalDateArray      = -502
+	TypeJavaLocalDateTimeArray  = -503
+	TypeJavaOffsetDateTimeArray = -504
+	TypeCompactArray            = -505
+
 	// TypeUnknown is the type of values with unknown types
 	// does not exist in the reference implementation
 	TypeUnknown = -2022
@@ -100,7 +112,7 @@ const (
 	TypeNotDecoded = -2024
 )
 
-var typeToString = map[int32]string{
+var typeToLabel = map[int32]string{
 	TypeNil:                                  "NIL",
 	TypePortable:                             "PORTABLE",
 	TypeDataSerializable:                     "DATA_SERIALIZABLE",
@@ -127,8 +139,8 @@ var typeToString = map[int32]string{
 	TypeSimpleImmutableEntry:                 "SIMPLE_IMMUTABLE_ENTRY",
 	TypeJavaClass:                            "JAVA_CLASS",
 	TypeJavaDate:                             "JAVA_DATE",
-	TypeJavaBigInteger:                       "JAVA_BIG_INTEGER",
-	TypeJavaDecimal:                          "JAVA_DECIMAL",
+	TypeJavaBigInteger:                       "BIG_INTEGER",
+	TypeJavaDecimal:                          "DECIMAL",
 	TypeJavaArray:                            "JAVA_ARRAY",
 	TypeJavaArrayList:                        "JAVA_ARRAY_LIST",
 	TypeJavaLinkedList:                       "JAVA_LINKED_LIST",
@@ -152,16 +164,16 @@ var typeToString = map[int32]string{
 	TypeJavaDefaultTypeLinkedTransferQueue:   "JAVA_LINKED_TRANSFER_QUEUE",
 	TypeJavaDefaultTypePriorityQueue:         "JAVA_PRIORITY_QUEUE",
 	TypeJavaDefaultTypeOptional:              "JAVA_OPTIONAL",
-	TypeJavaLocalDate:                        "JAVA_LOCALDATE",
-	TypeJavaLocalTime:                        "JAVA_LOCALTIME",
-	TypeJavaLocalDateTime:                    "JAVA_LOCALDATETIME",
-	TypeJavaOffsetDateTime:                   "JAVA_OFFSETDATETIME",
+	TypeJavaLocalDate:                        "LOCALDATE",
+	TypeJavaLocalTime:                        "LOCALTIME",
+	TypeJavaLocalDateTime:                    "LOCALDATETIME",
+	TypeJavaOffsetDateTime:                   "OFFSETDATETIME",
 	TypeCompact:                              "COMPACT",
 	TypeCompactWithSchema:                    "COMPACT_WITH_SCHEMA",
 	TypeJavaDefaultTypeSerializable:          "JAVA_SERIALIZABLE",
 	TypeJavaDefaultTypeExternalizable:        "JAVA_EXTERNALIZABLE",
-	TypeCsharpCLRSerializationType:           "CSHARP_CLR_SERIALIZATION",
-	TypePythonPickleSerializationType:        "PYTHON_PICKLE_SERIALIZATION",
+	TypeCsharpCLRSerializationType:           "NET_CLR",
+	TypePythonPickleSerializationType:        "PYTHON_PICKLE",
 	TypeJSONSerialization:                    "JSON",
 	TypeGobSerialization:                     "GO_GOB_SERIALIZATION",
 	TypeHibernate3TypeHibernateCacheKey:      "HIBERNATE3_CACHE_KEY",
@@ -173,10 +185,19 @@ var typeToString = map[int32]string{
 	TypeHibernate5TypeHibernateNaturalIDKey:  "HIBERNATE5_NATURAL_ID_KEY",
 	TypeJetSerializerFirst:                   "JET_SERIALIZER_FIRST",
 	TypeJetSerializerLast:                    "JET_SERIALIZER_LAST",
+	TypeDecimalArray:                         "DECIMAL_ARRAY",
+	TypeJavaLocalTimeArray:                   "LOCALTIME_ARRAY",
+	TypeJavaLocalDateArray:                   "LOCALDATE_ARRAY",
+	TypeJavaLocalDateTimeArray:               "LOCALDATETIME_ARRAY",
+	TypeJavaOffsetDateTimeArray:              "OFFSETDATETIME_ARRAY",
+	TypeCompactArray:                         "COMPACT_ARRAY",
+	TypeUnknown:                              "UNKNOWN",
+	TypeSkip:                                 ValueSkip,
+	TypeNotDecoded:                           ValueNotDecoded,
 }
 
-func TypeToString(t int32) string {
-	s, ok := typeToString[t]
+func TypeToLabel(t int32) string {
+	s, ok := typeToLabel[t]
 	if !ok {
 		return fmt.Sprintf("UNKNOWN_TYPE:%d", t)
 	}
