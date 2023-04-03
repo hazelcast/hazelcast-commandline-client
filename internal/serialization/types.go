@@ -229,10 +229,10 @@ func (col Column) JSONValue() (any, error) {
 		return col.Value, nil
 	case TypeDataSerializable:
 		return nil, errors.ErrNotDecoded
-	case TypeByte, TypeBool, TypeUInt16,
+	case TypeByte, TypeBool, TypeInt8, TypeUInt16,
 		TypeInt16, TypeInt32, TypeInt64,
 		TypeFloat32, TypeFloat64, TypeString,
-		TypeByteArray, TypeBoolArray, TypeUInt16Array,
+		TypeByteArray, TypeBoolArray, TypeInt8Array, TypeUInt16Array,
 		TypeInt16Array, TypeInt32Array, TypeInt64Array,
 		TypeFloat32Array, TypeFloat64Array, TypeStringArray:
 		return col.Value, nil
@@ -402,6 +402,21 @@ func sprintStringer(v any) string {
 	return fmt.Sprint(v)
 }
 
+func ptrStringer[T any](T) Stringer {
+	return func(v any) string {
+		if vv, ok := v.(T); ok {
+			return fmt.Sprint(vv)
+		}
+		if vv, ok := v.(*T); ok {
+			if vv == nil {
+				return ValueNil
+			}
+			return fmt.Sprint(*vv)
+		}
+		return fmt.Sprintf("??%v", reflect.TypeOf(v))
+	}
+}
+
 func sprintNilStringer[T any](v *T) string {
 	if v == (*T)(nil) {
 		return ValueNil
@@ -415,7 +430,7 @@ func arrayStringer[T any](v any) string {
 		if vv, ok := v.([]*T); ok {
 			return arrayPtrStringer[T](vv)
 		}
-		panic(fmt.Errorf("arrayString: cannot handle %v", reflect.TypeOf(v)))
+		return fmt.Sprintf("??%v", reflect.TypeOf(v))
 	}
 	var sb strings.Builder
 	sb.WriteString("[")
@@ -492,14 +507,16 @@ var ValueToText = map[int32]Stringer{
 	TypeByte:           sprintStringer,
 	TypeBool:           sprintStringer,
 	TypeUInt16:         sprintStringer,
+	TypeInt8:           sprintNilStringer[int8],
 	TypeInt16:          sprintStringer,
 	TypeInt32:          sprintStringer,
 	TypeInt64:          sprintStringer,
 	TypeFloat32:        sprintStringer,
 	TypeFloat64:        sprintStringer,
 	TypeString:         sprintStringer,
-	TypeByteArray:      arrayStringer[int8],
+	TypeByteArray:      arrayStringer[uint8],
 	TypeBoolArray:      arrayStringer[bool],
+	TypeInt8Array:      arrayStringer[int8],
 	TypeUInt16Array:    arrayStringer[uint16],
 	TypeInt16Array:     arrayStringer[int16],
 	TypeInt32Array:     arrayStringer[int32],

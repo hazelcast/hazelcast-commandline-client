@@ -102,6 +102,8 @@ const (
 	TypeJavaLocalDateTimeArray  = -503
 	TypeJavaOffsetDateTimeArray = -504
 	TypeCompactArray            = -505
+	TypeInt8                    = -506
+	TypeInt8Array               = -507
 
 	// TypeUnknown is the type of values with unknown types
 	// does not exist in the reference implementation
