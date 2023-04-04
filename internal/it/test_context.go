@@ -39,8 +39,8 @@ import (
 )
 
 const (
-	DefaultTimeout = 30 * time.Second
-	DefaultDelay   = 10 * time.Millisecond
+	EnvDefaultTimeout = "DEFAULT_TIMEOUT"
+	DefaultDelay      = 10 * time.Millisecond
 )
 
 type TestContext struct {
@@ -178,21 +178,21 @@ func (tcx TestContext) IO() clc.IO {
 }
 
 func (tcx TestContext) AssertStdoutEquals(t *testing.T, text string) {
-	if !tcx.ExpectStdout.Match(expect.Exact(text), expect.WithTimeout(DefaultTimeout), expect.WithDelay(DefaultDelay)) {
+	if !tcx.ExpectStdout.Match(expect.Exact(text), expect.WithTimeout(DefaultTimeout()), expect.WithDelay(DefaultDelay)) {
 		t.Log("STDOUT:", tcx.ExpectStdout.String())
 		t.Fatalf("expect failed, no match for: %s", text)
 	}
 }
 
 func (tcx TestContext) AssertStderrEquals(t *testing.T, text string) {
-	if !tcx.ExpectStderr.Match(expect.Exact(text), expect.WithTimeout(DefaultTimeout), expect.WithDelay(DefaultDelay)) {
+	if !tcx.ExpectStderr.Match(expect.Exact(text), expect.WithTimeout(DefaultTimeout()), expect.WithDelay(DefaultDelay)) {
 		t.Log("STDERR:", tcx.ExpectStderr.String())
 		t.Fatalf("expect failed, no match for: %s", text)
 	}
 }
 
 func (tcx TestContext) AssertStdoutContains(t *testing.T, text string) {
-	if !tcx.ExpectStdout.Match(expect.Contains(text), expect.WithTimeout(DefaultTimeout)) {
+	if !tcx.ExpectStdout.Match(expect.Contains(text), expect.WithTimeout(DefaultTimeout())) {
 		t.Log("STDOUT:", tcx.ExpectStdout.String())
 		t.Fatalf("expect failed, no match for: %s", text)
 	}
@@ -204,7 +204,7 @@ func (tcx TestContext) AssertStdoutContainsWithPath(t *testing.T, path string) {
 }
 
 func (tcx TestContext) AssertStdoutDollar(t *testing.T, text string) {
-	if !tcx.ExpectStdout.Match(expect.Dollar(text), expect.WithTimeout(DefaultTimeout)) {
+	if !tcx.ExpectStdout.Match(expect.Dollar(text), expect.WithTimeout(DefaultTimeout())) {
 		t.Log("STDOUT:", tcx.ExpectStdout.String())
 		t.Fatalf("expect failed, no match for: %s", text)
 	}
@@ -246,4 +246,13 @@ func withEnv(name, value string, f func()) {
 	}
 	check.Must(os.Setenv(name, value))
 	f()
+}
+
+func DefaultTimeout() time.Duration {
+	s := os.Getenv(EnvDefaultTimeout)
+	d, err := time.ParseDuration(s)
+	if err != nil {
+		return 1 * time.Second
+	}
+	return d
 }

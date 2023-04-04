@@ -3,11 +3,14 @@ package serialization_test
 import (
 	"context"
 	"math"
+	"math/big"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/types"
 
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/map"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -19,15 +22,16 @@ func TestCompactSerialization(t *testing.T) {
 		name string
 		f    func(t *testing.T)
 	}{
-		{name: "PrimitiveArrays", f: primitiveArraysTest},
-		{name: "Primitives", f: primitivesTest},
+		{name: "CompactOthers", f: compactOthersTest},
+		{name: "CompactPrimitiveArrays", f: compactPrimitiveArraysTest},
+		{name: "CompactPrimitives", f: compactPrimitivesTest},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, tc.f)
 	}
 }
 
-func primitiveArraysTest(t *testing.T) {
+func compactPrimitiveArraysTest(t *testing.T) {
 	tcx := it.TestContext{
 		T: t,
 		ConfigCallback: func(tcx it.TestContext) {
@@ -43,7 +47,7 @@ func primitiveArraysTest(t *testing.T) {
 			fullInt16Array:        []int16{math.MinInt16, 0, math.MaxInt16},
 			fullInt32Array:        []int32{math.MinInt32, 0, math.MaxInt32},
 			fullInt64Array:        []int64{math.MinInt64, 0, math.MinInt64},
-			fullNullableBoolArray: []*bool{&b},
+			fullNullableBoolArray: []*bool{&b, nil},
 			fullNullableInt8Array: []*int8{nil, &i8},
 		}
 		ctx := context.Background()
@@ -55,15 +59,15 @@ func primitiveArraysTest(t *testing.T) {
 			}{
 				{
 					format: "delimited",
-					target: "emptyBoolArray:[]; emptyFloat32Array:[]; emptyFloat64Array:[]; emptyInt16Array:[]; emptyInt32Array:[]; emptyInt64Array:[]; emptyInt8Array:[]; emptyNullableBoolArray:[]; emptyNullableInt8Array:[]; fullBoolArray:[true, false]; fullFloat32Array:[]; fullFloat64Array:[]; fullInt16Array:[-32768, 0, 32767]; fullInt32Array:[-2147483648, 0, 2147483647]; fullInt64Array:[-9223372036854775808, 0, -9223372036854775808]; fullInt8Array:[-128, 0, 127]; fullNullableBoolArray:[true]; fullNullableInt8Array:[-, 8]\n",
+					target: "emptyBoolArray:[]; emptyFloat32Array:[]; emptyFloat64Array:[]; emptyInt16Array:[]; emptyInt32Array:[]; emptyInt64Array:[]; emptyInt8Array:[]; emptyNullableBoolArray:[]; emptyNullableInt8Array:[]; fullBoolArray:[true, false]; fullFloat32Array:[]; fullFloat64Array:[]; fullInt16Array:[-32768, 0, 32767]; fullInt32Array:[-2147483648, 0, 2147483647]; fullInt64Array:[-9223372036854775808, 0, -9223372036854775808]; fullInt8Array:[-128, 0, 127]; fullNullableBoolArray:[true, -]; fullNullableInt8Array:[-, 8]\n",
 				},
 				{
 					format: "json",
-					target: `{"this":{"emptyBoolArray":null,"emptyFloat32Array":null,"emptyFloat64Array":null,"emptyInt16Array":null,"emptyInt32Array":null,"emptyInt64Array":null,"emptyInt8Array":null,"emptyNullableBoolArray":null,"emptyNullableInt8Array":null,"fullBoolArray":[true,false],"fullFloat32Array":null,"fullFloat64Array":null,"fullInt16Array":[-32768,0,32767],"fullInt32Array":[-2147483648,0,2147483647],"fullInt64Array":[-9223372036854775808,0,-9223372036854775808],"fullInt8Array":[-128,0,127],"fullNullableBoolArray":[true],"fullNullableInt8Array":[null,8]}}` + "\n",
+					target: `{"this":{"emptyBoolArray":null,"emptyFloat32Array":null,"emptyFloat64Array":null,"emptyInt16Array":null,"emptyInt32Array":null,"emptyInt64Array":null,"emptyInt8Array":null,"emptyNullableBoolArray":null,"emptyNullableInt8Array":null,"fullBoolArray":[true,false],"fullFloat32Array":null,"fullFloat64Array":null,"fullInt16Array":[-32768,0,32767],"fullInt32Array":[-2147483648,0,2147483647],"fullInt64Array":[-9223372036854775808,0,-9223372036854775808],"fullInt8Array":[-128,0,127],"fullNullableBoolArray":[true,null],"fullNullableInt8Array":[null,8]}}` + "\n",
 				},
 				{
 					format: "csv",
-					target: "this\n" + `"emptyBoolArray:[]; emptyFloat32Array:[]; emptyFloat64Array:[]; emptyInt16Array:[]; emptyInt32Array:[]; emptyInt64Array:[]; emptyInt8Array:[]; emptyNullableBoolArray:[]; emptyNullableInt8Array:[]; fullBoolArray:[true, false]; fullFloat32Array:[]; fullFloat64Array:[]; fullInt16Array:[-32768, 0, 32767]; fullInt32Array:[-2147483648, 0, 2147483647]; fullInt64Array:[-9223372036854775808, 0, -9223372036854775808]; fullInt8Array:[-128, 0, 127]; fullNullableBoolArray:[true]; fullNullableInt8Array:[-, 8]"` + "\n",
+					target: "this\n" + `"emptyBoolArray:[]; emptyFloat32Array:[]; emptyFloat64Array:[]; emptyInt16Array:[]; emptyInt32Array:[]; emptyInt64Array:[]; emptyInt8Array:[]; emptyNullableBoolArray:[]; emptyNullableInt8Array:[]; fullBoolArray:[true, false]; fullFloat32Array:[]; fullFloat64Array:[]; fullInt16Array:[-32768, 0, 32767]; fullInt32Array:[-2147483648, 0, 2147483647]; fullInt64Array:[-9223372036854775808, 0, -9223372036854775808]; fullInt8Array:[-128, 0, 127]; fullNullableBoolArray:[true, -]; fullNullableInt8Array:[-, 8]"` + "\n",
 				},
 
 				{
@@ -90,7 +94,7 @@ func primitiveArraysTest(t *testing.T) {
 	})
 }
 
-func primitivesTest(t *testing.T) {
+func compactPrimitivesTest(t *testing.T) {
 	tcx := it.TestContext{
 		T: t,
 		ConfigCallback: func(tcx it.TestContext) {
@@ -118,7 +122,6 @@ func primitivesTest(t *testing.T) {
 					format: "json",
 					target: `{"this":{"nullInt8NotNull":8,"nullInt8Null":null,"valueInt8":8}}` + "\n",
 				},
-
 				{
 					format: "csv",
 					target: "this\n" + `nullInt8NotNull:8; nullInt8Null:-; valueInt8:8` + "\n",
@@ -126,6 +129,65 @@ func primitivesTest(t *testing.T) {
 				{
 					format: "table",
 					target: "testdata/primitives_table.txt",
+				},
+			}
+			for _, tc := range testCases {
+				tc := tc
+				t.Run(tc.format, func(t *testing.T) {
+					tcx.T = t
+					tcx.WithReset(func() {
+						check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "get", "value", "--quite", "-f", tc.format))
+						if tc.format == "table" {
+							tcx.AssertStdoutDollarWithPath(t, tc.target)
+						} else {
+							tcx.AssertStdoutEquals(t, tc.target)
+						}
+					})
+				})
+			}
+		})
+
+	})
+}
+
+func compactOthersTest(t *testing.T) {
+	tcx := it.TestContext{
+		T: t,
+		ConfigCallback: func(tcx it.TestContext) {
+			tcx.ClientConfig.Serialization.Compact.SetSerializers(othersSerializer{})
+		},
+	}
+	tcx.Tester(func(tcx it.TestContext) {
+		s := "foobar"
+		dtz := time.Date(2023, 4, 5, 12, 33, 45, 46, time.UTC)
+		dc := types.NewDecimal(big.NewInt(1234), 56)
+		value := others{
+			nullStringNotNull:     &s,
+			offsetDateTimeNotNull: (*types.OffsetDateTime)(&dtz),
+			decimalNotNull:        &dc,
+		}
+		ctx := context.Background()
+		it.WithMap(tcx, func(m *hazelcast.Map) {
+			check.Must(m.Set(ctx, "value", value))
+			testCases := []struct {
+				format string
+				target string
+			}{
+				{
+					format: "delimited",
+					target: "decimalNotNull:1.234E-53; decimalNull:-; nullStringNotNull:foobar; nullStringNull:-; offsetDateTimeNotNull:2023-04-05T12:33:45Z; offsetDateTimeNull:-\n",
+				},
+				{
+					format: "json",
+					target: `{"this":{"decimalNotNull":"1.234E-53","decimalNull":null,"nullStringNotNull":"foobar","nullStringNull":null,"offsetDateTimeNotNull":"2023-04-05T12:33:45Z","offsetDateTimeNull":null}}` + "\n",
+				},
+				{
+					format: "csv",
+					target: "this\n" + `decimalNotNull:1.234E-53; decimalNull:-; nullStringNotNull:foobar; nullStringNull:-; offsetDateTimeNotNull:2023-04-05T12:33:45Z; offsetDateTimeNull:-` + "\n",
+				},
+				{
+					format: "table",
+					target: "testdata/compact_others_table.txt",
 				},
 			}
 			for _, tc := range testCases {
@@ -252,4 +314,44 @@ func (s primitiveArraysSerializer) Write(w serialization.CompactWriter, v interf
 	w.WriteArrayOfNullableBoolean("emptyNullableBoolArray", vv.emptyNullableBoolArray)
 	w.WriteArrayOfNullableInt8("emptyNullableInt8Array", vv.emptyNullableInt8Array)
 	w.WriteArrayOfNullableInt8("fullNullableInt8Array", vv.fullNullableInt8Array)
+}
+
+type others struct {
+	nullStringNull        *string
+	nullStringNotNull     *string
+	offsetDateTimeNull    *types.OffsetDateTime
+	offsetDateTimeNotNull *types.OffsetDateTime
+	decimalNull           *types.Decimal
+	decimalNotNull        *types.Decimal
+}
+
+type othersSerializer struct{}
+
+func (s othersSerializer) Type() reflect.Type {
+	return reflect.TypeOf(others{})
+}
+
+func (s othersSerializer) TypeName() string {
+	return "others"
+}
+
+func (s othersSerializer) Read(r serialization.CompactReader) interface{} {
+	return others{
+		nullStringNull:        r.ReadString("nullStringNull"),
+		nullStringNotNull:     r.ReadString("nullStringNotNull"),
+		offsetDateTimeNull:    r.ReadTimestampWithTimezone("offsetDateTimeNull"),
+		offsetDateTimeNotNull: r.ReadTimestampWithTimezone("offsetDateTimeNotNull"),
+		decimalNull:           r.ReadDecimal("decimalNull"),
+		decimalNotNull:        r.ReadDecimal("decimalNotNull"),
+	}
+}
+
+func (s othersSerializer) Write(w serialization.CompactWriter, v interface{}) {
+	vv := v.(others)
+	w.WriteString("nullStringNull", vv.nullStringNull)
+	w.WriteString("nullStringNotNull", vv.nullStringNotNull)
+	w.WriteTimestampWithTimezone("offsetDateTimeNull", vv.offsetDateTimeNull)
+	w.WriteTimestampWithTimezone("offsetDateTimeNotNull", vv.offsetDateTimeNotNull)
+	w.WriteDecimal("decimalNull", vv.decimalNull)
+	w.WriteDecimal("decimalNotNull", vv.decimalNotNull)
 }

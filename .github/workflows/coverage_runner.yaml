@@ -44,8 +44,20 @@ jobs:
       - name: Install JDK      
         uses: actions/setup-java@v2
         with:
-          distribution: 'adopt'
+          distribution: 'zulu'
           java-version: '8'
+
+      - name: "Download RCD (Linux/MacOS)"
+        if: "!contains(matrix.os, 'windows')"
+        run: |
+          wget https://rcd-download.s3.us-east-2.amazonaws.com/rcd-${{ matrix.os }}
+
+      - name: "Start Hazelcast Remote Controller (Linux/MacOS)"
+        if: "!contains(matrix.os, 'windows')"
+        run: |
+          chmod +x rcd-${{ matrix.os }} 
+          ./rcd-${{ matrix.os }} -version $HZ_VERSION -dir $HOME &
+          sleep 10
 
       - name: Checkout code for PR
         if: github.event_name == 'pull_request_target'
@@ -65,10 +77,11 @@ jobs:
           
       - name: Test
         env:
-          HAZELCAST_ENTERPRISE_KEY: ${{ secrets.HAZELCAST_ENTERPRISE_KEY }}
+#          HAZELCAST_ENTERPRISE_KEY: ${{ secrets.HAZELCAST_ENTERPRISE_KEY }}
           HZ_VERSION: 5.2.1
-          SSL_ENABLED: 1
+#          SSL_ENABLED: 1
           MEMBER_COUNT: 3
+          DEFAULT_TIMEOUT: "30s"
         run: |
           ./rc.sh start
           go mod tidy

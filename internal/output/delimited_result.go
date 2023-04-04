@@ -35,7 +35,7 @@ func (d DelimitedResult) Serialize(ctx context.Context, w io.Writer) (int, error
 		if len(row) == 0 {
 			continue
 		}
-		sb.WriteString(fmt.Sprintf("%v", d.adapt(row[0])))
+		sb.WriteString(d.adapt(row[0]))
 		for _, r := range row[1:] {
 			sb.WriteString(d.delim)
 			sb.WriteString(fmt.Sprintf("%v", d.adapt(r)))
@@ -51,8 +51,14 @@ func (d DelimitedResult) Serialize(ctx context.Context, w io.Writer) (int, error
 }
 
 func (d DelimitedResult) adapt(col Column) string {
-	if d.singleLine {
-		return col.SingleLine()
+	text := col.Text()
+	if !d.singleLine {
+		return text
 	}
-	return col.MultiLine()
+	// return only the first line
+	idx := strings.Index(text, "\n")
+	if idx < 0 {
+		return text
+	}
+	return text[:idx]
 }

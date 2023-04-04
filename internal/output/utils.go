@@ -87,7 +87,7 @@ func MakeTableFromRows(rows []Row) (table.Row, []Row) {
 				v.Name = h
 			}
 			row[i] = v
-			sv := fmt.Sprint(v.Value)
+			sv := v.Text()
 			if len(sv) > width[i] {
 				width[i] = len(sv)
 			}

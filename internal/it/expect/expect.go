@@ -60,7 +60,6 @@ func (e *Expect) String() string {
 }
 
 func (e *Expect) Match(m Matcher, options ...Option) bool {
-	//e.Reset()
 	o := Options{}
 	for _, opt := range options {
 		if err := opt(&o); err != nil {

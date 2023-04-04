@@ -164,7 +164,7 @@ func (ec *ExecContext) StderrText() string {
 }
 
 func (ec *ExecContext) LoggerText() string {
-	return ec.lg.Text()
+	return ec.lg.String()
 }
 
 func (ec *ExecContext) Set(name string, value any) {

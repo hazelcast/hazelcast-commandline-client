@@ -68,4 +68,4 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-replace github.com/hazelcast/hazelcast-go-client v1.4.0 => github.com/yuce/hazelcast-go-client v1.1.2-0.20230402181107-69ca4f4d4156
+replace github.com/hazelcast/hazelcast-go-client v1.4.0 => github.com/yuce/hazelcast-go-client v1.1.2-0.20230404141417-cffc4cae7feb

@@ -15,6 +15,6 @@ func convertColumn(col Column) any {
 	case iserialization.TypeSkip:
 		return ValueSkip
 	default:
-		return col.SingleLine()
+		return col.Text()
 	}
 }
