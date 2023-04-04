@@ -38,7 +38,7 @@ func (d DelimitedResult) Serialize(ctx context.Context, w io.Writer) (int, error
 		sb.WriteString(d.adapt(row[0]))
 		for _, r := range row[1:] {
 			sb.WriteString(d.delim)
-			sb.WriteString(fmt.Sprintf("%v", d.adapt(r)))
+			sb.WriteString(d.adapt(r))
 		}
 		sb.WriteString("\n")
 		wn, err := w.Write([]byte(sb.String()))

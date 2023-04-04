@@ -1,7 +1,6 @@
 package serialization
 
 import (
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -34,24 +33,6 @@ func jsonValueToTypeID(v any) int32 {
 		return TypeNil
 	}
 	return TypeUnknown
-}
-
-func structToString(v any) (string, error) {
-	vv := reflect.ValueOf(v)
-	if vv.Kind() == reflect.Pointer {
-		if vv.IsNil() {
-			return ValueNil, nil
-		}
-		vv = vv.Elem()
-	}
-	if vv.Kind() == reflect.Struct {
-		b, err := json.Marshal(v)
-		if err != nil {
-			return "", err
-		}
-		return string(b), nil
-	}
-	return fmt.Sprintf("%v", v), nil
 }
 
 type Stringer func(any) string
@@ -169,58 +150,61 @@ func timeStringer(v any) string {
 	return "??datetime"
 }
 
-func portableSerializer(v any) string {
-	return ""
+func portableStringer(v any) string {
+	vv := v.(*GenericPortable)
+	return vv.Text()
 }
 
-var ValueToText = map[int32]Stringer{
-	TypeNil: staticStringer(ValueNil),
+var ValueToText map[int32]Stringer
 
-	//TypePortable
-	// TypeDataSerializable
+func init() {
+	ValueToText = map[int32]Stringer{
+		TypeNil: staticStringer(ValueNil),
 
-	TypeByte:         ptrStringer[byte](),
-	TypeBool:         ptrStringer[bool](),
-	TypeUInt16:       ptrStringer[uint16](),
-	TypeInt16:        ptrStringer[int16](),
-	TypeInt32:        ptrStringer[int32](),
-	TypeInt64:        ptrStringer[int64](),
-	TypeFloat32:      ptrStringer[float32](),
-	TypeFloat64:      ptrStringer[float64](),
-	TypeString:       ptrStringer[string](),
-	TypeByteArray:    arrayStringer[uint8],
-	TypeBoolArray:    arrayStringer[bool],
-	TypeUInt16Array:  arrayStringer[uint16],
-	TypeInt16Array:   arrayStringer[int16],
-	TypeInt32Array:   arrayStringer[int32],
-	TypeInt64Array:   arrayStringer[int64],
-	TypeFloat32Array: arrayStringer[float32],
-	TypeFloat64Array: arrayStringer[float64],
-	TypeStringArray:  arrayStringer[string],
-	TypeUUID:         sprintStringer,
+		TypePortable: portableStringer,
+		// TypeDataSerializable
 
-	// TypeSimpleEntry
-	// TypeSimpleImmutableEntry
+		TypeByte:         ptrStringer[byte](),
+		TypeBool:         ptrStringer[bool](),
+		TypeUInt16:       ptrStringer[uint16](),
+		TypeInt16:        ptrStringer[int16](),
+		TypeInt32:        ptrStringer[int32](),
+		TypeInt64:        ptrStringer[int64](),
+		TypeFloat32:      ptrStringer[float32](),
+		TypeFloat64:      ptrStringer[float64](),
+		TypeString:       ptrStringer[string](),
+		TypeByteArray:    arrayStringer[uint8],
+		TypeBoolArray:    arrayStringer[bool],
+		TypeUInt16Array:  arrayStringer[uint16],
+		TypeInt16Array:   arrayStringer[int16],
+		TypeInt32Array:   arrayStringer[int32],
+		TypeInt64Array:   arrayStringer[int64],
+		TypeFloat32Array: arrayStringer[float32],
+		TypeFloat64Array: arrayStringer[float64],
+		TypeStringArray:  arrayStringer[string],
+		TypeUUID:         sprintStringer,
 
-	TypeJavaClass:      javaClassStringer,
-	TypeJavaDate:       timeStringer,
-	TypeJavaBigInteger: sprintStringer,
-	TypeJavaDecimal:    ptrStringer[types.Decimal](),
-	/*
-		TypeJavaArray:                            "JAVA_ARRAY",
-		TypeJavaArrayList:                        "JAVA_ARRAY_LIST",
-		TypeJavaLinkedList:                       "JAVA_LINKED_LIST",
+		// TypeSimpleEntry
+		// TypeSimpleImmutableEntry
 
-	*/
-	TypeJavaLocalDate:      timeStringer,
-	TypeJavaLocalTime:      timeStringer,
-	TypeJavaLocalDateTime:  timeStringer,
-	TypeJavaOffsetDateTime: timeStringer,
+		TypeJavaClass:      javaClassStringer,
+		TypeJavaDate:       timeStringer,
+		TypeJavaBigInteger: sprintStringer,
+		TypeJavaDecimal:    ptrStringer[types.Decimal](),
+		/*
+			TypeJavaArray:                            "JAVA_ARRAY",
+			TypeJavaArrayList:                        "JAVA_ARRAY_LIST",
+			TypeJavaLinkedList:                       "JAVA_LINKED_LIST",
 
-	//
+		*/
+		TypeJavaLocalDate:      timeStringer,
+		TypeJavaLocalTime:      timeStringer,
+		TypeJavaLocalDateTime:  timeStringer,
+		TypeJavaOffsetDateTime: timeStringer,
 
-	TypeInt8:      ptrStringer[int8](),
-	TypeInt8Array: arrayStringer[int8],
+		//
+
+		TypeInt8:      ptrStringer[int8](),
+		TypeInt8Array: arrayStringer[int8],
+	}
 }
-
-//func MakeText()
