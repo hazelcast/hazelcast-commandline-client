@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -16,13 +17,13 @@ import (
 )
 
 func TestBuiltinSerialization(t *testing.T) {
+	tv := time.Date(2023, 2, 3, 4, 5, 6, 7, time.UTC)
 	testCases := []struct {
 		name            string
 		value           any
 		delimitedOutput string
 		jsonOutput      string
 		csvOutput       string
-		tableOutputPath string
 	}{
 		{
 			name:            "types.Decimal",
@@ -30,7 +31,20 @@ func TestBuiltinSerialization(t *testing.T) {
 			delimitedOutput: "1.00E-8\n",
 			jsonOutput:      `{"this":"1.00E-8"}` + "\n",
 			csvOutput:       "this\n1.00E-8\n",
-			tableOutputPath: "testdata/builtin_decimal.txt",
+		},
+		{
+			name:            "string",
+			value:           "test-string",
+			delimitedOutput: "test-string\n",
+			jsonOutput:      `{"this":"test-string"}` + "\n",
+			csvOutput:       "this\ntest-string\n",
+		},
+		{
+			name:            "types.OffsetDateTime",
+			value:           types.OffsetDateTime(tv),
+			delimitedOutput: "2023-02-03T04:05:06Z\n",
+			jsonOutput:      `{"this":"2023-02-03T04:05:06Z"}` + "\n",
+			csvOutput:       "this\n2023-02-03T04:05:06Z\n",
 		},
 	}
 	ctx := context.Background()

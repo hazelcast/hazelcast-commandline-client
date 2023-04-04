@@ -35,11 +35,10 @@ func portableOthersTest(t *testing.T) {
 		},
 	}
 	tcx.Tester(func(tcx it.TestContext) {
-		s := "foobar"
 		dtz := time.Date(2023, 4, 5, 12, 33, 45, 46, time.UTC)
 		dc := types.NewDecimal(big.NewInt(1234), 56)
 		value := &others2{
-			nullStringNotNull:     &s,
+			valueString:           "foobar",
 			offsetDateTimeNotNull: (*types.OffsetDateTime)(&dtz),
 			decimalNotNull:        &dc,
 		}
@@ -52,15 +51,15 @@ func portableOthersTest(t *testing.T) {
 			}{
 				{
 					format: "delimited",
-					target: "decimalNotNull:1.234E-53; decimalNull:-\n",
+					target: "decimalNotNull:1.234E-53; decimalNull:-; offsetDateTimeNotNull:2023-04-05T12:33:45Z; offsetDateTimeNull:-; valueString:foobar\n",
 				},
 				{
 					format: "json",
-					target: `{"this":{"decimalNotNull":"1.234E-53","decimalNull":null}}` + "\n",
+					target: `{"this":{"decimalNotNull":"1.234E-53","decimalNull":null,"offsetDateTimeNotNull":"2023-04-05T12:33:45Z","offsetDateTimeNull":null,"valueString":"foobar"}}` + "\n",
 				},
 				{
 					format: "csv",
-					target: "this\n" + `decimalNotNull:1.234E-53; decimalNull:-` + "\n",
+					target: "this\n" + `decimalNotNull:1.234E-53; decimalNull:-; offsetDateTimeNotNull:2023-04-05T12:33:45Z; offsetDateTimeNull:-; valueString:foobar` + "\n",
 				},
 				{
 					format: "table",
@@ -94,8 +93,7 @@ const (
 // duplicated the others to be able to serialize in portable
 
 type others2 struct {
-	nullStringNull        *string
-	nullStringNotNull     *string
+	valueString           string
 	offsetDateTimeNull    *types.OffsetDateTime
 	offsetDateTimeNotNull *types.OffsetDateTime
 	decimalNull           *types.Decimal
@@ -111,11 +109,17 @@ func (o *others2) ClassID() int32 {
 }
 
 func (o *others2) WritePortable(w serialization.PortableWriter) {
+	w.WriteString("valueString", o.valueString)
+	w.WriteTimestampWithTimezone("offsetDateTimeNull", o.offsetDateTimeNull)
+	w.WriteTimestampWithTimezone("offsetDateTimeNotNull", o.offsetDateTimeNotNull)
 	w.WriteDecimal("decimalNull", o.decimalNull)
 	w.WriteDecimal("decimalNotNull", o.decimalNotNull)
 }
 
 func (o *others2) ReadPortable(r serialization.PortableReader) {
+	o.valueString = r.ReadString("valueString")
+	o.offsetDateTimeNull = r.ReadTimestampWithTimezone("offsetDateTimeNull")
+	o.offsetDateTimeNotNull = r.ReadTimestampWithTimezone("offsetDateTimeNotNull")
 	o.decimalNull = r.ReadDecimal("decimalNull")
 	o.decimalNotNull = r.ReadDecimal("decimalNotNull")
 }

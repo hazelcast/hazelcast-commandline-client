@@ -172,7 +172,7 @@ func init() {
 		TypeInt64:        ptrStringer[int64](),
 		TypeFloat32:      ptrStringer[float32](),
 		TypeFloat64:      ptrStringer[float64](),
-		TypeString:       ptrStringer[string](),
+		TypeString:       ptrStringer[string](), // +
 		TypeByteArray:    arrayStringer[uint8],
 		TypeBoolArray:    arrayStringer[bool],
 		TypeUInt16Array:  arrayStringer[uint16],
@@ -190,7 +190,7 @@ func init() {
 		TypeJavaClass:      javaClassStringer,
 		TypeJavaDate:       timeStringer,
 		TypeJavaBigInteger: sprintStringer,
-		TypeJavaDecimal:    ptrStringer[types.Decimal](),
+		TypeJavaDecimal:    ptrStringer[types.Decimal](), // +
 		/*
 			TypeJavaArray:                            "JAVA_ARRAY",
 			TypeJavaArrayList:                        "JAVA_ARRAY_LIST",
@@ -200,7 +200,7 @@ func init() {
 		TypeJavaLocalDate:      timeStringer,
 		TypeJavaLocalTime:      timeStringer,
 		TypeJavaLocalDateTime:  timeStringer,
-		TypeJavaOffsetDateTime: timeStringer,
+		TypeJavaOffsetDateTime: timeStringer, // +
 
 		//
 
