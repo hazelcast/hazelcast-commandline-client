@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 	"os/signal"
-	"strings"
 	"time"
 
 	"github.com/fatih/color"
@@ -239,9 +238,6 @@ func (ec *ExecContext) Wrap(f func() error) error {
 		} else {
 			var msg string
 			errStr := err.Error()
-			if ec.Interactive() {
-				errStr = trimError(err, maxErrorLines)
-			}
 			if verbose {
 				msg = fmt.Sprintf("\nError in %d ms: %s", took.Milliseconds(), errStr)
 			} else {
@@ -301,13 +297,4 @@ func (n nopSpinner) Start() error {
 
 func (n nopSpinner) SetText(text string) {
 	// pass
-}
-
-// trimErrorString trims the string so it's at most n lines
-func trimError(err error, n int) string {
-	lines := strings.Split(err.Error(), "\n")
-	if len(lines) > n {
-		lines = append(lines[:5], "(Rest of the error message is trimmed.)")
-	}
-	return strings.Join(lines, "\n")
 }

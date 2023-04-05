@@ -60,12 +60,14 @@ func (e *Expect) String() string {
 }
 
 func (e *Expect) Match(m Matcher, options ...Option) bool {
-	//e.Reset()
 	o := Options{}
 	for _, opt := range options {
 		if err := opt(&o); err != nil {
 			panic(fmt.Errorf("creating Match options: %w", err))
 		}
+	}
+	if o.delay > 0 {
+		time.Sleep(o.delay)
 	}
 	ch := make(chan struct{})
 	var done atomic.Bool

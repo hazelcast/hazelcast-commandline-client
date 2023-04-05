@@ -18,8 +18,10 @@ func TestMap(t *testing.T) {
 		name string
 		f    func(t *testing.T)
 	}{
+		{name: "Clear_NonInteractive", f: clear_NonInteractiveTest},
 		{name: "EntrySet_NonInteractive", f: entrySet_NonInteractiveTest},
 		{name: "Get_Noninteractive", f: get_NonInteractiveTest},
+		{name: "Remove_Noninteractive", f: remove_NonInteractiveTest},
 		{name: "Set_NonInteractive", f: set_NonInteractiveTest},
 		{name: "Size_Interactive", f: size_InteractiveTest},
 		{name: "Size_Noninteractive", f: size_NoninteractiveTest},
@@ -29,51 +31,78 @@ func TestMap(t *testing.T) {
 	}
 }
 
-func entrySet_NonInteractiveTest(t *testing.T) {
-	mapTester(t, func(tcx it.TestContext, m *hz.Map) {
+func clear_NonInteractiveTest(t *testing.T) {
+	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
 		t := tcx.T
+		ctx := context.Background()
+		tcx.WithReset(func() {
+			check.Must(m.Set(ctx, "foo", "bar"))
+			require.Equal(t, 1, check.MustValue(m.Size(ctx)))
+			check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "clear", "--quite"))
+			require.Equal(t, 0, check.MustValue(m.Size(ctx)))
+		})
+	})
+
+}
+
+func entrySet_NonInteractiveTest(t *testing.T) {
+	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
 		// no entry
 		tcx.WithReset(func() {
 			check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "entry-set", "--quite"))
-			tcx.AssertStdoutEquals(t, "")
+			tcx.AssertStdoutEquals("")
 		})
 		// set an entry
 		tcx.WithReset(func() {
 			check.Must(m.Set(context.Background(), "foo", "bar"))
 			check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "entry-set", "--quite"))
-			tcx.AssertStdoutContains(t, "foo\tbar\n")
+			tcx.AssertStdoutContains("foo\tbar\n")
 		})
 		// show type
 		tcx.WithReset(func() {
 			check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "entry-set", "--show-type", "--quite"))
-			tcx.AssertStdoutContains(t, "foo\tSTRING\tbar\tSTRING\n")
+			tcx.AssertStdoutContains("foo\tSTRING\tbar\tSTRING\n")
 		})
 	})
 }
 
 func get_NonInteractiveTest(t *testing.T) {
-	mapTester(t, func(tcx it.TestContext, m *hz.Map) {
-		t := tcx.T
+	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
 		// no entry
 		tcx.WithReset(func() {
 			check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "get", "foo", "--quite"))
-			tcx.AssertStdoutEquals(t, "-\n")
+			tcx.AssertStdoutEquals("-\n")
 		})
 		// set an entry
 		tcx.WithReset(func() {
 			check.Must(m.Set(context.Background(), "foo", "bar"))
-			check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "get", "foo", "--quite"))
-			tcx.AssertStdoutContains(t, "bar\n")
+			check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "get", "foo", "--quite", "--show-type"))
+			tcx.AssertStdoutEquals("bar\tSTRING\n")
+		})
+	})
+}
+
+func remove_NonInteractiveTest(t *testing.T) {
+	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
+		ctx := context.Background()
+		tcx.WithReset(func() {
+			check.Must(m.Set(ctx, "foo", "bar"))
+			size := check.MustValue(m.Size(ctx))
+			require.Equal(tcx.T, 1, size)
+			check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "remove", "foo", "--quite", "--show-type"))
+			tcx.AssertStdoutEquals("bar\tSTRING\n")
+			size = check.MustValue(m.Size(ctx))
+			require.Equal(tcx.T, 0, size)
 		})
 	})
 }
 
 func set_NonInteractiveTest(t *testing.T) {
-	mapTester(t, func(tcx it.TestContext, m *hz.Map) {
+	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
 		t := tcx.T
 		tcx.WithReset(func() {
 			tcx.CLCExecute("map", "-n", m.Name(), "set", "foo", "bar", "--quite")
-			tcx.AssertStderrEquals(t, "")
+			tcx.AssertStderrEquals("")
 			v := check.MustValue(m.Get(context.Background(), "foo"))
 			require.Equal(t, "bar", v)
 		})
@@ -81,54 +110,35 @@ func set_NonInteractiveTest(t *testing.T) {
 }
 
 func size_NoninteractiveTest(t *testing.T) {
-	mapTester(t, func(tcx it.TestContext, m *hz.Map) {
-		t := tcx.T
+	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
 		// no entry
 		tcx.WithReset(func() {
 			check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "size", "--quite"))
-			tcx.AssertStdoutEquals(t, "0\n")
+			tcx.AssertStdoutEquals("0\n")
 		})
 		// set an entry
 		tcx.WithReset(func() {
-			tcx.AssertStdoutEquals(t, "")
+			tcx.AssertStdoutEquals("")
 			check.Must(m.Set(context.Background(), "foo", "bar"))
 			check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "size", "--quite"))
-			tcx.AssertStdoutEquals(t, "1\n")
+			tcx.AssertStdoutEquals("1\n")
 		})
 	})
 }
 
 func size_InteractiveTest(t *testing.T) {
-	mapTester(t, func(tcx it.TestContext, m *hz.Map) {
-		t := tcx.T
+	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
 		ctx := context.Background()
-		go func(t *testing.T) {
-			check.Must(tcx.CLC().Execute())
-		}(t)
-		tcx.WithReset(func() {
-			tcx.WriteStdin([]byte(fmt.Sprintf("\\map -n %s size\n", m.Name())))
-			tcx.AssertStdoutDollarWithPath(t, "testdata/map_size_0.txt")
-		})
-		tcx.WithReset(func() {
-			check.Must(m.Set(ctx, "foo", "bar"))
-			tcx.WriteStdin([]byte(fmt.Sprintf("\\map -n %s size\n", m.Name())))
-			tcx.AssertStdoutDollarWithPath(t, "testdata/map_size_1.txt")
-		})
-	})
-}
-
-func withMap(tcx it.TestContext, fn func(m *hz.Map)) {
-	name := it.NewUniqueObjectName("map")
-	ctx := context.Background()
-	m := check.MustValue(tcx.Client.GetMap(ctx, name))
-	fn(m)
-}
-
-func mapTester(t *testing.T, fn func(tcx it.TestContext, m *hz.Map)) {
-	tcx := it.TestContext{T: t}
-	tcx.Tester(func(tcx it.TestContext) {
-		withMap(tcx, func(m *hz.Map) {
-			fn(tcx, m)
+		tcx.WithShell(func(tcx it.TestContext) {
+			tcx.WithReset(func() {
+				tcx.WriteStdin([]byte(fmt.Sprintf("\\map -n %s size\n", m.Name())))
+				tcx.AssertStdoutDollarWithPath("testdata/map_size_0.txt")
+			})
+			tcx.WithReset(func() {
+				check.Must(m.Set(ctx, "foo", "bar"))
+				tcx.WriteStdin([]byte(fmt.Sprintf("\\map -n %s size\n", m.Name())))
+				tcx.AssertStdoutDollarWithPath("testdata/map_size_1.txt")
+			})
 		})
 	})
 }

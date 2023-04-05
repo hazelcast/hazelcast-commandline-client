@@ -91,7 +91,7 @@ func ExecSQL(ctx context.Context, ec plug.ExecContext, query string) (sql.Result
 		// Once that is removed from the Go client, the code below may be removed.
 		err = AdaptSQLError(err)
 		if !as {
-			if serr.Suggestion != "" {
+			if serr.Suggestion != "" && !ec.Interactive() {
 				return nil, stop, fmt.Errorf("%w\n\nUse --%s to automatically apply the suggestion", err, propertyUseMappingSuggestion)
 			}
 			return nil, stop, err

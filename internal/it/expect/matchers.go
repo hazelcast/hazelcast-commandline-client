@@ -57,7 +57,12 @@ func (m DollarMatcher) normalize(s string) string {
 	scn := bufio.NewScanner(strings.NewReader(s))
 	for scn.Scan() {
 		line := strings.TrimSpace(scn.Text())
+		line = strings.ReplaceAll(line, `\`, `\\`)
+		line = strings.ReplaceAll(line, `+`, `\+`)
+		line = strings.ReplaceAll(line, `*`, `\*`)
 		line = strings.ReplaceAll(line, "$", "\\s*")
+		line = strings.ReplaceAll(line, "[", "\\[")
+		line = strings.ReplaceAll(line, "|", "\\|")
 		lines = append(lines, line)
 	}
 	return strings.Join(lines, "\n")

@@ -23,7 +23,7 @@ func NewLogger() *Logger {
 	return &Logger{buf: &bytes.Buffer{}}
 }
 
-func (l Logger) Text() string {
+func (l Logger) String() string {
 	b, err := io.ReadAll(l.buf)
 	if err != nil {
 		panic(err)

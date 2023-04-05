@@ -52,7 +52,7 @@ func (mc *MapRemoveCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 	value, err := ci.DecodeData(raw)
 	if err != nil {
 		ec.Logger().Info("The value for %s was not decoded, due to error: %s", keyStr, err.Error())
-		value = serialization.NondecodedType(serialization.TypeToString(vt))
+		value = serialization.NondecodedType(serialization.TypeToLabel(vt))
 	}
 	row := output.Row{
 		output.Column{
@@ -65,7 +65,7 @@ func (mc *MapRemoveCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 		row = append(row, output.Column{
 			Name:  output.NameValueType,
 			Type:  serialization.TypeString,
-			Value: serialization.TypeToString(vt),
+			Value: serialization.TypeToLabel(vt),
 		})
 	}
 	return ec.AddOutputRows(ctx, row)

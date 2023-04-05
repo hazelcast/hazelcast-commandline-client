@@ -18,7 +18,7 @@ type OneshotShell struct {
 	stdin         io.Reader
 }
 
-func NewOneshot(endLineFn EndLineFn, sio clc.IO, textFn TextFn) *OneshotShell {
+func NewOneshotShell(endLineFn EndLineFn, sio clc.IO, textFn TextFn) *OneshotShell {
 	return &OneshotShell{
 		endLineFn:     endLineFn,
 		textFn:        textFn,

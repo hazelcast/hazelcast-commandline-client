@@ -135,6 +135,8 @@ func (m *Main) Root() *cobra.Command {
 	return m.root
 }
 
+// TODO: add context arg to Execute
+
 func (m *Main) Execute(args ...string) error {
 	var cm *cobra.Command
 	var cmdArgs []string
@@ -390,6 +392,6 @@ func convertFlagValue(fs *pflag.FlagSet, name string, v pflag.Value) any {
 }
 
 func init() {
-	hazelcast.SetDefaultCompactDeserializer(serialization.NewGenericCompactDeserializer())
+	hazelcast.SetDefaultCompactDeserializer(serialization.GenericCompactDeserializer{})
 	hazelcast.SetDefaultPortableDeserializer(serialization.NewGenericPortableSerializer())
 }

@@ -38,7 +38,10 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it/expect"
 )
 
-const DefaultTimeout = 30 * time.Second
+const (
+	EnvDefaultTimeout = "DEFAULT_TIMEOUT"
+	DefaultDelay      = 10 * time.Millisecond
+)
 
 type TestContext struct {
 	T              *testing.T
@@ -74,9 +77,7 @@ func (tcx TestContext) Stdout() *bytes.Buffer {
 }
 
 func (tcx TestContext) Stdin() io.Reader {
-	//panic("foo")
 	return tcx.stdinR
-	//return tcx.stdin
 }
 
 func (tcx TestContext) CLC() *cmd.Main {
@@ -95,6 +96,14 @@ func (tcx TestContext) WriteStdin(b []byte) {
 	if _, err := tcx.stdinW.Write(b); err != nil {
 		panic(fmt.Errorf("writing to stdin: %w", err))
 	}
+}
+
+func (tcx TestContext) WriteStdinString(s string) {
+	tcx.WriteStdin([]byte(s))
+}
+
+func (tcx TestContext) WriteStdinF(format string, args ...any) {
+	tcx.WriteStdin([]byte(fmt.Sprintf(format, args...)))
 }
 
 func (tcx TestContext) Tester(f func(tcx TestContext)) {
@@ -140,8 +149,8 @@ func (tcx TestContext) Tester(f func(tcx TestContext)) {
 		defer tcx.ExpectStdout.Stop()
 		tcx.ExpectStderr = expect.New(tcx.stderr)
 		defer tcx.ExpectStderr.Stop()
-		withEnv(paths.EnvCLCHome, tcx.homePath, func() {
-			withEnv(clc.EnvMaxCols, "50", func() {
+		WithEnv(paths.EnvCLCHome, tcx.homePath, func() {
+			WithEnv(clc.EnvMaxCols, "50", func() {
 				p := paths.ResolveConfigPath(tcx.ConfigPath)
 				d, _ := filepath.Split(p)
 				check.Must(os.MkdirAll(d, 0700))
@@ -174,48 +183,62 @@ func (tcx TestContext) IO() clc.IO {
 	}
 }
 
-func (tcx TestContext) AssertStdoutEquals(t *testing.T, text string) {
-	if !tcx.ExpectStdout.Match(expect.Exact(text), expect.WithTimeout(DefaultTimeout)) {
-		t.Log("STDOUT:", tcx.ExpectStdout.String())
-		t.Fatalf("expect failed, no match for: %s", text)
+func (tcx TestContext) AssertStdoutEquals(text string) {
+	if !tcx.ExpectStdout.Match(expect.Exact(text), expect.WithTimeout(DefaultTimeout()), expect.WithDelay(DefaultDelay)) {
+		tcx.T.Log("STDOUT:", tcx.ExpectStdout.String())
+		tcx.T.Fatalf("expect failed, no match for: %s", text)
 	}
 }
 
-func (tcx TestContext) AssertStderrEquals(t *testing.T, text string) {
-	if !tcx.ExpectStderr.Match(expect.Exact(text), expect.WithTimeout(DefaultTimeout)) {
-		t.Log("STDERR:", tcx.ExpectStderr.String())
-		t.Fatalf("expect failed, no match for: %s", text)
+func (tcx TestContext) AssertStderrEquals(text string) {
+	if !tcx.ExpectStderr.Match(expect.Exact(text), expect.WithTimeout(DefaultTimeout()), expect.WithDelay(DefaultDelay)) {
+		tcx.T.Log("STDERR:", tcx.ExpectStderr.String())
+		tcx.T.Fatalf("expect failed, no match for: %s", text)
 	}
 }
 
-func (tcx TestContext) AssertStdoutContains(t *testing.T, text string) {
-	if !tcx.ExpectStdout.Match(expect.Contains(text), expect.WithTimeout(DefaultTimeout)) {
-		t.Log("STDOUT:", tcx.ExpectStdout.String())
-		t.Fatalf("expect failed, no match for: %s", text)
+func (tcx TestContext) AssertStderrContains(text string) {
+	if !tcx.ExpectStderr.Match(expect.Contains(text), expect.WithTimeout(DefaultTimeout()), expect.WithDelay(DefaultDelay)) {
+		tcx.T.Log("STDERR:", tcx.ExpectStderr.String())
+		tcx.T.Fatalf("expect failed, no match for: %s", text)
 	}
 }
 
-func (tcx TestContext) AssertStdoutContainsWithPath(t *testing.T, path string) {
+func (tcx TestContext) AssertStderrNotContains(text string) {
+	if tcx.ExpectStderr.Match(expect.Contains(text), expect.WithTimeout(DefaultTimeout()), expect.WithDelay(DefaultDelay)) {
+		tcx.T.Log("STDERR:", tcx.ExpectStderr.String())
+		tcx.T.Fatalf("expect failed, matched: %s", text)
+	}
+}
+
+func (tcx TestContext) AssertStdoutContains(text string) {
+	if !tcx.ExpectStdout.Match(expect.Contains(text), expect.WithTimeout(DefaultTimeout())) {
+		tcx.T.Log("STDOUT:", tcx.ExpectStdout.String())
+		tcx.T.Fatalf("expect failed, no match for: %s", text)
+	}
+}
+
+func (tcx TestContext) AssertStdoutContainsWithPath(path string) {
 	p := string(check.MustValue(os.ReadFile(path)))
-	tcx.AssertStdoutContains(t, p)
+	tcx.AssertStdoutContains(p)
 }
 
-func (tcx TestContext) AssertStdoutDollar(t *testing.T, text string) {
-	if !tcx.ExpectStdout.Match(expect.Dollar(text), expect.WithTimeout(DefaultTimeout)) {
-		t.Log("STDOUT:", tcx.ExpectStdout.String())
-		t.Fatalf("expect failed, no match for: %s", text)
+func (tcx TestContext) AssertStdoutDollar(text string) {
+	if !tcx.ExpectStdout.Match(expect.Dollar(text), expect.WithTimeout(DefaultTimeout())) {
+		tcx.T.Log("STDOUT:", tcx.ExpectStdout.String())
+		tcx.T.Fatalf("expect failed, no match for: %s", text)
 	}
 }
 
-func (tcx TestContext) AssertStdoutDollarWithPath(t *testing.T, path string) {
+func (tcx TestContext) AssertStdoutDollarWithPath(path string) {
 	p := string(check.MustValue(os.ReadFile(path)))
-	tcx.AssertStdoutDollar(t, p)
+	tcx.AssertStdoutDollar(p)
 }
 
-func (tcx TestContext) AssertStdoutEqualsWithPath(t *testing.T, path string) {
+func (tcx TestContext) AssertStdoutEqualsWithPath(path string) {
 	p := string(check.MustValue(os.ReadFile(path)))
 	p = strings.ReplaceAll(p, "$", "")
-	tcx.AssertStdoutEquals(t, p)
+	tcx.AssertStdoutEquals(p)
 }
 
 func (tcx TestContext) WithReset(f func()) {
@@ -232,7 +255,16 @@ func (tcx TestContext) CLCExecute(args ...string) {
 	check.Must(tcx.CLC().Execute(a...))
 }
 
-func withEnv(name, value string, f func()) {
+func (tcx TestContext) WithShell(f func(tcx TestContext)) {
+	go func() {
+		tcx.CLCExecute()
+	}()
+	// best effort to exit the shell
+	defer tcx.WriteStdin([]byte("\\exit\n"))
+	f(tcx)
+}
+
+func WithEnv(name, value string, f func()) {
 	b, ok := os.LookupEnv(name)
 	if ok {
 		// error is ignored
@@ -243,4 +275,13 @@ func withEnv(name, value string, f func()) {
 	}
 	check.Must(os.Setenv(name, value))
 	f()
+}
+
+func DefaultTimeout() time.Duration {
+	s := os.Getenv(EnvDefaultTimeout)
+	d, err := time.ParseDuration(s)
+	if err != nil {
+		return 1 * time.Second
+	}
+	return d
 }

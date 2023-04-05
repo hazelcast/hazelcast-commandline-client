@@ -48,15 +48,16 @@ const (
 	EnvHzVersion          = "HZ_VERSION"
 )
 
-const (
-	DefaultClusterName = "clc-test"
-)
+func DefaultClusterName() string {
+	return NewUniqueObjectName("clc-test")
+}
 
+var defaultClusterName = DefaultClusterName()
 var rc *RemoteControllerClientWrapper
 var rcMu = &sync.RWMutex{}
-var defaultTestCluster = NewSingletonTestCluster("default", func() *TestCluster {
+var defaultTestCluster = NewSingletonTestCluster(defaultClusterName, func() *TestCluster {
 	port := NextPort()
-	return rc.startNewCluster(MemberCount(), xmlConfig(DefaultClusterName, port), port)
+	return rc.startNewCluster(MemberCount(), xmlConfig(defaultClusterName, port), port)
 })
 var idGen = ReferenceIDGenerator{}
 
@@ -69,7 +70,8 @@ func NewUniqueObjectName(service string, labels ...string) string {
 	if ls != "" {
 		ls = fmt.Sprintf("-%s", ls)
 	}
-	return fmt.Sprintf("test-%s-%d-%d%s", service, idGen.NextID(), rand.Int(), ls)
+	// make sure the random part is at least 4 characters long
+	return fmt.Sprintf("test-%s-%d-%d%s", service, idGen.NextID(), rand.Intn(100_000)+1000, ls)
 }
 
 func TraceLoggingEnabled() bool {
