@@ -55,10 +55,5 @@ func (d DelimitedResult) adapt(col Column) string {
 	if !d.singleLine {
 		return text
 	}
-	// return only the first line
-	idx := strings.Index(text, "\n")
-	if idx < 0 {
-		return text
-	}
-	return text[:idx]
+	return strings.ReplaceAll(text, "\n", " ")
 }

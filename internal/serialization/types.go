@@ -61,7 +61,7 @@ func ptrStringer[T any]() Stringer {
 			}
 			return fmt.Sprint(*vv)
 		}
-		return fmt.Sprintf("??%v", reflect.TypeOf(v))
+		return fmt.Sprintf("?%v?", reflect.TypeOf(v))
 	}
 }
 
@@ -78,7 +78,7 @@ func arrayStringer[T any](v any) string {
 		if vv, ok := v.([]*T); ok {
 			return arrayPtrStringer[T](vv)
 		}
-		return fmt.Sprintf("??%v", reflect.TypeOf(v))
+		return fmt.Sprintf("?%v?", reflect.TypeOf(v))
 	}
 	var sb strings.Builder
 	sb.WriteString("[")
@@ -147,7 +147,7 @@ func timeStringer(v any) string {
 		}
 		return (*time.Time)(vv).Format(time.RFC3339)
 	}
-	return "??datetime"
+	return "?datetime?"
 }
 
 func portableStringer(v any) string {
@@ -201,6 +201,8 @@ func init() {
 		TypeJavaLocalTime:      timeStringer,
 		TypeJavaLocalDateTime:  timeStringer,
 		TypeJavaOffsetDateTime: timeStringer, // +
+
+		TypeJSONSerialization: sprintStringer,
 
 		//
 

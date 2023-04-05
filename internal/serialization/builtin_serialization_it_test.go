@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/map"
@@ -45,6 +46,13 @@ func TestBuiltinSerialization(t *testing.T) {
 			delimitedOutput: "2023-02-03T04:05:06Z\n",
 			jsonOutput:      `{"this":"2023-02-03T04:05:06Z"}` + "\n",
 			csvOutput:       "this\n2023-02-03T04:05:06Z\n",
+		},
+		{
+			name:            "serialization.JSON",
+			value:           pubserialization.JSON(`{"FieldA":"json-str-1", "FieldB":22}`),
+			delimitedOutput: `{"FieldA":"json-str-1", "FieldB":22}` + "\n",
+			jsonOutput:      `{"this":{"FieldA":"json-str-1","FieldB":22}}` + "\n",
+			csvOutput:       "this\n" + `"{""FieldA"":""json-str-1"", ""FieldB"":22}"` + "\n",
 		},
 	}
 	ctx := context.Background()
