@@ -137,6 +137,9 @@ func timeStringer(v any) string {
 	case time.Time:
 		return vv.Format(time.RFC3339)
 	case *time.Time:
+		if vv == nil {
+			return ValueNil
+		}
 		return vv.Format(time.RFC3339)
 	case types.LocalTime:
 		return time.Time(vv).Format("15:04:05")

@@ -21,6 +21,7 @@ func TestMap(t *testing.T) {
 		{name: "Clear_NonInteractive", f: clear_NonInteractiveTest},
 		{name: "EntrySet_NonInteractive", f: entrySet_NonInteractiveTest},
 		{name: "Get_Noninteractive", f: get_NonInteractiveTest},
+		{name: "Remove_Noninteractive", f: remove_NonInteractiveTest},
 		{name: "Set_NonInteractive", f: set_NonInteractiveTest},
 		{name: "Size_Interactive", f: size_InteractiveTest},
 		{name: "Size_Noninteractive", f: size_NoninteractiveTest},
@@ -75,8 +76,23 @@ func get_NonInteractiveTest(t *testing.T) {
 		// set an entry
 		tcx.WithReset(func() {
 			check.Must(m.Set(context.Background(), "foo", "bar"))
-			check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "get", "foo", "--quite"))
-			tcx.AssertStdoutContains("bar\n")
+			check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "get", "foo", "--quite", "--show-type"))
+			tcx.AssertStdoutEquals("bar\tSTRING\n")
+		})
+	})
+}
+
+func remove_NonInteractiveTest(t *testing.T) {
+	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
+		ctx := context.Background()
+		tcx.WithReset(func() {
+			check.Must(m.Set(ctx, "foo", "bar"))
+			size := check.MustValue(m.Size(ctx))
+			require.Equal(tcx.T, 1, size)
+			check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "remove", "foo", "--quite", "--show-type"))
+			tcx.AssertStdoutEquals("bar\tSTRING\n")
+			size = check.MustValue(m.Size(ctx))
+			require.Equal(tcx.T, 0, size)
 		})
 	})
 }
