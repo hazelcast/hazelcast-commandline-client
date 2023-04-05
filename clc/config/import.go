@@ -29,6 +29,15 @@ func ImportSource(ctx context.Context, ec plug.ExecContext, target, src string) 
 	if ok {
 		return path, nil
 	}
+	// import is not successful, check whether this an HTTP source
+	path, ok, err = tryImportHTTPSource(ctx, ec, target, src)
+	if err != nil {
+		return "", err
+	}
+	// import is successful
+	if ok {
+		return path, nil
+	}
 	// import is not successful, so assume this is a zip file path and try to import from it.
 	path, ok, err = tryImportViridianZipSource(ctx, ec, target, src)
 	if err != nil {
@@ -42,19 +51,22 @@ func ImportSource(ctx context.Context, ec plug.ExecContext, target, src string) 
 
 // tryImportViridianCurlSource returns true if importing from a Viridian CURL command line is successful
 func tryImportViridianCurlSource(ctx context.Context, ec plug.ExecContext, target, src string) (string, bool, error) {
-	const reCurlSource = `curl (?P<url>.*) -o hazelcast-cloud-(?P<language>[a-z]+)-sample-client-(?P<cn>[a-z-0-9-]+)-default\.zip`
+	const reCurlSource = `curl (?P<url>[^\s]+)\s+`
 	re, err := regexp.Compile(reCurlSource)
 	if err != nil {
 		return "", false, err
 	}
 	grps := re.FindStringSubmatch(src)
-	if len(grps) != 4 {
+	if len(grps) < 2 {
 		return "", false, nil
 	}
 	url := grps[1]
-	language := grps[2]
-	if language != "go" {
-		return "", false, fmt.Errorf("%s sample is not usable as a configuration source, use Go sample", language)
+	return tryImportHTTPSource(ctx, ec, target, url)
+}
+
+func tryImportHTTPSource(ctx context.Context, ec plug.ExecContext, target, url string) (string, bool, error) {
+	if !strings.HasPrefix(url, "https://") && !strings.HasSuffix(url, "http://") {
+		return "", false, nil
 	}
 	path, err := download(ctx, ec, url)
 	if err != nil {
@@ -66,11 +78,12 @@ func tryImportViridianCurlSource(ctx context.Context, ec plug.ExecContext, targe
 		return "", false, err
 	}
 	return path, true, nil
+
 }
 
 // tryImportViridianZipSource returns true if importing from a Viridian Go sample zip file is successful
 func tryImportViridianZipSource(ctx context.Context, ec plug.ExecContext, target, src string) (string, bool, error) {
-	const reSource = `hazelcast-cloud-(?P<language>[a-z]+)-sample-client-(?P<cn>[a-z-0-9-]+)-default\.zip`
+	const reSource = `hazelcast-cloud-(?P<language>[a-z]+)-sample-client-(?P<cn>[a-zA-Z0-9_-]+)-default\.zip`
 	re, err := regexp.Compile(reSource)
 	if err != nil {
 		return "", false, err

@@ -112,19 +112,17 @@ func size_NoninteractiveTest(t *testing.T) {
 
 func size_InteractiveTest(t *testing.T) {
 	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
-		t := tcx.T
 		ctx := context.Background()
-		go func(t *testing.T) {
-			check.Must(tcx.CLC().Execute())
-		}(t)
-		tcx.WithReset(func() {
-			tcx.WriteStdin([]byte(fmt.Sprintf("\\map -n %s size\n", m.Name())))
-			tcx.AssertStdoutDollarWithPath("testdata/map_size_0.txt")
-		})
-		tcx.WithReset(func() {
-			check.Must(m.Set(ctx, "foo", "bar"))
-			tcx.WriteStdin([]byte(fmt.Sprintf("\\map -n %s size\n", m.Name())))
-			tcx.AssertStdoutDollarWithPath("testdata/map_size_1.txt")
+		tcx.WithShell(func(tcx it.TestContext) {
+			tcx.WithReset(func() {
+				tcx.WriteStdin([]byte(fmt.Sprintf("\\map -n %s size\n", m.Name())))
+				tcx.AssertStdoutDollarWithPath("testdata/map_size_0.txt")
+			})
+			tcx.WithReset(func() {
+				check.Must(m.Set(ctx, "foo", "bar"))
+				tcx.WriteStdin([]byte(fmt.Sprintf("\\map -n %s size\n", m.Name())))
+				tcx.AssertStdoutDollarWithPath("testdata/map_size_1.txt")
+			})
 		})
 	})
 }
