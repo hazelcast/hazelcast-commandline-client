@@ -197,6 +197,20 @@ func (tcx TestContext) AssertStderrEquals(text string) {
 	}
 }
 
+func (tcx TestContext) AssertStderrContains(text string) {
+	if !tcx.ExpectStderr.Match(expect.Contains(text), expect.WithTimeout(DefaultTimeout()), expect.WithDelay(DefaultDelay)) {
+		tcx.T.Log("STDERR:", tcx.ExpectStderr.String())
+		tcx.T.Fatalf("expect failed, no match for: %s", text)
+	}
+}
+
+func (tcx TestContext) AssertStderrNotContains(text string) {
+	if tcx.ExpectStderr.Match(expect.Contains(text), expect.WithTimeout(DefaultTimeout()), expect.WithDelay(DefaultDelay)) {
+		tcx.T.Log("STDERR:", tcx.ExpectStderr.String())
+		tcx.T.Fatalf("expect failed, matched: %s", text)
+	}
+}
+
 func (tcx TestContext) AssertStdoutContains(text string) {
 	if !tcx.ExpectStdout.Match(expect.Contains(text), expect.WithTimeout(DefaultTimeout())) {
 		tcx.T.Log("STDOUT:", tcx.ExpectStdout.String())

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hazelcast/hazelcast-go-client"
+
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
@@ -16,9 +18,11 @@ func TestSQL(t *testing.T) {
 		f    func(t *testing.T)
 	}{
 		{name: "SQLOutput_NonInteractive", f: sqlOutput_NonInteractiveTest},
-		{name: "SQL_shellCommand", f: sql_shellCommandTest},
+		{name: "SQL_ShellCommand", f: sql_shellCommandTest},
 		{name: "SQL_Interactive", f: sql_InteractiveTest},
 		{name: "SQL_NonInteractive", f: sql_NonInteractiveTest},
+		{name: "SQL_Suggestion_Interactive", f: sqlSuggestion_Interactive},
+		{name: "SQL_Suggestion_NonInteractive", f: sqlSuggestion_NonInteractive},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, tc.f)
@@ -122,13 +126,42 @@ $-------------------------------------------------------------------------------
 			})
 		})
 	})
+}
 
+func sqlSuggestion_Interactive(t *testing.T) {
+	tcx := it.TestContext{T: t}
+	tcx.Tester(func(tcx it.TestContext) {
+		ctx := context.Background()
+		it.WithMap(tcx, func(m *hazelcast.Map) {
+			check.Must(m.Set(ctx, "foo", "bar"))
+			tcx.WithShell(func(tcx it.TestContext) {
+				tcx.WriteStdinF(`SELECT * FROM "%s";`+"\n", m.Name())
+				tcx.AssertStderrContains("CREATE MAPPING")
+				tcx.AssertStderrNotContains("--use-mapping-suggestion")
+			})
+		})
+	})
+}
+
+func sqlSuggestion_NonInteractive(t *testing.T) {
+	tcx := it.TestContext{T: t}
+	tcx.Tester(func(tcx it.TestContext) {
+		ctx := context.Background()
+		it.WithMap(tcx, func(m *hazelcast.Map) {
+			check.Must(m.Set(ctx, "foo", "bar"))
+			// ignoring the error here
+			_ = tcx.CLC().Execute("sql", fmt.Sprintf(`SELECT * FROM "%s";`, m.Name()))
+			tcx.AssertStderrContains("CREATE MAPPING")
+			tcx.AssertStderrContains("--use-mapping-suggestion")
+			check.Must(tcx.CLC().Execute("sql", fmt.Sprintf(`SELECT * FROM "%s";`, m.Name()), "--use-mapping-suggestion"))
+			tcx.AssertStdoutContains("foo\tbar")
+		})
+	})
 }
 
 func sqlOutput_NonInteractiveTest(t *testing.T) {
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
-		t := tcx.T
 		name := it.NewUniqueObjectName("table")
 		ctx := context.Background()
 		check.MustValue(tcx.Client.SQL().Execute(ctx, fmt.Sprintf(`
@@ -146,7 +179,7 @@ func sqlOutput_NonInteractiveTest(t *testing.T) {
 		testCases := []string{"delimited", "json", "csv", "table"}
 		for _, f := range testCases {
 			f := f
-			t.Run(f, func(t *testing.T) {
+			tcx.T.Run(f, func(t *testing.T) {
 				tcx.WithReset(func() {
 					tcx.CLCExecute("sql", "--format", f, "--quite", fmt.Sprintf(`
 					SELECT * FROM "%s" ORDER BY __key;

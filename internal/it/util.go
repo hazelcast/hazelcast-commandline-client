@@ -48,15 +48,16 @@ const (
 	EnvHzVersion          = "HZ_VERSION"
 )
 
-const (
-	DefaultClusterName = "clc-test"
-)
+func DefaultClusterName() string {
+	return NewUniqueObjectName("clc-test")
+}
 
+var defaultClusterName = DefaultClusterName()
 var rc *RemoteControllerClientWrapper
 var rcMu = &sync.RWMutex{}
-var defaultTestCluster = NewSingletonTestCluster("default", func() *TestCluster {
+var defaultTestCluster = NewSingletonTestCluster(defaultClusterName, func() *TestCluster {
 	port := NextPort()
-	return rc.startNewCluster(MemberCount(), xmlConfig(DefaultClusterName, port), port)
+	return rc.startNewCluster(MemberCount(), xmlConfig(defaultClusterName, port), port)
 })
 var idGen = ReferenceIDGenerator{}
 

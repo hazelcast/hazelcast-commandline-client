@@ -141,7 +141,7 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 			Stderr: ec.Stderr(),
 			Stdout: ec.Stdout(),
 		}
-		sh := shell.NewOneshot(endLineFn, sio, textFn)
+		sh := shell.NewOneshotShell(endLineFn, sio, textFn)
 		sh.SetCommentPrefix("--")
 		return sh.Run(context.Background())
 	}
