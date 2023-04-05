@@ -69,7 +69,8 @@ func NewUniqueObjectName(service string, labels ...string) string {
 	if ls != "" {
 		ls = fmt.Sprintf("-%s", ls)
 	}
-	return fmt.Sprintf("test-%s-%d-%d%s", service, idGen.NextID(), rand.Int(), ls)
+	// make sure the random part is at least 4 characters long
+	return fmt.Sprintf("test-%s-%d-%d%s", service, idGen.NextID(), rand.Intn(100_000)+1000, ls)
 }
 
 func TraceLoggingEnabled() bool {

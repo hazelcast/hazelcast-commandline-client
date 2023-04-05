@@ -97,9 +97,9 @@ func TestBuiltinSerialization(t *testing.T) {
 									panic(fmt.Sprintf("unknown format: %s", format))
 								}
 								if format == "table" {
-									tcx.AssertStdoutDollarWithPath(t, target)
+									tcx.AssertStdoutDollarWithPath(target)
 								} else {
-									tcx.AssertStdoutEquals(t, target)
+									tcx.AssertStdoutEquals(target)
 								}
 							})
 						})

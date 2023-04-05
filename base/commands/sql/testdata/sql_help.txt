@@ -1,0 +1,6 @@
+$Shortcut Commands:$
+$\dm           List mappings$
+$\dm  MAPPING  Display information about a mapping$
+$\dm+ MAPPING  Describe a mapping$
+$\exit         Exit the shell$
+$\help         Display help for CLC commands$

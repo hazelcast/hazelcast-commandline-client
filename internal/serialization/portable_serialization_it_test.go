@@ -65,9 +65,9 @@ func portablePrimitivesTest(t *testing.T) {
 					tcx.WithReset(func() {
 						check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "get", "value", "--quite", "-f", tc.format))
 						if tc.format == "table" {
-							tcx.AssertStdoutDollarWithPath(t, tc.target)
+							tcx.AssertStdoutDollarWithPath(tc.target)
 						} else {
-							tcx.AssertStdoutEquals(t, tc.target)
+							tcx.AssertStdoutEquals(tc.target)
 						}
 					})
 				})
@@ -116,9 +116,9 @@ func portableOthersTest(t *testing.T) {
 					tcx.WithReset(func() {
 						check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "get", "value", "--quite", "-f", tc.format))
 						if tc.format == "table" {
-							tcx.AssertStdoutDollarWithPath(t, tc.target)
+							tcx.AssertStdoutDollarWithPath(tc.target)
 						} else {
-							tcx.AssertStdoutEquals(t, tc.target)
+							tcx.AssertStdoutEquals(tc.target)
 						}
 					})
 				})

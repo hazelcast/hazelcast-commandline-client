@@ -2,6 +2,7 @@ package serialization
 
 import (
 	"encoding/json"
+	"sort"
 	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -125,6 +126,9 @@ func jsonValueToColumns(value any) []Column {
 		for k, v := range vv {
 			cols = append(cols, jsonValueToColumn(k, v))
 		}
+		sort.Slice(cols, func(i, j int) bool {
+			return cols[i].Name < cols[j].Name
+		})
 		return cols
 	}
 	return []Column{jsonValueToColumn("", value)}
