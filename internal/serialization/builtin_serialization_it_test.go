@@ -54,6 +54,13 @@ func TestBuiltinSerialization(t *testing.T) {
 			jsonOutput:      `{"this":{"FieldA":"json-str-1","FieldB":22}}` + "\n",
 			csvOutput:       "this\n" + `"{""FieldA"":""json-str-1"", ""FieldB"":22}"` + "\n",
 		},
+		{
+			name:            "slice",
+			value:           []any{int64(100), "foo", int32(200), true},
+			delimitedOutput: "[100, foo, 200, true]\n",
+			jsonOutput:      `{"this":[100,"foo",200,true]}` + "\n",
+			csvOutput:       "this\n" + `"[100, foo, 200, true]"` + "\n",
+		},
 	}
 	ctx := context.Background()
 	for _, tc := range testCases {

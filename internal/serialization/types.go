@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/types"
+
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 )
 
 type NondecodedType string
@@ -44,7 +46,7 @@ func staticStringer(v string) Stringer {
 }
 
 func sprintStringer(v any) string {
-	if v == nil {
+	if check.IsNil(v) {
 		return ValueNil
 	}
 	return fmt.Sprint(v)
@@ -102,6 +104,24 @@ func arrayPtrStringer[T any](v any) string {
 		for _, x := range vv[1:] {
 			sb.WriteString(", ")
 			sb.WriteString(sprintNilStringer(x))
+		}
+	}
+	sb.WriteString("]")
+	return sb.String()
+}
+
+func arrayAnySerializer(v any) string {
+	vv, ok := v.([]any)
+	if !ok {
+		return "?array?"
+	}
+	var sb strings.Builder
+	sb.WriteString("[")
+	if len(vv) > 0 {
+		sb.WriteString(sprintStringer(vv[0]))
+		for _, x := range vv[1:] {
+			sb.WriteString(", ")
+			sb.WriteString(sprintStringer(x))
 		}
 	}
 	sb.WriteString("]")
@@ -187,16 +207,13 @@ func init() {
 		// TypeSimpleEntry
 		// TypeSimpleImmutableEntry
 
-		TypeJavaClass:      javaClassStringer,
-		TypeJavaDate:       timeStringer,
-		TypeJavaBigInteger: sprintStringer,
-		TypeJavaDecimal:    ptrStringer[types.Decimal](), // +
-		/*
-			TypeJavaArray:                            "JAVA_ARRAY",
-			TypeJavaArrayList:                        "JAVA_ARRAY_LIST",
-			TypeJavaLinkedList:                       "JAVA_LINKED_LIST",
-
-		*/
+		TypeJavaClass:          javaClassStringer,
+		TypeJavaDate:           timeStringer,
+		TypeJavaBigInteger:     sprintStringer,
+		TypeJavaDecimal:        ptrStringer[types.Decimal](), // +
+		TypeJavaArray:          arrayAnySerializer,
+		TypeJavaArrayList:      arrayAnySerializer,
+		TypeJavaLinkedList:     arrayAnySerializer,
 		TypeJavaLocalDate:      timeStringer,
 		TypeJavaLocalTime:      timeStringer,
 		TypeJavaLocalDateTime:  timeStringer,
