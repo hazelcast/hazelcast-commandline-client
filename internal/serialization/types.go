@@ -184,8 +184,8 @@ func init() {
 		TypePortable: portableStringer,
 		// TypeDataSerializable
 
-		TypeByte:         ptrStringer[byte](),
-		TypeBool:         ptrStringer[bool](),
+		TypeByte:         ptrStringer[byte](), // +
+		TypeBool:         ptrStringer[bool](), // +
 		TypeUInt16:       ptrStringer[uint16](),
 		TypeInt16:        ptrStringer[int16](),
 		TypeInt32:        ptrStringer[int32](),
@@ -211,9 +211,9 @@ func init() {
 		TypeJavaDate:           timeStringer,
 		TypeJavaBigInteger:     sprintStringer,
 		TypeJavaDecimal:        ptrStringer[types.Decimal](), // +
-		TypeJavaArray:          arrayAnySerializer,
-		TypeJavaArrayList:      arrayAnySerializer,
-		TypeJavaLinkedList:     arrayAnySerializer,
+		TypeJavaArray:          arrayAnySerializer,           // +
+		TypeJavaArrayList:      arrayAnySerializer,           // +
+		TypeJavaLinkedList:     arrayAnySerializer,           // +
 		TypeJavaLocalDate:      timeStringer,
 		TypeJavaLocalTime:      timeStringer,
 		TypeJavaLocalDateTime:  timeStringer,

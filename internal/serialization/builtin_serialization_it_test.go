@@ -27,6 +27,13 @@ func TestBuiltinSerialization(t *testing.T) {
 		csvOutput       string
 	}{
 		{
+			name:            "byte",
+			value:           byte(8),
+			delimitedOutput: "8\n",
+			jsonOutput:      `{"this":8}` + "\n",
+			csvOutput:       "this\n8\n",
+		},
+		{
 			name:            "types.Decimal",
 			value:           types.NewDecimal(big.NewInt(100), 10),
 			delimitedOutput: "1.00E-8\n",

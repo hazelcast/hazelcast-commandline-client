@@ -103,9 +103,12 @@ func compactPrimitivesTest(t *testing.T) {
 	}
 	tcx.Tester(func(tcx it.TestContext) {
 		i8 := int8(8)
+		b := false
 		value := primitives{
 			valueInt8:       i8,
 			nullInt8NotNull: &i8,
+			valueBool:       true,
+			nullBoolNotNull: &b,
 		}
 		ctx := context.Background()
 		it.WithMap(tcx, func(m *hazelcast.Map) {
@@ -116,19 +119,19 @@ func compactPrimitivesTest(t *testing.T) {
 			}{
 				{
 					format: "delimited",
-					target: "nullInt8NotNull:8; nullInt8Null:-; valueInt8:8\n",
+					target: "nullBoolNotNull:false; nullBoolNull:-; nullInt8NotNull:8; nullInt8Null:-; valueBool:true; valueInt8:8\n",
 				},
 				{
 					format: "json",
-					target: `{"this":{"nullInt8NotNull":8,"nullInt8Null":null,"valueInt8":8}}` + "\n",
+					target: `{"this":{"nullBoolNotNull":false,"nullBoolNull":null,"nullInt8NotNull":8,"nullInt8Null":null,"valueBool":true,"valueInt8":8}}` + "\n",
 				},
 				{
 					format: "csv",
-					target: "this\n" + `nullInt8NotNull:8; nullInt8Null:-; valueInt8:8` + "\n",
+					target: "this\nnullBoolNotNull:false; nullBoolNull:-; nullInt8NotNull:8; nullInt8Null:-; valueBool:true; valueInt8:8\n",
 				},
 				{
 					format: "table",
-					target: "testdata/primitives_table.txt",
+					target: "testdata/compact_primitives_table.txt",
 				},
 			}
 			for _, tc := range testCases {
@@ -213,6 +216,9 @@ type primitives struct {
 	valueInt8       int8
 	nullInt8Null    *int8
 	nullInt8NotNull *int8
+	valueBool       bool
+	nullBoolNull    *bool
+	nullBoolNotNull *bool
 }
 
 type primitivesSerializer struct{}
@@ -230,6 +236,9 @@ func (s primitivesSerializer) Read(r serialization.CompactReader) interface{} {
 		valueInt8:       r.ReadInt8("valueInt8"),
 		nullInt8Null:    r.ReadNullableInt8("nullInt8Null"),
 		nullInt8NotNull: r.ReadNullableInt8("nullInt8NotNull"),
+		valueBool:       r.ReadBoolean("valueBool"),
+		nullBoolNull:    r.ReadNullableBoolean("nullBoolNull"),
+		nullBoolNotNull: r.ReadNullableBoolean("nullBoolNotNull"),
 	}
 }
 
@@ -238,6 +247,9 @@ func (s primitivesSerializer) Write(w serialization.CompactWriter, v interface{}
 	w.WriteInt8("valueInt8", vv.valueInt8)
 	w.WriteNullableInt8("nullInt8Null", vv.nullInt8Null)
 	w.WriteNullableInt8("nullInt8NotNull", vv.nullInt8NotNull)
+	w.WriteBoolean("valueBool", vv.valueBool)
+	w.WriteNullableBoolean("nullBoolNull", vv.nullBoolNull)
+	w.WriteNullableBoolean("nullBoolNotNull", vv.nullBoolNotNull)
 }
 
 type primitiveArrays struct {
