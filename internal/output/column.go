@@ -6,18 +6,6 @@ import (
 
 type Column = iserialization.Column
 
-func NewStringColumn(value string) Column {
-	return Column{Type: iserialization.TypeString, Value: value}
-}
-
-func NewNilColumn() Column {
-	return Column{Type: iserialization.TypeNil}
-}
-
-func NewSkipColumn() Column {
-	return Column{Type: iserialization.TypeSkip}
-}
-
 func NewKeyColumn(kt int32, key any) Column {
 	return Column{
 		Name:  NameKey,

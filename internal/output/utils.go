@@ -45,7 +45,7 @@ func MakeTableFromRows(rows []Row) (table.Row, []Row) {
 						}
 						hd.Add(sc.Name)
 						newRow[sc.Name] = sc
-						newRow[col.Name] = NewSkipColumn()
+						newRow[col.Name] = Column{Type: serialization.TypeSkip}
 					}
 					continue
 				}
