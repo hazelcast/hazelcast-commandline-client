@@ -32,7 +32,7 @@ func (cm *SQLCommand) Init(cc plug.InitContext) error {
 	if cc.Interactive() {
 		return errors.ErrNotAvailable
 	}
-	cc.SetCommandUsage("sql [QUERY] [flags]")
+	cc.SetCommandUsage("sql [query] [flags]")
 	cc.SetPositionalArgCount(1, 1)
 	cc.AddCommandGroup("sql", "SQL")
 	cc.SetCommandGroup("sql")

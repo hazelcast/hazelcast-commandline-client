@@ -24,7 +24,7 @@ func (mc *MapSetCommand) Init(cc plug.InitContext) error {
 	cc.SetPositionalArgCount(2, 2)
 	help := "Set a value in the given Map"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("set [-n MAP] KEY VALUE [flags]")
+	cc.SetCommandUsage("set [-n MAP] [key] [value] [flags]")
 	return nil
 }
 

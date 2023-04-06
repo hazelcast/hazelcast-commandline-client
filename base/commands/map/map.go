@@ -31,7 +31,7 @@ func (mc *MapCommand) Init(cc plug.InitContext) error {
 		cc.AddStringFlag(clc.PropertySchemaDir, "", paths.Schemas(), false, "set the schema directory")
 	}
 	cc.SetTopLevel(true)
-	cc.SetCommandUsage("map COMMAND [flags]")
+	cc.SetCommandUsage("map [command] [flags]")
 	help := "Map operations"
 	cc.SetCommandHelp(help, help)
 	return nil

@@ -22,7 +22,7 @@ func (mc *MapRemoveCommand) Init(cc plug.InitContext) error {
 	addKeyTypeFlag(cc)
 	help := "Remove a value from the given Map"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("remove [-n MAP] KEY [flags]")
+	cc.SetCommandUsage("remove [-n map-name] [key] [flags]")
 	cc.SetPositionalArgCount(1, 1)
 	return nil
 }
