@@ -256,9 +256,9 @@ func (ec *ExecContext) Wrap(f func() error) error {
 	}
 	var msg string
 	if verbose || ec.Interactive() {
-		msg = fmt.Sprintf("\nOK (%d ms)", took.Milliseconds())
+		msg = fmt.Sprintf("OK (%d ms)", took.Milliseconds())
 	} else {
-		msg = "\nOK"
+		msg = "OK"
 	}
 	I2(fmt.Fprintln(ec.stdout, msg))
 	return nil

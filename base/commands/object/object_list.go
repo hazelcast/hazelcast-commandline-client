@@ -51,11 +51,6 @@ var objTypes = []string{
 	Cache,
 	EventJournal,
 	Ringbuffer,
-	FencedLock,
-	ISemaphore,
-	IAtomicLong,
-	IAtomicReference,
-	ICountdownLatch,
 	CardinalityEstimator,
 }
 
@@ -70,7 +65,9 @@ func (cm ObjectListCommand) Init(cc plug.InitContext) error {
 	long := fmt.Sprintf(`List distributed objects, optionally filter by type.
 	
 The object-type filter may be one of:
+	
 %s
+CP objects such as AtomicLong cannot be listed.
 `, objectFilterTypes())
 	cc.SetCommandHelp(long, "List distributed objects")
 	cc.AddBoolFlag(flagShowHidden, "", false, false, "show hidden and system objects")
@@ -108,7 +105,13 @@ func (cm ObjectListCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 			valueCol,
 		})
 	}
-	return ec.AddOutputRows(ctx, rows...)
+	if len(rows) > 0 {
+		return ec.AddOutputRows(ctx, rows...)
+	}
+	if !ec.Props().GetBool(clc.PropertyQuite) {
+		I2(fmt.Fprintln(ec.Stdout(), "No objects found"))
+	}
+	return nil
 }
 
 func objectFilterTypes() string {

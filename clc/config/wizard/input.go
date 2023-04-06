@@ -120,10 +120,27 @@ func (m textModel) View() string {
 		return ""
 	}
 	var b strings.Builder
-	b.WriteString(
-		"There is no configuration detected. You can register a new configuration to connect Hazelcast cluster.\n" +
-			"You can connect to Viridian cluster using curl request from `Dashboard -> Connect Client -> Quick connection guide -> Go` tab.\n" +
-			"Paste the link to source field below and it will download the config and TLS files.\n\n")
+	b.WriteString(`There is no configuration detected.
+
+This screen helps you create a new connection configuration.
+Note that this screen supports only Viridian clusters.
+For other clusters use the following command:
+	
+	clc config add --help
+
+1. Enter the desired name in the "Configuration Name" field. 
+2. On Viridian console, visit:
+	
+	Dashboard -> Connect Client -> Quick connection guide -> Go
+
+3. Copy the text in box 1 and paste it in the "Source" field.
+4. Navigate to the [Submit] button and press enter.
+	
+Alternatively, you can use the following command:
+	
+	clc config import --help
+
+`)
 	for i := range m.inputs {
 		b.WriteString(m.inputs[i].View())
 		if i < len(m.inputs)-1 {

@@ -19,7 +19,7 @@ type MapClearCommand struct{}
 func (mc *MapClearCommand) Init(cc plug.InitContext) error {
 	help := "Delete all entries of a Map"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("clear [-n MAP] [flags]")
+	cc.SetCommandUsage("clear [-n map-name] [flags]")
 	return nil
 }
 

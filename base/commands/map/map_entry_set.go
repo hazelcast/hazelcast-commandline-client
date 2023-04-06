@@ -21,7 +21,7 @@ type MapEntrySetCommand struct{}
 func (mc *MapEntrySetCommand) Init(cc plug.InitContext) error {
 	help := "Get all entries of a Map"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("entry-set [-n MAP] [flags]")
+	cc.SetCommandUsage("entry-set [-n map-name] [flags]")
 	cc.SetPositionalArgCount(0, 0)
 	return nil
 }
@@ -44,7 +44,13 @@ func (mc *MapEntrySetCommand) Exec(ctx context.Context, ec plug.ExecContext) err
 	stop()
 	pairs := codec.DecodeMapEntrySetResponse(rv.(*hazelcast.ClientMessage))
 	rows := output.DecodePairs(ci, pairs, showType)
-	return ec.AddOutputRows(ctx, rows...)
+	if len(rows) > 0 {
+		return ec.AddOutputRows(ctx, rows...)
+	}
+	if !ec.Props().GetBool(clc.PropertyQuite) {
+		I2(fmt.Fprintln(ec.Stdout(), "No entries found"))
+	}
+	return nil
 }
 
 func init() {

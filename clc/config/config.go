@@ -63,9 +63,6 @@ func MakeHzConfig(props plug.ReadOnlyProperties, lg log.Logger) (hazelcast.Confi
 	var viridianEnabled bool
 	if vt := props.GetString(clc.PropertyClusterDiscoveryToken); vt != "" {
 		lg.Debugf("Viridan token: XXX")
-		if err := os.Setenv(clc.EnvHzCloudCoordinatorBaseURL, clc.ViridianCoordinatorURL); err != nil {
-			return cfg, fmt.Errorf("setting coordinator URL")
-		}
 		cfg.Cluster.Cloud.Enabled = true
 		cfg.Cluster.Cloud.Token = vt
 		viridianEnabled = true

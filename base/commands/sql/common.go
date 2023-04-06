@@ -45,6 +45,7 @@ func UpdateOutput(ctx context.Context, ec plug.ExecContext, res sql.Result, verb
 				errCh <- err
 				break
 			}
+			// TODO: move the following 2 lines out of the loop --YT
 			cols := row.Metadata().Columns()
 			orow := make(output.Row, len(cols))
 			for i, col := range cols {
