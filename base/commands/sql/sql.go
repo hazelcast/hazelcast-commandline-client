@@ -52,10 +52,10 @@ func (cm *SQLCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	}
 	query := ec.Args()[0]
 	res, stop, err := cm.execQuery(ctx, query, ec)
-	defer stop()
 	if err != nil {
 		return err
 	}
+	stop()
 	// TODO: keep it or remove it?
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	return UpdateOutput(ctx, ec, res, verbose)
