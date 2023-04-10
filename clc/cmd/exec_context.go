@@ -125,7 +125,8 @@ func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInt
 	setClientInternal(ci)
 	quite := ec.Props().GetBool(clc.PropertyQuite) || shell.IsPipe()
 	if !quite {
-		I2(fmt.Fprintf(ec.stderr, "Connected to cluster: %s\n\n", ci.ClusterService().FailoverService().Current().ClusterName))
+		n := ci.ClusterService().FailoverService().Current().ClusterName
+		I2(fmt.Fprintf(ec.stderr, "Connected to cluster: %s\n\n", n))
 	}
 	return ci, nil
 }
