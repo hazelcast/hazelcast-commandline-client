@@ -33,7 +33,7 @@ func importTest(t *testing.T) {
 		name := it.NewUniqueObjectName("cfg")
 		tcx.WithReset(func() {
 			check.Must(tcx.CLC().Execute("config", "import", name, configURL))
-			tcx.AssertStdoutContains("OK\n")
+			tcx.AssertStderrContains("OK\n")
 			path := paths.Join(paths.ResolveConfigPath(name))
 			tcx.T.Logf("config path: %s", path)
 			assert.True(tcx.T, paths.Exists(path))
@@ -51,7 +51,7 @@ func addTest(t *testing.T) {
 		name := it.NewUniqueObjectName("cfg")
 		tcx.WithReset(func() {
 			check.Must(tcx.CLC().Execute("config", "add", name, "cluster.address=foobar.com"))
-			tcx.AssertStdoutContains("OK\n")
+			tcx.AssertStderrContains("OK\n")
 		})
 		tcx.WithReset(func() {
 			check.Must(tcx.CLC().Execute("config", "list"))
