@@ -10,7 +10,7 @@ require (
 	github.com/hazelcast/hazelcast-go-client v1.4.1-0.20230404141417-cffc4cae7feb
 	github.com/mattn/go-runewidth v0.0.14
 	github.com/nathan-fiscaletti/consolesize-go v0.0.0-20210105204122-a87d9f614b9d
-	github.com/spf13/cobra v1.6.0
+	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.0
 	github.com/theckman/yacspin v0.13.12
@@ -30,7 +30,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dlclark/regexp2 v1.4.0 // indirect
 	github.com/go-ole/go-ole v1.2.4 // indirect
-	github.com/inconshreveable/mousetrap v1.0.1 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.17 // indirect
@@ -64,6 +64,6 @@ require (
 	github.com/charmbracelet/lipgloss v0.7.1
 	github.com/fatih/color v1.13.0
 	github.com/mattn/go-colorable v0.1.12
-	github.com/nyaosorg/go-readline-ny v0.8.3
+	github.com/nyaosorg/go-readline-ny v0.9.1
 	gopkg.in/yaml.v2 v2.4.0
 )
