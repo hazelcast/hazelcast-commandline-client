@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"runtime"
 	"strings"
 
 	"github.com/fatih/color"
@@ -57,7 +58,12 @@ func New(prompt1, prompt2, historyPath string, stdout, stderr io.Writer, stdin i
 		stdin:         stdin,
 		commentPrefix: "",
 	}
-	if os.Getenv(envReadline) == "ny" {
+	rl := os.Getenv(envReadline)
+	if rl == "" && runtime.GOOS == "windows" {
+		// ny is default on Windows
+		rl = "ny"
+	}
+	if rl == "ny" {
 		if err := sh.createNyLineReader(prompt1); err != nil {
 			return nil, err
 		}
