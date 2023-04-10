@@ -125,7 +125,7 @@ func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInt
 	setClientInternal(ci)
 	quite := ec.Props().GetBool(clc.PropertyQuite) || shell.IsPipe()
 	if !quite {
-		I2(fmt.Fprintf(ec.stdout, "Connected to cluster: %s\n\n", ci.ClusterService().FailoverService().Current().ClusterName))
+		I2(fmt.Fprintf(ec.stderr, "Connected to cluster: %s\n\n", ci.ClusterService().FailoverService().Current().ClusterName))
 	}
 	return ci, nil
 }
@@ -182,6 +182,7 @@ func (ec *ExecContext) ExecuteBlocking(ctx context.Context, f func(context.Conte
 			CharSet:      yacspin.CharSets[59],
 			Prefix:       cancelMsg,
 			SpinnerAtEnd: true,
+			Writer:       ec.stderr,
 		}
 		// ignoring the error here
 		s, err := yacspin.New(sc)
@@ -260,7 +261,7 @@ func (ec *ExecContext) Wrap(f func() error) error {
 	} else {
 		msg = "OK"
 	}
-	I2(fmt.Fprintln(ec.stdout, msg))
+	I2(fmt.Fprintln(ec.stderr, msg))
 	return nil
 }
 
