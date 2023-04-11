@@ -181,7 +181,7 @@ func sqlOutput_NonInteractiveTest(t *testing.T) {
 			f := f
 			tcx.T.Run(f, func(t *testing.T) {
 				tcx.WithReset(func() {
-					tcx.CLCExecute("sql", "--format", f, "--quite", fmt.Sprintf(`
+					tcx.CLCExecute("sql", "--format", f, "-q", fmt.Sprintf(`
 					SELECT * FROM "%s" ORDER BY __key;
 				`, name))
 					tcx.AssertStdoutDollarWithPath(fmt.Sprintf("testdata/sql_output_%s.txt", f))

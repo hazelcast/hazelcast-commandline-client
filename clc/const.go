@@ -10,7 +10,7 @@ const (
 	PropertyClusterPassword       = "cluster.password"
 	PropertyFormat                = "format"
 	PropertyVerbose               = "verbose"
-	PropertyQuite                 = "quite"
+	PropertyQuiet                 = "quiet"
 	// PropertyConfig is the config name or path
 	// TODO: Separate config name and path
 	PropertyConfig               = "config"

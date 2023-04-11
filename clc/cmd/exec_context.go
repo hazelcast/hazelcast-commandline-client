@@ -123,7 +123,7 @@ func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInt
 	stop()
 	ci = civ.(*hazelcast.ClientInternal)
 	setClientInternal(ci)
-	quite := ec.Props().GetBool(clc.PropertyQuite) || shell.IsPipe()
+	quite := ec.Props().GetBool(clc.PropertyQuiet) || shell.IsPipe()
 	if !quite {
 		n := ci.ClusterService().FailoverService().Current().ClusterName
 		I2(fmt.Fprintf(ec.stderr, "Connected to cluster: %s\n\n", n))
@@ -172,7 +172,7 @@ func (ec *ExecContext) SetInteractive(value bool) {
 // The returned stop function must be called at least once to prevent leaks if there's no error.
 // Calling returned stop more than once has no effect.
 func (ec *ExecContext) ExecuteBlocking(ctx context.Context, f func(context.Context, clc.Spinner) (any, error)) (value any, stop context.CancelFunc, err error) {
-	quite := ec.Props().GetBool(clc.PropertyQuite) || shell.IsPipe()
+	quite := ec.Props().GetBool(clc.PropertyQuiet) || shell.IsPipe()
 	// setup the Ctrl+C handler
 	ctx, stop = signal.NotifyContext(ctx, os.Interrupt, os.Kill)
 	ch := make(chan any)
@@ -233,7 +233,7 @@ func (ec *ExecContext) Wrap(f func() error) error {
 	err := f()
 	took := time.Since(t)
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
-	quite := ec.Props().GetBool(clc.PropertyQuite) || shell.IsPipe()
+	quite := ec.Props().GetBool(clc.PropertyQuiet) || shell.IsPipe()
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
 			I2(fmt.Fprintln(ec.stderr, "User cancelled"))

@@ -37,7 +37,7 @@ func (cm ListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		ec.Logger().Warn("Cannot access configs directory at: %s: %s", cd, err.Error())
 	}
-	quite := ec.Props().GetBool(clc.PropertyQuite) || shell.IsPipe()
+	quite := ec.Props().GetBool(clc.PropertyQuiet) || shell.IsPipe()
 	if len(cs) == 0 && !quite {
 		I2(fmt.Fprintln(ec.Stderr(), "No configuration was found."))
 		return nil
