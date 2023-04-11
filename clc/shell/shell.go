@@ -82,10 +82,8 @@ func (sh *Shell) SetCommentPrefix(pfx string) {
 }
 
 func (sh *Shell) Start(ctx context.Context) error {
-	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, os.Kill)
-	defer stop()
 	for {
-		text, err := sh.readTextReadline()
+		text, err := sh.readTextReadline(ctx)
 		if err == io.EOF {
 			return nil
 		}
@@ -100,7 +98,10 @@ func (sh *Shell) Start(ctx context.Context) error {
 			continue
 		}
 		sh.lr.AddToHistory(text)
-		if err := sh.textFn(ctx, sh.stdout, text); err != nil {
+		ctx, stop := signal.NotifyContext(ctx, os.Interrupt, os.Kill)
+		err = sh.textFn(ctx, sh.stdout, text)
+		stop()
+		if err != nil {
 			if errors.Is(err, ErrExit) {
 				return nil
 			}
@@ -108,7 +109,7 @@ func (sh *Shell) Start(ctx context.Context) error {
 	}
 }
 
-func (sh *Shell) readTextReadline() (string, error) {
+func (sh *Shell) readTextReadline(ctx context.Context) (string, error) {
 	// NOTE: when this implementation is changed,
 	// clc/shell/oneshot_shell.go:readTextBasic should also change!
 	prompt := sh.prompt1
@@ -116,7 +117,7 @@ func (sh *Shell) readTextReadline() (string, error) {
 	var sb strings.Builder
 	for {
 		sh.lr.SetPrompt(prompt)
-		p, err := sh.lr.ReadLine(context.Background())
+		p, err := sh.lr.ReadLine(ctx)
 		if err != nil {
 			return "", err
 		}

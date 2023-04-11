@@ -319,16 +319,17 @@ func (m *Main) createCommands() error {
 				ec.SetMain(m)
 				ec.SetArgs(args)
 				ec.SetCmd(cmd)
+				ctx := context.Background()
 				if err := m.runAugmentors(ec, props); err != nil {
 					return err
 				}
 				// to wrap or not to wrap
 				// that's the problem
 				if _, ok := c.Item.(plug.UnwrappableCommander); ok {
-					err = c.Item.Exec(cmd.Context(), ec)
+					err = c.Item.Exec(ctx, ec)
 				} else {
 					err = ec.Wrap(func() error {
-						return c.Item.Exec(cmd.Context(), ec)
+						return c.Item.Exec(ctx, ec)
 					})
 				}
 				if err != nil {
@@ -337,10 +338,10 @@ func (m *Main) createCommands() error {
 				if ic, ok := c.Item.(plug.InteractiveCommander); ok {
 					ec.SetInteractive(true)
 					if _, ok := c.Item.(plug.UnwrappableCommander); ok {
-						err = ic.ExecInteractive(cmd.Context(), ec)
+						err = ic.ExecInteractive(ctx, ec)
 					} else {
 						err = ec.Wrap(func() error {
-							return ic.ExecInteractive(cmd.Context(), ec)
+							return ic.ExecInteractive(ctx, ec)
 						})
 					}
 					if errors.Is(err, puberrors.ErrNotAvailable) {

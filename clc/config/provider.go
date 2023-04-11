@@ -1,6 +1,7 @@
 package config
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -21,7 +22,7 @@ type Provider interface {
 	Set(key string, value any)
 	All() map[string]any
 	BindFlag(name string, flag *pflag.Flag)
-	ClientConfig(ec plug.ExecContext) (hazelcast.Config, error)
+	ClientConfig(ctx context.Context, ec plug.ExecContext) (hazelcast.Config, error)
 }
 
 type FileProvider struct {
@@ -117,7 +118,7 @@ func (p *FileProvider) BindFlag(name string, flag *pflag.Flag) {
 	p.mu.Unlock()
 }
 
-func (p *FileProvider) ClientConfig(ec plug.ExecContext) (hazelcast.Config, error) {
+func (p *FileProvider) ClientConfig(ctx context.Context, ec plug.ExecContext) (hazelcast.Config, error) {
 	cc, ok := p.clientConfig()
 	if ok {
 		return cc, nil

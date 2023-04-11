@@ -109,7 +109,7 @@ func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInt
 	if ci != nil {
 		return ci, nil
 	}
-	cfg, err := ec.cp.ClientConfig(ec)
+	cfg, err := ec.cp.ClientConfig(ctx, ec)
 	if err != nil {
 		return nil, err
 	}

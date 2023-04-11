@@ -143,7 +143,7 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 		}
 		sh := shell.NewOneshotShell(endLineFn, sio, textFn)
 		sh.SetCommentPrefix("--")
-		return sh.Run(context.Background())
+		return sh.Run(ctx)
 	}
 	sh, err := shell.New("CLC> ", " ... ", path, ec.Stdout(), ec.Stderr(), ec.Stdin(), endLineFn, textFn)
 	if err != nil {
