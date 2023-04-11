@@ -102,7 +102,7 @@ func (cm LoginCmd) apiKeySecret(ec plug.ExecContext) (key, secret string, err er
 		secret = os.Getenv(viridian.EnvAPISecret)
 	}
 	if secret == "" {
-		secret, err = shell.Prompt(ec.Stdout(), ec.Stdin(), "API Secret : ")
+		secret, err = shell.PasswordPrompt(ec.Stdout(), ec.Stdin(), "API Secret : ")
 		if err != nil {
 			return "", "", fmt.Errorf("reading API secret: %w", err)
 		}
