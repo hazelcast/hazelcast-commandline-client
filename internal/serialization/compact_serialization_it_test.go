@@ -80,7 +80,8 @@ func compactPrimitiveArraysTest(t *testing.T) {
 				t.Run(tc.format, func(t *testing.T) {
 					tcx.T = t
 					tcx.WithReset(func() {
-						check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "get", "value", "-q", "-f", tc.format))
+						ctx := context.Background()
+						check.Must(tcx.CLC().Execute(ctx, "map", "-n", m.Name(), "get", "value", "-q", "-f", tc.format))
 						if tc.format == "table" {
 							tcx.AssertStdoutDollarWithPath(tc.target)
 						} else {
@@ -139,7 +140,8 @@ func compactPrimitivesTest(t *testing.T) {
 				t.Run(tc.format, func(t *testing.T) {
 					tcx.T = t
 					tcx.WithReset(func() {
-						check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "get", "value", "-q", "-f", tc.format))
+						ctx := context.Background()
+						check.Must(tcx.CLC().Execute(ctx, "map", "-n", m.Name(), "get", "value", "-q", "-f", tc.format))
 						if tc.format == "table" {
 							tcx.AssertStdoutDollarWithPath(tc.target)
 						} else {
@@ -198,7 +200,8 @@ func compactOthersTest(t *testing.T) {
 				t.Run(tc.format, func(t *testing.T) {
 					tcx.T = t
 					tcx.WithReset(func() {
-						check.Must(tcx.CLC().Execute("map", "-n", m.Name(), "get", "value", "-q", "-f", tc.format))
+						ctx := context.Background()
+						check.Must(tcx.CLC().Execute(ctx, "map", "-n", m.Name(), "get", "value", "-q", "-f", tc.format))
 						if tc.format == "table" {
 							tcx.AssertStdoutDollarWithPath(tc.target)
 						} else {

@@ -29,7 +29,7 @@ func New(reader io.Reader) *Expect {
 }
 
 func (e *Expect) read() {
-	ticker := time.NewTicker(1 * time.Millisecond)
+	ticker := time.NewTicker(50 * time.Millisecond)
 	defer ticker.Stop()
 	for {
 		select {
@@ -83,7 +83,7 @@ func (e *Expect) Match(m Matcher, options ...Option) bool {
 			time.Sleep(10 * time.Millisecond)
 		}
 	}()
-	timeout := time.Duration(1<<63 - 1)
+	timeout := 1 * time.Minute
 	if o.timeout > 0 {
 		timeout = o.timeout
 	}

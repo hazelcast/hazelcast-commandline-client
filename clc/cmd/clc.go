@@ -137,7 +137,7 @@ func (m *Main) Root() *cobra.Command {
 
 // TODO: add context arg to Execute
 
-func (m *Main) Execute(args ...string) error {
+func (m *Main) Execute(ctx context.Context, args ...string) error {
 	var cm *cobra.Command
 	var cmdArgs []string
 	var err error
@@ -171,7 +171,7 @@ func (m *Main) Execute(args ...string) error {
 	}
 	m.root.SetArgs(args)
 	m.props.Push()
-	err = m.root.Execute()
+	err = m.root.ExecuteContext(ctx)
 	m.props.Pop()
 	// set all flags to their defaults
 	// XXX: it may not work with slices, see: https://github.com/spf13/cobra/issues/1488#issuecomment-1205104931

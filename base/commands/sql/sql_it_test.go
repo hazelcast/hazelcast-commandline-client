@@ -33,7 +33,8 @@ func sql_NonInteractiveTest(t *testing.T) {
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
 		name := it.NewUniqueObjectName("table")
-		tcx.CLCExecute("sql", fmt.Sprintf(`
+		ctx := context.Background()
+		tcx.CLCExecute(ctx, "sql", fmt.Sprintf(`
 			CREATE MAPPING "%s" (
 				__key INT,
 				this VARCHAR
@@ -42,11 +43,11 @@ func sql_NonInteractiveTest(t *testing.T) {
 				'valueFormat' = 'varchar'
 			);
 		`, name))
-		tcx.CLCExecute("sql", fmt.Sprintf(`
+		tcx.CLCExecute(ctx, "sql", fmt.Sprintf(`
 			INSERT INTO "%s" (__key, this) VALUES (10, 'foo'), (20, 'bar');
 		`, name))
 		tcx.WithReset(func() {
-			tcx.CLCExecute("sql", fmt.Sprintf(`
+			tcx.CLCExecute(ctx, "sql", fmt.Sprintf(`
 			SELECT * FROM "%s" ORDER BY __key;
 		`, name))
 			tcx.AssertStdoutContains("10\tfoo\n20\tbar\n")
@@ -57,7 +58,8 @@ func sql_NonInteractiveTest(t *testing.T) {
 func sql_InteractiveTest(t *testing.T) {
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
-		tcx.WithShell(func(tcx it.TestContext) {
+		ctx := context.Background()
+		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			name := it.NewUniqueObjectName("table")
 			tcx.WriteStdinF(`
 				CREATE MAPPING "%s" (
@@ -82,7 +84,7 @@ func sql_shellCommandTest(t *testing.T) {
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
 		ctx := context.Background()
-		tcx.WithShell(func(tcx it.TestContext) {
+		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			// help
 			tcx.WithReset(func() {
 				tcx.WriteStdinString("help\n")
@@ -134,7 +136,7 @@ func sqlSuggestion_Interactive(t *testing.T) {
 		ctx := context.Background()
 		it.WithMap(tcx, func(m *hazelcast.Map) {
 			check.Must(m.Set(ctx, "foo", "bar"))
-			tcx.WithShell(func(tcx it.TestContext) {
+			tcx.WithShell(ctx, func(tcx it.TestContext) {
 				tcx.WriteStdinF(`SELECT * FROM "%s";`+"\n", m.Name())
 				tcx.AssertStderrContains("CREATE MAPPING")
 				tcx.AssertStderrNotContains("--use-mapping-suggestion")
@@ -150,10 +152,10 @@ func sqlSuggestion_NonInteractive(t *testing.T) {
 		it.WithMap(tcx, func(m *hazelcast.Map) {
 			check.Must(m.Set(ctx, "foo", "bar"))
 			// ignoring the error here
-			_ = tcx.CLC().Execute("sql", fmt.Sprintf(`SELECT * FROM "%s";`, m.Name()))
+			_ = tcx.CLC().Execute(ctx, "sql", fmt.Sprintf(`SELECT * FROM "%s";`, m.Name()))
 			tcx.AssertStderrContains("CREATE MAPPING")
 			tcx.AssertStderrContains("--use-mapping-suggestion")
-			check.Must(tcx.CLC().Execute("sql", fmt.Sprintf(`SELECT * FROM "%s";`, m.Name()), "--use-mapping-suggestion"))
+			check.Must(tcx.CLC().Execute(ctx, "sql", fmt.Sprintf(`SELECT * FROM "%s";`, m.Name()), "--use-mapping-suggestion"))
 			tcx.AssertStdoutContains("foo\tbar")
 		})
 	})
@@ -181,7 +183,7 @@ func sqlOutput_NonInteractiveTest(t *testing.T) {
 			f := f
 			tcx.T.Run(f, func(t *testing.T) {
 				tcx.WithReset(func() {
-					tcx.CLCExecute("sql", "--format", f, "-q", fmt.Sprintf(`
+					tcx.CLCExecute(ctx, "sql", "--format", f, "-q", fmt.Sprintf(`
 					SELECT * FROM "%s" ORDER BY __key;
 				`, name))
 					tcx.AssertStdoutDollarWithPath(fmt.Sprintf("testdata/sql_output_%s.txt", f))

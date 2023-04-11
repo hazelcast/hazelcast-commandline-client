@@ -82,6 +82,8 @@ func (sh *Shell) SetCommentPrefix(pfx string) {
 }
 
 func (sh *Shell) Start(ctx context.Context) error {
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, os.Kill)
+	defer stop()
 	for {
 		text, err := sh.readTextReadline()
 		if err == io.EOF {
@@ -98,13 +100,11 @@ func (sh *Shell) Start(ctx context.Context) error {
 			continue
 		}
 		sh.lr.AddToHistory(text)
-		ctx, stop := signal.NotifyContext(ctx, os.Interrupt, os.Kill)
 		if err := sh.textFn(ctx, sh.stdout, text); err != nil {
 			if errors.Is(err, ErrExit) {
 				return nil
 			}
 		}
-		stop()
 	}
 }
 

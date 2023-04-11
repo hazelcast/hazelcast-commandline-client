@@ -82,7 +82,8 @@ func TestBuiltinSerialization(t *testing.T) {
 						t.Run(format, func(t *testing.T) {
 							tcx.T = t
 							tcx.WithReset(func() {
-								check.Must(tcx.CLC().Execute("map", "get", "-n", m.Name(), key, "-q", "-f", format))
+								ctx := context.Background()
+								check.Must(tcx.CLC().Execute(ctx, "map", "get", "-n", m.Name(), key, "-q", "-f", format))
 								var target string
 								switch format {
 								case "delimited":
