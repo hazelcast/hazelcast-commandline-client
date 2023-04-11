@@ -34,6 +34,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/shell"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it/expect"
 )
@@ -256,12 +257,16 @@ func (tcx TestContext) CLCExecute(args ...string) {
 }
 
 func (tcx TestContext) WithShell(f func(tcx TestContext)) {
-	go func() {
-		tcx.CLCExecute()
-	}()
-	// best effort to exit the shell
-	defer tcx.WriteStdin([]byte("\\exit\n"))
-	f(tcx)
+	// use the gohxs readline implementation
+	// since we can't set stdin for the ny one.
+	WithEnv(shell.EnvReadline, "gohxs", func() {
+		go func() {
+			tcx.CLCExecute()
+		}()
+		// best effort to exit the shell
+		defer tcx.WriteStdin([]byte("\\exit\n"))
+		f(tcx)
+	})
 }
 
 func WithEnv(name, value string, f func()) {

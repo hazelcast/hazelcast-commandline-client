@@ -23,7 +23,7 @@ const (
 	CmdPrefix    = `\`
 	envStyler    = "CLC_EXPERIMENTAL_STYLER"
 	envFormatter = "CLC_EXPERIMENTAL_FORMATTER"
-	envReadline  = "CLC_EXPERIMENTAL_READLINE"
+	EnvReadline  = "CLC_EXPERIMENTAL_READLINE"
 )
 
 var ErrExit = errors.New("exit")
@@ -58,7 +58,7 @@ func New(prompt1, prompt2, historyPath string, stdout, stderr io.Writer, stdin i
 		stdin:         stdin,
 		commentPrefix: "",
 	}
-	rl := os.Getenv(envReadline)
+	rl := os.Getenv(EnvReadline)
 	if rl == "" && runtime.GOOS == "windows" {
 		// ny is default on Windows
 		rl = "ny"
