@@ -121,7 +121,7 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 			}
 			return err
 		}
-		return ec.Wrap(func() error {
+		f := func() error {
 			res, stop, err := sql.ExecSQL(ctx, ec, text)
 			if err != nil {
 				return err
@@ -132,7 +132,11 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 				return err
 			}
 			return nil
-		})
+		}
+		if w, ok := ec.(plug.ResultWrapper); ok {
+			return w.WrapResult(f)
+		}
+		return f()
 	}
 	path := paths.Join(paths.Home(), "shell.history")
 	if shell.IsPipe() {

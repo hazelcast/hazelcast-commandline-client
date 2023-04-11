@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -11,6 +12,8 @@ const (
 	EnvCLCHome    = "CLC_HOME"
 	DefaultConfig = "config.yaml"
 )
+
+type FilterFn func(basePath string, entry os.DirEntry) (ok bool)
 
 func Home() string {
 	dir := os.Getenv(EnvCLCHome)
@@ -34,6 +37,10 @@ func Schemas() string {
 
 func Logs() string {
 	return filepath.Join(Home(), "logs")
+}
+
+func Secrets() string {
+	return filepath.Join(Home(), "secrets")
 }
 
 func DefaultConfigPath() string {
@@ -85,6 +92,16 @@ func ResolveLogPath(path string) string {
 	return path
 }
 
+func ResolveSecretPath(prefix, name string) string {
+	if name == "" {
+		panic("secret name cannot be blank")
+	}
+	if prefix == "" {
+		return Join(Secrets(), name)
+	}
+	return Join(Secrets(), prefix, name)
+}
+
 func Join(paths ...string) string {
 	if len(paths) == 0 {
 		return ""
@@ -106,6 +123,24 @@ func Exists(path string) bool {
 		return false
 	}
 	return true
+}
+
+func FindAll(cd string, fn FilterFn) ([]string, error) {
+	var cs []string
+	es, err := os.ReadDir(cd)
+	if err != nil {
+		return nil, err
+	}
+	for _, e := range es {
+		if strings.HasPrefix(e.Name(), ".") || strings.HasPrefix(e.Name(), "_") {
+			continue
+		}
+		if !fn(cd, e) {
+			continue
+		}
+		cs = append(cs, e.Name())
+	}
+	return cs, nil
 }
 
 func nearbyConfigPath() string {

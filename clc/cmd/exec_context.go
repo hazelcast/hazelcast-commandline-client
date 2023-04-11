@@ -22,6 +22,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/terminal"
 )
 
 const (
@@ -226,7 +227,7 @@ func (ec *ExecContext) ExecuteBlocking(ctx context.Context, f func(context.Conte
 	}
 }
 
-func (ec *ExecContext) Wrap(f func() error) error {
+func (ec *ExecContext) WrapResult(f func() error) error {
 	t := time.Now()
 	err := f()
 	took := time.Since(t)
@@ -262,6 +263,16 @@ func (ec *ExecContext) Wrap(f func() error) error {
 	}
 	I2(fmt.Fprintln(ec.stdout, msg))
 	return nil
+}
+
+func (ec *ExecContext) PrintlnUnnecessary(text string) {
+	if !ec.Quite() {
+		I2(fmt.Fprintln(ec.Stdout(), text))
+	}
+}
+
+func (ec *ExecContext) Quite() bool {
+	return ec.Props().GetBool(clc.PropertyQuite) || terminal.IsPipe()
 }
 
 func (ec *ExecContext) ensurePrinter() error {

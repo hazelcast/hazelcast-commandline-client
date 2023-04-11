@@ -1,15 +1,9 @@
 package shell
 
 import (
-	"os"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/terminal"
 )
 
 func IsPipe() bool {
-	// TODO: parameterize os.Stdin
-	fi, err := os.Stdin.Stat()
-	if err != nil {
-		// do not activate pipe mode if there's a problem with getting stats of stdin
-		return false
-	}
-	return fi.Mode()&os.ModeCharDevice == 0
+	return terminal.IsPipe()
 }

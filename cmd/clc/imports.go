@@ -6,4 +6,5 @@ import (
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/map"
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/object"
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/sql"
+	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/viridian"
 )
