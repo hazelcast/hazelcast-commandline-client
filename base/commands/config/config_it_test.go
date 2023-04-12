@@ -1,6 +1,7 @@
 package config_test
 
 import (
+	"context"
 	"os"
 	"regexp"
 	"testing"
@@ -31,15 +32,16 @@ func importTest(t *testing.T) {
 	const configURL = "https://rcd-download.s3.us-east-2.amazonaws.com/hazelcast-cloud-go-sample-client-pr-FOR_TESTING-default.zip"
 	tcx.Tester(func(tcx it.TestContext) {
 		name := it.NewUniqueObjectName("cfg")
+		ctx := context.Background()
 		tcx.WithReset(func() {
-			check.Must(tcx.CLC().Execute("config", "import", name, configURL))
-			tcx.AssertStdoutContains("OK\n")
+			check.Must(tcx.CLC().Execute(ctx, "config", "import", name, configURL))
+			tcx.AssertStderrContains("OK\n")
 			path := paths.Join(paths.ResolveConfigPath(name))
 			tcx.T.Logf("config path: %s", path)
 			assert.True(tcx.T, paths.Exists(path))
 		})
 		tcx.WithReset(func() {
-			check.Must(tcx.CLC().Execute("config", "list"))
+			check.Must(tcx.CLC().Execute(ctx, "config", "list"))
 			tcx.AssertStdoutContains(name)
 		})
 	})
@@ -49,12 +51,13 @@ func addTest(t *testing.T) {
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
 		name := it.NewUniqueObjectName("cfg")
+		ctx := context.Background()
 		tcx.WithReset(func() {
-			check.Must(tcx.CLC().Execute("config", "add", name, "cluster.address=foobar.com"))
-			tcx.AssertStdoutContains("OK\n")
+			check.Must(tcx.CLC().Execute(ctx, "config", "add", name, "cluster.address=foobar.com"))
+			tcx.AssertStderrContains("OK\n")
 		})
 		tcx.WithReset(func() {
-			check.Must(tcx.CLC().Execute("config", "list"))
+			check.Must(tcx.CLC().Execute(ctx, "config", "list"))
 			tcx.AssertStdoutContains(name)
 		})
 		path := paths.ResolveConfigPath(name)

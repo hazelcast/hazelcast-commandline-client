@@ -137,7 +137,7 @@ func (m *Main) Root() *cobra.Command {
 
 // TODO: add context arg to Execute
 
-func (m *Main) Execute(args ...string) error {
+func (m *Main) Execute(ctx context.Context, args ...string) error {
 	var cm *cobra.Command
 	var cmdArgs []string
 	var err error
@@ -171,7 +171,7 @@ func (m *Main) Execute(args ...string) error {
 	}
 	m.root.SetArgs(args)
 	m.props.Push()
-	err = m.root.Execute()
+	err = m.root.ExecuteContext(ctx)
 	m.props.Pop()
 	// set all flags to their defaults
 	// XXX: it may not work with slices, see: https://github.com/spf13/cobra/issues/1488#issuecomment-1205104931
@@ -319,16 +319,17 @@ func (m *Main) createCommands() error {
 				ec.SetMain(m)
 				ec.SetArgs(args)
 				ec.SetCmd(cmd)
+				ctx := context.Background()
 				if err := m.runAugmentors(ec, props); err != nil {
 					return err
 				}
 				// to wrap or not to wrap
 				// that's the problem
 				if _, ok := c.Item.(plug.UnwrappableCommander); ok {
-					err = c.Item.Exec(cmd.Context(), ec)
+					err = c.Item.Exec(ctx, ec)
 				} else {
 					err = ec.Wrap(func() error {
-						return c.Item.Exec(cmd.Context(), ec)
+						return c.Item.Exec(ctx, ec)
 					})
 				}
 				if err != nil {
@@ -337,10 +338,10 @@ func (m *Main) createCommands() error {
 				if ic, ok := c.Item.(plug.InteractiveCommander); ok {
 					ec.SetInteractive(true)
 					if _, ok := c.Item.(plug.UnwrappableCommander); ok {
-						err = ic.ExecInteractive(cmd.Context(), ec)
+						err = ic.ExecInteractive(ctx, ec)
 					} else {
 						err = ec.Wrap(func() error {
-							return ic.ExecInteractive(cmd.Context(), ec)
+							return ic.ExecInteractive(ctx, ec)
 						})
 					}
 					if errors.Is(err, puberrors.ErrNotAvailable) {

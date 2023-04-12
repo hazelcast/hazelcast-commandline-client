@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"runtime"
 	"strings"
 
 	"github.com/fatih/color"
@@ -22,7 +23,7 @@ const (
 	CmdPrefix    = `\`
 	envStyler    = "CLC_EXPERIMENTAL_STYLER"
 	envFormatter = "CLC_EXPERIMENTAL_FORMATTER"
-	envReadline  = "CLC_EXPERIMENTAL_READLINE"
+	EnvReadline  = "CLC_EXPERIMENTAL_READLINE"
 )
 
 var ErrExit = errors.New("exit")
@@ -57,7 +58,12 @@ func New(prompt1, prompt2, historyPath string, stdout, stderr io.Writer, stdin i
 		stdin:         stdin,
 		commentPrefix: "",
 	}
-	if os.Getenv(envReadline) == "ny" {
+	rl := os.Getenv(EnvReadline)
+	if rl == "" && runtime.GOOS == "windows" {
+		// ny is default on Windows
+		rl = "ny"
+	}
+	if rl == "ny" {
 		if err := sh.createNyLineReader(prompt1); err != nil {
 			return nil, err
 		}
@@ -77,7 +83,7 @@ func (sh *Shell) SetCommentPrefix(pfx string) {
 
 func (sh *Shell) Start(ctx context.Context) error {
 	for {
-		text, err := sh.readTextReadline()
+		text, err := sh.readTextReadline(ctx)
 		if err == io.EOF {
 			return nil
 		}
@@ -93,16 +99,17 @@ func (sh *Shell) Start(ctx context.Context) error {
 		}
 		sh.lr.AddToHistory(text)
 		ctx, stop := signal.NotifyContext(ctx, os.Interrupt, os.Kill)
-		if err := sh.textFn(ctx, sh.stdout, text); err != nil {
+		err = sh.textFn(ctx, sh.stdout, text)
+		stop()
+		if err != nil {
 			if errors.Is(err, ErrExit) {
 				return nil
 			}
 		}
-		stop()
 	}
 }
 
-func (sh *Shell) readTextReadline() (string, error) {
+func (sh *Shell) readTextReadline(ctx context.Context) (string, error) {
 	// NOTE: when this implementation is changed,
 	// clc/shell/oneshot_shell.go:readTextBasic should also change!
 	prompt := sh.prompt1
@@ -110,7 +117,7 @@ func (sh *Shell) readTextReadline() (string, error) {
 	var sb strings.Builder
 	for {
 		sh.lr.SetPrompt(prompt)
-		p, err := sh.lr.ReadLine(context.Background())
+		p, err := sh.lr.ReadLine(ctx)
 		if err != nil {
 			return "", err
 		}

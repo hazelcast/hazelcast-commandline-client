@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -33,7 +34,7 @@ func main() {
 	if err != nil {
 		bye(err)
 	}
-	err = m.Execute(args...)
+	err = m.Execute(context.Background(), args...)
 	if err != nil {
 		// print the error only if it wasn't printed before
 		if _, ok := err.(errors.WrappedError); !ok {
