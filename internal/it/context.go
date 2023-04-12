@@ -173,14 +173,17 @@ func (ec *ExecContext) LoggerText() string {
 func (ec *ExecContext) Set(name string, value any) {
 	ec.props.Set(name, value)
 }
-
 func (ec *ExecContext) Get(name string) (any, bool) {
 	return ec.props.Get(name)
 }
 
 func (ec *ExecContext) PrintlnUnnecessary(text string) {
-	quite := ec.Props().GetBool(clc.PropertyQuiet) || terminal.IsPipe()
-	if !quite {
+	quiet := ec.Props().GetBool(clc.PropertyQuiet) || terminal.IsPipe(ec.Stdout())
+	if !quiet {
 		check.I2(fmt.Fprintln(ec.Stdout(), text))
 	}
+}
+
+func (ec *ExecContext) WrapResult(f func() error) error {
+	return f()
 }

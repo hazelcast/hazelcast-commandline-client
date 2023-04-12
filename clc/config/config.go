@@ -268,9 +268,6 @@ func copyOpt(level int, sb *strings.Builder, opt clc.KeyValue[string, string]) {
 
 func FindAll(cd string) ([]string, error) {
 	return paths.FindAll(cd, func(base string, e os.DirEntry) (ok bool) {
-		if !e.IsDir() {
-			return false
-		}
 		return e.IsDir() && paths.Exists(paths.Join(base, e.Name(), "config.yaml"))
 	})
 }

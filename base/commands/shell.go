@@ -20,6 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/terminal"
 )
 
 const banner = `Hazelcast CLC %s (c) 2023 Hazelcast Inc.
@@ -64,7 +65,7 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 		return fmt.Errorf("cloning Main: %w", err)
 	}
 	var cfgText, logText string
-	if !shell.IsPipe() {
+	if !terminal.IsPipe(ec.Stdin()) {
 		cfgPath := ec.Props().GetString(clc.PropertyConfig)
 		if cfgPath != "" {
 			cfgPath = paths.ResolveConfigPath(cfgPath)
@@ -139,7 +140,7 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 		return f()
 	}
 	path := paths.Join(paths.Home(), "shell.history")
-	if shell.IsPipe() {
+	if terminal.IsPipe(ec.Stdin()) {
 		sio := clc.IO{
 			Stdin:  ec.Stdin(),
 			Stderr: ec.Stderr(),
