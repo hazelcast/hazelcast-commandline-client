@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
 
@@ -21,6 +22,7 @@ func TestSQL(t *testing.T) {
 		{name: "SQL_ShellCommand", f: sql_shellCommandTest},
 		{name: "SQL_Interactive", f: sql_InteractiveTest},
 		{name: "SQL_NonInteractive", f: sql_NonInteractiveTest},
+		{name: "SQL_NonInteractiveStreaming", f: sql_NonInteractiveStreamingTest},
 		{name: "SQL_Suggestion_Interactive", f: sqlSuggestion_Interactive},
 		{name: "SQL_Suggestion_NonInteractive", f: sqlSuggestion_NonInteractive},
 	}
@@ -51,6 +53,21 @@ func sql_NonInteractiveTest(t *testing.T) {
 			SELECT * FROM "%s" ORDER BY __key;
 		`, name))
 			tcx.AssertStdoutContains("10\tfoo\n20\tbar\n")
+		})
+	})
+}
+
+func sql_NonInteractiveStreamingTest(t *testing.T) {
+	tcx := it.TestContext{T: t}
+	tcx.Tester(func(tcx it.TestContext) {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		tcx.WithReset(func() {
+			go func() {
+				tcx.CLCExecute(ctx, "sql", "select * from table(generate_stream(1))")
+			}()
+			time.Sleep(5 * time.Second)
+			tcx.AssertStdoutContains("1\n2\n")
 		})
 	})
 }

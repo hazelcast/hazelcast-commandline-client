@@ -124,7 +124,7 @@ func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInt
 	ci = civ.(*hazelcast.ClientInternal)
 	setClientInternal(ci)
 	cn := ci.ClusterService().FailoverService().Current().ClusterName
-	ec.PrintlnUnnecessary(fmt.Sprintf("Connected to cluster: %s\n\n", cn))
+	ec.PrintlnUnnecessary(fmt.Sprintf("Connected to cluster: %s", cn))
 	return ci, nil
 }
 
@@ -236,9 +236,9 @@ func (ec *ExecContext) WrapResult(f func() error) error {
 			var msg string
 			errStr := err.Error()
 			if verbose {
-				msg = fmt.Sprintf("\nError in %d ms: %s", took.Milliseconds(), errStr)
+				msg = fmt.Sprintf("Error in %d ms: %s", took.Milliseconds(), errStr)
 			} else {
-				msg = fmt.Sprintf("\nError: %s", errStr)
+				msg = fmt.Sprintf("Error: %s", errStr)
 			}
 			if ec.Interactive() {
 				I2(fmt.Fprintln(ec.stderr, color.RedString(msg)))
@@ -251,13 +251,12 @@ func (ec *ExecContext) WrapResult(f func() error) error {
 	if ec.Quiet() {
 		return nil
 	}
-	var msg string
 	if verbose || ec.Interactive() {
-		msg = fmt.Sprintf("OK (%d ms)", took.Milliseconds())
+		msg := fmt.Sprintf("OK (%d ms)", took.Milliseconds())
+		I2(fmt.Fprintln(ec.stderr, msg))
 	} else {
-		msg = "OK"
+		I2(fmt.Fprintln(ec.stderr, "OK"))
 	}
-	I2(fmt.Fprintln(ec.stderr, msg))
 	return nil
 }
 
