@@ -108,7 +108,7 @@ func (cm ObjectListCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 	if len(rows) > 0 {
 		return ec.AddOutputRows(ctx, rows...)
 	}
-	if !ec.Props().GetBool(clc.PropertyQuite) {
+	if !ec.Props().GetBool(clc.PropertyQuiet) {
 		I2(fmt.Fprintln(ec.Stdout(), "No objects found"))
 	}
 	return nil

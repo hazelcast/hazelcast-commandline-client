@@ -179,7 +179,7 @@ func (ec *ExecContext) Get(name string) (any, bool) {
 }
 
 func (ec *ExecContext) PrintlnUnnecessary(text string) {
-	quite := ec.Props().GetBool(clc.PropertyQuite) || terminal.IsPipe()
+	quite := ec.Props().GetBool(clc.PropertyQuiet) || terminal.IsPipe()
 	if !quite {
 		check.I2(fmt.Fprintln(ec.Stdout(), text))
 	}

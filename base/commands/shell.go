@@ -110,7 +110,7 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 					return err
 				}
 				args[0] = fmt.Sprintf("%s%s", shell.CmdPrefix, args[0])
-				return m.Execute(args...)
+				return m.Execute(ctx, args...)
 			}
 		}
 		text, err := convertStatement(text)
@@ -147,7 +147,7 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 		}
 		sh := shell.NewOneshotShell(endLineFn, sio, textFn)
 		sh.SetCommentPrefix("--")
-		return sh.Run(context.Background())
+		return sh.Run(ctx)
 	}
 	sh, err := shell.New("CLC> ", " ... ", path, ec.Stdout(), ec.Stderr(), ec.Stdin(), endLineFn, textFn)
 	if err != nil {

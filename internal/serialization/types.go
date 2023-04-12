@@ -182,7 +182,9 @@ var ValueToText map[int32]Stringer
 
 func init() {
 	ValueToText = map[int32]Stringer{
-		TypeNil: staticStringer(ValueNil),
+		TypeNil:        staticStringer(ValueNil),
+		TypeSkip:       staticStringer(ValueSkip),
+		TypeNotDecoded: staticStringer(ValueNotDecoded),
 
 		TypePortable: portableStringer,
 		// TypeDataSerializable

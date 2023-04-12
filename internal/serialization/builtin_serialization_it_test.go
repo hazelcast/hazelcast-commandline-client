@@ -12,6 +12,7 @@ import (
 	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 
+	_ "github.com/hazelcast/hazelcast-commandline-client/base"
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/map"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
@@ -82,7 +83,8 @@ func TestBuiltinSerialization(t *testing.T) {
 						t.Run(format, func(t *testing.T) {
 							tcx.T = t
 							tcx.WithReset(func() {
-								check.Must(tcx.CLC().Execute("map", "get", "-n", m.Name(), key, "--quite", "-f", format))
+								ctx := context.Background()
+								check.Must(tcx.CLC().Execute(ctx, "map", "get", "-n", m.Name(), key, "-q", "-f", format))
 								var target string
 								switch format {
 								case "delimited":

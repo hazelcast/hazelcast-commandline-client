@@ -24,6 +24,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -34,6 +35,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/shell"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it/expect"
 )
@@ -57,8 +59,8 @@ type TestContext struct {
 	ExpectStdout   *expect.Expect
 	ExpectStderr   *expect.Expect
 	homePath       string
-	stderr         *bytes.Buffer
-	stdout         *bytes.Buffer
+	stderr         *ProtectedBuffer
+	stdout         *ProtectedBuffer
 	stdinR         io.Reader
 	stdinW         io.Writer
 	main           *cmd.Main
@@ -68,11 +70,11 @@ func (tcx TestContext) HomePath() string {
 	return tcx.homePath
 }
 
-func (tcx TestContext) Stderr() *bytes.Buffer {
+func (tcx TestContext) Stderr() *ProtectedBuffer {
 	return tcx.stderr
 }
 
-func (tcx TestContext) Stdout() *bytes.Buffer {
+func (tcx TestContext) Stdout() *ProtectedBuffer {
 	return tcx.stdout
 }
 
@@ -141,8 +143,8 @@ func (tcx TestContext) Tester(f func(tcx TestContext)) {
 			}
 		}()
 		tcx.ConfigPath = "test-cfg"
-		tcx.stderr = &bytes.Buffer{}
-		tcx.stdout = &bytes.Buffer{}
+		tcx.stderr = newProtectedBuffer()
+		tcx.stdout = newProtectedBuffer()
 		tcx.stdinR, tcx.stdinW = io.Pipe()
 		tcx.homePath = home.Path()
 		tcx.ExpectStdout = expect.New(tcx.stdout)
@@ -160,7 +162,11 @@ func (tcx TestContext) Tester(f func(tcx TestContext)) {
 						panic(err)
 					}
 					tcx.main = check.MustValue(cmd.NewMain("clc", tcx.ConfigPath, fp, tcx.LogPath, tcx.LogLevel, tcx.IO()))
-					defer tcx.main.Exit()
+					tcx.T.Logf("created CLC main")
+					defer func() {
+						check.Must(tcx.main.Exit())
+						tcx.T.Logf("exited CLC main")
+					}()
 					f(tcx)
 				})
 			})
@@ -249,19 +255,23 @@ func (tcx TestContext) WithReset(f func()) {
 	f()
 }
 
-func (tcx TestContext) CLCExecute(args ...string) {
+func (tcx TestContext) CLCExecute(ctx context.Context, args ...string) {
 	a := []string{"-c", tcx.ConfigPath}
 	a = append(a, args...)
-	check.Must(tcx.CLC().Execute(a...))
+	check.Must(tcx.CLC().Execute(ctx, a...))
 }
 
-func (tcx TestContext) WithShell(f func(tcx TestContext)) {
-	go func() {
-		tcx.CLCExecute()
-	}()
-	// best effort to exit the shell
-	defer tcx.WriteStdin([]byte("\\exit\n"))
-	f(tcx)
+func (tcx TestContext) WithShell(ctx context.Context, f func(tcx TestContext)) {
+	// use the gohxs readline implementation
+	// since we can't set stdin for the ny one.
+	WithEnv(shell.EnvReadline, "gohxs", func() {
+		go func() {
+			tcx.CLCExecute(ctx)
+		}()
+		// best effort to exit the shell
+		defer tcx.WriteStdin([]byte("\\exit\n"))
+		f(tcx)
+	})
 }
 
 func WithEnv(name, value string, f func()) {
@@ -284,4 +294,43 @@ func DefaultTimeout() time.Duration {
 		return 1 * time.Second
 	}
 	return d
+}
+
+type ProtectedBuffer struct {
+	buf *bytes.Buffer
+	mu  *sync.RWMutex
+}
+
+func newProtectedBuffer() *ProtectedBuffer {
+	return &ProtectedBuffer{
+		buf: &bytes.Buffer{},
+		mu:  &sync.RWMutex{},
+	}
+}
+
+func (pb *ProtectedBuffer) Read(p []byte) (n int, err error) {
+	pb.mu.RLock()
+	n, err = pb.buf.Read(p)
+	pb.mu.RUnlock()
+	return n, err
+}
+
+func (pb *ProtectedBuffer) Write(p []byte) (n int, err error) {
+	pb.mu.Lock()
+	n, err = pb.buf.Write(p)
+	pb.mu.Unlock()
+	return n, err
+}
+
+func (pb *ProtectedBuffer) Reset() {
+	pb.mu.Lock()
+	pb.buf.Reset()
+	pb.mu.Unlock()
+}
+
+func (pb *ProtectedBuffer) Bytes() []byte {
+	pb.mu.RLock()
+	b := pb.buf.Bytes()
+	pb.mu.RUnlock()
+	return b
 }

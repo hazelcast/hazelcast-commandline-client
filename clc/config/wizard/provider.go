@@ -49,14 +49,14 @@ func (p *Provider) BindFlag(name string, flag *pflag.Flag) {
 	p.fp.Load().BindFlag(name, flag)
 }
 
-func (p *Provider) ClientConfig(ec plug.ExecContext) (hazelcast.Config, error) {
-	cfg, err := p.fp.Load().ClientConfig(ec)
+func (p *Provider) ClientConfig(ctx context.Context, ec plug.ExecContext) (hazelcast.Config, error) {
+	cfg, err := p.fp.Load().ClientConfig(ctx, ec)
 	if err != nil {
 		if !ec.Interactive() {
 			return hazelcast.Config{}, err
 		}
 		// ask the config to the user
-		name, err := p.runWizard(context.Background(), ec)
+		name, err := p.runWizard(ctx, ec)
 		if err != nil {
 			return hazelcast.Config{}, err
 		}
@@ -65,7 +65,7 @@ func (p *Provider) ClientConfig(ec plug.ExecContext) (hazelcast.Config, error) {
 			return cfg, err
 		}
 		p.fp.Store(fp)
-		return fp.ClientConfig(ec)
+		return fp.ClientConfig(ctx, ec)
 	}
 	return cfg, nil
 }
