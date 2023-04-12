@@ -55,7 +55,7 @@ func (cm *SQLCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		return err
 	}
-	stop()
+	defer stop()
 	// TODO: keep it or remove it?
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	return UpdateOutput(ctx, ec, res, verbose)
