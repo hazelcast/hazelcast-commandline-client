@@ -22,7 +22,7 @@ func Prompt(out io.Writer, in io.Reader, prompt string) (text string, err error)
 func PasswordPrompt(out io.Writer, in io.Reader, prompt string) (text string, err error) {
 	// XXX: the password can only be read from a real stdin
 	check.I2(fmt.Fprint(out, prompt))
-	b, err := term.ReadPassword(syscall.Stdin)
+	b, err := term.ReadPassword(int(syscall.Stdin))
 	if err != nil {
 		return "", err
 	}
