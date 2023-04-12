@@ -124,7 +124,7 @@ func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInt
 	ci = civ.(*hazelcast.ClientInternal)
 	setClientInternal(ci)
 	cn := ci.ClusterService().FailoverService().Current().ClusterName
-	ec.PrintlnUnnecessary(fmt.Sprintf("Connected to cluster: %s\n\n", cn))
+	ec.PrintlnUnnecessary(fmt.Sprintf("Connected to cluster: %s", cn))
 	return ci, nil
 }
 
@@ -251,13 +251,10 @@ func (ec *ExecContext) WrapResult(f func() error) error {
 	if ec.Quiet() {
 		return nil
 	}
-	var msg string
 	if verbose || ec.Interactive() {
-		msg = fmt.Sprintf("OK (%d ms)", took.Milliseconds())
-	} else {
-		msg = "OK"
+		msg := fmt.Sprintf("OK (%d ms)", took.Milliseconds())
+		I2(fmt.Fprintln(ec.stderr, msg))
 	}
-	I2(fmt.Fprintln(ec.stderr, msg))
 	return nil
 }
 

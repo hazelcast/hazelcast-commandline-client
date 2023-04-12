@@ -39,13 +39,13 @@ func UpdateOutput(ctx context.Context, ec plug.ExecContext, res sql.Result, verb
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, os.Kill)
 	defer stop()
 	go func() {
+		var row sql.Row
+		var err error
 		for it.HasNext() {
-			row, err := it.Next()
+			row, err = it.Next()
 			if err != nil {
-				errCh <- err
 				break
 			}
-			// TODO: move the following 2 lines out of the loop --YT
 			cols := row.Metadata().Columns()
 			orow := make(output.Row, len(cols))
 			for i, col := range cols {
@@ -62,7 +62,7 @@ func UpdateOutput(ctx context.Context, ec plug.ExecContext, res sql.Result, verb
 			}
 		}
 		close(rowCh)
-		errCh <- nil
+		errCh <- err
 	}()
 	_ = ec.AddOutputStream(ctx, rowCh)
 	select {
