@@ -16,12 +16,12 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/shell"
 	cmderrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/terminal"
 )
 
 const (
@@ -123,11 +123,8 @@ func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInt
 	stop()
 	ci = civ.(*hazelcast.ClientInternal)
 	setClientInternal(ci)
-	quite := ec.Props().GetBool(clc.PropertyQuiet) || shell.IsPipe()
-	if !quite {
-		n := ci.ClusterService().FailoverService().Current().ClusterName
-		I2(fmt.Fprintf(ec.stderr, "Connected to cluster: %s\n\n", n))
-	}
+	cn := ci.ClusterService().FailoverService().Current().ClusterName
+	ec.PrintlnUnnecessary(fmt.Sprintf("Connected to cluster: %s\n\n", cn))
 	return ci, nil
 }
 
@@ -172,12 +169,11 @@ func (ec *ExecContext) SetInteractive(value bool) {
 // The returned stop function must be called at least once to prevent leaks if there's no error.
 // Calling returned stop more than once has no effect.
 func (ec *ExecContext) ExecuteBlocking(ctx context.Context, f func(context.Context, clc.Spinner) (any, error)) (value any, stop context.CancelFunc, err error) {
-	quite := ec.Props().GetBool(clc.PropertyQuiet) || shell.IsPipe()
 	// setup the Ctrl+C handler
 	ctx, stop = signal.NotifyContext(ctx, os.Interrupt, os.Kill)
 	ch := make(chan any)
 	var sp clc.Spinner
-	if !quite {
+	if !ec.Quiet() {
 		sc := yacspin.Config{
 			Frequency:    100 * time.Millisecond,
 			CharSet:      yacspin.CharSets[59],
@@ -220,7 +216,7 @@ func (ec *ExecContext) ExecuteBlocking(ctx context.Context, f func(context.Conte
 			}
 			return v, stop, nil
 		case <-timer.C:
-			if !quite {
+			if !ec.Quiet() {
 				// ignoring the error here
 				_ = sp.Start()
 			}
@@ -228,12 +224,11 @@ func (ec *ExecContext) ExecuteBlocking(ctx context.Context, f func(context.Conte
 	}
 }
 
-func (ec *ExecContext) Wrap(f func() error) error {
+func (ec *ExecContext) WrapResult(f func() error) error {
 	t := time.Now()
 	err := f()
 	took := time.Since(t)
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
-	quite := ec.Props().GetBool(clc.PropertyQuiet) || shell.IsPipe()
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
 			I2(fmt.Fprintln(ec.stderr, "User cancelled"))
@@ -253,7 +248,7 @@ func (ec *ExecContext) Wrap(f func() error) error {
 		}
 		return cmderrors.WrappedError{Err: err}
 	}
-	if quite {
+	if ec.Quiet() {
 		return nil
 	}
 	var msg string
@@ -264,6 +259,16 @@ func (ec *ExecContext) Wrap(f func() error) error {
 	}
 	I2(fmt.Fprintln(ec.stderr, msg))
 	return nil
+}
+
+func (ec *ExecContext) PrintlnUnnecessary(text string) {
+	if !ec.Quiet() {
+		I2(fmt.Fprintln(ec.Stdout(), text))
+	}
+}
+
+func (ec *ExecContext) Quiet() bool {
+	return ec.Props().GetBool(clc.PropertyQuiet) || terminal.IsPipe(ec.Stdin()) || terminal.IsPipe(ec.Stdout())
 }
 
 func (ec *ExecContext) ensurePrinter() error {

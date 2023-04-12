@@ -328,7 +328,7 @@ func (m *Main) createCommands() error {
 				if _, ok := c.Item.(plug.UnwrappableCommander); ok {
 					err = c.Item.Exec(ctx, ec)
 				} else {
-					err = ec.Wrap(func() error {
+					err = ec.WrapResult(func() error {
 						return c.Item.Exec(ctx, ec)
 					})
 				}
@@ -340,7 +340,7 @@ func (m *Main) createCommands() error {
 					if _, ok := c.Item.(plug.UnwrappableCommander); ok {
 						err = ic.ExecInteractive(ctx, ec)
 					} else {
-						err = ec.Wrap(func() error {
+						err = ec.WrapResult(func() error {
 							return ic.ExecInteractive(ctx, ec)
 						})
 					}

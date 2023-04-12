@@ -3,14 +3,17 @@ package it
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 
 	"github.com/hazelcast/hazelcast-go-client"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/terminal"
 )
 
 type CommandContext struct {
@@ -174,6 +177,13 @@ func (ec *ExecContext) Get(name string) (any, bool) {
 	return ec.props.Get(name)
 }
 
-func (ec *ExecContext) Wrap(f func() error) error {
+func (ec *ExecContext) PrintlnUnnecessary(text string) {
+	quiet := ec.Props().GetBool(clc.PropertyQuiet) || terminal.IsPipe(ec.Stdout())
+	if !quiet {
+		check.I2(fmt.Fprintln(ec.Stdout(), text))
+	}
+}
+
+func (ec *ExecContext) WrapResult(f func() error) error {
 	return f()
 }

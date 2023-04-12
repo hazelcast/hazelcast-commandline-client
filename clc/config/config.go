@@ -267,21 +267,7 @@ func copyOpt(level int, sb *strings.Builder, opt clc.KeyValue[string, string]) {
 }
 
 func FindAll(cd string) ([]string, error) {
-	var cs []string
-	es, err := os.ReadDir(cd)
-	if err != nil {
-		return nil, err
-	}
-	for _, e := range es {
-		if !e.IsDir() {
-			continue
-		}
-		if strings.HasPrefix(e.Name(), ".") || strings.HasPrefix(e.Name(), "_") {
-			continue
-		}
-		if paths.Exists(paths.Join(cd, e.Name(), "config.yaml")) {
-			cs = append(cs, e.Name())
-		}
-	}
-	return cs, nil
+	return paths.FindAll(cd, func(base string, e os.DirEntry) (ok bool) {
+		return e.IsDir() && paths.Exists(paths.Join(base, e.Name(), "config.yaml"))
+	})
 }
