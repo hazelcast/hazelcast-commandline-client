@@ -6,10 +6,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/shell"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -37,9 +35,8 @@ func (cm ListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		ec.Logger().Warn("Cannot access configs directory at: %s: %s", cd, err.Error())
 	}
-	quite := ec.Props().GetBool(clc.PropertyQuiet) || shell.IsPipe()
-	if len(cs) == 0 && !quite {
-		I2(fmt.Fprintln(ec.Stderr(), "No configuration was found."))
+	if len(cs) == 0 {
+		ec.PrintlnUnnecessary("No configuration was found.")
 		return nil
 	}
 	var rows []output.Row

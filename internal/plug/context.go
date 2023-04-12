@@ -40,5 +40,9 @@ type ExecContext interface {
 	Stdout() io.Writer
 	Stdin() io.Reader
 	ExecuteBlocking(ctx context.Context, f func(context.Context, clc.Spinner) (any, error)) (value any, stop context.CancelFunc, err error)
-	Wrap(f func() error) error
+	PrintlnUnnecessary(text string)
+}
+
+type ResultWrapper interface {
+	WrapResult(f func() error) error
 }
