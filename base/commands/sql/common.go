@@ -21,13 +21,6 @@ import (
 
 func UpdateOutput(ctx context.Context, ec plug.ExecContext, res sql.Result, verbose bool) error {
 	if !res.IsRowSet() {
-		if verbose {
-			return ec.AddOutputRows(ctx, output.Row{
-				{
-					Name: "Affected Rows", Type: serialization.TypeInt64, Value: res.UpdateCount(),
-				},
-			})
-		}
 		return nil
 	}
 	it, err := res.Iterator()

@@ -236,9 +236,9 @@ func (ec *ExecContext) WrapResult(f func() error) error {
 			var msg string
 			errStr := err.Error()
 			if verbose {
-				msg = fmt.Sprintf("\nError in %d ms: %s", took.Milliseconds(), errStr)
+				msg = fmt.Sprintf("Error in %d ms: %s", took.Milliseconds(), errStr)
 			} else {
-				msg = fmt.Sprintf("\nError: %s", errStr)
+				msg = fmt.Sprintf("Error: %s", errStr)
 			}
 			if ec.Interactive() {
 				I2(fmt.Fprintln(ec.stderr, color.RedString(msg)))
@@ -254,6 +254,8 @@ func (ec *ExecContext) WrapResult(f func() error) error {
 	if verbose || ec.Interactive() {
 		msg := fmt.Sprintf("OK (%d ms)", took.Milliseconds())
 		I2(fmt.Fprintln(ec.stderr, msg))
+	} else {
+		I2(fmt.Fprintln(ec.stderr, "OK"))
 	}
 	return nil
 }
