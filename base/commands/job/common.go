@@ -1,9 +1,19 @@
 package job
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/types"
+
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec/control"
 )
 
 func idToString(id int64) string {
@@ -32,4 +42,42 @@ func stringToID(s string) (int64, error) {
 		}
 	}
 	return i, nil
+}
+
+func terminateJob(ctx context.Context, ec plug.ExecContext, jobID int64, terminateMode int32, text string) error {
+	ci, err := ec.ClientInternal(ctx)
+	if err != nil {
+		return err
+	}
+	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		sp.SetText(fmt.Sprintf("%s: %s", text, jobID))
+		req := codec.EncodeJetTerminateJobRequest(jobID, terminateMode, types.UUID{})
+		if _, err := ci.InvokeOnRandomTarget(ctx, req, nil); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	if err != nil {
+		return err
+	}
+	stop()
+	return nil
+}
+
+func makeErrorsString(errs []error) error {
+	var sb strings.Builder
+	for _, e := range errs {
+		sb.WriteString(fmt.Sprintf("- %s\n", e.Error()))
+	}
+	return errors.New(sb.String())
+}
+
+func getJobList(ctx context.Context, ci *hazelcast.ClientInternal) ([]control.JobAndSqlSummary, error) {
+	req := codec.EncodeJetGetJobAndSqlSummaryListRequest()
+	resp, err := ci.InvokeOnRandomTarget(ctx, req, nil)
+	if err != nil {
+		return nil, err
+	}
+	ls := codec.DecodeJetGetJobAndSqlSummaryListResponse(resp)
+	return ls, nil
 }

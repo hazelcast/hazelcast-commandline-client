@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"math"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -24,10 +25,13 @@ import (
 type SubmitCmd struct{}
 
 func (cm SubmitCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("submit [jar file]")
+	cc.SetCommandUsage("submit [jar file] [arg, ...]")
 	help := "Submit a jar file and create a Jet job"
 	cc.SetCommandHelp(help, help)
-	cc.SetPositionalArgCount(1, 1)
+	cc.AddStringFlag(flagName, "", "", false, "override the job name")
+	cc.AddStringFlag(flagSnapshot, "", "", false, "set the snapshot name")
+	cc.AddStringFlag(flagMainClass, "", "", false, "set the main class")
+	cc.SetPositionalArgCount(1, math.MaxInt)
 	return nil
 }
 
@@ -56,18 +60,21 @@ func submitJar(ctx context.Context, ci *hazelcast.ClientInternal, ec plug.ExecCo
 	hash := fmt.Sprintf("%x", sha256.Sum256(bin))
 	_, fn := filepath.Split(path)
 	fn = strings.TrimSuffix(fn, ".jar")
-	req := codec.EncodeJetUploadJobMetaDataRequest(sid, false, fn, hash, "", "", "", nil)
+	args := ec.Args()[1:]
+	jobName := ec.Props().GetString(flagName)
+	snapshot := ec.Props().GetString(flagSnapshot)
+	className := ec.Props().GetString(flagMainClass)
+	req := codec.EncodeJetUploadJobMetaDataRequest(sid, false, fn, hash, snapshot, jobName, className, args)
 	mi, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Uploading metadata")
 		mem, err := randomMember(ctx, ci)
 		if err != nil {
-			return nil, err
-		}
-		_, err = ci.InvokeOnMember(ctx, req, mem, nil)
-		if err != nil {
 			return nil, fmt.Errorf("uploading job metadata: %w", err)
 		}
-		return nil, nil
+		if _, err = ci.InvokeOnMember(ctx, req, mem, nil); err != nil {
+			return nil, err
+		}
+		return mem, nil
 	})
 	if err != nil {
 		return fmt.Errorf("uploading metadata: %w", err)
@@ -77,14 +84,13 @@ func submitJar(ctx context.Context, ci *hazelcast.ClientInternal, ec plug.ExecCo
 	_, stop, err = ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Uploading Jar")
 		req = codec.EncodeJetUploadJobMultipartRequest(sid, 1, 1, bin, int32(len(bin)), hash)
-		_, err = ci.InvokeOnMember(ctx, req, mem, nil)
-		if err != nil {
-			return nil, fmt.Errorf("uploading jar file")
+		if _, err = ci.InvokeOnMember(ctx, req, mem, nil); err != nil {
+			return nil, fmt.Errorf("uploading jar file: %w", err)
 		}
 		return nil, nil
 	})
 	if err != nil {
-		return fmt.Errorf("uploading the jar file: %w", err)
+		return err
 	}
 	defer stop()
 	return nil

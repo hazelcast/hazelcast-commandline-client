@@ -10,7 +10,6 @@ import (
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec/control"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
@@ -23,6 +22,7 @@ func (cm ListCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandHelp(help, help)
 	cc.SetPositionalArgCount(0, 0)
 	cc.AddBoolFlag(flagIncludeSQL, "", false, false, "include SQL jobs")
+	cc.AddBoolFlag(flagIncludeUserCancelled, "", false, false, "include user cancelled jobs")
 	return nil
 }
 
@@ -33,13 +33,7 @@ func (cm ListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	}
 	ls, cancel, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Getting the job list")
-		req := codec.EncodeJetGetJobAndSqlSummaryListRequest()
-		resp, err := ci.InvokeOnRandomTarget(ctx, req, nil)
-		if err != nil {
-			return nil, err
-		}
-		ls := codec.DecodeJetGetJobAndSqlSummaryListResponse(resp)
-		return ls, nil
+		return getJobList(ctx, ci)
 	})
 	if err != nil {
 		return err
@@ -53,9 +47,14 @@ func outputJetJobs(ctx context.Context, ec plug.ExecContext, lsi interface{}) er
 	rows := make([]output.Row, 0, len(ls))
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	sql := ec.Props().GetBool(flagIncludeSQL)
+	user := ec.Props().GetBool(flagIncludeUserCancelled)
 	for _, v := range ls {
 		if !sql && v.SqlSummary.Query != "" {
 			// this is an SQL job but --include-sql was not used, so skip it
+			continue
+		}
+		if !user && v.UserCancelled {
+			// this is a user cancelled job but --include-user-cancelled was not used, so skip it
 			continue
 		}
 		row := output.Row{
@@ -86,6 +85,13 @@ func outputJetJobs(ctx context.Context, ec plug.ExecContext, lsi interface{}) er
 				Name:  "Unbounded",
 				Type:  serialization.TypeBool,
 				Value: v.SqlSummary.Unbounded,
+			})
+		}
+		if user {
+			row = append(row, output.Column{
+				Name:  "User Cancelled",
+				Type:  serialization.TypeBool,
+				Value: v.UserCancelled,
 			})
 		}
 		if verbose {
