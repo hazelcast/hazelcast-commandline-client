@@ -1,144 +1,87 @@
 package serialization
 
 import (
-	"fmt"
-	"math/big"
 	"reflect"
-	"time"
 
+	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
-	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 type compactFieldReader func(r serialization.CompactReader, field string) any
 
-type compactFieldWriter func(w serialization.CompactWriter, field string, value any)
-
-type GenericCompact struct {
-	ValueType     reflect.Type
-	ValueTypeName string
-	Fields        []CompactField
-	readers       []compactFieldReader
-	writers       []compactFieldWriter
+type SchemaInfo struct {
+	Type     reflect.Type
+	TypeName string
 }
 
-func NewGenericCompact(value GenericCompact) (*GenericCompact, error) {
-	rs := make([]compactFieldReader, len(value.Fields))
-	ws := make([]compactFieldWriter, len(value.Fields))
-	for i, f := range value.Fields {
-		if f.Type < CompactFieldType(serialization.FieldKindNotAvailable) || f.Type > CompactFieldType(serialization.FieldKindArrayOfNullableFloat64) {
-			return nil, fmt.Errorf("invalid portable type: %d", f.Type)
+type GenericCompactDeserializer struct{}
+
+func (cm GenericCompactDeserializer) Read(schema *hazelcast.Schema, reader serialization.CompactReader) interface{} {
+	fds := schema.FieldDefinitions()
+	cs := make(ColumnList, len(fds))
+	for i, fd := range fds {
+		r := compactReaders[fd.Kind]
+		v := r(reader, fd.Name)
+		c := Column{
+			Name:  fd.Name,
+			Value: v,
 		}
-		r, ok := compactReaders[serialization.FieldKind(f.Type)]
-		if !ok {
-			return nil, fmt.Errorf("reader not found for compact type: %d", f.Type)
+		if v == nil {
+			c.Type = TypeNil
+		} else {
+			c.Type = fieldKindToType[fd.Kind]
 		}
-		rs[i] = r
-		// writing is disabled for now --YT
+		cs[i] = c
 	}
-	return &GenericCompact{
-		Fields:        value.Fields,
-		ValueType:     value.makeType(),
-		ValueTypeName: value.ValueTypeName,
-		readers:       rs,
-		writers:       ws,
-	}, nil
-
+	return cs
 }
 
-func (cm GenericCompact) makeType() reflect.Type {
-	fs := make([]reflect.StructField, len(cm.Fields))
-	for i, f := range cm.Fields {
-		fs[i] = reflect.StructField{
-			Name: fmt.Sprintf("Field%03d", i),
-			Type: fieldKindToType[serialization.FieldKind(f.Type)],
-			Tag:  reflect.StructTag(fmt.Sprintf("json:\"%s\"", f.Name)),
-		}
-	}
-	return reflect.StructOf(fs)
-}
-
-func (cm GenericCompact) Type() reflect.Type {
-	return cm.ValueType
-}
-
-func (cm GenericCompact) TypeName() string {
-	return cm.ValueTypeName
-}
-
-func (cm GenericCompact) Read(reader serialization.CompactReader) interface{} {
-	rs := cm.readers
-	v := reflect.New(cm.ValueType)
-	for i, f := range cm.Fields {
-		value := reflect.ValueOf(rs[i](reader, f.Name))
-		if value.Interface() == nil {
-			continue
-		}
-		v.Elem().Field(i).Set(value)
-	}
-	return v.Interface()
-}
-
-func (cm GenericCompact) Write(writer serialization.CompactWriter, value interface{}) {
-	// TODO: implement me when compact write is supported
-	panic("implement me")
-}
-
-var fieldKindToType map[serialization.FieldKind]reflect.Type
+var fieldKindToType map[serialization.FieldKind]int32
 
 func init() {
-	var a any
-	var b bool
-	var i8 int8
-	var i16 int16
-	var i32 int32
-	var i64 int64
-	var f32 float32
-	var f64 float64
-	var t time.Time
-	fieldKindToType = map[serialization.FieldKind]reflect.Type{
-		serialization.FieldKindNotAvailable:                 nil,
-		serialization.FieldKindBoolean:                      reflect.TypeOf(b),
-		serialization.FieldKindArrayOfBoolean:               reflect.TypeOf([]bool{}),
-		serialization.FieldKindInt8:                         reflect.TypeOf(i8),
-		serialization.FieldKindArrayOfInt8:                  reflect.TypeOf([]int8{}),
-		serialization.FieldKindInt16:                        reflect.TypeOf(i16),
-		serialization.FieldKindArrayOfInt16:                 reflect.TypeOf([]int16{}),
-		serialization.FieldKindInt32:                        reflect.TypeOf(i32),
-		serialization.FieldKindArrayOfInt32:                 reflect.TypeOf([]int32{}),
-		serialization.FieldKindInt64:                        reflect.TypeOf(i64),
-		serialization.FieldKindArrayOfInt64:                 reflect.TypeOf([]int64{}),
-		serialization.FieldKindFloat32:                      reflect.TypeOf(f32),
-		serialization.FieldKindArrayOfFloat32:               reflect.TypeOf([]float32{}),
-		serialization.FieldKindFloat64:                      reflect.TypeOf(f64),
-		serialization.FieldKindArrayOfFloat64:               reflect.TypeOf([]float64{}),
-		serialization.FieldKindString:                       reflect.TypeOf(""),
-		serialization.FieldKindArrayOfString:                reflect.TypeOf([]string{}),
-		serialization.FieldKindDecimal:                      reflect.TypeOf(types.NewDecimal(new(big.Int), 0)),
-		serialization.FieldKindArrayOfDecimal:               reflect.TypeOf([]types.Decimal{}),
-		serialization.FieldKindTime:                         reflect.TypeOf(types.LocalTime(t)),
-		serialization.FieldKindArrayOfTime:                  reflect.TypeOf([]types.LocalTime{}),
-		serialization.FieldKindDate:                         reflect.TypeOf(types.LocalDate(t)),
-		serialization.FieldKindArrayOfDate:                  reflect.TypeOf([]types.LocalDate{}),
-		serialization.FieldKindTimestamp:                    reflect.TypeOf(types.LocalDateTime(t)),
-		serialization.FieldKindArrayOfTimestamp:             reflect.TypeOf([]types.LocalDateTime{}),
-		serialization.FieldKindTimestampWithTimezone:        reflect.TypeOf(types.OffsetDateTime(t)),
-		serialization.FieldKindArrayOfTimestampWithTimezone: reflect.TypeOf([]types.OffsetDateTime{}),
-		serialization.FieldKindCompact:                      reflect.TypeOf(a),
-		serialization.FieldKindArrayOfCompact:               reflect.TypeOf([]any{}),
-		serialization.FieldKindNullableBoolean:              reflect.TypeOf(&b),
-		serialization.FieldKindArrayOfNullableBoolean:       reflect.TypeOf([]*bool{}),
-		serialization.FieldKindNullableInt8:                 reflect.TypeOf(&i8),
-		serialization.FieldKindArrayOfNullableInt8:          reflect.TypeOf([]*int8{}),
-		serialization.FieldKindNullableInt16:                reflect.TypeOf(&i16),
-		serialization.FieldKindArrayOfNullableInt16:         reflect.TypeOf([]*int16{}),
-		serialization.FieldKindNullableInt32:                reflect.TypeOf(&i32),
-		serialization.FieldKindArrayOfNullableInt32:         reflect.TypeOf([]*int32{}),
-		serialization.FieldKindNullableInt64:                reflect.TypeOf(&i64),
-		serialization.FieldKindArrayOfNullableInt64:         reflect.TypeOf([]*int64{}),
-		serialization.FieldKindNullableFloat32:              reflect.TypeOf(&f32),
-		serialization.FieldKindArrayOfNullableFloat32:       reflect.TypeOf([]*float32{}),
-		serialization.FieldKindNullableFloat64:              reflect.TypeOf(&f64),
-		serialization.FieldKindArrayOfNullableFloat64:       reflect.TypeOf([]*float64{}),
+	fieldKindToType = map[serialization.FieldKind]int32{
+		serialization.FieldKindNotAvailable:                 TypeNil,
+		serialization.FieldKindBoolean:                      TypeBool,
+		serialization.FieldKindArrayOfBoolean:               TypeBoolArray,
+		serialization.FieldKindInt8:                         TypeInt8,
+		serialization.FieldKindArrayOfInt8:                  TypeInt8Array,
+		serialization.FieldKindInt16:                        TypeInt16,
+		serialization.FieldKindArrayOfInt16:                 TypeInt16Array,
+		serialization.FieldKindInt32:                        TypeInt32,
+		serialization.FieldKindArrayOfInt32:                 TypeInt32Array,
+		serialization.FieldKindInt64:                        TypeInt64,
+		serialization.FieldKindArrayOfInt64:                 TypeInt64Array,
+		serialization.FieldKindFloat32:                      TypeFloat32,
+		serialization.FieldKindArrayOfFloat32:               TypeFloat32Array,
+		serialization.FieldKindFloat64:                      TypeFloat64,
+		serialization.FieldKindArrayOfFloat64:               TypeFloat64Array,
+		serialization.FieldKindString:                       TypeString,
+		serialization.FieldKindArrayOfString:                TypeStringArray,
+		serialization.FieldKindDecimal:                      TypeJavaDecimal,
+		serialization.FieldKindArrayOfDecimal:               TypeDecimalArray,
+		serialization.FieldKindTime:                         TypeJavaLocalTime,
+		serialization.FieldKindArrayOfTime:                  TypeJavaLocalTimeArray,
+		serialization.FieldKindDate:                         TypeJavaLocalDate,
+		serialization.FieldKindArrayOfDate:                  TypeJavaLocalDateArray,
+		serialization.FieldKindTimestamp:                    TypeJavaLocalDateTime,
+		serialization.FieldKindArrayOfTimestamp:             TypeJavaLocalDateTimeArray,
+		serialization.FieldKindTimestampWithTimezone:        TypeJavaOffsetDateTime,
+		serialization.FieldKindArrayOfTimestampWithTimezone: TypeJavaOffsetDateTimeArray,
+		serialization.FieldKindCompact:                      TypeCompact,
+		serialization.FieldKindArrayOfCompact:               TypeCompactArray,
+		serialization.FieldKindNullableBoolean:              TypeBool,
+		serialization.FieldKindArrayOfNullableBoolean:       TypeBoolArray,
+		serialization.FieldKindNullableInt8:                 TypeInt8,
+		serialization.FieldKindArrayOfNullableInt8:          TypeInt8Array,
+		serialization.FieldKindNullableInt16:                TypeInt16,
+		serialization.FieldKindArrayOfNullableInt16:         TypeInt16Array,
+		serialization.FieldKindNullableInt32:                TypeInt32,
+		serialization.FieldKindArrayOfNullableInt32:         TypeInt32Array,
+		serialization.FieldKindNullableInt64:                TypeInt64,
+		serialization.FieldKindArrayOfNullableInt64:         TypeInt64Array,
+		serialization.FieldKindNullableFloat32:              TypeFloat32,
+		serialization.FieldKindArrayOfNullableFloat32:       TypeFloat32Array,
+		serialization.FieldKindNullableFloat64:              TypeFloat64,
+		serialization.FieldKindArrayOfNullableFloat64:       TypeFloat64Array,
 	}
 }

@@ -10,6 +10,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/types"
 
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -50,11 +51,6 @@ var objTypes = []string{
 	Cache,
 	EventJournal,
 	Ringbuffer,
-	FencedLock,
-	ISemaphore,
-	IAtomicLong,
-	IAtomicReference,
-	ICountdownLatch,
 	CardinalityEstimator,
 }
 
@@ -69,7 +65,9 @@ func (cm ObjectListCommand) Init(cc plug.InitContext) error {
 	long := fmt.Sprintf(`List distributed objects, optionally filter by type.
 	
 The object-type filter may be one of:
+	
 %s
+CP objects such as AtomicLong cannot be listed.
 `, objectFilterTypes())
 	cc.SetCommandHelp(long, "List distributed objects")
 	cc.AddBoolFlag(flagShowHidden, "", false, false, "show hidden and system objects")
@@ -107,7 +105,13 @@ func (cm ObjectListCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 			valueCol,
 		})
 	}
-	return ec.AddOutputRows(ctx, rows...)
+	if len(rows) > 0 {
+		return ec.AddOutputRows(ctx, rows...)
+	}
+	if !ec.Props().GetBool(clc.PropertyQuiet) {
+		I2(fmt.Fprintln(ec.Stdout(), "No objects found"))
+	}
+	return nil
 }
 
 func objectFilterTypes() string {
@@ -123,7 +127,8 @@ func getObjects(ctx context.Context, ec plug.ExecContext, typeFilter string, sho
 	if err != nil {
 		return nil, err
 	}
-	objs, stop, err := ec.ExecuteBlocking(ctx, "Getting distributed objects", func(ctx context.Context) (any, error) {
+	objs, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		sp.SetText("Getting distributed objects")
 		return ci.Client().GetDistributedObjectsInfo(ctx)
 	})
 	if err != nil {

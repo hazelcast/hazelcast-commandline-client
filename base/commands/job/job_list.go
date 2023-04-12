@@ -31,7 +31,8 @@ func (cm ListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		return err
 	}
-	ls, cancel, err := ec.ExecuteBlocking(ctx, "Getting the job list", func(ctx context.Context) (any, error) {
+	ls, cancel, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		sp.SetText("Getting the job list")
 		req := codec.EncodeJetGetJobAndSqlSummaryListRequest()
 		resp, err := ci.InvokeOnRandomTarget(ctx, req, nil)
 		if err != nil {
@@ -99,6 +100,9 @@ func outputJetJobs(ctx context.Context, ec plug.ExecContext, lsi interface{}) er
 			})
 		}
 		rows = append(rows, row)
+	}
+	if len(rows) == 0 {
+		ec.PrintlnUnnecessary("There are no jobs.")
 	}
 	return ec.AddOutputRows(ctx, rows...)
 }

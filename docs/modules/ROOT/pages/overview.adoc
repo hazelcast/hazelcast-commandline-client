@@ -20,7 +20,7 @@ Work in <<non-interactive-mode, non-interactive mode>> to script and execute rep
 
 == Modes
 
-The Hazelcast CLC works in three modes:
+The Hazelcast CLC works in two modes:
 
 - Non-interactive
 - Interactive

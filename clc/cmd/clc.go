@@ -5,15 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
@@ -22,28 +21,40 @@ import (
 	puberrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
-// client is currently global in order to have a single client.
-// This is bad.
-// TODO: make the client unique without making it global.
-var clientInternal *hazelcast.ClientInternal
+var (
+	// client is currently global in order to have a single client.
+	// This is bad.
+	// TODO: make the client unique without making it global.
+	clientInternal atomic.Pointer[hazelcast.ClientInternal]
+)
+
+func getClientInternal() *hazelcast.ClientInternal {
+	return clientInternal.Load()
+}
+
+func setClientInternal(ci *hazelcast.ClientInternal) {
+	clientInternal.Store(ci)
+}
 
 type Main struct {
 	root          *cobra.Command
 	cmds          map[string]*cobra.Command
-	vpr           *viper.Viper
 	lg            *logger.Logger
-	stdout        io.WriteCloser
 	stderr        io.WriteCloser
+	stdout        io.WriteCloser
+	stdin         io.Reader
 	isInteractive bool
 	outputFormat  string
 	configLoaded  bool
 	props         *plug.Properties
 	cc            *CommandContext
+	cp            config.Provider
 }
 
-func NewMain(arg0, cfgPath, logPath, logLevel string, stdout, stderr io.Writer) (*Main, error) {
+func NewMain(arg0, cfgPath string, cfgProvider config.Provider, logPath, logLevel string, sio clc.IO) (*Main, error) {
 	rc := &cobra.Command{
 		Use:               arg0,
 		Short:             "Hazelcast CLC",
@@ -52,36 +63,38 @@ func NewMain(arg0, cfgPath, logPath, logLevel string, stdout, stderr io.Writer) 
 		CompletionOptions: cobra.CompletionOptions{DisableDescriptions: true},
 		SilenceErrors:     true,
 	}
+	rc.SetOut(sio.Stdout)
+	rc.SetErr(sio.Stderr)
 	m := &Main{
 		root:   rc,
 		cmds:   map[string]*cobra.Command{},
-		vpr:    viper.New(),
-		stdout: clc.NopWriteCloser{W: stdout},
-		stderr: clc.NopWriteCloser{W: stderr},
+		stdout: clc.NopWriteCloser{W: sio.Stdout},
+		stderr: clc.NopWriteCloser{W: sio.Stderr},
+		stdin:  sio.Stdin,
 		props:  plug.NewProperties(),
-	}
-	cfgPath = paths.ResolveConfigPath(cfgPath)
-	if _, err := m.loadConfig(cfgPath); err != nil {
-		return nil, err
+		cp:     cfgProvider,
 	}
 	if logPath == "" {
-		logPath = m.vpr.GetString(clc.PropertyLogPath)
+		logPath = cfgProvider.GetString(clc.PropertyLogPath)
 	}
 	logPath = paths.ResolveLogPath(logPath)
 	if logLevel == "" {
-		logLevel = m.vpr.GetString(clc.PropertyLogLevel)
+		logLevel = cfgProvider.GetString(clc.PropertyLogLevel)
+		if logLevel == "" {
+			logLevel = "info"
+		}
 	}
 	if err := m.createLogger(logPath, logLevel); err != nil {
 		return nil, err
 	}
-	for k, v := range m.vpr.AllSettings() {
+	for k, v := range cfgProvider.All() {
 		m.setConfigProps(m.props, k, v)
 	}
 	// these properties are managed manually
 	m.props.Set(clc.PropertyConfig, cfgPath)
 	m.props.Set(clc.PropertyLogPath, logPath)
 	m.props.Set(clc.PropertyLogLevel, logLevel)
-	m.cc = NewCommandContext(rc, m.vpr, m.isInteractive)
+	m.cc = NewCommandContext(rc, cfgProvider, m.isInteractive)
 	if err := m.runInitializers(m.cc); err != nil {
 		return nil, err
 	}
@@ -107,9 +120,8 @@ func (m *Main) CloneForInteractiveMode() (*Main, error) {
 			return mc.root.Help()
 		},
 	})
-
 	mc.cmds = map[string]*cobra.Command{}
-	mc.cc = NewCommandContext(rc, mc.vpr, mc.isInteractive)
+	mc.cc = NewCommandContext(rc, mc.cp, mc.isInteractive)
 	if err := mc.runInitializers(mc.cc); err != nil {
 		return nil, err
 	}
@@ -123,7 +135,9 @@ func (m *Main) Root() *cobra.Command {
 	return m.root
 }
 
-func (m *Main) Execute(args []string) error {
+// TODO: add context arg to Execute
+
+func (m *Main) Execute(ctx context.Context, args ...string) error {
 	var cm *cobra.Command
 	var cmdArgs []string
 	var err error
@@ -147,6 +161,8 @@ func (m *Main) Execute(args []string) error {
 			}
 			// if help was not requested, set shell as the command
 			if useShell {
+				// check that the first argument is not an invalid commands
+				//if len(cmdArgs) > 0 && !strings.HasPrefix()
 				args = append([]string{"shell"}, cmdArgs...)
 			}
 		}
@@ -155,7 +171,7 @@ func (m *Main) Execute(args []string) error {
 	}
 	m.root.SetArgs(args)
 	m.props.Push()
-	err = m.root.Execute()
+	err = m.root.ExecuteContext(ctx)
 	m.props.Pop()
 	// set all flags to their defaults
 	// XXX: it may not work with slices, see: https://github.com/spf13/cobra/issues/1488#issuecomment-1205104931
@@ -260,7 +276,7 @@ func (m *Main) createCommands() error {
 			SilenceUsage: true,
 		}
 		cmd.SetUsageTemplate(usageTemplate)
-		cc := NewCommandContext(cmd, m.vpr, m.isInteractive)
+		cc := NewCommandContext(cmd, m.cp, m.isInteractive)
 		if ci, ok := c.Item.(plug.Initializer); ok {
 			if err := ci.Init(cc); err != nil {
 				if errors.Is(err, puberrors.ErrNotAvailable) {
@@ -285,27 +301,49 @@ func (m *Main) createCommands() error {
 					}
 					props.Set(f.Name, convertFlagValue(cfs, f.Name, f.Value))
 				})
-				ec, err := NewExecContext(m.lg, m.stdout, m.stderr, m.props, func(ctx context.Context) (*hazelcast.ClientInternal, error) {
-					if err := m.ensureClient(ctx, m.props); err != nil {
+				sio := clc.IO{
+					Stdin:  m.stdin,
+					Stderr: m.stderr,
+					Stdout: m.stdout,
+				}
+				ec, err := NewExecContext(m.lg, sio, m.props, func(ctx context.Context, cfg hazelcast.Config) (*hazelcast.ClientInternal, error) {
+					if err := m.ensureClient(ctx, cfg); err != nil {
 						return nil, err
 					}
-					return clientInternal, nil
+					return clientInternal.Load(), nil
 				}, m.isInteractive)
 				if err != nil {
 					return err
 				}
+				ec.SetConfigProvider(m.cp)
 				ec.SetMain(m)
 				ec.SetArgs(args)
 				ec.SetCmd(cmd)
+				ctx := context.Background()
 				if err := m.runAugmentors(ec, props); err != nil {
 					return err
 				}
-				if err := c.Item.Exec(cmd.Context(), ec); err != nil {
+				// to wrap or not to wrap
+				// that's the problem
+				if _, ok := c.Item.(plug.UnwrappableCommander); ok {
+					err = c.Item.Exec(ctx, ec)
+				} else {
+					err = ec.WrapResult(func() error {
+						return c.Item.Exec(ctx, ec)
+					})
+				}
+				if err != nil {
 					return err
 				}
 				if ic, ok := c.Item.(plug.InteractiveCommander); ok {
 					ec.SetInteractive(true)
-					err := ic.ExecInteractive(cmd.Context(), ec)
+					if _, ok := c.Item.(plug.UnwrappableCommander); ok {
+						err = ic.ExecInteractive(ctx, ec)
+					} else {
+						err = ec.WrapResult(func() error {
+							return ic.ExecInteractive(ctx, ec)
+						})
+					}
 					if errors.Is(err, puberrors.ErrNotAvailable) {
 						return nil
 					}
@@ -320,44 +358,15 @@ func (m *Main) createCommands() error {
 	return nil
 }
 
-func (m *Main) ensureClient(ctx context.Context, props plug.ReadOnlyProperties) error {
-	if clientInternal == nil {
-		cfg, err := config.MakeHzConfig(props, m.lg)
-		if err != nil {
-			return err
-		}
+func (m *Main) ensureClient(ctx context.Context, cfg hazelcast.Config) error {
+	if getClientInternal() == nil {
 		client, err := hazelcast.StartNewClientWithConfig(ctx, cfg)
 		if err != nil {
 			return err
 		}
-		clientInternal = hazelcast.NewClientInternal(client)
+		setClientInternal(hazelcast.NewClientInternal(client))
 	}
 	return nil
-}
-
-func (m *Main) loadConfig(path string) (bool, error) {
-	if m.configLoaded {
-		return true, nil
-	}
-	m.configLoaded = true
-	m.vpr.SetConfigFile(path)
-	if err := m.vpr.ReadInConfig(); err != nil {
-		// ignore the errors if the path is the default path, it is possible that it does not exist.
-		defaultPath := paths.DefaultConfigPath()
-		var pe *fs.PathError
-		if errors.As(err, &pe) {
-			if path == defaultPath {
-				return false, nil
-			}
-		}
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			if path == defaultPath {
-				return false, nil
-			}
-		}
-		return false, err
-	}
-	return true, nil
 }
 
 func (m *Main) setConfigProps(props *plug.Properties, key string, value any) {
@@ -381,4 +390,9 @@ func convertFlagValue(fs *pflag.FlagSet, name string, v pflag.Value) any {
 		return MustValue(fs.GetInt64(name))
 	}
 	panic(fmt.Errorf("cannot convert type: %s", v.Type()))
+}
+
+func init() {
+	hazelcast.SetDefaultCompactDeserializer(serialization.GenericCompactDeserializer{})
+	hazelcast.SetDefaultPortableDeserializer(serialization.NewGenericPortableSerializer())
 }

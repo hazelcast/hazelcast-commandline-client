@@ -34,7 +34,8 @@ func (cm CancelCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		return fmt.Errorf("invalid job ID: %s: %w", jids, err)
 	}
-	_, cancel, err := ec.ExecuteBlocking(ctx, "Getting the job list", func(ctx context.Context) (any, error) {
+	_, cancel, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		sp.SetText("Getting the job list")
 		tm := terminateModeCancelGraceful
 		if ec.Props().GetBool(flagForce) {
 			tm = terminateModeCancelForceful

@@ -10,6 +10,9 @@ This file can exist anywhere in the file system, and can be used with the `--con
 clc -c test/config.yaml
 ----
 
+TIP: If you don't add any configuration before and try to run an operation that requires client connection, CLC will prompt a configuration wizard to import Viridian config easily. For details, see xref:config-wizard.adoc[CLC Configuration Wizard ].
+
+
 If there is a `config.yaml` in the same directory with the CLC binary and the configuration was not explicitly set, CLC tries to load that configuration file:
 [source, bash]
 ----

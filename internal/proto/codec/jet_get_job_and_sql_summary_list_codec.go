@@ -19,7 +19,7 @@ package codec
 import (
 	proto "github.com/hazelcast/hazelcast-go-client"
 
-	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec/control"
+	pubcontrol "github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec/control"
 )
 
 const (
@@ -41,7 +41,7 @@ func EncodeJetGetJobAndSqlSummaryListRequest() *proto.ClientMessage {
 	return clientMessage
 }
 
-func DecodeJetGetJobAndSqlSummaryListResponse(clientMessage *proto.ClientMessage) []control.JobAndSqlSummary {
+func DecodeJetGetJobAndSqlSummaryListResponse(clientMessage *proto.ClientMessage) []pubcontrol.JobAndSqlSummary {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

@@ -14,14 +14,15 @@ import (
 	"golang.org/x/exp/slices"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/logger"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/str"
 )
 
 const (
-	envClientName = "CLC_CLIENT_NAME"
+	envClientName   = "CLC_CLIENT_NAME"
+	envClientLabels = "CLC_CLIENT_LABELS"
 )
 
 func Create(path string, opts clc.KeyValues[string, string]) (dir, cfgPath string, err error) {
@@ -40,7 +41,7 @@ func Create(path string, opts clc.KeyValues[string, string]) (dir, cfgPath strin
 	return dir, cfgPath, nil
 }
 
-func MakeHzConfig(props plug.ReadOnlyProperties, lg *logger.Logger) (hazelcast.Config, error) {
+func MakeHzConfig(props plug.ReadOnlyProperties, lg log.Logger) (hazelcast.Config, error) {
 	// if the path is not absolute, assume it is in the parent directory of the configuration
 	wd := filepath.Dir(props.GetString(clc.PropertyConfig))
 	var cfg hazelcast.Config
@@ -59,16 +60,9 @@ func MakeHzConfig(props plug.ReadOnlyProperties, lg *logger.Logger) (hazelcast.C
 	if sd == "" {
 		sd = paths.Join(paths.Home(), "schemas")
 	}
-	lg.Info("Loading schemas recursively from directory: %s", sd)
-	if err := serialization.UpdateSerializationConfigWithRecursivePaths(&cfg, lg, sd); err != nil {
-		lg.Error(fmt.Errorf("loading serialization paths: %w", err))
-	}
 	var viridianEnabled bool
 	if vt := props.GetString(clc.PropertyClusterDiscoveryToken); vt != "" {
 		lg.Debugf("Viridan token: XXX")
-		if err := os.Setenv(clc.EnvHzCloudCoordinatorBaseURL, clc.ViridianCoordinatorURL); err != nil {
-			return cfg, fmt.Errorf("setting coordinator URL")
-		}
 		cfg.Cluster.Cloud.Enabled = true
 		cfg.Cluster.Cloud.Token = vt
 		viridianEnabled = true
@@ -117,6 +111,7 @@ func MakeHzConfig(props plug.ReadOnlyProperties, lg *logger.Logger) (hazelcast.C
 			}
 		}
 	}
+	cfg.Labels = makeClientLabels()
 	cfg.ClientName = makeClientName()
 	usr := props.GetString(clc.PropertyClusterUser)
 	pass := props.GetString(clc.PropertyClusterPassword)
@@ -136,22 +131,36 @@ func makeClientName() string {
 	if cn != "" {
 		return cn
 	}
-	var userName string
+	t := time.Now().Unix()
+	return fmt.Sprintf("%s-%d", userHostName(), t)
+}
+
+func makeClientLabels() []string {
+	lss, ok := os.LookupEnv(envClientLabels)
+	if ok {
+		return str.SplitByComma(lss, true)
+	}
+	return []string{"CLC", fmt.Sprintf("User:%s", userHostName())}
+}
+
+func userName() string {
 	u, err := user.Current()
 	if err != nil {
-		userName = "UNKNOWN"
-	} else {
-		userName = u.Username
+		return "UNKNOWN"
 	}
-	var hostName string
+	return u.Username
+}
+
+func hostName() string {
 	host, err := os.Hostname()
 	if err != nil {
-		host = "UNKNOWN"
-	} else {
-		hostName = host
+		return "UNKNOWN"
 	}
-	t := time.Now().Unix()
-	return fmt.Sprintf("%s@%s-%d", userName, hostName, t)
+	return host
+}
+
+func userHostName() string {
+	return fmt.Sprintf("%s@%s", userName(), hostName())
 }
 
 // DirAndFile returns the configuration directory and file separately
@@ -257,4 +266,10 @@ func copyOpt(level int, sb *strings.Builder, opt clc.KeyValue[string, string]) {
 	sb.WriteString(": ")
 	sb.WriteString(opt.Value)
 	sb.WriteString("\n")
+}
+
+func FindAll(cd string) ([]string, error) {
+	return paths.FindAll(cd, func(base string, e os.DirEntry) (ok bool) {
+		return e.IsDir() && paths.Exists(paths.Join(base, e.Name(), "config.yaml"))
+	})
 }

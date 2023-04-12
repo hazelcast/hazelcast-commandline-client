@@ -1,5 +1,29 @@
 # Hazelcast CLC
 
+## Installation
+
+We provide binaries for the popular platforms at our [Releases](https://github.com/hazelcast/hazelcast-commandline-client/releases) page.
+In order to install CLC:
+
+* Download the release package for your platform,
+* Extract it,
+* Optionally move the `clc` binary to somewhere in your *PATH*, so it can be run in any terminal without additional settings.
+
+Currently we provide precompiled binaries of CLC for the following platforms and architectures:
+
+* Linux/amd64
+* Windows/amd64
+* MacOS/amd64
+* MacOS/arm64
+
+Additionally, we provide an installer for Windows 10 and up.
+The installer can install CLC for either system-wide or just for the user.
+It adds the `clc` binary automatically to the `$PATH`, so it can be run in any terminal without additional settings.
+
+If your platform is not one of the above, you may want to compile CLC yourself. Our build process is very simple and doesn't have many dependencies.
+In most cases just running `make` is sufficient to build CLC if you have the latest [Go](https://go.dev/) compiler installed.
+See [Building from source](#building-from-source) section.
+
 ## Usage Summary
 
 ### Home Directory

@@ -27,4 +27,5 @@ type JobAndSqlSummary struct {
 	FailureText     string
 	SqlSummary      SqlSummary
 	SuspensionCause string
+	UserCancelled   bool
 }

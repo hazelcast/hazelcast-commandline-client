@@ -19,7 +19,7 @@ package codec
 import (
 	proto "github.com/hazelcast/hazelcast-go-client"
 
-	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec/control"
+	pubcontrol "github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec/control"
 )
 
 const (
@@ -27,7 +27,18 @@ const (
 	SqlSummaryCodecUnboundedInitialFrameSize = SqlSummaryCodecUnboundedFieldOffset + proto.BooleanSizeInBytes
 )
 
-func DecodeSqlSummary(frameIterator *proto.ForwardFrameIterator) control.SqlSummary {
+func EncodeSqlSummary(clientMessage *proto.ClientMessage, sqlSummary pubcontrol.SqlSummary) {
+	clientMessage.AddFrame(proto.BeginFrame.Copy())
+	initialFrame := proto.NewFrame(make([]byte, SqlSummaryCodecUnboundedInitialFrameSize))
+	EncodeBoolean(initialFrame.Content, SqlSummaryCodecUnboundedFieldOffset, sqlSummary.Unbounded)
+	clientMessage.AddFrame(initialFrame)
+
+	EncodeString(clientMessage, sqlSummary.Query)
+
+	clientMessage.AddFrame(proto.EndFrame.Copy())
+}
+
+func DecodeSqlSummary(frameIterator *proto.ForwardFrameIterator) pubcontrol.SqlSummary {
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()
@@ -36,7 +47,7 @@ func DecodeSqlSummary(frameIterator *proto.ForwardFrameIterator) control.SqlSumm
 	query := DecodeString(frameIterator)
 	FastForwardToEndFrame(frameIterator)
 
-	return control.SqlSummary{
+	return pubcontrol.SqlSummary{
 		Query:     query,
 		Unbounded: unbounded,
 	}

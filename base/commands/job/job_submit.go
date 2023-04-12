@@ -3,7 +3,6 @@ package job
 import (
 	"context"
 	"crypto/sha256"
-	"errors"
 	"fmt"
 	"math/rand"
 	"os"
@@ -15,6 +14,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/types"
 
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -56,43 +56,37 @@ func submitJar(ctx context.Context, ci *hazelcast.ClientInternal, ec plug.ExecCo
 	hash := fmt.Sprintf("%x", sha256.Sum256(bin))
 	_, fn := filepath.Split(path)
 	fn = strings.TrimSuffix(fn, ".jar")
-	req := codec.EncodeJetUploadJobMetaDataRequest(sid, fn, hash, "", "", "", nil)
-	mi, cancel, err := ec.ExecuteBlocking(ctx, "Uploading metadata", func(ctx context.Context) (any, error) {
+	req := codec.EncodeJetUploadJobMetaDataRequest(sid, false, fn, hash, "", "", "", nil)
+	mi, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		sp.SetText("Uploading metadata")
 		mem, err := randomMember(ctx, ci)
 		if err != nil {
 			return nil, err
 		}
-		resp, err := ci.InvokeOnMember(ctx, req, mem, nil)
+		_, err = ci.InvokeOnMember(ctx, req, mem, nil)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("uploading job metadata: %w", err)
 		}
-		ok := codec.DecodeJetUploadJobMetaDataResponse(resp)
-		if !ok {
-			return nil, errors.New("cannot upload job metadata")
-		}
-		return mem, nil
+		return nil, nil
 	})
 	if err != nil {
 		return fmt.Errorf("uploading metadata: %w", err)
 	}
-	defer cancel()
+	defer stop()
 	mem := mi.(types.UUID)
-	_, cancel, err = ec.ExecuteBlocking(ctx, "Uploading Jar", func(ctx context.Context) (any, error) {
-		req = codec.EncodeJetUploadJobMultipartRequest(sid, 1, 1, bin, int32(len(bin)))
-		resp, err := ci.InvokeOnMember(ctx, req, mem, nil)
+	_, stop, err = ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		sp.SetText("Uploading Jar")
+		req = codec.EncodeJetUploadJobMultipartRequest(sid, 1, 1, bin, int32(len(bin)), hash)
+		_, err = ci.InvokeOnMember(ctx, req, mem, nil)
 		if err != nil {
-			return nil, err
-		}
-		ok := codec.DecodeJetUploadJobMultipartResponse(resp)
-		if !ok {
-			return nil, errors.New("cannot upload the jar file")
+			return nil, fmt.Errorf("uploading jar file")
 		}
 		return nil, nil
 	})
 	if err != nil {
 		return fmt.Errorf("uploading the jar file: %w", err)
 	}
-	defer cancel()
+	defer stop()
 	return nil
 }
 

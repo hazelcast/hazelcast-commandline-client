@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/hazelcast/hazelcast-go-client/logger"
+
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 )
 
@@ -12,11 +14,16 @@ type Logger struct {
 	buf *bytes.Buffer
 }
 
+func (l Logger) Log(weight logger.Weight, f func() string) {
+	// TODO: use the correct level name
+	l.log("INFO", f())
+}
+
 func NewLogger() *Logger {
 	return &Logger{buf: &bytes.Buffer{}}
 }
 
-func (l Logger) Text() string {
+func (l Logger) String() string {
 	b, err := io.ReadAll(l.buf)
 	if err != nil {
 		panic(err)

@@ -10,6 +10,7 @@ const (
 	PropertyClusterPassword       = "cluster.password"
 	PropertyFormat                = "format"
 	PropertyVerbose               = "verbose"
+	PropertyQuiet                 = "quiet"
 	// PropertyConfig is the config name or path
 	// TODO: Separate config name and path
 	PropertyConfig               = "config"
@@ -27,4 +28,5 @@ const (
 	GroupJetID                   = "jet"
 	ViridianCoordinatorURL       = "https://api.viridian.hazelcast.com"
 	EnvHzCloudCoordinatorBaseURL = "HZ_CLOUD_COORDINATOR_BASE_URL"
+	EnvMaxCols                   = "CLC_MAX_COLS"
 )

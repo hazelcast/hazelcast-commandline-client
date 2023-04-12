@@ -1,17 +1,18 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
+	"math"
 
+	"github.com/spf13/cobra"
+
+	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/mk"
 )
 
 type CommandContext struct {
 	Cmd           *cobra.Command
-	Vpr           *viper.Viper
+	CP            config.Provider
 	stringValues  map[string]*string
 	boolValues    map[string]*bool
 	intValues     map[string]*int64
@@ -20,10 +21,10 @@ type CommandContext struct {
 	groups        map[string]*cobra.Group
 }
 
-func NewCommandContext(cmd *cobra.Command, vpr *viper.Viper, isInteractive bool) *CommandContext {
+func NewCommandContext(cmd *cobra.Command, cfgProvider config.Provider, isInteractive bool) *CommandContext {
 	return &CommandContext{
 		Cmd:           cmd,
-		Vpr:           vpr,
+		CP:            cfgProvider,
 		stringValues:  map[string]*string{},
 		boolValues:    map[string]*bool{},
 		intValues:     map[string]*int64{},
@@ -60,16 +61,23 @@ func (cc *CommandContext) AddBoolFlag(long, short string, value bool, required b
 	cc.boolValues[long] = &b
 }
 
+// SetPositionalArgCount sets the number minimum and maximum positional arguments.
+// if min and max are the same, the pos args are set as the exact num of args.
+// otherwise, if max == math.MaxInt, num of pos args are set as the minumum of min args.
+// otherwise, if min == 0, num of pos args are set as the maximum of max args.
+// otherwise num of pos args is the range of min, max args.
 func (cc *CommandContext) SetPositionalArgCount(min, max int) {
 	if min == max {
 		cc.Cmd.Args = cobra.ExactArgs(min)
 		return
 	}
+	if max == math.MaxInt {
+		cc.Cmd.Args = cobra.MinimumNArgs(min)
+		return
+	}
 	if min == 0 {
 		cc.Cmd.Args = cobra.MaximumNArgs(max)
-	}
-	if max == 0 {
-		cc.Cmd.Args = cobra.MinimumNArgs(min)
+		return
 	}
 	cc.Cmd.Args = cobra.RangeArgs(min, max)
 }
@@ -111,13 +119,12 @@ func (cc *CommandContext) Groups() []*cobra.Group {
 }
 
 func (cc *CommandContext) AddStringConfig(name, value, flag string, help string) {
-	cc.Vpr.SetDefault(name, value)
+	cc.CP.Set(name, value)
 	if flag != "" && !cc.isInteractive {
 		f := cc.Cmd.Flag(flag)
 		if f != nil {
-			Must(cc.Vpr.BindPFlag(name, f))
+			cc.CP.BindFlag(name, f)
 		}
-		return
 	}
 }
 

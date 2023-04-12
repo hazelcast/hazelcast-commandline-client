@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"runtime"
 	"strings"
 
 	"github.com/fatih/color"
@@ -19,18 +20,17 @@ import (
 )
 
 const (
-	CmdPrefix     = `\`
-	envStyler     = "CLC_EXPERIMENTAL_STYLER"
-	envFormatter  = "CLC_EXPERIMENTAL_FORMATTER"
-	envReadline   = "CLC_EXPERIMENTAL_READLINE"
-	maxErrorLines = 5
+	CmdPrefix    = `\`
+	envStyler    = "CLC_EXPERIMENTAL_STYLER"
+	envFormatter = "CLC_EXPERIMENTAL_FORMATTER"
+	EnvReadline  = "CLC_EXPERIMENTAL_READLINE"
 )
 
 var ErrExit = errors.New("exit")
 
 type EndLineFn func(line string, multiline bool) (string, bool)
 
-type TextFn func(ctx context.Context, text string) error
+type TextFn func(ctx context.Context, stdout io.Writer, text string) error
 
 type Shell struct {
 	lr            LineReader
@@ -41,10 +41,11 @@ type Shell struct {
 	historyPath   string
 	stderr        io.Writer
 	stdout        io.Writer
+	stdin         io.Reader
 	commentPrefix string
 }
 
-func New(prompt1, prompt2, historyPath string, stdout, stderr io.Writer, endLineFn EndLineFn, textFn TextFn) (*Shell, error) {
+func New(prompt1, prompt2, historyPath string, stdout, stderr io.Writer, stdin io.Reader, endLineFn EndLineFn, textFn TextFn) (*Shell, error) {
 	stdout, stderr = fixStdoutStderr(stdout, stderr)
 	sh := &Shell{
 		endLineFn:     endLineFn,
@@ -54,9 +55,15 @@ func New(prompt1, prompt2, historyPath string, stdout, stderr io.Writer, endLine
 		historyPath:   historyPath,
 		stderr:        stderr,
 		stdout:        stdout,
+		stdin:         stdin,
 		commentPrefix: "",
 	}
-	if os.Getenv(envReadline) == "ny" {
+	rl := os.Getenv(EnvReadline)
+	if rl == "" && runtime.GOOS == "windows" {
+		// ny is default on Windows
+		rl = "ny"
+	}
+	if rl == "ny" {
 		if err := sh.createNyLineReader(prompt1); err != nil {
 			return nil, err
 		}
@@ -76,7 +83,7 @@ func (sh *Shell) SetCommentPrefix(pfx string) {
 
 func (sh *Shell) Start(ctx context.Context) error {
 	for {
-		text, err := sh.readTextReadline()
+		text, err := sh.readTextReadline(ctx)
 		if err == io.EOF {
 			return nil
 		}
@@ -92,19 +99,17 @@ func (sh *Shell) Start(ctx context.Context) error {
 		}
 		sh.lr.AddToHistory(text)
 		ctx, stop := signal.NotifyContext(ctx, os.Interrupt, os.Kill)
-		if err := sh.textFn(ctx, text); err != nil {
+		err = sh.textFn(ctx, sh.stdout, text)
+		stop()
+		if err != nil {
 			if errors.Is(err, ErrExit) {
 				return nil
 			}
-			if !errors.Is(err, context.DeadlineExceeded) && !errors.Is(err, context.Canceled) {
-				I2(fmt.Fprintf(sh.stderr, color.RedString("Error: %s\n", trimError(err, maxErrorLines))))
-			}
 		}
-		stop()
 	}
 }
 
-func (sh *Shell) readTextReadline() (string, error) {
+func (sh *Shell) readTextReadline(ctx context.Context) (string, error) {
 	// NOTE: when this implementation is changed,
 	// clc/shell/oneshot_shell.go:readTextBasic should also change!
 	prompt := sh.prompt1
@@ -112,7 +117,7 @@ func (sh *Shell) readTextReadline() (string, error) {
 	var sb strings.Builder
 	for {
 		sh.lr.SetPrompt(prompt)
-		p, err := sh.lr.ReadLine(context.Background())
+		p, err := sh.lr.ReadLine(ctx)
 		if err != nil {
 			return "", err
 		}
@@ -148,15 +153,6 @@ func (c *SQLColoring) Init() int {
 
 func (c *SQLColoring) Next(_ rune) int {
 	return ny.DefaultForeGroundColor
-}
-
-// trimErrorString trims the string so it's at most n lines
-func trimError(err error, n int) string {
-	lines := strings.Split(err.Error(), "\n")
-	if len(lines) > n {
-		lines = append(lines[:5], "(Rest of the error message is trimmed.)")
-	}
-	return strings.Join(lines, "\n")
 }
 
 func isStdout(w io.Writer) bool {

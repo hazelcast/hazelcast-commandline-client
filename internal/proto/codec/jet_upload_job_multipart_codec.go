@@ -22,19 +22,17 @@ import (
 )
 
 const (
-	JetUploadJobMultipartCodecRequestMessageType  = int32(0xFE1100)
-	JetUploadJobMultipartCodecResponseMessageType = int32(0xFE1101)
+	JetUploadJobMultipartCodecRequestMessageType  = int32(0xFE1200)
+	JetUploadJobMultipartCodecResponseMessageType = int32(0xFE1201)
 
 	JetUploadJobMultipartCodecRequestSessionIdOffset         = proto.PartitionIDOffset + proto.IntSizeInBytes
 	JetUploadJobMultipartCodecRequestCurrentPartNumberOffset = JetUploadJobMultipartCodecRequestSessionIdOffset + proto.UuidSizeInBytes
 	JetUploadJobMultipartCodecRequestTotalPartNumberOffset   = JetUploadJobMultipartCodecRequestCurrentPartNumberOffset + proto.IntSizeInBytes
 	JetUploadJobMultipartCodecRequestPartSizeOffset          = JetUploadJobMultipartCodecRequestTotalPartNumberOffset + proto.IntSizeInBytes
 	JetUploadJobMultipartCodecRequestInitialFrameSize        = JetUploadJobMultipartCodecRequestPartSizeOffset + proto.IntSizeInBytes
-
-	JetUploadJobMultipartResponseResponseOffset = proto.ResponseBackupAcksOffset + proto.ByteSizeInBytes
 )
 
-func EncodeJetUploadJobMultipartRequest(sessionId types.UUID, currentPartNumber int32, totalPartNumber int32, partData []byte, partSize int32) *proto.ClientMessage {
+func EncodeJetUploadJobMultipartRequest(sessionId types.UUID, currentPartNumber int32, totalPartNumber int32, partData []byte, partSize int32, sha256Hex string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -48,13 +46,7 @@ func EncodeJetUploadJobMultipartRequest(sessionId types.UUID, currentPartNumber 
 	clientMessage.SetPartitionId(-1)
 
 	EncodeByteArray(clientMessage, partData)
+	EncodeString(clientMessage, sha256Hex)
 
 	return clientMessage
-}
-
-func DecodeJetUploadJobMultipartResponse(clientMessage *proto.ClientMessage) bool {
-	frameIterator := clientMessage.FrameIterator()
-	initialFrame := frameIterator.Next()
-
-	return DecodeBoolean(initialFrame.Content, JetUploadJobMultipartResponseResponseOffset)
 }

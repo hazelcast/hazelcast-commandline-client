@@ -19,20 +19,41 @@ package codec
 import (
 	proto "github.com/hazelcast/hazelcast-go-client"
 
-	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec/control"
+	pubcontrol "github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec/control"
 )
 
 const (
-	JobAndSqlSummaryCodecLightJobFieldOffset            = 0
-	JobAndSqlSummaryCodecJobIdFieldOffset               = JobAndSqlSummaryCodecLightJobFieldOffset + proto.BooleanSizeInBytes
-	JobAndSqlSummaryCodecExecutionIdFieldOffset         = JobAndSqlSummaryCodecJobIdFieldOffset + proto.LongSizeInBytes
-	JobAndSqlSummaryCodecStatusFieldOffset              = JobAndSqlSummaryCodecExecutionIdFieldOffset + proto.LongSizeInBytes
-	JobAndSqlSummaryCodecSubmissionTimeFieldOffset      = JobAndSqlSummaryCodecStatusFieldOffset + proto.IntSizeInBytes
-	JobAndSqlSummaryCodecCompletionTimeFieldOffset      = JobAndSqlSummaryCodecSubmissionTimeFieldOffset + proto.LongSizeInBytes
-	JobAndSqlSummaryCodecCompletionTimeInitialFrameSize = JobAndSqlSummaryCodecCompletionTimeFieldOffset + proto.LongSizeInBytes
+	JobAndSqlSummaryCodecLightJobFieldOffset           = 0
+	JobAndSqlSummaryCodecJobIdFieldOffset              = JobAndSqlSummaryCodecLightJobFieldOffset + proto.BooleanSizeInBytes
+	JobAndSqlSummaryCodecExecutionIdFieldOffset        = JobAndSqlSummaryCodecJobIdFieldOffset + proto.LongSizeInBytes
+	JobAndSqlSummaryCodecStatusFieldOffset             = JobAndSqlSummaryCodecExecutionIdFieldOffset + proto.LongSizeInBytes
+	JobAndSqlSummaryCodecSubmissionTimeFieldOffset     = JobAndSqlSummaryCodecStatusFieldOffset + proto.IntSizeInBytes
+	JobAndSqlSummaryCodecCompletionTimeFieldOffset     = JobAndSqlSummaryCodecSubmissionTimeFieldOffset + proto.LongSizeInBytes
+	JobAndSqlSummaryCodecUserCancelledFieldOffset      = JobAndSqlSummaryCodecCompletionTimeFieldOffset + proto.LongSizeInBytes
+	JobAndSqlSummaryCodecUserCancelledInitialFrameSize = JobAndSqlSummaryCodecUserCancelledFieldOffset + proto.BooleanSizeInBytes
 )
 
-func DecodeJobAndSqlSummary(frameIterator *proto.ForwardFrameIterator) control.JobAndSqlSummary {
+func EncodeJobAndSqlSummary(clientMessage *proto.ClientMessage, jobAndSqlSummary pubcontrol.JobAndSqlSummary) {
+	clientMessage.AddFrame(proto.BeginFrame.Copy())
+	initialFrame := proto.NewFrame(make([]byte, JobAndSqlSummaryCodecUserCancelledInitialFrameSize))
+	EncodeBoolean(initialFrame.Content, JobAndSqlSummaryCodecLightJobFieldOffset, jobAndSqlSummary.LightJob)
+	EncodeLong(initialFrame.Content, JobAndSqlSummaryCodecJobIdFieldOffset, int64(jobAndSqlSummary.JobId))
+	EncodeLong(initialFrame.Content, JobAndSqlSummaryCodecExecutionIdFieldOffset, int64(jobAndSqlSummary.ExecutionId))
+	EncodeInt(initialFrame.Content, JobAndSqlSummaryCodecStatusFieldOffset, int32(jobAndSqlSummary.Status))
+	EncodeLong(initialFrame.Content, JobAndSqlSummaryCodecSubmissionTimeFieldOffset, int64(jobAndSqlSummary.SubmissionTime))
+	EncodeLong(initialFrame.Content, JobAndSqlSummaryCodecCompletionTimeFieldOffset, int64(jobAndSqlSummary.CompletionTime))
+	EncodeBoolean(initialFrame.Content, JobAndSqlSummaryCodecUserCancelledFieldOffset, jobAndSqlSummary.UserCancelled)
+	clientMessage.AddFrame(initialFrame)
+
+	EncodeString(clientMessage, jobAndSqlSummary.NameOrId)
+	EncodeNullableForString(clientMessage, jobAndSqlSummary.FailureText)
+	EncodeNullableForSqlSummary(clientMessage, &jobAndSqlSummary.SqlSummary)
+	EncodeNullableForString(clientMessage, jobAndSqlSummary.SuspensionCause)
+
+	clientMessage.AddFrame(proto.EndFrame.Copy())
+}
+
+func DecodeJobAndSqlSummary(frameIterator *proto.ForwardFrameIterator) pubcontrol.JobAndSqlSummary {
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()
@@ -42,10 +63,13 @@ func DecodeJobAndSqlSummary(frameIterator *proto.ForwardFrameIterator) control.J
 	status := DecodeInt(initialFrame.Content, JobAndSqlSummaryCodecStatusFieldOffset)
 	submissionTime := DecodeLong(initialFrame.Content, JobAndSqlSummaryCodecSubmissionTimeFieldOffset)
 	completionTime := DecodeLong(initialFrame.Content, JobAndSqlSummaryCodecCompletionTimeFieldOffset)
+	var userCancelled bool
+	if len(initialFrame.Content) >= JobAndSqlSummaryCodecUserCancelledFieldOffset+proto.BooleanSizeInBytes {
+		userCancelled = DecodeBoolean(initialFrame.Content, JobAndSqlSummaryCodecUserCancelledFieldOffset)
+	}
 
 	nameOrId := DecodeString(frameIterator)
 	failureText := DecodeNullableForString(frameIterator)
-	// ignoring the ok value
 	sqlSummary, _ := DecodeNullableForSqlSummary(frameIterator)
 	var suspensionCause string
 	if !frameIterator.PeekNext().IsEndFrame() {
@@ -53,7 +77,7 @@ func DecodeJobAndSqlSummary(frameIterator *proto.ForwardFrameIterator) control.J
 	}
 	FastForwardToEndFrame(frameIterator)
 
-	return control.JobAndSqlSummary{
+	return pubcontrol.JobAndSqlSummary{
 		LightJob:        lightJob,
 		JobId:           jobId,
 		ExecutionId:     executionId,
@@ -64,5 +88,6 @@ func DecodeJobAndSqlSummary(frameIterator *proto.ForwardFrameIterator) control.J
 		FailureText:     failureText,
 		SqlSummary:      sqlSummary,
 		SuspensionCause: suspensionCause,
+		UserCancelled:   userCancelled,
 	}
 }

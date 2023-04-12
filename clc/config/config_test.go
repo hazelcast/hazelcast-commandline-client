@@ -3,7 +3,9 @@ package config_test
 import (
 	"bytes"
 	"crypto/tls"
+	"fmt"
 	"os"
+	"os/user"
 	"path/filepath"
 	"testing"
 
@@ -17,6 +19,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc/logger"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/it/skip"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
@@ -29,10 +32,10 @@ func TestMakeConfiguration_Default(t *testing.T) {
 	require.NoError(t, err)
 	var target hazelcast.Config
 	target.ClientName = "my-client"
+	target.Labels = []string{"CLC", fmt.Sprintf("User:%s", userHostName())}
 	target.Cluster.Unisocket = true
 	target.Stats.Enabled = true
 	target.Logger.CustomLogger = lg
-	target.Serialization.Compact.SetSerializers()
 	require.Equal(t, target, cfg)
 }
 
@@ -55,6 +58,7 @@ func TestMakeConfiguration_Viridian(t *testing.T) {
 	require.NoError(t, err)
 	var target hazelcast.Config
 	target.ClientName = "my-client"
+	target.Labels = []string{"CLC", fmt.Sprintf("User:%s", userHostName())}
 	target.Cluster.Unisocket = true
 	target.Cluster.Name = "pr-3066"
 	target.Cluster.Cloud.Enabled = true
@@ -63,11 +67,11 @@ func TestMakeConfiguration_Viridian(t *testing.T) {
 	target.Cluster.Network.SSL.SetTLSConfig(&tls.Config{ServerName: "hazelcast.cloud"})
 	target.Stats.Enabled = true
 	target.Logger.CustomLogger = lg
-	target.Serialization.Compact.SetSerializers()
 	require.Equal(t, target, cfg)
 }
 
-func TestConfigDirFile(t *testing.T) {
+func TestConfigDirFile_Unix(t *testing.T) {
+	skip.If(t, "os = windows")
 	// ignoring the error
 	_ = os.Setenv(paths.EnvCLCHome, "/home/clc")
 	defer os.Unsetenv(paths.EnvCLCHome)
@@ -98,6 +102,63 @@ func TestConfigDirFile(t *testing.T) {
 			name:       "existing cfg file",
 			path:       existingFile,
 			targetDir:  existingDir,
+			targetFile: "myconfig.yaml",
+		},
+		{
+			name:       "nonexistent dir",
+			path:       "/home/me/foo",
+			targetDir:  "/home/me/foo",
+			targetFile: "config.yaml",
+		},
+		{
+			name:       "nonexistent file",
+			path:       "/home/me/foo/some.file",
+			targetDir:  "/home/me/foo",
+			targetFile: "some.file",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			d, f, err := config.DirAndFile(tc.path)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.targetDir, d)
+			assert.Equal(t, tc.targetFile, f)
+		})
+	}
+}
+
+func TestConfigDirFile_Windows(t *testing.T) {
+	skip.IfNot(t, "os = windows")
+	// ignoring the error
+	_ = os.Setenv(paths.EnvCLCHome, "C:\\Users\\clc")
+	defer os.Unsetenv(paths.EnvCLCHome)
+	td := MustValue(os.MkdirTemp("", "clctest-*"))
+	existingDir := filepath.Join(td, "mydir")
+	Must(os.MkdirAll(existingDir, 0700))
+	existingFile := filepath.Join(td, "mydir", "myconfig.yaml")
+	Must(os.WriteFile(existingFile, []byte{}, 0700))
+	testCases := []struct {
+		name       string
+		path       string
+		targetDir  string
+		targetFile string
+	}{
+		{
+			name:       "default config",
+			path:       "default-cfg",
+			targetDir:  "C:\\Users\\clc\\configs\\default-cfg",
+			targetFile: "config.yaml",
+		},
+		{
+			name:       "existing cfg dir",
+			path:       existingDir,
+			targetDir:  filepath.ToSlash(existingDir),
+			targetFile: "config.yaml",
+		},
+		{
+			name:       "existing cfg file",
+			path:       existingFile,
+			targetDir:  filepath.ToSlash(existingDir),
 			targetFile: "myconfig.yaml",
 		},
 		{
@@ -209,4 +270,11 @@ ssl:
 			assert.Equalf(t, tc.want, s, "CreateYAML(%v)", tc.kvs)
 		})
 	}
+}
+
+func userHostName() string {
+	u := MustValue(user.Current())
+	host := MustValue(os.Hostname())
+	return fmt.Sprintf("%s@%s", u.Username, host)
+
 }

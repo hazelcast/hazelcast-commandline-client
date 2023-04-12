@@ -22,21 +22,21 @@ import (
 )
 
 const (
-	JetUploadJobMetaDataCodecRequestMessageType  = int32(0xFE1000)
-	JetUploadJobMetaDataCodecResponseMessageType = int32(0xFE1001)
+	JetUploadJobMetaDataCodecRequestMessageType  = int32(0xFE1100)
+	JetUploadJobMetaDataCodecResponseMessageType = int32(0xFE1101)
 
-	JetUploadJobMetaDataCodecRequestSessionIdOffset  = proto.PartitionIDOffset + proto.IntSizeInBytes
-	JetUploadJobMetaDataCodecRequestInitialFrameSize = JetUploadJobMetaDataCodecRequestSessionIdOffset + proto.UuidSizeInBytes
-
-	JetUploadJobMetaDataResponseResponseOffset = proto.ResponseBackupAcksOffset + proto.ByteSizeInBytes
+	JetUploadJobMetaDataCodecRequestSessionIdOffset   = proto.PartitionIDOffset + proto.IntSizeInBytes
+	JetUploadJobMetaDataCodecRequestJarOnMemberOffset = JetUploadJobMetaDataCodecRequestSessionIdOffset + proto.UuidSizeInBytes
+	JetUploadJobMetaDataCodecRequestInitialFrameSize  = JetUploadJobMetaDataCodecRequestJarOnMemberOffset + proto.BooleanSizeInBytes
 )
 
-func EncodeJetUploadJobMetaDataRequest(sessionId types.UUID, fileName string, sha256Hex string, snapshotName string, jobName string, mainClass string, jobParameters []string) *proto.ClientMessage {
+func EncodeJetUploadJobMetaDataRequest(sessionId types.UUID, jarOnMember bool, fileName string, sha256Hex string, snapshotName string, jobName string, mainClass string, jobParameters []string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
 	initialFrame := proto.NewFrameWith(make([]byte, JetUploadJobMetaDataCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	EncodeUUID(initialFrame.Content, JetUploadJobMetaDataCodecRequestSessionIdOffset, sessionId)
+	EncodeBoolean(initialFrame.Content, JetUploadJobMetaDataCodecRequestJarOnMemberOffset, jarOnMember)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(JetUploadJobMetaDataCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
@@ -49,11 +49,4 @@ func EncodeJetUploadJobMetaDataRequest(sessionId types.UUID, fileName string, sh
 	EncodeListMultiFrameForString(clientMessage, jobParameters)
 
 	return clientMessage
-}
-
-func DecodeJetUploadJobMetaDataResponse(clientMessage *proto.ClientMessage) bool {
-	frameIterator := clientMessage.FrameIterator()
-	initialFrame := frameIterator.Next()
-
-	return DecodeBoolean(initialFrame.Content, JetUploadJobMetaDataResponseResponseOffset)
 }

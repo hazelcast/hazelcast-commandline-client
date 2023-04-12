@@ -8,7 +8,7 @@ import (
 	proto "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/types"
 
-	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec/control"
+	control "github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec/control"
 )
 
 // Encoder for ClientMessage and value
@@ -150,6 +150,14 @@ func EncodeNullableForData(message *proto.ClientMessage, data iserialization.Dat
 		message.AddFrame(proto.NullFrame.Copy())
 	} else {
 		EncodeData(message, data)
+	}
+}
+
+func EncodeNullableForSqlSummary(message *proto.ClientMessage, summary *control.SqlSummary) {
+	if summary == nil {
+		message.AddFrame(proto.NullFrame.Copy())
+	} else {
+		EncodeSqlSummary(message, *summary)
 	}
 }
 

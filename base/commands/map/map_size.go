@@ -8,6 +8,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -19,7 +20,7 @@ type MapSizeCommand struct{}
 func (mc *MapSizeCommand) Init(cc plug.InitContext) error {
 	help := "Return the size of the given Map"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("size [-n MAP]")
+	cc.SetCommandUsage("size [-n map-name]")
 	cc.SetPositionalArgCount(0, 0)
 	return nil
 }
@@ -31,10 +32,9 @@ func (mc *MapSizeCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		return err
 	}
 	m := mv.(*hazelcast.Map)
-	hint := fmt.Sprintf("Getting the size of the map %s", mapName)
-	sv, stop, err := ec.ExecuteBlocking(ctx, hint, func(ctx context.Context) (any, error) {
+	sv, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		sp.SetText(fmt.Sprintf("Getting the size of the map %s", mapName))
 		return m.Size(ctx)
-
 	})
 	if err != nil {
 		return err
