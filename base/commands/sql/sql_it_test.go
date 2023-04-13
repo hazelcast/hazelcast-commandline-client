@@ -128,7 +128,7 @@ func sql_shellCommandTest(t *testing.T) {
 				target := fmt.Sprintf(`$----------------------------------------------------------------------------------------------------$
 $ table_catalog | table_schema | table_name | mapping_external_name | mapping_type | mapping_options $
 $----------------------------------------------------------------------------------------------------$
-$ hazelcast     | public       | test-table | %s      | IMAP         | {"keyFormat":"i $
+$ hazelcast     | public       | test-table | "%s"    | IMAP         | {"keyFormat":"i $
 $----------------------------------------------------------------------------------------------------$`, name)
 				tcx.AssertStdoutDollar(target)
 			})

@@ -30,7 +30,7 @@ func (cm SubmitCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandHelp(help, help)
 	cc.AddStringFlag(flagName, "", "", false, "override the job name")
 	cc.AddStringFlag(flagSnapshot, "", "", false, "set the snapshot name")
-	cc.AddStringFlag(flagMainClass, "", "", false, "set the main class")
+	cc.AddStringFlag(flagClass, "", "", false, "set the main class")
 	cc.SetPositionalArgCount(1, math.MaxInt)
 	return nil
 }
@@ -63,7 +63,7 @@ func submitJar(ctx context.Context, ci *hazelcast.ClientInternal, ec plug.ExecCo
 	args := ec.Args()[1:]
 	jobName := ec.Props().GetString(flagName)
 	snapshot := ec.Props().GetString(flagSnapshot)
-	className := ec.Props().GetString(flagMainClass)
+	className := ec.Props().GetString(flagClass)
 	req := codec.EncodeJetUploadJobMetaDataRequest(sid, false, fn, hash, snapshot, jobName, className, args)
 	mi, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Uploading metadata")

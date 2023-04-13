@@ -12,7 +12,7 @@ const (
 	flagIncludeUserCancelled               = "include-user-cancelled"
 	flagName                               = "name"
 	flagSnapshot                           = "snapshot"
-	flagMainClass                          = "main-class"
+	flagClass                              = "class"
 	statusNotRunning                       = 0
 	statusStarting                         = 1
 	statusRunning                          = 2

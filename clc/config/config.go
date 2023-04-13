@@ -121,8 +121,6 @@ func MakeHzConfig(props plug.ReadOnlyProperties, lg log.Logger) (hazelcast.Confi
 		cfg.Cluster.Security.Credentials.Username = usr
 		cfg.Cluster.Security.Credentials.Password = pass
 	}
-	// register serializers
-	cfg.Serialization.SetIdentifiedDataSerializableFactories(&JetIdentifiedDataSerializableFactory{})
 	return cfg, nil
 }
 

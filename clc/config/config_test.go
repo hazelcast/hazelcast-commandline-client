@@ -11,7 +11,6 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 	hzlogger "github.com/hazelcast/hazelcast-go-client/logger"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -37,10 +36,6 @@ func TestMakeConfiguration_Default(t *testing.T) {
 	target.Cluster.Unisocket = true
 	target.Stats.Enabled = true
 	target.Logger.CustomLogger = lg
-	// setting the serialization to zero value
-	// so it is not taken account when comparing
-	target.Serialization = serialization.Config{}
-	cfg.Serialization = serialization.Config{}
 	require.Equal(t, target, cfg)
 }
 
@@ -72,10 +67,6 @@ func TestMakeConfiguration_Viridian(t *testing.T) {
 	target.Cluster.Network.SSL.SetTLSConfig(&tls.Config{ServerName: "hazelcast.cloud"})
 	target.Stats.Enabled = true
 	target.Logger.CustomLogger = lg
-	// setting the serialization to zero value
-	// so it is not taken account when comparing
-	target.Serialization = serialization.Config{}
-	cfg.Serialization = serialization.Config{}
 	require.Equal(t, target, cfg)
 }
 
