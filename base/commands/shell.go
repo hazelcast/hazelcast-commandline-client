@@ -110,7 +110,7 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 				if err != nil {
 					return err
 				}
-				args[0] = fmt.Sprintf("%s%s", shell.CmdPrefix, args[0])
+				args[0] = shell.CmdPrefix + args[0]
 				return m.Execute(ctx, args...)
 			}
 		}

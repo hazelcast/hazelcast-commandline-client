@@ -105,6 +105,7 @@ func (sh *Shell) Start(ctx context.Context) error {
 			if errors.Is(err, ErrExit) {
 				return nil
 			}
+			I2(fmt.Fprintf(sh.stderr, color.RedString("Error: %s\n", err.Error())))
 		}
 	}
 }

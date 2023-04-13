@@ -123,8 +123,11 @@ func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInt
 	stop()
 	ci = civ.(*hazelcast.ClientInternal)
 	setClientInternal(ci)
-	cn := ci.ClusterService().FailoverService().Current().ClusterName
-	ec.PrintlnUnnecessary(fmt.Sprintf("Connected to cluster: %s", cn))
+	verbose := ec.Props().GetBool(clc.PropertyVerbose)
+	if verbose || ec.Interactive() {
+		cn := ci.ClusterService().FailoverService().Current().ClusterName
+		ec.PrintlnUnnecessary(fmt.Sprintf("Connected to cluster: %s", cn))
+	}
 	return ci, nil
 }
 
