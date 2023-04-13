@@ -28,7 +28,7 @@ func (cm TerminateCmd) Init(cc plug.InitContext) error {
 }
 
 func (cm TerminateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
-	// just preloadig the client
+	// just preloading the client
 	_, err := ec.ClientInternal(ctx)
 	if err != nil {
 		return err

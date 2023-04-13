@@ -52,7 +52,7 @@ func terminateJob(ctx context.Context, ec plug.ExecContext, jobID int64, termina
 		return err
 	}
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("%s: %s", text, jobID))
+		sp.SetText(fmt.Sprintf("%s: %s", text, idToString(jobID)))
 		req := codec.EncodeJetTerminateJobRequest(jobID, terminateMode, types.UUID{})
 		if _, err := ci.InvokeOnRandomTarget(ctx, req, nil); err != nil {
 			return nil, err
@@ -123,7 +123,7 @@ func newJobNameToIDMap(ctx context.Context, ec plug.ExecContext) (jobNameToIDMap
 	}
 	stop()
 	m := makeJobNameToIDMap(jl.([]control.JobAndSqlSummary))
-	return jobNameToIDMap(m), nil
+	return m, nil
 }
 
 func (m jobNameToIDMap) Get(idOrName string) (int64, bool) {
