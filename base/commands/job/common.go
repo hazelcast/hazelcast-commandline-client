@@ -16,6 +16,8 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec/control"
 )
 
+var errInvalidJobID = errors.New("invalid job ID")
+
 func idToString(id int64) string {
 	buf := []byte("0000-0000-0000-0000")
 	hex := []byte(strconv.FormatInt(id, 16))
@@ -80,4 +82,56 @@ func getJobList(ctx context.Context, ci *hazelcast.ClientInternal) ([]control.Jo
 	}
 	ls := codec.DecodeJetGetJobAndSqlSummaryListResponse(resp)
 	return ls, nil
+}
+
+func makeJobNameToIDMap(jobList []control.JobAndSqlSummary) map[string]int64 {
+	m := make(map[string]int64, len(jobList))
+	for _, j := range jobList {
+		if j.Status == statusFailed || j.Status == statusCompleted {
+			continue
+		}
+		m[j.NameOrId] = j.JobId
+	}
+	return m
+}
+
+type jobNameToIDMap map[string]int64
+
+func newJobNameToIDMap(ctx context.Context, ec plug.ExecContext) (jobNameToIDMap, error) {
+	hasJobName := false
+	for _, arg := range ec.Args() {
+		if _, err := stringToID(arg); err != nil {
+			hasJobName = true
+			break
+		}
+	}
+	if !hasJobName {
+		// relies on m.Get returning the numeric jobID
+		// if s is a UUID
+		return jobNameToIDMap{}, nil
+	}
+	ci, err := ec.ClientInternal(ctx)
+	if err != nil {
+		return nil, err
+	}
+	jl, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		sp.SetText("Getting job list")
+		return getJobList(ctx, ci)
+	})
+	if err != nil {
+		return nil, err
+	}
+	stop()
+	m := makeJobNameToIDMap(jl.([]control.JobAndSqlSummary))
+	return jobNameToIDMap(m), nil
+}
+
+func (m jobNameToIDMap) Get(idOrName string) (int64, bool) {
+	id, err := stringToID(idOrName)
+	// note that comparing err to nil
+	if err == nil {
+		return id, true
+	}
+	v, ok := m[idOrName]
+	return v, ok
 }

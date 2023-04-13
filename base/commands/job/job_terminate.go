@@ -8,7 +8,6 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec/control"
 )
 
 type TerminateCmd struct {
@@ -29,7 +28,8 @@ func (cm TerminateCmd) Init(cc plug.InitContext) error {
 }
 
 func (cm TerminateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
-	ci, err := ec.ClientInternal(ctx)
+	// just preloadig the client
+	_, err := ec.ClientInternal(ctx)
 	if err != nil {
 		return err
 	}
@@ -38,24 +38,15 @@ func (cm TerminateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 		tm = cm.terminateModeForce
 	}
 	var allErrs []error
-	var jobs map[string]int64
-	var ok bool
+	jm, err := newJobNameToIDMap(ctx, ec)
+	if err != nil {
+		return err
+	}
 	for _, arg := range ec.Args() {
-		jid, err := stringToID(arg)
-		if err != nil {
-			// this may be a job name
-			if jobs == nil {
-				jl, err := getJobList(ctx, ci)
-				if err != nil {
-					allErrs = append(allErrs, err)
-					continue
-				}
-				jobs = jobsToMap(jl)
-			}
-			jid, ok = jobs[arg]
-			if !ok {
-				allErrs = append(allErrs, fmt.Errorf("invalid job ID: %s", arg))
-			}
+		jid, ok := jm.Get(arg)
+		if !ok {
+			allErrs = append(allErrs, errInvalidJobID)
+			continue
 		}
 		if err := terminateJob(ctx, ec, jid, tm, cm.msg); err != nil {
 			allErrs = append(allErrs, fmt.Errorf("%s: %w", arg, err))
@@ -70,14 +61,6 @@ func (cm TerminateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 		return nil
 	}
 	return makeErrorsString(allErrs)
-}
-
-func jobsToMap(jobs []control.JobAndSqlSummary) map[string]int64 {
-	m := make(map[string]int64, len(jobs))
-	for _, j := range jobs {
-		m[j.NameOrId] = j.JobId
-	}
-	return m
 }
 
 func init() {

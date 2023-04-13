@@ -129,21 +129,21 @@ func msToOffsetDateTimeColumn(ms int64, name string) output.Column {
 
 func statusToString(status int32) string {
 	switch status {
-	case 0:
+	case statusNotRunning:
 		return "NOT_RUNNING"
-	case 1:
+	case statusStarting:
 		return "STARTING"
-	case 2:
+	case statusRunning:
 		return "RUNNING"
-	case 3:
+	case statusSuspended:
 		return "SUSPENDED"
-	case 4:
+	case statusSuspendedExportingSnapshot:
 		return "SUSPENDED_EXPORTING_SNAPSHOT"
-	case 5:
+	case statusCompleting:
 		return "COMPLETING"
-	case 6:
+	case statusFailed:
 		return "FAILED"
-	case 7:
+	case statusCompleted:
 		return "COMPLETED"
 	}
 	return "UNKNOWN"
