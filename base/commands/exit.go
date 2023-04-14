@@ -26,19 +26,21 @@ func (ex ExitCommand) Init(cc plug.InitContext) error {
 
 func (ex ExitCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	args := ec.Args()
-	if len(args) > 0 {
+	if len(args) == 0 {
+		return errors.WrappedErrorWithCode{
+			Code: 0,
+			Err:  errors.ErrExitWithCode,
+		}
+	} else {
 		code, err := strconv.Atoi(args[0])
 		if err != nil || code < 0 || code > 255 {
-			return fmt.Errorf("Exit code should range between 0 and 255.")
+			return fmt.Errorf("Usage: %sexit [0 < CODE < 255] [flags]", shell.CmdPrefix)
 		}
-		fmt.Println("returning with code:", code)
 		return errors.WrappedErrorWithCode{
 			Code: code,
 			Err:  errors.ErrExitWithCode,
 		}
 	}
-	return fmt.Errorf("Usage: %sexit [STATUS CODE] [flags]", shell.CmdPrefix)
-
 }
 
 func init() {

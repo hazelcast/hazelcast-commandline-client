@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	goerrors "errors"
 	"fmt"
 	"os"
 
@@ -37,18 +36,17 @@ func main() {
 	}
 	err = m.Execute(context.Background(), args...)
 	code := -1
-	if goerrors.Unwrap(err) == errors.ErrExitWithCode {
-		code = err.(*errors.WrappedErrorWithCode).GetCode()
-	} else if err != nil {
-		// print the error only if it wasn't printed before
-		if _, ok := err.(errors.WrappedError); !ok {
+	if err != nil {
+		if _, ok := err.(errors.WrappedErrorWithCode); ok {
+			code = err.(errors.WrappedErrorWithCode).GetCode()
+		} else if _, ok := err.(errors.WrappedError); !ok {
+			// print the error only if it wasn't printed before
 			fmt.Println("Error:", err)
 		}
 	}
 	// ignoring the error here
 	_ = m.Exit()
 	if code != -1 {
-		fmt.Println("exiting with code...")
 		os.Exit(code)
 	} else if err != nil {
 		os.Exit(1)

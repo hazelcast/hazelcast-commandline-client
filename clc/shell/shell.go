@@ -16,6 +16,7 @@ import (
 	ny "github.com/nyaosorg/go-readline-ny"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	puberrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 )
 
@@ -104,6 +105,8 @@ func (sh *Shell) Start(ctx context.Context) error {
 		if err != nil {
 			if errors.Is(err, ErrExit) {
 				return nil
+			} else if errors.Is(err, puberrors.ErrExitWithCode) {
+				return err
 			}
 		}
 	}

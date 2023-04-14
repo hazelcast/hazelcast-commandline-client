@@ -45,9 +45,8 @@ func (cm *ShellCommand) Init(cc plug.InitContext) error {
 	cc.SetPositionalArgCount(0, 0)
 	cc.Hide()
 	cm.shortcuts = map[string]struct{}{
-		`\dm`:   {},
-		`\dm+`:  {},
-		`\exit`: {},
+		`\dm`:  {},
+		`\dm+`: {},
 	}
 	return nil
 }
@@ -197,8 +196,6 @@ func convertStatement(stmt string) (string, error) {
 				`, mn), nil
 			}
 			return "", fmt.Errorf("Usage: %sdm+ [mapping]", shell.CmdPrefix)
-		case "exit":
-			return "", shell.ErrExit
 		}
 		return "", fmt.Errorf("Unknown shell command: %s", stmt)
 	}
@@ -211,7 +208,7 @@ Shortcut Commands:
 	\dm           List mappings
 	\dm  MAPPING  Display information about a mapping
 	\dm+ MAPPING  Describe a mapping
-	\exit         Exit the shell
+	\exit CODE    Exit the shell with code
 	\help         Display help for CLC commands
 `
 }

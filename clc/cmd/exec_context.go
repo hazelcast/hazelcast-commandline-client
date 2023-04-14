@@ -230,6 +230,9 @@ func (ec *ExecContext) WrapResult(f func() error) error {
 	took := time.Since(t)
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	if err != nil {
+		if _, ok := err.(cmderrors.WrappedErrorWithCode); ok {
+			return err
+		}
 		if errors.Is(err, context.Canceled) {
 			I2(fmt.Fprintln(ec.stderr, "User cancelled"))
 		} else {
