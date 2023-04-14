@@ -7,6 +7,7 @@
 * xref:configuration.adoc[Configure]
 ** xref:connect-to-viridian.adoc[Connect to Viridian]
 ** xref:connect-to-platform.adoc[Connect to Platform]
+** xref:config-wizard.adoc[CLC Configuration Wizard ]
 * xref:upgrade-clc.adoc[Upgrade]
 
 .Reference
@@ -22,4 +23,4 @@
 * xref:keyboard-shortcuts.adoc[]
 
 .Release Notes
-* xref:release-notes.adoc[5.2.0-BETA-3]
+* xref:release-notes.adoc[5.2.0]

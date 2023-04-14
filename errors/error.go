@@ -18,36 +18,41 @@ package errors
 
 import (
 	"errors"
-	"fmt"
 )
 
 var (
-	ErrUserCancelled = errors.New("cancelled")
-	ErrNotDecoded    = errors.New("not decoded")
-	ErrNotAvailable  = errors.New("not available")
-	ErrExitWithCode  = fmt.Errorf("exit with status")
+	ErrUserCancelled   = errors.New("cancelled")
+	ErrNotDecoded      = errors.New("not decoded")
+	ErrNotAvailable    = errors.New("not available")
+	ErrNoClusterConfig = errors.New("no configuration was specified")
+	ErrExitWithCode    = errors.New("exit with code")
 )
 
-type ExitWithStatusError struct {
+type WrappedError struct {
+	Err error
+}
+
+func (w WrappedError) Unwrap() error {
+	return w.Err
+}
+
+func (w WrappedError) Error() string {
+	return w.Err.Error()
+}
+
+type WrappedErrorWithCode struct {
 	Code int
 	Err  error
 }
 
-func (ve *ExitWithStatusError) Error() string {
-	return fmt.Sprintf("value error: %s", ve.Err)
+func (we WrappedErrorWithCode) Error() string {
+	return we.Err.Error()
 }
 
-func (ve *ExitWithStatusError) Unwrap() error {
-	return ve.Err
+func (we WrappedErrorWithCode) Unwrap() error {
+	return we.Err
 }
 
-func (ve *ExitWithStatusError) GetCode() int {
-	return ve.Code
-}
-
-func NewExitError(code int) *ExitWithStatusError {
-	return &ExitWithStatusError{
-		Code: code,
-		Err:  ErrExitWithCode,
-	}
+func (we WrappedErrorWithCode) GetCode() int {
+	return we.Code
 }

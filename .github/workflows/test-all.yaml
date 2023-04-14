@@ -3,10 +3,14 @@ name: "Test Hazelcast CLC"
 on: ["push", "pull_request"]
 jobs:
   test:
-    runs-on: "ubuntu-latest"
+    strategy:
+      matrix:
+        os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+    runs-on: ${{ matrix.os }}
     env:
       GOPATH: "${{ github.workspace }}"
-      HZ_VERSION: "5.2.1"
+      HZ_VERSION: "5.2.2"
+      DEFAULT_TIMEOUT: "30s"
     defaults:
       run:
         shell: "bash"
@@ -17,15 +21,34 @@ jobs:
         with:
           path: "$HOME/hazelcast-commandline-client"
 
-      - name: "Install Dependencies"
-        run: |
-          sudo apt-get update &&\
-          sudo apt-get install -y openjdk-8-jdk-headless maven
+      - name: "Setup JRE"
+        uses: actions/setup-java@v2
+        with:
+          distribution: "zulu"
+          java-version: "8"
 
-      - name: "Start Hazelcast Remote Controller"
+      - name: "Download RCD (Linux/MacOS)"
+        if: "!contains(matrix.os, 'windows')"
         run: |
-          bash ./rc.sh start
-          sleep 2
+          wget https://rcd-download.s3.us-east-2.amazonaws.com/rcd-${{ matrix.os }}
+
+      - name: "Start Hazelcast Remote Controller (Linux/MacOS)"
+        if: "!contains(matrix.os, 'windows')"
+        run: |
+          chmod +x rcd-${{ matrix.os }} 
+          ./rcd-${{ matrix.os }} -version $HZ_VERSION -dir $HOME &
+          sleep 10
+
+      - name: "Download RCD (Windows)"
+        if: "contains(matrix.os, 'windows')"
+        run: |
+          curl -O https://rcd-download.s3.us-east-2.amazonaws.com/rcd-${{ matrix.os }}.exe
+
+      - name: "Start Hazelcast Remote Controller (Windows)"
+        if: "contains(matrix.os, 'windows')"
+        run: |
+          .\\rcd-${{ matrix.os }}.exe -version 5.2.2 &
+          sleep 10
 
       - name: "Setup Go"
         uses: "actions/setup-go@v3"

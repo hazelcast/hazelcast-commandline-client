@@ -13,14 +13,6 @@ type CompactField struct {
 	Value any
 }
 
-func readNullableCompactField[T any](field string, f func(string) *T) any {
-	v := f(field)
-	if v == nil {
-		return nil
-	}
-	return *v
-}
-
 var compactReaders = map[serialization.FieldKind]compactFieldReader{
 	serialization.FieldKindBoolean: func(r serialization.CompactReader, field string) any {
 		return r.ReadBoolean(field)
@@ -67,37 +59,37 @@ var compactReaders = map[serialization.FieldKind]compactFieldReader{
 		return r.ReadArrayOfFloat64(field)
 	},
 	serialization.FieldKindString: func(r serialization.CompactReader, field string) any {
-		return readNullableCompactField(field, r.ReadString)
+		return r.ReadString(field)
 	},
 	serialization.FieldKindArrayOfString: func(r serialization.CompactReader, field string) any {
 		return r.ReadArrayOfString(field)
 	},
 	serialization.FieldKindDecimal: func(r serialization.CompactReader, field string) any {
-		return readNullableCompactField(field, r.ReadDecimal)
+		return r.ReadDecimal(field)
 	},
 	serialization.FieldKindArrayOfDecimal: func(r serialization.CompactReader, field string) any {
 		return r.ReadArrayOfDecimal(field)
 	},
 	serialization.FieldKindTime: func(r serialization.CompactReader, field string) any {
-		return readNullableCompactField(field, r.ReadTime)
+		return r.ReadTime(field)
 	},
 	serialization.FieldKindArrayOfTime: func(r serialization.CompactReader, field string) any {
 		return r.ReadArrayOfTime(field)
 	},
 	serialization.FieldKindDate: func(r serialization.CompactReader, field string) any {
-		return readNullableCompactField(field, r.ReadDate)
+		return r.ReadDate(field)
 	},
 	serialization.FieldKindArrayOfDate: func(r serialization.CompactReader, field string) any {
 		return r.ReadArrayOfDate(field)
 	},
 	serialization.FieldKindTimestamp: func(r serialization.CompactReader, field string) any {
-		return readNullableCompactField(field, r.ReadTimestamp)
+		return r.ReadTimestamp(field)
 	},
 	serialization.FieldKindArrayOfTimestamp: func(r serialization.CompactReader, field string) any {
 		return r.ReadArrayOfTimestamp(field)
 	},
 	serialization.FieldKindTimestampWithTimezone: func(r serialization.CompactReader, field string) any {
-		return readNullableCompactField(field, r.ReadTimestampWithTimezone)
+		return r.ReadTimestampWithTimezone(field)
 	},
 	serialization.FieldKindArrayOfTimestampWithTimezone: func(r serialization.CompactReader, field string) any {
 		return r.ReadArrayOfTimestampWithTimezone(field)
@@ -111,43 +103,43 @@ var compactReaders = map[serialization.FieldKind]compactFieldReader{
 	// FieldKindPortable        : Not decoded due to spec.
 	// FieldKindArrayOfPortable : Not decoded due to spec.
 	serialization.FieldKindNullableBoolean: func(r serialization.CompactReader, field string) any {
-		return readNullableCompactField(field, r.ReadNullableBoolean)
+		return r.ReadNullableBoolean(field)
 	},
 	serialization.FieldKindArrayOfNullableBoolean: func(r serialization.CompactReader, field string) any {
 		return r.ReadArrayOfNullableBoolean(field)
 	},
 	serialization.FieldKindNullableInt8: func(r serialization.CompactReader, field string) any {
-		return readNullableCompactField(field, r.ReadNullableInt8)
+		return r.ReadNullableInt8(field)
 	},
 	serialization.FieldKindArrayOfNullableInt8: func(r serialization.CompactReader, field string) any {
 		return r.ReadArrayOfNullableInt8(field)
 	},
 	serialization.FieldKindNullableInt16: func(r serialization.CompactReader, field string) any {
-		return readNullableCompactField(field, r.ReadNullableInt16)
+		return r.ReadNullableInt16(field)
 	},
 	serialization.FieldKindArrayOfNullableInt16: func(r serialization.CompactReader, field string) any {
 		return r.ReadArrayOfNullableInt16(field)
 	},
 	serialization.FieldKindNullableInt32: func(r serialization.CompactReader, field string) any {
-		return readNullableCompactField(field, r.ReadNullableInt32)
+		return r.ReadNullableInt32(field)
 	},
 	serialization.FieldKindArrayOfNullableInt32: func(r serialization.CompactReader, field string) any {
 		return r.ReadArrayOfNullableInt32(field)
 	},
 	serialization.FieldKindNullableInt64: func(r serialization.CompactReader, field string) any {
-		return readNullableCompactField(field, r.ReadNullableInt64)
+		return r.ReadNullableInt64(field)
 	},
 	serialization.FieldKindArrayOfNullableInt64: func(r serialization.CompactReader, field string) any {
 		return r.ReadArrayOfNullableInt64(field)
 	},
 	serialization.FieldKindNullableFloat32: func(r serialization.CompactReader, field string) any {
-		return readNullableCompactField(field, r.ReadNullableFloat32)
+		return r.ReadNullableFloat32(field)
 	},
 	serialization.FieldKindArrayOfNullableFloat32: func(r serialization.CompactReader, field string) any {
 		return r.ReadArrayOfNullableFloat32(field)
 	},
 	serialization.FieldKindNullableFloat64: func(r serialization.CompactReader, field string) any {
-		return readNullableCompactField(field, r.ReadNullableFloat64)
+		return r.ReadNullableFloat64(field)
 	},
 	serialization.FieldKindArrayOfNullableFloat64: func(r serialization.CompactReader, field string) any {
 		return r.ReadArrayOfNullableFloat64(field)

@@ -19,6 +19,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc/logger"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/it/skip"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
@@ -69,7 +70,8 @@ func TestMakeConfiguration_Viridian(t *testing.T) {
 	require.Equal(t, target, cfg)
 }
 
-func TestConfigDirFile(t *testing.T) {
+func TestConfigDirFile_Unix(t *testing.T) {
+	skip.If(t, "os = windows")
 	// ignoring the error
 	_ = os.Setenv(paths.EnvCLCHome, "/home/clc")
 	defer os.Unsetenv(paths.EnvCLCHome)
@@ -100,6 +102,63 @@ func TestConfigDirFile(t *testing.T) {
 			name:       "existing cfg file",
 			path:       existingFile,
 			targetDir:  existingDir,
+			targetFile: "myconfig.yaml",
+		},
+		{
+			name:       "nonexistent dir",
+			path:       "/home/me/foo",
+			targetDir:  "/home/me/foo",
+			targetFile: "config.yaml",
+		},
+		{
+			name:       "nonexistent file",
+			path:       "/home/me/foo/some.file",
+			targetDir:  "/home/me/foo",
+			targetFile: "some.file",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			d, f, err := config.DirAndFile(tc.path)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.targetDir, d)
+			assert.Equal(t, tc.targetFile, f)
+		})
+	}
+}
+
+func TestConfigDirFile_Windows(t *testing.T) {
+	skip.IfNot(t, "os = windows")
+	// ignoring the error
+	_ = os.Setenv(paths.EnvCLCHome, "C:\\Users\\clc")
+	defer os.Unsetenv(paths.EnvCLCHome)
+	td := MustValue(os.MkdirTemp("", "clctest-*"))
+	existingDir := filepath.Join(td, "mydir")
+	Must(os.MkdirAll(existingDir, 0700))
+	existingFile := filepath.Join(td, "mydir", "myconfig.yaml")
+	Must(os.WriteFile(existingFile, []byte{}, 0700))
+	testCases := []struct {
+		name       string
+		path       string
+		targetDir  string
+		targetFile string
+	}{
+		{
+			name:       "default config",
+			path:       "default-cfg",
+			targetDir:  "C:\\Users\\clc\\configs\\default-cfg",
+			targetFile: "config.yaml",
+		},
+		{
+			name:       "existing cfg dir",
+			path:       existingDir,
+			targetDir:  filepath.ToSlash(existingDir),
+			targetFile: "config.yaml",
+		},
+		{
+			name:       "existing cfg file",
+			path:       existingFile,
+			targetDir:  filepath.ToSlash(existingDir),
 			targetFile: "myconfig.yaml",
 		},
 		{

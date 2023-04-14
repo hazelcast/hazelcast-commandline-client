@@ -12,6 +12,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/sql"
 
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -44,6 +45,7 @@ func UpdateOutput(ctx context.Context, ec plug.ExecContext, res sql.Result, verb
 				errCh <- err
 				break
 			}
+			// TODO: move the following 2 lines out of the loop --YT
 			cols := row.Metadata().Columns()
 			orow := make(output.Row, len(cols))
 			for i, col := range cols {
@@ -90,7 +92,7 @@ func ExecSQL(ctx context.Context, ec plug.ExecContext, query string) (sql.Result
 		// Once that is removed from the Go client, the code below may be removed.
 		err = AdaptSQLError(err)
 		if !as {
-			if serr.Suggestion != "" {
+			if serr.Suggestion != "" && !ec.Interactive() {
 				return nil, stop, fmt.Errorf("%w\n\nUse --%s to automatically apply the suggestion", err, propertyUseMappingSuggestion)
 			}
 			return nil, stop, err
@@ -113,7 +115,8 @@ func ExecSQL(ctx context.Context, ec plug.ExecContext, query string) (sql.Result
 }
 
 func execSQL(ctx context.Context, ec plug.ExecContext, ci *hazelcast.ClientInternal, query string) (sql.Result, context.CancelFunc, error) {
-	rv, stop, err := ec.ExecuteBlocking(ctx, "Executing SQL", func(ctx context.Context) (any, error) {
+	rv, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		sp.SetText("Executing SQL")
 		for {
 			if ctx.Err() != nil {
 				return nil, ctx.Err()

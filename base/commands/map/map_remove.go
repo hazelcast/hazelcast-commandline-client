@@ -8,6 +8,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -21,7 +22,7 @@ func (mc *MapRemoveCommand) Init(cc plug.InitContext) error {
 	addKeyTypeFlag(cc)
 	help := "Remove a value from the given Map"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("remove [-n MAP] KEY [flags]")
+	cc.SetCommandUsage("remove [-n map-name] [key] [flags]")
 	cc.SetPositionalArgCount(1, 1)
 	return nil
 }
@@ -38,8 +39,8 @@ func (mc *MapRemoveCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 		return err
 	}
 	req := codec.EncodeMapRemoveRequest(mapName, keyData, 0)
-	hint := fmt.Sprintf("Removing from map %s", mapName)
-	rv, stop, err := ec.ExecuteBlocking(ctx, hint, func(ctx context.Context) (any, error) {
+	rv, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		sp.SetText(fmt.Sprintf("Removing from map %s", mapName))
 		return ci.InvokeOnKey(ctx, req, keyData, nil)
 	})
 	if err != nil {
@@ -51,7 +52,7 @@ func (mc *MapRemoveCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 	value, err := ci.DecodeData(raw)
 	if err != nil {
 		ec.Logger().Info("The value for %s was not decoded, due to error: %s", keyStr, err.Error())
-		value = serialization.NondecodedType(serialization.TypeToString(vt))
+		value = serialization.NondecodedType(serialization.TypeToLabel(vt))
 	}
 	row := output.Row{
 		output.Column{
@@ -64,7 +65,7 @@ func (mc *MapRemoveCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 		row = append(row, output.Column{
 			Name:  output.NameValueType,
 			Type:  serialization.TypeString,
-			Value: serialization.TypeToString(vt),
+			Value: serialization.TypeToLabel(vt),
 		})
 	}
 	return ec.AddOutputRows(ctx, row)

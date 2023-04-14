@@ -2,31 +2,40 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"os/signal"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 	"github.com/theckman/yacspin"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/shell"
-	"github.com/hazelcast/hazelcast-commandline-client/errors"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
+	cmderrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/terminal"
 )
 
-type ClientFn func(ctx context.Context) (*hazelcast.ClientInternal, error)
+const (
+	cancelMsg     = " (Ctrl+C to cancel) "
+	maxErrorLines = 5
+)
+
+type ClientFn func(ctx context.Context, cfg hazelcast.Config) (*hazelcast.ClientInternal, error)
 
 type ExecContext struct {
 	lg            log.Logger
 	stdout        io.Writer
 	stderr        io.Writer
+	stdin         io.Reader
 	args          []string
 	props         *plug.Properties
 	clientFn      ClientFn
@@ -35,18 +44,24 @@ type ExecContext struct {
 	main          *Main
 	spinnerWait   time.Duration
 	printer       plug.Printer
+	cp            config.Provider
 }
 
-func NewExecContext(lg log.Logger, stdout, stderr io.Writer, props *plug.Properties, clientFn ClientFn, interactive bool) (*ExecContext, error) {
+func NewExecContext(lg log.Logger, sio clc.IO, props *plug.Properties, clientFn ClientFn, interactive bool) (*ExecContext, error) {
 	return &ExecContext{
 		lg:            lg,
-		stdout:        stdout,
-		stderr:        stderr,
+		stdout:        sio.Stdout,
+		stderr:        sio.Stderr,
+		stdin:         sio.Stdin,
 		props:         props,
 		clientFn:      clientFn,
 		isInteractive: interactive,
 		spinnerWait:   1 * time.Second,
 	}, nil
+}
+
+func (ec *ExecContext) SetConfigProvider(cfgProvider config.Provider) {
+	ec.cp = cfgProvider
 }
 
 func (ec *ExecContext) SetArgs(args []string) {
@@ -77,6 +92,10 @@ func (ec *ExecContext) Stderr() io.Writer {
 	return ec.stderr
 }
 
+func (ec *ExecContext) Stdin() io.Reader {
+	return ec.stdin
+}
+
 func (ec *ExecContext) Args() []string {
 	return ec.args
 }
@@ -86,21 +105,27 @@ func (ec *ExecContext) Props() plug.ReadOnlyProperties {
 }
 
 func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInternal, error) {
-	if clientInternal != nil {
-		return clientInternal, nil
+	ci := getClientInternal()
+	if ci != nil {
+		return ci, nil
 	}
-	ci, stop, err := ec.ExecuteBlocking(ctx, "Connecting to the cluster", func(ctx context.Context) (any, error) {
-		return ec.clientFn(ctx)
+	cfg, err := ec.cp.ClientConfig(ctx, ec)
+	if err != nil {
+		return nil, err
+	}
+	civ, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		sp.SetText("Connecting to the cluster")
+		return ec.clientFn(ctx, cfg)
 	})
 	if err != nil {
 		return nil, err
 	}
 	stop()
-	clientInternal = ci.(*hazelcast.ClientInternal)
-	if ec.Interactive() && !shell.IsPipe() {
-		I2(fmt.Fprintf(ec.stdout, "Connected to cluster: %s\n\n", clientInternal.ClusterService().FailoverService().Current().ClusterName))
-	}
-	return clientInternal, nil
+	ci = civ.(*hazelcast.ClientInternal)
+	setClientInternal(ci)
+	cn := ci.ClusterService().FailoverService().Current().ClusterName
+	ec.PrintlnUnnecessary(fmt.Sprintf("Connected to cluster: %s\n\n", cn))
+	return ci, nil
 }
 
 func (ec *ExecContext) Interactive() bool {
@@ -143,12 +168,31 @@ func (ec *ExecContext) SetInteractive(value bool) {
 // It displays a spinner in the interactive mode after a timeout.
 // The returned stop function must be called at least once to prevent leaks if there's no error.
 // Calling returned stop more than once has no effect.
-func (ec *ExecContext) ExecuteBlocking(ctx context.Context, hint string, f func(context.Context) (any, error)) (value any, stop context.CancelFunc, err error) {
+func (ec *ExecContext) ExecuteBlocking(ctx context.Context, f func(context.Context, clc.Spinner) (any, error)) (value any, stop context.CancelFunc, err error) {
 	// setup the Ctrl+C handler
 	ctx, stop = signal.NotifyContext(ctx, os.Interrupt, os.Kill)
 	ch := make(chan any)
+	var sp clc.Spinner
+	if !ec.Quiet() {
+		sc := yacspin.Config{
+			Frequency:    100 * time.Millisecond,
+			CharSet:      yacspin.CharSets[59],
+			Prefix:       cancelMsg,
+			SpinnerAtEnd: true,
+			Writer:       ec.stderr,
+		}
+		// ignoring the error here
+		s, err := yacspin.New(sc)
+		if err == nil {
+			// note that checking whether there's no error
+			defer s.Stop()
+		}
+		sp = &simpleSpinner{sp: s}
+	} else {
+		sp = nopSpinner{}
+	}
 	go func() {
-		v, err := f(ctx)
+		v, err := f(ctx, sp)
 		if err != nil {
 			ch <- err
 			return
@@ -157,28 +201,12 @@ func (ec *ExecContext) ExecuteBlocking(ctx context.Context, hint string, f func(
 	}()
 	timer := time.NewTimer(ec.spinnerWait)
 	defer timer.Stop()
-	var s *yacspin.Spinner
-	if ec.isInteractive && !shell.IsPipe() {
-		if hint != "" {
-			hint = fmt.Sprintf("%s ", hint)
-		}
-		hint = fmt.Sprintf("%s(Ctrl+C to cancel) ", hint)
-		sc := yacspin.Config{
-			Frequency:    100 * time.Millisecond,
-			CharSet:      yacspin.CharSets[59],
-			Prefix:       hint,
-			SpinnerAtEnd: true,
-		}
-		// ignoring the error here
-		s, _ = yacspin.New(sc)
-		defer s.Stop()
-	}
 	for {
 		select {
 		case <-ctx.Done():
 			// calling stop but also returning no-op just in case...
 			stop()
-			return nil, func() {}, errors.ErrUserCancelled
+			return nil, func() {}, cmderrors.ErrUserCancelled
 		case v := <-ch:
 			if err, ok := v.(error); ok {
 				// if an error came out from the channel, return that as the error
@@ -188,12 +216,59 @@ func (ec *ExecContext) ExecuteBlocking(ctx context.Context, hint string, f func(
 			}
 			return v, stop, nil
 		case <-timer.C:
-			if ec.isInteractive && s != nil {
+			if !ec.Quiet() {
 				// ignoring the error here
-				_ = s.Start()
+				_ = sp.Start()
 			}
 		}
 	}
+}
+
+func (ec *ExecContext) WrapResult(f func() error) error {
+	t := time.Now()
+	err := f()
+	took := time.Since(t)
+	verbose := ec.Props().GetBool(clc.PropertyVerbose)
+	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			I2(fmt.Fprintln(ec.stderr, "User cancelled"))
+		} else {
+			var msg string
+			errStr := err.Error()
+			if verbose {
+				msg = fmt.Sprintf("\nError in %d ms: %s", took.Milliseconds(), errStr)
+			} else {
+				msg = fmt.Sprintf("\nError: %s", errStr)
+			}
+			if ec.Interactive() {
+				I2(fmt.Fprintln(ec.stderr, color.RedString(msg)))
+			} else {
+				I2(fmt.Fprintln(ec.stderr, msg))
+			}
+		}
+		return cmderrors.WrappedError{Err: err}
+	}
+	if ec.Quiet() {
+		return nil
+	}
+	var msg string
+	if verbose || ec.Interactive() {
+		msg = fmt.Sprintf("OK (%d ms)", took.Milliseconds())
+	} else {
+		msg = "OK"
+	}
+	I2(fmt.Fprintln(ec.stderr, msg))
+	return nil
+}
+
+func (ec *ExecContext) PrintlnUnnecessary(text string) {
+	if !ec.Quiet() {
+		I2(fmt.Fprintln(ec.Stdout(), text))
+	}
+}
+
+func (ec *ExecContext) Quiet() bool {
+	return ec.Props().GetBool(clc.PropertyQuiet) || terminal.IsPipe(ec.Stdin()) || terminal.IsPipe(ec.Stdout())
 }
 
 func (ec *ExecContext) ensurePrinter() error {
@@ -207,4 +282,26 @@ func (ec *ExecContext) ensurePrinter() error {
 	}
 	ec.printer = pr
 	return nil
+}
+
+type simpleSpinner struct {
+	sp *yacspin.Spinner
+}
+
+func (s *simpleSpinner) Start() error {
+	return s.sp.Start()
+}
+
+func (s *simpleSpinner) SetText(text string) {
+	s.sp.Prefix(text + cancelMsg)
+}
+
+type nopSpinner struct{}
+
+func (n nopSpinner) Start() error {
+	return nil
+}
+
+func (n nopSpinner) SetText(text string) {
+	// pass
 }

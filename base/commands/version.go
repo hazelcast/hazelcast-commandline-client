@@ -62,6 +62,8 @@ func (vc VersionCommand) row(key, value string) output.Row {
 	}
 }
 
+func (VersionCommand) Unwrappable() {}
+
 func init() {
 	Must(plug.Registry.RegisterCommand("version", &VersionCommand{}))
 }

@@ -3,8 +3,8 @@ package output
 import (
 	"context"
 	"encoding/csv"
-	"fmt"
 	"io"
+	"strings"
 )
 
 type CSVResult struct {
@@ -54,7 +54,7 @@ func makeCSVHeaderFromRow(row Row) []string {
 func makeCSVRecordFromRow(row Row) []string {
 	r := make([]string, len(row))
 	for i, c := range row {
-		r[i] = fmt.Sprint(convertColumn(c))
+		r[i] = strings.ReplaceAll(c.Text(), "\n", " ")
 	}
 	return r
 }

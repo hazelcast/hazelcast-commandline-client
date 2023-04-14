@@ -8,6 +8,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
@@ -23,7 +24,7 @@ func (mc *MapSetCommand) Init(cc plug.InitContext) error {
 	cc.SetPositionalArgCount(2, 2)
 	help := "Set a value in the given Map"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("set [-n MAP] KEY VALUE [flags]")
+	cc.SetCommandUsage("set [-n MAP] [key] [value] [flags]")
 	return nil
 }
 
@@ -51,8 +52,8 @@ func (mc *MapSetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	} else {
 		req = codec.EncodeMapSetRequest(mapName, kd, vd, 0, ttl)
 	}
-	hint := fmt.Sprintf("Setting value into map %s", mapName)
-	_, stop, err := ec.ExecuteBlocking(ctx, hint, func(ctx context.Context) (any, error) {
+	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		sp.SetText(fmt.Sprintf("Setting value into map %s", mapName))
 		return ci.InvokeOnKey(ctx, req, kd, nil)
 	})
 	if err != nil {

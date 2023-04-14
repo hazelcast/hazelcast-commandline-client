@@ -9,7 +9,7 @@ import (
 	"strconv"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/shell"
-	puberrors "github.com/hazelcast/hazelcast-commandline-client/errors"
+	"github.com/hazelcast/hazelcast-commandline-client/errors"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
@@ -29,9 +29,13 @@ func (ex ExitCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if len(args) > 0 {
 		code, err := strconv.Atoi(args[0])
 		if err != nil || code < 0 || code > 255 {
-			return fmt.Errorf("Given status code should range between 0 and 255.")
+			return fmt.Errorf("Exit code should range between 0 and 255.")
 		}
-		return puberrors.NewExitError(code)
+		fmt.Println("returning with code:", code)
+		return errors.WrappedErrorWithCode{
+			Code: code,
+			Err:  errors.ErrExitWithCode,
+		}
 	}
 	return fmt.Errorf("Usage: %sexit [STATUS CODE] [flags]", shell.CmdPrefix)
 

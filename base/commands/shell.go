@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/google/shlex"
@@ -19,6 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/terminal"
 )
 
 const banner = `Hazelcast CLC %s (c) 2023 Hazelcast Inc.
@@ -63,9 +65,10 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 		return fmt.Errorf("cloning Main: %w", err)
 	}
 	var cfgText, logText string
-	if !shell.IsPipe() {
+	if !terminal.IsPipe(ec.Stdin()) {
 		cfgPath := ec.Props().GetString(clc.PropertyConfig)
 		if cfgPath != "" {
+			cfgPath = paths.ResolveConfigPath(cfgPath)
 			cfgText = fmt.Sprintf("Configuration : %s\n", cfgPath)
 		}
 		logPath := ec.Props().GetString(clc.PropertyLogPath)
@@ -96,7 +99,7 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 		}
 		return line, end
 	}
-	textFn := func(ctx context.Context, text string) error {
+	textFn := func(ctx context.Context, stdout io.Writer, text string) error {
 		if strings.HasPrefix(strings.TrimSpace(text), shell.CmdPrefix) {
 			parts := strings.Fields(text)
 			if _, ok := cm.shortcuts[parts[0]]; !ok {
@@ -108,34 +111,46 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 					return err
 				}
 				args[0] = fmt.Sprintf("%s%s", shell.CmdPrefix, args[0])
-				return m.Execute(args)
+				return m.Execute(ctx, args...)
 			}
 		}
 		text, err := convertStatement(text)
 		if err != nil {
 			if errors.Is(err, errHelp) {
-				I2(fmt.Fprintln(ec.Stdout(), interactiveHelp()))
+				I2(fmt.Fprintln(stdout, interactiveHelp()))
 				return nil
 			}
 			return err
 		}
-		res, stop, err := sql.ExecSQL(ctx, ec, text)
-		if err != nil {
-			return err
+		f := func() error {
+			res, stop, err := sql.ExecSQL(ctx, ec, text)
+			if err != nil {
+				return err
+			}
+			defer stop()
+			// TODO: update sql.UpdateOutput to use stdout
+			if err := sql.UpdateOutput(ctx, ec, res, verbose); err != nil {
+				return err
+			}
+			return nil
 		}
-		defer stop()
-		if err := sql.UpdateOutput(ctx, ec, res, verbose); err != nil {
-			return err
+		if w, ok := ec.(plug.ResultWrapper); ok {
+			return w.WrapResult(f)
 		}
-		return nil
+		return f()
 	}
 	path := paths.Join(paths.Home(), "shell.history")
-	if shell.IsPipe() {
-		sh := shell.NewOneshot(endLineFn, textFn)
+	if terminal.IsPipe(ec.Stdin()) {
+		sio := clc.IO{
+			Stdin:  ec.Stdin(),
+			Stderr: ec.Stderr(),
+			Stdout: ec.Stdout(),
+		}
+		sh := shell.NewOneshotShell(endLineFn, sio, textFn)
 		sh.SetCommentPrefix("--")
-		return sh.Run(context.Background())
+		return sh.Run(ctx)
 	}
-	sh, err := shell.New("CLC> ", " ... ", path, ec.Stdout(), ec.Stderr(), endLineFn, textFn)
+	sh, err := shell.New("CLC> ", " ... ", path, ec.Stdout(), ec.Stderr(), ec.Stdin(), endLineFn, textFn)
 	if err != nil {
 		return err
 	}
@@ -143,6 +158,8 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 	defer sh.Close()
 	return sh.Start(ctx)
 }
+
+func (ShellCommand) Unwrappable() {}
 
 func convertStatement(stmt string) (string, error) {
 	stmt = strings.TrimSpace(stmt)

@@ -3,9 +3,12 @@ package base
 import (
 	"context"
 	"io"
+	"os"
+	"strconv"
 
 	"github.com/nathan-fiscaletti/consolesize-go"
 
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
@@ -50,8 +53,11 @@ func (pr JSONPrinter) PrintRows(ctx context.Context, w io.Writer, rows []output.
 type TablePrinter struct{}
 
 func (pr *TablePrinter) PrintStream(ctx context.Context, w io.Writer, rp output.RowProducer) error {
-	maxCols, _ := consolesize.GetConsoleSize()
-	tr := output.NewTableResult(nil, rp, maxCols)
+	mc, _ := consolesize.GetConsoleSize()
+	if mc <= 0 {
+		mc = maxCols()
+	}
+	tr := output.NewTableResult(nil, rp, mc)
 	_, err := tr.Serialize(ctx, w)
 	return err
 }
@@ -77,6 +83,16 @@ func (pr *CSVPrinter) PrintRows(ctx context.Context, w io.Writer, rows []output.
 	cr := output.NewCSVResult(rp)
 	_, err := cr.Serialize(ctx, w)
 	return err
+}
+
+func maxCols() int {
+	if s, ok := os.LookupEnv(clc.EnvMaxCols); ok {
+		v, err := strconv.Atoi(s)
+		if err == nil {
+			return v
+		}
+	}
+	return 1_000
 }
 
 func init() {

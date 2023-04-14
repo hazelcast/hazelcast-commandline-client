@@ -37,8 +37,13 @@ a|Set the log level, one of:
 |Set the log path. Use `stderr` to log to the screen (stderr).
 |`$CLC_HOME/logs/YYYY-MM-DD.log` where `YYYY-MM-DD` is today's date.
 
+|`--quiet`, `-q`
+|Prevent displaying unnecessary output.
+|false
+
+
 |--verbose
-|Enable verbose output
-|N/A
+|Enable output with more information.
+|false
 
 |===

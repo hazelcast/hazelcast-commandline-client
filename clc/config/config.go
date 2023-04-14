@@ -14,8 +14,8 @@ import (
 	"golang.org/x/exp/slices"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/logger"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/str"
 )
@@ -41,7 +41,7 @@ func Create(path string, opts clc.KeyValues[string, string]) (dir, cfgPath strin
 	return dir, cfgPath, nil
 }
 
-func MakeHzConfig(props plug.ReadOnlyProperties, lg *logger.Logger) (hazelcast.Config, error) {
+func MakeHzConfig(props plug.ReadOnlyProperties, lg log.Logger) (hazelcast.Config, error) {
 	// if the path is not absolute, assume it is in the parent directory of the configuration
 	wd := filepath.Dir(props.GetString(clc.PropertyConfig))
 	var cfg hazelcast.Config
@@ -63,9 +63,6 @@ func MakeHzConfig(props plug.ReadOnlyProperties, lg *logger.Logger) (hazelcast.C
 	var viridianEnabled bool
 	if vt := props.GetString(clc.PropertyClusterDiscoveryToken); vt != "" {
 		lg.Debugf("Viridan token: XXX")
-		if err := os.Setenv(clc.EnvHzCloudCoordinatorBaseURL, clc.ViridianCoordinatorURL); err != nil {
-			return cfg, fmt.Errorf("setting coordinator URL")
-		}
 		cfg.Cluster.Cloud.Enabled = true
 		cfg.Cluster.Cloud.Token = vt
 		viridianEnabled = true
@@ -267,4 +264,10 @@ func copyOpt(level int, sb *strings.Builder, opt clc.KeyValue[string, string]) {
 	sb.WriteString(": ")
 	sb.WriteString(opt.Value)
 	sb.WriteString("\n")
+}
+
+func FindAll(cd string) ([]string, error) {
+	return paths.FindAll(cd, func(base string, e os.DirEntry) (ok bool) {
+		return e.IsDir() && paths.Exists(paths.Join(base, e.Name(), "config.yaml"))
+	})
 }

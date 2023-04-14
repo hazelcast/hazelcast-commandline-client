@@ -2,7 +2,6 @@ package output
 
 import (
 	"context"
-	"fmt"
 	"io"
 
 	"github.com/fatih/color"
@@ -60,7 +59,7 @@ func (tr *TableResult) Serialize(ctx context.Context, w io.Writer) (int, error) 
 		}
 		row := make([]string, len(vr))
 		for i, v := range vr {
-			row[i] = fmt.Sprint(convertColumn(v))
+			row[i] = v.Text()
 		}
 		t.WriteRow(row)
 	}

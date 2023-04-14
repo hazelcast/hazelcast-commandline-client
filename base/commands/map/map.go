@@ -31,7 +31,7 @@ func (mc *MapCommand) Init(cc plug.InitContext) error {
 		cc.AddStringFlag(clc.PropertySchemaDir, "", paths.Schemas(), false, "set the schema directory")
 	}
 	cc.SetTopLevel(true)
-	cc.SetCommandUsage("map COMMAND [flags]")
+	cc.SetCommandUsage("map [command] [flags]")
 	help := "Map operations"
 	cc.SetCommandHelp(help, help)
 	return nil
@@ -50,8 +50,8 @@ func (mc *MapCommand) Augment(ec plug.ExecContext, props *plug.Properties) error
 		if err != nil {
 			return nil, err
 		}
-		hint := fmt.Sprintf("Getting map %s", mapName)
-		mv, stop, err := ec.ExecuteBlocking(ctx, hint, func(ctx context.Context) (any, error) {
+		mv, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+			sp.SetText(fmt.Sprintf("Getting map %s", mapName))
 			m, err := ci.Client().GetMap(ctx, mapName)
 			if err != nil {
 				return nil, err
