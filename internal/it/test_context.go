@@ -104,7 +104,7 @@ func (tcx TestContext) WriteStdinString(s string) {
 	tcx.WriteStdin([]byte(s))
 }
 
-func (tcx TestContext) WriteStdinF(format string, args ...any) {
+func (tcx TestContext) WriteStdinf(format string, args ...any) {
 	tcx.WriteStdin([]byte(fmt.Sprintf(format, args...)))
 }
 
