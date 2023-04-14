@@ -54,6 +54,9 @@ func sprintStringer(v any) string {
 
 func ptrStringer[T any]() Stringer {
 	return func(v any) string {
+		if v == nil {
+			return ValueNil
+		}
 		if vv, ok := v.(T); ok {
 			return fmt.Sprint(vv)
 		}
@@ -63,7 +66,7 @@ func ptrStringer[T any]() Stringer {
 			}
 			return fmt.Sprint(*vv)
 		}
-		return fmt.Sprintf("?%v?", reflect.TypeOf(v))
+		return fmt.Sprintf("?ptr:%v?", reflect.TypeOf(v))
 	}
 }
 
@@ -80,7 +83,7 @@ func arrayStringer[T any](v any) string {
 		if vv, ok := v.([]*T); ok {
 			return arrayPtrStringer[T](vv)
 		}
-		return fmt.Sprintf("?%v?", reflect.TypeOf(v))
+		return fmt.Sprintf("?array:%v?", reflect.TypeOf(v))
 	}
 	var sb strings.Builder
 	sb.WriteString("[")
@@ -132,7 +135,7 @@ func javaClassStringer(v any) string {
 	return fmt.Sprintf("Java Class: %v", v)
 }
 
-func timeStringer(v any) string {
+func dateTimeStringer(v any) string {
 	switch vv := v.(type) {
 	case time.Time:
 		return vv.Format(time.RFC3339)
@@ -213,16 +216,16 @@ func init() {
 		// TypeSimpleImmutableEntry
 
 		TypeJavaClass:          javaClassStringer,
-		TypeJavaDate:           timeStringer,
+		TypeJavaDate:           dateTimeStringer,
 		TypeJavaBigInteger:     sprintStringer,
 		TypeJavaDecimal:        ptrStringer[types.Decimal](), // +
 		TypeJavaArray:          arrayAnySerializer,           // +
 		TypeJavaArrayList:      arrayAnySerializer,           // +
 		TypeJavaLinkedList:     arrayAnySerializer,           // +
-		TypeJavaLocalDate:      timeStringer,
-		TypeJavaLocalTime:      timeStringer,
-		TypeJavaLocalDateTime:  timeStringer,
-		TypeJavaOffsetDateTime: timeStringer, // +
+		TypeJavaLocalDate:      dateTimeStringer,
+		TypeJavaLocalTime:      dateTimeStringer,
+		TypeJavaLocalDateTime:  dateTimeStringer,
+		TypeJavaOffsetDateTime: dateTimeStringer, // +
 
 		TypeJSONSerialization: sprintStringer,
 

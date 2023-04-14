@@ -90,7 +90,7 @@ func TestTimeStringer(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			v := timeStringer(tc.in)
+			v := dateTimeStringer(tc.in)
 			require.Equal(t, tc.target, v)
 		})
 	}
