@@ -1,0 +1,2 @@
+__key,fieldStr,fieldNum,fieldBool,fieldNull
+10,string,38.27,true,-
