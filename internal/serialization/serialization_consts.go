@@ -21,6 +21,13 @@ import (
 )
 
 const (
+	ValueUnknown    = "UNKNOWN"
+	ValueNotDecoded = "?"
+	ValueSkip       = ">"
+	ValueNil        = "-"
+)
+
+const (
 	TypeNil                                  = 0
 	TypePortable                             = -1
 	TypeDataSerializable                     = -2
@@ -104,13 +111,14 @@ const (
 	TypeCompactArray            = -505
 	TypeInt8                    = -506
 	TypeInt8Array               = -507
+	TypePortableArray           = -508
 
 	// TypeUnknown is the type of values with unknown types
 	// does not exist in the reference implementation
 	TypeUnknown = -2022
 	// TypeSkip indicates that this value should be ignored
 	TypeSkip = -2023
-	// TypeNotDecoded indicates that this value was not decodec
+	// TypeNotDecoded indicates that this value was not decoded
 	TypeNotDecoded = -2024
 )
 
@@ -193,7 +201,8 @@ var typeToLabel = map[int32]string{
 	TypeJavaLocalDateTimeArray:               "LOCALDATETIME_ARRAY",
 	TypeJavaOffsetDateTimeArray:              "OFFSETDATETIME_ARRAY",
 	TypeCompactArray:                         "COMPACT_ARRAY",
-	TypeUnknown:                              "UNKNOWN",
+	TypePortableArray:                        "PORTABLE_ARRAY",
+	TypeUnknown:                              ValueUnknown,
 	TypeSkip:                                 ValueSkip,
 	TypeNotDecoded:                           ValueNotDecoded,
 }

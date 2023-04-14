@@ -20,6 +20,7 @@ func TestPortableSerialization(t *testing.T) {
 		name string
 		f    func(t *testing.T)
 	}{
+		{name: "PortableArrays", f: portableArraysTest},
 		{name: "PortableOthers", f: portableOthersTest},
 		{name: "PortablePrimitives", f: portablePrimitivesTest},
 	}
@@ -29,144 +30,185 @@ func TestPortableSerialization(t *testing.T) {
 }
 
 func portablePrimitivesTest(t *testing.T) {
-	portableTester(t, func(tcx it.TestContext) {
-		value := &primitives2{
-			valueByte: 8,
-			valueBool: true,
-		}
-		ctx := context.Background()
-		it.WithMap(tcx, func(m *hazelcast.Map) {
-			check.Must(m.Set(ctx, "value", value))
-			testCases := []struct {
-				format string
-				target string
-			}{
-				{
-					format: "delimited",
-					target: "valueBool:true; valueByte:8\n",
-				},
-				{
-					format: "json",
-					target: `{"this":{"valueBool":true,"valueByte":8}}` + "\n",
-				},
-				{
-					format: "csv",
-					target: "this\n" + "valueBool:true; valueByte:8\n",
-				},
-				{
-					format: "table",
-					target: "testdata/portable_primitives_table.txt",
-				},
-			}
-			for _, tc := range testCases {
-				tc := tc
-				t.Run(tc.format, func(t *testing.T) {
-					tcx.T = t
-					ctx := context.Background()
-					tcx.WithReset(func() {
-						check.Must(tcx.CLC().Execute(ctx, "map", "-n", m.Name(), "get", "value", "-q", "-f", tc.format))
-						if tc.format == "table" {
-							tcx.AssertStdoutDollarWithPath(tc.target)
-						} else {
-							tcx.AssertStdoutEquals(tc.target)
-						}
-					})
-				})
-			}
+	testCases := []struct {
+		format string
+		target string
+	}{
+		{
+			format: "delimited",
+			target: "{valueBool:true; valueByte:8}\n",
+		},
+		{
+			format: "json",
+			target: `{"this":{"valueBool":true,"valueByte":8}}` + "\n",
+		},
+		{
+			format: "csv",
+			target: "this\n" + "{valueBool:true; valueByte:8}\n",
+		},
+		{
+			format: "table",
+			target: "testdata/portable_primitives_table.txt",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.format, func(t *testing.T) {
+			portableTestValue(t, tc.format, tc.target, &primitives2{
+				valueByte: 8,
+				valueBool: true,
+			})
 		})
-	})
+	}
 }
 
 func portableOthersTest(t *testing.T) {
-	portableTester(t, func(tcx it.TestContext) {
-		dtz := time.Date(2023, 4, 5, 12, 33, 45, 46, time.UTC)
-		dc := types.NewDecimal(big.NewInt(1234), 56)
-		value := &others2{
+	testCases := []struct {
+		format string
+		target string
+	}{
+		{
+			format: "delimited",
+			target: "{decimalNotNull:1.234E-53; decimalNull:-; offsetDateTimeNotNull:2023-04-05T12:33:45Z; offsetDateTimeNull:-; portable:{value:foo}; valueString:foobar}\n",
+		},
+		{
+			format: "json",
+			target: `{"this":{"decimalNotNull":"1.234E-53","decimalNull":null,"offsetDateTimeNotNull":"2023-04-05T12:33:45Z","offsetDateTimeNull":null,"portable":{"value":"foo"},"valueString":"foobar"}}` + "\n",
+		},
+		{
+			format: "csv",
+			target: "this\n" + `{decimalNotNull:1.234E-53; decimalNull:-; offsetDateTimeNotNull:2023-04-05T12:33:45Z; offsetDateTimeNull:-; portable:{value:foo}; valueString:foobar}` + "\n",
+		},
+		{
+			format: "table",
+			target: "testdata/portable_others_table.txt",
+		},
+	}
+	dtz := time.Date(2023, 4, 5, 12, 33, 45, 46, time.UTC)
+	dc := types.NewDecimal(big.NewInt(1234), 56)
+	for _, tc := range testCases {
+		portableTestValue(t, tc.format, tc.target, &portableOthers{
 			valueString:           "foobar",
 			offsetDateTimeNotNull: (*types.OffsetDateTime)(&dtz),
 			decimalNotNull:        &dc,
-		}
-		ctx := context.Background()
-		it.WithMap(tcx, func(m *hazelcast.Map) {
-			check.Must(m.Set(ctx, "value", value))
-			testCases := []struct {
-				format string
-				target string
-			}{
-				{
-					format: "delimited",
-					target: "decimalNotNull:1.234E-53; decimalNull:-; offsetDateTimeNotNull:2023-04-05T12:33:45Z; offsetDateTimeNull:-; valueString:foobar\n",
-				},
-				{
-					format: "json",
-					target: `{"this":{"decimalNotNull":"1.234E-53","decimalNull":null,"offsetDateTimeNotNull":"2023-04-05T12:33:45Z","offsetDateTimeNull":null,"valueString":"foobar"}}` + "\n",
-				},
-				{
-					format: "csv",
-					target: "this\n" + `decimalNotNull:1.234E-53; decimalNull:-; offsetDateTimeNotNull:2023-04-05T12:33:45Z; offsetDateTimeNull:-; valueString:foobar` + "\n",
-				},
-				{
-					format: "table",
-					target: "testdata/portable_others_table.txt",
-				},
-			}
-			for _, tc := range testCases {
-				tc := tc
-				t.Run(tc.format, func(t *testing.T) {
-					tcx.T = t
-					tcx.WithReset(func() {
-						ctx := context.Background()
-						check.Must(tcx.CLC().Execute(ctx, "map", "-n", m.Name(), "get", "value", "-q", "-f", tc.format))
-						if tc.format == "table" {
-							tcx.AssertStdoutDollarWithPath(tc.target)
-						} else {
-							tcx.AssertStdoutEquals(tc.target)
-						}
-					})
+			portable:              &simplePortable{value: "foo"},
+		})
+	}
+}
+
+func portableArraysTest(t *testing.T) {
+	testCases := []struct {
+		format string
+		target string
+	}{
+		{
+			format: "delimited",
+			target: "{portableArray:[{value:value1}, {value:value2}]; stringArray:[str1, str2]}\n",
+		},
+		{
+			format: "json",
+			target: `{"this":{"portableArray":[{"value":"value1"},{"value":"value2"}],"stringArray":["str1","str2"]}}` + "\n",
+		},
+		{
+			format: "csv",
+			target: "this\n" + `"{portableArray:[{value:value1}, {value:value2}]; stringArray:[str1, str2]}"` + "\n",
+		},
+		{
+			format: "table",
+			target: "testdata/portable_arrays_table.txt",
+		},
+	}
+	for _, tc := range testCases {
+		portableTestValue(t, tc.format, tc.target, &portableArrays{
+			stringArray: []string{"str1", "str2"},
+			portableArray: []serialization.Portable{
+				&simplePortable{value: "value1"},
+				&simplePortable{value: "value2"},
+			},
+		})
+	}
+}
+
+func portableTestValue(t *testing.T, format, target string, value any) {
+	ctx := context.Background()
+	t.Run(format, func(t *testing.T) {
+		portableTester(t, func(tcx it.TestContext) {
+			it.WithMap(tcx, func(m *hazelcast.Map) {
+				check.Must(m.Set(ctx, "value", value))
+				tcx.WithReset(func() {
+					ctx := context.Background()
+					check.Must(tcx.CLC().Execute(ctx, "map", "-n", m.Name(), "get", "value", "-q", "-f", format))
+					if format == "table" {
+						tcx.AssertStdoutDollarWithPath(target)
+					} else {
+						tcx.AssertStdoutEquals(target)
+					}
 				})
-			}
+			})
 		})
 	})
 }
 
 const (
-	factoryID         = 1000
-	othersClassID     = 10
-	primitivesClassID = 11
+	factoryID             = 1000
+	othersClassID         = 10
+	primitivesClassID     = 11
+	simplePortableClassID = 12
+	portableArraysClassID = 13
 )
 
-// duplicated the others to be able to serialize in portable
+type simplePortable struct {
+	value string
+}
 
-type others2 struct {
+func (p *simplePortable) FactoryID() int32 {
+	return factoryID
+}
+
+func (p *simplePortable) ClassID() int32 {
+	return simplePortableClassID
+}
+
+func (p *simplePortable) WritePortable(w serialization.PortableWriter) {
+	w.WriteString("value", p.value)
+}
+
+func (p *simplePortable) ReadPortable(r serialization.PortableReader) {
+	p.value = r.ReadString("value")
+}
+
+type portableOthers struct {
 	valueString           string
 	offsetDateTimeNull    *types.OffsetDateTime
 	offsetDateTimeNotNull *types.OffsetDateTime
 	decimalNull           *types.Decimal
 	decimalNotNull        *types.Decimal
+	portable              serialization.Portable
 }
 
-func (o *others2) FactoryID() int32 {
+func (o *portableOthers) FactoryID() int32 {
 	return factoryID
 }
 
-func (o *others2) ClassID() int32 {
+func (o *portableOthers) ClassID() int32 {
 	return othersClassID
 }
 
-func (o *others2) WritePortable(w serialization.PortableWriter) {
+func (o *portableOthers) WritePortable(w serialization.PortableWriter) {
 	w.WriteString("valueString", o.valueString)
 	w.WriteTimestampWithTimezone("offsetDateTimeNull", o.offsetDateTimeNull)
 	w.WriteTimestampWithTimezone("offsetDateTimeNotNull", o.offsetDateTimeNotNull)
 	w.WriteDecimal("decimalNull", o.decimalNull)
 	w.WriteDecimal("decimalNotNull", o.decimalNotNull)
+	w.WritePortable("portable", o.portable)
 }
 
-func (o *others2) ReadPortable(r serialization.PortableReader) {
+func (o *portableOthers) ReadPortable(r serialization.PortableReader) {
 	o.valueString = r.ReadString("valueString")
 	o.offsetDateTimeNull = r.ReadTimestampWithTimezone("offsetDateTimeNull")
 	o.offsetDateTimeNotNull = r.ReadTimestampWithTimezone("offsetDateTimeNotNull")
 	o.decimalNull = r.ReadDecimal("decimalNull")
 	o.decimalNotNull = r.ReadDecimal("decimalNotNull")
+	o.portable = r.ReadPortable("portable")
 }
 
 type primitives2 struct {
@@ -192,14 +234,41 @@ func (p *primitives2) ReadPortable(r serialization.PortableReader) {
 	p.valueBool = r.ReadBool("valueBool")
 }
 
+type portableArrays struct {
+	stringArray   []string
+	portableArray []serialization.Portable
+}
+
+func (p *portableArrays) FactoryID() int32 {
+	return factoryID
+}
+
+func (p *portableArrays) ClassID() int32 {
+	return portableArraysClassID
+}
+
+func (p *portableArrays) WritePortable(w serialization.PortableWriter) {
+	w.WriteStringArray("stringArray", p.stringArray)
+	w.WritePortableArray("portableArray", p.portableArray)
+}
+
+func (p *portableArrays) ReadPortable(r serialization.PortableReader) {
+	p.stringArray = r.ReadStringArray("stringArray")
+	p.portableArray = r.ReadPortableArray("portableArray")
+}
+
 type portableFactory struct{}
 
 func (p portableFactory) Create(cid int32) serialization.Portable {
 	switch cid {
 	case othersClassID:
-		return &others2{}
+		return &portableOthers{}
 	case primitivesClassID:
 		return &primitives2{}
+	case simplePortableClassID:
+		return &simplePortable{}
+	case portableArraysClassID:
+		return &portableArrays{}
 	}
 	panic(fmt.Sprintf("unknown cid: %d", cid))
 }

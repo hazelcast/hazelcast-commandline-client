@@ -27,13 +27,13 @@ func MakeTableFromRows(rows []Row) (table.Row, []Row) {
 			// break out only complex types
 			if col.Type == serialization.TypeJSONSerialization || col.Type == serialization.TypePortable || col.Type == serialization.TypeCompact {
 				// XXX: what if col.Value == ValueNotDecoded ?
-				if col.Value != ValueNotDecoded {
+				if col.Value != serialization.ValueNotDecoded {
 					nc, err := col.RowExtensions()
 					if err != nil {
 						hd.Add(col.Name)
 						newRow[col.Name] = Column{
 							Type:  serialization.TypeString,
-							Value: ValueNotDecoded,
+							Value: serialization.ValueNotDecoded,
 						}
 						continue
 					}
@@ -45,8 +45,9 @@ func MakeTableFromRows(rows []Row) (table.Row, []Row) {
 						}
 						hd.Add(sc.Name)
 						newRow[sc.Name] = sc
-						newRow[col.Name] = Column{Type: serialization.TypeSkip}
 					}
+					hd.Add(col.Name)
+					newRow[col.Name] = Column{Type: serialization.TypeSkip}
 					continue
 				}
 			}

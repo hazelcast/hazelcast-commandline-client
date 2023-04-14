@@ -22,6 +22,7 @@ func TestCompactSerialization(t *testing.T) {
 		name string
 		f    func(t *testing.T)
 	}{
+		{name: "CompactOtherArrays", f: compactOtherArraysTest},
 		{name: "CompactOthers", f: compactOthersTest},
 		{name: "CompactPrimitiveArrays", f: compactPrimitiveArraysTest},
 		{name: "CompactPrimitives", f: compactPrimitivesTest},
@@ -47,6 +48,8 @@ func compactPrimitiveArraysTest(t *testing.T) {
 			fullInt16Array:        []int16{math.MinInt16, 0, math.MaxInt16},
 			fullInt32Array:        []int32{math.MinInt32, 0, math.MaxInt32},
 			fullInt64Array:        []int64{math.MinInt64, 0, math.MinInt64},
+			fullFloat32Array:      []float32{math.SmallestNonzeroFloat32, 0, math.MaxFloat32},
+			fullFloat64Array:      []float64{math.SmallestNonzeroFloat64, 0, math.MaxFloat64},
 			fullNullableBoolArray: []*bool{&b, nil},
 			fullNullableInt8Array: []*int8{nil, &i8},
 		}
@@ -59,20 +62,20 @@ func compactPrimitiveArraysTest(t *testing.T) {
 			}{
 				{
 					format: "delimited",
-					target: "emptyBoolArray:[]; emptyFloat32Array:[]; emptyFloat64Array:[]; emptyInt16Array:[]; emptyInt32Array:[]; emptyInt64Array:[]; emptyInt8Array:[]; emptyNullableBoolArray:[]; emptyNullableInt8Array:[]; fullBoolArray:[true, false]; fullFloat32Array:[]; fullFloat64Array:[]; fullInt16Array:[-32768, 0, 32767]; fullInt32Array:[-2147483648, 0, 2147483647]; fullInt64Array:[-9223372036854775808, 0, -9223372036854775808]; fullInt8Array:[-128, 0, 127]; fullNullableBoolArray:[true, -]; fullNullableInt8Array:[-, 8]\n",
+					target: "{emptyBoolArray:[]; emptyFloat32Array:[]; emptyFloat64Array:[]; emptyInt16Array:[]; emptyInt32Array:[]; emptyInt64Array:[]; emptyInt8Array:[]; emptyNullableBoolArray:[]; emptyNullableInt8Array:[]; fullBoolArray:[true, false]; fullFloat32Array:[1e-45, 0, 3.4028235e+38]; fullFloat64Array:[5e-324, 0, 1.7976931348623157e+308]; fullInt16Array:[-32768, 0, 32767]; fullInt32Array:[-2147483648, 0, 2147483647]; fullInt64Array:[-9223372036854775808, 0, -9223372036854775808]; fullInt8Array:[-128, 0, 127]; fullNullableBoolArray:[true, -]; fullNullableInt8Array:[-, 8]}\n",
 				},
 				{
 					format: "json",
-					target: `{"this":{"emptyBoolArray":null,"emptyFloat32Array":null,"emptyFloat64Array":null,"emptyInt16Array":null,"emptyInt32Array":null,"emptyInt64Array":null,"emptyInt8Array":null,"emptyNullableBoolArray":null,"emptyNullableInt8Array":null,"fullBoolArray":[true,false],"fullFloat32Array":null,"fullFloat64Array":null,"fullInt16Array":[-32768,0,32767],"fullInt32Array":[-2147483648,0,2147483647],"fullInt64Array":[-9223372036854775808,0,-9223372036854775808],"fullInt8Array":[-128,0,127],"fullNullableBoolArray":[true,null],"fullNullableInt8Array":[null,8]}}` + "\n",
+					target: `{"this":{"emptyBoolArray":[],"emptyFloat32Array":[],"emptyFloat64Array":[],"emptyInt16Array":[],"emptyInt32Array":[],"emptyInt64Array":[],"emptyInt8Array":[],"emptyNullableBoolArray":[],"emptyNullableInt8Array":[],"fullBoolArray":[true,false],"fullFloat32Array":[1e-45,0,3.4028235e+38],"fullFloat64Array":[5e-324,0,1.7976931348623157e+308],"fullInt16Array":[-32768,0,32767],"fullInt32Array":[-2147483648,0,2147483647],"fullInt64Array":[-9223372036854775808,0,-9223372036854775808],"fullInt8Array":[-128,0,127],"fullNullableBoolArray":[true,null],"fullNullableInt8Array":[null,8]}}` + "\n",
 				},
 				{
 					format: "csv",
-					target: "this\n" + `"emptyBoolArray:[]; emptyFloat32Array:[]; emptyFloat64Array:[]; emptyInt16Array:[]; emptyInt32Array:[]; emptyInt64Array:[]; emptyInt8Array:[]; emptyNullableBoolArray:[]; emptyNullableInt8Array:[]; fullBoolArray:[true, false]; fullFloat32Array:[]; fullFloat64Array:[]; fullInt16Array:[-32768, 0, 32767]; fullInt32Array:[-2147483648, 0, 2147483647]; fullInt64Array:[-9223372036854775808, 0, -9223372036854775808]; fullInt8Array:[-128, 0, 127]; fullNullableBoolArray:[true, -]; fullNullableInt8Array:[-, 8]"` + "\n",
+					target: "this\n" + `"{emptyBoolArray:[]; emptyFloat32Array:[]; emptyFloat64Array:[]; emptyInt16Array:[]; emptyInt32Array:[]; emptyInt64Array:[]; emptyInt8Array:[]; emptyNullableBoolArray:[]; emptyNullableInt8Array:[]; fullBoolArray:[true, false]; fullFloat32Array:[1e-45, 0, 3.4028235e+38]; fullFloat64Array:[5e-324, 0, 1.7976931348623157e+308]; fullInt16Array:[-32768, 0, 32767]; fullInt32Array:[-2147483648, 0, 2147483647]; fullInt64Array:[-9223372036854775808, 0, -9223372036854775808]; fullInt8Array:[-128, 0, 127]; fullNullableBoolArray:[true, -]; fullNullableInt8Array:[-, 8]}"` + "\n",
 				},
 
 				{
 					format: "table",
-					target: "testdata/primitive_arrays_table.txt",
+					target: "testdata/compact_primitive_arrays_table.txt",
 				},
 			}
 			for _, tc := range testCases {
@@ -120,7 +123,7 @@ func compactPrimitivesTest(t *testing.T) {
 			}{
 				{
 					format: "delimited",
-					target: "nullBoolNotNull:false; nullBoolNull:-; nullInt8NotNull:8; nullInt8Null:-; valueBool:true; valueInt8:8\n",
+					target: "{nullBoolNotNull:false; nullBoolNull:-; nullInt8NotNull:8; nullInt8Null:-; valueBool:true; valueInt8:8}\n",
 				},
 				{
 					format: "json",
@@ -128,7 +131,7 @@ func compactPrimitivesTest(t *testing.T) {
 				},
 				{
 					format: "csv",
-					target: "this\nnullBoolNotNull:false; nullBoolNull:-; nullInt8NotNull:8; nullInt8Null:-; valueBool:true; valueInt8:8\n",
+					target: "this\n{nullBoolNotNull:false; nullBoolNull:-; nullInt8NotNull:8; nullInt8Null:-; valueBool:true; valueInt8:8}\n",
 				},
 				{
 					format: "table",
@@ -180,7 +183,7 @@ func compactOthersTest(t *testing.T) {
 			}{
 				{
 					format: "delimited",
-					target: "decimalNotNull:1.234E-53; decimalNull:-; nullStringNotNull:foobar; nullStringNull:-; offsetDateTimeNotNull:2023-04-05T12:33:45Z; offsetDateTimeNull:-\n",
+					target: "{decimalNotNull:1.234E-53; decimalNull:-; nullStringNotNull:foobar; nullStringNull:-; offsetDateTimeNotNull:2023-04-05T12:33:45Z; offsetDateTimeNull:-}\n",
 				},
 				{
 					format: "json",
@@ -188,7 +191,7 @@ func compactOthersTest(t *testing.T) {
 				},
 				{
 					format: "csv",
-					target: "this\n" + `decimalNotNull:1.234E-53; decimalNull:-; nullStringNotNull:foobar; nullStringNull:-; offsetDateTimeNotNull:2023-04-05T12:33:45Z; offsetDateTimeNull:-` + "\n",
+					target: "this\n" + `{decimalNotNull:1.234E-53; decimalNull:-; nullStringNotNull:foobar; nullStringNull:-; offsetDateTimeNotNull:2023-04-05T12:33:45Z; offsetDateTimeNull:-}` + "\n",
 				},
 				{
 					format: "table",
@@ -213,6 +216,87 @@ func compactOthersTest(t *testing.T) {
 		})
 
 	})
+}
+
+func compactOtherArraysTest(t *testing.T) {
+	dt1 := time.Date(2023, 1, 2, 3, 4, 5, 6, time.UTC)
+	dt2 := time.Date(2022, 2, 3, 4, 5, 6, 7, time.UTC)
+	value := otherArrays{
+		fullTimeArray: []*types.LocalTime{
+			(*types.LocalTime)(&dt1),
+			(*types.LocalTime)(&dt2),
+		},
+		fullDateArray: []*types.LocalDate{
+			(*types.LocalDate)(&dt1),
+			(*types.LocalDate)(&dt2),
+		},
+		fullTimestampTimeArray: []*types.LocalDateTime{
+			(*types.LocalDateTime)(&dt1),
+			(*types.LocalDateTime)(&dt2),
+		},
+		fullTimestampWithTimezoneArray: []*types.OffsetDateTime{
+			(*types.OffsetDateTime)(&dt1),
+			(*types.OffsetDateTime)(&dt2),
+		},
+		fullDecimalArray: []*types.Decimal{
+			ptr(types.NewDecimal(big.NewInt(1234), 67)),
+			ptr(types.NewDecimal(big.NewInt(4567), 89)),
+		},
+		fullCompactArray: []any{
+			simpleObj{value: ptr("obj1")},
+			simpleObj{value: ptr("obj2")},
+		},
+	}
+	testCases := []struct {
+		format string
+		target string
+	}{
+		{
+			format: "delimited",
+			target: `{emptyCompactArray:[]; emptyDateArray:[]; emptyDecimalArray:[]; emptyTimeArray:[]; emptyTimestampArray:[]; emptyTimestampWithTimezoneArray:[]; fullCompactArray:[{value:obj1}, {value:obj2}]; fullDateArray:[2023-01-02, 2022-02-03]; fullDecimalArray:[1.234E-64, 4.567E-86]; fullTimeArray:[03:04:05, 04:05:06]; fullTimestampTimeArray:[2023-01-02 03:04:05, 2022-02-03 04:05:06]; fullTimestampWithTimezoneArray:[2023-01-02T03:04:05Z, 2022-02-03T04:05:06Z]}` + "\n",
+		},
+		{
+			format: "json",
+			target: `{"this":{"emptyCompactArray":[],"emptyDateArray":[],"emptyDecimalArray":[],"emptyTimeArray":[],"emptyTimestampArray":[],"emptyTimestampWithTimezoneArray":[],"fullCompactArray":[{"value":"obj1"},{"value":"obj2"}],"fullDateArray":["2023-01-02","2022-02-03"],"fullDecimalArray":["1.234E-64","4.567E-86"],"fullTimeArray":["03:04:05","04:05:06"],"fullTimestampTimeArray":["2023-01-02 03:04:05","2022-02-03 04:05:06"],"fullTimestampWithTimezoneArray":["2023-01-02T03:04:05Z","2022-02-03T04:05:06Z"]}}` + "\n",
+		},
+		{
+			format: "csv",
+			target: "this\n" + `"{emptyCompactArray:[]; emptyDateArray:[]; emptyDecimalArray:[]; emptyTimeArray:[]; emptyTimestampArray:[]; emptyTimestampWithTimezoneArray:[]; fullCompactArray:[{value:obj1}, {value:obj2}]; fullDateArray:[2023-01-02, 2022-02-03]; fullDecimalArray:[1.234E-64, 4.567E-86]; fullTimeArray:[03:04:05, 04:05:06]; fullTimestampTimeArray:[2023-01-02 03:04:05, 2022-02-03 04:05:06]; fullTimestampWithTimezoneArray:[2023-01-02T03:04:05Z, 2022-02-03T04:05:06Z]}"` + "\n",
+		},
+		{
+			format: "table",
+			target: "testdata/compact_other_arrays_table.txt",
+		},
+	}
+	ctx := context.Background()
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.format, func(t *testing.T) {
+			tcx := it.TestContext{
+				T: t,
+				ConfigCallback: func(tcx it.TestContext) {
+					tcx.ClientConfig.Serialization.Compact.SetSerializers(
+						otherArraysSerializer{},
+						simpleObjSerializer{},
+					)
+				},
+			}
+			tcx.Tester(func(tcx it.TestContext) {
+				it.WithMap(tcx, func(m *hazelcast.Map) {
+					check.Must(m.Set(ctx, "value", value))
+					tcx.WithReset(func() {
+						ctx := context.Background()
+						check.Must(tcx.CLC().Execute(ctx, "map", "-n", m.Name(), "get", "value", "-q", "-f", tc.format))
+						if tc.format == "table" {
+							tcx.AssertStdoutDollarWithPath(tc.target)
+						} else {
+							tcx.AssertStdoutEquals(tc.target)
+						}
+					})
+				})
+			})
+		})
+	}
 }
 
 type primitives struct {
@@ -369,4 +453,91 @@ func (s othersSerializer) Write(w serialization.CompactWriter, v interface{}) {
 	w.WriteTimestampWithTimezone("offsetDateTimeNotNull", vv.offsetDateTimeNotNull)
 	w.WriteDecimal("decimalNull", vv.decimalNull)
 	w.WriteDecimal("decimalNotNull", vv.decimalNotNull)
+}
+
+type simpleObj struct {
+	value *string
+}
+
+type simpleObjSerializer struct{}
+
+func (s simpleObjSerializer) Type() reflect.Type {
+	return reflect.TypeOf(simpleObj{})
+}
+
+func (s simpleObjSerializer) TypeName() string {
+	return "simpleObj"
+}
+
+func (s simpleObjSerializer) Read(r serialization.CompactReader) interface{} {
+	return simpleObj{
+		value: r.ReadString("value"),
+	}
+}
+
+func (s simpleObjSerializer) Write(w serialization.CompactWriter, v interface{}) {
+	vv := v.(simpleObj)
+	w.WriteString("value", vv.value)
+}
+
+type otherArrays struct {
+	emptyTimeArray                  []*types.LocalTime
+	fullTimeArray                   []*types.LocalTime
+	emptyDateArray                  []*types.LocalDate
+	fullDateArray                   []*types.LocalDate
+	emptyTimestampArray             []*types.LocalDateTime
+	fullTimestampTimeArray          []*types.LocalDateTime
+	emptyTimestampWithTimezoneArray []*types.OffsetDateTime
+	fullTimestampWithTimezoneArray  []*types.OffsetDateTime
+	emptyDecimalArray               []*types.Decimal
+	fullDecimalArray                []*types.Decimal
+	emptyCompactArray               []any
+	fullCompactArray                []any
+}
+
+type otherArraysSerializer struct{}
+
+func (s otherArraysSerializer) Type() reflect.Type {
+	return reflect.TypeOf(otherArrays{})
+}
+
+func (s otherArraysSerializer) TypeName() string {
+	return "otherArrays"
+}
+
+func (s otherArraysSerializer) Read(r serialization.CompactReader) interface{} {
+	return otherArrays{
+		emptyTimeArray:                  r.ReadArrayOfTime("emptyTimeArray"),
+		fullTimeArray:                   r.ReadArrayOfTime("fullTimeArray"),
+		emptyDateArray:                  r.ReadArrayOfDate("emptyDateArray"),
+		fullDateArray:                   r.ReadArrayOfDate("fullDateArray"),
+		emptyTimestampArray:             r.ReadArrayOfTimestamp("emptyTimestampArray"),
+		fullTimestampTimeArray:          r.ReadArrayOfTimestamp("fullTimestampTimeArray"),
+		emptyTimestampWithTimezoneArray: r.ReadArrayOfTimestampWithTimezone("emptyTimestampWithTimezoneArray"),
+		fullTimestampWithTimezoneArray:  r.ReadArrayOfTimestampWithTimezone("fullTimestampWithTimezoneArray"),
+		emptyDecimalArray:               r.ReadArrayOfDecimal("emptyDecimalArray"),
+		fullDecimalArray:                r.ReadArrayOfDecimal("fullDecimalArray"),
+		emptyCompactArray:               r.ReadArrayOfCompact("emptyCompactArray"),
+		fullCompactArray:                r.ReadArrayOfCompact("fullCompactArray"),
+	}
+}
+
+func (s otherArraysSerializer) Write(w serialization.CompactWriter, v interface{}) {
+	vv := v.(otherArrays)
+	w.WriteArrayOfTime("emptyTimeArray", vv.emptyTimeArray)
+	w.WriteArrayOfTime("fullTimeArray", vv.fullTimeArray)
+	w.WriteArrayOfDate("emptyDateArray", vv.emptyDateArray)
+	w.WriteArrayOfDate("fullDateArray", vv.fullDateArray)
+	w.WriteArrayOfTimestamp("emptyTimestampArray", vv.emptyTimestampArray)
+	w.WriteArrayOfTimestamp("fullTimestampTimeArray", vv.fullTimestampTimeArray)
+	w.WriteArrayOfTimestampWithTimezone("emptyTimestampWithTimezoneArray", vv.emptyTimestampWithTimezoneArray)
+	w.WriteArrayOfTimestampWithTimezone("fullTimestampWithTimezoneArray", vv.fullTimestampWithTimezoneArray)
+	w.WriteArrayOfDecimal("emptyDecimalArray", vv.emptyDecimalArray)
+	w.WriteArrayOfDecimal("fullDecimalArray", vv.fullDecimalArray)
+	w.WriteArrayOfCompact("emptyCompactArray", vv.emptyCompactArray)
+	w.WriteArrayOfCompact("fullCompactArray", vv.fullCompactArray)
+}
+
+func ptr[T any](v T) *T {
+	return &v
 }
