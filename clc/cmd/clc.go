@@ -40,6 +40,10 @@ func setClientInternal(ci *hazelcast.ClientInternal) {
 	clientInternal.Store(ci)
 }
 
+func ServerVersionOf(ci *hazelcast.ClientInternal) string {
+	return ci.ConnectionManager().RandomConnection().ServerVersion()
+}
+
 type Main struct {
 	root          *cobra.Command
 	cmds          map[string]*cobra.Command

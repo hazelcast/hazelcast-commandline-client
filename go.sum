@@ -48,8 +48,8 @@ github.com/gohxs/readline v0.0.0-20171011095936-a780388e6e7c/go.mod h1:9S/fKAutQ
 github.com/google/go-cmp v0.5.8 h1:e6P7q2lk1O+qJJb4BtCQXlK8vWEO8V1ZeuEdJNOqZyg=
 github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 h1:El6M4kTTCOh6aBiKaUGG7oYTSPP8MxqL4YI3kZKwcP4=
 github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510/go.mod h1:pupxD2MaaD3pAXIBCelhxNneeOaAeabZDe5s4K6zSpQ=
-github.com/hazelcast/hazelcast-go-client v1.4.1-0.20230414163103-81c510723182 h1:PSn6/nZ5DbqSDMc3MHurSHSFR477f9sH6ghWv9gxR4s=
-github.com/hazelcast/hazelcast-go-client v1.4.1-0.20230414163103-81c510723182/go.mod h1:PJ38lqXJ18S0YpkrRznPDlUH8GnnMAQCx3jpQtBPZ6Q=
+github.com/hazelcast/hazelcast-go-client v1.4.1-0.20230416163549-9ff1dac4cc44 h1:T6bF83wTppzyyzeHmnLUNkcW0JzPMT6wdVY0RKfbnYQ=
+github.com/hazelcast/hazelcast-go-client v1.4.1-0.20230416163549-9ff1dac4cc44/go.mod h1:PJ38lqXJ18S0YpkrRznPDlUH8GnnMAQCx3jpQtBPZ6Q=
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=

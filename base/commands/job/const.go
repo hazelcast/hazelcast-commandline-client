@@ -13,6 +13,7 @@ const (
 	flagName                               = "name"
 	flagSnapshot                           = "snapshot"
 	flagClass                              = "class"
+	flagCancel                             = "cancel"
 	statusNotRunning                       = 0
 	statusStarting                         = 1
 	statusRunning                          = 2

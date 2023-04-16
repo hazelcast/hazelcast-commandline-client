@@ -16,10 +16,16 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/types"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
+)
+
+const (
+	// see: https://github.com/hazelcast/hazelcast/issues/24285
+	envExperimentalCalculateHashWorkaround = "CLC_EXPERIMENTAL_WORKAROUND_24285"
 )
 
 type SubmitCmd struct{}
@@ -57,16 +63,19 @@ func submitJar(ctx context.Context, ci *hazelcast.ClientInternal, ec plug.ExecCo
 	if err != nil {
 		return fmt.Errorf("reading %s: %w", path, err)
 	}
-	hash := fmt.Sprintf("%x", sha256.Sum256(bin))
 	_, fn := filepath.Split(path)
 	fn = strings.TrimSuffix(fn, ".jar")
 	args := ec.Args()[1:]
 	jobName := ec.Props().GetString(flagName)
 	snapshot := ec.Props().GetString(flagSnapshot)
 	className := ec.Props().GetString(flagClass)
-	req := codec.EncodeJetUploadJobMetaDataRequest(sid, false, fn, hash, snapshot, jobName, className, args)
-	mi, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Uploading metadata")
+		hash, workaround := calculateHashWithWorkaround(ci, bin)
+		if workaround {
+			ec.Logger().Info("Working around https://github.com/hazelcast/hazelcast/issues/24285")
+		}
+		req := codec.EncodeJetUploadJobMetaDataRequest(sid, false, fn, hash, snapshot, jobName, className, args)
 		mem, err := randomMember(ctx, ci)
 		if err != nil {
 			return nil, fmt.Errorf("uploading job metadata: %w", err)
@@ -74,14 +83,6 @@ func submitJar(ctx context.Context, ci *hazelcast.ClientInternal, ec plug.ExecCo
 		if _, err = ci.InvokeOnMember(ctx, req, mem, nil); err != nil {
 			return nil, err
 		}
-		return mem, nil
-	})
-	if err != nil {
-		return fmt.Errorf("uploading metadata: %w", err)
-	}
-	defer stop()
-	mem := mi.(types.UUID)
-	_, stop, err = ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Uploading Jar")
 		req = codec.EncodeJetUploadJobMultipartRequest(sid, 1, 1, bin, int32(len(bin)), hash)
 		if _, err = ci.InvokeOnMember(ctx, req, mem, nil); err != nil {
@@ -90,9 +91,9 @@ func submitJar(ctx context.Context, ci *hazelcast.ClientInternal, ec plug.ExecCo
 		return nil, nil
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("uploading metadata: %w", err)
 	}
-	defer stop()
+	stop()
 	return nil
 }
 
@@ -111,6 +112,27 @@ func randomMember(ctx context.Context, ci *hazelcast.ClientInternal) (types.UUID
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
+}
+
+func calculateHash(bin []byte) string {
+	// use the following when the member-side is fixed
+	return fmt.Sprintf("%x", sha256.Sum256(bin))
+}
+
+func calculateHashWithWorkaround(ci *hazelcast.ClientInternal, bin []byte) (string, bool) {
+	var workaround bool
+	w := os.Getenv(envExperimentalCalculateHashWorkaround)
+	if w == "1" {
+		workaround = true
+	}
+	if cmd.ServerVersionOf(ci) == "5.3.0-BETA-2" {
+		workaround = true
+	}
+	hash := calculateHash(bin)
+	if workaround && bin[0] == 0 {
+		hash = hash[1:]
+	}
+	return hash, workaround
 }
 
 func init() {

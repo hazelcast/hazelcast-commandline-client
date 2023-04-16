@@ -25,12 +25,12 @@ func (cm ResumeCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		return err
 	}
-	jm, err := newJobNameToIDMap(ctx, ec)
+	jm, err := newJobNameToIDMap(ctx, ec, false)
 	if err != nil {
 		return err
 	}
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		jid, ok := jm.Get(ec.Args()[0])
+		jid, ok := jm.GetIDForName(ec.Args()[0])
 		if !ok {
 			return nil, errInvalidJobID
 		}

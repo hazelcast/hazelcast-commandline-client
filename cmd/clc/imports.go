@@ -6,5 +6,6 @@ import (
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/job"
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/map"
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/object"
+	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/snapshot"
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/sql"
 )

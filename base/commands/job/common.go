@@ -84,20 +84,26 @@ func getJobList(ctx context.Context, ci *hazelcast.ClientInternal) ([]control.Jo
 	return ls, nil
 }
 
-func makeJobNameToIDMap(jobList []control.JobAndSqlSummary) map[string]int64 {
-	m := make(map[string]int64, len(jobList))
+func makeJobNameIDMaps(jobList []control.JobAndSqlSummary) (jobNameToID map[string]int64, idToJobName map[int64]string) {
+	jobNameToID = make(map[string]int64, len(jobList))
+	idToJobName = make(map[int64]string, len(jobList))
 	for _, j := range jobList {
+		idToJobName[j.JobId] = j.NameOrId
 		if j.Status == statusFailed || j.Status == statusCompleted {
 			continue
 		}
-		m[j.NameOrId] = j.JobId
+		jobNameToID[j.NameOrId] = j.JobId
+
 	}
-	return m
+	return jobNameToID, idToJobName
 }
 
-type jobNameToIDMap map[string]int64
+type jobNameToIDMap struct {
+	nameToID map[string]int64
+	IDToName map[int64]string
+}
 
-func newJobNameToIDMap(ctx context.Context, ec plug.ExecContext) (jobNameToIDMap, error) {
+func newJobNameToIDMap(ctx context.Context, ec plug.ExecContext, forceLoadJobList bool) (*jobNameToIDMap, error) {
 	hasJobName := false
 	for _, arg := range ec.Args() {
 		if _, err := stringToID(arg); err != nil {
@@ -105,10 +111,13 @@ func newJobNameToIDMap(ctx context.Context, ec plug.ExecContext) (jobNameToIDMap
 			break
 		}
 	}
-	if !hasJobName {
-		// relies on m.Get returning the numeric jobID
+	if !hasJobName && !forceLoadJobList {
+		// relies on m.GetIDForName returning the numeric jobID
 		// if s is a UUID
-		return jobNameToIDMap{}, nil
+		return &jobNameToIDMap{
+			nameToID: map[string]int64{},
+			IDToName: map[int64]string{},
+		}, nil
 	}
 	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
@@ -122,16 +131,24 @@ func newJobNameToIDMap(ctx context.Context, ec plug.ExecContext) (jobNameToIDMap
 		return nil, err
 	}
 	stop()
-	m := makeJobNameToIDMap(jl.([]control.JobAndSqlSummary))
-	return m, nil
+	n2i, i2j := makeJobNameIDMaps(jl.([]control.JobAndSqlSummary))
+	return &jobNameToIDMap{
+		nameToID: n2i,
+		IDToName: i2j,
+	}, nil
 }
 
-func (m jobNameToIDMap) Get(idOrName string) (int64, bool) {
+func (m jobNameToIDMap) GetIDForName(idOrName string) (int64, bool) {
 	id, err := stringToID(idOrName)
 	// note that comparing err to nil
 	if err == nil {
 		return id, true
 	}
-	v, ok := m[idOrName]
+	v, ok := m.nameToID[idOrName]
+	return v, ok
+}
+
+func (m jobNameToIDMap) GetNameForID(id int64) (string, bool) {
+	v, ok := m.IDToName[id]
 	return v, ok
 }

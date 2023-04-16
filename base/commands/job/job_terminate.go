@@ -38,12 +38,12 @@ func (cm TerminateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 		tm = cm.terminateModeForce
 	}
 	var allErrs []error
-	jm, err := newJobNameToIDMap(ctx, ec)
+	jm, err := newJobNameToIDMap(ctx, ec, false)
 	if err != nil {
 		return err
 	}
 	for _, arg := range ec.Args() {
-		jid, ok := jm.Get(arg)
+		jid, ok := jm.GetIDForName(arg)
 		if !ok {
 			allErrs = append(allErrs, errInvalidJobID)
 			continue
