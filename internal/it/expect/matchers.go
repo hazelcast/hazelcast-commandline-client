@@ -20,6 +20,10 @@ func Dollar(s string) DollarMatcher {
 	return DollarMatcher{pattern: s}
 }
 
+func Regex(s string) RegexMatcher {
+	return RegexMatcher{pattern: s}
+}
+
 type Matcher interface {
 	Match(s string) bool
 }
@@ -66,4 +70,12 @@ func (m DollarMatcher) normalize(s string) string {
 		lines = append(lines, line)
 	}
 	return strings.Join(lines, "\n")
+}
+
+type RegexMatcher struct {
+	pattern string
+}
+
+func (m RegexMatcher) Match(s string) bool {
+	return check.MustValue(regexp.Match(m.pattern, []byte(s)))
 }

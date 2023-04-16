@@ -15,6 +15,7 @@ func TestShell(t *testing.T) {
 		f    func(t *testing.T)
 	}{
 		{name: "ShellErrors", f: shellErrorsTest},
+		{name: "ShellNoDoubleError", f: shellNoDoubleErrorTest},
 		{name: "ShellHelp", f: shellHelpTest},
 	}
 	for _, tc := range testCases {
@@ -54,6 +55,21 @@ func shellErrorsTest(t *testing.T) {
 			})
 		})
 	}
+}
+
+func shellNoDoubleErrorTest(t *testing.T) {
+	tcx := it.TestContext{T: t}
+	tcx.Tester(func(tcx it.TestContext) {
+		ctx := context.Background()
+		tcx.WithShell(ctx, func(tcx it.TestContext) {
+			for _, text := range []string{"foo;", "\\foo", "\\map --foo"} {
+				tcx.WithReset(func() {
+					tcx.WriteStdinString(text + "\n")
+					tcx.AssertStderrNotRegexMatch("Error:.*\nError:")
+				})
+			}
+		})
+	})
 }
 
 func shellHelpTest(t *testing.T) {
