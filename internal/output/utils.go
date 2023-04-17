@@ -152,7 +152,7 @@ func widthForType(t int32, headerWidth, defaultWidth int) int {
 	case serialization.TypeInt32:
 		return maxInt(headerWidth, len(fmt.Sprint(math.MaxInt32)))
 	case serialization.TypeInt64:
-		return maxInt(headerWidth, len(fmt.Sprint(math.MaxInt64)))
+		return maxInt(headerWidth, len(fmt.Sprint(math.MaxInt)))
 	case serialization.TypeFloat32:
 		return maxInt(headerWidth, len(fmt.Sprint(math.MaxFloat32)))
 	case serialization.TypeFloat64:
