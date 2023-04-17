@@ -1,9 +1,11 @@
 package job
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"io"
 	"math"
 	"math/rand"
 	"os"
@@ -19,6 +21,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
 )
@@ -27,6 +30,7 @@ const (
 	// see: https://github.com/hazelcast/hazelcast/issues/24285
 	envExperimentalCalculateHashWorkaround = "CLC_EXPERIMENTAL_WORKAROUND_24285"
 	minServerVersion                       = "5.3.0-BETA-2"
+	defaultBatchSize                       = 10 * 1024 * 1024 // 10MB
 )
 
 type SubmitCmd struct{}
@@ -42,7 +46,8 @@ having version %s or better.
 	cc.SetCommandHelp(long, short)
 	cc.AddStringFlag(flagName, "", "", false, "override the job name")
 	cc.AddStringFlag(flagSnapshot, "", "", false, "initial snapshot to start the job from")
-	cc.AddStringFlag(flagClass, "", "", false, "set the main class")
+	cc.AddStringFlag(flagClass, "", "", false, "the class that contains the main method that creates the Jet job")
+	cc.AddIntFlag(flagRetries, "", 3, false, "number of times to retry a failed upload attempt")
 	cc.SetPositionalArgCount(1, math.MaxInt)
 	return nil
 }
@@ -66,44 +71,120 @@ func (cm SubmitCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 }
 
 func submitJar(ctx context.Context, ci *hazelcast.ClientInternal, ec plug.ExecContext, path string) error {
-	// TODO: split the binary
-	sid := types.NewUUID()
-	bin, err := os.ReadFile(path)
-	if err != nil {
-		return fmt.Errorf("reading %s: %w", path, err)
-	}
-	_, fn := filepath.Split(path)
-	fn = strings.TrimSuffix(fn, ".jar")
-	args := ec.Args()[1:]
 	jobName := ec.Props().GetString(flagName)
 	snapshot := ec.Props().GetString(flagSnapshot)
 	className := ec.Props().GetString(flagClass)
+	tries := int(ec.Props().GetInt(flagRetries))
+	if tries < 0 {
+		tries = 0
+	}
+	tries++
+	sid := types.NewUUID()
+	_, fn := filepath.Split(path)
+	fn = strings.TrimSuffix(fn, ".jar")
+	args := ec.Args()[1:]
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Uploading metadata")
-		hash, workaround := calculateHashWithWorkaround(ci, bin)
+		workaround := workaround24285(ci)
 		if workaround {
-			ec.Logger().Info("Working around https://github.com/hazelcast/hazelcast/issues/24285")
+			ec.Logger().Debugf("Working around https://github.com/hazelcast/hazelcast/issues/24285")
 		}
+		hashBin, err := hashOfPath(path)
+		if err != nil {
+			return nil, err
+		}
+		hash := hashWithWorkaround(hashBin, workaround)
 		req := codec.EncodeJetUploadJobMetaDataRequest(sid, false, fn, hash, snapshot, jobName, className, args)
 		mem, err := randomMember(ctx, ci)
 		if err != nil {
-			return nil, fmt.Errorf("uploading job metadata: %w", err)
-		}
-		if _, err = ci.InvokeOnMember(ctx, req, mem, nil); err != nil {
 			return nil, err
 		}
-		sp.SetText("Uploading Jar")
-		req = codec.EncodeJetUploadJobMultipartRequest(sid, 1, 1, bin, int32(len(bin)), hash)
-		if _, err = ci.InvokeOnMember(ctx, req, mem, nil); err != nil {
-			return nil, fmt.Errorf("uploading jar file: %w", err)
+		err = retry(tries, ec.Logger(), func() error {
+			if _, err = ci.InvokeOnMember(ctx, req, mem, nil); err != nil {
+				return err
+			}
+			return nil
+		})
+		if err != nil {
+			return nil, fmt.Errorf("uploading job metadata: %w", err)
 		}
+		sp.SetText("Uploading Jar")
+		pc, err := partCountOf(path, defaultBatchSize)
+		if err != nil {
+			return nil, err
+		}
+		f, err := os.Open(path)
+		if err != nil {
+			return nil, err
+		}
+		defer f.Close()
+		ec.Logger().Info("Sending %s in %d batch(es)", path, pc)
+		bb := newBatch(f, defaultBatchSize)
+		sp.SetProgress(0)
+		for i := int32(0); i < int32(pc); i++ {
+			bin, hashBin, err := bb.Next()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				return nil, fmt.Errorf("reading Jar: %w", err)
+			}
+			part := i + 1
+			sp.SetText(fmt.Sprintf("Uploading Jar part %d", part))
+			hash := hashWithWorkaround(hashBin, workaround)
+			req = codec.EncodeJetUploadJobMultipartRequest(sid, part, int32(pc), bin, int32(len(bin)), hash)
+			err = retry(tries, ec.Logger(), func() error {
+				if _, err := ci.InvokeOnMember(ctx, req, mem, nil); err != nil {
+					return fmt.Errorf("sending upload message: %w", err)
+				}
+				return nil
+			})
+			if err != nil {
+				return nil, fmt.Errorf("uploading part %d: %w", part, err)
+			}
+			sp.SetProgress(float32(part) / float32(pc))
+			time.Sleep(100 * time.Millisecond)
+		}
+		sp.SetText("Uploading Jar")
+		sp.SetProgress(1)
 		return nil, nil
 	})
 	if err != nil {
-		return fmt.Errorf("uploading metadata: %w", err)
+		return fmt.Errorf("uploading the job: %w", err)
 	}
 	stop()
 	return nil
+}
+
+func partCountOf(path string, partSize int) (int, error) {
+	st, err := os.Stat(path)
+	if err != nil {
+		return 0, err
+	}
+	return int(math.Ceil(float64(st.Size()) / float64(partSize))), nil
+}
+
+func retry(times int, lg log.Logger, f func() error) error {
+	var err error
+	for i := 0; i < times; i++ {
+		err = f()
+		if err != nil {
+			lg.Error(err)
+			time.Sleep(1 * time.Second)
+			continue
+		}
+		return nil
+	}
+	return fmt.Errorf("failed after %d tries: %w", times, err)
+}
+
+func hashOfPath(path string) ([]byte, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	return calculateHash(f)
 }
 
 func randomMember(ctx context.Context, ci *hazelcast.ClientInternal) (types.UUID, error) {
@@ -119,29 +200,62 @@ func randomMember(ctx context.Context, ci *hazelcast.ClientInternal) (types.UUID
 				return mi.UUID, nil
 			}
 		}
-		time.Sleep(100 * time.Millisecond)
 	}
 }
 
-func calculateHash(bin []byte) string {
-	// use the following when the member-side is fixed
-	return fmt.Sprintf("%x", sha256.Sum256(bin))
+func workaround24285(ci *hazelcast.ClientInternal) bool {
+	if os.Getenv(envExperimentalCalculateHashWorkaround) == "1" {
+		return true
+	}
+	return cmd.ServerVersionOf(ci) == "5.3.0-BETA-2"
 }
 
-func calculateHashWithWorkaround(ci *hazelcast.ClientInternal, bin []byte) (string, bool) {
-	var workaround bool
-	w := os.Getenv(envExperimentalCalculateHashWorkaround)
-	if w == "1" {
-		workaround = true
-	}
-	if cmd.ServerVersionOf(ci) == "5.3.0-BETA-2" {
-		workaround = true
-	}
-	hash := calculateHash(bin)
-	if workaround && bin[0] == 0 {
+func hashWithWorkaround(hash []byte, workaround bool) string {
+	if workaround && hash[0] == 0 {
 		hash = hash[1:]
 	}
-	return hash, workaround
+	return fmt.Sprintf("%x", hash)
+}
+
+func calculateHash(r io.Reader) ([]byte, error) {
+	h := sha256.New()
+	_, err := io.Copy(h, r)
+	if err != nil {
+		return nil, err
+	}
+	buf := make([]byte, 0, 32)
+	b := h.Sum(buf)
+	return b, nil
+}
+
+type binBatch struct {
+	reader io.Reader
+	buf    []byte
+}
+
+func newBatch(reader io.Reader, batchSize int) *binBatch {
+	if batchSize < 1 {
+		panic("newBatch: batchSize must be positive")
+	}
+	return &binBatch{
+		reader: reader,
+		buf:    make([]byte, batchSize),
+	}
+}
+
+// Next returns the next batch of bytes.
+// Make sure to copy it before calling Next again.
+func (bb *binBatch) Next() ([]byte, []byte, error) {
+	n, err := bb.reader.Read(bb.buf)
+	if err != nil {
+		return nil, nil, err
+	}
+	b := bb.buf[0:n:n]
+	h, err := calculateHash(bytes.NewBuffer(b))
+	if err != nil {
+		return nil, nil, err
+	}
+	return b, h, nil
 }
 
 func init() {

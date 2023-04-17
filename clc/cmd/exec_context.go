@@ -287,7 +287,8 @@ func (ec *ExecContext) ensurePrinter() error {
 }
 
 type simpleSpinner struct {
-	sp *yacspin.Spinner
+	sp   *yacspin.Spinner
+	text string
 }
 
 func (s *simpleSpinner) Start() error {
@@ -295,7 +296,19 @@ func (s *simpleSpinner) Start() error {
 }
 
 func (s *simpleSpinner) SetText(text string) {
+	s.text = text
 	s.sp.Prefix(text + cancelMsg)
+}
+
+func (s *simpleSpinner) SetProgress(progress float32) {
+	if progress > 1 {
+		progress = 1
+	}
+	if progress < 0 {
+		progress = 0
+	}
+	pc := int(progress * 100)
+	s.sp.Prefix(fmt.Sprintf("%s %d%%%s", s.text, pc, cancelMsg))
 }
 
 type nopSpinner struct{}
@@ -305,5 +318,9 @@ func (n nopSpinner) Start() error {
 }
 
 func (n nopSpinner) SetText(text string) {
+	// pass
+}
+
+func (n nopSpinner) SetProgress(progress float32) {
 	// pass
 }

@@ -14,6 +14,7 @@ const (
 	flagSnapshot                           = "snapshot"
 	flagClass                              = "class"
 	flagCancel                             = "cancel"
+	flagRetries                            = "retries"
 	statusNotRunning                       = 0
 	statusStarting                         = 1
 	statusRunning                          = 2
