@@ -138,7 +138,7 @@ func calculateHashWithWorkaround(ci *hazelcast.ClientInternal, bin []byte) (stri
 		workaround = true
 	}
 	hash := calculateHash(bin)
-	if workaround && bin[0] == 0 {
+	if workaround && hash[0] == '0' {
 		hash = hash[1:]
 	}
 	return hash, workaround
