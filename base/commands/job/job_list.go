@@ -57,16 +57,21 @@ func outputJetJobs(ctx context.Context, ec plug.ExecContext, lsi interface{}) er
 			// this is a user cancelled job but --include-user-cancelled was not used, so skip it
 			continue
 		}
+		id := idToString(v.JobId)
+		name := v.NameOrId
+		if name == id {
+			name = "N/A"
+		}
 		row := output.Row{
 			output.Column{
 				Name:  "Job ID",
 				Type:  serialization.TypeString,
-				Value: idToString(v.JobId),
+				Value: id,
 			},
 			output.Column{
 				Name:  "Name",
 				Type:  serialization.TypeString,
-				Value: v.NameOrId,
+				Value: name,
 			},
 			output.Column{
 				Name:  "Status",
