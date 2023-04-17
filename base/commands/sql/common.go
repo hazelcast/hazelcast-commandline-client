@@ -35,18 +35,20 @@ func UpdateOutput(ctx context.Context, ec plug.ExecContext, res sql.Result, verb
 		return err
 	}
 	rowCh := make(chan output.Row, 1)
-	errCh := make(chan error)
+	errCh := make(chan error, 1)
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, os.Kill)
 	defer stop()
 	go func() {
+		cols := MustValue(res.RowMetadata()).Columns()
+		var row sql.Row
+		var err error
 		for it.HasNext() {
-			row, err := it.Next()
+			row, err = it.Next()
 			if err != nil {
-				errCh <- err
 				break
 			}
-			// TODO: move the following 2 lines out of the loop --YT
-			cols := row.Metadata().Columns()
+			// have to create a new output row
+			// since it is processed by another goroutine
 			orow := make(output.Row, len(cols))
 			for i, col := range cols {
 				orow[i] = output.Column{
@@ -62,7 +64,7 @@ func UpdateOutput(ctx context.Context, ec plug.ExecContext, res sql.Result, verb
 			}
 		}
 		close(rowCh)
-		errCh <- nil
+		errCh <- err
 	}()
 	_ = ec.AddOutputStream(ctx, rowCh)
 	select {

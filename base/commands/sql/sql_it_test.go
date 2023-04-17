@@ -24,6 +24,7 @@ func TestSQL(t *testing.T) {
 		{name: "SQL_ShellCommand", f: sql_shellCommandTest},
 		{name: "SQL_Interactive", f: sql_InteractiveTest},
 		{name: "SQL_NonInteractive", f: sql_NonInteractiveTest},
+		{name: "SQL_NonInteractiveStreaming", f: sql_NonInteractiveStreamingTest},
 		{name: "SQL_Suggestion_Interactive", f: sqlSuggestion_Interactive},
 		{name: "SQL_Suggestion_NonInteractive", f: sqlSuggestion_NonInteractive},
 	}
@@ -195,6 +196,23 @@ func sqlOutput_NonInteractiveTest(t *testing.T) {
 
 		})
 	}
+}
+
+func sql_NonInteractiveStreamingTest(t *testing.T) {
+	tcx := it.TestContext{T: t}
+	tcx.Tester(func(tcx it.TestContext) {
+		/*
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+		*/
+		ctx := context.Background()
+		tcx.WithShell(ctx, func(tcx it.TestContext) {
+			tcx.WithReset(func() {
+				tcx.CLCExecute(ctx, "sql", "select * from table(generate_stream(1)) limit 3")
+				tcx.AssertStdoutDollar("$1$2$")
+			})
+		})
+	})
 }
 
 func sqlOutput_JSONTest(t *testing.T) {
