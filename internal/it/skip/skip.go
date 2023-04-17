@@ -20,11 +20,12 @@ import (
 	"fmt"
 	"os"
 	"runtime"
-	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/hazelcast/hazelcast-go-client"
+
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
 const (
@@ -59,7 +60,7 @@ var skipChecker = defaultSkipChecker()
 If can be used to skip a test case based on comma-separated conditions.
 There are two kinds of conditions, comparisons and booleans.
 
-Comparison conditions
+# Comparison conditions
 
 Comparison conditions are in the following format:
 
@@ -144,7 +145,7 @@ The following conditions are evaluated to false:
 	hz = 5.1
 	hz = 5.1.0
 
-Boolean conditions
+# Boolean conditions
 
 Boolean conditions are in the following format:
 
@@ -163,7 +164,7 @@ KEY is one of the following keys:
 
 ! operator negates the value of the key.
 
-Many Conditions
+# Many Conditions
 
 More than one condition may be specified by separating them with commas.
 All conditions should be satisfied to skip.
@@ -175,7 +176,6 @@ You can use multiple skip.If statements to skip when one of the conditions is sa
 	// skip if the OS is windows or client version is greater than 1.3.2 and the Hazelcast cluster is open source:
 	skip.If(t, "os = windows")
 	skip.If(t, "ver > 1.3.2, oss")
-
 */
 func If(t *testing.T, conditions string) {
 	if skipChecker.CanSkip(conditions) {
@@ -230,7 +230,7 @@ func defaultSkipChecker() Checker {
 // right is the given Hazelcast server version.
 // Hazelcast server version is retrieved from HZ_VERSION environment variable.
 func (s Checker) checkHzVer(op, right string) bool {
-	return checkVersion(s.HzVer, op, right)
+	return internal.CheckVersion(s.HzVer, op, right)
 }
 
 // checkVer evaluates left OP right and returns the result.
@@ -238,7 +238,7 @@ func (s Checker) checkHzVer(op, right string) bool {
 // op is the comparison operator.
 // right is the given client version.
 func (s Checker) checkVer(op, right string) bool {
-	return checkVersion(s.Ver, op, right)
+	return internal.CheckVersion(s.Ver, op, right)
 }
 
 // checkOS evaluates left OP right and returns the result.
@@ -405,102 +405,6 @@ func ensureLen(parts []string, expected int, condition, example string) {
 	}
 }
 
-func checkVersion(left, operator, right string) bool {
-	switch operator {
-	case "=":
-		return compareVersions(left, right) == 0
-	case "!=":
-		return compareVersions(left, right) != 0
-	case ">":
-		return compareVersions(left, right) > 0
-	case ">=":
-		return compareVersions(left, right) >= 0
-	case "<":
-		return compareVersions(left, right) < 0
-	case "<=":
-		return compareVersions(left, right) <= 0
-	case "~":
-		return looselyEqual(left, right)
-	default:
-		panic(fmt.Errorf(`unexpected test skip operator "%s" to compare versions`, operator))
-	}
-}
-
-func compareVersions(left, right string) int {
-	var leftHasSuffix, rightHasSuffix bool
-	leftHasSuffix, left = stripSuffix(left)
-	rightHasSuffix, right = stripSuffix(right)
-	leftNums := strings.Split(left, ".")
-	rightNums := strings.Split(right, ".")
-	// make rightNums and leftNums the same length by filling the shorter one with zeros.
-	if len(rightNums) < len(leftNums) {
-		rightNums = equalizeVersions(rightNums, leftNums)
-	} else if len(leftNums) < len(rightNums) {
-		leftNums = equalizeVersions(leftNums, rightNums)
-	}
-	for i := 0; i < len(rightNums); i++ {
-		r := mustAtoi(rightNums[i])
-		l := mustAtoi(leftNums[i])
-		if r < l {
-			return 1
-		}
-		if r > l {
-			return -1
-		}
-	}
-	// if the version number has a suffix, then it is prior to the non-suffixed one.
-	// See: https://semver.org/#spec-item-9
-	if leftHasSuffix {
-		if rightHasSuffix {
-			return 0
-		}
-		return -1
-	}
-	if rightHasSuffix {
-		return 1
-	}
-	return 0
-}
-
-// looselyEqual uses right version for the precision
-func looselyEqual(left, right string) bool {
-	_, left = stripSuffix(left)
-	_, right = stripSuffix(right)
-	leftNums := strings.Split(left, ".")
-	rightNums := strings.Split(right, ".")
-	minNums := len(rightNums)
-	if len(leftNums) < minNums {
-		// fill left num with zeros
-		leftNums = equalizeVersions(leftNums, rightNums)
-	}
-	for i := 0; i < minNums; i++ {
-		r := mustAtoi(rightNums[i])
-		l := mustAtoi(leftNums[i])
-		if r != l {
-			return false
-		}
-	}
-	return true
-}
-
-// stripSuffix checks and removes suffix, e.g., "-beta1" from the version.
-func stripSuffix(version string) (hasSuffix bool, newVersion string) {
-	newVersion = version
-	hasSuffix = strings.Contains(version, "-")
-	if hasSuffix {
-		newVersion = strings.SplitN(newVersion, "-", 2)[0]
-	}
-	return
-}
-
-func mustAtoi(s string) int {
-	n, err := strconv.Atoi(s)
-	if err != nil {
-		panic(fmt.Errorf("could not parse int %s: %w", s, err))
-	}
-	return n
-}
-
 func checkEquality(left, operator, right, key string) bool {
 	switch operator {
 	case "=":
@@ -510,19 +414,6 @@ func checkEquality(left, operator, right, key string) bool {
 	default:
 		panic(fmt.Errorf(`unexpected test skip operator "%s" in "%s" condition`, operator, key))
 	}
-}
-
-// equalizeVersions makes minV and maxV the same length by filling minV with zeros and returns the new minV
-func equalizeVersions(minV, maxV []string) []string {
-	var i int
-	newMinV := make([]string, len(maxV))
-	for i = 0; i < len(minV); i++ {
-		newMinV[i] = minV[i]
-	}
-	for ; i < len(maxV); i++ {
-		newMinV[i] = "0"
-	}
-	return newMinV
 }
 
 func hzVersion() string {

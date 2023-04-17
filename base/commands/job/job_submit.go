@@ -26,16 +26,22 @@ import (
 const (
 	// see: https://github.com/hazelcast/hazelcast/issues/24285
 	envExperimentalCalculateHashWorkaround = "CLC_EXPERIMENTAL_WORKAROUND_24285"
+	minServerVersion                       = "5.3.0-BETA-2"
 )
 
 type SubmitCmd struct{}
 
 func (cm SubmitCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("submit [jar file] [arg, ...]")
-	help := "Submit a jar file and create a Jet job"
-	cc.SetCommandHelp(help, help)
+	long := fmt.Sprintf(`Submit a jar file and create a Jet job
+	
+This command requires a Viridian or a Hazelcast cluster
+having version %s or better.
+`, minServerVersion)
+	short := "Submit a jar file and create a Jet job"
+	cc.SetCommandHelp(long, short)
 	cc.AddStringFlag(flagName, "", "", false, "override the job name")
-	cc.AddStringFlag(flagSnapshot, "", "", false, "set the snapshot name")
+	cc.AddStringFlag(flagSnapshot, "", "", false, "initial snapshot to start the job from")
 	cc.AddStringFlag(flagClass, "", "", false, "set the main class")
 	cc.SetPositionalArgCount(1, math.MaxInt)
 	return nil
@@ -52,6 +58,9 @@ func (cm SubmitCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
 		return err
+	}
+	if sv, ok := cmd.CheckServerCompatible(ci, minServerVersion); !ok {
+		return fmt.Errorf("server (%s) does not support this command, at least %s is expected", sv, minServerVersion)
 	}
 	return submitJar(ctx, ci, ec, path)
 }
