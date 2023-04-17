@@ -46,13 +46,14 @@ func stringToID(s string) (int64, error) {
 	return i, nil
 }
 
-func terminateJob(ctx context.Context, ec plug.ExecContext, jobID int64, terminateMode int32, text string) error {
+func terminateJob(ctx context.Context, ec plug.ExecContext, jobID int64, nameOrID string, terminateMode int32, text string) error {
 	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
 		return err
 	}
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("%s: %s", text, idToString(jobID)))
+		sp.SetText(fmt.Sprintf("%s %s", text, nameOrID))
+		ec.Logger().Info("%s %s (%s)", text, nameOrID, idToString(jobID))
 		req := codec.EncodeJetTerminateJobRequest(jobID, terminateMode, types.UUID{})
 		if _, err := ci.InvokeOnRandomTarget(ctx, req, nil); err != nil {
 			return nil, err

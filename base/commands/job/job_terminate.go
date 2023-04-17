@@ -48,7 +48,7 @@ func (cm TerminateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 			allErrs = append(allErrs, errInvalidJobID)
 			continue
 		}
-		if err := terminateJob(ctx, ec, jid, tm, cm.msg); err != nil {
+		if err := terminateJob(ctx, ec, jid, arg, tm, cm.msg); err != nil {
 			allErrs = append(allErrs, fmt.Errorf("%s: %w", arg, err))
 		} else {
 			verbose := ec.Props().GetBool(clc.PropertyVerbose)

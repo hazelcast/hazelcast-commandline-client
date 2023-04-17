@@ -304,11 +304,12 @@ func (s *simpleSpinner) SetProgress(progress float32) {
 	if progress > 1 {
 		progress = 1
 	}
-	if progress < 0 {
-		progress = 0
+	if progress <= 0 {
+		s.sp.Suffix("")
+		return
 	}
 	pc := int(progress * 100)
-	s.sp.Prefix(fmt.Sprintf("%s %d%%%s", s.text, pc, cancelMsg))
+	s.sp.Suffix(fmt.Sprintf(" %3d%%", pc))
 }
 
 type nopSpinner struct{}

@@ -30,7 +30,7 @@ const (
 	// see: https://github.com/hazelcast/hazelcast/issues/24285
 	envExperimentalCalculateHashWorkaround = "CLC_EXPERIMENTAL_WORKAROUND_24285"
 	minServerVersion                       = "5.3.0-BETA-2"
-	defaultBatchSize                       = 10 * 1024 * 1024 // 10MB
+	defaultBatchSize                       = 2 * 1024 * 1024 // 10MB
 )
 
 type SubmitCmd struct{}
@@ -130,7 +130,6 @@ func submitJar(ctx context.Context, ci *hazelcast.ClientInternal, ec plug.ExecCo
 				return nil, fmt.Errorf("reading Jar: %w", err)
 			}
 			part := i + 1
-			sp.SetText(fmt.Sprintf("Uploading Jar part %d", part))
 			hash := hashWithWorkaround(hashBin, workaround)
 			req = codec.EncodeJetUploadJobMultipartRequest(sid, part, int32(pc), bin, int32(len(bin)), hash)
 			err = retry(tries, ec.Logger(), func() error {
@@ -143,9 +142,7 @@ func submitJar(ctx context.Context, ci *hazelcast.ClientInternal, ec plug.ExecCo
 				return nil, fmt.Errorf("uploading part %d: %w", part, err)
 			}
 			sp.SetProgress(float32(part) / float32(pc))
-			time.Sleep(100 * time.Millisecond)
 		}
-		sp.SetText("Uploading Jar")
 		sp.SetProgress(1)
 		return nil, nil
 	})
@@ -170,7 +167,7 @@ func retry(times int, lg log.Logger, f func() error) error {
 		err = f()
 		if err != nil {
 			lg.Error(err)
-			time.Sleep(1 * time.Second)
+			time.Sleep(5 * time.Second)
 			continue
 		}
 		return nil
@@ -211,10 +208,11 @@ func workaround24285(ci *hazelcast.ClientInternal) bool {
 }
 
 func hashWithWorkaround(hash []byte, workaround bool) string {
-	if workaround && hash[0] == 0 {
-		hash = hash[1:]
+	text := fmt.Sprintf("%x", hash)
+	if workaround && text[0] == '0' {
+		text = text[1:]
 	}
-	return fmt.Sprintf("%x", hash)
+	return text
 }
 
 func calculateHash(r io.Reader) ([]byte, error) {
