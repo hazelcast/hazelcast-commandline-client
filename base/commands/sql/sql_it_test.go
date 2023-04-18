@@ -214,6 +214,22 @@ func sqlOutput_NonInteractiveTest(t *testing.T) {
 	}
 }
 
+/*
+func sql_NonInteractiveStreamingTest(t *testing.T) {
+	tcx := it.TestContext{T: t}
+	tcx.Tester(func(tcx it.TestContext) {
+		ctx := context.Background()
+		tcx.WithShell(ctx, func(tcx it.TestContext) {
+			tcx.WithReset(func() {
+				tcx.CLCExecute(ctx, "sql", "select * from table(generate_stream(1)) limit 3")
+				tcx.AssertStdoutEquals("0\n1\n2\n")
+			})
+		})
+	})
+}
+
+*/
+
 func sqlOutput_JSONTest(t *testing.T) {
 	formats := []string{"delimited", "json", "csv", "table"}
 	for _, f := range formats {

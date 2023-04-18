@@ -157,11 +157,7 @@ func (tcx TestContext) Tester(f func(tcx TestContext)) {
 				d, _ := filepath.Split(p)
 				check.Must(os.MkdirAll(d, 0700))
 				home.WithFile(p, bytesConfig, func(_ string) {
-					fp, err := config.NewFileProvider(tcx.ConfigPath)
-					if err != nil {
-						panic(err)
-					}
-					tcx.main = check.MustValue(cmd.NewMain("clc", tcx.ConfigPath, fp, tcx.LogPath, tcx.LogLevel, tcx.IO()))
+					tcx.main = check.MustValue(tcx.createMain())
 					tcx.T.Logf("created CLC main")
 					defer func() {
 						check.Must(tcx.main.Exit())
@@ -255,6 +251,7 @@ func (tcx TestContext) AssertStdoutEqualsWithPath(path string) {
 }
 
 func (tcx TestContext) WithReset(f func()) {
+	time.Sleep(100 * time.Millisecond)
 	tcx.ExpectStdout.Reset()
 	tcx.ExpectStderr.Reset()
 	tcx.stdout.Reset()
@@ -265,7 +262,8 @@ func (tcx TestContext) WithReset(f func()) {
 func (tcx TestContext) CLCExecute(ctx context.Context, args ...string) {
 	a := []string{"-c", tcx.ConfigPath}
 	a = append(a, args...)
-	check.Must(tcx.CLC().Execute(ctx, a...))
+	main := check.MustValue(tcx.createMain())
+	check.Must(main.Execute(ctx, a...))
 }
 
 func (tcx TestContext) WithShell(ctx context.Context, f func(tcx TestContext)) {
@@ -279,6 +277,14 @@ func (tcx TestContext) WithShell(ctx context.Context, f func(tcx TestContext)) {
 		defer tcx.WriteStdin([]byte("\\exit\n"))
 		f(tcx)
 	})
+}
+
+func (tcx TestContext) createMain() (*cmd.Main, error) {
+	fp, err := config.NewFileProvider(tcx.ConfigPath)
+	if err != nil {
+		panic(err)
+	}
+	return cmd.NewMain("clc", tcx.ConfigPath, fp, tcx.LogPath, tcx.LogLevel, tcx.IO())
 }
 
 func WithEnv(name, value string, f func()) {
