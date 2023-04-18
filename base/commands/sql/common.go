@@ -39,7 +39,6 @@ func UpdateOutput(ctx context.Context, ec plug.ExecContext, res sql.Result, verb
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, os.Kill)
 	defer stop()
 	go func() {
-		cols := MustValue(res.RowMetadata()).Columns()
 		var row sql.Row
 		var err error
 		for it.HasNext() {
@@ -49,6 +48,7 @@ func UpdateOutput(ctx context.Context, ec plug.ExecContext, res sql.Result, verb
 			}
 			// have to create a new output row
 			// since it is processed by another goroutine
+			cols := row.Metadata().Columns()
 			orow := make(output.Row, len(cols))
 			for i, col := range cols {
 				orow[i] = output.Column{
