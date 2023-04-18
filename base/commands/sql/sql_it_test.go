@@ -209,7 +209,7 @@ func sql_NonInteractiveStreamingTest(t *testing.T) {
 		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			tcx.WithReset(func() {
 				tcx.CLCExecute(ctx, "sql", "select * from table(generate_stream(1)) limit 3")
-				tcx.AssertStdoutDollar("$1$2$")
+				tcx.AssertStdoutDollar("$0$1$2$")
 			})
 		})
 	})
