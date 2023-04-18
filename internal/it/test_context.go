@@ -251,6 +251,7 @@ func (tcx TestContext) AssertStdoutEqualsWithPath(path string) {
 }
 
 func (tcx TestContext) WithReset(f func()) {
+	time.Sleep(100 * time.Millisecond)
 	tcx.ExpectStdout.Reset()
 	tcx.ExpectStderr.Reset()
 	tcx.stdout.Reset()

@@ -201,15 +201,11 @@ func sqlOutput_NonInteractiveTest(t *testing.T) {
 func sql_NonInteractiveStreamingTest(t *testing.T) {
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
-		/*
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
-		*/
 		ctx := context.Background()
 		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			tcx.WithReset(func() {
 				tcx.CLCExecute(ctx, "sql", "select * from table(generate_stream(1)) limit 3")
-				tcx.AssertStdoutDollar("$0$1$2$")
+				tcx.AssertStdoutEquals("0\n1\n2\n")
 			})
 		})
 	})
