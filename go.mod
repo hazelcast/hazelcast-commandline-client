@@ -7,7 +7,7 @@ require (
 	github.com/alecthomas/chroma v0.10.0
 	github.com/gohxs/readline v0.0.0-20171011095936-a780388e6e7c
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
-	github.com/hazelcast/hazelcast-go-client v1.4.0
+	github.com/hazelcast/hazelcast-go-client v1.4.1-0.20230418181131-132516f96baa
 	github.com/mattn/go-runewidth v0.0.14
 	github.com/nathan-fiscaletti/consolesize-go v0.0.0-20210105204122-a87d9f614b9d
 	github.com/spf13/cobra v1.7.0
@@ -67,5 +67,3 @@ require (
 	github.com/nyaosorg/go-readline-ny v0.9.1
 	gopkg.in/yaml.v2 v2.4.0
 )
-
-replace github.com/hazelcast/hazelcast-go-client v1.4.0 => github.com/yuce/hazelcast-go-client v1.1.2-0.20230418181131-132516f96baa
