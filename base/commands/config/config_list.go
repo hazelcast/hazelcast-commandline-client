@@ -36,7 +36,7 @@ func (cm ListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 		ec.Logger().Warn("Cannot access configs directory at: %s: %s", cd, err.Error())
 	}
 	if len(cs) == 0 {
-		ec.PrintlnUnnecessary("No configuration was found.")
+		ec.PrintlnUnnecessary("No configurations found.")
 		return nil
 	}
 	var rows []output.Row
