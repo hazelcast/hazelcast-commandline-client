@@ -67,3 +67,5 @@ require (
 	github.com/nyaosorg/go-readline-ny v0.9.1
 	gopkg.in/yaml.v2 v2.4.0
 )
+
+replace github.com/hazelcast/hazelcast-go-client v1.4.1-0.20230418160303-e484c512505f => github.com/yuce/hazelcast-go-client v1.1.2-0.20230418173527-117242c58b80
