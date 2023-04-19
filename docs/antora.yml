@@ -4,16 +4,18 @@ start_page: overview.adoc
 # Version in the URL
 version: '5.2'
 # Version in the version selector (we display only the latest major.minor version)
-display_version: '5.2.0'
+display_version: '5.2.1'
 # Displays a banner to inform users that this is a prerelease version 
 prerelease: false
 asciidoc:
   attributes:
     # The full major.minor.patch version, which is used as a variable in the docs for things like download links
-    full-version: '5.2.0-BETA-3'
+    full-version: '5.2.1'
     # Allows us to use UI macros. See https://docs.asciidoctor.org/asciidoc/latest/macros/ui-macros/
     experimental: true
     snapshot: true
-    page-toclevels: 3@  
+    page-toclevels: 3@
+    # Required Go version for build
+    go-version: 1.19
 nav:
   - modules/ROOT/nav.adoc
