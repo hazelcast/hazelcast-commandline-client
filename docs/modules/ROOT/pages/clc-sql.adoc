@@ -7,7 +7,7 @@ Usage:
 
 [source,bash]
 ----
-clc sql "[query]" [--format OUTPUT-FORMAT]
+clc sql [query] [flags]
 ----
 
 Parameters:

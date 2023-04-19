@@ -6,7 +6,7 @@ Usage:
 
 [source,bash]
 ----
-clc config [command] [options]
+clc config [command] [flags]
 ----
 
 == Commands
@@ -25,8 +25,86 @@ Usage:
 
 [source,bash]
 ----
-clc config add [target] [source] [key=value...]
+clc config add [target] [source] [flags] [key=value...]
 ----
+
+Configuration keys:
+
+[cols="1m,1a,1a,1"]
+|===
+|Key|Value|Default Value|Note
+
+|cluster.name
+|Any string
+|dev
+|
+
+|cluster.address
+|HOST:PORT / HOST / :PORT
+|localhost:5701
+|
+
+|cluster.user
+|Any string
+|
+| Hazelcast Enterprise only
+
+|cluster.password
+|Any string
+|
+| Hazelcast Enterprise only
+
+|cluster.discovery-token
+|Any string
+|
+|Viridian only
+
+|ssl.enabled
+|true / false
+|false
+|Viridian or Hazelcast Enterprise
+
+|ssl.server
+|DOMAIN_NAME (must match SSL certificate)
+|
+|Viridian (automatically set) or Hazelcast Enterprise
+
+|ssl.skip-verify
+|true / false
+|false
+|Viridian or Hazelcast Enterprise. Disables SSL host name and client-side verification. Never set to true in production.
+
+|ssl.ca-path
+|An absolute or relative path
+|
+|Viridian or Hazelcast Enterprise. Sets the path to the CA certificate.
+
+|ssl.key-path
+|An absolute or relative path
+|
+|Viridian or Hazelcast Enterprise. Sets the path to the certificate key.
+
+|ssl.key-password
+|Any sring
+|
+|Viridian or Hazelcast Enterprise. Sets the passwor the certificate key.
+
+|log.path
+|An absolute or relative path or `stderr` to log to stderr.
+|`$CLC_HOME/logs/YYYY-MM-DD.log` where the date is today.
+|
+
+|log.level
+|One of:
+
+. `error`
+. `warn`
+. `info`
+. `debug`
+| `info`
+|
+
+|===
 
 Parameters:
 
@@ -57,11 +135,26 @@ clc config add dev cluster.name=dev cluster.address=localhost:5701
 
 Imports configuration from an arbitrary source.
 
+Currently importing only Viridian connection configuration is supported.
+
+1. On Viridian console, visit:
++
+Dashboard -> Connect Client -> Quick connection guide -> Go
+
+2. Copy the text in box 1 and pass it as the second parameter.
+Make sure the text is quoted before running:
++
+	clc config import my-config "curl https://api.viridian.hazelcast.com ... default.zip"
++
+Alternatively, you can use an already downloaded Go client sample:
++
+	clc config import my-config /home/me/Downloads/hazelcast-cloud-go-sample....zip
+
 Usage:
 
 [source,bash]
 ----
-clc config import [target] [source]
+clc config import [configuration-name] [source] [flags]
 ----
 
 Parameters:
@@ -70,7 +163,7 @@ Parameters:
 |===
 |Parameter|Required|Description|Default
 
-|`target`
+|`configuration-name`
 |Required
 |Name of the configuration or its path. If a name is used, the configuration is saved to `$CLC_HOME/configs/NAME`
 |N/A
@@ -97,11 +190,14 @@ clc config import production ~/Downloads/hazelcast-cloud-go-sample-client-pr-381
 
 Lists the known configurations.
 
+A known configuration is a directory at `$CLC_HOME/configs` that contains config.yaml.
+Directory names which start with dot (`.`) or underscore (`_`) are ignored.
+
 Usage:
 
 [source,bash]
 ----
-clc config list
+clc config list [flags]
 ----
 
 Example output:

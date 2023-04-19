@@ -7,7 +7,7 @@ Usage:
 
 [source,bash]
 ----
-clc completion [shell] [--no-descriptions]
+clc completion [shell]
 ----
 
 Parameters:
@@ -25,11 +25,6 @@ Parameters:
 * powershell
 * zsh
 
-|All types
-
-|`--no-descriptions`
-|Optional
-|Disables completion descriptions
 |N/A
 
 |===

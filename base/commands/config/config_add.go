@@ -18,7 +18,7 @@ import (
 type AddCmd struct{}
 
 func (cm AddCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("add [configuration-name]")
+	cc.SetCommandUsage("add [configuration-name] [flags]")
 	short := "Adds a configuration"
 	long := `Adds a configuration with the given name/path and KEY=VALUE pairs
 	

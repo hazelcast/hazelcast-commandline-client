@@ -8,7 +8,7 @@ Usage:
 
 [source,bash]
 ----
-clc home [subdirectory ...]
+clc home [subdirectory ...] [flags]
 ----
 
 Parameters:
