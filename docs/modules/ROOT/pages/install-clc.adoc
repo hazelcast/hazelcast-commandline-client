@@ -11,36 +11,59 @@
 
 == Installing on macOS
 
-The Hazelcast CLC is supported on macOS 12 or newer versions.
+The Hazelcast CLC is supported on macOS 13 or newer versions.
 
 [tabs]
 ====
+ZIP (Intel)::
++
+. Go to the https://github.com/hazelcast/hazelcast-commandline-client/releases/latest[latest release page], and locate the AMD compressed file (`hazelcast-clc_v{full-version}_darwin_amd64.zip`).
+. Download and unzip the file.
+. Optionally make `clc` available without using its full path. You can do that by moving `clc` to one of the directories in the  `$PATH` environment variable. `/usr/local/bin` is a safe choice.
++
+[source,shell,subs="attributes"]
+----
+sudo mv hazelcast-clc_v{full-version}_darwin_amd64/clc /usr/local/bin
+----
+
+ZIP (Apple Silicon)::
++
+. Go to the https://github.com/hazelcast/hazelcast-commandline-client/releases/latest[latest release page], and locate the ARM compressed file (`hazelcast-clc_v{full-version}_darwin_arm64.zip`).
+. Download and unzip the file.
+. Optionally make `clc` available without using its full path. You can do that by moving `clc` to one of the directories in the  `$PATH` environment variable. `/usr/local/bin` is a safe choice.
++
+[source,shell,subs="attributes"]
+----
+sudo mv hazelcast-clc_v{full-version}_darwin_arm64/clc /usr/local/bin
+----
+
 Build from Source::
 +
 . Make sure the following are installed:
-** https://www.atlassian.com/git/tutorials/install-git[Git] (check with the `git --version` command)
-** https://www.gnu.org/software/make/[GNU Make] (check with the `make --version` command)
-** https://go.dev/doc/install[Go v1.18] or newer (check with the `go version` command)
-+
-. Clone the GitHub repository.
+** GNU Make (check with the `make --version` command). If it is not already installed, you can install Xcode Command Line Tools Package.
 +
 [source,shell]
 ----
-git clone https://github.com/hazelcast/hazelcast-commandline-client.git
+xcode-select --install
 ----
-. Change into the `hazelcast-commandline-client` directory.
 +
-[source,shell]
+** https://go.dev/doc/install[Go {go-version}] or newer (check with the `go version` command)
++
+. Go to the https://github.com/hazelcast/hazelcast-commandline-client/releases/latest[latest release page], and locate the compressed source file (`v{full-version}.zip`).
+. Download and unzip the file.
+. Change into the `hazelcast-commandline-client-{full-version}` directory.
++
+[source,shell,subs="attributes"]
 ----
-cd hazelcast-commandline-client
+cd hazelcast-commandline-client-{full-version}
 ----
 . Run the following command to build the Hazelcast CLC.
 +
-[source,shell]
+[source,shell,subs="attributes"]
 ----
-make
+CLC_VERSION=v{full-version} make
 ----
-
++
 The `clc` binary is created in the `build` directory.
 . Run the following command to start the Hazelcast CLC.
 +
@@ -48,86 +71,101 @@ The `clc` binary is created in the `build` directory.
 ----
 ./build/clc
 ----
-
-ZIP (AMD64)::
 +
-. Go to the https://github.com/hazelcast/hazelcast-commandline-client/releases/latest[latest release page], and locate the AMD compressed file (`hazelcast-clc-setup-{full-version}_darwin_amd64.zip`).
-. Download and unzip the file, and then add `clc` to the `$PATH` environment variable.
-
-ZIP (ARM64)::
+. Optionally make `clc` available without using its full path. You can do that by moving `clc` to one of the directories in the  `$PATH` environment variable. `/usr/local/bin` is a safe choice.
 +
-. Go to the https://github.com/hazelcast/hazelcast-commandline-client/releases/latest[latest release page], and locate the ARM compressed file (`hazelcast-clc-setup-{full-version}_darwin_arm64.zip`).
-. Download and unzip the file, and then add `clc` to the `$PATH` environment variable.
+[source,shell,subs="attributes"]
+----
+sudo mv ./build/clc /usr/local/bin
+----
+
 ====
 
 == Installing on Linux
 
-The Hazelcast CLC is supported on Ubuntu 18.04 or newer versions.
+The Hazelcast CLC runs on any recent Linux distribution. We test it on Ubuntu 22.04.
 
 [tabs] 
-==== 
+====
+Tarball (AMD64)::
++
+. Go to the https://github.com/hazelcast/hazelcast-commandline-client/releases/latest[latest release page], and locate the tarball for Linux (`hazelcast-clc_v{full-version}_linux_amd64.tar.gz`).
+. Download and unzip the file.
+. Optionally make `clc` available without using its full path. You can do that by moving `clc` to one of the directories in the  `$PATH` environment variable. `/usr/local/bin` is a safe choice.
++
+[source,shell,subs="attributes"]
+----
+sudo mv hazelcast-clc_v{full-version}_linux_amd64/clc /usr/local/bin
+----
+
 Build from Source::
 +
 . Make sure the following are installed:
-** https://www.atlassian.com/git/tutorials/install-git[Git] (check with the `git --version` command)
-** https://www.gnu.org/software/make/[GNU Make] (check with the `make --version` command)
-** https://go.dev/doc/install[Go v1.18] or newer (check with the `go version` command)
+** GNU Make (check with the `make --version` command). It is installed by default on most Linux distributions.
+** https://go.dev/doc/install[Go {go-version}] or newer (check with the `go version` command)
 +
-. Clone the GitHub repository.
+. Go to the https://github.com/hazelcast/hazelcast-commandline-client/releases/latest[latest release page], and locate the source tarball (`v{full-version}.tar.gz`).
+. Download and uncompress the file.
 +
-[source,shell]
+[source,shell,subs="attributes"]
 ----
-git clone https://github.com/hazelcast/hazelcast-commandline-client.git
+tar xf v{full-version}.tar.gz
 ----
-. Change into the `hazelcast-commandline-client` directory.
+. Change into the `hazelcast-commandline-client-{full-version}` directory.
 +
-[source,shell]
+[source,shell,subs="attributes"]
 ----
-cd hazelcast-commandline-client
+cd hazelcast-commandline-client-{full-version}
 ----
 . Run the following command to build the Hazelcast CLC.
 +
-[source,shell]
+[source,shell,subs="attributes"]
 ----
-make
+CLC_VERSION=v{full-version} make
 ----
-
-The `clc` binary is created in the build directory.
++
+The `clc` binary is created in the `build` directory.
 . Run the following command to start the Hazelcast CLC.
 +
 [source,shell]
 ----
 ./build/clc
 ----
-
-TAR GZ::
 +
-. Go to the https://github.com/hazelcast/hazelcast-commandline-client/releases/latest[latest release page], and locate the Linux compressed file (`hazelcast-clc-setup-{full-version}_linux.tar.gz`).
-. Download and unzip the file, and then add `clc` to the `$PATH` environment variable.
+. Optionally make `clc` available without using its full path. You can do that by moving `clc` to one of the directories in the  `$PATH` environment variable. `/usr/local/bin` is a safe choice.
++
+[source,shell,subs="attributes"]
+----
+sudo mv ./build/clc /usr/local/bin
+----
+
 ====
 
 == Installing on Windows
 
-The Hazelcast CLC is supported on Windows 10 or newer versions.
+The Hazelcast CLC is supported on Windows 10 or newer versions. We provide pre-built binaries only for 64bit Intel/AMD architecture.
 
 [tabs] 
 ==== 
 Installer::
 +
-. Go to the https://github.com/hazelcast/hazelcast-commandline-client/releases/latest[latest release page], and locate the Windows installer file (`hazelcast-clc-setup-{full-version}.exe`).
+. Go to the https://github.com/hazelcast/hazelcast-commandline-client/releases/latest[latest release page], and locate the Windows installer file (`hazelcast-clc-setup-v{full-version}.exe`).
 . Download and the run the installer on your system to start the installation wizard.
 . Follow the steps on the wizard; when you see the "Completing the Hazelcast CLC Setup Wizard" dialog, press kbd:[Finish] to complete the installation.
-. Start the Hazelcast CLC from the shortcut or by running the following command.
+. `clc.exe` is automatically added to the `PATH` environment variable, so it can be started in the terminal without its full path.
+. Start the Hazelcast CLC from the start menu or by running the following command.
 +
 [source,shell]
 ----
-.\hazelcast-commandline-client\build\clc.exe
+clc.exe
 ----
 
 ZIP::
 +
-. Go to the https://github.com/hazelcast/hazelcast-commandline-client/releases/latest[latest release page], and locate the Windows ZIP file (`hazelcast-clc-setup-{full-version}_windows.zip`).
-. Download and unzip the file, and then add the `clc.exe` executable to the `$PATH` environment variable.
+. Go to the https://github.com/hazelcast/hazelcast-commandline-client/releases/latest[latest release page], and locate the Windows ZIP file (`hazelcast-clc_v{full-version}_windows_amd64.zip`).
+. Download and unzip the file.
+. Optionally make `clc.exe` available without using its full path. You can do that by adding the full path of the extracted directory to the `PATH` environment variable.
+
 ====
 
 == Verifying the Hazelcast CLC Installation
@@ -154,7 +192,7 @@ Windows::
 . Right-click on it and select *Uninstall*.
 . Press kbd:[Yes] on the uninstallation dialog.
 
-Source::
+Release Packagae::
 +
 Delete the `hazelcast-commandline-client` directory.
 ====
