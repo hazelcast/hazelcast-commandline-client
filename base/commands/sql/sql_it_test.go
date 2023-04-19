@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
 
@@ -55,6 +56,21 @@ func sql_NonInteractiveTest(t *testing.T) {
 			SELECT * FROM "%s" ORDER BY __key;
 		`, name))
 			tcx.AssertStdoutContains("10\tfoo\n20\tbar\n")
+		})
+	})
+}
+
+func sql_NonInteractiveStreamingTest(t *testing.T) {
+	tcx := it.TestContext{T: t}
+	tcx.Tester(func(tcx it.TestContext) {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		tcx.WithReset(func() {
+			go func() {
+				tcx.CLCExecute(ctx, "sql", "select * from table(generate_stream(1))")
+			}()
+			time.Sleep(5 * time.Second)
+			tcx.AssertStdoutContains("1\n2\n")
 		})
 	})
 }
@@ -115,7 +131,7 @@ func sql_shellCommandTest(t *testing.T) {
 				target := fmt.Sprintf(`$----------------------------------------------------------------------------------------------------$
 $ table_catalog | table_schema | table_name | mapping_external_name | mapping_type | mapping_options $
 $----------------------------------------------------------------------------------------------------$
-$ hazelcast     | public       | test-table | %s      | IMAP         | {"keyFormat":"i $
+$ hazelcast     | public       | test-table | "%s"    | IMAP         | {"keyFormat":"i $
 $----------------------------------------------------------------------------------------------------$`, name)
 				tcx.AssertStdoutDollar(target)
 			})
@@ -198,6 +214,7 @@ func sqlOutput_NonInteractiveTest(t *testing.T) {
 	}
 }
 
+/*
 func sql_NonInteractiveStreamingTest(t *testing.T) {
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
@@ -210,6 +227,8 @@ func sql_NonInteractiveStreamingTest(t *testing.T) {
 		})
 	})
 }
+
+*/
 
 func sqlOutput_JSONTest(t *testing.T) {
 	formats := []string{"delimited", "json", "csv", "table"}
