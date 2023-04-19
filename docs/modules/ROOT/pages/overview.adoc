@@ -6,6 +6,10 @@
 
 The Hazelcast CLC simplifies the client setup process for Windows and Unix-like local environments. Within minutes of installation, you can start to perform common tasks on clusters.
 
+== Install
+
+See xref:install-clc.adoc[installation documentation].
+
 == Use Cases
 
 Example use cases for the Hazelcast CLC.

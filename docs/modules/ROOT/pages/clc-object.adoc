@@ -21,8 +21,12 @@ Usage:
 
 [source,bash]
 ----
-clc object list [type] [--show-hidden]
+clc object list [object-type] [flags]
 ----
+
+Available object types (_case insensitive_):
+
+
 
 Parameters:
 
@@ -34,13 +38,10 @@ Parameters:
 |Optional
 |Type of the objects to be listed. If not specified, the command lists all the objects. Available types (_case insensitive_):
 
-* atomicLong
-* atomicReference
 * cache
 * cardinalityEstimator
 * countdownLatch
 * eventJournal
-* fencedLock
 * flakeIdGenerator
 * list
 * map
@@ -52,6 +53,8 @@ Parameters:
 * semaphore
 * set
 * topic
+
+Note that CP subsystem objects cannot be listed.
 
 |All types
 

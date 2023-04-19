@@ -20,7 +20,7 @@ type MapSizeCommand struct{}
 func (mc *MapSizeCommand) Init(cc plug.InitContext) error {
 	help := "Return the size of the given Map"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("size [-n map-name]")
+	cc.SetCommandUsage("size")
 	cc.SetPositionalArgCount(0, 0)
 	return nil
 }

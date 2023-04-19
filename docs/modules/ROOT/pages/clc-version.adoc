@@ -3,7 +3,9 @@
 
 {description}
 
-The following are printed:
+Without any flags, only the version of the Hazelcast CLC is printed.
+
+With the `--verbose` flag, the following are printed:
 
 * The Hazelcast CLC version
 * Latest Git commit hash to the Hazelcast CLC
@@ -11,6 +13,13 @@ The following are printed:
 * Go Version
 
 Usage:
+
+[source,bash]
+----
+clc version [flags]
+----
+
+Example:
 
 [source,bash]
 ----

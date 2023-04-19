@@ -22,7 +22,7 @@ func (mc *MapGetCommand) Init(cc plug.InitContext) error {
 	addKeyTypeFlag(cc)
 	help := "Get a value from the given Map"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("get [-n map-name] [key] [flags]")
+	cc.SetCommandUsage("get [key] [flags]")
 	cc.SetPositionalArgCount(1, 1)
 	return nil
 }
