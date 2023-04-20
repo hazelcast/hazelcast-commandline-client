@@ -12,13 +12,15 @@
 
 .Reference
 * xref:clc-commands.adoc[Command Reference]
+** xref:clc.adoc[]
 ** xref:clc-completion.adoc[]
 ** xref:clc-config.adoc[]
 ** xref:clc-home.adoc[]
+** xref:clc-job.adoc[]
 ** xref:clc-object.adoc[]
 ** xref:clc-map.adoc[]
-** xref:clc.adoc[]
 ** xref:clc-sql.adoc[]
+** xref:clc-snapshot.adoc[]
 ** xref:clc-version.adoc[]
 * xref:keyboard-shortcuts.adoc[]
 
