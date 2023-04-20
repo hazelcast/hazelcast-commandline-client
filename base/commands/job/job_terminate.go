@@ -20,7 +20,7 @@ type TerminateCmd struct {
 }
 
 func (cm TerminateCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage(fmt.Sprintf("%s [job ID/name, ...]", cm.name))
+	cc.SetCommandUsage(fmt.Sprintf("%s [job-ID/name, ...]", cm.name))
 	cc.SetCommandHelp(cm.longHelp, cm.shortHelp)
 	cc.SetPositionalArgCount(1, math.MaxInt)
 	cc.AddBoolFlag(flagForce, "", false, false, fmt.Sprintf("force %s the job", cm.name))

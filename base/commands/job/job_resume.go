@@ -13,7 +13,7 @@ import (
 type ResumeCmd struct{}
 
 func (cm ResumeCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("resume [job ID/name]")
+	cc.SetCommandUsage("resume [job-ID/name]")
 	help := "Resumes a suspended job"
 	cc.SetCommandHelp(help, help)
 	cc.SetPositionalArgCount(1, 1)

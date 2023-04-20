@@ -15,7 +15,7 @@ import (
 type ExportSnapshotCmd struct{}
 
 func (cm ExportSnapshotCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("export-snapshot [job ID/name]")
+	cc.SetCommandUsage("export-snapshot [job-ID/name]")
 	help := "Exports a snapshot for a job"
 	cc.SetCommandHelp(help, help)
 	cc.SetPositionalArgCount(1, 1)
