@@ -1,0 +1,255 @@
+= clc job
+
+This command group provides commands for creating and operating on Jet jobs.
+
+Check out the documentation for https://docs.hazelcast.com/hazelcast/latest/pipelines/overview[Data Pipelines] for more information about the Jet engine.
+
+Usage:
+
+[source,bash]
+----
+clc job [command] [options]
+----
+
+== Commands
+
+* <<clc-job-submit, clc job submit>>
+* <<clc-job-cancel, clc job cancel>>
+* <<clc-job-list, clc job list>>
+* <<clc-job-restart, clc job restart>>
+* <<clc-job-resume, clc job resume>>
+* <<clc-job-suspend, clc job suspend>>
+* <<clc-job-export-snapshot, clc job export-snapshot>>
+
+== clc job submit
+
+Creates a Jet job using the provided Jar file.
+
+This command requires a Viridian or a Hazelcast cluster
+having version 5.3.0-BETA-2 or better.
+
+Usage:
+
+[source,bash]
+----
+clc job submit [jar-file] [arg, ...] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`jar-file`
+|Required
+|The jar file that contains the data pipeline code.
+|
+
+|`arg`
+|Optional
+|Zero or more arguments to pass to the `main` method of the data pipeline class.
+|
+
+|`--class`
+|Optional
+|Fully qualified name of the class that contains the `main` method that creates the data pipeline.
+Must include the package name, such as: `com.example.JetJob`.
+|Main class in the Jar manifest
+
+|`--name`
+|Optional
+|Name of the Jet job. Job names must be unique across running and suspended jobs.
+|The name given while creating the data pipeline.
+
+|`--retries`
+|Optional
+|Number of times to retry a failed submission.
+|`3`
+
+|`--snapshot`
+|Optional
+|Name of the snapshot to initialize the job with.
+|
+
+|===
+
+== clc job cancel
+
+Cancels one or more Jet jobs.
+
+Usage:
+
+[source,bash]
+----
+clc job cancel [job-ID/name, ...] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`job-ID/name`
+|Required
+|One or more Job IDs (UUID or integer) or job names.
+|
+
+|`--force`
+|Optional
+|Force cancelling the job. This is useful for cancelling suspended jobs.
+|`false`
+
+|===
+
+== clc job list
+
+Lists Jet jobs.
+
+Usage:
+
+[source,bash]
+----
+clc job list [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--include-sql`
+|Optional
+|Running SQL queries creates Jet jobs. This flags enables showing them in the list.
+|`false`
+
+|`--include-user-cancelled`
+|Optional
+|This flags enables showing user cancelled jobs in the list.
+|`false`
+
+|===
+
+Example output:
+
+[source,bash]
+----
+clc job list
+09bb-6718-4902-0001	sample2	RUNNING	2023-04-20 06:06:52	-
+09bb-6718-4900-0001	sample1	SUSPENDED	2023-04-20 06:06:45	-
+----
+
+
+== clc job restart
+
+Restarts one or more Jet jobs.
+
+Usage:
+
+[source,bash]
+----
+clc job restart [job-ID/name, ...] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`job-ID/name`
+|Required
+|One or more Job IDs (UUID or integer) or job names.
+|
+
+|`--force`
+|Optional
+|Force restart the job.
+|`false`
+
+|===
+
+== clc job resume
+
+Resumes a suspended a Jet job.
+
+Usage:
+
+[source,bash]
+----
+clc job resume [job-ID/name] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`job-ID/name`
+|Required
+|The Job with ID (UUID or integer) or with name to resume.
+|
+
+|===
+
+
+== clc job suspend
+
+Suspends one or more Jet jobs.
+
+Usage:
+
+[source,bash]
+----
+clc job suspend [job-ID/name, ...] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`job-ID/name`
+|Required
+|One or more Job IDs (UUID or integer) or job names.
+|
+
+|`--force`
+|Optional
+|Force suspend the job.
+|`false`
+
+|===
+
+== clc job export-snapshot
+
+Exports a snapshot from a Jet job. Note that this feature requires Viridian or Hazelcast Enterprise.
+
+Usage:
+
+[source,bash]
+----
+clc job export-snapshot [job-ID/name] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--cancel`
+|Optional
+|If true, the job is cancelled after taking a snapshot.
+|`false`
+
+|`--name`
+|Optional
+|Name of the snapshot. If not given, an auto-generated snapshot name is used.
+|Auto-generated name
+
+|===
