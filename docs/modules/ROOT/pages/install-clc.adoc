@@ -1,7 +1,7 @@
 = Installing the Hazelcast CLC
 :description: The Hazelcast Command-Line Client (CLC) is available to install in macOS, Linux, and Windows environments.
 
-// See https://docs.hazelcast.com/hazelcast/5.2-snapshot/clients/clc#installing-the-hazelcast-clc
+// See https://docs.hazelcast.com/hazelcast/5.3-snapshot/clients/clc#installing-the-hazelcast-clc
 
 {description} You can install the Hazelcast CLC, using one of the following:
 
