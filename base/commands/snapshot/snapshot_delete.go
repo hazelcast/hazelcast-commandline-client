@@ -11,7 +11,7 @@ import (
 type DeleteCmd struct{}
 
 func (cm DeleteCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("delete [snapshot ID")
+	cc.SetCommandUsage("delete [snapshot-name]")
 	help := "Delete a snapshot"
 	cc.SetCommandHelp(help, help)
 	cc.SetPositionalArgCount(1, 1)

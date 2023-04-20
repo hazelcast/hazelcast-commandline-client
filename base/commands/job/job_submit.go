@@ -36,13 +36,13 @@ const (
 type SubmitCmd struct{}
 
 func (cm SubmitCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("submit [jar file] [arg, ...]")
-	long := fmt.Sprintf(`Submit a jar file and create a Jet job
+	cc.SetCommandUsage("submit [jar-file] [arg, ...]")
+	long := fmt.Sprintf(`Submits a jar file to create a Jet job
 	
 This command requires a Viridian or a Hazelcast cluster
 having version %s or better.
 `, minServerVersion)
-	short := "Submit a jar file and create a Jet job"
+	short := "Submits a jar file to create a Jet job"
 	cc.SetCommandHelp(long, short)
 	cc.AddStringFlag(flagName, "", "", false, "override the job name")
 	cc.AddStringFlag(flagSnapshot, "", "", false, "initial snapshot to start the job from")
