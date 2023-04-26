@@ -41,7 +41,7 @@ func Read(prefix, name string) (string, error) {
 }
 
 func FindAll(prefix string) ([]string, error) {
-	return paths.FindAll(paths.Secrets(), func(basePath string, entry os.DirEntry) (ok bool) {
+	return paths.FindAll(paths.Join(paths.Secrets(), prefix), func(basePath string, entry os.DirEntry) (ok bool) {
 		return !entry.IsDir()
 	})
 }

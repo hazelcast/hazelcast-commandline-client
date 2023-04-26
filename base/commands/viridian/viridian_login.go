@@ -52,6 +52,7 @@ func (cm LoginCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err = cm.saveSecrets(ctx, key, token); err != nil {
 		return err
 	}
+	ec.PrintlnUnnecessary("")
 	ec.PrintlnUnnecessary("Viridian token was fetched and saved.")
 	return nil
 }

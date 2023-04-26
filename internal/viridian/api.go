@@ -34,6 +34,14 @@ func (a API) Token() string {
 	return a.token
 }
 
+func (a API) ListClusters(ctx context.Context) ([]Cluster, error) {
+	csw, err := doGet[Wrapper[[]Cluster]](ctx, "/cluster", a.Token())
+	if err != nil {
+		return nil, fmt.Errorf("listing clusters: %w", err)
+	}
+	return csw.Content, nil
+}
+
 func APIBaseURL() string {
 	u := os.Getenv(EnvAPIBaseURL)
 	if u != "" {
@@ -48,29 +56,31 @@ func makeUrl(path string) string {
 	return APIBaseURL() + path
 }
 
-func doGet(ctx context.Context, url, token string) ([]byte, error) {
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+func doGet[Res any](ctx context.Context, path, token string) (res Res, err error) {
+	req, err := http.NewRequest(http.MethodGet, makeUrl(path), nil)
 	if err != nil {
-		return nil, fmt.Errorf("creating request: %w", err)
+		return res, fmt.Errorf("creating request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	if token != "" {
 		req.Header.Set("Authorization", "Bearer "+token)
 	}
 	req = req.WithContext(ctx)
-	res, err := http.DefaultClient.Do(req)
+	rawRes, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("sending request: %w", err)
+		return res, fmt.Errorf("sending request: %w", err)
 	}
-	rb, err := io.ReadAll(res.Body)
+	rb, err := io.ReadAll(rawRes.Body)
 	if err != nil {
-		return nil, fmt.Errorf("reading response: %w", err)
+		return res, fmt.Errorf("reading response: %w", err)
 	}
-	if res.StatusCode == 200 {
-		return rb, nil
+	if rawRes.StatusCode == 200 {
+		if err = json.Unmarshal(rb, &res); err != nil {
+			return res, err
+		}
+		return res, nil
 	}
-	return nil, fmt.Errorf("%d: %s", res.StatusCode, string(rb))
-
+	return res, fmt.Errorf("%d: %s", rawRes.StatusCode, string(rb))
 }
 
 func doPost[Req, Res any](ctx context.Context, path, token string, request Req) (res Res, err error) {
