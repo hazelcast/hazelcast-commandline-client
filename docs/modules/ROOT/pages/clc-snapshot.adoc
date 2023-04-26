@@ -1,0 +1,231 @@
+= clc snapshot
+
+This command manages Jet job snapshots.
+
+Usage:
+
+[source,bash]
+----
+clc snapshot [command] [flags]
+----
+
+== Commands
+
+* <<clc-snapshot-list, clc snapshot list>>
+* <<clc-snapshot-delete, clc snapshot delete>>
+
+== clc snapshot list
+
+Lists Jet job snapshots.
+
+Usage:
+
+[source,bash]
+----
+clc snapshot list [flags]
+----
+
+== clc snapshot delete
+
+Deletes the given Jet job snapshot.
+
+Usage:
+
+[source,bash]
+----
+clc snapshot delete [snapshot-name] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`snapshot-name`
+|Required
+|The snapshot to delete.
+|
+
+|===
+
+
+== clc job cancel
+
+Cancels one or more Jet jobs.
+
+Usage:
+
+[source,bash]
+----
+clc job cancel [job-ID/name, ...] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`job-ID/name`
+|Required
+|One or more Job IDs (UUID or integer) or job names.
+|
+
+|`--force`
+|Optional
+|Force cancelling the job. This is useful for cancelling suspended jobs.
+|`false`
+
+|===
+
+== clc job list
+
+Lists Jet jobs.
+
+Usage:
+
+[source,bash]
+----
+clc job list [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--include-sql`
+|Optional
+|Running SQL queries creates Jet jobs. This flags enables showing them in the list.
+|`false`
+
+|`--include-user-cancelled`
+|Optional
+|This flags enables showing user cancelled jobs in the list.
+|`false`
+
+|===
+
+Example output:
+
+[source,bash]
+----
+clc job list
+09bb-6718-4902-0001	sample2	RUNNING	2023-04-20 06:06:52	-
+09bb-6718-4900-0001	sample1	SUSPENDED	2023-04-20 06:06:45	-
+----
+
+
+== clc job restart
+
+Restarts one or more Jet jobs.
+
+Usage:
+
+[source,bash]
+----
+clc job restart [job-ID/name, ...] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`job-ID/name`
+|Required
+|One or more Job IDs (UUID or integer) or job names.
+|
+
+|`--force`
+|Optional
+|Force restart the job.
+|`false`
+
+|===
+
+== clc job resume
+
+Resumes a suspended a Jet job.
+
+Usage:
+
+[source,bash]
+----
+clc job resume [job-ID/name] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`job-ID/name`
+|Required
+|The Job with ID (UUID or integer) or with name to resume.
+|
+
+|===
+
+
+== clc job suspend
+
+Suspends one or more Jet jobs.
+
+Usage:
+
+[source,bash]
+----
+clc job suspend [job-ID/name, ...] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`job-ID/name`
+|Required
+|One or more Job IDs (UUID or integer) or job names.
+|
+
+|`--force`
+|Optional
+|Force suspend the job.
+|`false`
+
+|===
+
+== clc job export-snapshot
+
+Exports a snapshot from a Jet job. Note that this feature requires Viridian or Hazelcast Enterprise.
+
+Usage:
+
+[source,bash]
+----
+clc job export-snapshot [job-ID/name] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--cancel`
+|Optional
+|If true, the job is cancelled after taking a snapshot.
+|`false`
+
+|`--name`
+|Optional
+|Name of the snapshot. If not given, an auto-generated snapshot name is used.
+|Auto-generated name
+
+|===

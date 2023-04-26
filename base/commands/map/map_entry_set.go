@@ -21,7 +21,7 @@ type MapEntrySetCommand struct{}
 func (mc *MapEntrySetCommand) Init(cc plug.InitContext) error {
 	help := "Get all entries of a Map"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("entry-set [-n map-name] [flags]")
+	cc.SetCommandUsage("entry-set")
 	cc.SetPositionalArgCount(0, 0)
 	return nil
 }
@@ -48,7 +48,7 @@ func (mc *MapEntrySetCommand) Exec(ctx context.Context, ec plug.ExecContext) err
 		return ec.AddOutputRows(ctx, rows...)
 	}
 	if !ec.Props().GetBool(clc.PropertyQuiet) {
-		I2(fmt.Fprintln(ec.Stdout(), "No entries found"))
+		I2(fmt.Fprintln(ec.Stdout(), "No entries found."))
 	}
 	return nil
 }

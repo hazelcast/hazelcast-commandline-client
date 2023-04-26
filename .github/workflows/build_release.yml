@@ -28,6 +28,8 @@ jobs:
           go mod tidy
           export CLC_VERSION="${GITHUB_REF_NAME}"
           GOOS=linux GOARCH=amd64 make release BINARY_NAME=clc TARGZ=true
+          GOOS=linux GOARCH=arm64 make release BINARY_NAME=clc TARGZ=true
+          GOOS=linux GOARCH=arm make release BINARY_NAME=clc TARGZ=true
           GOOS=darwin GOARCH=amd64 make release BINARY_NAME=clc TARGZ=false
           GOOS=darwin GOARCH=arm64 make release BINARY_NAME=clc TARGZ=false
           GOOS=windows GOARCH=amd64 make release BINARY_NAME=clc.exe TARGZ=false

@@ -12,15 +12,19 @@
 
 .Reference
 * xref:clc-commands.adoc[Command Reference]
+** xref:clc.adoc[]
 ** xref:clc-completion.adoc[]
 ** xref:clc-config.adoc[]
 ** xref:clc-home.adoc[]
+** xref:clc-job.adoc[]
 ** xref:clc-object.adoc[]
 ** xref:clc-map.adoc[]
-** xref:clc.adoc[]
 ** xref:clc-sql.adoc[]
+** xref:clc-snapshot.adoc[]
 ** xref:clc-version.adoc[]
 * xref:keyboard-shortcuts.adoc[]
 
 .Release Notes
-* xref:release-notes.adoc[5.2.0-BETA-3]
+* xref:release-notes-5.3.0-BETA-1.adoc[5.3.0-BETA-1]
+* xref:release-notes-5.2.1.adoc[5.2.1]
+* xref:release-notes-5.2.0.adoc[5.2.0]

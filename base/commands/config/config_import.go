@@ -15,7 +15,7 @@ import (
 type ImportCmd struct{}
 
 func (cm ImportCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("import [configuration-name] [source]")
+	cc.SetCommandUsage("import [configuration-name] [source] [flags]")
 	short := "Imports configuration from an arbitrary source"
 	long := `Imports configuration from an arbitrary source
 	

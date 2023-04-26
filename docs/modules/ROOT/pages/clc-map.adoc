@@ -6,7 +6,7 @@ Usage:
 
 [source,bash]
 ----
-clc map [command] [options]
+clc map [command] [flags]
 ----
 
 == Commands
@@ -26,7 +26,7 @@ Usage:
 
 [source,bash]
 ----
-clc map clear --name <name of your map>
+clc map [flags]
 ----
 
 Parameters:
@@ -36,7 +36,7 @@ Parameters:
 |Parameter|Required|Description|Default
 
 |`--name`, `-n`
-|Required
+|Optional
 |Name of the map.
 |`default`
 
@@ -50,9 +50,7 @@ Usage:
 
 [source,bash]
 ----
-clc map get --name <name of your map>
-            [--key-type {string (default), bool, json, i8, i16, i32, i64, f32, f64}]
-            [key]
+clc map get [key] [flags]
 ----
 
 Parameters:
@@ -62,9 +60,9 @@ Parameters:
 |Parameter|Required|Description|Default
 
 |`--name`, `-n`
-|Required
+|Optional
 |Name of the map.
-|`dev`
+|`default`
 
 |`key`
 |Required
@@ -73,8 +71,18 @@ Parameters:
 
 |`--key-type`, `-k`
 |Optional
-|Data type of the key.
-|String
+|Data type of the key. One of: `string`, `bool`, `json`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`.
+|string
+
+|`--format`, `-f`
+|Optional
+|Output format. Supported formats:
+
+- `csv`
+- `delimited`
+- `json`
+- `table`
+|`delimited` in non-interactive mode, `table` in interactive mode.
 
 |===
 
@@ -93,14 +101,7 @@ Usage:
 
 [source,bash]
 ----
-clc map set --name <name of your map>
-            [key]
-            [value]
-            [--key-type {string (default), bool, json, i8, i16, i32, i64, f32, f64}]
-            [--value-type {string (default), bool, json, i8, i16, i32, i64, f32, f64}]
-            [--ttl {ns, us, ms, s, m, h (nanosecond, microsecond, millisecond, second, minute, hour)}]
-            [--max-idle {ns, us, ms, s, m, h (nanosecond, microsecond, millisecond, second, minute, hour)}]
-
+clc map set [key] [value] [flags]
 ----
 
 Parameters:
@@ -110,28 +111,28 @@ Parameters:
 |Parameter|Required|Description|Default
 
 |`--name`, `-n`
-|Required
+|Optional
 |Name of the map.
-|`dev`
+|`default`
 
 |`key`
 |Required
 |Key of the map entry.
 |N/A
 
-|`value`
+|`value`,
 |Required
-|Value to set for the key. Mutually exclusive with `--value-file`.
+|Value to set for the key.
 |N/A
 
 |`--key-type`, `-k`
 |Optional
-|Data type of the key.
+|Data type of the key. One of: `string`, `bool`, `json`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`
 |String
 
 |`--value-type`, `-v`
 |Optional
-|Data type of the value.
+|Data type of the value. One of: `string`, `bool`, `json`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`
 |String
 
 |`--ttl`
@@ -150,7 +151,7 @@ Example:
 
 [source,bash]
 ----
-clc map set --key-type string hello --value-type f32 19.94 --name myMap --ttl 1300ms
+clc map set --key-type string hello --value-type f32 19.94 --name myMap --ttl 1300
 ----
 
 == clc map entry-set
@@ -161,7 +162,7 @@ Usage:
 
 [source,bash]
 ----
-clc map entry-set --name <name of your map>
+clc map entry-set [flags]
 ----
 
 Parameters:
@@ -171,9 +172,19 @@ Parameters:
 |Parameter|Required|Description|Default
 
 |`--name`, `-n`
-|Required
+|Optional
 |Name of the map.
-|`dev`
+|`default`
+
+|`--format`, `-f`
+|Optional
+|Output format. Supported formats:
+
+- `csv`
+- `delimited`
+- `json`
+- `table`
+|`delimited` in non-interactive mode, `table` in interactive mode.
 
 |===
 
@@ -192,7 +203,7 @@ Usage:
 
 [source,bash]
 ----
-clc map size --name <name of your map>
+clc map size [flags]
 ----
 
 Parameters:
@@ -202,23 +213,21 @@ Parameters:
 |Parameter|Required|Description|Default
 
 |`--name`, `-n`
-|Required
+|Optional
 |Name of the map.
-|`dev`
+|`default`
 
 |===
 
 == clc map remove
 
-Deletes the value of a given key in a map.
+Deletes the value of a given key in a map and returns the key.
 
 Usage:
 
 [source,bash]
 ----
-clc map remove --name <name of your map>
-               [key]
-               [--key-type {string (default), bool, json, i8, i16, i32, i64, f32, f64}]
+clc map remove [flags] [key]
 ----
 
 Parameters:
@@ -228,9 +237,9 @@ Parameters:
 |Parameter|Required|Description|Default
 
 |`--name`, `-n`
-|Required
+|Optional
 |Name of the map.
-|`dev`
+|`default`
 
 |`key`
 |Required
@@ -239,8 +248,18 @@ Parameters:
 
 |`--key-type`, `-k`
 |Optional
-|Data type of the key.
+|Data type of the key. One of: `string`, `bool`, `json`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`
 |String
+
+|`--format`, `-f`
+|Optional
+|Output format. Supported formats:
+
+- `csv`
+- `delimited`
+- `json`
+- `table`
+|`delimited` in non-interactive mode, `table` in interactive mode.
 
 |===
 
@@ -249,4 +268,5 @@ Example:
 [source,bash]
 ----
 clc map remove --name myMap --key-type string k1
+k1
 ----

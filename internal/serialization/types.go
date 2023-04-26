@@ -49,11 +49,17 @@ func sprintStringer(v any) string {
 	if check.IsNil(v) {
 		return ValueNil
 	}
+	if vv, ok := v.(Texter); ok {
+		return vv.Text()
+	}
 	return fmt.Sprint(v)
 }
 
 func ptrStringer[T any]() Stringer {
 	return func(v any) string {
+		if v == nil {
+			return ValueNil
+		}
 		if vv, ok := v.(T); ok {
 			return fmt.Sprint(vv)
 		}
@@ -63,7 +69,7 @@ func ptrStringer[T any]() Stringer {
 			}
 			return fmt.Sprint(*vv)
 		}
-		return fmt.Sprintf("?%v?", reflect.TypeOf(v))
+		return fmt.Sprintf("?ptr:%v?", reflect.TypeOf(v))
 	}
 }
 
@@ -74,25 +80,54 @@ func sprintNilStringer[T any](v *T) string {
 	return fmt.Sprint(*v)
 }
 
-func arrayStringer[T any](v any) string {
-	vv, ok := v.([]T)
-	if !ok {
-		if vv, ok := v.([]*T); ok {
-			return arrayPtrStringer[T](vv)
-		}
-		return fmt.Sprintf("?%v?", reflect.TypeOf(v))
+func simplify(v any) any {
+	if vc, ok := v.(ColumnList); ok {
+		return convertToAnyArray(vc)
 	}
-	var sb strings.Builder
-	sb.WriteString("[")
-	if len(vv) > 0 {
-		sb.WriteString(fmt.Sprint(vv[0]))
-		for _, x := range vv[1:] {
-			sb.WriteString(", ")
-			sb.WriteString(fmt.Sprint(x))
-		}
+	if vc, ok := v.(ColumnMap); ok {
+		return convertToAnyArray(vc)
 	}
-	sb.WriteString("]")
-	return sb.String()
+	vv := reflect.ValueOf(v)
+	if vv.Kind() == reflect.Slice {
+		l := vv.Len()
+		a := make([]any, l)
+		for i := 0; i < l; i++ {
+			a[i] = vv.Index(i).Interface()
+		}
+		return a
+	}
+	return v
+}
+
+func convertToAnyArray[T any](v []T) []any {
+	r := make([]any, len(v))
+	for i, x := range v {
+		r[i] = x
+	}
+	return r
+}
+
+func arrayStringer[T any](stringer Stringer) Stringer {
+	return func(v any) string {
+		vv, ok := v.([]T)
+		if !ok {
+			if vv, ok := v.([]*T); ok {
+				return arrayPtrStringer[T](vv)
+			}
+			return fmt.Sprintf("?array:%v?", reflect.TypeOf(v))
+		}
+		var sb strings.Builder
+		sb.WriteString("[")
+		if len(vv) > 0 {
+			sb.WriteString(stringer(vv[0]))
+			for _, x := range vv[1:] {
+				sb.WriteString(", ")
+				sb.WriteString(stringer(x))
+			}
+		}
+		sb.WriteString("]")
+		return sb.String()
+	}
 }
 
 func arrayPtrStringer[T any](v any) string {
@@ -110,29 +145,35 @@ func arrayPtrStringer[T any](v any) string {
 	return sb.String()
 }
 
-func arrayAnySerializer(v any) string {
-	vv, ok := v.([]any)
-	if !ok {
-		return "?array?"
-	}
-	var sb strings.Builder
-	sb.WriteString("[")
-	if len(vv) > 0 {
-		sb.WriteString(sprintStringer(vv[0]))
-		for _, x := range vv[1:] {
-			sb.WriteString(", ")
-			sb.WriteString(sprintStringer(x))
+func arrayAnyStringer[T any](stringer Stringer) Stringer {
+	return func(v any) string {
+		vv, ok := v.([]T)
+		if !ok {
+			vv, ok := v.([]*T)
+			if !ok {
+				return "?array?"
+			}
+			return arrayStringer[*T](stringer)(vv)
 		}
+		var sb strings.Builder
+		sb.WriteString("[")
+		if len(vv) > 0 {
+			sb.WriteString(stringer(vv[0]))
+			for _, x := range vv[1:] {
+				sb.WriteString(", ")
+				sb.WriteString(stringer(x))
+			}
+		}
+		sb.WriteString("]")
+		return sb.String()
 	}
-	sb.WriteString("]")
-	return sb.String()
 }
 
 func javaClassStringer(v any) string {
 	return fmt.Sprintf("Java Class: %v", v)
 }
 
-func timeStringer(v any) string {
+func dateTimeStringer(v any) string {
 	switch vv := v.(type) {
 	case time.Time:
 		return vv.Format(time.RFC3339)
@@ -198,37 +239,42 @@ func init() {
 		TypeFloat32:      ptrStringer[float32](),
 		TypeFloat64:      ptrStringer[float64](),
 		TypeString:       ptrStringer[string](), // +
-		TypeByteArray:    arrayStringer[uint8],
-		TypeBoolArray:    arrayStringer[bool],
-		TypeUInt16Array:  arrayStringer[uint16],
-		TypeInt16Array:   arrayStringer[int16],
-		TypeInt32Array:   arrayStringer[int32],
-		TypeInt64Array:   arrayStringer[int64],
-		TypeFloat32Array: arrayStringer[float32],
-		TypeFloat64Array: arrayStringer[float64],
-		TypeStringArray:  arrayStringer[string],
+		TypeByteArray:    arrayStringer[uint8](sprintStringer),
+		TypeBoolArray:    arrayStringer[bool](sprintStringer),
+		TypeUInt16Array:  arrayStringer[uint16](sprintStringer),
+		TypeInt16Array:   arrayStringer[int16](sprintStringer),
+		TypeInt32Array:   arrayStringer[int32](sprintStringer),
+		TypeInt64Array:   arrayStringer[int64](sprintStringer),
+		TypeFloat32Array: arrayStringer[float32](sprintStringer),
+		TypeFloat64Array: arrayStringer[float64](sprintStringer),
+		TypeStringArray:  arrayStringer[string](sprintStringer),
 		TypeUUID:         sprintStringer,
 
 		// TypeSimpleEntry
 		// TypeSimpleImmutableEntry
 
 		TypeJavaClass:          javaClassStringer,
-		TypeJavaDate:           timeStringer,
+		TypeJavaDate:           dateTimeStringer,
 		TypeJavaBigInteger:     sprintStringer,
-		TypeJavaDecimal:        ptrStringer[types.Decimal](), // +
-		TypeJavaArray:          arrayAnySerializer,           // +
-		TypeJavaArrayList:      arrayAnySerializer,           // +
-		TypeJavaLinkedList:     arrayAnySerializer,           // +
-		TypeJavaLocalDate:      timeStringer,
-		TypeJavaLocalTime:      timeStringer,
-		TypeJavaLocalDateTime:  timeStringer,
-		TypeJavaOffsetDateTime: timeStringer, // +
+		TypeJavaDecimal:        ptrStringer[types.Decimal](),          // +
+		TypeJavaArray:          arrayAnyStringer[any](sprintStringer), // +
+		TypeJavaArrayList:      arrayAnyStringer[any](sprintStringer), // +
+		TypeJavaLinkedList:     arrayAnyStringer[any](sprintStringer), // +
+		TypeJavaLocalDate:      dateTimeStringer,
+		TypeJavaLocalTime:      dateTimeStringer,
+		TypeJavaLocalDateTime:  dateTimeStringer,
+		TypeJavaOffsetDateTime: dateTimeStringer, // +
 
 		TypeJSONSerialization: sprintStringer,
 
 		//
-
-		TypeInt8:      ptrStringer[int8](),
-		TypeInt8Array: arrayStringer[int8],
+		TypeDecimalArray:            arrayAnyStringer[types.Decimal](ptrStringer[types.Decimal]()),
+		TypeJavaLocalTimeArray:      arrayAnyStringer[types.LocalTime](dateTimeStringer),
+		TypeJavaLocalDateArray:      arrayAnyStringer[types.LocalDate](dateTimeStringer),
+		TypeJavaLocalDateTimeArray:  arrayAnyStringer[types.LocalDateTime](dateTimeStringer),
+		TypeJavaOffsetDateTimeArray: arrayAnyStringer[types.OffsetDateTime](dateTimeStringer),
+		TypeCompactArray:            arrayAnyStringer[any](sprintStringer),
+		TypeInt8:                    ptrStringer[int8](),
+		TypeInt8Array:               arrayStringer[int8](sprintStringer),
 	}
 }

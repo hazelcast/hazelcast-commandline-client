@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync/atomic"
 
@@ -37,6 +38,10 @@ func getClientInternal() *hazelcast.ClientInternal {
 
 func setClientInternal(ci *hazelcast.ClientInternal) {
 	clientInternal.Store(ci)
+}
+
+func ServerVersionOf(ci *hazelcast.ClientInternal) string {
+	return ci.ConnectionManager().RandomConnection().ServerVersion()
 }
 
 type Main struct {
@@ -110,6 +115,8 @@ func (m *Main) CloneForInteractiveMode() (*Main, error) {
 	rc := &cobra.Command{
 		SilenceErrors: true,
 	}
+	rc.SetOut(m.stdout)
+	rc.SetErr(m.stderr)
 	mc.root = rc
 	// disable completions command in the interactive mode
 	rc.CompletionOptions.DisableDefaultCmd = true
@@ -134,8 +141,6 @@ func (m *Main) CloneForInteractiveMode() (*Main, error) {
 func (m *Main) Root() *cobra.Command {
 	return m.root
 }
-
-// TODO: add context arg to Execute
 
 func (m *Main) Execute(ctx context.Context, args ...string) error {
 	var cm *cobra.Command
@@ -162,12 +167,17 @@ func (m *Main) Execute(ctx context.Context, args ...string) error {
 			// if help was not requested, set shell as the command
 			if useShell {
 				// check that the first argument is not an invalid commands
-				//if len(cmdArgs) > 0 && !strings.HasPrefix()
 				args = append([]string{"shell"}, cmdArgs...)
 			}
 		}
 	} else {
-		cm, _, _ = m.root.Find(args)
+		cm, _, err = m.root.Find(args)
+		if err != nil {
+			if len(args) > 0 && args[0] == "\\help" {
+				return m.root.Help()
+			}
+			return convertUnknownCommandError(err)
+		}
 	}
 	m.root.SetArgs(args)
 	m.props.Push()
@@ -390,6 +400,16 @@ func convertFlagValue(fs *pflag.FlagSet, name string, v pflag.Value) any {
 		return MustValue(fs.GetInt64(name))
 	}
 	panic(fmt.Errorf("cannot convert type: %s", v.Type()))
+}
+
+var regexpUnknownCommand = regexp.MustCompile(`unknown command "\\\\([^"]+)"`)
+
+func convertUnknownCommandError(err error) error {
+	ss := regexpUnknownCommand.FindStringSubmatch(err.Error())
+	if len(ss) < 2 {
+		return err
+	}
+	return fmt.Errorf("unknown command \\%s", ss[1])
 }
 
 func init() {

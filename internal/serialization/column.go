@@ -56,7 +56,7 @@ func (co Column) RowExtensions() ([]Column, error) {
 		}
 		return cols, nil
 	case TypeCompact:
-		if v, ok := co.Value.(ColumnList); ok {
+		if v, ok := co.Value.(ColumnMap); ok {
 			return v, nil
 		}
 		return nil, errors.ErrNotDecoded
@@ -77,13 +77,15 @@ func (col Column) JSONValue() (any, error) {
 	case TypePortable, TypeCompact,
 		TypeByte, TypeBool, TypeInt8, TypeUInt16,
 		TypeInt16, TypeInt32, TypeInt64,
-		TypeFloat32, TypeFloat64, TypeString,
-		TypeByteArray, TypeBoolArray, TypeInt8Array, TypeUInt16Array,
+		TypeFloat32, TypeFloat64, TypeString, TypeJSONSerialization:
+		return col.Value, nil
+	case TypeByteArray, TypeBoolArray, TypeInt8Array, TypeUInt16Array,
 		TypeInt16Array, TypeInt32Array, TypeInt64Array,
 		TypeFloat32Array, TypeFloat64Array, TypeStringArray,
 		TypeJavaArray, TypeJavaArrayList, TypeJavaLinkedList,
-		TypeJSONSerialization:
-		return col.Value, nil
+		TypeDecimalArray, TypeCompactArray,
+		TypeJavaLocalTimeArray, TypeJavaLocalDateArray, TypeJavaLocalDateTimeArray, TypeJavaOffsetDateTimeArray:
+		return simplify(col.Value), nil
 	}
 	return col.Text(), nil
 }
@@ -91,11 +93,42 @@ func (col Column) JSONValue() (any, error) {
 type ColumnList []Column
 
 func (cs ColumnList) Text() string {
+	const delim = ", "
+	var sb strings.Builder
+	if len(cs) == 0 {
+		return "[]"
+	}
+	sb.WriteString("[")
+	sb.WriteString(cs[0].Text())
+	for _, c := range cs[1:] {
+		sb.WriteString(delim)
+		sb.WriteString(c.Text())
+	}
+	sb.WriteString("]")
+	return sb.String()
+}
+
+func (cs ColumnList) JSONValue() (any, error) {
+	vs := make([]any, len(cs))
+	for i, c := range cs {
+		v, err := c.JSONValue()
+		if err != nil {
+			v = ValueNotDecoded
+		}
+		vs[i] = v
+	}
+	return vs, nil
+}
+
+type ColumnMap []Column
+
+func (cs ColumnMap) Text() string {
 	const delim = "; "
 	var sb strings.Builder
 	if len(cs) == 0 {
-		return ""
+		return "{}"
 	}
+	sb.WriteString("{")
 	sb.WriteString(cs[0].Name)
 	sb.WriteString(":")
 	sb.WriteString(cs[0].Text())
@@ -105,10 +138,11 @@ func (cs ColumnList) Text() string {
 		sb.WriteString(":")
 		sb.WriteString(c.Text())
 	}
+	sb.WriteString("}")
 	return sb.String()
 }
 
-func (cs ColumnList) JSONValue() (any, error) {
+func (cs ColumnMap) JSONValue() (any, error) {
 	m := make(map[string]any, len(cs))
 	for _, c := range cs {
 		v, err := c.JSONValue()

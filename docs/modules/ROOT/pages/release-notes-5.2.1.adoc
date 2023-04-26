@@ -1,0 +1,16 @@
+= 5.2.1 Release Notes
+
+== Changes
+
+* Corrected the --quite flag to --quiet.
+* Uses the experimental NY readline library on Windows by default. That fixes arrow key related issues but disables syntax highlight for SQL
+* Use stderr for unnecessary output.
+
+== Improvements
+* More consistent success messages when a list doesn't have any items.
+* Added support for more compact serialization types.
+
+== Fixes
+* Fixed a race in shell command.
+* Fixed a bug that would cause a panic if the SQL command is interrupted.*
+* Powershell completion is fixed

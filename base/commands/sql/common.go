@@ -21,13 +21,6 @@ import (
 
 func UpdateOutput(ctx context.Context, ec plug.ExecContext, res sql.Result, verbose bool) error {
 	if !res.IsRowSet() {
-		if verbose {
-			return ec.AddOutputRows(ctx, output.Row{
-				{
-					Name: "Affected Rows", Type: serialization.TypeInt64, Value: res.UpdateCount(),
-				},
-			})
-		}
 		return nil
 	}
 	it, err := res.Iterator()
@@ -35,17 +28,19 @@ func UpdateOutput(ctx context.Context, ec plug.ExecContext, res sql.Result, verb
 		return err
 	}
 	rowCh := make(chan output.Row, 1)
-	errCh := make(chan error)
+	errCh := make(chan error, 1)
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, os.Kill)
 	defer stop()
 	go func() {
+		var row sql.Row
+		var err error
 		for it.HasNext() {
-			row, err := it.Next()
+			row, err = it.Next()
 			if err != nil {
-				errCh <- err
 				break
 			}
-			// TODO: move the following 2 lines out of the loop --YT
+			// have to create a new output row
+			// since it is processed by another goroutine
 			cols := row.Metadata().Columns()
 			orow := make(output.Row, len(cols))
 			for i, col := range cols {
@@ -62,7 +57,7 @@ func UpdateOutput(ctx context.Context, ec plug.ExecContext, res sql.Result, verb
 			}
 		}
 		close(rowCh)
-		errCh <- nil
+		errCh <- err
 	}()
 	_ = ec.AddOutputStream(ctx, rowCh)
 	select {

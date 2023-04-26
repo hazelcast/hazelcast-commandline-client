@@ -6,10 +6,10 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
-type portableFieldReader func(r serialization.PortableReader, field string) any
+type portableFieldReader func(r serialization.PortableReader, field string) Column
 
 type GenericPortable struct {
-	Fields ColumnList
+	Fields ColumnMap
 	FID    int32
 	CID    int32
 }
@@ -54,11 +54,7 @@ func (gs GenericPortableSerializer) CreatePortableValue(factoryID, classID int32
 func (gs GenericPortableSerializer) ReadPortableWithClassDefinition(portable serialization.Portable, cd *serialization.ClassDefinition, reader serialization.PortableReader) {
 	v := portable.(*GenericPortable)
 	for name, f := range cd.Fields {
-		v.Fields = append(v.Fields, Column{
-			Name:  f.Name,
-			Type:  FieldDefinitionIDToType[f.Type],
-			Value: portableReaders[f.Type](reader, name),
-		})
+		v.Fields = append(v.Fields, portableReaders[f.Type](reader, name))
 	}
 	// sort fields
 	sort.Slice(v.Fields, func(i, j int) bool {

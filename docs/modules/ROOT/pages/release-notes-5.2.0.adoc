@@ -1,6 +1,12 @@
-= Release Notes Hazelcast CLC {full-version}
+= 5.2.0 Release Notes
 
 == New Features
+
+* CLC can now read data serialized using Compact Serialization and Portable automatically.
+* Added the ability to select a configuration from a list or import a Viridian configuration when a configuration is not provided in the shell mode.
+* Added the `--quite` (shorthand `-q`) flag which suppresses unnecessary outputs. CLC outputs can be sometimes noisy, such as success message logs; you can use this flag for a more quiet output.
+* Added the `CLC_CLIENT_NAME` environment variable which allows overriding the default client name.
+* Added the `CLC_CLIENT_LABElS` environment variable which allows overriding the default client labels with a comma separated list of labels.
 
 * Added support for link:https://hazelcast.com/products/viridian/[Hazelcast {hazelcast-cloud} Serverless].
 
@@ -27,7 +33,7 @@
 
 * Added the `--show-type` flag for map commands, which outputs the type of key and value even if they can't be decoded.
 
-== Changes
+== Enhancements
 
 * Removed the SQL browser.
 * The interactive mode defaults to running SQL queries. Prefix CLC commands with a backslash `\`.

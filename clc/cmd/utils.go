@@ -2,8 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+
+	"github.com/hazelcast/hazelcast-go-client"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
 func ExtractStartupArgs(args []string) (cfgPath, logFile, logLevel string, err error) {
@@ -33,4 +37,13 @@ func ExtractStartupArgs(args []string) (cfgPath, logFile, logLevel string, err e
 		i++
 	}
 	return
+}
+
+func CheckServerCompatible(ci *hazelcast.ClientInternal, targetVersion string) (string, bool) {
+	sv := ServerVersionOf(ci)
+	if os.Getenv(clc.EnvSkipServerVersionCheck) == "1" {
+		return sv, true
+	}
+	ok := internal.CheckVersion(sv, ">=", targetVersion)
+	return sv, ok
 }

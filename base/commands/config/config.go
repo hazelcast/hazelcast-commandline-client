@@ -13,7 +13,7 @@ type Cmd struct{}
 
 func (cm Cmd) Init(cc plug.InitContext) error {
 	cc.SetTopLevel(true)
-	cc.SetCommandUsage("config [command]")
+	cc.SetCommandUsage("config [command] [flags]")
 	help := "Show, add or change configuration"
 	cc.SetCommandHelp(help, help)
 	return nil

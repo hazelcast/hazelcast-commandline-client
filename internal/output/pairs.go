@@ -8,7 +8,6 @@ import (
 
 func DecodePairs(ic *hazelcast.ClientInternal, pairs []hazelcast.Pair, showType bool) []Row {
 	rows := make([]Row, 0, len(pairs))
-	vs := []any{}
 	for _, pair := range pairs {
 		row := make(Row, 0, 4)
 		kt, key := ensureTypeValue(ic, pair.Key.(hazelcast.Data))
@@ -17,7 +16,6 @@ func DecodePairs(ic *hazelcast.ClientInternal, pairs []hazelcast.Pair, showType 
 			row = append(row, NewKeyTypeColumn(kt))
 		}
 		vt, value := ensureTypeValue(ic, pair.Value.(hazelcast.Data))
-		vs = append(vs, value)
 		row = append(row, NewValueColumn(vt, value))
 		if showType {
 			row = append(row, NewValueTypeColumn(vt))

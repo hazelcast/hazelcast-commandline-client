@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
 
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands"
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
 )
@@ -18,9 +20,12 @@ func TestSQL(t *testing.T) {
 		f    func(t *testing.T)
 	}{
 		{name: "SQLOutput_NonInteractive", f: sqlOutput_NonInteractiveTest},
+		{name: "SQLOutput_JSON", f: sqlOutput_JSONTest},
+		{name: "SQLOutput_JSONFlat", f: sqlOutput_JSONFlatTest},
 		{name: "SQL_ShellCommand", f: sql_shellCommandTest},
 		{name: "SQL_Interactive", f: sql_InteractiveTest},
 		{name: "SQL_NonInteractive", f: sql_NonInteractiveTest},
+		{name: "SQL_NonInteractiveStreaming", f: sql_NonInteractiveStreamingTest},
 		{name: "SQL_Suggestion_Interactive", f: sqlSuggestion_Interactive},
 		{name: "SQL_Suggestion_NonInteractive", f: sqlSuggestion_NonInteractive},
 	}
@@ -55,13 +60,28 @@ func sql_NonInteractiveTest(t *testing.T) {
 	})
 }
 
+func sql_NonInteractiveStreamingTest(t *testing.T) {
+	tcx := it.TestContext{T: t}
+	tcx.Tester(func(tcx it.TestContext) {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		tcx.WithReset(func() {
+			go func() {
+				tcx.CLCExecute(ctx, "sql", "select * from table(generate_stream(1))")
+			}()
+			time.Sleep(5 * time.Second)
+			tcx.AssertStdoutContains("1\n2\n")
+		})
+	})
+}
+
 func sql_InteractiveTest(t *testing.T) {
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
 		ctx := context.Background()
 		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			name := it.NewUniqueObjectName("table")
-			tcx.WriteStdinF(`
+			tcx.WriteStdinf(`
 				CREATE MAPPING "%s" (
 					__key INT,
 					this VARCHAR
@@ -69,11 +89,11 @@ func sql_InteractiveTest(t *testing.T) {
 					'keyFormat' = 'int',
 					'valueFormat' = 'varchar'
 				);`+"\n", name)
-			tcx.WriteStdinF(`
+			tcx.WriteStdinf(`
 				INSERT INTO "%s" (__key, this) VALUES (10, 'foo'), (20, 'bar');
 			`+"\n", name)
 			tcx.WithReset(func() {
-				tcx.WriteStdinF(`SELECT * FROM "%s" ORDER BY __key;`+"\n", name)
+				tcx.WriteStdinf(`SELECT * FROM "%s" ORDER BY __key;`+"\n", name)
 				tcx.AssertStdoutDollarWithPath("testdata/sql_1.txt")
 			})
 		})
@@ -107,17 +127,17 @@ func sql_shellCommandTest(t *testing.T) {
 			})
 			// dm NAME
 			tcx.WithReset(func() {
-				tcx.WriteStdinF("\\dm %s\n", name)
+				tcx.WriteStdinf("\\dm %s\n", name)
 				target := fmt.Sprintf(`$----------------------------------------------------------------------------------------------------$
 $ table_catalog | table_schema | table_name | mapping_external_name | mapping_type | mapping_options $
 $----------------------------------------------------------------------------------------------------$
-$ hazelcast     | public       | test-table | %s      | IMAP         | {"keyFormat":"i $
+$ hazelcast     | public       | test-table | "%s"    | IMAP         | {"keyFormat":"i $
 $----------------------------------------------------------------------------------------------------$`, name)
 				tcx.AssertStdoutDollar(target)
 			})
 			// dm+ NAME
 			tcx.WithReset(func() {
-				tcx.WriteStdinF("\\dm+ %s\n", name)
+				tcx.WriteStdinf("\\dm+ %s\n", name)
 				target := `$-----------------------------------------------------------------------------------------------------------------------------$
 $ table_catalog | table_schema | table_name | column_name | column_external_name | ordinal_position | is_nullable | data_type $
 $-----------------------------------------------------------------------------------------------------------------------------$
@@ -137,7 +157,7 @@ func sqlSuggestion_Interactive(t *testing.T) {
 		it.WithMap(tcx, func(m *hazelcast.Map) {
 			check.Must(m.Set(ctx, "foo", "bar"))
 			tcx.WithShell(ctx, func(tcx it.TestContext) {
-				tcx.WriteStdinF(`SELECT * FROM "%s";`+"\n", m.Name())
+				tcx.WriteStdinf(`SELECT * FROM "%s";`+"\n", m.Name())
 				tcx.AssertStderrContains("CREATE MAPPING")
 				tcx.AssertStderrNotContains("--use-mapping-suggestion")
 			})
@@ -162,11 +182,15 @@ func sqlSuggestion_NonInteractive(t *testing.T) {
 }
 
 func sqlOutput_NonInteractiveTest(t *testing.T) {
-	tcx := it.TestContext{T: t}
-	tcx.Tester(func(tcx it.TestContext) {
-		name := it.NewUniqueObjectName("table")
-		ctx := context.Background()
-		check.MustValue(tcx.Client.SQL().Execute(ctx, fmt.Sprintf(`
+	formats := []string{"delimited", "json", "csv", "table"}
+	for _, f := range formats {
+		f := f
+		t.Run(f, func(t *testing.T) {
+			tcx := it.TestContext{T: t}
+			tcx.Tester(func(tcx it.TestContext) {
+				name := it.NewUniqueObjectName("table")
+				ctx := context.Background()
+				check.MustValue(tcx.Client.SQL().Execute(ctx, fmt.Sprintf(`
 			CREATE MAPPING "%s" (
 				__key INT,
 				this VARCHAR
@@ -175,13 +199,9 @@ func sqlOutput_NonInteractiveTest(t *testing.T) {
 				'valueFormat' = 'varchar'
 			);
 		`, name)))
-		check.MustValue(tcx.Client.SQL().Execute(ctx, fmt.Sprintf(`
+				check.MustValue(tcx.Client.SQL().Execute(ctx, fmt.Sprintf(`
 			INSERT INTO "%s" (__key, this) VALUES (10, 'foo'), (20, 'bar');
 		`, name)))
-		testCases := []string{"delimited", "json", "csv", "table"}
-		for _, f := range testCases {
-			f := f
-			tcx.T.Run(f, func(t *testing.T) {
 				tcx.WithReset(func() {
 					tcx.CLCExecute(ctx, "sql", "--format", f, "-q", fmt.Sprintf(`
 					SELECT * FROM "%s" ORDER BY __key;
@@ -189,6 +209,102 @@ func sqlOutput_NonInteractiveTest(t *testing.T) {
 					tcx.AssertStdoutDollarWithPath(fmt.Sprintf("testdata/sql_output_%s.txt", f))
 				})
 			})
-		}
+
+		})
+	}
+}
+
+/*
+func sql_NonInteractiveStreamingTest(t *testing.T) {
+	tcx := it.TestContext{T: t}
+	tcx.Tester(func(tcx it.TestContext) {
+		ctx := context.Background()
+		tcx.WithShell(ctx, func(tcx it.TestContext) {
+			tcx.WithReset(func() {
+				tcx.CLCExecute(ctx, "sql", "select * from table(generate_stream(1)) limit 3")
+				tcx.AssertStdoutEquals("0\n1\n2\n")
+			})
+		})
 	})
+}
+
+*/
+
+func sqlOutput_JSONTest(t *testing.T) {
+	formats := []string{"delimited", "json", "csv", "table"}
+	for _, f := range formats {
+		f := f
+		t.Run(f, func(t *testing.T) {
+			tcx := it.TestContext{T: t}
+			tcx.Tester(func(tcx it.TestContext) {
+				name := it.NewUniqueObjectName("table")
+				ctx := context.Background()
+				it.WithEnv(clc.EnvMaxCols, "150", func() {
+					check.MustValue(tcx.Client.SQL().Execute(ctx, fmt.Sprintf(`
+			CREATE MAPPING "%s"
+			TYPE IMAP OPTIONS (
+				'keyFormat' = 'int',
+				'valueFormat' = 'json'
+			);
+		`, name)))
+					v := `JSON_OBJECT(
+			'fieldStr': 'string',
+			'fieldNum': 38.27,
+			'fieldBool': true,
+			'fieldNull': null,
+			'fieldArray': JSON_ARRAY(1, 2, 3),
+			'fieldObj': JSON_OBJECT('inner': 'foo')
+		)`
+					check.MustValue(tcx.Client.SQL().Execute(ctx, fmt.Sprintf(`
+			INSERT INTO "%s" VALUES (10, %s);
+		`, name, v)))
+					tcx.WithReset(func() {
+						tcx.CLCExecute(ctx, "sql", "--format", f, "-q", fmt.Sprintf(`
+					SELECT * FROM "%s" ORDER BY __key;
+				`, name))
+						tcx.AssertStdoutDollarWithPath(fmt.Sprintf("testdata/sql_output_json_%s.txt", f))
+					})
+				})
+			})
+		})
+	}
+}
+
+func sqlOutput_JSONFlatTest(t *testing.T) {
+	formats := []string{"delimited", "json", "csv", "table"}
+	for _, f := range formats {
+		f := f
+		t.Run(f, func(t *testing.T) {
+			tcx := it.TestContext{T: t}
+			tcx.Tester(func(tcx it.TestContext) {
+				name := it.NewUniqueObjectName("table")
+				ctx := context.Background()
+				it.WithEnv(clc.EnvMaxCols, "150", func() {
+					check.MustValue(tcx.Client.SQL().Execute(ctx, fmt.Sprintf(`
+			CREATE MAPPING "%s" (
+				__key INT,
+				fieldStr VARCHAR,
+				fieldNum DOUBLE,
+				fieldBool BOOLEAN,
+				fieldNull VARCHAR
+			)
+			TYPE IMAP OPTIONS (
+				'keyFormat' = 'int',
+				'valueFormat' = 'json-flat'
+			);
+		`, name)))
+					v := `'string', 38.27, true, null`
+					check.MustValue(tcx.Client.SQL().Execute(ctx, fmt.Sprintf(`
+			INSERT INTO "%s"(__key, fieldStr, fieldNum, fieldBool, fieldNull) VALUES (10, %s);
+		`, name, v)))
+					tcx.WithReset(func() {
+						tcx.CLCExecute(ctx, "sql", "--format", f, "-q", fmt.Sprintf(`
+					SELECT * FROM "%s" ORDER BY __key;
+				`, name))
+						tcx.AssertStdoutDollarWithPath(fmt.Sprintf("testdata/sql_output_jsonflat_%s.txt", f))
+					})
+				})
+			})
+		})
+	}
 }

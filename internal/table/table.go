@@ -21,8 +21,8 @@ type Column struct {
 type Row []Column
 
 type Table struct {
-	cfg    Config
 	rowIdx int64
+	cfg    Config
 	width  []int
 	rwf    []runeWidthFn
 	sep    string

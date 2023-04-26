@@ -5,6 +5,7 @@ package object
 import (
 	"context"
 
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
@@ -12,7 +13,7 @@ import (
 type ObjectCommand struct{}
 
 func (cm ObjectCommand) Init(cc plug.InitContext) error {
-	cc.SetCommandGroup("dds")
+	cc.SetCommandGroup(clc.GroupDDSID)
 	cc.SetTopLevel(true)
 	help := "Generic distributed data structure operations"
 	cc.SetCommandUsage("object [command]")

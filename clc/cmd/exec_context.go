@@ -123,8 +123,11 @@ func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInt
 	stop()
 	ci = civ.(*hazelcast.ClientInternal)
 	setClientInternal(ci)
-	cn := ci.ClusterService().FailoverService().Current().ClusterName
-	ec.PrintlnUnnecessary(fmt.Sprintf("Connected to cluster: %s\n\n", cn))
+	verbose := ec.Props().GetBool(clc.PropertyVerbose)
+	if verbose || ec.Interactive() {
+		cn := ci.ClusterService().FailoverService().Current().ClusterName
+		ec.PrintlnUnnecessary(fmt.Sprintf("Connected to cluster: %s", cn))
+	}
 	return ci, nil
 }
 
@@ -236,9 +239,9 @@ func (ec *ExecContext) WrapResult(f func() error) error {
 			var msg string
 			errStr := err.Error()
 			if verbose {
-				msg = fmt.Sprintf("\nError in %d ms: %s", took.Milliseconds(), errStr)
+				msg = fmt.Sprintf("Error in %d ms: %s", took.Milliseconds(), errStr)
 			} else {
-				msg = fmt.Sprintf("\nError: %s", errStr)
+				msg = fmt.Sprintf("Error: %s", errStr)
 			}
 			if ec.Interactive() {
 				I2(fmt.Fprintln(ec.stderr, color.RedString(msg)))
@@ -251,13 +254,12 @@ func (ec *ExecContext) WrapResult(f func() error) error {
 	if ec.Quiet() {
 		return nil
 	}
-	var msg string
 	if verbose || ec.Interactive() {
-		msg = fmt.Sprintf("OK (%d ms)", took.Milliseconds())
+		msg := fmt.Sprintf("OK (%d ms)", took.Milliseconds())
+		I2(fmt.Fprintln(ec.stderr, msg))
 	} else {
-		msg = "OK"
+		I2(fmt.Fprintln(ec.stderr, "OK"))
 	}
-	I2(fmt.Fprintln(ec.stderr, msg))
 	return nil
 }
 
@@ -285,7 +287,8 @@ func (ec *ExecContext) ensurePrinter() error {
 }
 
 type simpleSpinner struct {
-	sp *yacspin.Spinner
+	sp   *yacspin.Spinner
+	text string
 }
 
 func (s *simpleSpinner) Start() error {
@@ -293,7 +296,20 @@ func (s *simpleSpinner) Start() error {
 }
 
 func (s *simpleSpinner) SetText(text string) {
+	s.text = text
 	s.sp.Prefix(text + cancelMsg)
+}
+
+func (s *simpleSpinner) SetProgress(progress float32) {
+	if progress > 1 {
+		progress = 1
+	}
+	if progress <= 0 {
+		s.sp.Suffix("")
+		return
+	}
+	pc := int(progress * 100)
+	s.sp.Suffix(fmt.Sprintf(" %3d%%", pc))
 }
 
 type nopSpinner struct{}
@@ -303,5 +319,9 @@ func (n nopSpinner) Start() error {
 }
 
 func (n nopSpinner) SetText(text string) {
+	// pass
+}
+
+func (n nopSpinner) SetProgress(progress float32) {
 	// pass
 }

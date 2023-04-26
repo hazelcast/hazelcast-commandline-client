@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"sync"
 
 	"github.com/google/shlex"
 
@@ -36,6 +37,7 @@ var errHelp = errors.New("interactive help")
 
 type ShellCommand struct {
 	shortcuts map[string]struct{}
+	mu        sync.RWMutex
 }
 
 func (cm *ShellCommand) Init(cc plug.InitContext) error {
@@ -44,11 +46,13 @@ func (cm *ShellCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandHelp(help, help)
 	cc.SetPositionalArgCount(0, 0)
 	cc.Hide()
+	cm.mu.Lock()
 	cm.shortcuts = map[string]struct{}{
 		`\dm`:   {},
 		`\dm+`:  {},
 		`\exit`: {},
 	}
+	cm.mu.Unlock()
 	return nil
 }
 
@@ -102,7 +106,10 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 	textFn := func(ctx context.Context, stdout io.Writer, text string) error {
 		if strings.HasPrefix(strings.TrimSpace(text), shell.CmdPrefix) {
 			parts := strings.Fields(text)
-			if _, ok := cm.shortcuts[parts[0]]; !ok {
+			cm.mu.RLock()
+			_, ok := cm.shortcuts[parts[0]]
+			cm.mu.RUnlock()
+			if !ok {
 				// this is a CLC command
 				text = strings.TrimSpace(text)
 				text = strings.TrimPrefix(text, shell.CmdPrefix)
@@ -110,7 +117,7 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 				if err != nil {
 					return err
 				}
-				args[0] = fmt.Sprintf("%s%s", shell.CmdPrefix, args[0])
+				args[0] = shell.CmdPrefix + args[0]
 				return m.Execute(ctx, args...)
 			}
 		}
