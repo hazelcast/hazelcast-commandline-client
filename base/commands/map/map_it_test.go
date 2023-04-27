@@ -25,6 +25,7 @@ func TestMap(t *testing.T) {
 		{name: "Set_NonInteractive", f: set_NonInteractiveTest},
 		{name: "Size_Interactive", f: size_InteractiveTest},
 		{name: "Size_Noninteractive", f: size_NoninteractiveTest},
+		{name: "KeySet_NoninteractiveTest", f: keySet_NoninteractiveTest},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, tc.f)
@@ -143,6 +144,28 @@ func size_InteractiveTest(t *testing.T) {
 				tcx.AssertStderrContains("OK")
 				tcx.AssertStdoutDollarWithPath("testdata/map_size_1.txt")
 			})
+		})
+	})
+}
+
+func keySet_NoninteractiveTest(t *testing.T) {
+	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
+		ctx := context.Background()
+		// no entry
+		tcx.WithReset(func() {
+			check.Must(tcx.CLC().Execute(ctx, "map", "-n", m.Name(), "key-set", "-q"))
+			tcx.AssertStdoutEquals("")
+		})
+		// set an entry
+		tcx.WithReset(func() {
+			check.Must(m.Set(context.Background(), "foo", "bar"))
+			check.Must(tcx.CLC().Execute(ctx, "map", "-n", m.Name(), "key-set", "-q"))
+			tcx.AssertStdoutContains("foo\n")
+		})
+		// show type
+		tcx.WithReset(func() {
+			check.Must(tcx.CLC().Execute(ctx, "map", "-n", m.Name(), "key-set", "--show-type", "-q"))
+			tcx.AssertStdoutContains("foo\tSTRING\n")
 		})
 	})
 }
