@@ -27,7 +27,7 @@ func TestMap(t *testing.T) {
 		{name: "Size_Interactive", f: size_InteractiveTest},
 		{name: "Size_Noninteractive", f: size_NoninteractiveTest},
 		{name: "Destroy_NonInteractive", f: destroy_NonInteractiveTest},
-		{name: "Destroy_defaultYes_NonInteractiveTest", f: destroy_defaultYes_NonInteractiveTest},
+		{name: "Destroy_AutoYes_NonInteractiveTest", f: destroy_autoYes_NonInteractiveTest},
 		{name: "Destroy_InteractiveTest", f: destroy_InteractiveTest},
 	}
 	for _, tc := range testCases {
@@ -163,7 +163,7 @@ func destroy_NonInteractiveTest(t *testing.T) {
 	})
 }
 
-func destroy_defaultYes_NonInteractiveTest(t *testing.T) {
+func destroy_autoYes_NonInteractiveTest(t *testing.T) {
 	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
 		ctx := context.Background()
 		tcx.WithReset(func() {
