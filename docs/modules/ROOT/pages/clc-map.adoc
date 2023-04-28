@@ -17,6 +17,7 @@ clc map [command] [flags]
 * <<clc-map-entry-set, clc map entry-set>>
 * <<clc-map-size, clc map size>>
 * <<clc-map-remove, clc map remove>>
+* <<clc-map-destroy, clc map destroy>>
 
 == clc map clear
 
@@ -26,7 +27,7 @@ Usage:
 
 [source,bash]
 ----
-clc map [flags]
+clc map clear [flags]
 ----
 
 Parameters:
@@ -270,3 +271,32 @@ Example:
 clc map remove --name myMap --key-type string k1
 k1
 ----
+
+== clc map destroy
+
+Destroys the map.
+
+Usage:
+
+[source,bash]
+----
+clc map destroy [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the map.
+|`default`
+
+|`--yes`
+|Optional
+|Skip interactive approval.
+|`false`
+
+|===

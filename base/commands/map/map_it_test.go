@@ -25,6 +25,9 @@ func TestMap(t *testing.T) {
 		{name: "Set_NonInteractive", f: set_NonInteractiveTest},
 		{name: "Size_Interactive", f: size_InteractiveTest},
 		{name: "Size_Noninteractive", f: size_NoninteractiveTest},
+		{name: "Destroy_NonInteractive", f: destroy_InteractiveTest},
+		{name: "Destroy_defaultYes_NonInteractiveTest", f: destroy_defaultYes_NonInteractiveTest},
+		{name: "Destroy_InteractiveTest", f: destroy_InteractiveTest},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, tc.f)
@@ -142,6 +145,52 @@ func size_InteractiveTest(t *testing.T) {
 				tcx.WriteStdin([]byte(fmt.Sprintf("\\map -n %s size\n", m.Name())))
 				tcx.AssertStderrContains("OK")
 				tcx.AssertStdoutDollarWithPath("testdata/map_size_1.txt")
+			})
+		})
+	})
+}
+
+func destroy_NonInteractiveTest(t *testing.T) {
+	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
+		t := tcx.T
+		ctx := context.Background()
+		tcx.WithReset(func() {
+			check.Must(m.Set(ctx, "foo", "bar"))
+			require.Equal(t, 1, check.MustValue(m.Size(ctx)))
+			go tcx.WriteStdin([]byte("y\n"))
+			check.Must(tcx.CLC().Execute(ctx, "map", "-n", m.Name(), "destroy"))
+			require.Equal(t, 0, check.MustValue(m.Size(ctx)))
+		})
+	})
+}
+
+func destroy_defaultYes_NonInteractiveTest(t *testing.T) {
+	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
+		t := tcx.T
+		ctx := context.Background()
+		tcx.WithReset(func() {
+			check.Must(m.Set(ctx, "foo", "bar"))
+			require.Equal(t, 1, check.MustValue(m.Size(ctx)))
+			check.Must(tcx.CLC().Execute(ctx, "map", "-n", m.Name(), "destroy", "--yes"))
+			require.Equal(t, 0, check.MustValue(m.Size(ctx)))
+		})
+	})
+}
+
+func destroy_InteractiveTest(t *testing.T) {
+	t.Skip()
+	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
+		t := tcx.T
+		ctx := context.Background()
+		tcx.WithShell(ctx, func(tcx it.TestContext) {
+			tcx.WithReset(func() {
+				tcx.WriteStdin([]byte(fmt.Sprintf("\\map -n %s size\n", m.Name())))
+				check.Must(m.Set(ctx, "foo", "bar"))
+				require.Equal(t, 1, check.MustValue(m.Size(ctx)))
+				tcx.WriteStdin([]byte(fmt.Sprintf("\\map -n %s destroy\n", m.Name())))
+				tcx.AssertStdoutContains("(y/n)")
+				tcx.WriteStdin([]byte("y"))
+				require.Equal(t, 0, check.MustValue(m.Size(ctx)))
 			})
 		})
 	})
