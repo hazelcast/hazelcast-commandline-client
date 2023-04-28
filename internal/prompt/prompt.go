@@ -1,7 +1,6 @@
 package prompt
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -29,15 +28,11 @@ func (p *Prompter) YesNoPrompt(q string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	s = strings.TrimSpace(s)
-	s = strings.ToLower(s)
-	switch s {
+	switch strings.TrimSpace(strings.ToLower(s)) {
 	case "y", "yes":
 		return true, nil
-	case "n", "no":
-		return false, nil
 	default:
-		return false, errors.New("Invalid input")
+		return false, nil
 	}
 }
 
@@ -52,7 +47,7 @@ func (p *Prompter) readline(prompt string) (string, error) {
 	}
 	rl, err := gohxs.NewEx(cfg)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("creating gohxs readline: %w", err)
 	}
 
 	return rl.Readline()

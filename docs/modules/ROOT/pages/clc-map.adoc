@@ -274,7 +274,7 @@ k1
 
 == clc map destroy
 
-Destroys the map.
+Deletes the map and all the data in it.
 
 Usage:
 
@@ -296,7 +296,7 @@ Parameters:
 
 |`--yes`
 |Optional
-|Skip interactive approval.
+|Skip conforming the destroy operation.
 |`false`
 
 |===
