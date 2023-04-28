@@ -20,7 +20,19 @@ func MustAnyValue[T any](v any, err error) T {
 	return v.(T)
 }
 
-func MustOK[T any](v any, ok bool) T {
+func MustOK(ok bool) {
+	if !ok {
+		panic("not OK")
+	}
+}
+
+func MustNotOK(ok bool) {
+	if ok {
+		panic("OK")
+	}
+}
+
+func MustOKValue[T any](v any, ok bool) T {
 	if !ok {
 		panic("not OK")
 	}
