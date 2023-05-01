@@ -16,7 +16,7 @@ import (
 type ClusterListCmd struct{}
 
 func (cm ClusterListCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("cluster-list")
+	cc.SetCommandUsage("list-clusters")
 	help := "List Viridian clusters"
 	cc.SetCommandHelp(help, help)
 	cc.SetPositionalArgCount(0, 0)
@@ -24,14 +24,10 @@ func (cm ClusterListCmd) Init(cc plug.InitContext) error {
 }
 
 func (cm ClusterListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
-	tokenPaths, err := secrets.FindAll(secretPrefix)
+	tp, err := findToken()
 	if err != nil {
-		return fmt.Errorf("cannot access the secrets, did you login?: %w", err)
+		return err
 	}
-	if len(tokenPaths) == 0 {
-		return fmt.Errorf("no secrets found, did you login?")
-	}
-	tp := tokenPaths[0]
 	ec.Logger().Info("Using Viridian secret at: %s", tp)
 	token, err := secrets.Read(secretPrefix, tp)
 	if err != nil {

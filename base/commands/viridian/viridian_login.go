@@ -16,8 +16,10 @@ import (
 )
 
 const (
-	propAPIKey    = "key"
-	propAPISecret = "secret"
+	propAPIKey    = "api-key"
+	propAPISecret = "api-secret"
+	propEmail     = "email"
+	propPassword  = "password"
 	secretPrefix  = "viridian"
 )
 
@@ -25,23 +27,40 @@ type LoginCmd struct{}
 
 func (cm LoginCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("login")
-	short := "Logins to Viridian using the given API key and API secret"
-	long := fmt.Sprintf(`Logins to Viridian using the given API key and API secret.
+	if viridian.LegacyAPI() {
+		short := "Logins to Viridian using the given username and password"
+		long := fmt.Sprintf(`Logins to Viridian using the given username and password.
+If not specified, the username and the password will be asked in a prompt.
+
+Alternatively, you can use the following environment variables:
+* %s
+* %s
+		
+NOTE: Currently CLC_EXPERIMENTAL_VIRIDIAN_API environment variable is set to "legacy".
+This is not supported nor recommended.
+`, viridian.EnvEmail, viridian.EnvPassword)
+		cc.SetCommandHelp(long, short)
+		cc.AddStringFlag(propEmail, "", "", false, "Viridian Email")
+		cc.AddStringFlag(propPassword, "", "", false, "Viridian Password")
+	} else {
+		short := "Logins to Viridian using the given API key and API secret"
+		long := fmt.Sprintf(`Logins to Viridian using the given API key and API secret.
 If not specified, the key and the secret will be asked in a prompt.
 
 Alternatively, you can use the following environment variables:
 * %s
 * %s
 `, viridian.EnvAPIKey, viridian.EnvAPISecret)
-	cc.SetCommandHelp(long, short)
+		cc.SetCommandHelp(long, short)
+		cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
+		cc.AddStringFlag(propAPISecret, "", "", false, "Viridian API Secret")
+	}
 	cc.SetPositionalArgCount(0, 0)
-	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
-	cc.AddStringFlag(propAPISecret, "", "", false, "Viridian API Secret")
 	return nil
 }
 
 func (cm LoginCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
-	key, secret, err := cm.apiKeySecret(ec)
+	key, secret, err := apiKeySecret(ec)
 	if err != nil {
 		return err
 	}
@@ -75,6 +94,7 @@ func (cm LoginCmd) retrieveToken(ctx context.Context, ec plug.ExecContext, key, 
 }
 
 func (cm LoginCmd) saveSecrets(ctx context.Context, key, token string) error {
+	key = fmt.Sprintf("%s-%s", viridian.APIClass(), key)
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
@@ -84,7 +104,10 @@ func (cm LoginCmd) saveSecrets(ctx context.Context, key, token string) error {
 	return secrets.Write(secretPrefix, key, token)
 }
 
-func (cm LoginCmd) apiKeySecret(ec plug.ExecContext) (key, secret string, err error) {
+func apiKeySecret(ec plug.ExecContext) (key, secret string, err error) {
+	if viridian.LegacyAPI() {
+		return legacyAPIKeySecret(ec)
+	}
 	key = ec.Props().GetString(propAPIKey)
 	if key == "" {
 		key = os.Getenv(viridian.EnvAPIKey)
@@ -112,6 +135,36 @@ func (cm LoginCmd) apiKeySecret(ec plug.ExecContext) (key, secret string, err er
 		return "", "", errors.New("api secret cannot be blank")
 	}
 	return key, secret, nil
+}
+
+func legacyAPIKeySecret(ec plug.ExecContext) (email, password string, err error) {
+	email = ec.Props().GetString(propEmail)
+	if email == "" {
+		email = os.Getenv(viridian.EnvEmail)
+	}
+	if email == "" {
+		email, err = shell.Prompt(ec.Stdout(), ec.Stdin(), "Email    : ")
+		if err != nil {
+			return "", "", fmt.Errorf("reading email: %w", err)
+		}
+	}
+	if email == "" {
+		return "", "", errors.New("email cannot be blank")
+	}
+	password = ec.Props().GetString(propPassword)
+	if password == "" {
+		password = os.Getenv(viridian.EnvPassword)
+	}
+	if password == "" {
+		password, err = shell.PasswordPrompt(ec.Stdout(), ec.Stdin(), "Password : ")
+		if err != nil {
+			return "", "", fmt.Errorf("reading password: %w", err)
+		}
+	}
+	if password == "" {
+		return "", "", errors.New("password cannot be blank")
+	}
+	return email, password, nil
 }
 
 func init() {

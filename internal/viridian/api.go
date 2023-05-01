@@ -15,6 +15,9 @@ const (
 	EnvAPIBaseURL     = "CLC_EXPERIMENTAL_VIRIDIAN_BASE_URL"
 	EnvAPIKey         = "CLC_VIRIDIAN_API_KEY"
 	EnvAPISecret      = "CLC_VIRIDIAN_API_SECRET"
+	EnvEmail          = "CLC_VIRIDIAN_EMAIL"
+	EnvPassword       = "CLC_VIRIDIAN_PASSWORD"
+	EnvAPI            = "CLC_EXPERIMENTAL_VIRIDIAN_API"
 	DefaultAPIBaseURL = "https://api.viridian.hazelcast.com"
 )
 
@@ -23,7 +26,8 @@ type Wrapper[T any] struct {
 }
 
 type API struct {
-	token string
+	token     string
+	legacyAPI bool
 }
 
 func NewAPI(token string) API {
@@ -121,4 +125,16 @@ func doPostBytes(ctx context.Context, url, token string, body []byte) ([]byte, e
 		return rb, nil
 	}
 	return nil, fmt.Errorf("%d: %s", res.StatusCode, string(rb))
+}
+
+func APIClass() string {
+	ac := os.Getenv(EnvAPI)
+	if ac != "" {
+		return ac
+	}
+	return "api"
+}
+
+func LegacyAPI() bool {
+	return APIClass() == "legacy"
 }
