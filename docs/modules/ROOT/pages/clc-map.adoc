@@ -296,7 +296,7 @@ Parameters:
 
 |`--yes`
 |Optional
-|Skip conforming the destroy operation.
+|Skip confirming the destroy operation.
 |`false`
 
 |===
