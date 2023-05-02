@@ -62,9 +62,8 @@ func (mc *MapKeySetCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 		return ec.AddOutputRows(ctx, rows...)
 	}
 
-	if !ec.Props().GetBool(clc.PropertyQuiet) {
-		I2(fmt.Fprintln(ec.Stdout(), "No entries found."))
-	}
+	ec.PrintlnUnnecessary("No entries found.")
+
 	return nil
 }
 
