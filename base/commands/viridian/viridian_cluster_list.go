@@ -63,6 +63,11 @@ func (cm ClusterListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 				Value: c.Name,
 			},
 			output.Column{
+				Name:  "State",
+				Type:  serialization.TypeString,
+				Value: c.State,
+			},
+			output.Column{
 				Name:  "Hazelcast Version",
 				Type:  serialization.TypeString,
 				Value: c.HazelcastVersion,
