@@ -36,7 +36,8 @@ func (mc *MapDestroyCommand) Exec(ctx context.Context, ec plug.ExecContext) erro
 		prompt := prompt.NewPrompter(ec.Stdin(), ec.Stdout())
 		yes, err := prompt.YesNoPrompt("Map will be deleted irreversibly, proceed?")
 		if err != nil {
-			return err
+			ec.Logger().Info("User input could not be processed due to error: %s", err.Error())
+			return errors.ErrUserCancelled
 		}
 		if !yes {
 			return errors.ErrUserCancelled
