@@ -243,3 +243,14 @@ func DecodeListMultiFrameForJobAndSqlSummary(frameIterator *proto.ForwardFrameIt
 	frameIterator.Next()
 	return result
 }
+
+func DecodeListMultiFrameForData(frameIterator *proto.ForwardFrameIterator) []*iserialization.Data {
+	result := make([]*iserialization.Data, 0)
+	frameIterator.Next()
+	for !NextFrameIsDataStructureEndFrame(frameIterator) {
+		d := DecodeData(frameIterator)
+		result = append(result, &d)
+	}
+	frameIterator.Next()
+	return result
+}
