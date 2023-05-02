@@ -153,23 +153,25 @@ func size_InteractiveTest(t *testing.T) {
 
 func destroy_NonInteractiveTest(t *testing.T) {
 	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
+		t := tcx.T
 		ctx := context.Background()
 		tcx.WithReset(func() {
 			go tcx.WriteStdin([]byte("y\n"))
 			check.Must(tcx.CLC().Execute(ctx, "map", "-n", m.Name(), "destroy"))
 			objects := check.MustValue(tcx.Client.GetDistributedObjectsInfo(ctx))
-			check.MustNotOK(objectExists(hz.ServiceNameMap, m.Name(), objects))
+			require.False(t, objectExists(hz.ServiceNameMap, m.Name(), objects))
 		})
 	})
 }
 
 func destroy_autoYes_NonInteractiveTest(t *testing.T) {
 	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
+		t := tcx.T
 		ctx := context.Background()
 		tcx.WithReset(func() {
 			check.Must(tcx.CLC().Execute(ctx, "map", "-n", m.Name(), "destroy", "--yes"))
 			objects := check.MustValue(tcx.Client.GetDistributedObjectsInfo(ctx))
-			check.MustNotOK(objectExists(hz.ServiceNameMap, m.Name(), objects))
+			require.False(t, objectExists(hz.ServiceNameMap, m.Name(), objects))
 		})
 	})
 }
@@ -177,6 +179,7 @@ func destroy_autoYes_NonInteractiveTest(t *testing.T) {
 func destroy_InteractiveTest(t *testing.T) {
 	t.Skip()
 	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
+		t := tcx.T
 		ctx := context.Background()
 		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			tcx.WithReset(func() {
@@ -184,7 +187,7 @@ func destroy_InteractiveTest(t *testing.T) {
 				tcx.AssertStdoutContains("(y/n)")
 				tcx.WriteStdin([]byte("y"))
 				objects := check.MustValue(tcx.Client.GetDistributedObjectsInfo(ctx))
-				check.MustNotOK(objectExists(hz.ServiceNameMap, m.Name(), objects))
+				require.False(t, objectExists(hz.ServiceNameMap, m.Name(), objects))
 			})
 		})
 	})
