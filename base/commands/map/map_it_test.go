@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/types"
 	"github.com/stretchr/testify/require"
 
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands"
@@ -25,6 +26,9 @@ func TestMap(t *testing.T) {
 		{name: "Set_NonInteractive", f: set_NonInteractiveTest},
 		{name: "Size_Interactive", f: size_InteractiveTest},
 		{name: "Size_Noninteractive", f: size_NoninteractiveTest},
+		{name: "Destroy_NonInteractive", f: destroy_NonInteractiveTest},
+		{name: "Destroy_AutoYes_NonInteractiveTest", f: destroy_autoYes_NonInteractiveTest},
+		{name: "Destroy_InteractiveTest", f: destroy_InteractiveTest},
 		{name: "KeySet_NoninteractiveTest", f: keySet_NoninteractiveTest},
 		{name: "KeySet_InteractiveTest", f: keySet_InteractiveTest},
 	}
@@ -196,4 +200,55 @@ func keySet_InteractiveTest(t *testing.T) {
 			})
 		})
 	})
+}
+
+func destroy_NonInteractiveTest(t *testing.T) {
+	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
+		t := tcx.T
+		ctx := context.Background()
+		tcx.WithReset(func() {
+			go tcx.WriteStdin([]byte("y\n"))
+			check.Must(tcx.CLC().Execute(ctx, "map", "-n", m.Name(), "destroy"))
+			objects := check.MustValue(tcx.Client.GetDistributedObjectsInfo(ctx))
+			require.False(t, objectExists(hz.ServiceNameMap, m.Name(), objects))
+		})
+	})
+}
+
+func destroy_autoYes_NonInteractiveTest(t *testing.T) {
+	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
+		t := tcx.T
+		ctx := context.Background()
+		tcx.WithReset(func() {
+			check.Must(tcx.CLC().Execute(ctx, "map", "-n", m.Name(), "destroy", "--yes"))
+			objects := check.MustValue(tcx.Client.GetDistributedObjectsInfo(ctx))
+			require.False(t, objectExists(hz.ServiceNameMap, m.Name(), objects))
+		})
+	})
+}
+
+func destroy_InteractiveTest(t *testing.T) {
+	t.Skip()
+	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
+		t := tcx.T
+		ctx := context.Background()
+		tcx.WithShell(ctx, func(tcx it.TestContext) {
+			tcx.WithReset(func() {
+				tcx.WriteStdin([]byte(fmt.Sprintf("\\map -n %s destroy\n", m.Name())))
+				tcx.AssertStdoutContains("(y/n)")
+				tcx.WriteStdin([]byte("y"))
+				objects := check.MustValue(tcx.Client.GetDistributedObjectsInfo(ctx))
+				require.False(t, objectExists(hz.ServiceNameMap, m.Name(), objects))
+			})
+		})
+	})
+}
+
+func objectExists(sn, name string, objects []types.DistributedObjectInfo) bool {
+	for _, obj := range objects {
+		if sn == obj.ServiceName && name == obj.Name {
+			return true
+		}
+	}
+	return false
 }
