@@ -34,11 +34,7 @@ func Login(ctx context.Context, key, secret string) (API, error) {
 		APIKey:    key,
 		APISecret: secret,
 	}
-	url := "/customers/api/login"
-	if LegacyAPI() {
-		url = "/customers/login"
-	}
-	resp, err := doPost[loginRequest, loginResponse](ctx, url, "", c)
+	resp, err := doPost[loginRequest, loginResponse](ctx, "/customers/api/login", "", c)
 	if err != nil {
 		return api, err
 	}

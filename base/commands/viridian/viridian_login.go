@@ -77,7 +77,7 @@ func (cm LoginCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 }
 
 func (cm LoginCmd) retrieveToken(ctx context.Context, ec plug.ExecContext, key, secret string) (string, error) {
-	ti, cancel, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+	ti, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Logging in")
 		api, err := viridian.Login(ctx, key, secret)
 		if err != nil {
@@ -89,7 +89,7 @@ func (cm LoginCmd) retrieveToken(ctx context.Context, ec plug.ExecContext, key, 
 		ec.Logger().Error(err)
 		return "", errors.New("login failed")
 	}
-	cancel()
+	stop()
 	return ti.(string), nil
 }
 

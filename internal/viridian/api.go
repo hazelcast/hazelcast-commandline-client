@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	EnvAPIBaseURL     = "CLC_EXPERIMENTAL_VIRIDIAN_BASE_URL"
+	EnvAPIBaseURL     = "HZ_CLOUD_COORDINATOR_BASE_URL"
 	EnvAPIKey         = "CLC_VIRIDIAN_API_KEY"
 	EnvAPISecret      = "CLC_VIRIDIAN_API_SECRET"
 	EnvEmail          = "CLC_VIRIDIAN_EMAIL"
