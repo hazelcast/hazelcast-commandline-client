@@ -1,0 +1,64 @@
+= clc viridian
+
+This command group provides commands for doing various Viridian operations, such as creating and managing clusters.
+
+Usage:
+
+[source,bash]
+----
+clc viridian [command] [options]
+----
+
+== Commands
+
+* <<clc-viridian-login, clc viridian login>>
+* <<clc-viridian-list-clusters, clc viridian list-clusters>>
+
+== clc viridian login
+
+Logs in to Viridian using the given API key and API secret and retrieves a token.
+The token is cached to be used by other commands.
+If not specified, the key and the secret will be asked in a prompt.
+
+Alternatively, you can use the following environment variables:
+
+* `CLC_VIRIDIAN_API_KEY`
+* `CLC_VIRIDIAN_API_SECRET`
+
+Usage:
+
+[source,bash]
+----
+clc viridian login [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--api-key`
+|Optional
+|Sets the API key. Overrides the `CLC_VIRIDIAN_API_KEY` environment variable. If not given, an input prompt is shown.
+|
+
+|`--api-secret`
+|Optional
+|Sets the API secret. Overrides the `CLC_VIRIDIAN_API_SECRET` environment variable. If not given, an input prompt is shown.
+|
+
+|===
+
+== clc viridian list-clusters
+
+Lists all Viridian clusters for the logged in API key.
+
+Make sure you login before running this command.
+
+Usage:
+
+[source,bash]
+----
+clc viridian list-clusters [flags]
+----

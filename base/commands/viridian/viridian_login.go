@@ -28,8 +28,8 @@ type LoginCmd struct{}
 func (cm LoginCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("login")
 	if viridian.LegacyAPI() {
-		short := "Logins to Viridian using the given username and password"
-		long := fmt.Sprintf(`Logins to Viridian using the given username and password.
+		short := "Logs in to Viridian using the given username and password"
+		long := fmt.Sprintf(`Logs in to Viridian using the given username and password.
 If not specified, the username and the password will be asked in a prompt.
 
 Alternatively, you can use the following environment variables:
@@ -43,8 +43,8 @@ This is not supported nor recommended.
 		cc.AddStringFlag(propEmail, "", "", false, "Viridian Email")
 		cc.AddStringFlag(propPassword, "", "", false, "Viridian Password")
 	} else {
-		short := "Logins to Viridian using the given API key and API secret"
-		long := fmt.Sprintf(`Logins to Viridian using the given API key and API secret.
+		short := "Logs in to Viridian using the given API key and API secret"
+		long := fmt.Sprintf(`Logs in to Viridian using the given API key and API secret.
 If not specified, the key and the secret will be asked in a prompt.
 
 Alternatively, you can use the following environment variables:

@@ -17,8 +17,12 @@ type ClusterListCmd struct{}
 
 func (cm ClusterListCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("list-clusters")
-	help := "List Viridian clusters"
-	cc.SetCommandHelp(help, help)
+	long := `Lists all Viridian clusters for the logged in API key.
+
+Make sure you login before running this command.
+`
+	short := "Lists Viridian clusters"
+	cc.SetCommandHelp(long, short)
 	cc.SetPositionalArgCount(0, 0)
 	return nil
 }
