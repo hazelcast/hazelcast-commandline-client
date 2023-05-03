@@ -10,7 +10,7 @@ You need the following:
 - The xref:install-clc.adoc[Hazelcast CLC] installed on your local machine
 - Two xref:cloud:ROOT:create-serverless-cluster.adoc[Hazelcast {hazelcast-cloud} Serverless clusters]. For this tutorial, you'll use one development and one production cluster, to show how you might use the CLC for basic administration and deployment tasks.
 
-TIP: You can download Go client samples from Hazelcast {hazelcast-cloud} console. For details, see xref:cloud:ROOT:connect-to-cluster.adoc[].
+TIP: You can download Go client samples from the Hazelcast {hazelcast-cloud} console. For details, see xref:cloud:ROOT:connect-to-cluster.adoc[].
 
 [[step-1-dev-configure]]
 == Step 1. Add Configuration for the Development Cluster
