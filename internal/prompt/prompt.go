@@ -8,23 +8,23 @@ import (
 	gohxs "github.com/gohxs/readline"
 )
 
-type Prompter struct {
-	Stdin           io.Reader
-	Stdout          io.Writer
-	InterruptPrompt string
+type Prompt struct {
+	stdin           io.Reader
+	stdout          io.Writer
+	interruptPrompt string
 }
 
-func NewPrompter(r io.Reader, w io.Writer) *Prompter {
-	return &Prompter{
-		Stdin:           r,
-		Stdout:          w,
-		InterruptPrompt: "^C",
+func New(r io.Reader, w io.Writer) *Prompt {
+	return &Prompt{
+		stdin:           r,
+		stdout:          w,
+		interruptPrompt: "^C",
 	}
 }
 
-func (p *Prompter) YesNoPrompt(q string) (bool, error) {
+func (p *Prompt) YesNo(q string) (bool, error) {
 	prompt := fmt.Sprintf("%s (y/n) ", q)
-	s, err := p.readline(prompt)
+	s, err := p.readline(prompt, false)
 	if err != nil {
 		return false, err
 	}
@@ -36,19 +36,31 @@ func (p *Prompter) YesNoPrompt(q string) (bool, error) {
 	}
 }
 
-func (p *Prompter) readline(prompt string) (string, error) {
+func (p *Prompt) Text(q string) (string, error) {
+	return p.readline(q, false)
+}
+
+func (p *Prompt) Password(q string) (string, error) {
+	return p.readline(q, true)
+}
+
+func (p *Prompt) readline(prompt string, enableMask bool) (string, error) {
+	// prevent closing the stdin
+	stdin := io.NopCloser(p.stdin)
 	cfg := &gohxs.Config{
 		Prompt:                 prompt,
-		InterruptPrompt:        p.InterruptPrompt,
-		Stdout:                 p.Stdout,
-		Stdin:                  p.Stdin,
+		InterruptPrompt:        p.interruptPrompt,
+		Stdout:                 p.stdout,
+		Stdin:                  stdin,
 		DisableAutoSaveHistory: true,
 		HistoryLimit:           -1,
+		EnableMask:             enableMask,
+		MaskRune:               '*',
 	}
 	rl, err := gohxs.NewEx(cfg)
 	if err != nil {
 		return "", fmt.Errorf("creating gohxs readline: %w", err)
 	}
-
+	defer rl.Close()
 	return rl.Readline()
 }

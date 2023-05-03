@@ -12,6 +12,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc/shell"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/prompt"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
@@ -108,12 +109,13 @@ func apiKeySecret(ec plug.ExecContext) (key, secret string, err error) {
 	if viridian.LegacyAPI() {
 		return legacyAPIKeySecret(ec)
 	}
+	pr := prompt.New(ec.Stdin(), ec.Stdout())
 	key = ec.Props().GetString(propAPIKey)
 	if key == "" {
 		key = os.Getenv(viridian.EnvAPIKey)
 	}
 	if key == "" {
-		key, err = shell.Prompt(ec.Stdout(), ec.Stdin(), "API Key    : ")
+		key, err = pr.Text("API Key    : ")
 		if err != nil {
 			return "", "", fmt.Errorf("reading API key: %w", err)
 		}
@@ -126,7 +128,7 @@ func apiKeySecret(ec plug.ExecContext) (key, secret string, err error) {
 		secret = os.Getenv(viridian.EnvAPISecret)
 	}
 	if secret == "" {
-		secret, err = shell.PasswordPrompt(ec.Stdout(), ec.Stdin(), "API Secret : ")
+		secret, err = pr.Password("API Secret : ")
 		if err != nil {
 			return "", "", fmt.Errorf("reading API secret: %w", err)
 		}
