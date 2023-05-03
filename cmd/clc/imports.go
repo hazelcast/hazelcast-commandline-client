@@ -8,4 +8,5 @@ import (
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/object"
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/snapshot"
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/sql"
+	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/viridian"
 )

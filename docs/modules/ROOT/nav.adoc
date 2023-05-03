@@ -22,6 +22,7 @@
 ** xref:clc-sql.adoc[]
 ** xref:clc-snapshot.adoc[]
 ** xref:clc-version.adoc[]
+** xref:clc-viridian.adoc[]
 * xref:keyboard-shortcuts.adoc[]
 
 .Release Notes
