@@ -20,9 +20,6 @@ type loginResponse struct {
 }
 
 func Login(ctx context.Context, key, secret string) (API, error) {
-	if LegacyAPI() {
-		return loginLegacy(ctx, key, secret)
-	}
 	var api API
 	if key == "" {
 		return api, errors.New("api key cannot be blank")
@@ -35,26 +32,6 @@ func Login(ctx context.Context, key, secret string) (API, error) {
 		APISecret: secret,
 	}
 	resp, err := doPost[loginRequest, loginResponse](ctx, "/customers/api/login", "", c)
-	if err != nil {
-		return api, err
-	}
-	api.token = resp.Token
-	return api, nil
-}
-
-func loginLegacy(ctx context.Context, email, password string) (API, error) {
-	var api API
-	if email == "" {
-		return api, errors.New("email cannot be blank")
-	}
-	if password == "" {
-		return api, errors.New("password cannot be blank")
-	}
-	c := legacyLoginRequest{
-		Email:    email,
-		Password: password,
-	}
-	resp, err := doPost[legacyLoginRequest, loginResponse](ctx, "/customers/login", "", c)
 	if err != nil {
 		return api, err
 	}
