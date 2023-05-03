@@ -26,8 +26,7 @@ type Wrapper[T any] struct {
 }
 
 type API struct {
-	token     string
-	legacyAPI bool
+	token string
 }
 
 func NewAPI(token string) *API {
@@ -133,8 +132,4 @@ func APIClass() string {
 		return ac
 	}
 	return "api"
-}
-
-func LegacyAPI() bool {
-	return APIClass() == "legacy"
 }

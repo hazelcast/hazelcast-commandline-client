@@ -10,11 +10,6 @@ type loginRequest struct {
 	APISecret string `json:"apiSecret"`
 }
 
-type legacyLoginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
 type loginResponse struct {
 	Token string `json:"token"`
 }
