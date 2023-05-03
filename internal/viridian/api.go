@@ -30,8 +30,8 @@ type API struct {
 	legacyAPI bool
 }
 
-func NewAPI(token string) API {
-	return API{token: token}
+func NewAPI(token string) *API {
+	return &API{token: token}
 }
 
 func (a API) Token() string {

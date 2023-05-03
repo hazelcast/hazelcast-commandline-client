@@ -101,7 +101,7 @@ func (cm LoginCmd) saveSecrets(ctx context.Context, key, token string) error {
 	if err := os.MkdirAll(paths.Secrets(), 0700); err != nil {
 		return fmt.Errorf("creating secrets directory: %w", err)
 	}
-	return secrets.Write(secretPrefix, key, token)
+	return secrets.Write(secretPrefix, key, []byte(token))
 }
 
 func apiKeySecret(ec plug.ExecContext) (key, secret string, err error) {

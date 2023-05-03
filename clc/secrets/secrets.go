@@ -10,7 +10,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 )
 
-func Write(prefix, name, token string) (err error) {
+func Write(prefix, name string, token []byte) (err error) {
 	path := paths.ResolveSecretPath(prefix, name)
 	dir := filepath.Dir(path)
 	if err = os.MkdirAll(dir, 0700); err != nil {
@@ -29,25 +29,25 @@ func Write(prefix, name, token string) (err error) {
 	b64 := base64.NewEncoder(base64.StdEncoding, f)
 	// ignoring the error here
 	defer b64.Close()
-	if _, err = b64.Write([]byte(token)); err != nil {
+	if _, err = b64.Write(token); err != nil {
 		return fmt.Errorf("writing the secret: %w", err)
 	}
 	return nil
 }
 
-func Read(prefix, name string) (string, error) {
+func Read(prefix, name string) ([]byte, error) {
 	f, err := os.Open(paths.ResolveSecretPath(prefix, name))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	// ignoring the error here
 	defer f.Close()
 	b64 := base64.NewDecoder(base64.StdEncoding, f)
 	b, err := io.ReadAll(b64)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return string(b), nil
+	return b, nil
 }
 
 func FindAll(prefix string) ([]string, error) {

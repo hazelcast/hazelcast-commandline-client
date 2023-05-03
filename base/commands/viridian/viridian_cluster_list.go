@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/secrets"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -24,22 +23,16 @@ Make sure you login before running this command.
 	short := "Lists Viridian clusters"
 	cc.SetCommandHelp(long, short)
 	cc.SetPositionalArgCount(0, 0)
+	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	return nil
 }
 
 func (cm ClusterListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
-	tp, err := findToken()
+	api, err := getAPI(ec)
 	if err != nil {
 		return err
 	}
-	ec.Logger().Info("Using Viridian secret at: %s", tp)
-	token, err := secrets.Read(secretPrefix, tp)
-	if err != nil {
-		ec.Logger().Error(err)
-		return fmt.Errorf("could not load Viridian secrets, did you login?")
-	}
-	api := viridian.NewAPI(token)
-	csi, cancel, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+	csi, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Retrieving clusters")
 		cs, err := api.ListClusters(ctx)
 		if err != nil {
@@ -51,7 +44,7 @@ func (cm ClusterListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 		ec.Logger().Error(err)
 		return fmt.Errorf("error getting clusters. Did you login?: %w", err)
 	}
-	cancel()
+	stop()
 	cs := csi.([]viridian.Cluster)
 	rows := make([]output.Row, len(cs))
 	for i, c := range cs {
