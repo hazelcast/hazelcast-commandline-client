@@ -149,7 +149,7 @@ func doDelete(ctx context.Context, url, token string) error {
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		return fmt.Errorf("an error occurred while downloading custom class: %w", err)
+		return fmt.Errorf("an error occurred while deleting: %w", err)
 	}
 
 	return nil
