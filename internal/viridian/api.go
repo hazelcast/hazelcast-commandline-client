@@ -181,6 +181,36 @@ func doCustomClassUpload(ctx context.Context, url, filePath, token string) error
 	return nil
 }
 
+func doCustomClassDownload(ctx context.Context, url, className, token string) error {
+	f, err := os.Create(className)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	req, err := http.NewRequest(http.MethodGet, makeUrl(url), nil)
+	if err != nil {
+		return fmt.Errorf("creating request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	req = req.WithContext(ctx)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("sending request: %w", err)
+	}
+	defer res.Body.Close()
+
+	_, err = io.Copy(f, res.Body)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func APIClass() string {
 	ac := os.Getenv(EnvAPI)
 	if ac != "" {

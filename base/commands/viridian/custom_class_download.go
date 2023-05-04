@@ -9,15 +9,15 @@ import (
 	"math"
 )
 
-type CustomClassUploadCmd struct{}
+type CustomClassDownloadCmd struct{}
 
-func (cmd CustomClassUploadCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("upload-custom-class [file-name]")
-	long := `Upload a new Custom Class to the Cluster.
+func (cmd CustomClassDownloadCmd) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("download-custom-class [file-name]")
+	long := `Download an existing custom class from the cluster.
 
 Make sure you login before running this command.
 `
-	short := "Upload a Custom Class to the Viridian Cluster"
+	short := "Download an existing custom class from the Viridian Cluster."
 	cc.SetCommandHelp(long, short)
 	cc.SetPositionalArgCount(0, math.MaxInt)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
@@ -25,18 +25,19 @@ Make sure you login before running this command.
 	return nil
 }
 
-func (cmd CustomClassUploadCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (cmd CustomClassDownloadCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	api, err := getAPI(ec)
 	if err != nil {
 		return err
 	}
 
 	cn := ec.Props().GetString("cluster.name")
-	filePath := ec.Args()[0]
+	cn = "f0wuy8wg"
+	className := ec.Args()[0]
 
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText("Uploading custom class")
-		err := api.UploadCustomClasses(ctx, cn, filePath)
+		sp.SetText("Downloading custom class")
+		err := api.DownloadCustomClasses(ctx, cn, className)
 		if err != nil {
 			return nil, err
 		}
@@ -44,15 +45,15 @@ func (cmd CustomClassUploadCmd) Exec(ctx context.Context, ec plug.ExecContext) e
 	})
 	if err != nil {
 		ec.Logger().Error(err)
-		return fmt.Errorf("error uploading custom classes. Did you login?: %w", err)
+		return fmt.Errorf("error downloading custom class. Did you login?: %w", err)
 	}
 	stop()
 
 	ec.PrintlnUnnecessary("")
-	ec.PrintlnUnnecessary("Custom class uploaded successfully.")
+	ec.PrintlnUnnecessary("Custom class downloaded successfully.")
 	return nil
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("viridian:upload-custom-class", &CustomClassUploadCmd{}))
+	Must(plug.Registry.RegisterCommand("viridian:download-custom-class", &CustomClassDownloadCmd{}))
 }
