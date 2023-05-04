@@ -6,8 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
+	"mime/multipart"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -124,6 +127,56 @@ func doPostBytes(ctx context.Context, url, token string, body []byte) ([]byte, e
 		return rb, nil
 	}
 	return nil, fmt.Errorf("%d: %s", res.StatusCode, string(rb))
+}
+
+func doCustomClassUpload(ctx context.Context, url, filePath, token string) error {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	reqBody := new(bytes.Buffer)
+	w := multipart.NewWriter(reqBody)
+	err = w.SetBoundary("WebAppBoundary")
+	if err != nil {
+		return err
+	}
+	p, err := w.CreateFormFile("customClassesFile", filepath.Base(filePath))
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(p, file)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, makeUrl(url), reqBody)
+	if err != nil {
+		return err
+	}
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	req = req.WithContext(ctx)
+	req.Header.Set("Content-Type", w.FormDataContentType())
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	resBody := &bytes.Buffer{}
+	_, err = resBody.ReadFrom(res.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("%d: %s", res.StatusCode, resBody.String())
+	}
+	return nil
 }
 
 func APIClass() string {
