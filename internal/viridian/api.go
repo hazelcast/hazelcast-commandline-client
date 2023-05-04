@@ -129,6 +129,32 @@ func doPostBytes(ctx context.Context, url, token string, body []byte) ([]byte, e
 	return nil, fmt.Errorf("%d: %s", res.StatusCode, string(rb))
 }
 
+func doDelete(ctx context.Context, url, token string) error {
+	req, err := http.NewRequest(http.MethodDelete, makeUrl(url), nil)
+	if err != nil {
+		return err
+	}
+	if err != nil {
+		return fmt.Errorf("creating request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	req = req.WithContext(ctx)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("sending request: %w", err)
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("an error occurred while downloading custom class: %w", err)
+	}
+
+	return nil
+}
+
 func doCustomClassUpload(ctx context.Context, url, filePath, token string) error {
 	reqBody := new(bytes.Buffer)
 	w := multipart.NewWriter(reqBody)
@@ -202,6 +228,10 @@ func doCustomClassDownload(ctx context.Context, url, className, token string) er
 		return fmt.Errorf("sending request: %w", err)
 	}
 	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("an error occurred while downloading custom class: %w", err)
+	}
 
 	_, err = io.Copy(f, res.Body)
 	if err != nil {

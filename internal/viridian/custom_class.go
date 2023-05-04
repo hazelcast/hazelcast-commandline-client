@@ -21,7 +21,7 @@ func (a API) UploadCustomClasses(ctx context.Context, clusterName, filePath stri
 	return nil
 }
 
-func (a API) DownloadCustomClasses(ctx context.Context, clusterName, className string) error {
+func (a API) DownloadCustomClass(ctx context.Context, clusterName, className string) error {
 	customClasses, err := a.ListCustomClasses(ctx, clusterName)
 	if err != nil {
 		return err
@@ -35,6 +35,27 @@ func (a API) DownloadCustomClasses(ctx context.Context, clusterName, className s
 	}
 
 	err = doCustomClassDownload(ctx, fmt.Sprintf("/cluster/%s/custom_classes/%d", clusterName, id), className, a.token)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (a API) DeleteCustomClass(ctx context.Context, clusterName, className string) error {
+	customClasses, err := a.ListCustomClasses(ctx, clusterName)
+	if err != nil {
+		return err
+	}
+
+	var id int64
+	for _, c := range customClasses {
+		if c.Name == className {
+			id = c.Id
+		}
+	}
+
+	err = doDelete(ctx, fmt.Sprintf("/cluster/%s/custom_classes/%d", clusterName, id), a.token)
 	if err != nil {
 		return err
 	}

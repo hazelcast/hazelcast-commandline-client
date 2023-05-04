@@ -9,15 +9,15 @@ import (
 	"math"
 )
 
-type CustomClassDownloadCmd struct{}
+type CustomClassDeleteCmd struct{}
 
-func (cmd CustomClassDownloadCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("download-custom-class [file-name]")
-	long := `Download an existing custom class from the cluster.
+func (cmd CustomClassDeleteCmd) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("delete-custom-class [file-name]")
+	long := `Delete an existing custom class from the cluster.
 
 Make sure you login before running this command.
 `
-	short := "Download an existing custom class from the Viridian Cluster."
+	short := "Delete an existing custom class from the Viridian Cluster."
 	cc.SetCommandHelp(long, short)
 	cc.SetPositionalArgCount(0, math.MaxInt)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
@@ -25,7 +25,7 @@ Make sure you login before running this command.
 	return nil
 }
 
-func (cmd CustomClassDownloadCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (cmd CustomClassDeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	api, err := getAPI(ec)
 	if err != nil {
 		return err
@@ -35,8 +35,8 @@ func (cmd CustomClassDownloadCmd) Exec(ctx context.Context, ec plug.ExecContext)
 	className := ec.Args()[0]
 
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText("Downloading custom class")
-		err := api.DownloadCustomClass(ctx, cn, className)
+		sp.SetText("Deleting custom class")
+		err := api.DeleteCustomClass(ctx, cn, className)
 		if err != nil {
 			return nil, err
 		}
@@ -44,15 +44,15 @@ func (cmd CustomClassDownloadCmd) Exec(ctx context.Context, ec plug.ExecContext)
 	})
 	if err != nil {
 		ec.Logger().Error(err)
-		return fmt.Errorf("error downloading custom class. Did you login?: %w", err)
+		return fmt.Errorf("error deleting custom class. Did you login?: %w", err)
 	}
 	stop()
 
 	ec.PrintlnUnnecessary("")
-	ec.PrintlnUnnecessary("Custom class downloaded successfully.")
+	ec.PrintlnUnnecessary("Custom class deleted successfully.")
 	return nil
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("viridian:download-custom-class", &CustomClassDownloadCmd{}))
+	Must(plug.Registry.RegisterCommand("viridian:delete-custom-class", &CustomClassDeleteCmd{}))
 }
