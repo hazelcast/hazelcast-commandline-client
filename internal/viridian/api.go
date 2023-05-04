@@ -130,36 +130,38 @@ func doPostBytes(ctx context.Context, url, token string, body []byte) ([]byte, e
 }
 
 func doCustomClassUpload(ctx context.Context, url, filePath, token string) error {
+	reqBody := new(bytes.Buffer)
+	w := multipart.NewWriter(reqBody)
+
+	p, err := w.CreateFormFile("customClassesFile", filepath.Base(filePath))
+	if err != nil {
+		return err
+	}
+
 	file, err := os.Open(filePath)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
-	reqBody := new(bytes.Buffer)
-	w := multipart.NewWriter(reqBody)
-	err = w.SetBoundary("WebAppBoundary")
-	if err != nil {
-		return err
-	}
-	p, err := w.CreateFormFile("customClassesFile", filepath.Base(filePath))
-	if err != nil {
-		return err
-	}
 	_, err = io.Copy(p, file)
 	if err != nil {
 		return err
 	}
 
+	w.Close()
+
 	req, err := http.NewRequest(http.MethodPost, makeUrl(url), reqBody)
 	if err != nil {
 		return err
 	}
+
 	if token != "" {
 		req.Header.Set("Authorization", "Bearer "+token)
 	}
-	req = req.WithContext(ctx)
 	req.Header.Set("Content-Type", w.FormDataContentType())
+
+	req = req.WithContext(ctx)
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
