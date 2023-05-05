@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 )
 
@@ -157,7 +156,7 @@ func doDelete(ctx context.Context, url, token string) error {
 	return nil
 }
 
-func doCustomClassUpload(ctx context.Context, url, filePath, token string) error {
+func doCustomClassUpload(ctx context.Context, sp clc.Spinner, url, filePath, token string) error {
 	reqBody := new(bytes.Buffer)
 	w := multipart.NewWriter(reqBody)
 
@@ -172,14 +171,14 @@ func doCustomClassUpload(ctx context.Context, url, filePath, token string) error
 	}
 	defer file.Close()
 
-	_, err = io.Copy(p, file)
+	size, err := io.Copy(p, file)
 	if err != nil {
 		return err
 	}
 
 	w.Close()
 
-	req, err := http.NewRequest(http.MethodPost, makeUrl(url), reqBody)
+	req, err := http.NewRequest(http.MethodPost, makeUrl(url), &progressReader{r: reqBody, max: size, sp: sp})
 	if err != nil {
 		return err
 	}
@@ -235,12 +234,11 @@ func doCustomClassDownload(ctx context.Context, sp clc.Spinner, url, className, 
 		return fmt.Errorf("an error occurred while downloading custom class: %w", err)
 	}
 
-	totalSize, err := strconv.Atoi(res.Header.Get("Content-Length"))
 	if err != nil {
 		return fmt.Errorf("an error occurred while downloading custom class: %w", err)
 	}
 
-	p := &ProgressPrinter{Spinner: sp, Total: uint64(totalSize)}
+	p := &ProgressPrinter{Spinner: sp, Total: uint64(res.ContentLength)}
 	_, err = io.Copy(f, io.TeeReader(res.Body, p))
 	if err != nil {
 		f.Close()
@@ -272,5 +270,30 @@ func (pp *ProgressPrinter) Write(p []byte) (int, error) {
 }
 
 func (pp *ProgressPrinter) Print() {
-	pp.Spinner.SetProgress(float32(pp.Current) / float32(pp.Total) * 100)
+	pp.Spinner.SetProgress(float32(pp.Current) / float32(pp.Total))
+}
+
+type progressReader struct {
+	r     io.Reader
+	max   int64
+	sent  int64
+	atEOF bool
+	sp    clc.Spinner
+}
+
+func (pr *progressReader) Read(p []byte) (int, error) {
+	n, err := pr.r.Read(p)
+	pr.sent += int64(n)
+	if err == io.EOF {
+		pr.atEOF = true
+	}
+	pr.report()
+	return n, err
+}
+
+func (pr *progressReader) report() {
+	pr.sp.SetProgress(float32(pr.sent) / float32(pr.max))
+	if pr.atEOF {
+		pr.sp.SetProgress(1)
+	}
 }

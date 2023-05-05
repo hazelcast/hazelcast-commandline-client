@@ -36,7 +36,7 @@ func (cmd CustomClassUploadCmd) Exec(ctx context.Context, ec plug.ExecContext) e
 
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Uploading custom class")
-		err := api.UploadCustomClasses(ctx, cn, filePath)
+		err := api.UploadCustomClasses(ctx, sp, cn, filePath)
 		if err != nil {
 			return nil, err
 		}

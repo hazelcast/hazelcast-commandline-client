@@ -14,8 +14,8 @@ func (a API) ListCustomClasses(ctx context.Context, clusterName string) ([]Custo
 	return csw, nil
 }
 
-func (a API) UploadCustomClasses(ctx context.Context, clusterName, filePath string) error {
-	err := doCustomClassUpload(ctx, fmt.Sprintf("/cluster/%s/custom_classes", clusterName), filePath, a.Token())
+func (a API) UploadCustomClasses(ctx context.Context, sp clc.Spinner, clusterName, filePath string) error {
+	err := doCustomClassUpload(ctx, sp, fmt.Sprintf("/cluster/%s/custom_classes", clusterName), filePath, a.Token())
 	if err != nil {
 		return fmt.Errorf("uploading custom class: %w", err)
 	}
