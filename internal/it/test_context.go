@@ -58,6 +58,7 @@ type TestContext struct {
 	LogLevel       string
 	ExpectStdout   *expect.Expect
 	ExpectStderr   *expect.Expect
+	Viridian       *ViridianAPI
 	homePath       string
 	stderr         *ProtectedBuffer
 	stdout         *ProtectedBuffer
@@ -115,6 +116,7 @@ func (tcx TestContext) Tester(f func(tcx TestContext)) {
 			if ViridianEnabled() {
 				ensureViridianEnvironment()
 				tcx.Cluster = defaultViridianTestCluster.Launch(tcx.T)
+				tcx.Viridian = defaultViridianTestCluster.cls.(*viridianTestCluster).api
 			} else {
 				tcx.Cluster = defaultDedicatedTestCluster.Launch(tcx.T)
 			}

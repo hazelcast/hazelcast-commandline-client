@@ -124,26 +124,63 @@ func xmlConfig(clusterName string, port int) string {
 	`, clusterName, port)
 }
 
-type viridianAPI struct {
+type viridianClusterInfo struct {
+	ID    string `json:"id"`
+	State string `json:"state"`
+}
+
+type keyValue map[string]any
+
+type Wrapper[T any] struct {
+	Content T
+}
+
+type ViridianAPI struct {
 	token string
 }
 
-func newViridianAPI(apiKey, apiSecret string) *viridianAPI {
-	a := &viridianAPI{}
-	a.login(apiKey, apiSecret)
+func loginNewViridianAPI(ctx context.Context, apiKey, apiSecret string) *ViridianAPI {
+	a := &ViridianAPI{}
+	a.login(ctx, apiKey, apiSecret)
 	return a
 }
 
-func (a *viridianAPI) login(apiKey, apiSecret string) {
+func (a *ViridianAPI) login(ctx context.Context, apiKey, apiSecret string) {
 	req := map[string]any{
 		"apiKey":    apiKey,
 		"apiSecret": apiSecret,
 	}
-	res, err := doPost(context.Background(), "/customers/api/login", "", req)
+	res, err := doPost[keyValue, keyValue](ctx, "/customers/api/login", "", req)
 	if err != nil {
 		panic(err)
 	}
 	a.token = res["token"].(string)
+}
+
+func (a *ViridianAPI) CreateCluster(ctx context.Context, name string) (viridianClusterInfo, error) {
+	req := map[string]any{
+		"kubernetesClusterId": 1,
+		"clusterTypeId":       6,
+		"name":                name,
+		"planName":            "SERVERLESS",
+	}
+	res, err := doPost[keyValue, viridianClusterInfo](ctx, "/cluster", a.token, req)
+	if err != nil {
+		return viridianClusterInfo{}, err
+	}
+	return res, nil
+}
+
+func (a *ViridianAPI) DeleteCluster(ctx context.Context, clusterID string) error {
+	return doDelete(ctx, "/cluster/"+clusterID, a.token)
+}
+
+func (a *ViridianAPI) ListClusters(ctx context.Context) ([]viridianClusterInfo, error) {
+	res, err := doGet[Wrapper[[]viridianClusterInfo]](ctx, "/cluster", a.token)
+	if err != nil {
+		return nil, err
+	}
+	return res.Content, nil
 }
 
 func makeUrl(path string) string {
@@ -152,7 +189,7 @@ func makeUrl(path string) string {
 	return os.Getenv(envAPIBaseURL) + path
 }
 
-func doPost(ctx context.Context, path, token string, request map[string]any) (res map[string]any, err error) {
+func doPost[Req, Res any](ctx context.Context, path, token string, request Req) (res Res, err error) {
 	m, err := json.Marshal(request)
 	if err != nil {
 		return res, fmt.Errorf("creating login payload: %w", err)
@@ -186,18 +223,68 @@ func doPostBytes(ctx context.Context, url, token string, body []byte) ([]byte, e
 	if err != nil {
 		return nil, fmt.Errorf("reading response: %w", err)
 	}
-	if res.StatusCode == 200 {
+	if res.StatusCode >= 200 && res.StatusCode < 300 {
 		return rb, nil
 	}
 	return nil, fmt.Errorf("%d: %s", res.StatusCode, string(rb))
 }
 
+func doDelete(ctx context.Context, path, token string) error {
+	req, err := http.NewRequest(http.MethodDelete, makeUrl(path), nil)
+	if err != nil {
+		return fmt.Errorf("creating request: %w", err)
+	}
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	req = req.WithContext(ctx)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("sending request: %w", err)
+	}
+	rb, err := io.ReadAll(res.Body)
+	if err != nil {
+		return fmt.Errorf("reading response: %w", err)
+	}
+	if res.StatusCode >= 200 && res.StatusCode < 300 {
+		return nil
+	}
+	return fmt.Errorf("%d: %s", res.StatusCode, string(rb))
+}
+
+func doGet[Res any](ctx context.Context, path, token string) (res Res, err error) {
+	req, err := http.NewRequest(http.MethodGet, makeUrl(path), nil)
+	if err != nil {
+		return res, fmt.Errorf("creating request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	req = req.WithContext(ctx)
+	rawRes, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return res, fmt.Errorf("sending request: %w", err)
+	}
+	rb, err := io.ReadAll(rawRes.Body)
+	if err != nil {
+		return res, fmt.Errorf("reading response: %w", err)
+	}
+	if rawRes.StatusCode == 200 {
+		if err = json.Unmarshal(rb, &res); err != nil {
+			return res, err
+		}
+		return res, nil
+	}
+	return res, fmt.Errorf("%d: %s", rawRes.StatusCode, string(rb))
+}
+
 type viridianTestCluster struct {
-	api *viridianAPI
+	api *ViridianAPI
 }
 
 func newViridianTestCluster() *viridianTestCluster {
-	api := newViridianAPI(ViridianAPIKey(), ViridianAPISecret())
+	api := loginNewViridianAPI(context.Background(), ViridianAPIKey(), ViridianAPISecret())
 	return &viridianTestCluster{api: api}
 }
 
