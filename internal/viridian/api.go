@@ -178,7 +178,7 @@ func doCustomClassUpload(ctx context.Context, sp clc.Spinner, url, filePath, tok
 
 	w.Close()
 
-	req, err := http.NewRequest(http.MethodPost, makeUrl(url), &progressReader{r: reqBody, max: size, sp: sp})
+	req, err := http.NewRequest(http.MethodPost, makeUrl(url), &UploadProgressReader{Reader: reqBody, Total: size, Spinner: sp})
 	if err != nil {
 		return err
 	}
@@ -238,7 +238,7 @@ func doCustomClassDownload(ctx context.Context, sp clc.Spinner, url, className, 
 		return fmt.Errorf("an error occurred while downloading custom class: %w", err)
 	}
 
-	p := &ProgressPrinter{Spinner: sp, Total: uint64(res.ContentLength)}
+	p := &DownloadProgressPrinter{Spinner: sp, Total: uint64(res.ContentLength)}
 	_, err = io.Copy(f, io.TeeReader(res.Body, p))
 	if err != nil {
 		f.Close()
@@ -256,44 +256,44 @@ func APIClass() string {
 	return "api"
 }
 
-type ProgressPrinter struct {
+type DownloadProgressPrinter struct {
 	Total   uint64
 	Current uint64
 	Spinner clc.Spinner
 }
 
-func (pp *ProgressPrinter) Write(p []byte) (int, error) {
+func (pp *DownloadProgressPrinter) Write(p []byte) (int, error) {
 	n := len(p)
 	pp.Current += uint64(n)
 	pp.Print()
 	return n, nil
 }
 
-func (pp *ProgressPrinter) Print() {
+func (pp *DownloadProgressPrinter) Print() {
 	pp.Spinner.SetProgress(float32(pp.Current) / float32(pp.Total))
 }
 
-type progressReader struct {
-	r     io.Reader
-	max   int64
-	sent  int64
-	atEOF bool
-	sp    clc.Spinner
+type UploadProgressReader struct {
+	Reader  io.Reader
+	Total   int64
+	Current int64
+	AtEOF   bool
+	Spinner clc.Spinner
 }
 
-func (pr *progressReader) Read(p []byte) (int, error) {
-	n, err := pr.r.Read(p)
-	pr.sent += int64(n)
+func (pr *UploadProgressReader) Read(p []byte) (int, error) {
+	n, err := pr.Reader.Read(p)
+	pr.Current += int64(n)
 	if err == io.EOF {
-		pr.atEOF = true
+		pr.AtEOF = true
 	}
 	pr.report()
 	return n, err
 }
 
-func (pr *progressReader) report() {
-	pr.sp.SetProgress(float32(pr.sent) / float32(pr.max))
-	if pr.atEOF {
-		pr.sp.SetProgress(1)
+func (pr *UploadProgressReader) report() {
+	pr.Spinner.SetProgress(float32(pr.Current) / float32(pr.Total))
+	if pr.AtEOF {
+		pr.Spinner.SetProgress(1)
 	}
 }
