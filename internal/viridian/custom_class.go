@@ -3,6 +3,7 @@ package viridian
 import (
 	"context"
 	"fmt"
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 )
 
 func (a API) ListCustomClasses(ctx context.Context, clusterName string) ([]CustomClass, error) {
@@ -21,7 +22,7 @@ func (a API) UploadCustomClasses(ctx context.Context, clusterName, filePath stri
 	return nil
 }
 
-func (a API) DownloadCustomClass(ctx context.Context, clusterName, className string) error {
+func (a API) DownloadCustomClass(ctx context.Context, sp clc.Spinner, clusterName, className string) error {
 	customClasses, err := a.ListCustomClasses(ctx, clusterName)
 	if err != nil {
 		return err
@@ -34,7 +35,7 @@ func (a API) DownloadCustomClass(ctx context.Context, clusterName, className str
 		}
 	}
 
-	err = doCustomClassDownload(ctx, fmt.Sprintf("/cluster/%s/custom_classes/%d", clusterName, id), className, a.token)
+	err = doCustomClassDownload(ctx, sp, fmt.Sprintf("/cluster/%s/custom_classes/%d", clusterName, id), className, a.token)
 	if err != nil {
 		return err
 	}

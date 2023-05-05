@@ -32,11 +32,12 @@ func (cmd CustomClassDownloadCmd) Exec(ctx context.Context, ec plug.ExecContext)
 	}
 
 	cn := ec.Props().GetString("cluster.name")
+	cn = "f0wuy8wg"
 	className := ec.Args()[0]
 
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Downloading custom class")
-		err := api.DownloadCustomClass(ctx, cn, className)
+		err = api.DownloadCustomClass(ctx, sp, cn, className)
 		if err != nil {
 			return nil, err
 		}

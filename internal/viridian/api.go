@@ -5,12 +5,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"io"
 	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -207,7 +209,7 @@ func doCustomClassUpload(ctx context.Context, url, filePath, token string) error
 	return nil
 }
 
-func doCustomClassDownload(ctx context.Context, url, className, token string) error {
+func doCustomClassDownload(ctx context.Context, sp clc.Spinner, url, className, token string) error {
 	f, err := os.Create(className)
 	if err != nil {
 		return err
@@ -233,8 +235,15 @@ func doCustomClassDownload(ctx context.Context, url, className, token string) er
 		return fmt.Errorf("an error occurred while downloading custom class: %w", err)
 	}
 
-	_, err = io.Copy(f, res.Body)
+	totalSize, err := strconv.Atoi(res.Header.Get("Content-Length"))
 	if err != nil {
+		return fmt.Errorf("an error occurred while downloading custom class: %w", err)
+	}
+
+	p := &ProgressPrinter{Spinner: sp, Total: uint64(totalSize)}
+	_, err = io.Copy(f, io.TeeReader(res.Body, p))
+	if err != nil {
+		f.Close()
 		return err
 	}
 
@@ -247,4 +256,21 @@ func APIClass() string {
 		return ac
 	}
 	return "api"
+}
+
+type ProgressPrinter struct {
+	Total   uint64
+	Current uint64
+	Spinner clc.Spinner
+}
+
+func (pp *ProgressPrinter) Write(p []byte) (int, error) {
+	n := len(p)
+	pp.Current += uint64(n)
+	pp.Print()
+	return n, nil
+}
+
+func (pp *ProgressPrinter) Print() {
+	pp.Spinner.SetProgress(float32(pp.Current) / float32(pp.Total) * 100)
 }
