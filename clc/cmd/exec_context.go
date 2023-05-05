@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -236,8 +237,14 @@ func (ec *ExecContext) WrapResult(f func() error) error {
 		if errors.Is(err, context.Canceled) {
 			I2(fmt.Fprintln(ec.stderr, "User cancelled"))
 		} else {
+			var errStr string
 			var msg string
-			errStr := err.Error()
+			var httpErr cmderrors.HTTPError
+			if errors.As(err, &httpErr) {
+				errStr = makeErrorStringFromHTTPResponse(httpErr.Text())
+			} else {
+				errStr = err.Error()
+			}
 			if verbose {
 				msg = fmt.Sprintf("Error in %d ms: %s", took.Milliseconds(), errStr)
 			} else {
@@ -284,6 +291,24 @@ func (ec *ExecContext) ensurePrinter() error {
 	}
 	ec.printer = pr
 	return nil
+}
+
+func makeErrorStringFromHTTPResponse(text string) string {
+	m := map[string]any{}
+	if err := json.Unmarshal([]byte(text), &m); err != nil {
+		return text
+	}
+	if v, ok := m["errorCode"]; ok {
+		if v == "ClusterTokenNotFound" {
+			return "Discovery token is not valid for this cluster"
+		}
+	}
+	if v, ok := m["message"]; ok {
+		if vs, ok := v.(string); ok {
+			return vs
+		}
+	}
+	return text
 }
 
 type simpleSpinner struct {

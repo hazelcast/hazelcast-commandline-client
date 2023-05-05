@@ -47,7 +47,7 @@ const (
 
 type TestContext struct {
 	T              *testing.T
-	Cluster        *TestCluster
+	Cluster        TestCluster
 	Client         *hz.Client
 	ClientConfig   *hz.Config
 	ConfigCallback func(testContext TestContext)
@@ -112,7 +112,12 @@ func (tcx TestContext) Tester(f func(tcx TestContext)) {
 	ensureRemoteController(true)
 	runner := func(tcx TestContext) {
 		if tcx.Cluster == nil {
-			tcx.Cluster = defaultTestCluster.Launch(tcx.T)
+			if ViridianEnabled() {
+				ensureViridianEnvironment()
+				tcx.Cluster = defaultViridianTestCluster.Launch(tcx.T)
+			} else {
+				tcx.Cluster = defaultDedicatedTestCluster.Launch(tcx.T)
+			}
 		}
 		if tcx.ClientConfig == nil {
 			cfg := tcx.Cluster.DefaultConfig()
@@ -346,4 +351,13 @@ func (pb *ProtectedBuffer) Bytes() []byte {
 	b := pb.buf.Bytes()
 	pb.mu.RUnlock()
 	return b
+}
+
+func ensureViridianEnvironment() {
+	const s = "ENABLE_VIRIDIAN==1 but %s was not set"
+	for _, e := range []string{envAPIBaseURL, envAPIKey, envAPISecret} {
+		if v := os.Getenv(e); v == "" {
+			panic(fmt.Sprintf(s, e))
+		}
+	}
 }
