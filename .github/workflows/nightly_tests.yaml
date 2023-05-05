@@ -15,8 +15,8 @@ jobs:
       DEFAULT_TIMEOUT: "30s"
       ENABLE_VIRIDIAN: "1"
       HZ_CLOUD_COORDINATOR_BASE_URL: "https://api.dev2.viridian.hazelcast.cloud"
-      # Note:
-      # VIRIDIAN_API_KEY and VIRIDIAN_API_SECRET are repo secrets
+      VIRIDIAN_API_KEY: "${{ secrets.VIRIDIAN_API_KEY }}"
+      VIRIDIAN_API_SECRET: "${{ secrets.VIRIDIAN_API_SECRET }}"
     defaults:
       run:
         shell: "bash"

@@ -192,7 +192,7 @@ func makeUrl(path string) string {
 func doPost[Req, Res any](ctx context.Context, path, token string, request Req) (res Res, err error) {
 	m, err := json.Marshal(request)
 	if err != nil {
-		return res, fmt.Errorf("creating login payload: %w", err)
+		return res, fmt.Errorf("creating request payload: %w", err)
 	}
 	b, err := doPostBytes(ctx, makeUrl(path), token, m)
 	if err != nil {
