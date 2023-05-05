@@ -35,6 +35,10 @@ func (a API) DownloadCustomClass(ctx context.Context, sp clc.Spinner, clusterNam
 		}
 	}
 
+	if id == 0 {
+		return fmt.Errorf("no such custom class found with name %s in cluster %s", className, clusterName)
+	}
+
 	err = doCustomClassDownload(ctx, sp, fmt.Sprintf("/cluster/%s/custom_classes/%d", clusterName, id), className, a.token)
 	if err != nil {
 		return err
@@ -54,6 +58,10 @@ func (a API) DeleteCustomClass(ctx context.Context, clusterName, className strin
 		if c.Name == className {
 			id = c.Id
 		}
+	}
+
+	if id == 0 {
+		return fmt.Errorf("no such custom class found with name %s in cluster %s", className, clusterName)
 	}
 
 	err = doDelete(ctx, fmt.Sprintf("/cluster/%s/custom_classes/%d", clusterName, id), a.token)

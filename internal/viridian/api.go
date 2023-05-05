@@ -5,13 +5,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"io"
-	"log"
-	"mime/multipart"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
 )
 
@@ -156,144 +152,10 @@ func doDelete(ctx context.Context, url, token string) error {
 	return nil
 }
 
-func doCustomClassUpload(ctx context.Context, sp clc.Spinner, url, filePath, token string) error {
-	reqBody := new(bytes.Buffer)
-	w := multipart.NewWriter(reqBody)
-
-	p, err := w.CreateFormFile("customClassesFile", filepath.Base(filePath))
-	if err != nil {
-		return err
-	}
-
-	file, err := os.Open(filePath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	size, err := io.Copy(p, file)
-	if err != nil {
-		return err
-	}
-
-	w.Close()
-
-	req, err := http.NewRequest(http.MethodPost, makeUrl(url), &UploadProgressReader{Reader: reqBody, Total: size, Spinner: sp})
-	if err != nil {
-		return err
-	}
-
-	if token != "" {
-		req.Header.Set("Authorization", "Bearer "+token)
-	}
-	req.Header.Set("Content-Type", w.FormDataContentType())
-
-	req = req.WithContext(ctx)
-
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return err
-	}
-
-	resBody := &bytes.Buffer{}
-	_, err = resBody.ReadFrom(res.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
-	res.Body.Close()
-
-	if res.StatusCode != http.StatusOK {
-		return fmt.Errorf("%d: %s", res.StatusCode, resBody.String())
-	}
-	return nil
-}
-
-func doCustomClassDownload(ctx context.Context, sp clc.Spinner, url, className, token string) error {
-	f, err := os.Create(className)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	req, err := http.NewRequest(http.MethodGet, makeUrl(url), nil)
-	if err != nil {
-		return fmt.Errorf("creating request: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	if token != "" {
-		req.Header.Set("Authorization", "Bearer "+token)
-	}
-	req = req.WithContext(ctx)
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("sending request: %w", err)
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode != http.StatusOK {
-		return fmt.Errorf("an error occurred while downloading custom class: %w", err)
-	}
-
-	if err != nil {
-		return fmt.Errorf("an error occurred while downloading custom class: %w", err)
-	}
-
-	p := &DownloadProgressPrinter{Spinner: sp, Total: uint64(res.ContentLength)}
-	_, err = io.Copy(f, io.TeeReader(res.Body, p))
-	if err != nil {
-		f.Close()
-		return err
-	}
-
-	return nil
-}
-
 func APIClass() string {
 	ac := os.Getenv(EnvAPI)
 	if ac != "" {
 		return ac
 	}
 	return "api"
-}
-
-type DownloadProgressPrinter struct {
-	Total   uint64
-	Current uint64
-	Spinner clc.Spinner
-}
-
-func (pp *DownloadProgressPrinter) Write(p []byte) (int, error) {
-	n := len(p)
-	pp.Current += uint64(n)
-	pp.Print()
-	return n, nil
-}
-
-func (pp *DownloadProgressPrinter) Print() {
-	pp.Spinner.SetProgress(float32(pp.Current) / float32(pp.Total))
-}
-
-type UploadProgressReader struct {
-	Reader  io.Reader
-	Total   int64
-	Current int64
-	AtEOF   bool
-	Spinner clc.Spinner
-}
-
-func (pr *UploadProgressReader) Read(p []byte) (int, error) {
-	n, err := pr.Reader.Read(p)
-	pr.Current += int64(n)
-	if err == io.EOF {
-		pr.AtEOF = true
-	}
-	pr.report()
-	return n, err
-}
-
-func (pr *UploadProgressReader) report() {
-	pr.Spinner.SetProgress(float32(pr.Current) / float32(pr.Total))
-	if pr.AtEOF {
-		pr.Spinner.SetProgress(1)
-	}
 }
