@@ -43,6 +43,7 @@ func TestSkipIf(t *testing.T) {
 		SSL:        true,
 		Slow:       true,
 		Flaky:      true,
+		Viridian:   true,
 		All:        true,
 	}
 	testCases := []skipTestCase{
@@ -159,6 +160,9 @@ func TestSkipIf(t *testing.T) {
 		// check flaky
 		skips("flaky"),
 		noSkip("!flaky"),
+		// check viridian
+		skips("viridian"),
+		noSkip("!viridian"),
 		// check all
 		skips("all"),
 		noSkip("!all"),
