@@ -59,6 +59,7 @@ type TestContext struct {
 	ExpectStdout   *expect.Expect
 	ExpectStderr   *expect.Expect
 	Viridian       *ViridianAPI
+	UseViridian    bool
 	homePath       string
 	stderr         *ProtectedBuffer
 	stdout         *ProtectedBuffer
@@ -112,8 +113,9 @@ func (tcx TestContext) WriteStdinf(format string, args ...any) {
 func (tcx TestContext) Tester(f func(tcx TestContext)) {
 	ensureRemoteController(true)
 	runner := func(tcx TestContext) {
+		useViridian := tcx.UseViridian && ViridianEnabled()
 		if tcx.Cluster == nil {
-			if ViridianEnabled() {
+			if useViridian {
 				ensureViridianEnvironment()
 				tcx.Cluster = defaultViridianTestCluster.Launch(tcx.T)
 				tcx.Viridian = defaultViridianTestCluster.cls.(*viridianTestCluster).api
@@ -140,13 +142,15 @@ func (tcx TestContext) Tester(f func(tcx TestContext)) {
 		}
 		home := check.MustValue(NewCLCHome())
 		defer home.Destroy()
-		if tcx.Client == nil {
+		if tcx.Client == nil && !useViridian {
 			tcx.Client = getDefaultClient(tcx.ClientConfig)
 		}
 		defer func() {
 			ctx := context.Background()
-			if err := tcx.Client.Shutdown(ctx); err != nil {
-				tcx.T.Logf("Test warning, client not shutdown: %s", err.Error())
+			if tcx.Client != nil {
+				if err := tcx.Client.Shutdown(ctx); err != nil {
+					tcx.T.Logf("Test warning, client not shutdown: %s", err.Error())
+				}
 			}
 		}()
 		tcx.ConfigPath = "test-cfg"
