@@ -13,6 +13,10 @@ clc viridian [command] [options]
 
 * <<clc-viridian-login, clc viridian login>>
 * <<clc-viridian-list-clusters, clc viridian list-clusters>>
+* <<clc-viridian-list-custom-classes, clc viridian list-clusters>>
+* <<clc-viridian-upload-custom-class, clc viridian upload-clusters>>
+* <<clc-viridian-download-custom-class, clc viridian download-clusters>>
+* <<clc-viridian-delete-custom-class, clc viridian delete-clusters>>
 
 == clc viridian login
 
@@ -61,4 +65,56 @@ Usage:
 [source,bash]
 ----
 clc viridian list-clusters [flags]
+----
+
+== clc viridian list-custom-classes
+
+Lists all custom classes in the Viridian Cluster.
+
+Make sure you login before running this command.
+
+Usage:
+
+[source,bash]
+----
+clc viridian list-custom-classes
+----
+
+== clc viridian upload-custom-class
+
+Uploads a custom class to the Viridian Cluster.
+
+Make sure you login before running this command.
+
+Usage:
+
+[source,bash]
+----
+clc viridian upload-custom-class <fileName>
+----
+
+== clc viridian download-custom-class
+
+Downloads a custom class from the Viridian Cluster.
+
+Make sure you login before running this command.
+
+Usage:
+
+[source,bash]
+----
+clc viridian download-custom-class <fileName>
+----
+
+== clc viridian delete-custom-class
+
+Deletes a custom class from the Viridian Cluster.
+
+Make sure you login before running this command.
+
+Usage:
+
+[source,bash]
+----
+clc viridian delete-custom-class <fileName>
 ----
