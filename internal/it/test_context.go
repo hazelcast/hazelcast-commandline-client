@@ -47,7 +47,7 @@ const (
 
 type TestContext struct {
 	T              *testing.T
-	Cluster        *TestCluster
+	Cluster        TestCluster
 	Client         *hz.Client
 	ClientConfig   *hz.Config
 	ConfigCallback func(testContext TestContext)
@@ -58,6 +58,8 @@ type TestContext struct {
 	LogLevel       string
 	ExpectStdout   *expect.Expect
 	ExpectStderr   *expect.Expect
+	Viridian       *ViridianAPI
+	UseViridian    bool
 	homePath       string
 	stderr         *ProtectedBuffer
 	stdout         *ProtectedBuffer
@@ -111,8 +113,15 @@ func (tcx TestContext) WriteStdinf(format string, args ...any) {
 func (tcx TestContext) Tester(f func(tcx TestContext)) {
 	ensureRemoteController(true)
 	runner := func(tcx TestContext) {
+		useViridian := tcx.UseViridian && ViridianEnabled()
 		if tcx.Cluster == nil {
-			tcx.Cluster = defaultTestCluster.Launch(tcx.T)
+			if useViridian {
+				ensureViridianEnvironment()
+				tcx.Cluster = defaultViridianTestCluster.Launch(tcx.T)
+				tcx.Viridian = defaultViridianTestCluster.cls.(*viridianTestCluster).api
+			} else {
+				tcx.Cluster = defaultDedicatedTestCluster.Launch(tcx.T)
+			}
 		}
 		if tcx.ClientConfig == nil {
 			cfg := tcx.Cluster.DefaultConfig()
@@ -133,13 +142,15 @@ func (tcx TestContext) Tester(f func(tcx TestContext)) {
 		}
 		home := check.MustValue(NewCLCHome())
 		defer home.Destroy()
-		if tcx.Client == nil {
+		if tcx.Client == nil && !useViridian {
 			tcx.Client = getDefaultClient(tcx.ClientConfig)
 		}
 		defer func() {
 			ctx := context.Background()
-			if err := tcx.Client.Shutdown(ctx); err != nil {
-				tcx.T.Logf("Test warning, client not shutdown: %s", err.Error())
+			if tcx.Client != nil {
+				if err := tcx.Client.Shutdown(ctx); err != nil {
+					tcx.T.Logf("Test warning, client not shutdown: %s", err.Error())
+				}
 			}
 		}()
 		tcx.ConfigPath = "test-cfg"
@@ -346,4 +357,13 @@ func (pb *ProtectedBuffer) Bytes() []byte {
 	b := pb.buf.Bytes()
 	pb.mu.RUnlock()
 	return b
+}
+
+func ensureViridianEnvironment() {
+	const s = "ENABLE_VIRIDIAN==1 but %s was not set"
+	for _, e := range []string{envAPIBaseURL, envAPIKey, envAPISecret} {
+		if v := os.Getenv(e); v == "" {
+			panic(fmt.Sprintf(s, e))
+		}
+	}
 }

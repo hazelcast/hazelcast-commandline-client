@@ -46,5 +46,13 @@ func MarkRacy(t *testing.T, see ...string) {
 	for _, s := range see {
 		t.Logf("See: %s", s)
 	}
-	skip.If(t, "race, !all")
+	skip.If(t, "!race, !all")
+}
+
+func MarkViridian(t *testing.T, see ...string) {
+	t.Logf("Note: %s is a test which requires a Viridian cluster, it will only run if the proper environment is detected.", t.Name())
+	for _, s := range see {
+		t.Logf("See: %s", s)
+	}
+	skip.If(t, "!viridian")
 }

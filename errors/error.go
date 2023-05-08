@@ -38,3 +38,8 @@ func (w WrappedError) Unwrap() error {
 func (w WrappedError) Error() string {
 	return w.Err.Error()
 }
+
+type HTTPError interface {
+	Text() string
+	Code() int
+}

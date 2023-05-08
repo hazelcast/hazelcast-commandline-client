@@ -84,7 +84,6 @@ func submitJar(ctx context.Context, ci *hazelcast.ClientInternal, ec plug.ExecCo
 		tries = 0
 	}
 	tries++
-	sid := types.NewUUID()
 	_, fn := filepath.Split(path)
 	fn = strings.TrimSuffix(fn, ".jar")
 	args := ec.Args()[1:]
@@ -98,9 +97,10 @@ func submitJar(ctx context.Context, ci *hazelcast.ClientInternal, ec plug.ExecCo
 			return nil, err
 		}
 		hash := hashWithWorkaround(hashBin, workaround)
-		mrReq := codec.EncodeJetUploadJobMetaDataRequest(sid, false, fn, hash, snapshot, jobName, className, args)
 		err = retry(tries, ec.Logger(), func() error {
 			sp.SetProgress(0)
+			sid := types.NewUUID()
+			mrReq := codec.EncodeJetUploadJobMetaDataRequest(sid, false, fn, hash, snapshot, jobName, className, args)
 			mem, err := randomMember(ctx, ci)
 			if err != nil {
 				return err
