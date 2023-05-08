@@ -140,13 +140,15 @@ func (tcx TestContext) Tester(f func(tcx TestContext)) {
 		}
 		home := check.MustValue(NewCLCHome())
 		defer home.Destroy()
-		if tcx.Client == nil {
+		if tcx.Client == nil && !ViridianEnabled() {
 			tcx.Client = getDefaultClient(tcx.ClientConfig)
 		}
 		defer func() {
 			ctx := context.Background()
-			if err := tcx.Client.Shutdown(ctx); err != nil {
-				tcx.T.Logf("Test warning, client not shutdown: %s", err.Error())
+			if tcx.Client != nil {
+				if err := tcx.Client.Shutdown(ctx); err != nil {
+					tcx.T.Logf("Test warning, client not shutdown: %s", err.Error())
+				}
 			}
 		}()
 		tcx.ConfigPath = "test-cfg"
