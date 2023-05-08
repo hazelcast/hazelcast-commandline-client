@@ -23,10 +23,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hazelcast/hazelcast-go-client"
-
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
+
+// see also the environment variables in it/util.go
 
 const (
 	skipHzVersion     = "hz"
@@ -45,13 +45,16 @@ const (
 	skipNotSlow       = "!slow"
 	skipFlaky         = "flaky"
 	skipNotFlaky      = "!flaky"
+	skipViridian      = "viridian"
+	skipNotViridian   = "!viridian"
 	skipAll           = "all"
 	skipNotAll        = "!all"
 	enterpriseKey     = "HAZELCAST_ENTERPRISE_KEY"
 	sslKey            = "ENABLE_SSL"
-	slowKey           = "SLOW_ENABLED"
-	flakyKey          = "FLAKY_ENABLED"
-	allKey            = "ALL_ENABLED"
+	slowKey           = "ENABLE_SLOW"
+	flakyKey          = "ENABLE_FLAKY"
+	viridianKey       = "ENABLE_VIRIDIAN"
+	allKey            = "ENABLE_ALL"
 )
 
 var skipChecker = defaultSkipChecker()
@@ -202,6 +205,7 @@ type Checker struct {
 	SSL        bool
 	Slow       bool
 	Flaky      bool
+	Viridian   bool
 	All        bool
 }
 
@@ -209,18 +213,17 @@ type Checker struct {
 func defaultSkipChecker() Checker {
 	_, enterprise := os.LookupEnv(enterpriseKey)
 	return Checker{
-		HzVer: hzVersion(),
-		//Ver:        internal.ClientVersion,
-		Ver:        hazelcast.ClientVersion,
+		HzVer:      hzVersion(),
+		Ver:        internal.Version,
 		OS:         runtime.GOOS,
 		Arch:       runtime.GOARCH,
 		Enterprise: enterprise,
-		// todo this does not compile?
-		//Race:       raceDetectorEnabled,
-		SSL:   isConditionEnabled(sslKey),
-		Slow:  isConditionEnabled(slowKey),
-		Flaky: isConditionEnabled(flakyKey),
-		All:   isConditionEnabled(allKey),
+		Race:       raceDetectorEnabled,
+		SSL:        isConditionEnabled(sslKey),
+		Slow:       isConditionEnabled(slowKey),
+		Flaky:      isConditionEnabled(flakyKey),
+		Viridian:   isConditionEnabled(viridianKey),
+		All:        isConditionEnabled(allKey),
 	}
 }
 
@@ -309,17 +312,22 @@ func (s Checker) isSSL() bool {
 	return s.SSL
 }
 
-// isSlow returns true if SLOW_ENABLED environment variable has the value "1".
+// isSlow returns true if ENABLE_SLOW environment variable has the value "1".
 func (s Checker) isSlow() bool {
 	return s.Slow
 }
 
-// isFlaky returns true if FLAKY_ENABLED environment variable has the value "1".
+// isFlaky returns true if ENABLE_FLAKY environment variable has the value "1".
 func (s Checker) isFlaky() bool {
 	return s.Flaky
 }
 
-// isAll returns true if ALL_ENABLED environment variable has the value "1".
+// isViridian returns true if ENABLE_VIRIDIAN environment variable has the value "1".
+func (s Checker) isViridian() bool {
+	return s.Viridian
+}
+
+// isAll returns true if ENABLE_ALL environment variable has the value "1".
 func (s Checker) isAll() bool {
 	return s.All
 }
@@ -353,46 +361,52 @@ func (s Checker) checkCondition(cond string) bool {
 		ensureLen(parts, 3, cond, "arch = 386")
 		return s.checkArch(parts[1], parts[2])
 	case skipEnterprise:
-		ensureLen(parts, 1, cond, "enterprise")
+		ensureLen(parts, 1, cond, skipEnterprise)
 		return s.isEnterprise()
 	case skipNotEnterprise:
-		ensureLen(parts, 1, cond, "!enterprise")
+		ensureLen(parts, 1, cond, skipNotEnterprise)
 		return !s.isEnterprise()
 	case skipOSS:
-		ensureLen(parts, 1, cond, "oss")
+		ensureLen(parts, 1, cond, skipOSS)
 		return s.isOSS()
 	case skipNotOSS:
-		ensureLen(parts, 1, cond, "!oss")
+		ensureLen(parts, 1, cond, skipNotOSS)
 		return !s.isOSS()
 	case skipRace:
-		ensureLen(parts, 1, cond, "race")
+		ensureLen(parts, 1, cond, skipRace)
 		return s.isRace()
 	case skipNotRace:
-		ensureLen(parts, 1, cond, "!race")
+		ensureLen(parts, 1, cond, skipNotRace)
 		return !s.isRace()
 	case skipSSL:
-		ensureLen(parts, 1, cond, "ssl")
+		ensureLen(parts, 1, cond, skipSSL)
 		return s.isSSL()
 	case skipNotSSL:
-		ensureLen(parts, 1, cond, "!ssl")
+		ensureLen(parts, 1, cond, skipNotSSL)
 		return !s.isSSL()
 	case skipSlow:
-		ensureLen(parts, 1, cond, "slow")
+		ensureLen(parts, 1, cond, skipSlow)
 		return s.isSlow()
 	case skipNotSlow:
-		ensureLen(parts, 1, cond, "!slow")
+		ensureLen(parts, 1, cond, skipNotSlow)
 		return !s.isSlow()
 	case skipFlaky:
-		ensureLen(parts, 1, cond, "flaky")
+		ensureLen(parts, 1, cond, skipFlaky)
 		return s.isFlaky()
 	case skipNotFlaky:
-		ensureLen(parts, 1, cond, "!flaky")
+		ensureLen(parts, 1, cond, skipNotFlaky)
 		return !s.isFlaky()
+	case skipViridian:
+		ensureLen(parts, 1, cond, skipViridian)
+		return s.isViridian()
+	case skipNotViridian:
+		ensureLen(parts, 1, cond, skipNotViridian)
+		return !s.isViridian()
 	case skipAll:
-		ensureLen(parts, 1, cond, "all")
+		ensureLen(parts, 1, cond, skipAll)
 		return s.isAll()
 	case skipNotAll:
-		ensureLen(parts, 1, cond, "!all")
+		ensureLen(parts, 1, cond, skipNotAll)
 		return !s.isAll()
 	default:
 		panic(fmt.Errorf(`unexpected test skip constant "%s" in %s`, parts[0], cond))

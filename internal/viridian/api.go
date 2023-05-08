@@ -15,8 +15,6 @@ const (
 	EnvAPIBaseURL     = "HZ_CLOUD_COORDINATOR_BASE_URL"
 	EnvAPIKey         = "CLC_VIRIDIAN_API_KEY"
 	EnvAPISecret      = "CLC_VIRIDIAN_API_SECRET"
-	EnvEmail          = "CLC_VIRIDIAN_EMAIL"
-	EnvPassword       = "CLC_VIRIDIAN_PASSWORD"
 	EnvAPI            = "CLC_EXPERIMENTAL_VIRIDIAN_API"
 	DefaultAPIBaseURL = "https://api.viridian.hazelcast.com"
 )
