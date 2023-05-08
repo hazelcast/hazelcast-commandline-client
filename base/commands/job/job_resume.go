@@ -32,7 +32,7 @@ func (cm ResumeCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		jid, ok := jm.GetIDForName(ec.Args()[0])
 		if !ok {
-			return nil, errInvalidJobID
+			return nil, ErrInvalidJobID
 		}
 		sp.SetText(fmt.Sprintf("Resuming job: %s", idToString(jid)))
 		req := codec.EncodeJetResumeJobRequest(jid)

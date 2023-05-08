@@ -255,7 +255,7 @@ func xmlConfig(clusterName string, port int) string {
             <network>
                <port>%d</port>
             </network>
-			<jet enabled="true" />
+			<jet enabled="true" resource-upload-enabled="true" />
         </hazelcast>
 	`, clusterName, port)
 }

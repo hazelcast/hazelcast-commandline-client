@@ -15,6 +15,7 @@ const (
 	flagClass                              = "class"
 	flagCancel                             = "cancel"
 	flagRetries                            = "retries"
+	flagWait                               = "wait"
 	statusNotRunning                       = 0
 	statusStarting                         = 1
 	statusRunning                          = 2

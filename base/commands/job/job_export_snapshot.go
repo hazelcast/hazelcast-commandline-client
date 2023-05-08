@@ -43,7 +43,7 @@ func (cm ExportSnapshotCmd) Exec(ctx context.Context, ec plug.ExecContext) error
 		}
 		jid, ok = jm.GetIDForName(jobNameOrID)
 		if !ok {
-			return errInvalidJobID
+			return ErrInvalidJobID
 		}
 		name, ok = jm.GetNameForID(jid)
 		if !ok {
@@ -57,7 +57,7 @@ func (cm ExportSnapshotCmd) Exec(ctx context.Context, ec plug.ExecContext) error
 		}
 		jid, ok = jm.GetIDForName(jobNameOrID)
 		if !ok {
-			return errInvalidJobID
+			return ErrInvalidJobID
 		}
 	}
 	if err != nil {

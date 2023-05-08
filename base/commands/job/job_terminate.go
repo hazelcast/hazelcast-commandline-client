@@ -45,7 +45,7 @@ func (cm TerminateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	for _, arg := range ec.Args() {
 		jid, ok := jm.GetIDForName(arg)
 		if !ok {
-			allErrs = append(allErrs, errInvalidJobID)
+			allErrs = append(allErrs, ErrInvalidJobID)
 			continue
 		}
 		if err := terminateJob(ctx, ec, jid, arg, tm, cm.msg); err != nil {
