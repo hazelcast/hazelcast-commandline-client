@@ -17,7 +17,10 @@ func TestViridian(t *testing.T) {
 	defer func() {
 		// make sure Viridian clusters are deleted
 		t.Logf("TestViridian cleanup...")
-		tcx := it.TestContext{T: t}
+		tcx := it.TestContext{
+			T:           t,
+			UseViridian: true,
+		}
 		tcx.Tester(func(tcx it.TestContext) {
 			ctx := context.Background()
 			infos := check.MustValue(tcx.Viridian.ListClusters(ctx))
@@ -43,7 +46,10 @@ func TestViridian(t *testing.T) {
 }
 
 func loginWithParamsTest(t *testing.T) {
-	tcx := it.TestContext{T: t}
+	tcx := it.TestContext{
+		T:           t,
+		UseViridian: true,
+	}
 	tcx.Tester(func(tcx it.TestContext) {
 		ctx := context.Background()
 		tcx.CLCExecute(ctx, "viridian", "login", "--api-key", it.ViridianAPIKey(), "--api-secret", it.ViridianAPISecret())
@@ -52,7 +58,10 @@ func loginWithParamsTest(t *testing.T) {
 }
 
 func loginWithEnvVariablesTest(t *testing.T) {
-	tcx := it.TestContext{T: t}
+	tcx := it.TestContext{
+		T:           t,
+		UseViridian: true,
+	}
 	tcx.Tester(func(tcx it.TestContext) {
 		ctx := context.Background()
 		it.WithEnv(viridian.EnvAPIKey, it.ViridianAPIKey(), func() {
@@ -77,7 +86,10 @@ func listClustersTest(t *testing.T) {
 }
 
 func viridianTester(t *testing.T, f func(ctx context.Context, tcx it.TestContext)) {
-	tcx := it.TestContext{T: t}
+	tcx := it.TestContext{
+		T:           t,
+		UseViridian: true,
+	}
 	tcx.Tester(func(tcx it.TestContext) {
 		ctx := context.Background()
 		tcx.CLCExecute(ctx, "viridian", "login", "--api-key", it.ViridianAPIKey(), "--api-secret", it.ViridianAPISecret())
