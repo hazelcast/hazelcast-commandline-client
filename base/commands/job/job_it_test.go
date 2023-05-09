@@ -24,9 +24,9 @@ func TestJob(t *testing.T) {
 func submitNonInteractiveTest(t *testing.T) {
 	tcx := it.TestContext{T: t}
 	cn := it.NewUniqueObjectName(t.Name())
-	port := 29_000
+	port := it.NextPort()
 	tcx.Cluster = it.StartNewClusterWithConfig(3, it.XMLConfig(cn, port), port)
-	//defer tcx.Cluster.(*it.DedicatedTestCluster).Terminate()
+	defer tcx.Cluster.(*it.DedicatedTestCluster).Terminate()
 	tcx.Tester(func(tcx it.TestContext) {
 		ctx := context.Background()
 		tcx.WithReset(func() {
