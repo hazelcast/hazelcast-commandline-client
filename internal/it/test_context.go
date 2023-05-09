@@ -143,7 +143,7 @@ func (tcx TestContext) Tester(f func(tcx TestContext)) {
 		home := check.MustValue(NewCLCHome())
 		defer home.Destroy()
 		if tcx.Client == nil && !useViridian {
-			tcx.Client = getDefaultClient(tcx.ClientConfig)
+			//tcx.Client = getDefaultClient(tcx.ClientConfig)
 		}
 		defer func() {
 			ctx := context.Background()

@@ -97,7 +97,7 @@ func submitJar(ctx context.Context, ci *hazelcast.ClientInternal, ec plug.ExecCo
 			return nil, err
 		}
 		hash := hashWithWorkaround(hashBin, workaround)
-		err = retry(tries, ec.Logger(), func() error {
+		err = retry(tries, ec.Logger(), func(try int) error {
 			sp.SetProgress(0)
 			sid := types.NewUUID()
 			mrReq := codec.EncodeJetUploadJobMetaDataRequest(sid, false, fn, hash, snapshot, jobName, className, args)
@@ -105,14 +105,24 @@ func submitJar(ctx context.Context, ci *hazelcast.ClientInternal, ec plug.ExecCo
 			if err != nil {
 				return err
 			}
-			sp.SetText("Uploading the metadata")
+			msg := "Uploading the metadata"
+			if try == 0 {
+				sp.SetText(msg)
+			} else {
+				sp.SetText(fmt.Sprintf("%s: retry %d", msg, try))
+			}
 			if _, err = ci.InvokeOnMember(ctx, mrReq, mem, nil); err != nil {
 				return err
 			}
 			if err != nil {
 				return fmt.Errorf("uploading job metadata: %w", err)
 			}
-			sp.SetText("Uploading the job")
+			msg = "Uploading the job"
+			if try == 0 {
+				sp.SetText(msg)
+			} else {
+				sp.SetText(fmt.Sprintf("%s: retry %d", msg, try))
+			}
 			pc, err := partCountOf(path, defaultBatchSize)
 			if err != nil {
 				return err
@@ -171,10 +181,10 @@ func partCountOf(path string, partSize int) (int, error) {
 	return int(math.Ceil(float64(st.Size()) / float64(partSize))), nil
 }
 
-func retry(times int, lg log.Logger, f func() error) error {
+func retry(times int, lg log.Logger, f func(try int) error) error {
 	var err error
 	for i := 0; i < times; i++ {
-		err = f()
+		err = f(i)
 		if err != nil {
 			lg.Error(err)
 			time.Sleep(5 * time.Second)
