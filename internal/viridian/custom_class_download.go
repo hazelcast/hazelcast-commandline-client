@@ -28,6 +28,14 @@ func (pp *DownloadProgressPrinter) Print() {
 
 func doCustomClassDownload(ctx context.Context, sp clc.Spinner, url, className, outputPath, token string) error {
 	if outputPath != "" {
+		// if the outputPath does not exist, then create it
+		_, err := os.Stat(outputPath)
+		if os.IsNotExist(err) {
+			err = os.MkdirAll(outputPath, os.ModePerm)
+			if err != nil {
+				return err
+			}
+		}
 		className = outputPath + "/" + className
 	}
 

@@ -31,7 +31,7 @@ func (cmd CustomClassDeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) e
 		return err
 	}
 
-	clusterName := ec.Args()[0]
+	cluster := ec.Args()[0]
 	artifactID, err := strconv.ParseInt(ec.Args()[1], 10, 64)
 	if err != nil {
 		return err
@@ -39,7 +39,7 @@ func (cmd CustomClassDeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) e
 
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Deleting custom class")
-		err = api.DeleteCustomClass(ctx, clusterName, artifactID)
+		err = api.DeleteCustomClass(ctx, cluster, artifactID)
 		if err != nil {
 			return nil, err
 		}
