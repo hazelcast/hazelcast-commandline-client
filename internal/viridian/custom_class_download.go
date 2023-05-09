@@ -26,7 +26,11 @@ func (pp *DownloadProgressPrinter) Print() {
 	pp.Spinner.SetProgress(float32(pp.Current) / float32(pp.Total))
 }
 
-func doCustomClassDownload(ctx context.Context, sp clc.Spinner, url, className, token string) error {
+func doCustomClassDownload(ctx context.Context, sp clc.Spinner, url, className, outputPath, token string) error {
+	if outputPath != "" {
+		className = outputPath + "/" + className
+	}
+
 	f, err := os.Create(className)
 	if err != nil {
 		return err

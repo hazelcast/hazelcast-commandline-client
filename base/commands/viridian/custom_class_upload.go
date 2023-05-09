@@ -6,20 +6,19 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"math"
 )
 
 type CustomClassUploadCmd struct{}
 
 func (cmd CustomClassUploadCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("upload-custom-class [file-name]")
-	long := `Upload a new Custom Class to the Cluster.
+	cc.SetCommandUsage("upload-custom-class [cluster-name/cluster-id] [file-name]")
+	long := `Upload a new Custom Class to the specified Viridian Cluster.
 
 Make sure you login before running this command.
 `
-	short := "Upload a Custom Class to the Viridian Cluster"
+	short := "Upload a Custom Class to the specified Viridian Cluster"
 	cc.SetCommandHelp(long, short)
-	cc.SetPositionalArgCount(0, math.MaxInt)
+	cc.SetPositionalArgCount(2, 2)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 
 	return nil
@@ -31,8 +30,8 @@ func (cmd CustomClassUploadCmd) Exec(ctx context.Context, ec plug.ExecContext) e
 		return err
 	}
 
-	cn := ec.Props().GetString("cluster.name")
-	filePath := ec.Args()[0]
+	cn := ec.Args()[0]
+	filePath := ec.Args()[1]
 
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Uploading custom class")

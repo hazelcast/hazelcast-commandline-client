@@ -6,20 +6,20 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"math"
+	"strconv"
 )
 
 type CustomClassDeleteCmd struct{}
 
 func (cmd CustomClassDeleteCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("delete-custom-class [file-name]")
-	long := `Delete an existing custom class from the cluster.
+	cc.SetCommandUsage("delete-custom-class [cluster-ID/cluster-name] [file-name]")
+	long := `Delete an existing custom class from the specified Viridian Cluster.
 
 Make sure you login before running this command.
 `
-	short := "Delete an existing custom class from the Viridian Cluster."
+	short := "Delete an existing custom class from the specified Viridian Cluster."
 	cc.SetCommandHelp(long, short)
-	cc.SetPositionalArgCount(0, math.MaxInt)
+	cc.SetPositionalArgCount(2, 2)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 
 	return nil
@@ -31,12 +31,15 @@ func (cmd CustomClassDeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) e
 		return err
 	}
 
-	cn := ec.Props().GetString("cluster.name")
-	className := ec.Args()[0]
+	clusterName := ec.Args()[0]
+	artifactID, err := strconv.ParseInt(ec.Args()[1], 10, 64)
+	if err != nil {
+		return err
+	}
 
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Deleting custom class")
-		err := api.DeleteCustomClass(ctx, cn, className)
+		err = api.DeleteCustomClass(ctx, clusterName, artifactID)
 		if err != nil {
 			return nil, err
 		}

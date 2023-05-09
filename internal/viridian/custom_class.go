@@ -22,7 +22,7 @@ func (a API) UploadCustomClasses(ctx context.Context, sp clc.Spinner, clusterNam
 	return nil
 }
 
-func (a API) DownloadCustomClass(ctx context.Context, sp clc.Spinner, clusterName, className string) error {
+func (a API) DownloadCustomClass(ctx context.Context, sp clc.Spinner, clusterName, className, outputPath string) error {
 	customClasses, err := a.ListCustomClasses(ctx, clusterName)
 	if err != nil {
 		return err
@@ -39,7 +39,7 @@ func (a API) DownloadCustomClass(ctx context.Context, sp clc.Spinner, clusterNam
 		return fmt.Errorf("no such custom class found with name %s in cluster %s", className, clusterName)
 	}
 
-	err = doCustomClassDownload(ctx, sp, fmt.Sprintf("/cluster/%s/custom_classes/%d", clusterName, id), className, a.token)
+	err = doCustomClassDownload(ctx, sp, fmt.Sprintf("/cluster/%s/custom_classes/%d", clusterName, id), className, outputPath, a.token)
 	if err != nil {
 		return err
 	}
@@ -47,7 +47,7 @@ func (a API) DownloadCustomClass(ctx context.Context, sp clc.Spinner, clusterNam
 	return nil
 }
 
-func (a API) DeleteCustomClass(ctx context.Context, clusterName, className string) error {
+func (a API) DeleteCustomClass(ctx context.Context, clusterName string, artifactID int64) error {
 	customClasses, err := a.ListCustomClasses(ctx, clusterName)
 	if err != nil {
 		return err
@@ -55,13 +55,13 @@ func (a API) DeleteCustomClass(ctx context.Context, clusterName, className strin
 
 	var id int64
 	for _, c := range customClasses {
-		if c.Name == className {
+		if c.Id == artifactID {
 			id = c.Id
 		}
 	}
 
 	if id == 0 {
-		return fmt.Errorf("no such custom class found with name %s in cluster %s", className, clusterName)
+		return fmt.Errorf("no such custom class found with name %s in cluster %s", artifactID, clusterName)
 	}
 
 	err = doDelete(ctx, fmt.Sprintf("/cluster/%s/custom_classes/%d", clusterName, id), a.token)

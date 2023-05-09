@@ -6,21 +6,23 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"math"
 )
+
+const outputPath = "output"
 
 type CustomClassDownloadCmd struct{}
 
 func (cmd CustomClassDownloadCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("download-custom-class [file-name]")
-	long := `Download an existing custom class from the cluster.
+	long := `Download an existing custom class from the specified Viridian Cluster.
 
 Make sure you login before running this command.
 `
 	short := "Download an existing custom class from the Viridian Cluster."
 	cc.SetCommandHelp(long, short)
-	cc.SetPositionalArgCount(0, math.MaxInt)
+	cc.SetPositionalArgCount(2, 2)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
+	cc.AddStringFlag(outputPath, "o", "", false, "Download Path")
 
 	return nil
 }
@@ -31,12 +33,13 @@ func (cmd CustomClassDownloadCmd) Exec(ctx context.Context, ec plug.ExecContext)
 		return err
 	}
 
-	cn := ec.Props().GetString("cluster.name")
-	className := ec.Args()[0]
+	clusterName := ec.Args()[0]
+	className := ec.Args()[1]
+	path := ec.Props().GetString(outputPath)
 
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Downloading custom class")
-		err = api.DownloadCustomClass(ctx, sp, cn, className)
+		err = api.DownloadCustomClass(ctx, sp, clusterName, className, path)
 		if err != nil {
 			return nil, err
 		}
