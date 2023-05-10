@@ -80,6 +80,19 @@ Usage:
 clc viridian list-custom-classes <cluster-name/cluster-id> [flags]
 ----
 
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--verbose`
+|Optional
+|Prints additional column `Temporary Custom Classes ID`
+|
+
+|===
+
 == clc viridian upload-custom-class
 
 Uploads a custom class to the Viridian cluster.
@@ -90,7 +103,7 @@ Usage:
 
 [source,bash]
 ----
-clc viridian upload-custom-class <cluster-name/cluster-id> <fileName/artifact-id> [flags]
+clc viridian upload-custom-class <cluster-name/cluster-id> <file-name/artifact-id> [flags]
 ----
 
 == clc viridian download-custom-class
@@ -103,7 +116,7 @@ Usage:
 
 [source,bash]
 ----
-clc viridian download-custom-class <cluster-name/cluster-id> <fileName/artifact-id> [flags]
+clc viridian download-custom-class <cluster-name/cluster-id> <file-name/artifact-id> [flags]
 ----
 
 Parameters:
@@ -129,5 +142,5 @@ Usage:
 
 [source,bash]
 ----
-clc viridian delete-custom-class <cluster-name/cluster-id> <fileName/artifact-id> [flags]
+clc viridian delete-custom-class <cluster-name/cluster-id> <file-name/artifact-id> [flags]
 ----
