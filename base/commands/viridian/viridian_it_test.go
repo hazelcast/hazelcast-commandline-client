@@ -39,8 +39,7 @@ func TestViridian(t *testing.T) {
 		{"listClusters", listClustersTest},
 		{"loginWithEnvVariables", loginWithEnvVariablesTest},
 		{"loginWithParams", loginWithParamsTest},
-		{"customClass_NonInteractive", customClassTest_NonInteractiveTest},
-		{"customClass_Interactive", customClass_InteractiveTest},
+		{"customClass_NonInteractive", customClassTest},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, tc.f)

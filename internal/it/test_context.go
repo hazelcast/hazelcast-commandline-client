@@ -238,13 +238,6 @@ func (tcx TestContext) AssertStdoutContains(text string) {
 	}
 }
 
-func (tcx TestContext) AssertStdoutNotContains(text string) {
-	if tcx.ExpectStdout.Match(expect.Contains(text), expect.WithTimeout(DefaultTimeout()), expect.WithDelay(DefaultDelay)) {
-		tcx.T.Log("STDOUT:", tcx.ExpectStdout.String())
-		tcx.T.Fatalf("expect failed, matched: %s", text)
-	}
-}
-
 func (tcx TestContext) AssertStdoutContainsWithPath(path string) {
 	p := string(check.MustValue(os.ReadFile(path)))
 	tcx.AssertStdoutContains(p)
