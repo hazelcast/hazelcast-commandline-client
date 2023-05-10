@@ -70,7 +70,7 @@ func doCustomClassDownload(ctx context.Context, sp clc.Spinner, t TargetInfo, ur
 type TargetInfo struct {
 	IsSet        bool
 	IsFile       bool
-	IsFileExists bool
+	IsPathExists bool
 	FileName     string
 	Path         string
 }
@@ -83,17 +83,17 @@ func CreateTargetInfo(target string) (TargetInfo, error) {
 		if err != nil {
 			return TargetInfo{}, err
 		}
-		i.IsFileExists = exists
+		i.IsPathExists = exists
 		i.IsFile, i.FileName, i.Path = isFile(target)
 		if !i.IsFile {
 			i.Path = target
 		}
 	}
-	return TargetInfo{}, nil
+	return i, nil
 }
 
 func (t TargetInfo) IsOverwrite() bool {
-	return t.IsSet && t.IsFile && t.IsFileExists
+	return t.IsSet && t.IsFile && t.IsPathExists
 }
 
 func (t TargetInfo) fileToBeCreated(className string) (string, error) {
@@ -140,8 +140,10 @@ func isExists(target string) (bool, error) {
 
 func isFile(target string) (bool, string, string) {
 	t := strings.Split(target, "/")
-	if a := strings.Split(t[len(t)-1], "."); a[1] != "" {
-		return true, t[0], t[len(t)-1] // return the file's path and its name
+	e := strings.Split(t[len(t)-1], ".")
+
+	if len(e) == 2 { // file.extension
+		return true, t[len(t)-1], strings.Join(t[:len(t)-1], "/") // return the file's path and its name
 	}
 	return false, "", ""
 }
