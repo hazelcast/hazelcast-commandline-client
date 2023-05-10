@@ -32,13 +32,11 @@ func doCustomClassDownload(ctx context.Context, sp clc.Spinner, t TargetInfo, ur
 	if err != nil {
 		return err
 	}
-
 	f, err := os.Create(fn)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
-
 	req, err := http.NewRequest(http.MethodGet, makeUrl(url), nil)
 	if err != nil {
 		return fmt.Errorf("creating request: %w", err)
@@ -53,22 +51,18 @@ func doCustomClassDownload(ctx context.Context, sp clc.Spinner, t TargetInfo, ur
 		return fmt.Errorf("sending request: %w", err)
 	}
 	defer res.Body.Close()
-
 	if res.StatusCode != http.StatusOK {
 		return fmt.Errorf("an error occurred while downloading custom class: %w", err)
 	}
-
 	if err != nil {
 		return fmt.Errorf("an error occurred while downloading custom class: %w", err)
 	}
-
 	p := &DownloadProgressPrinter{Spinner: sp, Total: uint64(res.ContentLength)}
 	_, err = io.Copy(f, io.TeeReader(res.Body, p))
 	if err != nil {
 		f.Close()
 		return err
 	}
-
 	return nil
 }
 
@@ -103,7 +97,6 @@ func (t TargetInfo) IsOverwrite() bool {
 
 func (t TargetInfo) fileToBeCreated(className string) (string, error) {
 	var toBeCreatedFile string
-
 	if !t.IsSet {
 		toBeCreatedFile = className
 	} else {

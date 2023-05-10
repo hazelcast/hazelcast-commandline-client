@@ -41,49 +41,39 @@ func (pr *UploadProgressReader) Print() {
 func doCustomClassUpload(ctx context.Context, sp clc.Spinner, url, filePath, token string) error {
 	reqBody := new(bytes.Buffer)
 	w := multipart.NewWriter(reqBody)
-
 	p, err := w.CreateFormFile("customClassesFile", filepath.Base(filePath))
 	if err != nil {
 		return err
 	}
-
 	file, err := os.Open(filePath)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
-
 	size, err := io.Copy(p, file)
 	if err != nil {
 		return err
 	}
-
 	w.Close()
-
 	req, err := http.NewRequest(http.MethodPost, makeUrl(url), &UploadProgressReader{Reader: reqBody, Total: size, Spinner: sp})
 	if err != nil {
 		return err
 	}
-
 	if token != "" {
 		req.Header.Set("Authorization", "Bearer "+token)
 	}
 	req.Header.Set("Content-Type", w.FormDataContentType())
-
 	req = req.WithContext(ctx)
-
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}
-
 	resBody := &bytes.Buffer{}
 	_, err = resBody.ReadFrom(res.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
 	res.Body.Close()
-
 	if res.StatusCode != http.StatusOK {
 		return fmt.Errorf("%d: %s", res.StatusCode, resBody.String())
 	}

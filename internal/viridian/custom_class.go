@@ -12,7 +12,6 @@ func (a API) ListCustomClasses(ctx context.Context, cluster string) ([]CustomCla
 	if err != nil {
 		return nil, err
 	}
-
 	csw, err := doGet[[]CustomClass](ctx, fmt.Sprintf("/cluster/%s/custom_classes", cID), a.Token())
 	if err != nil {
 		return nil, fmt.Errorf("listing custom classes: %w", err)
@@ -25,7 +24,6 @@ func (a API) UploadCustomClasses(ctx context.Context, sp clc.Spinner, cluster, f
 	if err != nil {
 		return err
 	}
-
 	err = doCustomClassUpload(ctx, sp, fmt.Sprintf("/cluster/%s/custom_classes", cID), filePath, a.Token())
 	if err != nil {
 		return fmt.Errorf("uploading custom class: %w", err)
@@ -38,21 +36,17 @@ func (a API) DownloadCustomClass(ctx context.Context, sp clc.Spinner, targetInfo
 	if err != nil {
 		return err
 	}
-
 	artifactID, artifactName, err := a.findArtifactIDAndName(ctx, cluster, artifact)
 	if err != nil {
 		return err
 	}
-
 	if artifactID == 0 {
 		return fmt.Errorf("no such custom class found with name %d in cluster %s", artifactID, cID)
 	}
-
 	err = doCustomClassDownload(ctx, sp, targetInfo, fmt.Sprintf("/cluster/%s/custom_classes/%d", cID, artifactID), artifactName, a.token)
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -61,28 +55,23 @@ func (a API) DeleteCustomClass(ctx context.Context, cluster string, artifactID i
 	if err != nil {
 		return err
 	}
-
 	customClasses, err := a.ListCustomClasses(ctx, cID)
 	if err != nil {
 		return err
 	}
-
 	var id int64
 	for _, c := range customClasses {
 		if c.Id == artifactID {
 			id = c.Id
 		}
 	}
-
 	if id == 0 {
 		return fmt.Errorf("no such custom class found with name %d in cluster %s", artifactID, cluster)
 	}
-
 	err = doDelete(ctx, fmt.Sprintf("/cluster/%s/custom_classes/%d", cluster, id), a.token)
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -91,13 +80,11 @@ func (a API) findClusterID(ctx context.Context, cluster string) (string, error) 
 	if err != nil {
 		return "", err
 	}
-
 	for _, c := range clusters {
 		if c.ID == cluster || c.Name == cluster {
 			return c.ID, nil
 		}
 	}
-
 	return "", fmt.Errorf("no such class found: %s", cluster)
 }
 
@@ -106,7 +93,6 @@ func (a API) findArtifactIDAndName(ctx context.Context, clusterName, artifact st
 	if err != nil {
 		return 0, "", err
 	}
-
 	var artifactName string
 	var artifactID int64
 	for _, cc := range customClasses {
@@ -116,6 +102,5 @@ func (a API) findArtifactIDAndName(ctx context.Context, clusterName, artifact st
 			break
 		}
 	}
-
 	return artifactID, artifactName, nil
 }

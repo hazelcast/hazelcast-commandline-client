@@ -23,7 +23,6 @@ Make sure you login before running this command.
 	cc.SetCommandHelp(long, short)
 	cc.SetPositionalArgCount(1, 1)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
-
 	return nil
 }
 
@@ -32,9 +31,8 @@ func (cmd CustomClassListCmd) Exec(ctx context.Context, ec plug.ExecContext) err
 	if err != nil {
 		return err
 	}
-
 	cn := ec.Args()[0]
-
+	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	csi, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Retrieving custom classes")
 		cs, err := api.ListCustomClasses(ctx, cn)
@@ -48,12 +46,10 @@ func (cmd CustomClassListCmd) Exec(ctx context.Context, ec plug.ExecContext) err
 		return fmt.Errorf("error getting custom classes. Did you login?: %w", err)
 	}
 	stop()
-
 	cs := csi.([]viridian.CustomClass)
 	rows := make([]output.Row, len(cs))
-
 	for i, c := range cs {
-		rows[i] = output.Row{
+		r := output.Row{
 			output.Column{
 				Name:  "ID",
 				Type:  serialization.TypeInt64,
@@ -74,12 +70,15 @@ func (cmd CustomClassListCmd) Exec(ctx context.Context, ec plug.ExecContext) err
 				Type:  serialization.TypeString,
 				Value: c.Status,
 			},
-			output.Column{
+		}
+		if verbose {
+			r = append(r, output.Column{
 				Name:  "Temporary Custom Classes Id",
 				Type:  serialization.TypeString,
 				Value: c.TemporaryCustomClassesId,
-			},
+			})
 		}
+		rows[i] = r
 	}
 	return ec.AddOutputRows(ctx, rows...)
 }

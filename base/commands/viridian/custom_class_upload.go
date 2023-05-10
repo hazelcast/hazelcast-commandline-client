@@ -20,7 +20,6 @@ Make sure you login before running this command.
 	cc.SetCommandHelp(long, short)
 	cc.SetPositionalArgCount(2, 2)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
-
 	return nil
 }
 
@@ -29,10 +28,8 @@ func (cmd CustomClassUploadCmd) Exec(ctx context.Context, ec plug.ExecContext) e
 	if err != nil {
 		return err
 	}
-
 	cn := ec.Args()[0]
 	filePath := ec.Args()[1]
-
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Uploading custom class")
 		err := api.UploadCustomClasses(ctx, sp, cn, filePath)
@@ -46,7 +43,6 @@ func (cmd CustomClassUploadCmd) Exec(ctx context.Context, ec plug.ExecContext) e
 		return fmt.Errorf("error uploading custom classes. Did you login?: %w", err)
 	}
 	stop()
-
 	ec.PrintlnUnnecessary("")
 	ec.PrintlnUnnecessary("Custom class uploaded successfully.")
 	return nil
