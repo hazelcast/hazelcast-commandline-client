@@ -15,11 +15,11 @@ type CustomClassListCmd struct{}
 
 func (cmd CustomClassListCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("list-custom-classes [cluster-name/cluster-id]")
-	long := `Lists all Custom Classes in the specified Viridian Cluster.
+	long := `Lists all custom classes in the given Viridian cluster.
 
 Make sure you login before running this command.
 `
-	short := "List Custom Classes in the specified Viridian Cluster"
+	short := "Lists all custom classes in the given Viridian cluster"
 	cc.SetCommandHelp(long, short)
 	cc.SetPositionalArgCount(1, 1)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
@@ -65,7 +65,7 @@ func (cmd CustomClassListCmd) Exec(ctx context.Context, ec plug.ExecContext) err
 				Value: c.Name,
 			},
 			output.Column{
-				Name:  "GeneratedFileName",
+				Name:  "Generated File Name",
 				Type:  serialization.TypeString,
 				Value: c.GeneratedFilename,
 			},
@@ -75,7 +75,7 @@ func (cmd CustomClassListCmd) Exec(ctx context.Context, ec plug.ExecContext) err
 				Value: c.Status,
 			},
 			output.Column{
-				Name:  "TemporaryCustomClassesId",
+				Name:  "Temporary Custom Classes Id",
 				Type:  serialization.TypeString,
 				Value: c.TemporaryCustomClassesId,
 			},
@@ -85,5 +85,5 @@ func (cmd CustomClassListCmd) Exec(ctx context.Context, ec plug.ExecContext) err
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("viridian:custom-classes-list", &CustomClassListCmd{}))
+	Must(plug.Registry.RegisterCommand("viridian:list-custom-classes", &CustomClassListCmd{}))
 }
