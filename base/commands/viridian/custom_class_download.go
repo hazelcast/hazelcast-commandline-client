@@ -4,8 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/errors"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/prompt"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
 const outputPath = "output"
@@ -23,7 +26,6 @@ Make sure you login before running this command.
 	cc.SetPositionalArgCount(2, 2)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	cc.AddStringFlag(outputPath, "o", "", false, "Download Path")
-
 	return nil
 }
 
@@ -32,14 +34,33 @@ func (cmd CustomClassDownloadCmd) Exec(ctx context.Context, ec plug.ExecContext)
 	if err != nil {
 		return err
 	}
-
+	// inputs
 	clusterName := ec.Args()[0]
 	artifact := ec.Args()[1]
-	path := ec.Props().GetString(outputPath)
-
+	target := ec.Props().GetString(outputPath)
+	// extract target info
+	t, err := viridian.CreateTargetInfo(target)
+	if err != nil {
+		return err
+	}
+	// if it is an existing file, it means we will overwrite it if user confirms
+	if t.IsOverwrite() {
+		autoYes := ec.Props().GetBool(clc.FlagAutoYes)
+		if !autoYes {
+			p := prompt.New(ec.Stdin(), ec.Stdout())
+			yes, err := p.YesNo("Such a file exists and it will be overwritten, proceed?")
+			if err != nil {
+				ec.Logger().Info("User input could not be processed due to error: %s", err.Error())
+				return errors.ErrUserCancelled
+			}
+			if !yes {
+				return errors.ErrUserCancelled
+			}
+		}
+	}
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Downloading custom class")
-		err = api.DownloadCustomClass(ctx, sp, clusterName, artifact, path)
+		err = api.DownloadCustomClass(ctx, sp, t, clusterName, artifact)
 		if err != nil {
 			return nil, err
 		}
@@ -50,7 +71,6 @@ func (cmd CustomClassDownloadCmd) Exec(ctx context.Context, ec plug.ExecContext)
 		return fmt.Errorf("error downloading custom class. Did you login?: %w", err)
 	}
 	stop()
-
 	ec.PrintlnUnnecessary("")
 	ec.PrintlnUnnecessary("Custom class downloaded successfully.")
 	return nil

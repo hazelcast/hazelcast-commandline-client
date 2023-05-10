@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 )
 
 type DownloadProgressPrinter struct {
@@ -26,20 +27,13 @@ func (pp *DownloadProgressPrinter) Print() {
 	pp.Spinner.SetProgress(float32(pp.Current) / float32(pp.Total))
 }
 
-func doCustomClassDownload(ctx context.Context, sp clc.Spinner, url, className, outputPath, token string) error {
-	if outputPath != "" {
-		// if the outputPath does not exist, then create it
-		_, err := os.Stat(outputPath)
-		if os.IsNotExist(err) {
-			err = os.MkdirAll(outputPath, os.ModePerm)
-			if err != nil {
-				return err
-			}
-		}
-		className = outputPath + "/" + className
+func doCustomClassDownload(ctx context.Context, sp clc.Spinner, t TargetInfo, url, className, token string) error {
+	fn, err := t.fileToBeCreated(className)
+	if err != nil {
+		return err
 	}
 
-	f, err := os.Create(className)
+	f, err := os.Create(fn)
 	if err != nil {
 		return err
 	}
@@ -76,4 +70,84 @@ func doCustomClassDownload(ctx context.Context, sp clc.Spinner, url, className, 
 	}
 
 	return nil
+}
+
+type TargetInfo struct {
+	IsSet        bool
+	IsFile       bool
+	IsFileExists bool
+	FileName     string
+	Path         string
+}
+
+func CreateTargetInfo(target string) (TargetInfo, error) {
+	var i TargetInfo
+	if target != "" {
+		i.IsSet = true
+		exists, err := isExists(target)
+		if err != nil {
+			return TargetInfo{}, err
+		}
+		i.IsFileExists = exists
+		i.IsFile, i.FileName, i.Path = isFile(target)
+		if !i.IsFile {
+			i.Path = target
+		}
+	}
+	return TargetInfo{}, nil
+}
+
+func (t TargetInfo) IsOverwrite() bool {
+	return t.IsSet && t.IsFile && t.IsFileExists
+}
+
+func (t TargetInfo) fileToBeCreated(className string) (string, error) {
+	var toBeCreatedFile string
+
+	if !t.IsSet {
+		toBeCreatedFile = className
+	} else {
+		// if directory does not exist, create it
+		err := t.createDirIfNotExists()
+		if err != nil {
+			return "", err
+		}
+		if !t.IsFile { // then it is a directory
+			toBeCreatedFile = t.Path + "/" + className
+		} else {
+			toBeCreatedFile = t.Path + "/" + t.FileName
+		}
+	}
+	return toBeCreatedFile, nil
+}
+
+func (t TargetInfo) createDirIfNotExists() error {
+	_, err := os.Stat(t.Path)
+	if os.IsNotExist(err) {
+		err = os.MkdirAll(t.Path, os.ModePerm)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func isExists(target string) (bool, error) {
+	_, err := os.Stat(target)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		} else {
+			return false, err
+		}
+	}
+	return true, nil
+}
+
+func isFile(target string) (bool, string, string) {
+	t := strings.Split(target, "/")
+	if a := strings.Split(t[len(t)-1], "."); a[1] != "" {
+		return true, t[0], t[len(t)-1] // return the file's path and its name
+	}
+	return false, "", ""
 }
