@@ -21,8 +21,7 @@ func customClass_NonInteractiveTest(t *testing.T) {
 		tcx.WithReset(func() {
 			tcx.CLCExecute(ctx, "viridian", "upload-custom-class", cid, fd)
 			tcx.AssertStderrContains("OK")
-			check.Must(waitCustomClassUpload(ctx, tcx))
-			tcx.AssertStderrContains("OK")
+			check.Must(waitCustomClassOperation(ctx, tcx, "Custom class uploaded successfully."))
 		})
 		id := ""
 		// test list custom class
@@ -42,7 +41,7 @@ func customClass_NonInteractiveTest(t *testing.T) {
 		tcx.WithReset(func() {
 			check.Must(waitState(ctx, tcx, cid, "RUNNING"))
 			tcx.CLCExecute(ctx, "viridian", "delete-custom-class", cid, id)
-			check.Must(waitCustomClassDelete(ctx, tcx))
+			check.Must(waitCustomClassOperation(ctx, tcx, "Custom class deleted successfully."))
 			tcx.AssertStderrContains("OK")
 		})
 		// check the list output again to be sure that delete was really successful
@@ -54,33 +53,16 @@ func customClass_NonInteractiveTest(t *testing.T) {
 	})
 }
 
-func waitCustomClassUpload(ctx context.Context, tcx it.TestContext) error {
+func waitCustomClassOperation(ctx context.Context, tcx it.TestContext, expected string) error {
 	tryCount := 0
 	for {
 		if tryCount == 5 {
-			return fmt.Errorf("custom class upload exceeded try limit")
+			return fmt.Errorf("custom class operation exceeded try limit")
 		}
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
-		if strings.Contains(tcx.ExpectStdout.String(), "Custom class uploaded successfully.") {
-			return nil
-		}
-		tryCount++
-		time.Sleep(5 * time.Second)
-	}
-}
-
-func waitCustomClassDelete(ctx context.Context, tcx it.TestContext) error {
-	tryCount := 0
-	for {
-		if tryCount == 5 {
-			return fmt.Errorf("custom class delete exceeded try limit")
-		}
-		if ctx.Err() != nil {
-			return ctx.Err()
-		}
-		if strings.Contains(tcx.ExpectStdout.String(), "Custom class deleted successfully.") {
+		if strings.Contains(tcx.ExpectStdout.String(), expected) {
 			return nil
 		}
 		tryCount++

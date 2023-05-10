@@ -82,7 +82,7 @@ clc viridian list-custom-classes <cluster-name/cluster-id> [flags]
 
 == clc viridian upload-custom-class
 
-Uploads a custom class to the Viridian Cluster.
+Uploads a custom class to the Viridian cluster.
 
 Make sure you login before running this command.
 
@@ -95,7 +95,7 @@ clc viridian upload-custom-class <cluster-name/cluster-id> <fileName/artifact-id
 
 == clc viridian download-custom-class
 
-Downloads a custom class from the Viridian Cluster.
+Downloads a custom class from the Viridian cluster.
 
 Make sure you login before running this command.
 
@@ -112,7 +112,7 @@ Parameters:
 |===
 |Parameter|Required|Description|Default
 
-|`--output`
+|`--output-path`
 |Optional
 |Output path for the downloaded artifact. The base directory of the path is created recursively if it doesn’t exist.
 |
@@ -121,7 +121,7 @@ Parameters:
 
 == clc viridian delete-custom-class
 
-Deletes a custom class from the Viridian Cluster.
+Deletes a custom class from the Viridian cluster.
 
 Make sure you login before running this command.
 

@@ -232,9 +232,6 @@ func doDelete(ctx context.Context, url, token string) error {
 	if err != nil {
 		return err
 	}
-	if err != nil {
-		return fmt.Errorf("creating request: %w", err)
-	}
 	req.Header.Set("Content-Type", "application/json")
 	if token != "" {
 		req.Header.Set("Authorization", "Bearer "+token)
