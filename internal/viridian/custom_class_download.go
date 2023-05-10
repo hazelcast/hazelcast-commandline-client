@@ -107,20 +107,30 @@ func (t TargetInfo) fileToBeCreated(className string) (string, error) {
 			return "", err
 		}
 		if !t.IsFile { // then it is a directory
-			toBeCreatedFile = t.Path + "/" + className
+			if t.Path != "" {
+				toBeCreatedFile = t.Path + "/" + className
+			} else {
+				toBeCreatedFile = className
+			}
 		} else {
-			toBeCreatedFile = t.Path + "/" + t.FileName
+			if t.Path != "" {
+				toBeCreatedFile = t.Path + "/" + t.FileName
+			} else {
+				toBeCreatedFile = t.FileName
+			}
 		}
 	}
 	return toBeCreatedFile, nil
 }
 
 func (t TargetInfo) createDirIfNotExists() error {
-	_, err := os.Stat(t.Path)
-	if os.IsNotExist(err) {
-		err = os.MkdirAll(t.Path, os.ModePerm)
-		if err != nil {
-			return err
+	if t.Path != "" {
+		_, err := os.Stat(t.Path)
+		if os.IsNotExist(err) {
+			err = os.MkdirAll(t.Path, os.ModePerm)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
