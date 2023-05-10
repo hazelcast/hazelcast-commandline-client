@@ -12,16 +12,15 @@ import (
 type CustomClassDeleteCmd struct{}
 
 func (cmd CustomClassDeleteCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("delete-custom-class [cluster-ID/cluster-name] [file-name]")
-	long := `Delete an existing custom class from the specified Viridian Cluster.
+	cc.SetCommandUsage("delete-custom-class [cluster-ID/cluster-name] [file-name/artifact-id] [flags]")
+	long := `Deletes a custom class from the given Viridian Cluster.
 
 Make sure you login before running this command.
 `
-	short := "Delete an existing custom class from the specified Viridian Cluster."
+	short := "Deletes a custom class from the given Viridian Cluster."
 	cc.SetCommandHelp(long, short)
 	cc.SetPositionalArgCount(2, 2)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
-
 	return nil
 }
 
@@ -30,13 +29,12 @@ func (cmd CustomClassDeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) e
 	if err != nil {
 		return err
 	}
-
+	// inputs
 	cluster := ec.Args()[0]
 	artifactID, err := strconv.ParseInt(ec.Args()[1], 10, 64)
 	if err != nil {
 		return err
 	}
-
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Deleting custom class")
 		err = api.DeleteCustomClass(ctx, cluster, artifactID)
@@ -50,7 +48,6 @@ func (cmd CustomClassDeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) e
 		return fmt.Errorf("error deleting custom class. Did you login?: %w", err)
 	}
 	stop()
-
 	ec.PrintlnUnnecessary("")
 	ec.PrintlnUnnecessary("Custom class deleted successfully.")
 	return nil

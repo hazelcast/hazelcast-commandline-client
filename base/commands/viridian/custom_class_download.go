@@ -11,21 +11,21 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
-const outputPath = "output"
+const flagOutputPath = "output-path"
 
 type CustomClassDownloadCmd struct{}
 
 func (cmd CustomClassDownloadCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("download-custom-class [file-name]")
-	long := `Download an existing custom class from the specified Viridian Cluster.
+	cc.SetCommandUsage("download-custom-class [file-name/artifact-id] [flags]")
+	long := `Download a custom class from the given Viridian Cluster.
 
 Make sure you login before running this command.
 `
-	short := "Download an existing custom class from the Viridian Cluster."
+	short := "Download a custom class from the given Viridian Cluster."
 	cc.SetCommandHelp(long, short)
 	cc.SetPositionalArgCount(2, 2)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
-	cc.AddStringFlag(outputPath, "o", "", false, "Download Path")
+	cc.AddStringFlag(flagOutputPath, "o", "", false, "download path")
 	return nil
 }
 
@@ -37,7 +37,7 @@ func (cmd CustomClassDownloadCmd) Exec(ctx context.Context, ec plug.ExecContext)
 	// inputs
 	clusterName := ec.Args()[0]
 	artifact := ec.Args()[1]
-	target := ec.Props().GetString(outputPath)
+	target := ec.Props().GetString(flagOutputPath)
 	// extract target info
 	t, err := viridian.CreateTargetInfo(target)
 	if err != nil {

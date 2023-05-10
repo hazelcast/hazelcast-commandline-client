@@ -11,7 +11,7 @@ import (
 type CustomClassUploadCmd struct{}
 
 func (cmd CustomClassUploadCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("upload-custom-class [cluster-name/cluster-id] [file-name]")
+	cc.SetCommandUsage("upload-custom-class [cluster-ID/name] [path-to-class] [flags]")
 	long := `Upload a new Custom Class to the specified Viridian Cluster.
 
 Make sure you login before running this command.
