@@ -53,7 +53,7 @@ func (a API) DownloadCustomClass(ctx context.Context, sp clc.Spinner, cluster st
 	}
 
 	if id == 0 {
-		return fmt.Errorf("no such custom class found with name %s in cluster %s", artifactID, cID)
+		return fmt.Errorf("no such custom class found with name %d in cluster %s", artifactID, cID)
 	}
 
 	err = doCustomClassDownload(ctx, sp, fmt.Sprintf("/cluster/%s/custom_classes/%d", cID, id), className, outputPath, a.token)
