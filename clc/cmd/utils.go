@@ -40,7 +40,11 @@ func ExtractStartupArgs(args []string) (cfgPath, logFile, logLevel string, err e
 }
 
 func CheckServerCompatible(ci *hazelcast.ClientInternal, targetVersion string) (string, bool) {
-	sv := ServerVersionOf(ci)
+	conn := ci.ConnectionManager().RandomConnection()
+	if conn == nil {
+		return "UNKNOWN", false
+	}
+	sv := conn.ServerVersion()
 	if os.Getenv(clc.EnvSkipServerVersionCheck) == "1" {
 		return sv, true
 	}

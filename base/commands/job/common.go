@@ -21,7 +21,7 @@ var ErrInvalidJobID = errors.New("invalid job ID")
 var ErrJobFailed = errors.New("job failed")
 var ErrJobNotFound = errors.New("job not found")
 
-func WaitJobState(ctx context.Context, ec plug.ExecContext, msg, jobName string, state int32, duration time.Duration) error {
+func WaitJobState(ctx context.Context, ec plug.ExecContext, msg, jobNameOrID string, state int32, duration time.Duration) error {
 	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
 		return err
@@ -35,14 +35,14 @@ func WaitJobState(ctx context.Context, ec plug.ExecContext, msg, jobName string,
 			if err != nil {
 				return nil, err
 			}
-			ok, err := EnsureJobState(jl, jobName, state)
+			ok, err := EnsureJobState(jl, jobNameOrID, state)
 			if err != nil {
 				return nil, err
 			}
 			if ok {
 				return nil, nil
 			}
-			ec.Logger().Debugf("Waiting %s for job %s to transition to state %s", duration.String(), jobName, statusToString(state))
+			ec.Logger().Debugf("Waiting %s for job %s to transition to state %s", duration.String(), jobNameOrID, statusToString(state))
 			time.Sleep(duration)
 		}
 	})
@@ -53,9 +53,9 @@ func WaitJobState(ctx context.Context, ec plug.ExecContext, msg, jobName string,
 	return nil
 }
 
-func EnsureJobState(jobs []control.JobAndSqlSummary, jobName string, state int32) (bool, error) {
+func EnsureJobState(jobs []control.JobAndSqlSummary, jobNameOrID string, state int32) (bool, error) {
 	for _, j := range jobs {
-		if j.NameOrId == jobName {
+		if j.NameOrId == jobNameOrID {
 			if j.Status == state {
 				return true, nil
 			}
@@ -96,7 +96,8 @@ func stringToID(s string) (int64, error) {
 	return i, nil
 }
 
-func terminateJob(ctx context.Context, ec plug.ExecContext, jobID int64, nameOrID string, terminateMode int32, text string) error {
+func terminateJob(ctx context.Context, ec plug.ExecContext, jobID int64, nameOrID string, terminateMode int32, text string, waitState int32) error {
+	wait := ec.Props().GetBool(flagWait)
 	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
 		return err
@@ -114,15 +115,15 @@ func terminateJob(ctx context.Context, ec plug.ExecContext, jobID int64, nameOrI
 		return err
 	}
 	stop()
-	return nil
-}
-
-func makeErrorsString(errs []error) error {
-	var sb strings.Builder
-	for _, e := range errs {
-		sb.WriteString(fmt.Sprintf("- %s\n", e.Error()))
+	if wait {
+		msg := fmt.Sprintf("Waiting for the operation to finish for job %s", nameOrID)
+		ec.Logger().Info(msg)
+		err = WaitJobState(ctx, ec, msg, nameOrID, waitState, 1*time.Second)
+		if err != nil {
+			return err
+		}
 	}
-	return errors.New(sb.String())
+	return nil
 }
 
 func GetJobList(ctx context.Context, ci *hazelcast.ClientInternal) ([]control.JobAndSqlSummary, error) {

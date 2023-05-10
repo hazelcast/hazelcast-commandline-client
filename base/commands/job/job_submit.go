@@ -48,7 +48,7 @@ having version %s or better.
 	cc.AddStringFlag(flagSnapshot, "", "", false, "initial snapshot to start the job from")
 	cc.AddStringFlag(flagClass, "", "", false, "the class that contains the main method that creates the Jet job")
 	cc.AddIntFlag(flagRetries, "", 3, false, "number of times to retry a failed upload attempt")
-	cc.AddBoolFlag(flagWait, "", false, false, "wait for the job to transition to RUNNING state")
+	cc.AddBoolFlag(flagWait, "", false, false, "wait for the job to be started")
 	cc.SetPositionalArgCount(1, math.MaxInt)
 	return nil
 }
@@ -163,9 +163,9 @@ func submitJar(ctx context.Context, ci *hazelcast.ClientInternal, ec plug.ExecCo
 	}
 	stop()
 	if wait {
-		msg := fmt.Sprintf("Waiting for job %s to transition to RUNNING state", jobName)
+		msg := fmt.Sprintf("Waiting for job %s to start", jobName)
 		ec.Logger().Info(msg)
-		err = WaitJobState(ctx, ec, msg, jobName, statusRunning, 3*time.Second)
+		err = WaitJobState(ctx, ec, msg, jobName, statusRunning, 2*time.Second)
 		if err != nil {
 			return err
 		}
