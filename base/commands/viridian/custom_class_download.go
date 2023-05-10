@@ -69,10 +69,9 @@ func (cmd CustomClassDownloadCmd) Exec(ctx context.Context, ec plug.ExecContext)
 	})
 	if err != nil {
 		ec.Logger().Error(err)
-		return fmt.Errorf("error downloading custom class. Did you login?: %w", err)
+		return fmt.Errorf("downloading custom class. Did you login?: %w", err)
 	}
 	stop()
-	ec.PrintlnUnnecessary("")
 	ec.PrintlnUnnecessary("Custom class downloaded successfully.")
 	return nil
 }

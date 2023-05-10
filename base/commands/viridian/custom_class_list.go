@@ -15,7 +15,7 @@ import (
 type CustomClassListCmd struct{}
 
 func (cmd CustomClassListCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("list-custom-classes [cluster-name/cluster-id]")
+	cc.SetCommandUsage("list-custom-classes [cluster-ID/cluster-name]")
 	long := `Lists all custom classes in the given Viridian cluster.
 
 Make sure you login before running this command.
@@ -44,7 +44,7 @@ func (cmd CustomClassListCmd) Exec(ctx context.Context, ec plug.ExecContext) err
 	})
 	if err != nil {
 		ec.Logger().Error(err)
-		return fmt.Errorf("error getting custom classes. Did you login?: %w", err)
+		return fmt.Errorf("getting custom classes. Did you login?: %w", err)
 	}
 	stop()
 	cs := csi.([]viridian.CustomClass)
@@ -74,7 +74,7 @@ func (cmd CustomClassListCmd) Exec(ctx context.Context, ec plug.ExecContext) err
 		}
 		if verbose {
 			r = append(r, output.Column{
-				Name:  "Temporary Custom Classes Id",
+				Name:  "Temporary Custom Classes ID",
 				Type:  serialization.TypeString,
 				Value: c.TemporaryCustomClassesId,
 			})

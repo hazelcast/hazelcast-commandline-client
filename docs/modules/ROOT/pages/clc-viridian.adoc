@@ -13,10 +13,10 @@ clc viridian [command] [options]
 
 * <<clc-viridian-login, clc viridian login>>
 * <<clc-viridian-list-clusters, clc viridian list-clusters>>
-* <<clc-viridian-list-custom-classes, clc viridian list-clusters>>
-* <<clc-viridian-upload-custom-class, clc viridian upload-clusters>>
-* <<clc-viridian-download-custom-class, clc viridian download-clusters>>
-* <<clc-viridian-delete-custom-class, clc viridian delete-clusters>>
+* <<clc-viridian-list-custom-classes, clc viridian list-custom-classes>>
+* <<clc-viridian-upload-custom-class, clc viridian upload-custom-class>>
+* <<clc-viridian-download-custom-class, clc viridian download-custom-class>>
+* <<clc-viridian-delete-custom-class, clc viridian delete-custom-class>>
 
 == clc viridian login
 

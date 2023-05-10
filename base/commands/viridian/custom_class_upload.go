@@ -12,12 +12,12 @@ import (
 type CustomClassUploadCmd struct{}
 
 func (cmd CustomClassUploadCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("upload-custom-class [cluster-ID/name] [path-to-class] [flags]")
-	long := `Upload a new Custom Class to the specified Viridian Cluster.
+	cc.SetCommandUsage("upload-custom-class [cluster-ID/cluster-name] [path-to-class] [flags]")
+	long := `Uploads a new Custom Class to the specified Viridian Cluster.
 
 Make sure you login before running this command.
 `
-	short := "Upload a Custom Class to the specified Viridian Cluster"
+	short := "Uploads a Custom Class to the specified Viridian Cluster"
 	cc.SetCommandHelp(long, short)
 	cc.SetPositionalArgCount(2, 2)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
@@ -41,10 +41,9 @@ func (cmd CustomClassUploadCmd) Exec(ctx context.Context, ec plug.ExecContext) e
 	})
 	if err != nil {
 		ec.Logger().Error(err)
-		return fmt.Errorf("error uploading custom classes. Did you login?: %w", err)
+		return fmt.Errorf("uploading custom classes. Did you login?: %w", err)
 	}
 	stop()
-	ec.PrintlnUnnecessary("")
 	ec.PrintlnUnnecessary("Custom class uploaded successfully.")
 	return nil
 }
