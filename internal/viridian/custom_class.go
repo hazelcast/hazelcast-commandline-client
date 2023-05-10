@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"strconv"
 )
 
 func (a API) ListCustomClasses(ctx context.Context, cluster string) ([]CustomClass, error) {
@@ -32,31 +33,22 @@ func (a API) UploadCustomClasses(ctx context.Context, sp clc.Spinner, cluster, f
 	return nil
 }
 
-func (a API) DownloadCustomClass(ctx context.Context, sp clc.Spinner, cluster string, artifactID int64, outputPath string) error {
+func (a API) DownloadCustomClass(ctx context.Context, sp clc.Spinner, cluster, artifact, outputPath string) error {
 	cID, err := a.findClusterID(ctx, cluster)
 	if err != nil {
 		return err
 	}
 
-	customClasses, err := a.ListCustomClasses(ctx, cID)
+	artifactID, artifactName, err := a.findArtifactIDAndName(ctx, cluster, artifact)
 	if err != nil {
 		return err
 	}
 
-	var id int64
-	var className string
-	for _, c := range customClasses {
-		if c.Id == artifactID {
-			id = c.Id
-			className = c.Name
-		}
-	}
-
-	if id == 0 {
+	if artifactID == 0 {
 		return fmt.Errorf("no such custom class found with name %d in cluster %s", artifactID, cID)
 	}
 
-	err = doCustomClassDownload(ctx, sp, fmt.Sprintf("/cluster/%s/custom_classes/%d", cID, id), className, outputPath, a.token)
+	err = doCustomClassDownload(ctx, sp, fmt.Sprintf("/cluster/%s/custom_classes/%d", cID, artifactID), artifactName, outputPath, a.token)
 	if err != nil {
 		return err
 	}
@@ -107,4 +99,23 @@ func (a API) findClusterID(ctx context.Context, cluster string) (string, error) 
 	}
 
 	return "", fmt.Errorf("no such class found: %s", cluster)
+}
+
+func (a API) findArtifactIDAndName(ctx context.Context, clusterName, artifact string) (int64, string, error) {
+	customClasses, err := a.ListCustomClasses(ctx, clusterName)
+	if err != nil {
+		return 0, "", err
+	}
+
+	var artifactName string
+	var artifactID int64
+	for _, cc := range customClasses {
+		if cc.Name == artifact || strconv.FormatInt(cc.Id, 10) == artifact {
+			artifactName = cc.Name
+			artifactID = cc.Id
+			break
+		}
+	}
+
+	return artifactID, artifactName, nil
 }

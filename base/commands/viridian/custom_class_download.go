@@ -6,7 +6,6 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"strconv"
 )
 
 const outputPath = "output"
@@ -36,15 +35,11 @@ func (cmd CustomClassDownloadCmd) Exec(ctx context.Context, ec plug.ExecContext)
 
 	clusterName := ec.Args()[0]
 	artifact := ec.Args()[1]
-	artifactID, err := strconv.ParseInt(artifact, 10, 64)
-	if err != nil {
-		return err
-	}
 	path := ec.Props().GetString(outputPath)
 
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Downloading custom class")
-		err = api.DownloadCustomClass(ctx, sp, clusterName, artifactID, path)
+		err = api.DownloadCustomClass(ctx, sp, clusterName, artifact, path)
 		if err != nil {
 			return nil, err
 		}
