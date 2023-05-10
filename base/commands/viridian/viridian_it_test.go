@@ -37,8 +37,10 @@ func TestViridian(t *testing.T) {
 		f    func(t *testing.T)
 	}{
 		{"listClusters", listClustersTest},
+		{"istClustersInteractive", listClustersInteractiveTest},
 		{"loginWithEnvVariables", loginWithEnvVariablesTest},
 		{"loginWithParams", loginWithParamsTest},
+		{"loginWithParamsInteractive", loginWithParamsInteractiveTest},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, tc.f)
@@ -54,6 +56,22 @@ func loginWithParamsTest(t *testing.T) {
 		ctx := context.Background()
 		tcx.CLCExecute(ctx, "viridian", "login", "--api-key", it.ViridianAPIKey(), "--api-secret", it.ViridianAPISecret())
 		tcx.AssertStdoutContains("Viridian token was fetched and saved.")
+	})
+}
+
+func loginWithParamsInteractiveTest(t *testing.T) {
+	tcx := it.TestContext{
+		T:           t,
+		UseViridian: true,
+	}
+	tcx.Tester(func(tcx it.TestContext) {
+		ctx := context.Background()
+		tcx.WithShell(ctx, func(tcx it.TestContext) {
+			tcx.WithReset(func() {
+				tcx.WriteStdin([]byte(fmt.Sprintf("\\viridian login --api-key %s --api-secret %s\n", it.ViridianAPIKey(), it.ViridianAPISecret())))
+				tcx.AssertStdoutContains("Viridian token was fetched and saved.")
+			})
+		})
 	})
 }
 
@@ -81,7 +99,23 @@ func listClustersTest(t *testing.T) {
 		tcx.CLCExecute(ctx, "viridian", "list-clusters")
 		tcx.AssertStderrContains("OK")
 		tcx.AssertStdoutContains(cid)
+	})
+}
 
+func listClustersInteractiveTest(t *testing.T) {
+	viridianTester(t, func(ctx context.Context, tcx it.TestContext) {
+		tcx.WithShell(ctx, func(tcx it.TestContext) {
+			tcx.WithReset(func() {
+				tcx.WriteStdin([]byte("\\viridian list-clusters\n"))
+				tcx.AssertStderrContains("OK")
+			})
+			cid := ensureClusterRunning(ctx, tcx)
+			tcx.WithReset(func() {
+				tcx.WriteStdin([]byte("\\viridian list-clusters\n"))
+				tcx.AssertStderrContains("OK")
+				tcx.AssertStdoutContains(cid)
+			})
+		})
 	})
 }
 
