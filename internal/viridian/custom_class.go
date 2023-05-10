@@ -32,7 +32,7 @@ func (a API) UploadCustomClasses(ctx context.Context, sp clc.Spinner, cluster, f
 	return nil
 }
 
-func (a API) DownloadCustomClass(ctx context.Context, sp clc.Spinner, cluster, className, outputPath string) error {
+func (a API) DownloadCustomClass(ctx context.Context, sp clc.Spinner, cluster string, artifactID int64, outputPath string) error {
 	cID, err := a.findClusterID(ctx, cluster)
 	if err != nil {
 		return err
@@ -44,14 +44,16 @@ func (a API) DownloadCustomClass(ctx context.Context, sp clc.Spinner, cluster, c
 	}
 
 	var id int64
+	var className string
 	for _, c := range customClasses {
-		if c.Name == className {
+		if c.Id == artifactID {
 			id = c.Id
+			className = c.Name
 		}
 	}
 
 	if id == 0 {
-		return fmt.Errorf("no such custom class found with name %s in cluster %s", className, cID)
+		return fmt.Errorf("no such custom class found with name %s in cluster %s", artifactID, cID)
 	}
 
 	err = doCustomClassDownload(ctx, sp, fmt.Sprintf("/cluster/%s/custom_classes/%d", cID, id), className, outputPath, a.token)
