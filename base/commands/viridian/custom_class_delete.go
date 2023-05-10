@@ -13,7 +13,7 @@ import (
 type CustomClassDeleteCmd struct{}
 
 func (cmd CustomClassDeleteCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("delete-custom-class [cluster-ID/cluster-name] [file-name/artifact-id] [flags]")
+	cc.SetCommandUsage("delete-custom-class [cluster-ID/cluster-name] [file-name/artifact-ID] [flags]")
 	long := `Deletes a custom class from the given Viridian Cluster.
 
 Make sure you login before running this command.
@@ -49,7 +49,6 @@ func (cmd CustomClassDeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) e
 		return fmt.Errorf("error deleting custom class. Did you login?: %w", err)
 	}
 	stop()
-	ec.PrintlnUnnecessary("")
 	ec.PrintlnUnnecessary("Custom class deleted successfully.")
 	return nil
 }

@@ -17,12 +17,12 @@ const flagOutputPath = "output-path"
 type CustomClassDownloadCmd struct{}
 
 func (cmd CustomClassDownloadCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("download-custom-class [file-name/artifact-id] [flags]")
-	long := `Download a custom class from the given Viridian Cluster.
+	cc.SetCommandUsage("download-custom-class [file-name/artifact-ID] [flags]")
+	long := `Downloads a custom class from the given Viridian Cluster.
 
 Make sure you login before running this command.
 `
-	short := "Download a custom class from the given Viridian Cluster."
+	short := "Downloads a custom class from the given Viridian Cluster."
 	cc.SetCommandHelp(long, short)
 	cc.SetPositionalArgCount(2, 2)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
@@ -49,7 +49,7 @@ func (cmd CustomClassDownloadCmd) Exec(ctx context.Context, ec plug.ExecContext)
 		autoYes := ec.Props().GetBool(clc.FlagAutoYes)
 		if !autoYes {
 			p := prompt.New(ec.Stdin(), ec.Stdout())
-			yes, err := p.YesNo("Such a file exists and it will be overwritten, proceed?")
+			yes, err := p.YesNo("Given output file exists and it will be overwritten, proceed?")
 			if err != nil {
 				ec.Logger().Info("User input could not be processed due to error: %s", err.Error())
 				return errors.ErrUserCancelled
