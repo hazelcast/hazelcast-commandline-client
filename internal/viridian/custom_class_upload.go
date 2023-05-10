@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"io"
 	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
+
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 )
 
 type UploadProgressReader struct {

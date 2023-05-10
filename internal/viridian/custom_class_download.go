@@ -3,11 +3,12 @@ package viridian
 import (
 	"context"
 	"fmt"
-	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"io"
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 )
 
 type DownloadProgressPrinter struct {

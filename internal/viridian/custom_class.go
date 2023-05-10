@@ -3,8 +3,9 @@ package viridian
 import (
 	"context"
 	"fmt"
-	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"strconv"
+
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 )
 
 func (a API) ListCustomClasses(ctx context.Context, cluster string) ([]CustomClass, error) {

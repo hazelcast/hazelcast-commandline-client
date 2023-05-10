@@ -3,10 +3,11 @@ package viridian
 import (
 	"context"
 	"fmt"
+	"strconv"
+
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"strconv"
 )
 
 type CustomClassDeleteCmd struct{}

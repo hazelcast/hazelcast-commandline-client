@@ -3,6 +3,7 @@ package viridian
 import (
 	"context"
 	"fmt"
+
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
