@@ -3,7 +3,6 @@ package job
 import (
 	"context"
 	"fmt"
-	"math"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -17,13 +16,15 @@ type TerminateCmd struct {
 	terminateMode      int32
 	terminateModeForce int32
 	msg                string
+	waitState          int32
 }
 
 func (cm TerminateCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage(fmt.Sprintf("%s [job-ID/name, ...]", cm.name))
+	cc.SetCommandUsage(fmt.Sprintf("%s [job-ID/name]", cm.name))
 	cc.SetCommandHelp(cm.longHelp, cm.shortHelp)
-	cc.SetPositionalArgCount(1, math.MaxInt)
+	cc.SetPositionalArgCount(1, 1)
 	cc.AddBoolFlag(flagForce, "", false, false, fmt.Sprintf("force %s the job", cm.name))
+	cc.AddBoolFlag(flagWait, "", false, false, "wait for the operation to finish")
 	return nil
 }
 
@@ -37,55 +38,51 @@ func (cm TerminateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if ec.Props().GetBool(flagForce) {
 		tm = cm.terminateModeForce
 	}
-	var allErrs []error
 	jm, err := newJobNameToIDMap(ctx, ec, false)
 	if err != nil {
 		return err
 	}
-	for _, arg := range ec.Args() {
-		jid, ok := jm.GetIDForName(arg)
-		if !ok {
-			allErrs = append(allErrs, errInvalidJobID)
-			continue
-		}
-		if err := terminateJob(ctx, ec, jid, arg, tm, cm.msg); err != nil {
-			allErrs = append(allErrs, fmt.Errorf("%s: %w", arg, err))
-		} else {
-			verbose := ec.Props().GetBool(clc.PropertyVerbose)
-			if verbose {
-				I2(fmt.Fprintf(ec.Stderr(), "Job %s: %s\n", cm.name, idToString(jid)))
-			}
-		}
+	arg := ec.Args()[0]
+	jid, ok := jm.GetIDForName(arg)
+	if !ok {
+		return ErrInvalidJobID
 	}
-	if len(allErrs) == 0 {
-		return nil
+	if err = terminateJob(ctx, ec, jid, arg, tm, cm.msg, cm.waitState); err != nil {
+		return err
 	}
-	return makeErrorsString(allErrs)
+	verbose := ec.Props().GetBool(clc.PropertyVerbose)
+	if verbose {
+		ec.PrintlnUnnecessary(fmt.Sprintf("Job %sed: %s", cm.name, idToString(jid)))
+	}
+	return nil
 }
 
 func init() {
 	Must(plug.Registry.RegisterCommand("job:cancel", &TerminateCmd{
 		name:               "cancel",
-		longHelp:           "Cancels the job with the given ID or name",
+		longHelp:           "Cancels the job with the given ID or name.",
 		shortHelp:          "Cancels the job with the given ID or name",
 		terminateMode:      terminateModeCancelGraceful,
 		terminateModeForce: terminateModeCancelForceful,
 		msg:                "Cancelling the job",
+		waitState:          statusFailed,
 	}))
 	Must(plug.Registry.RegisterCommand("job:suspend", &TerminateCmd{
 		name:               "suspend",
-		longHelp:           "Suspends the job with the given ID or name",
+		longHelp:           "Suspends the job with the given ID or name.",
 		shortHelp:          "Suspends the job with the given ID or name",
 		terminateMode:      terminateModeSuspendGraceful,
 		terminateModeForce: terminateModeSuspendForceful,
 		msg:                "Suspending the job",
+		waitState:          statusSuspended,
 	}))
 	Must(plug.Registry.RegisterCommand("job:restart", &TerminateCmd{
 		name:               "restart",
-		longHelp:           "Restarts the job with the given ID or name",
+		longHelp:           "Restarts the job with the given ID or name.",
 		shortHelp:          "Restarts the job with the given ID or name",
 		terminateMode:      terminateModeRestartGraceful,
 		terminateModeForce: terminateModeRestartForceful,
 		msg:                "Restarting the job",
+		waitState:          statusRunning,
 	}))
 }

@@ -40,6 +40,13 @@ func (c DedicatedTestCluster) Shutdown() {
 	}
 }
 
+func (c DedicatedTestCluster) Terminate() {
+	for _, memberUUID := range c.MemberUUIDs {
+		c.RC.TerminateMember(context.Background(), c.ClusterID, memberUUID)
+	}
+
+}
+
 func (c DedicatedTestCluster) DefaultConfig() hz.Config {
 	config := hz.Config{}
 	config.Cluster.Name = c.ClusterID
@@ -100,7 +107,7 @@ func (c *SingletonTestCluster) Launch(t testLogger) TestCluster {
 
 func StartNewClusterWithOptions(clusterName string, port, memberCount int) *DedicatedTestCluster {
 	ensureRemoteController(false)
-	config := xmlConfig(clusterName, port)
+	config := XMLConfig(clusterName, port)
 	return rc.startNewCluster(memberCount, config, port)
 }
 
@@ -109,7 +116,7 @@ func StartNewClusterWithConfig(memberCount int, config string, port int) *Dedica
 	return rc.startNewCluster(memberCount, config, port)
 }
 
-func xmlConfig(clusterName string, port int) string {
+func XMLConfig(clusterName string, port int) string {
 	return fmt.Sprintf(`
         <hazelcast xmlns="http://www.hazelcast.com/schema/config"
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -119,7 +126,7 @@ func xmlConfig(clusterName string, port int) string {
             <network>
                <port>%d</port>
             </network>
-			<jet enabled="true" />
+			<jet enabled="true" resource-upload-enabled="true" />
         </hazelcast>
 	`, clusterName, port)
 }

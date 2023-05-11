@@ -48,6 +48,7 @@ having version %s or better.
 	cc.AddStringFlag(flagSnapshot, "", "", false, "initial snapshot to start the job from")
 	cc.AddStringFlag(flagClass, "", "", false, "the class that contains the main method that creates the Jet job")
 	cc.AddIntFlag(flagRetries, "", 3, false, "number of times to retry a failed upload attempt")
+	cc.AddBoolFlag(flagWait, "", false, false, "wait for the job to be started")
 	cc.SetPositionalArgCount(1, math.MaxInt)
 	return nil
 }
@@ -71,20 +72,22 @@ func (cm SubmitCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 }
 
 func submitJar(ctx context.Context, ci *hazelcast.ClientInternal, ec plug.ExecContext, path string) error {
+	wait := ec.Props().GetBool(flagWait)
 	jobName := ec.Props().GetString(flagName)
 	snapshot := ec.Props().GetString(flagSnapshot)
 	className := ec.Props().GetString(flagClass)
+	if wait && jobName == "" {
+		return fmt.Errorf("--wait requires the --name to be set")
+	}
 	tries := int(ec.Props().GetInt(flagRetries))
 	if tries < 0 {
 		tries = 0
 	}
 	tries++
-	sid := types.NewUUID()
 	_, fn := filepath.Split(path)
 	fn = strings.TrimSuffix(fn, ".jar")
 	args := ec.Args()[1:]
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText("Uploading metadata")
 		workaround := workaround24285(ci)
 		if workaround {
 			ec.Logger().Debugf("Working around https://github.com/hazelcast/hazelcast/issues/24285")
@@ -94,62 +97,79 @@ func submitJar(ctx context.Context, ci *hazelcast.ClientInternal, ec plug.ExecCo
 			return nil, err
 		}
 		hash := hashWithWorkaround(hashBin, workaround)
-		req := codec.EncodeJetUploadJobMetaDataRequest(sid, false, fn, hash, snapshot, jobName, className, args)
-		mem, err := randomMember(ctx, ci)
-		if err != nil {
-			return nil, err
-		}
-		err = retry(tries, ec.Logger(), func() error {
-			if _, err = ci.InvokeOnMember(ctx, req, mem, nil); err != nil {
+		err = retry(tries, ec.Logger(), func(try int) error {
+			sp.SetProgress(0)
+			sid := types.NewUUID()
+			mrReq := codec.EncodeJetUploadJobMetaDataRequest(sid, false, fn, hash, snapshot, jobName, className, args)
+			mem, err := randomMember(ctx, ci)
+			if err != nil {
 				return err
 			}
+			msg := "Uploading the metadata"
+			if try == 0 {
+				sp.SetText(msg)
+			} else {
+				sp.SetText(fmt.Sprintf("%s: retry %d", msg, try))
+			}
+			if _, err = ci.InvokeOnMember(ctx, mrReq, mem, nil); err != nil {
+				return err
+			}
+			if err != nil {
+				return fmt.Errorf("uploading job metadata: %w", err)
+			}
+			msg = "Uploading the job"
+			if try == 0 {
+				sp.SetText(msg)
+			} else {
+				sp.SetText(fmt.Sprintf("%s: retry %d", msg, try))
+			}
+			pc, err := partCountOf(path, defaultBatchSize)
+			if err != nil {
+				return err
+			}
+			f, err := os.Open(path)
+			if err != nil {
+				return err
+			}
+			defer f.Close()
+			ec.Logger().Info("Sending %s in %d batch(es)", path, pc)
+			bb := newBatch(f, defaultBatchSize)
+			for i := int32(0); i < int32(pc); i++ {
+				bin, hashBin, err := bb.Next()
+				if err == io.EOF {
+					break
+				}
+				if err != nil {
+					return fmt.Errorf("sending the job: %w", err)
+				}
+				part := i + 1
+				hash := hashWithWorkaround(hashBin, workaround)
+				mrReq = codec.EncodeJetUploadJobMultipartRequest(sid, part, int32(pc), bin, int32(len(bin)), hash)
+				if _, err := ci.InvokeOnMember(ctx, mrReq, mem, nil); err != nil {
+					return fmt.Errorf("uploading part %d: %w", part, err)
+				}
+				sp.SetProgress(float32(part) / float32(pc))
+			}
+			sp.SetProgress(1)
 			return nil
 		})
 		if err != nil {
-			return nil, fmt.Errorf("uploading job metadata: %w", err)
-		}
-		sp.SetText("Uploading Jar")
-		pc, err := partCountOf(path, defaultBatchSize)
-		if err != nil {
 			return nil, err
 		}
-		f, err := os.Open(path)
-		if err != nil {
-			return nil, err
-		}
-		defer f.Close()
-		ec.Logger().Info("Sending %s in %d batch(es)", path, pc)
-		bb := newBatch(f, defaultBatchSize)
-		sp.SetProgress(0)
-		for i := int32(0); i < int32(pc); i++ {
-			bin, hashBin, err := bb.Next()
-			if err == io.EOF {
-				break
-			}
-			if err != nil {
-				return nil, fmt.Errorf("reading Jar: %w", err)
-			}
-			part := i + 1
-			hash := hashWithWorkaround(hashBin, workaround)
-			req = codec.EncodeJetUploadJobMultipartRequest(sid, part, int32(pc), bin, int32(len(bin)), hash)
-			err = retry(tries, ec.Logger(), func() error {
-				if _, err := ci.InvokeOnMember(ctx, req, mem, nil); err != nil {
-					return fmt.Errorf("sending upload message: %w", err)
-				}
-				return nil
-			})
-			if err != nil {
-				return nil, fmt.Errorf("uploading part %d: %w", part, err)
-			}
-			sp.SetProgress(float32(part) / float32(pc))
-		}
-		sp.SetProgress(1)
 		return nil, nil
 	})
 	if err != nil {
 		return fmt.Errorf("uploading the job: %w", err)
 	}
 	stop()
+	if wait {
+		msg := fmt.Sprintf("Waiting for job %s to start", jobName)
+		ec.Logger().Info(msg)
+		err = WaitJobState(ctx, ec, msg, jobName, statusRunning, 2*time.Second)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -161,10 +181,10 @@ func partCountOf(path string, partSize int) (int, error) {
 	return int(math.Ceil(float64(st.Size()) / float64(partSize))), nil
 }
 
-func retry(times int, lg log.Logger, f func() error) error {
+func retry(times int, lg log.Logger, f func(try int) error) error {
 	var err error
 	for i := 0; i < times; i++ {
-		err = f()
+		err = f(i)
 		if err != nil {
 			lg.Error(err)
 			time.Sleep(5 * time.Second)

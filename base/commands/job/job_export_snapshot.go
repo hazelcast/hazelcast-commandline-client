@@ -16,8 +16,9 @@ type ExportSnapshotCmd struct{}
 
 func (cm ExportSnapshotCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("export-snapshot [job-ID/name]")
-	help := "Exports a snapshot for a job"
-	cc.SetCommandHelp(help, help)
+	long := "Exports a snapshot for a job.\nThis feature requires a Viridian or Hazelcast Enterprise cluster."
+	short := "Exports a snapshot for a job"
+	cc.SetCommandHelp(long, short)
 	cc.SetPositionalArgCount(1, 1)
 	cc.AddStringFlag(flagName, "", "", false, "specify the snapshot. By default an auto-genertaed snapshot name is used")
 	cc.AddBoolFlag(flagCancel, "", false, false, "cancel the job after taking the snapshot")
@@ -43,7 +44,7 @@ func (cm ExportSnapshotCmd) Exec(ctx context.Context, ec plug.ExecContext) error
 		}
 		jid, ok = jm.GetIDForName(jobNameOrID)
 		if !ok {
-			return errInvalidJobID
+			return ErrInvalidJobID
 		}
 		name, ok = jm.GetNameForID(jid)
 		if !ok {
@@ -57,7 +58,7 @@ func (cm ExportSnapshotCmd) Exec(ctx context.Context, ec plug.ExecContext) error
 		}
 		jid, ok = jm.GetIDForName(jobNameOrID)
 		if !ok {
-			return errInvalidJobID
+			return ErrInvalidJobID
 		}
 	}
 	if err != nil {
