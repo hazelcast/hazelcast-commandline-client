@@ -8,7 +8,8 @@ import (
 	"io/fs"
 	"net/http"
 	"os"
-	"path"
+
+	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 )
 
 func (a API) DownloadClusterLogs(ctx context.Context, destDir string, idOrName string) error {
@@ -23,8 +24,8 @@ func (a API) DownloadClusterLogs(ctx context.Context, destDir string, idOrName s
 	return nil
 }
 
-func downloadLogs(ctx context.Context, destDir string, url, token string) error {
-	req, err := http.NewRequest(http.MethodGet, makeUrl(url), nil)
+func downloadLogs(ctx context.Context, destDir string, path, token string) error {
+	req, err := http.NewRequest(http.MethodGet, makeUrl(path), nil)
 	if err != nil {
 		return fmt.Errorf("creating request: %w", err)
 	}
@@ -70,7 +71,7 @@ func unzip(zipFile *os.File, destDir string) error {
 	if err != nil {
 		return err
 	}
-	zipReader, err := zip.NewReader(zipFile, fi.Size())
+	zr, err := zip.NewReader(zipFile, fi.Size())
 	if err != nil {
 		return err
 	}
@@ -87,13 +88,20 @@ func unzip(zipFile *os.File, destDir string) error {
 	if err != nil {
 		return err
 	}
-	for _, file := range zipReader.File {
-		r, err := file.Open()
-		if err != nil {
-			return err
-		}
-		filePath := path.Join(destDir, file.Name)
-		err = saveFile(filePath, file.FileInfo(), r)
+	for _, file := range zr.File {
+		err = func() error {
+			r, err := file.Open()
+			if err != nil {
+				return err
+			}
+			defer r.Close()
+			filePath := paths.Join(destDir, file.Name)
+			err = saveFile(filePath, file.FileInfo(), r)
+			if err != nil {
+				return err
+			}
+			return nil
+		}()
 		if err != nil {
 			return err
 		}

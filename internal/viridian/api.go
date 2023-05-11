@@ -218,8 +218,8 @@ func doPostBytes(ctx context.Context, url, token string, body []byte) ([]byte, e
 	return nil, fmt.Errorf("%d: %s", res.StatusCode, string(rb))
 }
 
-func doDelete(ctx context.Context, url, token string) error {
-	req, err := http.NewRequest(http.MethodDelete, makeUrl(url), nil)
+func doDelete(ctx context.Context, path, token string) error {
+	req, err := http.NewRequest(http.MethodDelete, makeUrl(path), nil)
 	if err != nil {
 		return fmt.Errorf("creating request: %w", err)
 	}

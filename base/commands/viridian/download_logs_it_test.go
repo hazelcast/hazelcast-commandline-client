@@ -2,13 +2,12 @@ package viridian_test
 
 import (
 	"context"
-	"fmt"
 	"os"
-	"path"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
 )
@@ -21,9 +20,9 @@ func downloadLogs_NonInteractiveTest(t *testing.T) {
 		tcx.WithReset(func() {
 			tcx.CLCExecute(ctx, "viridian", "download-logs", c.ID, "--output-dir", dir)
 			tcx.AssertStderrContains("OK")
-			require.FileExists(t, path.Join(dir, "node-1.log"))
-			require.FileExists(t, path.Join(dir, "node-2.log"))
-			require.FileExists(t, path.Join(dir, "node-3.log"))
+			require.FileExists(t, paths.Join(dir, "node-1.log"))
+			require.FileExists(t, paths.Join(dir, "node-2.log"))
+			require.FileExists(t, paths.Join(dir, "node-3.log"))
 		})
 	})
 }
@@ -35,11 +34,11 @@ func downloadLogs_InteractiveTest(t *testing.T) {
 		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			tcx.WithReset(func() {
 				c := createOrGetClusterWithState(ctx, tcx, "")
-				tcx.WriteStdin([]byte(fmt.Sprintf("\\viridian download-logs %s -o %s\n", c.Name, dir)))
+				tcx.WriteStdinf("\\viridian download-logs %s -o %s\n", c.Name, dir)
 				tcx.AssertStderrContains("OK")
-				require.FileExists(t, path.Join(dir, "node-1.log"))
-				require.FileExists(t, path.Join(dir, "node-2.log"))
-				require.FileExists(t, path.Join(dir, "node-3.log"))
+				require.FileExists(t, paths.Join(dir, "node-1.log"))
+				require.FileExists(t, paths.Join(dir, "node-2.log"))
+				require.FileExists(t, paths.Join(dir, "node-3.log"))
 			})
 		})
 	})

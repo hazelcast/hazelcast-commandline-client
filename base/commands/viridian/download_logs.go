@@ -35,8 +35,7 @@ func (cm DownloadLogsCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	clusterNameOrID := ec.Args()[0]
 	outDir := ec.Props().GetString(flagOutputDir)
 	// extract target info
-	err = validateOutputDir(outDir)
-	if err != nil {
+	if err := validateOutputDir(outDir); err != nil {
 		return err
 	}
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {

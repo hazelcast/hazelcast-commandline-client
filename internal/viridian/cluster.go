@@ -22,9 +22,6 @@ type createClusterResponse Cluster
 func (a API) CreateCluster(ctx context.Context, name string, plan ClusterPlan, k8sClusterID int, isDev bool) (Cluster, error) {
 	if name == "" {
 		name = clusterName()
-		if name == "" {
-			return Cluster{}, errors.New("could not generate cluster name")
-		}
 	}
 	if plan == "" {
 		plan = ClusterPlanServerless
@@ -49,7 +46,7 @@ func (a API) CreateCluster(ctx context.Context, name string, plan ClusterPlan, k
 func clusterName() string {
 	cwd, err := os.Getwd()
 	if err != nil {
-		return ""
+		cwd = "cluster"
 	}
 	base := path.Base(cwd)
 	date := time.Now().Format("2006-01-02-15-04-05")

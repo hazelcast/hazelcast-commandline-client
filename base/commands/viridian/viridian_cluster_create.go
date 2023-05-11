@@ -26,7 +26,7 @@ Make sure you login before running this command.
 	cc.SetCommandHelp(long, short)
 	cc.SetPositionalArgCount(0, 0)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
-	cc.AddStringFlag(flagName, "", "", false, "override the cluster name")
+	cc.AddStringFlag(flagName, "", "", false, "specify the cluster name; if not given an auto-generated name is used.")
 	cc.AddStringFlag(flagPlan, "", "", false, "plan for the cluster, supported values: serverless")
 	cc.AddBoolFlag(flagDevelopment, "", false, false, "start a development cluster")
 	return nil
@@ -45,12 +45,12 @@ func (cm ClusterCreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 	dev := ec.Props().GetBool(flagDevelopment)
 	csi, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Retrieving available Kubernetes clusters")
-		K8sCluster, err := getFirstAvailableK8sCluster(ctx, api)
+		k8sCluster, err := getFirstAvailableK8sCluster(ctx, api)
 		if err != nil {
 			return nil, err
 		}
 		sp.SetText("Creating the cluster")
-		cs, err := api.CreateCluster(ctx, name, viridian.ClusterPlan(strings.ToUpper(plan)), K8sCluster.ID, dev)
+		cs, err := api.CreateCluster(ctx, name, viridian.ClusterPlan(strings.ToUpper(plan)), k8sCluster.ID, dev)
 		if err != nil {
 			return nil, err
 		}

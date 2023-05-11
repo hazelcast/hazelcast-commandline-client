@@ -81,7 +81,7 @@ func loginWithParams_InteractiveTest(t *testing.T) {
 		ctx := context.Background()
 		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			tcx.WithReset(func() {
-				tcx.WriteStdin([]byte(fmt.Sprintf("\\viridian login --api-key %s --api-secret %s\n", it.ViridianAPIKey(), it.ViridianAPISecret())))
+				tcx.WriteStdinf("\\viridian login --api-key %s --api-secret %s\n", it.ViridianAPIKey(), it.ViridianAPISecret())
 				tcx.AssertStdoutContains("Viridian token was fetched and saved.")
 			})
 		})
@@ -151,7 +151,7 @@ func createCluster_InteractiveTest(t *testing.T) {
 			ensureNoClusterRunning(ctx, tcx)
 			tcx.WithReset(func() {
 				clusterName := it.UniqueClusterName()
-				tcx.WriteStdin([]byte(fmt.Sprintf("\\viridian create-cluster --verbose --name %s \n", clusterName)))
+				tcx.WriteStdinf("\\viridian create-cluster --verbose --name %s \n", clusterName)
 				tcx.AssertStderrContains("OK")
 				_ = check.MustValue(tcx.Viridian.GetClusterWithName(ctx, clusterName))
 			})
@@ -173,7 +173,7 @@ func stopCluster_InteractiveTest(t *testing.T) {
 		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			tcx.WithReset(func() {
 				c := createOrGetClusterWithState(ctx, tcx, "RUNNING")
-				tcx.WriteStdin([]byte(fmt.Sprintf("\\viridian stop-cluster %s\n", c.Name)))
+				tcx.WriteStdinf("\\viridian stop-cluster %s\n", c.Name)
 				tcx.AssertStderrContains("OK")
 				check.Must(waitState(ctx, tcx, c.ID, "STOPPED"))
 			})
@@ -195,7 +195,7 @@ func resumeCluster_InteractiveTest(t *testing.T) {
 		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			tcx.WithReset(func() {
 				c := createOrGetClusterWithState(ctx, tcx, "STOPPED")
-				tcx.WriteStdin([]byte(fmt.Sprintf("\\viridian resume-cluster %s\n", c.Name)))
+				tcx.WriteStdinf("\\viridian resume-cluster %s\n", c.Name)
 				tcx.AssertStderrContains("OK")
 				check.Must(waitState(ctx, tcx, c.ID, "RUNNING"))
 			})
@@ -219,7 +219,7 @@ func getCluster_InteractiveTest(t *testing.T) {
 		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			tcx.WithReset(func() {
 				c := createOrGetClusterWithState(ctx, tcx, "")
-				tcx.WriteStdin([]byte(fmt.Sprintf("\\viridian get-cluster %s\n", c.Name)))
+				tcx.WriteStdinf("\\viridian get-cluster %s\n", c.Name)
 				tcx.AssertStderrContains("OK")
 				tcx.AssertStdoutContains(c.Name)
 				tcx.AssertStdoutContains(c.ID)
@@ -246,7 +246,7 @@ func deleteCluster_InteractiveTest(t *testing.T) {
 		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			tcx.WithReset(func() {
 				c := createOrGetClusterWithState(ctx, tcx, "RUNNING")
-				tcx.WriteStdin([]byte(fmt.Sprintf("\\viridian delete-cluster %s\n", c.Name)))
+				tcx.WriteStdinf("\\viridian delete-cluster %s\n", c.Name)
 				tcx.AssertStdoutContains("(y/n)")
 				tcx.WriteStdin([]byte("y"))
 				tcx.AssertStderrContains("OK")
