@@ -16,14 +16,14 @@ func TestJob(t *testing.T) {
 		name string
 		f    func(t *testing.T)
 	}{
-		{name: "listNonInteractive", f: list_NonInteractiveTest},
-		{name: "listInteractive", f: list_InteractiveTest},
-		{name: "restartInteractive", f: restart_InteractiveTest},
-		{name: "restartNonInteractive", f: restart_NonInteractiveTest},
-		{name: "submitNonInteractive", f: submit_NonInteractiveTest},
-		{name: "submitInteractive", f: submit_InteractiveTest},
-		{name: "suspendResumeNonInteractive", f: suspendResume_NonInteractiveTest},
-		{name: "suspendResumeInteractive", f: suspendResume_InteractiveTest},
+		{name: "list_NonInteractive", f: list_NonInteractiveTest},
+		{name: "list_Interactive", f: list_InteractiveTest},
+		{name: "restart_Interactive", f: restart_InteractiveTest},
+		{name: "restart_NonInteractive", f: restart_NonInteractiveTest},
+		{name: "submit_NonInteractive", f: submit_NonInteractiveTest},
+		{name: "submit_Interactive", f: submit_InteractiveTest},
+		{name: "suspend_ResumeNonInteractive", f: suspendResume_NonInteractiveTest},
+		{name: "suspend_ResumeInteractive", f: suspendResume_InteractiveTest},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, tc.f)
