@@ -219,7 +219,7 @@ func (a *ViridianAPI) StopCluster(ctx context.Context, id string) error {
 		return err
 	}
 	if !ok {
-		return errors.New("stopping cluster returned false")
+		return errors.New("could not stop the cluster")
 	}
 	return nil
 }
@@ -230,7 +230,7 @@ func (a *ViridianAPI) ResumeCluster(ctx context.Context, id string) error {
 		return err
 	}
 	if !ok {
-		return errors.New("resuming cluster returned false")
+		return errors.New("could not resume the cluster")
 	}
 	return nil
 }

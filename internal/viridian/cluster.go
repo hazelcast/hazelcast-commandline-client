@@ -67,7 +67,7 @@ func (a API) StopCluster(ctx context.Context, idOrName string) error {
 		return fmt.Errorf("stopping cluster: %w", err)
 	}
 	if !ok {
-		return errors.New("stopping cluster returned false")
+		return errors.New("could not stop the cluster")
 	}
 	return nil
 }
@@ -90,7 +90,7 @@ func (a API) ResumeCluster(ctx context.Context, idOrName string) error {
 		return fmt.Errorf("resuming cluster: %w", err)
 	}
 	if !ok {
-		return errors.New("resuming cluster returned false")
+		return errors.New("could not resume the cluster")
 	}
 	return nil
 }

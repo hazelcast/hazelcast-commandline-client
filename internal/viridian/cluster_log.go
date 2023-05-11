@@ -43,7 +43,7 @@ func downloadLogs(ctx context.Context, destDir string, url, token string) error 
 	}
 	tempZip, err := saveTempFile("logzip", res.Body)
 	if err != nil {
-		return fmt.Errorf("creating temp zip file: %w", err)
+		return fmt.Errorf("creating temporary  file: %w", err)
 	}
 	defer tempZip.Close()
 	err = unzip(tempZip, destDir)
