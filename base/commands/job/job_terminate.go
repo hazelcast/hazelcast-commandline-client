@@ -9,7 +9,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-type CancelCmd struct {
+type TerminateCmd struct {
 	name               string
 	longHelp           string
 	shortHelp          string
@@ -19,8 +19,8 @@ type CancelCmd struct {
 	waitState          int32
 }
 
-func (cm CancelCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage(fmt.Sprintf("%s [job-ID/name,]", cm.name))
+func (cm TerminateCmd) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage(fmt.Sprintf("%s [job-ID/name]", cm.name))
 	cc.SetCommandHelp(cm.longHelp, cm.shortHelp)
 	cc.SetPositionalArgCount(1, 1)
 	cc.AddBoolFlag(flagForce, "", false, false, fmt.Sprintf("force %s the job", cm.name))
@@ -28,7 +28,7 @@ func (cm CancelCmd) Init(cc plug.InitContext) error {
 	return nil
 }
 
-func (cm CancelCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (cm TerminateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	// just preloading the client
 	_, err := ec.ClientInternal(ctx)
 	if err != nil {
@@ -58,27 +58,27 @@ func (cm CancelCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("job:cancel", &CancelCmd{
+	Must(plug.Registry.RegisterCommand("job:cancel", &TerminateCmd{
 		name:               "cancel",
-		longHelp:           "Cancels the job with the given ID or name",
+		longHelp:           "Cancels the job with the given ID or name.",
 		shortHelp:          "Cancels the job with the given ID or name",
 		terminateMode:      terminateModeCancelGraceful,
 		terminateModeForce: terminateModeCancelForceful,
 		msg:                "Cancelling the job",
 		waitState:          statusFailed,
 	}))
-	Must(plug.Registry.RegisterCommand("job:suspend", &CancelCmd{
+	Must(plug.Registry.RegisterCommand("job:suspend", &TerminateCmd{
 		name:               "suspend",
-		longHelp:           "Suspends the job with the given ID or name",
+		longHelp:           "Suspends the job with the given ID or name.",
 		shortHelp:          "Suspends the job with the given ID or name",
 		terminateMode:      terminateModeSuspendGraceful,
 		terminateModeForce: terminateModeSuspendForceful,
 		msg:                "Suspending the job",
 		waitState:          statusSuspended,
 	}))
-	Must(plug.Registry.RegisterCommand("job:restart", &CancelCmd{
+	Must(plug.Registry.RegisterCommand("job:restart", &TerminateCmd{
 		name:               "restart",
-		longHelp:           "Restarts the job with the given ID or name",
+		longHelp:           "Restarts the job with the given ID or name.",
 		shortHelp:          "Restarts the job with the given ID or name",
 		terminateMode:      terminateModeRestartGraceful,
 		terminateModeForce: terminateModeRestartForceful,
