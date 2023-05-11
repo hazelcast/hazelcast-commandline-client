@@ -78,5 +78,5 @@ func (cm ClusterListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("viridian:cluster-list", &ClusterListCmd{}))
+	Must(plug.Registry.RegisterCommand("viridian:list-clusters", &ClusterListCmd{}))
 }
