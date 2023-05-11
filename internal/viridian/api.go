@@ -107,7 +107,7 @@ func (a API) DeleteCustomClass(ctx context.Context, cluster string, artifactID i
 	if id == 0 {
 		return fmt.Errorf("no such custom class found with name %d in cluster %s", artifactID, cluster)
 	}
-	err = doDelete(ctx, fmt.Sprintf("/cluster/%s/custom_classes/%d", cluster, id), a.token)
+	err = doDelete(ctx, fmt.Sprintf("/cluster/%s/custom_classes/%d", cID, id), a.token)
 	if err != nil {
 		return err
 	}
