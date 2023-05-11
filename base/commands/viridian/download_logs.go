@@ -19,7 +19,7 @@ func (cm DownloadLogsCmd) Init(cc plug.InitContext) error {
 
 Make sure you login before running this command.
 `
-	short := "Gets Viridian cluster"
+	short := "Downloads the logs of the given Viridian cluster"
 	cc.SetCommandHelp(long, short)
 	cc.SetPositionalArgCount(1, 1)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")

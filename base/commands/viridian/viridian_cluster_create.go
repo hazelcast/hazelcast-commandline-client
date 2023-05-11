@@ -18,11 +18,11 @@ type ClusterCreateCmd struct{}
 
 func (cm ClusterCreateCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("create-cluster [flags]")
-	long := `Creates a Viridian cluster for the logged in API key.
+	long := `Creates a Viridian cluster.
 
 Make sure you login before running this command.
 `
-	short := "Creates Viridian cluster"
+	short := "Creates a Viridian cluster"
 	cc.SetCommandHelp(long, short)
 	cc.SetPositionalArgCount(0, 0)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
@@ -49,7 +49,7 @@ func (cm ClusterCreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 		if err != nil {
 			return nil, err
 		}
-		sp.SetText("Creating a cluster")
+		sp.SetText("Creating the cluster")
 		cs, err := api.CreateCluster(ctx, name, viridian.ClusterPlan(strings.ToUpper(plan)), K8sCluster.ID, dev)
 		if err != nil {
 			return nil, err
