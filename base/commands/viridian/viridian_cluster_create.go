@@ -44,12 +44,11 @@ func (cm ClusterCreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 	}
 	dev := ec.Props().GetBool(flagDevelopment)
 	csi, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText("Retrieving available Kubernetes clusters")
+		sp.SetText("Creating the cluster")
 		k8sCluster, err := getFirstAvailableK8sCluster(ctx, api)
 		if err != nil {
 			return nil, err
 		}
-		sp.SetText("Creating the cluster")
 		cs, err := api.CreateCluster(ctx, name, viridian.ClusterPlan(strings.ToUpper(plan)), k8sCluster.ID, dev)
 		if err != nil {
 			return nil, err
