@@ -14,3 +14,20 @@ type CustomClass struct {
 	Status                   string `json:"status"`
 	TemporaryCustomClassesId string `json:"temporaryCustomClassesId"`
 }
+
+type K8sCluster struct {
+	ID int `json:"id"`
+}
+
+type ClusterType int
+
+const (
+	ClusterTypeDev  ClusterType = 6
+	ClusterTypeProd ClusterType = 5
+)
+
+type ClusterPlan string
+
+const (
+	ClusterPlanServerless ClusterPlan = "SERVERLESS"
+)

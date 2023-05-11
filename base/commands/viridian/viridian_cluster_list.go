@@ -46,6 +46,9 @@ func (cm ClusterListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	}
 	stop()
 	cs := csi.([]viridian.Cluster)
+	if len(cs) == 0 {
+		ec.PrintlnUnnecessary("No clusters found")
+	}
 	rows := make([]output.Row, len(cs))
 	for i, c := range cs {
 		rows[i] = output.Row{

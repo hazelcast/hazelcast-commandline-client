@@ -36,12 +36,12 @@ func (a API) Token() string {
 	return a.token
 }
 
-func (a API) ListClusters(ctx context.Context) ([]Cluster, error) {
-	csw, err := doGet[Wrapper[[]Cluster]](ctx, "/cluster", a.Token())
+func (a API) ListAvailableK8sClusters(ctx context.Context) ([]K8sCluster, error) {
+	c, err := doGet[[]K8sCluster](ctx, "/kubernetes_clusters/available", a.Token())
 	if err != nil {
-		return nil, fmt.Errorf("listing clusters: %w", err)
+		return nil, fmt.Errorf("listing available Kubernetes clusters: %w", err)
 	}
-	return csw.Content, nil
+	return c, nil
 }
 
 func (a API) ListCustomClasses(ctx context.Context, cluster string) ([]CustomClass, error) {
@@ -107,17 +107,17 @@ func (a API) DeleteCustomClass(ctx context.Context, cluster string, artifact str
 	return nil
 }
 
-func (a API) findClusterID(ctx context.Context, cluster string) (string, error) {
+func (a API) findClusterID(ctx context.Context, idOrName string) (string, error) {
 	clusters, err := a.ListClusters(ctx)
 	if err != nil {
 		return "", err
 	}
 	for _, c := range clusters {
-		if c.ID == cluster || c.Name == cluster {
+		if c.ID == idOrName || c.Name == idOrName {
 			return c.ID, nil
 		}
 	}
-	return "", fmt.Errorf("no such class found: %s", cluster)
+	return "", fmt.Errorf("no such cluster found: %s", idOrName)
 }
 
 func (a API) findArtifactIDAndName(ctx context.Context, clusterName, artifact string) (int64, string, error) {
@@ -218,10 +218,10 @@ func doPostBytes(ctx context.Context, url, token string, body []byte) ([]byte, e
 	return nil, fmt.Errorf("%d: %s", res.StatusCode, string(rb))
 }
 
-func doDelete(ctx context.Context, path, token string) error {
-	req, err := http.NewRequest(http.MethodDelete, makeUrl(path), nil)
+func doDelete(ctx context.Context, url, token string) error {
+	req, err := http.NewRequest(http.MethodDelete, makeUrl(url), nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("creating request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	if token != "" {
@@ -232,12 +232,12 @@ func doDelete(ctx context.Context, path, token string) error {
 	if err != nil {
 		return fmt.Errorf("sending request: %w", err)
 	}
+	defer res.Body.Close()
 	rb, err := io.ReadAll(res.Body)
 	if err != nil {
 		return fmt.Errorf("reading response: %w", err)
 	}
-	defer res.Body.Close()
-	if res.StatusCode != http.StatusOK {
+	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusNoContent {
 		return fmt.Errorf("%d: %s", res.StatusCode, string(rb))
 	}
 	return nil

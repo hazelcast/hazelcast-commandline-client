@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -131,8 +132,9 @@ func XMLConfig(clusterName string, port int) string {
 	`, clusterName, port)
 }
 
-type viridianClusterInfo struct {
+type ViridianClusterInfo struct {
 	ID    string `json:"id"`
+	Name  string `json:"name"`
 	State string `json:"state"`
 }
 
@@ -164,16 +166,16 @@ func (a *ViridianAPI) login(ctx context.Context, apiKey, apiSecret string) {
 	a.token = res["token"].(string)
 }
 
-func (a *ViridianAPI) CreateCluster(ctx context.Context, name string) (viridianClusterInfo, error) {
+func (a *ViridianAPI) CreateCluster(ctx context.Context, name string) (ViridianClusterInfo, error) {
 	req := map[string]any{
 		"kubernetesClusterId": 1,
 		"clusterTypeId":       6,
 		"name":                name,
 		"planName":            "SERVERLESS",
 	}
-	res, err := doPost[keyValue, viridianClusterInfo](ctx, "/cluster", a.token, req)
+	res, err := doPost[keyValue, ViridianClusterInfo](ctx, "/cluster", a.token, req)
 	if err != nil {
-		return viridianClusterInfo{}, err
+		return ViridianClusterInfo{}, err
 	}
 	return res, nil
 }
@@ -182,12 +184,42 @@ func (a *ViridianAPI) DeleteCluster(ctx context.Context, clusterID string) error
 	return doDelete(ctx, "/cluster/"+clusterID, a.token)
 }
 
-func (a *ViridianAPI) ListClusters(ctx context.Context) ([]viridianClusterInfo, error) {
-	res, err := doGet[Wrapper[[]viridianClusterInfo]](ctx, "/cluster", a.token)
+func (a *ViridianAPI) GetCluster(ctx context.Context, clusterID string) (ViridianClusterInfo, error) {
+	res, err := doGet[ViridianClusterInfo](ctx, "/cluster/"+clusterID, a.token)
+	if err != nil {
+		return ViridianClusterInfo{}, err
+	}
+	return res, nil
+}
+
+func (a *ViridianAPI) ListClusters(ctx context.Context) ([]ViridianClusterInfo, error) {
+	res, err := doGet[Wrapper[[]ViridianClusterInfo]](ctx, "/cluster", a.token)
 	if err != nil {
 		return nil, err
 	}
 	return res.Content, nil
+}
+
+func (a *ViridianAPI) StopCluster(ctx context.Context, id string) error {
+	ok, err := doPost[[]byte, bool](ctx, fmt.Sprintf("/cluster/%s/stop", id), a.token, nil)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return errors.New("stopping cluster returned false")
+	}
+	return nil
+}
+
+func (a *ViridianAPI) ResumeCluster(ctx context.Context, id string) error {
+	ok, err := doPost[[]byte, bool](ctx, fmt.Sprintf("/cluster/%s/resume", id), a.token, nil)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return errors.New("resuming cluster returned false")
+	}
+	return nil
 }
 
 func makeUrl(path string) string {
