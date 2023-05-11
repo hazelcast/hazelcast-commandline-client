@@ -16,21 +16,21 @@ func TestJob(t *testing.T) {
 		name string
 		f    func(t *testing.T)
 	}{
-		{name: "listNonInteractive", f: listNonInteractiveTest},
-		{name: "listInteractive", f: listInteractiveTest},
-		{name: "restartInteractive", f: restartInteractiveTest},
-		{name: "restartNonInteractive", f: restartNonInteractiveTest},
-		{name: "submitNonInteractive", f: submitNonInteractiveTest},
-		{name: "submitInteractive", f: submitInteractiveTest},
-		{name: "suspendResumeNonInteractive", f: suspendResumeNonInteractiveTest},
-		{name: "suspendResumeInteractive", f: suspendResumeInteractiveTest},
+		{name: "listNonInteractive", f: list_NonInteractiveTest},
+		{name: "listInteractive", f: list_InteractiveTest},
+		{name: "restartInteractive", f: restart_InteractiveTest},
+		{name: "restartNonInteractive", f: restart_NonInteractiveTest},
+		{name: "submitNonInteractive", f: submit_NonInteractiveTest},
+		{name: "submitInteractive", f: submit_InteractiveTest},
+		{name: "suspendResumeNonInteractive", f: suspendResume_NonInteractiveTest},
+		{name: "suspendResumeInteractive", f: suspendResume_InteractiveTest},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, tc.f)
 	}
 }
 
-func submitNonInteractiveTest(t *testing.T) {
+func submit_NonInteractiveTest(t *testing.T) {
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
 		ctx := context.Background()
@@ -45,7 +45,7 @@ func submitNonInteractiveTest(t *testing.T) {
 	})
 }
 
-func submitInteractiveTest(t *testing.T) {
+func submit_InteractiveTest(t *testing.T) {
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
 		ctx := context.Background()
@@ -62,7 +62,7 @@ func submitInteractiveTest(t *testing.T) {
 	})
 }
 
-func listNonInteractiveTest(t *testing.T) {
+func list_NonInteractiveTest(t *testing.T) {
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
 		ctx := context.Background()
@@ -83,7 +83,7 @@ func listNonInteractiveTest(t *testing.T) {
 	})
 }
 
-func listInteractiveTest(t *testing.T) {
+func list_InteractiveTest(t *testing.T) {
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
 		ctx := context.Background()
@@ -106,7 +106,7 @@ func listInteractiveTest(t *testing.T) {
 	})
 }
 
-func suspendResumeNonInteractiveTest(t *testing.T) {
+func suspendResume_NonInteractiveTest(t *testing.T) {
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
 		ctx := context.Background()
@@ -137,7 +137,7 @@ func suspendResumeNonInteractiveTest(t *testing.T) {
 	})
 }
 
-func suspendResumeInteractiveTest(t *testing.T) {
+func suspendResume_InteractiveTest(t *testing.T) {
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
 		ctx := context.Background()
@@ -170,7 +170,7 @@ func suspendResumeInteractiveTest(t *testing.T) {
 	})
 }
 
-func restartNonInteractiveTest(t *testing.T) {
+func restart_NonInteractiveTest(t *testing.T) {
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
 		ctx := context.Background()
@@ -193,7 +193,7 @@ func restartNonInteractiveTest(t *testing.T) {
 	})
 }
 
-func restartInteractiveTest(t *testing.T) {
+func restart_InteractiveTest(t *testing.T) {
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
 		ctx := context.Background()
