@@ -90,18 +90,18 @@ func (t *TargetInfo) IsOverwrite() bool {
 	return t.IsSet && t.IsFile && t.IsPathExists
 }
 
-func (t *TargetInfo) fileToBeCreated(className string) (string, error) {
-	toBeCreatedFile := className
+func (t *TargetInfo) fileToBeCreated(artifactName string) (string, error) {
+	toBeCreatedFile := artifactName
 	if t.IsSet {
 		// if directory does not exist, create it
 		err := t.createDirIfNotExists()
 		if err != nil {
 			return "", err
 		}
-		if t.IsFile { // then it is a directory
+		if t.IsFile {
 			toBeCreatedFile = paths.Join(t.Path, t.FileName)
 		} else {
-			toBeCreatedFile = paths.Join(t.Path, className)
+			toBeCreatedFile = paths.Join(t.Path, artifactName)
 		}
 	}
 	return toBeCreatedFile, nil
