@@ -58,7 +58,7 @@ func (cm ClusterCreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 	})
 	if err != nil {
 		ec.Logger().Error(err)
-		return fmt.Errorf("error creating a cluster. Did you login?: %w", err)
+		return fmt.Errorf("creating the cluster. Did you login?: %w", err)
 	}
 	stop()
 	cs := csi.(viridian.Cluster)
@@ -86,7 +86,7 @@ func validatePlan(plan string) error {
 	case "", "serverless":
 		return nil
 	default:
-		return errors.New("plan invalid: possible values: [serverless]")
+		return errors.New("invalid plan")
 	}
 }
 func getFirstAvailableK8sCluster(ctx context.Context, api *viridian.API) (viridian.K8sCluster, error) {
@@ -95,11 +95,11 @@ func getFirstAvailableK8sCluster(ctx context.Context, api *viridian.API) (viridi
 		return viridian.K8sCluster{}, err
 	}
 	if len(clusters) == 0 {
-		return viridian.K8sCluster{}, errors.New("there is no available K8s cluster")
+		return viridian.K8sCluster{}, errors.New("cluster creation is not available, try again later")
 	}
 	return clusters[0], nil
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("viridian:cluster-create", &ClusterCreateCmd{}))
+	Must(plug.Registry.RegisterCommand("viridian:create-cluster", &ClusterCreateCmd{}))
 }

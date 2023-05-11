@@ -13,11 +13,11 @@ type ClusterStopCmd struct{}
 
 func (cm ClusterStopCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("stop-cluster [cluster-ID/name] [flags]")
-	long := `Stops the given Viridian cluster for the logged in API key.
+	long := `Stops the given Viridian cluster.
 
 Make sure you login before running this command.
 `
-	short := "Stops Viridian cluster"
+	short := "Stops the given Viridian cluster"
 	cc.SetCommandHelp(long, short)
 	cc.SetPositionalArgCount(1, 1)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
@@ -40,12 +40,12 @@ func (cm ClusterStopCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	})
 	if err != nil {
 		ec.Logger().Error(err)
-		return fmt.Errorf("error stopping the cluster. Did you login?: %w", err)
+		return fmt.Errorf("stopping the cluster. Did you login?: %w", err)
 	}
 	stop()
 	return nil
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("viridian:cluster-stop", &ClusterStopCmd{}))
+	Must(plug.Registry.RegisterCommand("viridian:stop-cluster", &ClusterStopCmd{}))
 }

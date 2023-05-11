@@ -16,11 +16,11 @@ type ClusterGetCmd struct{}
 
 func (cm ClusterGetCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("get-cluster [cluster-ID/name] [flags]")
-	long := `Gets the information about the given Viridian cluster for the logged in API key.
+	long := `Gets the information about the given Viridian cluster.
 
 Make sure you login before running this command.
 `
-	short := "Gets Viridian cluster"
+	short := "Gets the information about the given Viridian cluster"
 	cc.SetCommandHelp(long, short)
 	cc.SetPositionalArgCount(1, 1)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
@@ -43,7 +43,7 @@ func (cm ClusterGetCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	})
 	if err != nil {
 		ec.Logger().Error(err)
-		return fmt.Errorf("error retrieving the cluster. Did you login?: %w", err)
+		return fmt.Errorf("retrieving the cluster. Did you login?: %w", err)
 	}
 	stop()
 	c := ci.(viridian.Cluster)
@@ -73,5 +73,5 @@ func (cm ClusterGetCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("viridian:cluster-get", &ClusterGetCmd{}))
+	Must(plug.Registry.RegisterCommand("viridian:get-cluster", &ClusterGetCmd{}))
 }

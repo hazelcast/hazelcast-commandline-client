@@ -15,11 +15,11 @@ type ClusterDeleteCmd struct{}
 
 func (cm ClusterDeleteCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("delete-cluster [cluster-ID/name] [flags]")
-	long := `Deletes the given Viridian cluster for the logged in API key.
+	long := `Deletes the given Viridian cluster.
 
 Make sure you login before running this command.
 `
-	short := "Deletes Viridian cluster"
+	short := "Deletes the given Viridian cluster"
 	cc.SetCommandHelp(long, short)
 	cc.SetPositionalArgCount(1, 1)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
@@ -62,5 +62,5 @@ func (cm ClusterDeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("viridian:cluster-delete", &ClusterDeleteCmd{}))
+	Must(plug.Registry.RegisterCommand("viridian:delete-cluster", &ClusterDeleteCmd{}))
 }

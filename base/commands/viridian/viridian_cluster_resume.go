@@ -13,11 +13,11 @@ type ClusterResumeCmd struct{}
 
 func (cm ClusterResumeCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("resume-cluster [cluster-ID/name] [flags]")
-	long := `Resumes the given Viridian cluster for the logged in API key.
+	long := `Resumes the given Viridian cluster.
 
 Make sure you login before running this command.
 `
-	short := "Resumes Viridian cluster"
+	short := "Resumes the given Viridian cluster"
 	cc.SetCommandHelp(long, short)
 	cc.SetPositionalArgCount(1, 1)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
@@ -47,5 +47,5 @@ func (cm ClusterResumeCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("viridian:cluster-resume", &ClusterResumeCmd{}))
+	Must(plug.Registry.RegisterCommand("viridian:resume-cluster", &ClusterResumeCmd{}))
 }
