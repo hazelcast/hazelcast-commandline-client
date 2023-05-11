@@ -16,37 +16,37 @@ func customClass_NonInteractiveTest(t *testing.T) {
 		// setup
 		f := "foo.zip"
 		fd := "testdata/" + f
-		cid := ensureClusterRunning(ctx, tcx)
+		c := createOrGetClusterWithState(ctx, tcx, "RUNNING")
 		// test upload custom class
 		tcx.WithReset(func() {
-			tcx.CLCExecute(ctx, "viridian", "upload-custom-class", cid, fd)
+			tcx.CLCExecute(ctx, "viridian", "upload-custom-class", c.ID, fd)
 			tcx.AssertStderrContains("OK")
 			check.Must(waitCustomClassOperation(ctx, tcx, "Custom class uploaded successfully."))
 		})
 		id := ""
 		// test list custom class
 		tcx.WithReset(func() {
-			tcx.CLCExecute(ctx, "viridian", "list-custom-classes", cid)
+			tcx.CLCExecute(ctx, "viridian", "list-custom-classes", c.ID)
 			tcx.AssertStderrContains("OK")
 			id = customClassID(tcx.ExpectStdout.String())
 			tcx.AssertStdoutContains(f)
 		})
 		// test download custom class
 		tcx.WithReset(func() {
-			tcx.CLCExecute(ctx, "viridian", "download-custom-class", cid, f)
+			tcx.CLCExecute(ctx, "viridian", "download-custom-class", c.ID, f)
 			tcx.AssertStderrContains("OK")
 			tcx.AssertStdoutContains("Custom class downloaded successfully.")
 		})
 		// test delete custom class
 		tcx.WithReset(func() {
-			check.Must(waitState(ctx, tcx, cid, "RUNNING"))
-			tcx.CLCExecute(ctx, "viridian", "delete-custom-class", cid, id)
+			check.Must(waitState(ctx, tcx, c.ID, "RUNNING"))
+			tcx.CLCExecute(ctx, "viridian", "delete-custom-class", c.ID, id)
 			check.Must(waitCustomClassOperation(ctx, tcx, "Custom class deleted successfully."))
 			tcx.AssertStderrContains("OK")
 		})
 		// check the list output again to be sure that delete was really successful
 		tcx.WithReset(func() {
-			tcx.CLCExecute(ctx, "viridian", "list-custom-classes", cid)
+			tcx.CLCExecute(ctx, "viridian", "list-custom-classes", c.ID)
 			tcx.AssertStderrContains("OK")
 			tcx.AssertStderrNotContains(f)
 		})

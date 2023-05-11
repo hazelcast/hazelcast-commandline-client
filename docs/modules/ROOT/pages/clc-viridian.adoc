@@ -12,7 +12,13 @@ clc viridian [command] [options]
 == Commands
 
 * <<clc-viridian-login, clc viridian login>>
+* <<clc-viridian-create-cluster, clc viridian create-cluster>>
+* <<clc-viridian-get-cluster, clc viridian get-cluster>>
 * <<clc-viridian-list-clusters, clc viridian list-clusters>>
+* <<clc-viridian-stop-cluster, clc viridian stop-cluster>>
+* <<clc-viridian-resume-cluster, clc viridian resume-cluster>>
+* <<clc-viridian-delete-cluster, clc viridian delete-cluster>>
+* <<clc-viridian-download-logs, clc viridian download-logs>>
 * <<clc-viridian-list-custom-classes, clc viridian list-custom-classes>>
 * <<clc-viridian-upload-custom-class, clc viridian upload-custom-class>>
 * <<clc-viridian-download-custom-class, clc viridian download-custom-class>>
@@ -54,6 +60,72 @@ Parameters:
 
 |===
 
+== clc viridian create-cluster
+
+Creates a Viridian cluster.
+
+Make sure you login before running this command.
+
+Usage:
+
+[source,bash]
+----
+clc viridian create-cluster [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--api-key`
+|Optional
+|Sets the API key. Overrides the `CLC_VIRIDIAN_API_KEY` environment variable. If not given, one of the existing api keys will be used.
+|
+
+|`--name`
+|Optional
+|Sets the name of the created cluster. If not given, an auto-generated name will be used.
+|
+
+|`--plan`
+|Optional
+|Sets the plan for the created cluster.
+|serverless
+
+|`--development`
+|Optional
+|Creates a development cluster.
+|false
+|===
+
+== clc viridian get-cluster
+
+Gets the information about the given Viridian cluster.
+
+Make sure you login before running this command.
+
+Usage:
+
+[source,bash]
+----
+clc viridian get-cluster [cluster-ID/name] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--api-key`
+|Optional
+|Sets the API key. Overrides the `CLC_VIRIDIAN_API_KEY` environment variable. If not given, one of the existing api keys will be used.
+|
+
+|===
+
 == clc viridian list-clusters
 
 Lists all Viridian clusters for the logged in API key.
@@ -66,6 +138,135 @@ Usage:
 ----
 clc viridian list-clusters [flags]
 ----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--api-key`
+|Optional
+|Sets the API key. Overrides the `CLC_VIRIDIAN_API_KEY` environment variable. If not given, one of the existing api keys will be used.
+|
+
+|===
+
+== clc viridian stop-cluster
+
+Stops the given Viridian cluster.
+
+Make sure you login before running this command.
+
+Usage:
+
+[source,bash]
+----
+clc viridian stop-cluster [cluster-ID/name] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--api-key`
+|Optional
+|Sets the API key. Overrides the `CLC_VIRIDIAN_API_KEY` environment variable. If not given, one of the existing api keys will be used.
+|
+
+|===
+
+== clc viridian resume-cluster
+
+Resumes the given Viridian cluster.
+
+Make sure you login before running this command.
+
+Usage:
+
+[source,bash]
+----
+clc viridian resume-cluster [cluster-ID/name] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--api-key`
+|Optional
+|Sets the API key. Overrides the `CLC_VIRIDIAN_API_KEY` environment variable. If not given, one of the existing api keys will be used.
+|
+
+|===
+
+== clc viridian delete-cluster
+
+Deletes the given Viridian cluster.
+
+Make sure you login before running this command.
+
+Usage:
+
+[source,bash]
+----
+clc viridian delete-cluster [cluster-ID/name] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--api-key`
+|Optional
+|Sets the API key. Overrides the `CLC_VIRIDIAN_API_KEY` environment variable. If not given, one of the existing api keys will be used.
+|
+
+|`--yes`
+|Optional
+|Skips confirming the delete operation.
+|
+
+|===
+
+== clc viridian download-logs
+
+Downloads the logs of the given Viridian cluster.
+
+Make sure you login before running this command.
+
+Usage:
+
+[source,bash]
+----
+clc viridian download-logs [cluster-ID/name] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--api-key`
+|Optional
+|Sets the API key. Overrides the `CLC_VIRIDIAN_API_KEY` environment variable. If not given, one of the existing api keys will be used.
+|
+
+|`--output-dir` `-o`
+|Optional
+|Output directory for the log files, if not given current directory is used.
+|
+
+|===
+
+
 
 == clc viridian list-custom-classes
 
