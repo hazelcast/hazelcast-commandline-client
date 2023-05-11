@@ -18,7 +18,6 @@ package it
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"math/rand"
 	"net"
@@ -41,23 +40,29 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 )
 
+// see also the environment variables in it/skip/skip.go
+
 const (
-	EnvEnableTraceLogging = "ENABLE_TRACE"
 	EnvMemberCount        = "MEMBER_COUNT"
+	EnvEnableTraceLogging = "ENABLE_TRACE"
 	EnvEnableSSL          = "ENABLE_SSL"
+	EnvEnableViridian     = "ENABLE_VIRIDIAN"
 	EnvHzVersion          = "HZ_VERSION"
 )
 
-func DefaultClusterName() string {
+func UniqueClusterName() string {
 	return NewUniqueObjectName("clc-test")
 }
 
-var defaultClusterName = DefaultClusterName()
+var defaultDedicatedClusterName = UniqueClusterName()
 var rc *RemoteControllerClientWrapper
 var rcMu = &sync.RWMutex{}
-var defaultTestCluster = NewSingletonTestCluster(defaultClusterName, func() *TestCluster {
+var defaultDedicatedTestCluster = NewSingletonTestCluster(defaultDedicatedClusterName, func() TestCluster {
 	port := NextPort()
-	return rc.startNewCluster(MemberCount(), xmlConfig(defaultClusterName, port), port)
+	return rc.startNewCluster(MemberCount(), XMLConfig(defaultDedicatedClusterName, port), port)
+})
+var defaultViridianTestCluster = NewSingletonTestCluster("not-used", func() TestCluster {
+	return newViridianTestCluster()
 })
 var idGen = ReferenceIDGenerator{}
 
@@ -80,6 +85,10 @@ func TraceLoggingEnabled() bool {
 
 func SSLEnabled() bool {
 	return os.Getenv(EnvEnableSSL) == "1"
+}
+
+func ViridianEnabled() bool {
+	return os.Getenv(EnvEnableViridian) == "1"
 }
 
 func HzVersion() string {
@@ -129,17 +138,6 @@ func ensureRemoteController(launchDefaultCluster bool) *RemoteControllerClientWr
 	return rc
 }
 
-func StartNewClusterWithOptions(clusterName string, port, memberCount int) *TestCluster {
-	ensureRemoteController(false)
-	config := xmlConfig(clusterName, port)
-	return rc.startNewCluster(memberCount, config, port)
-}
-
-func StartNewClusterWithConfig(memberCount int, config string, port int) *TestCluster {
-	ensureRemoteController(false)
-	return rc.startNewCluster(memberCount, config, port)
-}
-
 type RemoteControllerClientWrapper struct {
 	mu *sync.Mutex
 	rc *RemoteControllerClient
@@ -152,14 +150,14 @@ func newRemoteControllerClientWrapper(rc *RemoteControllerClient) *RemoteControl
 	}
 }
 
-func (rcw *RemoteControllerClientWrapper) startNewCluster(memberCount int, config string, port int) *TestCluster {
+func (rcw *RemoteControllerClientWrapper) startNewCluster(memberCount int, config string, port int) *DedicatedTestCluster {
 	cluster := check.MustValue(rcw.CreateClusterKeepClusterName(context.Background(), HzVersion(), config))
 	memberUUIDs := make([]string, 0, memberCount)
 	for i := 0; i < memberCount; i++ {
 		member := check.MustValue(rcw.StartMember(context.Background(), cluster.ID))
 		memberUUIDs = append(memberUUIDs, member.UUID)
 	}
-	return &TestCluster{
+	return &DedicatedTestCluster{
 		RC:          rcw,
 		ClusterID:   cluster.ID,
 		MemberUUIDs: memberUUIDs,
@@ -201,63 +199,6 @@ func (rcw *RemoteControllerClientWrapper) ExecuteOnController(ctx context.Contex
 	rcw.mu.Lock()
 	defer rcw.mu.Unlock()
 	return rcw.rc.ExecuteOnController(ctx, clusterID, script, lang)
-}
-
-type TestCluster struct {
-	RC          *RemoteControllerClientWrapper
-	ClusterID   string
-	MemberUUIDs []string
-	Port        int
-}
-
-func (c TestCluster) Shutdown() {
-	// TODO: add Terminate method.
-	for _, memberUUID := range c.MemberUUIDs {
-		c.RC.ShutdownMember(context.Background(), c.ClusterID, memberUUID)
-	}
-}
-
-func (c TestCluster) DefaultConfig() hz.Config {
-	config := hz.Config{}
-	config.Cluster.Name = c.ClusterID
-	config.Cluster.Network.SetAddresses(fmt.Sprintf("localhost:%d", c.Port))
-	if SSLEnabled() {
-		config.Cluster.Network.SSL.Enabled = true
-		config.Cluster.Network.SSL.SetTLSConfig(&tls.Config{InsecureSkipVerify: true})
-	}
-	if TraceLoggingEnabled() {
-		config.Logger.Level = logger.TraceLevel
-	}
-	return config
-}
-
-func (c TestCluster) DefaultConfigWithNoSSL() hz.Config {
-	config := hz.Config{}
-	config.Cluster.Name = c.ClusterID
-	config.Cluster.Network.SetAddresses(fmt.Sprintf("localhost:%d", c.Port))
-	if TraceLoggingEnabled() {
-		config.Logger.Level = logger.TraceLevel
-	}
-	return config
-}
-
-func (c TestCluster) StartMember(ctx context.Context) (*Member, error) {
-	return c.RC.StartMember(ctx, c.ClusterID)
-}
-
-func xmlConfig(clusterName string, port int) string {
-	return fmt.Sprintf(`
-        <hazelcast xmlns="http://www.hazelcast.com/schema/config"
-            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-            http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
-            <cluster-name>%s</cluster-name>
-            <network>
-               <port>%d</port>
-            </network>
-			<jet enabled="true" />
-        </hazelcast>
-	`, clusterName, port)
 }
 
 func getLoggerLevel() logger.Level {
@@ -371,36 +312,6 @@ func isPortOpen(port int) bool {
 	// ignoring the error from conn.Close, since there's nothing useful to do with it.
 	_ = conn.Close()
 	return false
-}
-
-type SingletonTestCluster struct {
-	mu       *sync.Mutex
-	cls      *TestCluster
-	launcher func() *TestCluster
-	name     string
-}
-
-func NewSingletonTestCluster(name string, launcher func() *TestCluster) *SingletonTestCluster {
-	return &SingletonTestCluster{
-		name:     name,
-		mu:       &sync.Mutex{},
-		launcher: launcher,
-	}
-}
-
-type testLogger interface {
-	Logf(format string, args ...interface{})
-}
-
-func (c *SingletonTestCluster) Launch(t testLogger) *TestCluster {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if c.cls != nil {
-		return c.cls
-	}
-	t.Logf("Launching the auto-shutdown test cluster: %s", c.name)
-	c.cls = c.launcher()
-	return c.cls
 }
 
 type CLCHome struct {

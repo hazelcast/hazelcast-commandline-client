@@ -7,7 +7,7 @@ require (
 	github.com/alecthomas/chroma v0.10.0
 	github.com/gohxs/readline v0.0.0-20171011095936-a780388e6e7c
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
-	github.com/hazelcast/hazelcast-go-client v1.4.1-0.20230418181131-132516f96baa
+	github.com/hazelcast/hazelcast-go-client v1.4.1-0.20230504183357-a19e28973b3d
 	github.com/mattn/go-runewidth v0.0.14
 	github.com/nathan-fiscaletti/consolesize-go v0.0.0-20210105204122-a87d9f614b9d
 	github.com/spf13/cobra v1.7.0
@@ -51,8 +51,8 @@ require (
 	go.uber.org/multierr v1.6.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.6.0 // indirect
-	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
-	golang.org/x/text v0.4.0 // indirect
+	golang.org/x/term v0.4.0 // indirect
+	golang.org/x/text v0.6.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

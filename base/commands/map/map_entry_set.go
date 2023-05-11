@@ -47,9 +47,9 @@ func (mc *MapEntrySetCommand) Exec(ctx context.Context, ec plug.ExecContext) err
 	if len(rows) > 0 {
 		return ec.AddOutputRows(ctx, rows...)
 	}
-	if !ec.Props().GetBool(clc.PropertyQuiet) {
-		I2(fmt.Fprintln(ec.Stdout(), "No entries found."))
-	}
+
+	ec.PrintlnUnnecessary("No entries found.")
+
 	return nil
 }
 

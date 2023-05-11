@@ -15,8 +15,10 @@ clc map [command] [flags]
 * <<clc-map-get, clc map get>>
 * <<clc-map-set, clc map set>>
 * <<clc-map-entry-set, clc map entry-set>>
+* <<clc-map-key-set, clc map key-set>>
 * <<clc-map-size, clc map size>>
 * <<clc-map-remove, clc map remove>>
+* <<clc-map-destroy, clc map destroy>>
 
 == clc map clear
 
@@ -26,7 +28,7 @@ Usage:
 
 [source,bash]
 ----
-clc map [flags]
+clc map clear [flags]
 ----
 
 Parameters:
@@ -195,6 +197,47 @@ Example:
 clc map entry-set -n myMap
 ----
 
+== clc map key-set
+
+Gets all the keys of the specified map.
+
+Usage:
+
+[source,bash]
+----
+clc map key-set [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the map.
+|`default`
+
+|`--format`, `-f`
+|Optional
+|Output format. Supported formats:
+
+- `csv`
+- `delimited`
+- `json`
+- `table`
+|`delimited` in non-interactive mode, `table` in interactive mode.
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc map key-set -n myMap
+----
+
 == clc map size
 
 Prints the size of the given the map.
@@ -270,3 +313,32 @@ Example:
 clc map remove --name myMap --key-type string k1
 k1
 ----
+
+== clc map destroy
+
+Deletes the map and all the data in it.
+
+Usage:
+
+[source,bash]
+----
+clc map destroy [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the map.
+|`default`
+
+|`--yes`
+|Optional
+|Skip confirming the destroy operation.
+|`false`
+
+|===

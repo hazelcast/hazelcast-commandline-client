@@ -33,7 +33,7 @@ func (cm ListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	}
 	ls, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Getting the job list")
-		return getJobList(ctx, ci)
+		return GetJobList(ctx, ci)
 	})
 	if err != nil {
 		return err

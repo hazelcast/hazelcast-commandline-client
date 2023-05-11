@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -16,7 +17,56 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec/control"
 )
 
-var errInvalidJobID = errors.New("invalid job ID")
+var ErrInvalidJobID = errors.New("invalid job ID")
+var ErrJobFailed = errors.New("job failed")
+var ErrJobNotFound = errors.New("job not found")
+
+func WaitJobState(ctx context.Context, ec plug.ExecContext, msg, jobNameOrID string, state int32, duration time.Duration) error {
+	ci, err := ec.ClientInternal(ctx)
+	if err != nil {
+		return err
+	}
+	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, spinner clc.Spinner) (any, error) {
+		if msg != "" {
+			spinner.SetText(msg)
+		}
+		for {
+			jl, err := GetJobList(ctx, ci)
+			if err != nil {
+				return nil, err
+			}
+			ok, err := EnsureJobState(jl, jobNameOrID, state)
+			if err != nil {
+				return nil, err
+			}
+			if ok {
+				return nil, nil
+			}
+			ec.Logger().Debugf("Waiting %s for job %s to transition to state %s", duration.String(), jobNameOrID, statusToString(state))
+			time.Sleep(duration)
+		}
+	})
+	if err != nil {
+		return err
+	}
+	stop()
+	return nil
+}
+
+func EnsureJobState(jobs []control.JobAndSqlSummary, jobNameOrID string, state int32) (bool, error) {
+	for _, j := range jobs {
+		if j.NameOrId == jobNameOrID {
+			if j.Status == state {
+				return true, nil
+			}
+			if j.Status == statusFailed {
+				return false, ErrJobFailed
+			}
+			return false, nil
+		}
+	}
+	return false, ErrJobNotFound
+}
 
 func idToString(id int64) string {
 	buf := []byte("0000-0000-0000-0000")
@@ -46,7 +96,8 @@ func stringToID(s string) (int64, error) {
 	return i, nil
 }
 
-func terminateJob(ctx context.Context, ec plug.ExecContext, jobID int64, nameOrID string, terminateMode int32, text string) error {
+func terminateJob(ctx context.Context, ec plug.ExecContext, jobID int64, nameOrID string, terminateMode int32, text string, waitState int32) error {
+	wait := ec.Props().GetBool(flagWait)
 	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
 		return err
@@ -64,18 +115,18 @@ func terminateJob(ctx context.Context, ec plug.ExecContext, jobID int64, nameOrI
 		return err
 	}
 	stop()
+	if wait {
+		msg := fmt.Sprintf("Waiting for the operation to finish for job %s", nameOrID)
+		ec.Logger().Info(msg)
+		err = WaitJobState(ctx, ec, msg, nameOrID, waitState, 1*time.Second)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
-func makeErrorsString(errs []error) error {
-	var sb strings.Builder
-	for _, e := range errs {
-		sb.WriteString(fmt.Sprintf("- %s\n", e.Error()))
-	}
-	return errors.New(sb.String())
-}
-
-func getJobList(ctx context.Context, ci *hazelcast.ClientInternal) ([]control.JobAndSqlSummary, error) {
+func GetJobList(ctx context.Context, ci *hazelcast.ClientInternal) ([]control.JobAndSqlSummary, error) {
 	req := codec.EncodeJetGetJobAndSqlSummaryListRequest()
 	resp, err := ci.InvokeOnRandomTarget(ctx, req, nil)
 	if err != nil {
@@ -126,7 +177,7 @@ func newJobNameToIDMap(ctx context.Context, ec plug.ExecContext, forceLoadJobLis
 	}
 	jl, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Getting job list")
-		return getJobList(ctx, ci)
+		return GetJobList(ctx, ci)
 	})
 	if err != nil {
 		return nil, err

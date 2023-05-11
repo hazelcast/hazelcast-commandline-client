@@ -1,0 +1,85 @@
+name: "CLC nightly tests"
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 2 * * *'
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+    runs-on: ${{ matrix.os }}
+    env:
+      GOPATH: "${{ github.workspace }}"
+      HZ_VERSION: "5.3.0-BETA-2"
+      DEFAULT_TIMEOUT: "30s"
+      ENABLE_VIRIDIAN: "1"
+      HZ_CLOUD_COORDINATOR_BASE_URL: "https://api.dev2.viridian.hazelcast.cloud"
+      VIRIDIAN_API_KEY: "${{ secrets.VIRIDIAN_API_KEY }}"
+      VIRIDIAN_API_SECRET: "${{ secrets.VIRIDIAN_API_SECRET }}"
+    defaults:
+      run:
+        shell: "bash"
+        working-directory: "$HOME/hazelcast-commandline-client"
+    steps:
+      - name: "Checkout Code"
+        uses: "actions/checkout@v2"
+        with:
+          path: "$HOME/hazelcast-commandline-client"
+
+      - name: "Setup JRE"
+        uses: actions/setup-java@v2
+        with:
+          distribution: "zulu"
+          java-version: "8"
+
+      - name: "Download RCD (Linux/MacOS)"
+        if: "!contains(matrix.os, 'windows')"
+        run: |
+          wget https://rcd-download.s3.us-east-2.amazonaws.com/rcd-${{ matrix.os }}
+
+      - name: "Start Hazelcast Remote Controller (Linux/MacOS)"
+        if: "!contains(matrix.os, 'windows')"
+        run: |
+          chmod +x rcd-${{ matrix.os }} 
+          ./rcd-${{ matrix.os }} -version $HZ_VERSION -dir $HOME &
+          sleep 10
+
+      - name: "Download RCD (Windows)"
+        if: "contains(matrix.os, 'windows')"
+        run: |
+          curl -O https://rcd-download.s3.us-east-2.amazonaws.com/rcd-${{ matrix.os }}.exe
+
+      - name: "Start Hazelcast Remote Controller (Windows)"
+        if: "contains(matrix.os, 'windows')"
+        run: |
+          .\\rcd-${{ matrix.os }}.exe -version 5.3.0-BETA-2 &
+          sleep 10
+
+      - name: "Setup Go"
+        uses: "actions/setup-go@v3"
+        with:
+          go-version: "1.19"
+
+      - name: "Install Go tools"
+        run: |
+          go install golang.org/x/tools/...@v0.1.11
+          go install honnef.co/go/tools/cmd/staticcheck@2022.1.2
+
+      - name: "Go mod tidy"
+        run: |
+          go mod tidy
+
+      - name: "Download Test Fixtures"
+        run: |
+          curl https://rcd-download.s3.us-east-2.amazonaws.com/sample-job-1-1.0-SNAPSHOT-all.jar -o base/commands/job/testdata/sample-job-1-1.0-SNAPSHOT-all.jar
+
+      - name: "Run All Tests"
+        run: |
+          make test
+
+      - name: "Run Coverage"
+        run: |
+          make test-cover
+          make view-cover
+          

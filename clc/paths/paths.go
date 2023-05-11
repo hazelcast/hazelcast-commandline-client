@@ -39,6 +39,10 @@ func Logs() string {
 	return filepath.Join(Home(), "logs")
 }
 
+func Secrets() string {
+	return filepath.Join(Home(), "secrets")
+}
+
 func DefaultConfigPath() string {
 	if p := nearbyConfigPath(); p != "" {
 		return p
@@ -86,6 +90,16 @@ func ResolveLogPath(path string) string {
 		return DefaultLogPath(time.Now())
 	}
 	return path
+}
+
+func ResolveSecretPath(prefix, name string) string {
+	if name == "" {
+		panic("secret name cannot be blank")
+	}
+	if prefix == "" {
+		return Join(Secrets(), name)
+	}
+	return Join(Secrets(), prefix, name)
 }
 
 func Join(paths ...string) string {
