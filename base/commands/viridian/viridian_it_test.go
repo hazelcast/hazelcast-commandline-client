@@ -36,18 +36,18 @@ func TestViridian(t *testing.T) {
 		name string
 		f    func(t *testing.T)
 	}{
-		{"listClusters", listClustersTest},
-		{"istClustersInteractive", listClustersInteractiveTest},
-		{"loginWithEnvVariables", loginWithEnvVariablesTest},
-		{"loginWithParams", loginWithParamsTest},
-		{"loginWithParamsInteractive", loginWithParamsInteractiveTest},
+		{"listClustersNonInteractive", listClusters_NonInteractiveTest},
+		{"istClusters_Interactive", listClusters_InteractiveTest},
+		{"loginWithEnvVariables_NonInteractive", loginWithEnvVariables_NonInteractiveTest},
+		{"loginWithParams_NonInteractive", loginWithParams_NonInteractiveTest},
+		{"loginWithParams_Interactive", loginWithParams_InteractiveTest},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, tc.f)
 	}
 }
 
-func loginWithParamsTest(t *testing.T) {
+func loginWithParams_NonInteractiveTest(t *testing.T) {
 	tcx := it.TestContext{
 		T:           t,
 		UseViridian: true,
@@ -59,7 +59,7 @@ func loginWithParamsTest(t *testing.T) {
 	})
 }
 
-func loginWithParamsInteractiveTest(t *testing.T) {
+func loginWithParams_InteractiveTest(t *testing.T) {
 	tcx := it.TestContext{
 		T:           t,
 		UseViridian: true,
@@ -75,7 +75,7 @@ func loginWithParamsInteractiveTest(t *testing.T) {
 	})
 }
 
-func loginWithEnvVariablesTest(t *testing.T) {
+func loginWithEnvVariables_NonInteractiveTest(t *testing.T) {
 	tcx := it.TestContext{
 		T:           t,
 		UseViridian: true,
@@ -91,7 +91,7 @@ func loginWithEnvVariablesTest(t *testing.T) {
 	})
 }
 
-func listClustersTest(t *testing.T) {
+func listClusters_NonInteractiveTest(t *testing.T) {
 	viridianTester(t, func(ctx context.Context, tcx it.TestContext) {
 		tcx.CLCExecute(ctx, "viridian", "list-clusters")
 		tcx.AssertStderrContains("OK")
@@ -102,7 +102,7 @@ func listClustersTest(t *testing.T) {
 	})
 }
 
-func listClustersInteractiveTest(t *testing.T) {
+func listClusters_InteractiveTest(t *testing.T) {
 	viridianTester(t, func(ctx context.Context, tcx it.TestContext) {
 		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			tcx.WithReset(func() {
