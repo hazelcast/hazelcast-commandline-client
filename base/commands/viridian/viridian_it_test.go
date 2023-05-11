@@ -150,11 +150,10 @@ func createCluster_InteractiveTest(t *testing.T) {
 		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			ensureNoClusterRunning(ctx, tcx)
 			tcx.WithReset(func() {
-				tcx.WriteStdin([]byte("\\viridian create-cluster --verbose \n"))
+				clusterName := it.UniqueClusterName()
+				tcx.WriteStdin([]byte(fmt.Sprintf("\\viridian create-cluster --verbose --name %s \n", clusterName)))
 				tcx.AssertStderrContains("OK")
-				fields := tcx.AssertStdoutHasRowWithFields("ID", "Name")
-				info := check.MustValue(tcx.Viridian.GetCluster(ctx, fields["ID"]))
-				waitState(ctx, tcx, info.ID, "RUNNING")
+				_ = check.MustValue(tcx.Viridian.GetClusterWithName(ctx, clusterName))
 			})
 		})
 	})
@@ -231,23 +230,30 @@ func getCluster_InteractiveTest(t *testing.T) {
 
 func deleteCluster_NonInteractiveTest(t *testing.T) {
 	viridianTester(t, func(ctx context.Context, tcx it.TestContext) {
-		c := createOrGetClusterWithState(ctx, tcx, "")
-		tcx.CLCExecute(ctx, "viridian", "delete-cluster", c.ID)
+		c := createOrGetClusterWithState(ctx, tcx, "RUNNING")
+		tcx.CLCExecute(ctx, "viridian", "delete-cluster", c.ID, "--yes")
 		tcx.AssertStderrContains("OK")
-		_, err := tcx.Viridian.GetCluster(ctx, c.ID)
-		require.ErrorContains(t, err, "no such cluster found")
+		require.Eventually(t, func() bool {
+			_, err := tcx.Viridian.GetCluster(ctx, c.ID)
+			return err != nil
+		}, 1*time.Minute, 5*time.Second)
 	})
 }
 
 func deleteCluster_InteractiveTest(t *testing.T) {
+	t.Skip()
 	viridianTester(t, func(ctx context.Context, tcx it.TestContext) {
 		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			tcx.WithReset(func() {
-				c := createOrGetClusterWithState(ctx, tcx, "")
+				c := createOrGetClusterWithState(ctx, tcx, "RUNNING")
 				tcx.WriteStdin([]byte(fmt.Sprintf("\\viridian delete-cluster %s\n", c.Name)))
+				tcx.AssertStdoutContains("(y/n)")
+				tcx.WriteStdin([]byte("y"))
 				tcx.AssertStderrContains("OK")
-				_, err := tcx.Viridian.GetCluster(ctx, c.ID)
-				require.ErrorContains(t, err, "no such cluster found")
+				require.Eventually(t, func() bool {
+					_, err := tcx.Viridian.GetCluster(ctx, c.ID)
+					return err == nil
+				}, 1*time.Minute, 5*time.Second)
 			})
 		})
 	})

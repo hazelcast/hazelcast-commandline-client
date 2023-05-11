@@ -192,6 +192,19 @@ func (a *ViridianAPI) GetCluster(ctx context.Context, clusterID string) (Viridia
 	return res, nil
 }
 
+func (a *ViridianAPI) GetClusterWithName(ctx context.Context, name string) (ViridianClusterInfo, error) {
+	cs, err := a.ListClusters(ctx)
+	if err != nil {
+		return ViridianClusterInfo{}, err
+	}
+	for _, c := range cs {
+		if c.Name == name {
+			return c, nil
+		}
+	}
+	return ViridianClusterInfo{}, errors.New("cluster does not exist")
+}
+
 func (a *ViridianAPI) ListClusters(ctx context.Context) ([]ViridianClusterInfo, error) {
 	res, err := doGet[Wrapper[[]ViridianClusterInfo]](ctx, "/cluster", a.token)
 	if err != nil {
