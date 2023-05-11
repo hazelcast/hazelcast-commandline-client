@@ -17,7 +17,7 @@ const flagOutputPath = "output-path"
 type CustomClassDownloadCmd struct{}
 
 func (cmd CustomClassDownloadCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("download-custom-class [file-name/artifact-ID] [flags]")
+	cc.SetCommandUsage("download-custom-class [cluster-name/cluster-id] [file-name/artifact-ID] [flags]")
 	long := `Downloads a custom class from the given Viridian Cluster.
 
 Make sure you login before running this command.
@@ -61,7 +61,7 @@ func (cmd CustomClassDownloadCmd) Exec(ctx context.Context, ec plug.ExecContext)
 	}
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Downloading custom class")
-		err = api.DownloadCustomClass(ctx, sp, t, clusterName, artifact)
+		err = api.DownloadCustomClass(ctx, sp.SetProgress, t, clusterName, artifact)
 		if err != nil {
 			return nil, err
 		}

@@ -10,16 +10,14 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-
-	"github.com/hazelcast/hazelcast-commandline-client/clc"
 )
 
 type UploadProgressReader struct {
-	Reader  io.Reader
-	Total   int64
-	Current int64
-	AtEOF   bool
-	Spinner clc.Spinner
+	Reader     io.Reader
+	Total      int64
+	Current    int64
+	AtEOF      bool
+	SetterFunc func(progress float32)
 }
 
 func (pr *UploadProgressReader) Read(p []byte) (int, error) {
@@ -33,13 +31,13 @@ func (pr *UploadProgressReader) Read(p []byte) (int, error) {
 }
 
 func (pr *UploadProgressReader) Print() {
-	pr.Spinner.SetProgress(float32(pr.Current) / float32(pr.Total))
+	pr.SetterFunc(float32(pr.Current) / float32(pr.Total))
 	if pr.AtEOF {
-		pr.Spinner.SetProgress(1)
+		pr.SetterFunc(1)
 	}
 }
 
-func doCustomClassUpload(ctx context.Context, sp clc.Spinner, url, filePath, token string) error {
+func doCustomClassUpload(ctx context.Context, progressSetter func(progress float32), url, filePath, token string) error {
 	reqBody := new(bytes.Buffer)
 	w := multipart.NewWriter(reqBody)
 	p, err := w.CreateFormFile("customClassesFile", filepath.Base(filePath))
@@ -56,7 +54,7 @@ func doCustomClassUpload(ctx context.Context, sp clc.Spinner, url, filePath, tok
 		return err
 	}
 	w.Close()
-	req, err := http.NewRequest(http.MethodPost, makeUrl(url), &UploadProgressReader{Reader: reqBody, Total: size, Spinner: sp})
+	req, err := http.NewRequest(http.MethodPost, makeUrl(url), &UploadProgressReader{Reader: reqBody, Total: size, SetterFunc: progressSetter})
 	if err != nil {
 		return err
 	}

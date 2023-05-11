@@ -7,14 +7,12 @@ import (
 	"net/http"
 	"os"
 	"strings"
-
-	"github.com/hazelcast/hazelcast-commandline-client/clc"
 )
 
 type DownloadProgressPrinter struct {
-	Total   uint64
-	Current uint64
-	Spinner clc.Spinner
+	Total      uint64
+	Current    uint64
+	SetterFunc func(progress float32)
 }
 
 func (pp *DownloadProgressPrinter) Write(p []byte) (int, error) {
@@ -25,10 +23,11 @@ func (pp *DownloadProgressPrinter) Write(p []byte) (int, error) {
 }
 
 func (pp *DownloadProgressPrinter) Print() {
-	pp.Spinner.SetProgress(float32(pp.Current) / float32(pp.Total))
+	p := float32(pp.Current) / float32(pp.Total)
+	pp.SetterFunc(p)
 }
 
-func doCustomClassDownload(ctx context.Context, sp clc.Spinner, t TargetInfo, url, className, token string) error {
+func doCustomClassDownload(ctx context.Context, progressSetter func(progress float32), t TargetInfo, url, className, token string) error {
 	fn, err := t.fileToBeCreated(className)
 	if err != nil {
 		return err
@@ -58,7 +57,7 @@ func doCustomClassDownload(ctx context.Context, sp clc.Spinner, t TargetInfo, ur
 	if err != nil {
 		return fmt.Errorf("an error occurred while downloading custom class: %w", err)
 	}
-	p := &DownloadProgressPrinter{Spinner: sp, Total: uint64(res.ContentLength)}
+	p := &DownloadProgressPrinter{SetterFunc: progressSetter, Total: uint64(res.ContentLength)}
 	_, err = io.Copy(f, io.TeeReader(res.Body, p))
 	if err != nil {
 		f.Close()

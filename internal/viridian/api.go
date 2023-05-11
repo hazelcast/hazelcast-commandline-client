@@ -10,8 +10,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-
-	"github.com/hazelcast/hazelcast-commandline-client/clc"
 )
 
 const (
@@ -58,19 +56,19 @@ func (a API) ListCustomClasses(ctx context.Context, cluster string) ([]CustomCla
 	return csw, nil
 }
 
-func (a API) UploadCustomClasses(ctx context.Context, sp clc.Spinner, cluster, filePath string) error {
+func (a API) UploadCustomClasses(ctx context.Context, p func(progress float32), cluster, filePath string) error {
 	cID, err := a.findClusterID(ctx, cluster)
 	if err != nil {
 		return err
 	}
-	err = doCustomClassUpload(ctx, sp, fmt.Sprintf("/cluster/%s/custom_classes", cID), filePath, a.Token())
+	err = doCustomClassUpload(ctx, p, fmt.Sprintf("/cluster/%s/custom_classes", cID), filePath, a.Token())
 	if err != nil {
 		return fmt.Errorf("uploading custom class: %w", err)
 	}
 	return nil
 }
 
-func (a API) DownloadCustomClass(ctx context.Context, sp clc.Spinner, targetInfo TargetInfo, cluster, artifact string) error {
+func (a API) DownloadCustomClass(ctx context.Context, p func(progress float32), targetInfo TargetInfo, cluster, artifact string) error {
 	cID, err := a.findClusterID(ctx, cluster)
 	if err != nil {
 		return err
@@ -83,7 +81,7 @@ func (a API) DownloadCustomClass(ctx context.Context, sp clc.Spinner, targetInfo
 		return fmt.Errorf("no such custom class found with name %d in cluster %s", artifactID, cID)
 	}
 	url := fmt.Sprintf("/cluster/%s/custom_classes/%d", cID, artifactID)
-	err = doCustomClassDownload(ctx, sp, targetInfo, url, artifactName, a.token)
+	err = doCustomClassDownload(ctx, p, targetInfo, url, artifactName, a.token)
 	if err != nil {
 		return err
 	}
