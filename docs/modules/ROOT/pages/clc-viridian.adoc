@@ -13,6 +13,10 @@ clc viridian [command] [options]
 
 * <<clc-viridian-login, clc viridian login>>
 * <<clc-viridian-list-clusters, clc viridian list-clusters>>
+* <<clc-viridian-list-custom-classes, clc viridian list-custom-classes>>
+* <<clc-viridian-upload-custom-class, clc viridian upload-custom-class>>
+* <<clc-viridian-download-custom-class, clc viridian download-custom-class>>
+* <<clc-viridian-delete-custom-class, clc viridian delete-custom-class>>
 
 == clc viridian login
 
@@ -61,4 +65,82 @@ Usage:
 [source,bash]
 ----
 clc viridian list-clusters [flags]
+----
+
+== clc viridian list-custom-classes
+
+Lists all custom classes in the Viridian cluster.
+
+Make sure you login before running this command.
+
+Usage:
+
+[source,bash]
+----
+clc viridian list-custom-classes [cluster-name/cluster-ID] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--verbose`
+|Optional
+|Prints additional column `Temporary Custom Classes ID`
+|
+
+|===
+
+== clc viridian upload-custom-class
+
+Uploads a custom class to the Viridian cluster.
+
+Make sure you login before running this command.
+
+Usage:
+
+[source,bash]
+----
+clc viridian upload-custom-class [cluster-name/cluster-ID] [file-name] [flags]
+----
+
+== clc viridian download-custom-class
+
+Downloads a custom class from the Viridian cluster.
+
+Make sure you login before running this command.
+
+Usage:
+
+[source,bash]
+----
+clc viridian download-custom-class [cluster-name/cluster-ID] [file-name/artifact-ID] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--output-path`
+|Optional
+|Output path for the downloaded artifact. The base directory of the path is created recursively if it doesn’t exist.
+|
+
+|===
+
+== clc viridian delete-custom-class
+
+Deletes a custom class from the Viridian cluster.
+
+Make sure you login before running this command.
+
+Usage:
+
+[source,bash]
+----
+clc viridian delete-custom-class [cluster-name/cluster-ID] [file-name/artifact-ID] [flags]
 ----

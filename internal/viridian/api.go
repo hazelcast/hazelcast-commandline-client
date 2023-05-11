@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -41,6 +42,99 @@ func (a API) ListClusters(ctx context.Context) ([]Cluster, error) {
 		return nil, fmt.Errorf("listing clusters: %w", err)
 	}
 	return csw.Content, nil
+}
+
+func (a API) ListCustomClasses(ctx context.Context, cluster string) ([]CustomClass, error) {
+	cID, err := a.findClusterID(ctx, cluster)
+	if err != nil {
+		return nil, err
+	}
+	csw, err := doGet[[]CustomClass](ctx, fmt.Sprintf("/cluster/%s/custom_classes", cID), a.Token())
+	if err != nil {
+		return nil, fmt.Errorf("listing custom classes: %w", err)
+	}
+	return csw, nil
+}
+
+func (a API) UploadCustomClasses(ctx context.Context, p func(progress float32), cluster, filePath string) error {
+	cID, err := a.findClusterID(ctx, cluster)
+	if err != nil {
+		return err
+	}
+	err = doCustomClassUpload(ctx, p, fmt.Sprintf("/cluster/%s/custom_classes", cID), filePath, a.Token())
+	if err != nil {
+		return fmt.Errorf("uploading custom class: %w", err)
+	}
+	return nil
+}
+
+func (a API) DownloadCustomClass(ctx context.Context, p func(progress float32), targetInfo TargetInfo, cluster, artifact string) error {
+	cID, err := a.findClusterID(ctx, cluster)
+	if err != nil {
+		return err
+	}
+	artifactID, artifactName, err := a.findArtifactIDAndName(ctx, cluster, artifact)
+	if err != nil {
+		return err
+	}
+	if artifactID == 0 {
+		return fmt.Errorf("no custom class artifact found with name or ID %d in cluster %s", artifactID, cID)
+	}
+	url := fmt.Sprintf("/cluster/%s/custom_classes/%d", cID, artifactID)
+	err = doCustomClassDownload(ctx, p, targetInfo, url, artifactName, a.token)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a API) DeleteCustomClass(ctx context.Context, cluster string, artifact string) error {
+	cID, err := a.findClusterID(ctx, cluster)
+	if err != nil {
+		return err
+	}
+	artifactID, _, err := a.findArtifactIDAndName(ctx, cluster, artifact)
+	if err != nil {
+		return err
+	}
+	if artifactID == 0 {
+		return fmt.Errorf("no custom class artifact found with name or ID %d in cluster %s", artifactID, cID)
+	}
+	err = doDelete(ctx, fmt.Sprintf("/cluster/%s/custom_classes/%d", cID, artifactID), a.token)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a API) findClusterID(ctx context.Context, cluster string) (string, error) {
+	clusters, err := a.ListClusters(ctx)
+	if err != nil {
+		return "", err
+	}
+	for _, c := range clusters {
+		if c.ID == cluster || c.Name == cluster {
+			return c.ID, nil
+		}
+	}
+	return "", fmt.Errorf("no such class found: %s", cluster)
+}
+
+func (a API) findArtifactIDAndName(ctx context.Context, clusterName, artifact string) (int64, string, error) {
+	customClasses, err := a.ListCustomClasses(ctx, clusterName)
+	if err != nil {
+		return 0, "", err
+	}
+	var artifactName string
+	var artifactID int64
+	for _, cc := range customClasses {
+		if cc.Name == artifact || strconv.FormatInt(cc.ID, 10) == artifact {
+			artifactName = cc.Name
+			artifactID = cc.ID
+			break
+		}
+	}
+	return artifactID, artifactName, nil
 }
 
 func APIBaseURL() string {
@@ -122,6 +216,31 @@ func doPostBytes(ctx context.Context, url, token string, body []byte) ([]byte, e
 		return rb, nil
 	}
 	return nil, fmt.Errorf("%d: %s", res.StatusCode, string(rb))
+}
+
+func doDelete(ctx context.Context, path, token string) error {
+	req, err := http.NewRequest(http.MethodDelete, makeUrl(path), nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	req = req.WithContext(ctx)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("sending request: %w", err)
+	}
+	rb, err := io.ReadAll(res.Body)
+	if err != nil {
+		return fmt.Errorf("reading response: %w", err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("%d: %s", res.StatusCode, string(rb))
+	}
+	return nil
 }
 
 func APIClass() string {
