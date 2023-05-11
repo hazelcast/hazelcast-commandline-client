@@ -119,7 +119,7 @@ func suspendResumeNonInteractiveTest(t *testing.T) {
 			tcx.CLCExecute(ctx, "job", "cancel", name, "--wait")
 		}()
 		tcx.WithReset(func() {
-			tcx.WriteStdinf("\\job suspend %s --wait\n", name)
+			tcx.CLCExecute(ctx, "job", "suspend", name)
 			tcx.AssertStderrContains("OK")
 		})
 		tcx.WithReset(func() {
@@ -127,7 +127,7 @@ func suspendResumeNonInteractiveTest(t *testing.T) {
 			tcx.AssertStdoutContains(name + "\tSUSPENDED")
 		})
 		tcx.WithReset(func() {
-			tcx.WriteStdinf("\\job resume %s --wait\n", name)
+			tcx.CLCExecute(ctx, "job", "resume", name)
 			tcx.AssertStderrContains("OK")
 		})
 		tcx.WithReset(func() {
