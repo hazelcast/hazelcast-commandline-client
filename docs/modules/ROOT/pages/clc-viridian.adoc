@@ -103,7 +103,7 @@ Usage:
 
 [source,bash]
 ----
-clc viridian upload-custom-class [cluster-name/cluster-id] [file-name/artifact-id] [flags]
+clc viridian upload-custom-class [cluster-name/cluster-id] [file-name] [flags]
 ----
 
 == clc viridian download-custom-class
@@ -142,5 +142,5 @@ Usage:
 
 [source,bash]
 ----
-clc viridian delete-custom-class [cluster-name/cluster-id] [file-name/artifact-id] [flags]
+clc viridian delete-custom-class [cluster-name/cluster-id] [artifact-id] [flags]
 ----
