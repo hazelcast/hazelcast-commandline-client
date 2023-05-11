@@ -78,7 +78,7 @@ func (a API) DownloadCustomClass(ctx context.Context, p func(progress float32), 
 		return err
 	}
 	if artifactID == 0 {
-		return fmt.Errorf("no such custom class found with ID %d in cluster %s", artifactID, cID)
+		return fmt.Errorf("no custom class artifact found with name or ID %d in cluster %s", artifactID, cID)
 	}
 	url := fmt.Sprintf("/cluster/%s/custom_classes/%d", cID, artifactID)
 	err = doCustomClassDownload(ctx, p, targetInfo, url, artifactName, a.token)
@@ -98,7 +98,7 @@ func (a API) DeleteCustomClass(ctx context.Context, cluster string, artifact str
 		return err
 	}
 	if artifactID == 0 {
-		return fmt.Errorf("no such custom class found with ID %d in cluster %s", artifactID, cluster)
+		return fmt.Errorf("no custom class artifact found with name or ID %d in cluster %s", artifactID, cID)
 	}
 	err = doDelete(ctx, fmt.Sprintf("/cluster/%s/custom_classes/%d", cID, artifactID), a.token)
 	if err != nil {
@@ -128,9 +128,9 @@ func (a API) findArtifactIDAndName(ctx context.Context, clusterName, artifact st
 	var artifactName string
 	var artifactID int64
 	for _, cc := range customClasses {
-		if cc.Name == artifact || strconv.FormatInt(cc.Id, 10) == artifact {
+		if cc.Name == artifact || strconv.FormatInt(cc.ID, 10) == artifact {
 			artifactName = cc.Name
-			artifactID = cc.Id
+			artifactID = cc.ID
 			break
 		}
 	}
@@ -218,8 +218,8 @@ func doPostBytes(ctx context.Context, url, token string, body []byte) ([]byte, e
 	return nil, fmt.Errorf("%d: %s", res.StatusCode, string(rb))
 }
 
-func doDelete(ctx context.Context, url, token string) error {
-	req, err := http.NewRequest(http.MethodDelete, makeUrl(url), nil)
+func doDelete(ctx context.Context, path, token string) error {
+	req, err := http.NewRequest(http.MethodDelete, makeUrl(path), nil)
 	if err != nil {
 		return err
 	}

@@ -52,10 +52,10 @@ func doCustomClassDownload(ctx context.Context, progressSetter func(progress flo
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		return fmt.Errorf("an error occurred while downloading custom class: %w", err)
+		return fmt.Errorf("downloading custom class: %w", err)
 	}
 	if err != nil {
-		return fmt.Errorf("an error occurred while downloading custom class: %w", err)
+		return fmt.Errorf("downloading custom class: %w", err)
 	}
 	p := &DownloadProgressPrinter{SetterFunc: progressSetter, Total: uint64(res.ContentLength)}
 	_, err = io.Copy(f, io.TeeReader(res.Body, p))
@@ -150,7 +150,6 @@ func isExists(target string) (bool, error) {
 func isFile(target string) (bool, string, string) {
 	t := strings.Split(target, "/")
 	e := strings.Split(t[len(t)-1], ".")
-
 	if len(e) == 2 { // file.extension
 		return true, t[len(t)-1], strings.Join(t[:len(t)-1], "/") // return the file's path and its name
 	}

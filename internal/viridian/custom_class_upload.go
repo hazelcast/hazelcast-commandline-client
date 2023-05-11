@@ -16,7 +16,7 @@ type UploadProgressReader struct {
 	Reader     io.Reader
 	Total      int64
 	Current    int64
-	AtEOF      bool
+	EOF        bool
 	SetterFunc func(progress float32)
 }
 
@@ -24,7 +24,7 @@ func (pr *UploadProgressReader) Read(p []byte) (int, error) {
 	n, err := pr.Reader.Read(p)
 	pr.Current += int64(n)
 	if err == io.EOF {
-		pr.AtEOF = true
+		pr.EOF = true
 	}
 	pr.Print()
 	return n, err
@@ -32,19 +32,19 @@ func (pr *UploadProgressReader) Read(p []byte) (int, error) {
 
 func (pr *UploadProgressReader) Print() {
 	pr.SetterFunc(float32(pr.Current) / float32(pr.Total))
-	if pr.AtEOF {
+	if pr.EOF {
 		pr.SetterFunc(1)
 	}
 }
 
-func doCustomClassUpload(ctx context.Context, progressSetter func(progress float32), url, filePath, token string) error {
-	reqBody := new(bytes.Buffer)
+func doCustomClassUpload(ctx context.Context, progressSetter func(progress float32), url, path, token string) error {
+	reqBody := &bytes.Buffer{}
 	w := multipart.NewWriter(reqBody)
-	p, err := w.CreateFormFile("customClassesFile", filepath.Base(filePath))
+	p, err := w.CreateFormFile("customClassesFile", filepath.Base(path))
 	if err != nil {
 		return err
 	}
-	file, err := os.Open(filePath)
+	file, err := os.Open(path)
 	if err != nil {
 		return err
 	}
@@ -54,7 +54,8 @@ func doCustomClassUpload(ctx context.Context, progressSetter func(progress float
 		return err
 	}
 	w.Close()
-	req, err := http.NewRequest(http.MethodPost, makeUrl(url), &UploadProgressReader{Reader: reqBody, Total: size, SetterFunc: progressSetter})
+	pr := &UploadProgressReader{Reader: reqBody, Total: size, SetterFunc: progressSetter}
+	req, err := http.NewRequest(http.MethodPost, makeUrl(url), pr)
 	if err != nil {
 		return err
 	}

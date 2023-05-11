@@ -15,7 +15,7 @@ import (
 type CustomClassListCmd struct{}
 
 func (cmd CustomClassListCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("list-custom-classes [cluster-name/cluster-id] [flags]")
+	cc.SetCommandUsage("list-custom-classes [cluster-name/cluster-ID] [flags]")
 	long := `Lists all custom classes in the given Viridian cluster.
 
 Make sure you login before running this command.
@@ -54,7 +54,7 @@ func (cmd CustomClassListCmd) Exec(ctx context.Context, ec plug.ExecContext) err
 			output.Column{
 				Name:  "ID",
 				Type:  serialization.TypeInt64,
-				Value: c.Id,
+				Value: c.ID,
 			},
 			output.Column{
 				Name:  "Name",

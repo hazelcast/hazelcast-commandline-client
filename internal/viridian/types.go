@@ -8,7 +8,7 @@ type Cluster struct {
 }
 
 type CustomClass struct {
-	Id                       int64  `json:"id"`
+	ID                       int64  `json:"id"`
 	Name                     string `json:"name"`
 	GeneratedFilename        string `json:"generatedFilename"`
 	Status                   string `json:"status"`

@@ -17,12 +17,12 @@ const flagOutputPath = "output-path"
 type CustomClassDownloadCmd struct{}
 
 func (cmd CustomClassDownloadCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("download-custom-class [cluster-name/cluster-id] [file-name/artifact-ID] [flags]")
-	long := `Downloads a custom class from the given Viridian Cluster.
+	cc.SetCommandUsage("download-custom-class [cluster-name/cluster-ID] [file-name/artifact-ID] [flags]")
+	long := `Downloads a custom class from the given Viridian cluster.
 
 Make sure you login before running this command.
 `
-	short := "Downloads a custom class from the given Viridian Cluster."
+	short := "Downloads a custom class from the given Viridian cluster."
 	cc.SetCommandHelp(long, short)
 	cc.SetPositionalArgCount(2, 2)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
