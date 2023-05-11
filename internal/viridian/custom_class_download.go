@@ -6,7 +6,9 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strings"
+	"path/filepath"
+
+	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 )
 
 type DownloadProgressPrinter struct {
@@ -78,80 +80,57 @@ func CreateTargetInfo(target string) (TargetInfo, error) {
 	var i TargetInfo
 	if target != "" {
 		i.IsSet = true
-		exists, err := isExists(target)
-		if err != nil {
-			return TargetInfo{}, err
-		}
-		i.IsPathExists = exists
-		i.IsFile, i.FileName, i.Path = isFile(target)
-		if !i.IsFile {
-			i.Path = target
-		}
+		i.IsPathExists = isExists(target)
+		i.checkIfFile(target)
 	}
 	return i, nil
 }
 
-func (t TargetInfo) IsOverwrite() bool {
+func (t *TargetInfo) IsOverwrite() bool {
 	return t.IsSet && t.IsFile && t.IsPathExists
 }
 
-func (t TargetInfo) fileToBeCreated(className string) (string, error) {
-	var toBeCreatedFile string
-	if !t.IsSet {
-		toBeCreatedFile = className
-	} else {
+func (t *TargetInfo) fileToBeCreated(className string) (string, error) {
+	toBeCreatedFile := className
+	if t.IsSet {
 		// if directory does not exist, create it
 		err := t.createDirIfNotExists()
 		if err != nil {
 			return "", err
 		}
-		if !t.IsFile { // then it is a directory
-			if t.Path != "" {
-				toBeCreatedFile = t.Path + "/" + className
-			} else {
-				toBeCreatedFile = className
-			}
+		if t.IsFile { // then it is a directory
+			toBeCreatedFile = paths.Join(t.Path, t.FileName)
 		} else {
-			if t.Path != "" {
-				toBeCreatedFile = t.Path + "/" + t.FileName
-			} else {
-				toBeCreatedFile = t.FileName
-			}
+			toBeCreatedFile = paths.Join(t.Path, className)
 		}
 	}
 	return toBeCreatedFile, nil
 }
 
-func (t TargetInfo) createDirIfNotExists() error {
-	if t.Path != "" {
-		_, err := os.Stat(t.Path)
-		if os.IsNotExist(err) {
-			err = os.MkdirAll(t.Path, os.ModePerm)
-			if err != nil {
-				return err
-			}
-		}
+func (t *TargetInfo) createDirIfNotExists() error {
+	if t.Path == "" {
+		return nil
 	}
-	return nil
+	return os.MkdirAll(t.Path, os.ModePerm)
 }
 
-func isExists(target string) (bool, error) {
+func (t *TargetInfo) checkIfFile(target string) {
+	dir, f := filepath.Split(target)
+	ext := filepath.Ext(f)
+	t.Path = target
+	if f != "" && ext != "" {
+		t.IsFile = true
+		t.FileName = f
+		t.Path = dir
+	}
+}
+
+func isExists(target string) bool {
 	_, err := os.Stat(target)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return false, nil
-		} else {
-			return false, err
+			return false
 		}
 	}
-	return true, nil
-}
-
-func isFile(target string) (bool, string, string) {
-	t := strings.Split(target, "/")
-	e := strings.Split(t[len(t)-1], ".")
-	if len(e) == 2 { // file.extension
-		return true, t[len(t)-1], strings.Join(t[:len(t)-1], "/") // return the file's path and its name
-	}
-	return false, "", ""
+	return true
 }
