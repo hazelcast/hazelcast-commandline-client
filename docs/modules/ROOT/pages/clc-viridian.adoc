@@ -15,9 +15,9 @@ clc viridian [command] [options]
 * <<clc-viridian-create-cluster, clc viridian create-cluster>>
 * <<clc-viridian-get-cluster, clc viridian get-cluster>>
 * <<clc-viridian-list-clusters, clc viridian list-clusters>>
-* <<clc-viridian-stop-cluster, clc viridian get-cluster>>
-* <<clc-viridian-resume-cluster, clc viridian get-cluster>>
-* <<clc-viridian-delete-cluster, clc viridian get-cluster>>
+* <<clc-viridian-stop-cluster, clc viridian stop-cluster>>
+* <<clc-viridian-resume-cluster, clc viridian resume-cluster>>
+* <<clc-viridian-delete-cluster, clc viridian delete-cluster>>
 * <<clc-viridian-download-logs, clc viridian download-logs>>
 * <<clc-viridian-list-custom-classes, clc viridian list-custom-classes>>
 * <<clc-viridian-upload-custom-class, clc viridian upload-custom-class>>
@@ -62,7 +62,7 @@ Parameters:
 
 == clc viridian create-cluster
 
-Creates a Viridian cluster for the logged in API key.
+Creates a Viridian cluster.
 
 Make sure you login before running this command.
 
@@ -86,7 +86,7 @@ Parameters:
 
 |`--name`
 |Optional
-|Sets the name of the created cluster. If not given, random name will be generated.
+|Sets the name of the created cluster. If not given, an auto-generated name will be used.
 |
 
 |`--plan`
@@ -102,7 +102,7 @@ Parameters:
 
 == clc viridian get-cluster
 
-Gets the information about the given Viridian cluster for the logged in API key.
+Gets the information about the given Viridian cluster.
 
 Make sure you login before running this command.
 
@@ -154,7 +154,7 @@ Parameters:
 
 == clc viridian stop-cluster
 
-Stops the given Viridian cluster for the logged in API key.
+Stops the given Viridian cluster.
 
 Make sure you login before running this command.
 
@@ -180,7 +180,7 @@ Parameters:
 
 == clc viridian resume-cluster
 
-Resumes the given Viridian cluster for the logged in API key.
+Resumes the given Viridian cluster.
 
 Make sure you login before running this command.
 
@@ -206,7 +206,7 @@ Parameters:
 
 == clc viridian delete-cluster
 
-Deletes the given Viridian cluster for the logged in API key.
+Deletes the given Viridian cluster.
 
 Make sure you login before running this command.
 
@@ -237,7 +237,7 @@ Parameters:
 
 == clc viridian download-logs
 
-Downloads the logs of the given Viridian cluster for the logged in API key.
+Downloads the logs of the given Viridian cluster.
 
 Make sure you login before running this command.
 
