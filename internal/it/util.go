@@ -59,7 +59,7 @@ var rc *RemoteControllerClientWrapper
 var rcMu = &sync.RWMutex{}
 var defaultDedicatedTestCluster = NewSingletonTestCluster(defaultDedicatedClusterName, func() TestCluster {
 	port := NextPort()
-	return rc.startNewCluster(MemberCount(), xmlConfig(defaultDedicatedClusterName, port), port)
+	return rc.startNewCluster(MemberCount(), XMLConfig(defaultDedicatedClusterName, port), port)
 })
 var defaultViridianTestCluster = NewSingletonTestCluster("not-used", func() TestCluster {
 	return newViridianTestCluster()

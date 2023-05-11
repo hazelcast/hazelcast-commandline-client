@@ -70,6 +70,10 @@ jobs:
         run: |
           go mod tidy
 
+      - name: "Download Test Fixtures"
+        run: |
+          curl https://rcd-download.s3.us-east-2.amazonaws.com/sample-job-1-1.0-SNAPSHOT-all.jar -o base/commands/job/testdata/sample-job-1-1.0-SNAPSHOT-all.jar
+
       - name: "Run All Tests"
         run: |
           make test
