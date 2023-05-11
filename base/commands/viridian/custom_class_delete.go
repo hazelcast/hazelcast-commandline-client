@@ -3,7 +3,6 @@ package viridian
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -32,13 +31,10 @@ func (cmd CustomClassDeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) e
 	}
 	// inputs
 	cluster := ec.Args()[0]
-	artifactID, err := strconv.ParseInt(ec.Args()[1], 10, 64)
-	if err != nil {
-		return err
-	}
+	artifact := ec.Args()[1]
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Deleting custom class")
-		err = api.DeleteCustomClass(ctx, cluster, artifactID)
+		err = api.DeleteCustomClass(ctx, cluster, artifact)
 		if err != nil {
 			return nil, err
 		}

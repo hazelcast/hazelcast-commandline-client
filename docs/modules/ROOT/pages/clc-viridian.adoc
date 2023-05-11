@@ -142,5 +142,5 @@ Usage:
 
 [source,bash]
 ----
-clc viridian delete-custom-class [cluster-name/cluster-id] [artifact-id] [flags]
+clc viridian delete-custom-class [cluster-name/cluster-id] [file-name/artifact-ID] [flags]
 ----

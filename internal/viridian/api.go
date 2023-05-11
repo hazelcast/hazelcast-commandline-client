@@ -78,7 +78,7 @@ func (a API) DownloadCustomClass(ctx context.Context, p func(progress float32), 
 		return err
 	}
 	if artifactID == 0 {
-		return fmt.Errorf("no such custom class found with name %d in cluster %s", artifactID, cID)
+		return fmt.Errorf("no such custom class found with ID %d in cluster %s", artifactID, cID)
 	}
 	url := fmt.Sprintf("/cluster/%s/custom_classes/%d", cID, artifactID)
 	err = doCustomClassDownload(ctx, p, targetInfo, url, artifactName, a.token)
@@ -88,26 +88,19 @@ func (a API) DownloadCustomClass(ctx context.Context, p func(progress float32), 
 	return nil
 }
 
-func (a API) DeleteCustomClass(ctx context.Context, cluster string, artifactID int64) error {
+func (a API) DeleteCustomClass(ctx context.Context, cluster string, artifact string) error {
 	cID, err := a.findClusterID(ctx, cluster)
 	if err != nil {
 		return err
 	}
-	customClasses, err := a.ListCustomClasses(ctx, cID)
+	artifactID, _, err := a.findArtifactIDAndName(ctx, cluster, artifact)
 	if err != nil {
 		return err
 	}
-	var id int64
-	for _, c := range customClasses {
-		if c.Id == artifactID {
-			id = c.Id
-			break
-		}
+	if artifactID == 0 {
+		return fmt.Errorf("no such custom class found with ID %d in cluster %s", artifactID, cluster)
 	}
-	if id == 0 {
-		return fmt.Errorf("no such custom class found with name %d in cluster %s", artifactID, cluster)
-	}
-	err = doDelete(ctx, fmt.Sprintf("/cluster/%s/custom_classes/%d", cID, id), a.token)
+	err = doDelete(ctx, fmt.Sprintf("/cluster/%s/custom_classes/%d", cID, artifactID), a.token)
 	if err != nil {
 		return err
 	}
