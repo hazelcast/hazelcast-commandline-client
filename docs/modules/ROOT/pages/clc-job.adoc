@@ -75,6 +75,7 @@ Must include the package name, such as: `com.example.JetJob`.
 |`--wait`
 |Optional
 |Waits for the job to be started.
+|`false`
 
 |===
 
@@ -108,6 +109,7 @@ Parameters:
 |`--wait`
 |Optional
 |Waits for the job to be terminated.
+|`false`
 
 |===
 
@@ -180,6 +182,7 @@ Parameters:
 |`--wait`
 |Optional
 |Waits for the job to be restarted.
+|`false`
 
 |===
 
@@ -208,6 +211,7 @@ Parameters:
 |`--wait`
 |Optional
 |Waits for the job to be resumed.
+|`false`
 
 |===
 
@@ -238,10 +242,10 @@ Parameters:
 |Force suspend the job.
 |`false`
 
-
 |`--wait`
 |Optional
 |Waits for the job to be suspended.
+|`false`
 
 |===
 
