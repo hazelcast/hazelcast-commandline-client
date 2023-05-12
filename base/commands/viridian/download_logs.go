@@ -48,7 +48,7 @@ func (cm DownloadLogsCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	})
 	if err != nil {
 		ec.Logger().Error(err)
-		return fmt.Errorf("error downloading cluster logs. Did you login?: %w", err)
+		return fmt.Errorf("downloading cluster logs. Did you login?: %w", err)
 	}
 	stop()
 	return nil

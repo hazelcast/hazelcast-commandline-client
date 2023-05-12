@@ -3,10 +3,14 @@ package viridian_test
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
+	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
 )
@@ -33,9 +37,13 @@ func customClass_NonInteractiveTest(t *testing.T) {
 		})
 		// test download custom class
 		tcx.WithReset(func() {
-			tcx.CLCExecute(ctx, "viridian", "download-custom-class", c.ID, f)
+			dir := check.MustValue(os.MkdirTemp("", "clc-*"))
+			path := paths.Join(dir, "myfile.zip")
+			defer os.Remove(path)
+			tcx.CLCExecute(ctx, "viridian", "download-custom-class", c.ID, f, "-o", path)
 			tcx.AssertStderrContains("OK")
 			tcx.AssertStdoutContains("Custom class downloaded successfully.")
+			require.True(t, paths.Exists(path))
 		})
 		// test delete custom class
 		tcx.WithReset(func() {
