@@ -4,7 +4,7 @@ start_page: overview.adoc
 # Version in the URL
 version: '5.3'
 # Version in the version selector (we display only the latest major.minor version)
-display_version: '5.3.0-BETA-2'
+display_version: '5.3'
 # Displays a banner to inform users that this is a prerelease version 
 prerelease: true
 asciidoc:
