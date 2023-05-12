@@ -7,7 +7,10 @@ jobs:
   test:
     strategy:
       matrix:
-        os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+        # Note that we are testing only with ubuntu
+        # Since we have a single Viridian test cluster
+        # Parallel access to that cluster would make the tests fail
+        os: ["ubuntu-latest"]
     runs-on: ${{ matrix.os }}
     env:
       GOPATH: "${{ github.workspace }}"

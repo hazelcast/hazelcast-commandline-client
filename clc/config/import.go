@@ -73,7 +73,7 @@ func tryImportHTTPSource(ctx context.Context, ec plug.ExecContext, target, url s
 		return "", false, err
 	}
 	ec.Logger().Info("Downloaded sample to: %s", path)
-	path, err = makeConfigFromZip(ctx, ec, target, path)
+	path, err = CreateFromZip(ctx, ec, target, path)
 	if err != nil {
 		return "", false, err
 	}
@@ -96,7 +96,7 @@ func tryImportViridianZipSource(ctx context.Context, ec plug.ExecContext, target
 	if language != "go" {
 		return "", false, fmt.Errorf("%s is not usable as a configuration source, use Go sample", src)
 	}
-	path, err := makeConfigFromZip(ctx, ec, target, src)
+	path, err := CreateFromZip(ctx, ec, target, src)
 	if err != nil {
 		return "", false, err
 	}
@@ -125,7 +125,7 @@ func download(ctx context.Context, ec plug.ExecContext, url string) (string, err
 	return p.(string), nil
 }
 
-func makeConfigFromZip(ctx context.Context, ec plug.ExecContext, target, path string) (string, error) {
+func CreateFromZip(ctx context.Context, ec plug.ExecContext, target, path string) (string, error) {
 	p, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Extracting files from the sample")
 		reader, err := zip.OpenReader(path)

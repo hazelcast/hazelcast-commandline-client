@@ -107,6 +107,11 @@ func (a API) DeleteCustomClass(ctx context.Context, cluster string, artifact str
 	return nil
 }
 
+func (a API) DownloadConfig(ctx context.Context, clusterID string) (path string, stop func(), err error) {
+	url := makeConfigURL(clusterID)
+	return download(ctx, url, a.token)
+}
+
 func (a API) findClusterID(ctx context.Context, idOrName string) (string, error) {
 	clusters, err := a.ListClusters(ctx)
 	if err != nil {
@@ -181,7 +186,7 @@ func doGet[Res any](ctx context.Context, path, token string) (res Res, err error
 func doPost[Req, Res any](ctx context.Context, path, token string, request Req) (res Res, err error) {
 	m, err := json.Marshal(request)
 	if err != nil {
-		return res, fmt.Errorf("creating login payload: %w", err)
+		return res, fmt.Errorf("creating payload: %w", err)
 	}
 	b, err := doPostBytes(ctx, makeUrl(path), token, m)
 	if err != nil {
@@ -241,6 +246,46 @@ func doDelete(ctx context.Context, path, token string) error {
 		return fmt.Errorf("%d: %s", res.StatusCode, string(rb))
 	}
 	return nil
+}
+
+func download(ctx context.Context, url, token string) (downloadPath string, stop func(), err error) {
+	f, err := os.CreateTemp("", "clc-download-*")
+	if err != nil {
+		return "", nil, err
+	}
+	defer f.Close()
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return "", nil, fmt.Errorf("creating request: %w", err)
+	}
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	req = req.WithContext(ctx)
+	rawRes, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", nil, fmt.Errorf("sending request: %w", err)
+	}
+	defer rawRes.Body.Close()
+	if rawRes.StatusCode == 200 {
+		if _, err := io.Copy(f, rawRes.Body); err != nil {
+			return "", nil, fmt.Errorf("downloading file: %w", err)
+		}
+		stop = func() {
+			// ignoring tne error
+			os.Remove(f.Name())
+		}
+		return f.Name(), stop, nil
+	}
+	rb, err := io.ReadAll(rawRes.Body)
+	if err != nil {
+		return "", nil, fmt.Errorf("reading error response: %w", err)
+	}
+	return "", nil, fmt.Errorf("%d: %s", rawRes.StatusCode, string(rb))
+}
+
+func makeConfigURL(clusterID string) string {
+	return makeUrl(fmt.Sprintf("/client_samples/%s/go?source_identifier=default", clusterID))
 }
 
 func APIClass() string {
