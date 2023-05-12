@@ -28,6 +28,7 @@ func TestViridian(t *testing.T) {
 			ctx := context.Background()
 			infos := check.MustValue(tcx.Viridian.ListClusters(ctx))
 			for _, info := range infos {
+				time.Sleep(1 * time.Minute)
 				if err := tcx.Viridian.DeleteCluster(ctx, info.ID); err != nil {
 					tcx.T.Logf("ERROR while cleaning up cluster: %s", err.Error())
 				}

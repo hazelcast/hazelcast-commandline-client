@@ -47,6 +47,10 @@ func downloadLogs(ctx context.Context, destDir string, path, token string) error
 		return fmt.Errorf("creating temporary  file: %w", err)
 	}
 	defer tempZip.Close()
+	st, err := tempZip.Stat()
+	if err != nil || st.Size() == 0 {
+		return fmt.Errorf("logs are not available yet, retry later")
+	}
 	err = unzip(tempZip, destDir)
 	if err != nil {
 		return fmt.Errorf("unzipping: %w", err)
