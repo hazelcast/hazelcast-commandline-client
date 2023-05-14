@@ -2,7 +2,7 @@
 
 This command group provides commands for doing various Viridian operations, such as creating and managing clusters.
 
-All commands except `viridian login` requires  a token to be generated using an API key and secret which can be retrieved from Viridian Console. Running `viridian login` prompts this information, and creates and saves the token.
+All commands except `viridian login` requires a token to be generated using an API key and secret which can be retrieved from Viridian Console. Running `viridian login` prompts this information, and creates and saves the token.
 
 Usage:
 
