@@ -70,12 +70,12 @@ OK
 ----
 
 == Deleting a Cluster on Viridian
-You can delete an existing cluster on Viridian by its name or ID, you can use the following commands:
+You can delete an existing cluster on Viridian by its name or ID, you can use the following command:
 [source, bash]
 ----
 clc viridian delete-cluster x1qvpphn
 ----
-After you type one of these commands and hit enter, it is going to ask you:
+when you hit enter, it is going to ask you:
 [source, bash]
 ----
 Cluster will be deleted irreversibly, proceed? (y/n)
