@@ -1,0 +1,87 @@
+== Managing Viridian Clusters using CLC
+:description: In this tutorial, you'll learn the basics of managing Viridian clusters using CLC. You'll see how to create, list, delete clusters and also how to import data to them and how to download their logs. Also you'll learn how to perform stop/resume operations on Viridian clusters using CLC.
+
+{description}
+
+== Before You Begin
+
+Be sure you logged in to your Viridian account. To be able to log in to Viridian use the following command:
+
+[source, bash]
+----
+clc viridian login
+----
+
+It is going to ask for `API Key` and `API Secret`. You can create them on link:https://viridian.hazelcast.com/settings/developer[Viridian Developer Settings Page]. If your login is successfully completed, you'll see the following:
+
+[source, bash]
+----
+Viridian token was fetched and saved.
+OK
+----
+
+Then, you are ready to go to the next steps.
+
+== Creating a Cluster on Viridian
+To create a new cluster on Viridian, you can use the following command:
+
+[source, bash]
+----
+clc viridian create-cluster --name foo --development
+OK
+----
+This creates a development cluster named `foo`.
+
+== Downloading the Logs of the Viridian Cluster
+You can download the Hazelcast cluster logs on Viridian by using the following command:
+[source, bash]
+----
+clc viridian download-logs foo
+OK
+----
+This command downloads the logs to the same directory with the CLC binary.
+
+== Stop/Resume a Cluster on Viridian
+You can stop a running cluster by using its name or ID by executing the following command:
+[source, bash]
+----
+clc viridian stop-cluster foo
+OK
+----
+When you want to resume it, you can execute the following command by using its name or ID:
+----
+clc viridian resume-cluster foo
+OK
+----
+
+== Listing Clusters on Viridian
+To list existing clusters on Viridian, you can use the following command:
+
+[source, bash]
+----
+clc viridian list-clusters
+OK
+----
+This command lists the clusters, and you will see such an output:
+[source, bash]
+----
+x1qvpphn        foo     RUNNING 5.3.0-BETA-2
+OK
+----
+
+== Deleting a Cluster on Viridian
+You can delete an existing cluster on Viridian by its name or ID, you can use the following commands:
+[source, bash]
+----
+clc viridian delete-cluster x1qvpphn
+----
+After you type one of these commands and hit enter, it is going to ask you:
+[source, bash]
+----
+Cluster will be deleted irreversibly, proceed? (y/n)
+----
+You can just type `y` to confirm or if you don't want it to ask it, and directly delete the cluster, you can add `--yes` to your command:
+[source, bash]
+----
+clc viridian delete-cluster foo --yes
+----

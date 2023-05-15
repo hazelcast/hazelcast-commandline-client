@@ -1,6 +1,7 @@
 .Get Started
 * xref:overview.adoc[What is Hazelcast CLC?]
 * xref:get-started.adoc[Get Started]
+* xref:managing-viridian-clusters.adoc[Managing Viridian CLusters]
 
 .Manage
 * xref:install-clc.adoc[Install]
