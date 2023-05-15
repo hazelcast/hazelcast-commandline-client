@@ -12,7 +12,7 @@ import (
 type ClusterStopCmd struct{}
 
 func (cm ClusterStopCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("stop-cluster [cluster-ID/name] [flags]")
+	cc.SetCommandUsage("pause-cluster [cluster-ID/name] [flags]")
 	long := `Stops the given Viridian cluster.
 
 Make sure you login before running this command.
@@ -47,5 +47,5 @@ func (cm ClusterStopCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("viridian:stop-cluster", &ClusterStopCmd{}))
+	Must(plug.Registry.RegisterCommand("viridian:pause-cluster", &ClusterStopCmd{}))
 }
