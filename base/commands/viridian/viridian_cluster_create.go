@@ -3,6 +3,7 @@ package viridian
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
