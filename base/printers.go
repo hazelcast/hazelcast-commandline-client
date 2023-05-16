@@ -55,7 +55,7 @@ type TablePrinter struct{}
 func (pr *TablePrinter) PrintStream(ctx context.Context, w io.Writer, rp output.RowProducer) error {
 	mc, _ := consolesize.GetConsoleSize()
 	if mc <= 0 {
-		mc = tableMaxWidth()
+		mc = tableMaxcols()
 	}
 	if mc < 1 {
 		mc = 1000
@@ -66,7 +66,7 @@ func (pr *TablePrinter) PrintStream(ctx context.Context, w io.Writer, rp output.
 }
 
 func (pr *TablePrinter) PrintRows(ctx context.Context, w io.Writer, rows []output.Row) error {
-	mc := tableMaxWidth()
+	mc := tableMaxcols()
 	if mc <= 0 {
 		mc, _ = consolesize.GetConsoleSize()
 	}
@@ -92,7 +92,7 @@ func (pr *CSVPrinter) PrintRows(ctx context.Context, w io.Writer, rows []output.
 	return err
 }
 
-func tableMaxWidth() int {
+func tableMaxcols() int {
 	if s, ok := os.LookupEnv(clc.EnvMaxCols); ok {
 		v, err := strconv.Atoi(s)
 		if err == nil {
