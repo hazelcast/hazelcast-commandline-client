@@ -65,7 +65,7 @@ By using the `--output-dir` flag, you can download the logs to the given directo
 
 == Stop/Resume a Cluster on Viridian
 
-You can stop a running cluster by using its name or ID by executing the following command:
+You can stop a running cluster by using its name or ID by executing the command below. See link:https://docs.hazelcast.com/cloud/stop-and-resume[Pausing and Resuming Clusters] documentation for more information.
 [source, bash]
 ----
 clc viridian stop-cluster my-cluster
