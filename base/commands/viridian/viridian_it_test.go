@@ -6,11 +6,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
-	"github.com/stretchr/testify/require"
 )
 
 func TestViridian(t *testing.T) {
@@ -26,6 +28,7 @@ func TestViridian(t *testing.T) {
 			ctx := context.Background()
 			infos := check.MustValue(tcx.Viridian.ListClusters(ctx))
 			for _, info := range infos {
+				time.Sleep(1 * time.Minute)
 				if err := tcx.Viridian.DeleteCluster(ctx, info.ID); err != nil {
 					tcx.T.Logf("ERROR while cleaning up cluster: %s", err.Error())
 				}
@@ -36,24 +39,24 @@ func TestViridian(t *testing.T) {
 		name string
 		f    func(t *testing.T)
 	}{
-		{"loginWithParams_NonInteractive", loginWithParams_NonInteractiveTest},
-		{"loginWithParams_Interactive", loginWithParams_InteractiveTest},
-		{"loginWithEnvVariables_NonInteractive", loginWithEnvVariables_NonInteractiveTest},
+		{"createCluster_Interactive", createCluster_InteractiveTest},
 		{"createCluster_NonInteractive", createCluster_NonInteractiveTest},
-		{"stopCluster_NonInteractive", stopCluster_NonInteractiveTest},
+		{"customClass_NonInteractive", customClass_NonInteractiveTest},
+		{"deleteCluster_Interactive", deleteCluster_InteractiveTest},
+		{"deleteCluster_NonInteractive", deleteCluster_NonInteractiveTest},
+		{"downloadLogs_Interactive", downloadLogs_InteractiveTest},
+		{"downloadLogs_NonInteractive", downloadLogs_NonInteractiveTest},
+		{"getCluster_InteractiveTest", getCluster_InteractiveTest},
+		{"getCluster_NonInteractive", getCluster_NonInteractiveTest},
+		{"listClusters_Interactive", listClusters_InteractiveTest},
+		{"listClusters_NonInteractive", listClusters_NonInteractiveTest},
+		{"loginWithEnvVariables_NonInteractive", loginWithEnvVariables_NonInteractiveTest},
+		{"loginWithParams_Interactive", loginWithParams_InteractiveTest},
+		{"loginWithParams_NonInteractive", loginWithParams_NonInteractiveTest},
+		{"resumeCluster_Interactive", resumeCluster_InteractiveTest},
 		{"resumeCluster_NonInteractive", resumeCluster_NonInteractiveTest},
 		{"stopCluster_Interactive", stopCluster_InteractiveTest},
-		{"resumeCluster_Interactive", resumeCluster_InteractiveTest},
-		{"getCluster_NonInteractive", getCluster_NonInteractiveTest},
-		{"getCluster_InteractiveTest", getCluster_InteractiveTest},
-		{"listClusters_NonInteractive", listClusters_NonInteractiveTest},
-		{"listClusters_Interactive", listClusters_InteractiveTest},
-		{"downloadLogs_NonInteractive", downloadLogs_NonInteractiveTest},
-		{"downloadLogs_Interactive", downloadLogs_InteractiveTest},
-		{"customClass_NonInteractive", customClass_NonInteractiveTest},
-		{"deleteCluster_NonInteractive", deleteCluster_NonInteractiveTest},
-		{"createCluster_Interactive", createCluster_InteractiveTest},
-		{"deleteCluster_Interactive", deleteCluster_InteractiveTest},
+		{"stopCluster_NonInteractive", stopCluster_NonInteractiveTest},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, tc.f)
@@ -137,11 +140,12 @@ func createCluster_NonInteractiveTest(t *testing.T) {
 		ensureNoClusterRunning(ctx, tcx)
 		clusterName := it.UniqueClusterName()
 		tcx.CLCExecute(ctx, "viridian", "create-cluster", "--verbose", "--name", clusterName)
-		tcx.AssertStderrContains("OK")
-		fields := tcx.AssertStdoutHasRowWithFields("ID", "Name")
-		info := check.MustValue(tcx.Viridian.GetCluster(ctx, fields["ID"]))
-		require.Equal(t, info.Name, clusterName)
-		waitState(ctx, tcx, info.ID, "RUNNING")
+		//fields := tcx.AssertStdoutHasRowWithFields("ID", "Name")
+		cs := check.MustValue(tcx.Viridian.ListClusters(ctx))
+		cid := cs[0].ID
+		tcx.AssertStdoutDollar(fmt.Sprintf("$%s$%s$", cid, clusterName))
+		check.Must(waitState(ctx, tcx, cid, "RUNNING"))
+		require.True(t, paths.Exists(paths.ResolveConfigDir(clusterName)))
 	})
 }
 
@@ -152,8 +156,13 @@ func createCluster_InteractiveTest(t *testing.T) {
 			tcx.WithReset(func() {
 				clusterName := it.UniqueClusterName()
 				tcx.WriteStdinf("\\viridian create-cluster --verbose --name %s \n", clusterName)
+				time.Sleep(10 * time.Second)
+				check.Must(waitState(ctx, tcx, "", "RUNNING"))
+				tcx.AssertStdoutContains(fmt.Sprintf("Imported configuration: %s", clusterName))
 				tcx.AssertStderrContains("OK")
+				require.True(t, paths.Exists(paths.ResolveConfigDir(clusterName)))
 				_ = check.MustValue(tcx.Viridian.GetClusterWithName(ctx, clusterName))
+
 			})
 		})
 	})
@@ -330,13 +339,20 @@ func waitState(ctx context.Context, tcx it.TestContext, clusterID, state string)
 			return err
 		}
 		var found bool
-		for _, c := range cs {
-			if c.ID == clusterID {
-				found = true
-				if c.State == state {
-					return nil
+		if len(cs) == 1 && clusterID == "" {
+			found = true
+			if cs[0].State == state {
+				return nil
+			}
+		} else {
+			for _, c := range cs {
+				if c.ID == clusterID {
+					found = true
+					if c.State == state {
+						return nil
+					}
+					tcx.T.Logf("cluster ID: %s, state: %s", c.ID, c.State)
 				}
-				tcx.T.Logf("cluster ID: %s, state: %s", c.ID, c.State)
 			}
 		}
 		if !found {

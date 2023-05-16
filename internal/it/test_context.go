@@ -258,7 +258,7 @@ func (tcx TestContext) AssertStdoutDollar(text string) {
 }
 
 func (tcx TestContext) AssertStdoutHasRowWithFields(fields ...string) map[string]string {
-	stdout := string(tcx.ExpectStdout.String())
+	stdout := tcx.ExpectStdout.String()
 	out := strings.Fields(stdout)
 	if len(fields) != len(out) {
 		tcx.T.Log("STDOUT:", stdout)
