@@ -1,6 +1,6 @@
 == Managing Viridian Clusters Using the Hazelcast CLC
 
-:description: In this tutorial, you'll learn the basics of managing Viridian clusters using CLC. You'll see how to create, list, delete clusters and also how to import data to them and how to download their logs. Also you'll learn how to perform stop/resume operations on Viridian clusters using CLC.
+:description: In this tutorial, you'll learn the basics of managing Viridian clusters using CLC. You'll see how to create, list, delete clusters and how to download their logs. Also, you'll learn how to perform stop/resume operations on Viridian clusters using CLC.
 
 {description}
 
@@ -61,7 +61,7 @@ clc viridian download-logs my-cluster
 OK
 ----
 This command downloads the logs to the current working directory.
-By using the `--output-dir` flag you can, download the logs to the given directory of your choice.
+By using the `--output-dir` flag, you can download the logs to the given directory of your choice.
 
 == Stop/Resume a Cluster on Viridian
 
@@ -84,7 +84,7 @@ You can delete an existing cluster on Viridian by its name or ID, you can use th
 ----
 clc viridian delete-cluster x1qvpphn
 ----
-when you hit enter, it is going to ask you:
+when you hit kbd:[Enter], it is going to ask you:
 [source, bash]
 ----
 Cluster will be deleted irreversibly, proceed? (y/n)
