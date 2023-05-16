@@ -10,6 +10,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/hazelcast/hazelcast-commandline-client/errors"
 )
 
 const (
@@ -175,7 +177,7 @@ func doGet[Res any](ctx context.Context, path, token string) (res Res, err error
 		}
 		return res, nil
 	}
-	return res, fmt.Errorf("%d: %s", rawRes.StatusCode, string(rb))
+	return res, errors.NewHTTPClientError(rawRes.StatusCode, rb)
 }
 
 func doPost[Req, Res any](ctx context.Context, path, token string, request Req) (res Res, err error) {
@@ -215,7 +217,7 @@ func doPostBytes(ctx context.Context, url, token string, body []byte) ([]byte, e
 	if res.StatusCode == 200 {
 		return rb, nil
 	}
-	return nil, fmt.Errorf("%d: %s", res.StatusCode, string(rb))
+	return nil, errors.NewHTTPClientError(res.StatusCode, rb)
 }
 
 func doDelete(ctx context.Context, path, token string) error {
@@ -238,7 +240,7 @@ func doDelete(ctx context.Context, path, token string) error {
 		return fmt.Errorf("reading response: %w", err)
 	}
 	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusNoContent {
-		return fmt.Errorf("%d: %s", res.StatusCode, string(rb))
+		return errors.NewHTTPClientError(res.StatusCode, rb)
 	}
 	return nil
 }

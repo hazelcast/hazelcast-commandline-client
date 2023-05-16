@@ -15,7 +15,7 @@ clc viridian [command] [options]
 * <<clc-viridian-create-cluster, clc viridian create-cluster>>
 * <<clc-viridian-get-cluster, clc viridian get-cluster>>
 * <<clc-viridian-list-clusters, clc viridian list-clusters>>
-* <<clc-viridian-stop-cluster, clc viridian pause-cluster>>
+* <<clc-viridian-pause-cluster, clc viridian pause-cluster>>
 * <<clc-viridian-resume-cluster, clc viridian resume-cluster>>
 * <<clc-viridian-delete-cluster, clc viridian delete-cluster>>
 * <<clc-viridian-download-logs, clc viridian download-logs>>

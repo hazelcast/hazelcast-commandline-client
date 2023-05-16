@@ -17,7 +17,9 @@
 package errors
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 )
 
 var (
@@ -42,4 +44,40 @@ func (w WrappedError) Error() string {
 type HTTPError interface {
 	Text() string
 	Code() int
+}
+
+type HTTPClientError struct {
+	code    int
+	text    string
+	rawResp string
+}
+
+func NewHTTPClientError(code int, body []byte) error {
+	err := HTTPClientError{
+		code:    code,
+		rawResp: string(body),
+		text:    "an unexpected error occurred, please check logs for details", // it can be overwritten
+	}
+	type ErrResp struct {
+		Message string `json:"message"`
+	}
+	var errResp ErrResp
+	json.Unmarshal(body, &errResp) // if there is an error, errResp.Message will be empty, so we can ignore it
+	// overwriting error text
+	if errResp.Message != "" {
+		err.text = errResp.Message
+	}
+	return err
+}
+
+func (h HTTPClientError) Error() string {
+	return fmt.Sprintf("%d: %s", h.code, h.rawResp)
+}
+
+func (h HTTPClientError) Text() string {
+	return h.text
+}
+
+func (h HTTPClientError) Code() int {
+	return h.code
 }

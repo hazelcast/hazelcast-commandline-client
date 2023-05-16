@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
+	"github.com/hazelcast/hazelcast-commandline-client/errors"
 )
 
 type DownloadProgressPrinter struct {
@@ -54,10 +55,10 @@ func doCustomClassDownload(ctx context.Context, progressSetter func(progress flo
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		return fmt.Errorf("downloading custom class: %w", err)
+		return errors.NewHTTPClientError(res.StatusCode, nil)
 	}
 	if err != nil {
-		return fmt.Errorf("downloading custom class: %w", err)
+		return errors.NewHTTPClientError(res.StatusCode, nil)
 	}
 	p := &DownloadProgressPrinter{SetterFunc: progressSetter, Total: uint64(res.ContentLength)}
 	_, err = io.Copy(f, io.TeeReader(res.Body, p))

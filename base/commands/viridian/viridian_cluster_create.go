@@ -3,7 +3,6 @@ package viridian
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
@@ -56,8 +55,7 @@ func (cm ClusterCreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 		return cs, nil
 	})
 	if err != nil {
-		ec.Logger().Error(err)
-		return fmt.Errorf("creating the cluster. Did you login?: %w", err)
+		return handleErrorResponse(ec, err)
 	}
 	stop()
 	cs := csi.(viridian.Cluster)

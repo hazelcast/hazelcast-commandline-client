@@ -1,12 +1,14 @@
 package viridian
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"sort"
 	"strings"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/secrets"
+	errors2 "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
@@ -52,4 +54,16 @@ func getAPI(ec plug.ExecContext) (*viridian.API, error) {
 		return nil, fmt.Errorf("could not load Viridian secrets, did you login?")
 	}
 	return viridian.NewAPI(string(token)), nil
+}
+
+func handleErrorResponse(ec plug.ExecContext, err error) error {
+	// log the original error in very case
+	ec.Logger().Error(err)
+	// if it is a http client error, return the simplified error to user
+	var err2 errors2.HTTPClientError
+	if errors.As(err, &err2) {
+		return fmt.Errorf(err2.Text())
+	}
+	// if it is not a http client error, return it directly as always
+	return err
 }
