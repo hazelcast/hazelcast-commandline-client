@@ -163,7 +163,7 @@ func (tcx TestContext) Tester(f func(tcx TestContext)) {
 		tcx.ExpectStderr = expect.New(tcx.stderr)
 		defer tcx.ExpectStderr.Stop()
 		WithEnv(paths.EnvCLCHome, tcx.homePath, func() {
-			WithEnv(clc.EnvTableMaxWidth, "50", func() {
+			WithEnv(clc.EnvMaxCols, "50", func() {
 				p := paths.ResolveConfigPath(tcx.ConfigPath)
 				d, _ := filepath.Split(p)
 				check.Must(os.MkdirAll(d, 0700))

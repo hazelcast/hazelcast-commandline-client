@@ -27,7 +27,7 @@ const (
 	PropertyExperimentalAPIBase = "experimental.api-base"
 	GroupDDSID                  = "dds"
 	GroupJetID                  = "jet"
-	EnvTableMaxWidth            = "CLC_TABLE_MAX_WIDTH"
+	EnvMaxCols                  = "CLC_MAX_COLS"
 	EnvSkipServerVersionCheck   = "CLC_SKIP_SERVER_VERSION_CHECK"
 	FlagAutoYes                 = "yes"
 )

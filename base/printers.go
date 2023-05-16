@@ -93,7 +93,7 @@ func (pr *CSVPrinter) PrintRows(ctx context.Context, w io.Writer, rows []output.
 }
 
 func tableMaxWidth() int {
-	if s, ok := os.LookupEnv(clc.EnvTableMaxWidth); ok {
+	if s, ok := os.LookupEnv(clc.EnvMaxCols); ok {
 		v, err := strconv.Atoi(s)
 		if err == nil {
 			return v
