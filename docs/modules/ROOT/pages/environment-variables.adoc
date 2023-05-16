@@ -1,0 +1,61 @@
+= Environment variables
+:description: The Hazelcast CLC recognizes the following environment variables.
+
+{description}
+
+[cols="1a,2a,1a"]
+|===
+|Environment Variable|Description|Default
+
+|CLC_CLIENT_LABELS
+|Sets the client labels. This value is used in Management Center.
+|`USER@HOST-TIMESTAMP`
+
+|CLC_CLIENT_NAME
+|Sets the client name. This value is used in Viridian dashboard and Management Center.
+|`USER@HOST-TIMESTAMP`
+
+|CLC_HOME
+|Overrides the CLC home directory.
+| `$HOME/.hazelcast`
+
+|CLC_MAX_COLS
+|Sets the maximum width for a column of a table output. This is useful when the width cannot be determined.
+| Terminal width.
+
+|CLC_SKIP_SERVER_VERSION_CHECK
+|Some CLC features require a Hazelcast cluster of a certain version. If set to `1`, CLC disables server version check.
+|`0` (server version check is enabled)
+
+|CLC_VIRIDIAN_API_KEY
+|Sets the Viridian API key.
+|
+
+|CLC_VIRIDIAN_API_SECRET
+|Sets the Viridian API secret.
+|
+
+|===
+
+The following environment variables are experimental and may be removed in a future version.
+
+[cols="1a,2a,1a"]
+|===
+|Environment Variable|Description|Default
+
+|CLC_EXPERIMENTAL_FORMATTER
+|Sets formatter for SQL syntax highlighting. One of: `terminal`, `terminal8`, `terminal16`, `terminal256`, `terminal16m`. Only with the `gohxs` readline implementation.
+|`terminal`
+
+|CLC_EXPERIMENTAL_READLINE
+|Sets the readline implementation. Currently one of `gohxs` or `ny`.
+|`ny` for Windows, `gohxs` for other platforms.
+
+|CLC_EXPERIMENTAL_STYLER
+|Sets color theme for SQL syntax highlighting. See link:https://github.com/alecthomas/chroma/tree/master/styles[Chroma styles] for the options.  Only with the `gohxs` readline implementation.
+|`clc-default`
+
+|===
+
+
+
