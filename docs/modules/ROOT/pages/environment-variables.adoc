@@ -25,7 +25,7 @@
 
 |CLC_SKIP_SERVER_VERSION_CHECK
 |Some CLC features require a Hazelcast cluster of a certain version. If set to `1`, CLC disables server version check.
-|`0` (server version check is enabled)
+|`0` (false)
 
 |CLC_VIRIDIAN_API_KEY
 |Sets the Viridian API key.
@@ -54,6 +54,10 @@ The following environment variables are experimental and may be removed in a fut
 |CLC_EXPERIMENTAL_STYLER
 |Sets color theme for SQL syntax highlighting. See link:https://github.com/alecthomas/chroma/tree/master/styles[Chroma styles] for the options.  Only with the `gohxs` readline implementation.
 |`clc-default`
+
+|NO_COLOR
+|Disables color output if set to `1`.
+|`0` (false)
 
 |===
 
