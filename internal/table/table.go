@@ -11,6 +11,11 @@ import (
 	"github.com/mattn/go-runewidth"
 )
 
+const (
+	AlignRight = -1
+	AlignLeft  = 1
+)
+
 type runeWidthFn func(string, int) string
 
 type Column struct {
@@ -27,6 +32,8 @@ type Table struct {
 	rwf    []runeWidthFn
 	sep    string
 }
+
+type lines []string
 
 func New(cfg Config) *Table {
 	cfg.updateWithDefaults()
@@ -106,17 +113,38 @@ func (t *Table) printRow(row []string) int {
 }
 
 func (t *Table) wPrintRow(wr io.Writer, row []string) int {
-	var n int
-	for i, v := range row {
-		w := t.width[i]
-		v = runewidth.Truncate(v, w, "")
-		f := t.cfg.CellFormat[1]
-		if i == 0 {
-			f = t.cfg.CellFormat[0]
+	var maxLines int
+	rowLines := make([]lines, len(row))
+	// first iterate over all rows, splitting them to lines
+	for i, r := range row {
+		ls := splitLines(r, t.width[i])
+		if len(ls) > maxLines {
+			maxLines = len(ls)
 		}
-		n += printf(wr, f, t.rwf[i](v, w))
+		rowLines[i] = ls
 	}
-	return n
+	var rowWidth int
+	var n int
+	cf1 := t.cfg.CellFormat[1]
+	for li := 0; li < maxLines; li++ {
+		//first cell's format
+		f := t.cfg.CellFormat[0]
+		for ci, ls := range rowLines {
+			var v string
+			if len(ls) > li {
+				v = ls[li]
+			}
+			w := t.width[ci]
+			n += printf(wr, f, t.rwf[ci](v, w))
+			// cell format except the first cell
+			f = cf1
+		}
+		if li < maxLines-1 {
+			printf(wr, "\n")
+		}
+	}
+	rowWidth += n
+	return rowWidth
 }
 
 func (t *Table) printf(format string, args ...any) int {
@@ -124,7 +152,6 @@ func (t *Table) printf(format string, args ...any) int {
 }
 
 func printf(w io.Writer, format string, args ...any) int {
-	// ignoring the error here
 	n, err := fmt.Fprintf(w, format, args...)
 	if err != nil {
 		return 0
@@ -136,4 +163,36 @@ func withColor(c *color.Color, f func()) {
 	c.Set()
 	f()
 	color.Unset()
+}
+
+func splitLines(text string, maxWidth int) lines {
+	// just a precaution to not allocate the universe
+	if maxWidth > 65535 {
+		maxWidth = 65535
+	}
+	if maxWidth == 0 {
+		panic("splitLines: maxWidth cannot be 0")
+	}
+	const cr = '\n'
+	line := make([]rune, maxWidth)
+	var ls lines
+	var cursor int
+	for _, r := range text {
+		if r == cr {
+			ls = append(ls, string(line[:cursor]))
+			cursor = 0
+			continue
+		}
+		if cursor >= maxWidth {
+			ls = append(ls, string(line[:cursor]))
+			cursor = 0
+		}
+		line[cursor] = r
+		cursor++
+	}
+	// the last line
+	if cursor > 0 {
+		ls = append(ls, string(line[:cursor]))
+	}
+	return ls
 }

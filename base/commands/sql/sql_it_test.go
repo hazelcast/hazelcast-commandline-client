@@ -239,7 +239,7 @@ func sqlOutput_JSONTest(t *testing.T) {
 			tcx.Tester(func(tcx it.TestContext) {
 				name := it.NewUniqueObjectName("table")
 				ctx := context.Background()
-				it.WithEnv(clc.EnvMaxCols, "150", func() {
+				it.WithEnv(clc.EnvTableMaxWidth, "150", func() {
 					check.MustValue(tcx.Client.SQL().Execute(ctx, fmt.Sprintf(`
 			CREATE MAPPING "%s"
 			TYPE IMAP OPTIONS (
@@ -279,7 +279,7 @@ func sqlOutput_JSONFlatTest(t *testing.T) {
 			tcx.Tester(func(tcx it.TestContext) {
 				name := it.NewUniqueObjectName("table")
 				ctx := context.Background()
-				it.WithEnv(clc.EnvMaxCols, "150", func() {
+				it.WithEnv(clc.EnvTableMaxWidth, "150", func() {
 					check.MustValue(tcx.Client.SQL().Execute(ctx, fmt.Sprintf(`
 			CREATE MAPPING "%s" (
 				__key INT,
