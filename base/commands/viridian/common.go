@@ -1,16 +1,28 @@
 package viridian
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/secrets"
 	errors2 "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
+)
+
+const (
+	stateRunning = "RUNNING"
+	stateFailed  = "FAILED"
+)
+
+var (
+	ErrClusterFailed   = errors.New("cluster failed")
+	ErrClusterNotFound = errors.New("cluster not found")
 )
 
 func findToken(apiKey string) (string, error) {
@@ -54,6 +66,42 @@ func getAPI(ec plug.ExecContext) (*viridian.API, error) {
 		return nil, fmt.Errorf("could not load Viridian secrets, did you login?")
 	}
 	return viridian.NewAPI(string(token)), nil
+}
+
+func waitClusterState(ctx context.Context, ec plug.ExecContext, api *viridian.API, clusterIDOrName, state string) error {
+	for {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		cs, err := api.ListClusters(ctx)
+		if err != nil {
+			return err
+		}
+		for _, c := range cs {
+			if c.ID != clusterIDOrName && c.Name != clusterIDOrName {
+				continue
+			}
+			ok, err := matchClusterState(c, state)
+			if err != nil {
+				return err
+			}
+			if ok {
+				return nil
+			}
+			ec.Logger().Info("Waiting for cluster %s with state %s to transition to %s", clusterIDOrName, c.State, state)
+			time.Sleep(2 * time.Second)
+		}
+	}
+}
+
+func matchClusterState(cluster viridian.Cluster, state string) (bool, error) {
+	if cluster.State == state {
+		return true, nil
+	}
+	if cluster.State == stateFailed {
+		return false, ErrClusterFailed
+	}
+	return false, nil
 }
 
 func handleErrorResponse(ec plug.ExecContext, err error) error {

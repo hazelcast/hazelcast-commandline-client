@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"net/http"
 	"os"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
@@ -17,53 +16,24 @@ func (a API) DownloadClusterLogs(ctx context.Context, destDir string, idOrName s
 	if err != nil {
 		return err
 	}
-	err = downloadLogs(ctx, destDir, fmt.Sprintf("/cluster/%s/logs", cid), a.token)
+	zipPath, stop, err := download(ctx, makeUrl(fmt.Sprintf("/cluster/%s/logs", cid)), a.token)
+	if err != nil {
+		return err
+	}
+	defer stop()
+	zipFile, err := os.Open(zipPath)
+	if err != nil {
+		return err
+	}
+	st, err := zipFile.Stat()
+	if err != nil || st.Size() == 0 {
+		return fmt.Errorf("logs are not available yet, retry later")
+	}
+	err = unzip(zipFile, destDir)
 	if err != nil {
 		return err
 	}
 	return nil
-}
-
-func downloadLogs(ctx context.Context, destDir string, path, token string) error {
-	req, err := http.NewRequest(http.MethodGet, makeUrl(path), nil)
-	if err != nil {
-		return fmt.Errorf("creating request: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	if token != "" {
-		req.Header.Set("Authorization", "Bearer "+token)
-	}
-	req = req.WithContext(ctx)
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("sending request: %w", err)
-	}
-	defer res.Body.Close()
-	if res.StatusCode != http.StatusOK {
-		return fmt.Errorf("status code is: %d", res.StatusCode)
-	}
-	tempZip, err := saveTempFile("logzip", res.Body)
-	if err != nil {
-		return fmt.Errorf("creating temporary  file: %w", err)
-	}
-	defer tempZip.Close()
-	err = unzip(tempZip, destDir)
-	if err != nil {
-		return fmt.Errorf("unzipping: %w", err)
-	}
-	return nil
-}
-
-func saveTempFile(name string, r io.Reader) (*os.File, error) {
-	tempFile, err := os.CreateTemp("", name)
-	if err != nil {
-		return nil, err
-	}
-	_, err = io.Copy(tempFile, r)
-	if err != nil {
-		return nil, err
-	}
-	return tempFile, nil
 }
 
 func unzip(zipFile *os.File, destDir string) error {

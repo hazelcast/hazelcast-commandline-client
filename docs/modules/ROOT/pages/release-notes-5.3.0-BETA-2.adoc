@@ -1,0 +1,25 @@
+= 5.3.0-BETA-2 Release Notes
+
+== New Features
+
+* Viridian support. The following commands were added:
+** `viridian login`
+** `viridian create-cluster`
+** `viridian delete-cluster`
+** `viridian get-cluster`
+** `viridian list-clusters`
+** `viridian stop-cluster`
+** `viridian resume-cluster`
+** `viridian download-logs`
+** `viridian delete-custom-class`
+** `viridian download-custom-class`
+** `viridian list-custom-classes`
+** `viridian upload-custom-class`
+* Added the following new Map commands:
+** `map key-set`
+** `map destroy`
+* Added `--wait` flag which makes CLC wait for the operation to complete. That flag was added to the following `job` commands:  `submit`, `suspend`, `resume`, `cancel`, `restart`
+
+== Bug Fixes
+
+* `job submit` retries both sending the metadata and jar upload if there's an error.
