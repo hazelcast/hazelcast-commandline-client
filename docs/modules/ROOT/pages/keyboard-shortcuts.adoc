@@ -14,10 +14,10 @@
 |Go to the end of the line.
 
 |kbd:[Ctrl + P] or kbd:[Up]
-|Previous command.
+|Previous command in history.
 
 |kbd:[Ctrl + N] or kbd:[Down]
-|Next command.
+|Next command in history.
 
 |kbd:[Ctrl + F] or kbd:[Right]
 |Forward one character.
