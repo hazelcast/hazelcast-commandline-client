@@ -1,4 +1,4 @@
-= Environment variables
+= Environment Variables
 :description: The Hazelcast CLC recognizes the following environment variables.
 
 {description}
@@ -8,8 +8,8 @@
 |Environment Variable|Description|Default
 
 |CLC_CLIENT_LABELS
-|Sets the client labels. This value is used in Management Center.
-|`USER@HOST-TIMESTAMP`
+|Sets the client labels. The labels must be separated by commas. This value is used in Management Center.
+|`CLC,USER@HOST-TIMESTAMP`
 
 |CLC_CLIENT_NAME
 |Sets the client name. This value is used in Viridian dashboard and Management Center.
@@ -17,7 +17,7 @@
 
 |CLC_HOME
 |Overrides the CLC home directory.
-| `$HOME/.hazelcast`
+|`%HOMEDRIVE%:%HOMEPATH%\AppData\Roaming\Hazelcast` on Windows, `$HOME/.hazelcast` on other platforms.
 
 |CLC_MAX_COLS
 |Sets the maximum width for a column of a table output. This is useful when the width cannot be determined.
