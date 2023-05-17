@@ -1,0 +1,33 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '1.7.20'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
+}
+
+group = 'hz.primes'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compileOnly 'com.hazelcast:hazelcast:5.3.0-BETA-2'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+compileKotlin {
+    kotlinOptions.jvmTarget = '1.8'
+}
+
+compileTestKotlin {
+    kotlinOptions.jvmTarget = '1.8'
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'hz.primes.MainKt'
+    }
+}

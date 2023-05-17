@@ -10,3 +10,4 @@ coverage.out
 package-lock.json
 .DS_Store
 test.pid
+.gradle/
