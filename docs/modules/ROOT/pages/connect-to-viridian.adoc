@@ -5,7 +5,7 @@
 
 {description}
 
-You can also create a cluster using CLC, which automatically makes the cluster configuration available. See xref:managing-viridian-clusters.adoc[] for more information.
+You can also create a cluster using CLC, which automatically makes the cluster configuration available. See Managing Viridian Clusters for more information.
 
 == Before you Begin
 
