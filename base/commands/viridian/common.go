@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/secrets"
-	hzerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
@@ -107,7 +106,7 @@ func matchClusterState(cluster viridian.Cluster, state string) (bool, error) {
 func handleErrorResponse(ec plug.ExecContext, err error) error {
 	ec.Logger().Error(err)
 	// if it is a http client error, return the simplified error to user
-	var err2 hzerrors.HTTPClientError
+	var err2 viridian.HTTPClientError
 	if errors.As(err, &err2) {
 		return fmt.Errorf(err2.Text())
 	}

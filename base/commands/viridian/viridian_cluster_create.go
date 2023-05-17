@@ -27,7 +27,7 @@ Make sure you login before running this command.
 	cc.SetPositionalArgCount(0, 0)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	cc.AddStringFlag(flagName, "", "", false, "specify the cluster name; if not given an auto-generated name is used.")
-	cc.AddStringFlag(flagClusterType, "", "", false, "type for the cluster")
+	cc.AddStringFlag(flagClusterType, "", viridian.ClusterTypeServerless, false, "type for the cluster")
 	cc.AddStringFlag(flagHazelcastVersion, "", "", false, "version of the Hazelcast cluster")
 	return nil
 }

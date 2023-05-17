@@ -10,8 +10,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-
-	"github.com/hazelcast/hazelcast-commandline-client/errors"
 )
 
 const (
@@ -128,11 +126,11 @@ func (a API) FindCluster(ctx context.Context, idOrName string) (Cluster, error) 
 }
 
 func (a API) FindClusterType(ctx context.Context, name string) (ClusterType, error) {
-	clusterTypes, err := a.ListClusterTypes(ctx)
+	cts, err := a.ListClusterTypes(ctx)
 	if err != nil {
 		return ClusterType{}, err
 	}
-	for _, ct := range clusterTypes {
+	for _, ct := range cts {
 		if strings.ToUpper(ct.Name) == strings.ToUpper(name) {
 			return ct, nil
 		}
@@ -195,7 +193,7 @@ func doGet[Res any](ctx context.Context, path, token string) (res Res, err error
 		}
 		return res, nil
 	}
-	return res, errors.NewHTTPClientError(rawRes.StatusCode, rb)
+	return res, NewHTTPClientError(rawRes.StatusCode, rb)
 }
 
 func doPost[Req, Res any](ctx context.Context, path, token string, request Req) (res Res, err error) {
@@ -235,7 +233,7 @@ func doPostBytes(ctx context.Context, url, token string, body []byte) ([]byte, e
 	if res.StatusCode == 200 {
 		return rb, nil
 	}
-	return nil, errors.NewHTTPClientError(res.StatusCode, rb)
+	return nil, NewHTTPClientError(res.StatusCode, rb)
 }
 
 func doDelete(ctx context.Context, path, token string) error {
@@ -258,7 +256,7 @@ func doDelete(ctx context.Context, path, token string) error {
 		return fmt.Errorf("reading response: %w", err)
 	}
 	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusNoContent {
-		return errors.NewHTTPClientError(res.StatusCode, rb)
+		return NewHTTPClientError(res.StatusCode, rb)
 	}
 	return nil
 }

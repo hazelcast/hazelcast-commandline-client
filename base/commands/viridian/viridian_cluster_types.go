@@ -34,11 +34,7 @@ func (ct ClusterTypeListCmd) Exec(ctx context.Context, ec plug.ExecContext) erro
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	csi, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Retrieving cluster types")
-		cs, err := api.ListClusterTypes(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return cs, nil
+		return api.ListClusterTypes(ctx)
 	})
 	if err != nil {
 		return handleErrorResponse(ec, err)

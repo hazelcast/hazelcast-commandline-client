@@ -9,8 +9,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-
-	"github.com/hazelcast/hazelcast-commandline-client/errors"
 )
 
 type UploadProgressReader struct {
@@ -76,7 +74,7 @@ func doCustomClassUpload(ctx context.Context, progressSetter func(progress float
 	}
 	res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		return errors.NewHTTPClientError(res.StatusCode, resBody.Bytes())
+		return NewHTTPClientError(res.StatusCode, resBody.Bytes())
 	}
 	return nil
 }

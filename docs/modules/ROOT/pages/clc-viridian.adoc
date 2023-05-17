@@ -122,8 +122,6 @@ Parameters:
 |`--cluster-type`
 |Optional
 |Sets the cluster-type for the created cluster.
-
-WARNING: You can set `DEVMODE` to `SERVERLESS` without giving the `--hazelcast-version`. However, if you set `--cluster-type` to `DEVMODE` without providing `--hazelcast-version`, it will be automatically converted to `SERVERLESS`.
 |
 
 |`--hazelcast-version`
