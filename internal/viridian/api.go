@@ -47,11 +47,11 @@ func (a API) ListAvailableK8sClusters(ctx context.Context) ([]K8sCluster, error)
 }
 
 func (a API) ListCustomClasses(ctx context.Context, cluster string) ([]CustomClass, error) {
-	cID, err := a.findClusterID(ctx, cluster)
+	c, err := a.FindCluster(ctx, cluster)
 	if err != nil {
 		return nil, err
 	}
-	csw, err := doGet[[]CustomClass](ctx, fmt.Sprintf("/cluster/%s/custom_classes", cID), a.Token())
+	csw, err := doGet[[]CustomClass](ctx, fmt.Sprintf("/cluster/%s/custom_classes", c.ID), a.Token())
 	if err != nil {
 		return nil, fmt.Errorf("listing custom classes: %w", err)
 	}
@@ -59,11 +59,11 @@ func (a API) ListCustomClasses(ctx context.Context, cluster string) ([]CustomCla
 }
 
 func (a API) UploadCustomClasses(ctx context.Context, p func(progress float32), cluster, filePath string) error {
-	cID, err := a.findClusterID(ctx, cluster)
+	c, err := a.FindCluster(ctx, cluster)
 	if err != nil {
 		return err
 	}
-	err = doCustomClassUpload(ctx, p, fmt.Sprintf("/cluster/%s/custom_classes", cID), filePath, a.Token())
+	err = doCustomClassUpload(ctx, p, fmt.Sprintf("/cluster/%s/custom_classes", c.ID), filePath, a.Token())
 	if err != nil {
 		return fmt.Errorf("uploading custom class: %w", err)
 	}
@@ -71,7 +71,7 @@ func (a API) UploadCustomClasses(ctx context.Context, p func(progress float32), 
 }
 
 func (a API) DownloadCustomClass(ctx context.Context, p func(progress float32), targetInfo TargetInfo, cluster, artifact string) error {
-	cID, err := a.findClusterID(ctx, cluster)
+	c, err := a.FindCluster(ctx, cluster)
 	if err != nil {
 		return err
 	}
@@ -80,9 +80,9 @@ func (a API) DownloadCustomClass(ctx context.Context, p func(progress float32), 
 		return err
 	}
 	if artifactID == 0 {
-		return fmt.Errorf("no custom class artifact found with name or ID %d in cluster %s", artifactID, cID)
+		return fmt.Errorf("no custom class artifact found with name or ID %d in cluster %s", artifactID, c.ID)
 	}
-	url := fmt.Sprintf("/cluster/%s/custom_classes/%d", cID, artifactID)
+	url := fmt.Sprintf("/cluster/%s/custom_classes/%d", c.ID, artifactID)
 	err = doCustomClassDownload(ctx, p, targetInfo, url, artifactName, a.token)
 	if err != nil {
 		return err
@@ -91,7 +91,7 @@ func (a API) DownloadCustomClass(ctx context.Context, p func(progress float32), 
 }
 
 func (a API) DeleteCustomClass(ctx context.Context, cluster string, artifact string) error {
-	cID, err := a.findClusterID(ctx, cluster)
+	c, err := a.FindCluster(ctx, cluster)
 	if err != nil {
 		return err
 	}
@@ -100,9 +100,9 @@ func (a API) DeleteCustomClass(ctx context.Context, cluster string, artifact str
 		return err
 	}
 	if artifactID == 0 {
-		return fmt.Errorf("no custom class artifact found with name or ID %d in cluster %s", artifactID, cID)
+		return fmt.Errorf("no custom class artifact found with name or ID %d in cluster %s", artifactID, c.ID)
 	}
-	err = doDelete(ctx, fmt.Sprintf("/cluster/%s/custom_classes/%d", cID, artifactID), a.token)
+	err = doDelete(ctx, fmt.Sprintf("/cluster/%s/custom_classes/%d", c.ID, artifactID), a.token)
 	if err != nil {
 		return err
 	}
@@ -114,17 +114,17 @@ func (a API) DownloadConfig(ctx context.Context, clusterID string) (path string,
 	return download(ctx, url, a.token)
 }
 
-func (a API) findClusterID(ctx context.Context, idOrName string) (string, error) {
+func (a API) FindCluster(ctx context.Context, idOrName string) (Cluster, error) {
 	clusters, err := a.ListClusters(ctx)
 	if err != nil {
-		return "", err
+		return Cluster{}, err
 	}
 	for _, c := range clusters {
 		if c.ID == idOrName || c.Name == idOrName {
-			return c.ID, nil
+			return c, nil
 		}
 	}
-	return "", fmt.Errorf("no such cluster found: %s", idOrName)
+	return Cluster{}, fmt.Errorf("no such cluster found: %s", idOrName)
 }
 
 func (a API) findArtifactIDAndName(ctx context.Context, clusterName, artifact string) (int64, string, error) {

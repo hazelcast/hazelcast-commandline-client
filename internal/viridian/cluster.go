@@ -55,11 +55,11 @@ func clusterName() string {
 }
 
 func (a API) StopCluster(ctx context.Context, idOrName string) error {
-	cid, err := a.findClusterID(ctx, idOrName)
+	c, err := a.FindCluster(ctx, idOrName)
 	if err != nil {
 		return err
 	}
-	ok, err := doPost[[]byte, bool](ctx, fmt.Sprintf("/cluster/%s/stop", cid), a.Token(), nil)
+	ok, err := doPost[[]byte, bool](ctx, fmt.Sprintf("/cluster/%s/stop", c.ID), a.Token(), nil)
 	if err != nil {
 		return fmt.Errorf("stopping cluster: %w", err)
 	}
@@ -78,11 +78,11 @@ func (a API) ListClusters(ctx context.Context) ([]Cluster, error) {
 }
 
 func (a API) ResumeCluster(ctx context.Context, idOrName string) error {
-	cid, err := a.findClusterID(ctx, idOrName)
+	c, err := a.FindCluster(ctx, idOrName)
 	if err != nil {
 		return err
 	}
-	ok, err := doPost[[]byte, bool](ctx, fmt.Sprintf("/cluster/%s/resume", cid), a.Token(), nil)
+	ok, err := doPost[[]byte, bool](ctx, fmt.Sprintf("/cluster/%s/resume", c.ID), a.Token(), nil)
 	if err != nil {
 		return fmt.Errorf("resuming cluster: %w", err)
 	}
@@ -93,11 +93,11 @@ func (a API) ResumeCluster(ctx context.Context, idOrName string) error {
 }
 
 func (a API) DeleteCluster(ctx context.Context, idOrName string) error {
-	cid, err := a.findClusterID(ctx, idOrName)
+	c, err := a.FindCluster(ctx, idOrName)
 	if err != nil {
 		return err
 	}
-	err = doDelete(ctx, fmt.Sprintf("/cluster/%s", cid), a.Token())
+	err = doDelete(ctx, fmt.Sprintf("/cluster/%s", c.ID), a.Token())
 	if err != nil {
 		return fmt.Errorf("deleting cluster: %w", err)
 	}
@@ -105,11 +105,11 @@ func (a API) DeleteCluster(ctx context.Context, idOrName string) error {
 }
 
 func (a API) GetCluster(ctx context.Context, idOrName string) (Cluster, error) {
-	cid, err := a.findClusterID(ctx, idOrName)
+	cluster, err := a.FindCluster(ctx, idOrName)
 	if err != nil {
 		return Cluster{}, err
 	}
-	c, err := doGet[Cluster](ctx, fmt.Sprintf("/cluster/%s", cid), a.Token())
+	c, err := doGet[Cluster](ctx, fmt.Sprintf("/cluster/%s", cluster.ID), a.Token())
 	if err != nil {
 		return Cluster{}, fmt.Errorf("retrieving cluster: %w", err)
 	}

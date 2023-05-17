@@ -58,7 +58,7 @@ func doCustomClassDownload(ctx context.Context, progressSetter func(progress flo
 		return errors.NewHTTPClientError(res.StatusCode, nil)
 	}
 	if err != nil {
-		return errors.NewHTTPClientError(res.StatusCode, nil)
+		return fmt.Errorf("downloading custom class: %w", err)
 	}
 	p := &DownloadProgressPrinter{SetterFunc: progressSetter, Total: uint64(res.ContentLength)}
 	_, err = io.Copy(f, io.TeeReader(res.Body, p))
