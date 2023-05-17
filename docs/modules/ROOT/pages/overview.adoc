@@ -16,7 +16,7 @@ Example use cases for the Hazelcast CLC.
 
 === Run SQL Queries
 
-Run xref:clc-snapshot.adoc[SQL] queries against your cluster and display the output as a table or in a variety of text formats, such as JSON and CSV.
+Run xref:clc-sql.adoc[SQL] queries against your cluster and display the output as a table or in a variety of text formats, such as JSON and CSV.
 
 === Manage Viridian Clusters
 
