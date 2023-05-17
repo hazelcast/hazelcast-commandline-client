@@ -14,6 +14,8 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
+const defaultClusterType = "DEVMODE"
+
 type ClusterCreateCmd struct{}
 
 func (cm ClusterCreateCmd) Init(cc plug.InitContext) error {
@@ -27,7 +29,7 @@ Make sure you login before running this command.
 	cc.SetPositionalArgCount(0, 0)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	cc.AddStringFlag(flagName, "", "", false, "specify the cluster name; if not given an auto-generated name is used.")
-	cc.AddStringFlag(flagClusterType, "", "", false, "type for the cluster")
+	cc.AddStringFlag(flagClusterType, "", defaultClusterType, false, "type for the cluster")
 	return nil
 }
 

@@ -132,14 +132,12 @@ func (a API) FindClusterType(ctx context.Context, name string) (ClusterType, err
 	if err != nil {
 		return ClusterType{}, err
 	}
-	var found ClusterType
 	for _, ct := range clusterTypes {
-		if strings.ToLower(ct.Name) == strings.ToLower(name) {
-			found = ct
-			break
+		if strings.ToUpper(ct.Name) == strings.ToUpper(name) {
+			return ct, nil
 		}
 	}
-	return found, nil
+	return ClusterType{}, nil
 }
 
 func (a API) findArtifactIDAndName(ctx context.Context, clusterName, artifact string) (int64, string, error) {

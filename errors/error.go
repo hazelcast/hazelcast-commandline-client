@@ -56,16 +56,18 @@ func NewHTTPClientError(code int, body []byte) error {
 	err := HTTPClientError{
 		code:    code,
 		rawResp: string(body),
-		text:    "an unexpected error occurred, please check logs for details", // it can be overwritten
+		// it can be overwritten
+		text: "an unexpected error occurred, please check logs for details",
 	}
 	type ErrResp struct {
 		Message string `json:"message"`
 	}
-	var errResp ErrResp
-	json.Unmarshal(body, &errResp) // if there is an error, errResp.Message will be empty, so we can ignore it
+	var resp ErrResp
+	// if there is an error, resp.Message will be empty, so we can ignore it
+	json.Unmarshal(body, &resp)
 	// overwriting error text
-	if errResp.Message != "" {
-		err.text = errResp.Message
+	if resp.Message != "" {
+		err.text = resp.Message
 	}
 	return err
 }

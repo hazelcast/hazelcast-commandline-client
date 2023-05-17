@@ -7,7 +7,6 @@ import (
 	"math/rand"
 	"os"
 	"path"
-	"strings"
 	"time"
 )
 
@@ -20,8 +19,6 @@ type createClusterRequest struct {
 
 type createClusterResponse Cluster
 
-const defaultClusterType = "devmode"
-
 func (a API) CreateCluster(ctx context.Context, name string, clusterType string, k8sClusterID int) (Cluster, error) {
 	if name == "" {
 		name = clusterName()
@@ -32,19 +29,6 @@ func (a API) CreateCluster(ctx context.Context, name string, clusterType string,
 	}
 	clusterTypeID := cType.ID
 	planName := cType.Name
-	if cType.Name == "" {
-		clusterTypes, err := a.ListClusterTypes(ctx)
-		if err != nil {
-			return Cluster{}, err
-		}
-		for _, ct := range clusterTypes {
-			if strings.ToLower(ct.Name) == defaultClusterType {
-				clusterTypeID = ct.ID
-				planName = ct.Name
-				break
-			}
-		}
-	}
 	c := createClusterRequest{
 		KubernetesClusterID: k8sClusterID,
 		Name:                name,

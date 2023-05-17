@@ -15,7 +15,7 @@ type ClusterTypeListCmd struct{}
 
 func (ct ClusterTypeListCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("list-cluster-types [flags]")
-	long := `Lists available cluster type that can be used while creating a Viridian cluster.
+	long := `Lists available cluster types that can be used while creating a Viridian cluster.
 
 Make sure you login before running this command.
 `
@@ -50,7 +50,7 @@ func (ct ClusterTypeListCmd) Exec(ctx context.Context, ec plug.ExecContext) erro
 		var r output.Row
 		if verbose {
 			r = append(r, output.Column{
-				Name:  "Cluster Type ID",
+				Name:  "ID",
 				Type:  serialization.TypeInt64,
 				Value: c.ID,
 			})
@@ -60,7 +60,6 @@ func (ct ClusterTypeListCmd) Exec(ctx context.Context, ec plug.ExecContext) erro
 			Type:  serialization.TypeString,
 			Value: c.Name,
 		})
-
 		rows = append(rows, r)
 	}
 	return ec.AddOutputRows(ctx, rows...)
