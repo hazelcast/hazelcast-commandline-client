@@ -53,40 +53,24 @@ OK
 ----
 
 == Create Data on the Viridian Cluster
-To create data on the Viridian cluster, you can create map entries. To create a new map entry use the following command:
 
+Creating a Viridian cluster automatically makes the connection configuration available to CLC.
+The configuration has the same name with the cluster, `my-cluster` in this tutorial.
+
+Let's set a key on a map using this configuration:
 [source, bash]
 ----
-clc viridian map set foo bar
+clc -c my-cluster map set -n my-map my-key my-value
 OK
 ----
 
-To query the created map entry, you can use one of the following commands:
-
-`map get` command reads the value for the given key:
+Let's retrieve the value we just set:
 [source, bash]
 ----
-clc map get foo
-bar
+clc -c my-cluster map get -n my-map my-key
+my-value
 OK
 ----
-
-`map key-set` command returns only the keys in the map:
-[source, bash]
-----
-clc map key-set
-foo
-OK
-----
-
-`map key-set` command returns key-value pairs in the map:
-[source, bash]
-----
-clc map entry-set
-foo     bar
-OK
-----
-
 == Downloading the Logs of the Viridian Cluster
 
 You can download logs for your cluster by using the following command:
