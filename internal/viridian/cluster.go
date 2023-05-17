@@ -115,3 +115,16 @@ func (a API) GetCluster(ctx context.Context, idOrName string) (Cluster, error) {
 	}
 	return c, nil
 }
+
+type ClusterTypeItem struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+}
+
+func (a API) ListClusterTypes(ctx context.Context) ([]ClusterTypeItem, error) {
+	csw, err := doGet[Wrapper[[]ClusterTypeItem]](ctx, "/cluster_types", a.Token())
+	if err != nil {
+		return nil, fmt.Errorf("listing cluster types: %w", err)
+	}
+	return csw.Content, nil
+}

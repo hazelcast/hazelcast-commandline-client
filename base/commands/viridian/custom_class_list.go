@@ -42,7 +42,7 @@ func (cmd CustomClassListCmd) Exec(ctx context.Context, ec plug.ExecContext) err
 		return cs, nil
 	})
 	if err != nil {
-		handleErrorResponse(ec, err)
+		return handleErrorResponse(ec, err)
 	}
 	stop()
 	cs := csi.([]viridian.CustomClass)
