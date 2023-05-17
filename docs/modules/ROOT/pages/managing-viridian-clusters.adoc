@@ -1,0 +1,115 @@
+== Managing Viridian Clusters Using the Hazelcast CLC
+
+:description: In this tutorial, you'll learn the basics of managing Viridian clusters using CLC. You'll see how to create, list, delete clusters and how to download their logs. Also, you'll learn how to perform stop/resume operations on Viridian clusters using CLC.
+
+{description}
+
+== Before You Begin
+
+CLC  requires an API key and API secret to perform Viridian operations.
+You can create them on link:https://viridian.hazelcast.com/settings/developer[Viridian Developer Settings Page].
+After creating the Viridian API key and secret, run the following command for CLC to remember them:
+
+[source, bash]
+----
+clc viridian login
+----
+
+You will be asked for the API key and secret. Press kbd:[Enter] to confirm the input.
+If the API key and secret are correct, you will get the following output:
+[source, bash]
+----
+Viridian token was fetched and saved.
+OK
+----
+
+If you get an error, make sure your Viridian API key and secret are correct and try again.
+
+== Creating a Cluster on Viridian
+
+To create a new cluster on Viridian, you can use the following command:
+
+[source, bash]
+----
+clc viridian create-cluster --name my-cluster --development
+Imported configuration: my-cluster
+OK
+----
+This command creates a development cluster named `my-cluster`.
+
+== Listing Clusters on Viridian
+
+To list existing clusters on Viridian, you can use the following command:
+
+[source, bash]
+----
+clc viridian list-clusters
+----
+This command lists the clusters, and you will see such an output:
+[source, bash]
+----
+x1qvpphn        my-cluster     RUNNING 5.3.0-BETA-2
+OK
+----
+
+== Create Data on the Viridian Cluster
+
+Creating a Viridian cluster automatically makes the connection configuration available to CLC.
+The configuration has the same name with the cluster, `my-cluster` in this tutorial.
+
+Let's set a key on a map using this configuration:
+[source, bash]
+----
+clc -c my-cluster map set -n my-map my-key my-value
+OK
+----
+
+Let's retrieve the value we just set:
+[source, bash]
+----
+clc -c my-cluster map get -n my-map my-key
+my-value
+OK
+----
+== Downloading the Logs of the Viridian Cluster
+
+You can download logs for your cluster by using the following command:
+[source, bash]
+----
+clc viridian download-logs my-cluster
+OK
+----
+This command downloads the logs to the current working directory.
+By using the `--output-dir` flag, you can download the logs to the given directory of your choice.
+
+== Stop/Resume a Cluster on Viridian
+
+You can stop a running cluster by using its name or ID by executing the command below. See link:https://docs.hazelcast.com/cloud/stop-and-resume[Pausing and Resuming Clusters] documentation for more information.
+[source, bash]
+----
+clc viridian stop-cluster my-cluster
+OK
+----
+When you want to resume it, you can execute the following command by using its name or ID:
+----
+clc viridian resume-cluster my-cluster
+OK
+----
+
+== Deleting a Cluster on Viridian
+
+You can delete an existing cluster on Viridian using its name or ID by executing the command below. See link:https://docs.hazelcast.com/cloud/deleting-a-cluster[Deleting a Cluster] documentation for more information.
+[source, bash]
+----
+clc viridian delete-cluster x1qvpphn
+----
+when you hit kbd:[Enter], it is going to ask you:
+[source, bash]
+----
+Cluster will be deleted irreversibly, proceed? (y/n)
+----
+You can just type `y` to confirm or if you don't want it to ask it, and directly delete the cluster, you can add `--yes` to your command:
+[source, bash]
+----
+clc viridian delete-cluster my-cluster --yes
+----
