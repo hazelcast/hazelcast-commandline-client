@@ -14,8 +14,6 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
-const defaultClusterType = "DEVMODE"
-
 type ClusterCreateCmd struct{}
 
 func (cm ClusterCreateCmd) Init(cc plug.InitContext) error {
@@ -29,7 +27,8 @@ Make sure you login before running this command.
 	cc.SetPositionalArgCount(0, 0)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	cc.AddStringFlag(flagName, "", "", false, "specify the cluster name; if not given an auto-generated name is used.")
-	cc.AddStringFlag(flagClusterType, "", defaultClusterType, false, "type for the cluster")
+	cc.AddStringFlag(flagClusterType, "", "", false, "type for the cluster")
+	cc.AddStringFlag(flagHazelcastVersion, "", "", false, "version of the Hazelcast cluster")
 	return nil
 }
 
@@ -40,13 +39,14 @@ func (cm ClusterCreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 	}
 	name := ec.Props().GetString(flagName)
 	clusterType := ec.Props().GetString(flagClusterType)
+	hzVersion := ec.Props().GetString(flagHazelcastVersion)
 	csi, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Creating the cluster")
 		k8sCluster, err := getFirstAvailableK8sCluster(ctx, api)
 		if err != nil {
 			return nil, err
 		}
-		cs, err := api.CreateCluster(ctx, name, clusterType, k8sCluster.ID)
+		cs, err := api.CreateCluster(ctx, name, clusterType, k8sCluster.ID, hzVersion)
 		if err != nil {
 			return nil, err
 		}

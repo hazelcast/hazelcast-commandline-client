@@ -7,8 +7,12 @@ import (
 	"math/rand"
 	"os"
 	"path"
+	"strings"
 	"time"
 )
+
+const ClusterTypeDevMode = "DEVMODE"
+const ClusterTypeServerless = "SERVERLESS"
 
 type createClusterRequest struct {
 	KubernetesClusterID int    `json:"kubernetesClusterId"`
@@ -19,7 +23,7 @@ type createClusterRequest struct {
 
 type createClusterResponse Cluster
 
-func (a API) CreateCluster(ctx context.Context, name string, clusterType string, k8sClusterID int) (Cluster, error) {
+func (a API) CreateCluster(ctx context.Context, name string, clusterType string, k8sClusterID int, hzVersion string) (Cluster, error) {
 	if name == "" {
 		name = clusterName()
 	}
@@ -29,6 +33,9 @@ func (a API) CreateCluster(ctx context.Context, name string, clusterType string,
 	}
 	clusterTypeID := cType.ID
 	planName := cType.Name
+	if strings.ToUpper(cType.Name) == ClusterTypeDevMode && hzVersion == "" {
+		planName = ClusterTypeServerless
+	}
 	c := createClusterRequest{
 		KubernetesClusterID: k8sClusterID,
 		Name:                name,
