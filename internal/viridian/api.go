@@ -127,6 +127,21 @@ func (a API) FindCluster(ctx context.Context, idOrName string) (Cluster, error) 
 	return Cluster{}, fmt.Errorf("no such cluster found: %s", idOrName)
 }
 
+func (a API) FindClusterType(ctx context.Context, name string) (ClusterType, error) {
+	clusterTypes, err := a.ListClusterTypes(ctx)
+	if err != nil {
+		return ClusterType{}, err
+	}
+	var found ClusterType
+	for _, ct := range clusterTypes {
+		if strings.ToLower(ct.Name) == strings.ToLower(name) {
+			found = ct
+			break
+		}
+	}
+	return found, nil
+}
+
 func (a API) findArtifactIDAndName(ctx context.Context, clusterName, artifact string) (int64, string, error) {
 	customClasses, err := a.ListCustomClasses(ctx, clusterName)
 	if err != nil {

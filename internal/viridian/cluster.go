@@ -7,34 +7,49 @@ import (
 	"math/rand"
 	"os"
 	"path"
+	"strings"
 	"time"
 )
 
 type createClusterRequest struct {
-	KubernetesClusterID int         `json:"kubernetesClusterId"`
-	Name                string      `json:"name"`
-	ClusterTypeID       ClusterType `json:"clusterTypeId"`
-	PlanName            ClusterPlan `json:"planName"`
+	KubernetesClusterID int    `json:"kubernetesClusterId"`
+	Name                string `json:"name"`
+	ClusterTypeID       int64  `json:"clusterTypeId"`
+	PlanName            string `json:"planName"`
 }
 
 type createClusterResponse Cluster
 
-func (a API) CreateCluster(ctx context.Context, name string, plan ClusterPlan, k8sClusterID int, isDev bool) (Cluster, error) {
+const defaultClusterType = "devmode"
+
+func (a API) CreateCluster(ctx context.Context, name string, clusterType string, k8sClusterID int) (Cluster, error) {
 	if name == "" {
 		name = clusterName()
 	}
-	if plan == "" {
-		plan = ClusterPlanServerless
+	cType, err := a.FindClusterType(ctx, clusterType)
+	if err != nil {
+		return Cluster{}, err
 	}
-	ct := ClusterTypeProd
-	if isDev {
-		ct = ClusterTypeDev
+	clusterTypeID := cType.ID
+	planName := cType.Name
+	if cType.Name == "" {
+		clusterTypes, err := a.ListClusterTypes(ctx)
+		if err != nil {
+			return Cluster{}, err
+		}
+		for _, ct := range clusterTypes {
+			if strings.ToLower(ct.Name) == defaultClusterType {
+				clusterTypeID = ct.ID
+				planName = ct.Name
+				break
+			}
+		}
 	}
 	c := createClusterRequest{
 		KubernetesClusterID: k8sClusterID,
 		Name:                name,
-		ClusterTypeID:       ct,
-		PlanName:            plan,
+		ClusterTypeID:       clusterTypeID,
+		PlanName:            planName,
 	}
 	cluster, err := doPost[createClusterRequest, createClusterResponse](ctx, "/cluster", a.Token(), c)
 	if err != nil {
@@ -116,13 +131,13 @@ func (a API) GetCluster(ctx context.Context, idOrName string) (Cluster, error) {
 	return c, nil
 }
 
-type ClusterTypeItem struct {
+type ClusterType struct {
 	ID   int64  `json:"id"`
 	Name string `json:"name"`
 }
 
-func (a API) ListClusterTypes(ctx context.Context) ([]ClusterTypeItem, error) {
-	csw, err := doGet[Wrapper[[]ClusterTypeItem]](ctx, "/cluster_types", a.Token())
+func (a API) ListClusterTypes(ctx context.Context) ([]ClusterType, error) {
+	csw, err := doGet[Wrapper[[]ClusterType]](ctx, "/cluster_types", a.Token())
 	if err != nil {
 		return nil, fmt.Errorf("listing cluster types: %w", err)
 	}

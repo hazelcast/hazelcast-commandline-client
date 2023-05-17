@@ -15,7 +15,7 @@ type ClusterTypeListCmd struct{}
 
 func (ct ClusterTypeListCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("list-cluster-types [flags]")
-	long := `Lists Viridian cluster types
+	long := `Lists available cluster type that can be used while creating a Viridian cluster.
 
 Make sure you login before running this command.
 `
@@ -44,7 +44,7 @@ func (ct ClusterTypeListCmd) Exec(ctx context.Context, ec plug.ExecContext) erro
 		return handleErrorResponse(ec, err)
 	}
 	stop()
-	cs := csi.([]viridian.ClusterTypeItem)
+	cs := csi.([]viridian.ClusterType)
 	var rows []output.Row
 	for _, c := range cs {
 		var r output.Row

@@ -2,7 +2,6 @@ package viridian
 
 const (
 	flagName        = "name"
-	flagPlan        = "plan"
-	flagDevelopment = "development"
+	flagClusterType = "cluster-type"
 	flagOutputDir   = "output-dir"
 )

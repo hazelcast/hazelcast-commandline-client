@@ -18,16 +18,3 @@ type CustomClass struct {
 type K8sCluster struct {
 	ID int `json:"id"`
 }
-
-type ClusterType int
-
-const (
-	ClusterTypeDev  ClusterType = 6
-	ClusterTypeProd ClusterType = 5
-)
-
-type ClusterPlan string
-
-const (
-	ClusterPlanServerless ClusterPlan = "SERVERLESS"
-)

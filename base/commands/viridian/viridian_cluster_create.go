@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
@@ -28,8 +27,7 @@ Make sure you login before running this command.
 	cc.SetPositionalArgCount(0, 0)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	cc.AddStringFlag(flagName, "", "", false, "specify the cluster name; if not given an auto-generated name is used.")
-	cc.AddStringFlag(flagPlan, "", "", false, "plan for the cluster, supported values: serverless")
-	cc.AddBoolFlag(flagDevelopment, "", false, false, "start a development cluster")
+	cc.AddStringFlag(flagClusterType, "", "", false, "type for the cluster")
 	return nil
 }
 
@@ -39,18 +37,14 @@ func (cm ClusterCreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 		return err
 	}
 	name := ec.Props().GetString(flagName)
-	plan := ec.Props().GetString(flagPlan)
-	if err := validatePlan(plan); err != nil {
-		return err
-	}
-	dev := ec.Props().GetBool(flagDevelopment)
+	clusterType := ec.Props().GetString(flagClusterType)
 	csi, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Creating the cluster")
 		k8sCluster, err := getFirstAvailableK8sCluster(ctx, api)
 		if err != nil {
 			return nil, err
 		}
-		cs, err := api.CreateCluster(ctx, name, viridian.ClusterPlan(strings.ToUpper(plan)), k8sCluster.ID, dev)
+		cs, err := api.CreateCluster(ctx, name, clusterType, k8sCluster.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -81,14 +75,6 @@ func (cm ClusterCreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 	return nil
 }
 
-func validatePlan(plan string) error {
-	switch plan {
-	case "", "serverless":
-		return nil
-	default:
-		return errors.New("invalid plan")
-	}
-}
 func getFirstAvailableK8sCluster(ctx context.Context, api *viridian.API) (viridian.K8sCluster, error) {
 	clusters, err := api.ListAvailableK8sClusters(ctx)
 	if err != nil {

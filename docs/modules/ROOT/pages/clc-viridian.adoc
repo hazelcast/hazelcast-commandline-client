@@ -14,6 +14,7 @@ clc viridian [command] [options]
 == Commands
 
 * <<clc-viridian-login, clc viridian login>>
+* <<clc-viridian-list-cluster-types, clc viridian list-cluster-types>>
 * <<clc-viridian-create-cluster, clc viridian create-cluster>>
 * <<clc-viridian-get-cluster, clc viridian get-cluster>>
 * <<clc-viridian-list-clusters, clc viridian list-clusters>>
@@ -21,6 +22,7 @@ clc viridian [command] [options]
 * <<clc-viridian-resume-cluster, clc viridian resume-cluster>>
 * <<clc-viridian-delete-cluster, clc viridian delete-cluster>>
 * <<clc-viridian-download-logs, clc viridian download-logs>>
+* <<clc-viridian-import-config, clc viridian import-config>>
 * <<clc-viridian-list-custom-classes, clc viridian list-custom-classes>>
 * <<clc-viridian-upload-custom-class, clc viridian upload-custom-class>>
 * <<clc-viridian-download-custom-class, clc viridian download-custom-class>>
@@ -62,6 +64,32 @@ Parameters:
 
 |===
 
+== clc viridian list-cluster-types
+
+Lists available cluster type that can be used while creating a Viridian cluster.
+
+Make sure you login before running this command.
+
+Usage:
+
+[source,bash]
+----
+clc viridian list-cluster-types [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--api-key`
+|Optional
+|Sets the API key. Overrides the `CLC_VIRIDIAN_API_KEY` environment variable. If not given, one of the existing api keys will be used.
+|
+
+|===
+
 == clc viridian create-cluster
 
 Creates a Viridian cluster.
@@ -91,15 +119,10 @@ Parameters:
 |Sets the name of the created cluster. If not given, an auto-generated name will be used.
 |
 
-|`--plan`
+|`--cluster-type`
 |Optional
-|Sets the plan for the created cluster.
+|Sets the cluster-type for the created cluster.
 |serverless
-
-|`--development`
-|Optional
-|Creates a development cluster.
-|false
 |===
 
 == clc viridian get-cluster
@@ -268,6 +291,30 @@ Parameters:
 
 |===
 
+== clc viridian import-config
+
+Imports config of the given Viridian cluster.
+
+Make sure you login before running this command.
+
+Usage:
+
+[source,bash]
+----
+clc import-config [cluster-name/cluster-ID] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--api-key`
+|Optional
+|Sets the API key. Overrides the `CLC_VIRIDIAN_API_KEY` environment variable. If not given, one of the existing api keys will be used.
+|
+|===
 
 
 == clc viridian list-custom-classes
