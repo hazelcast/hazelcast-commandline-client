@@ -18,9 +18,9 @@ You need the following:
 TIP: You can create and find the API key and secret in the {hazelcast-cloud} console. For details, see xref:cloud:ROOT:developer.adoc[].
 
 [[mutual]]
-== Retrieving the Viridian token
+== Retrieving the Viridian Token
 
-. Retrieve the Viridian token using the following command:
+. In order to enable CLC to do Viridian cluster operations, a token must be generated using a Viridian API key and secret. Retrieve the Viridian token using the following command:
 +
 ```bash
 clc viridian login
@@ -40,7 +40,7 @@ clc viridian list-clusters
 [[mutual]]
 == Importing the Configuration
 
-. Import the configuration with name `dev` from the Viridian cluster:
+. Import the connection configuration from the Viridian cluster and save it with name `dev` using the command below. Use the name of your cluster instead `CLUSTER-NAME`:
 +
 ```bash
 clc viridian import-config CLUSTER-NAME --name dev
