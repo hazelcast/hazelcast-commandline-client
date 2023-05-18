@@ -24,7 +24,7 @@ Using the Hazelcast CLC, you can xref:clc-viridian.adoc[create and manage] {haze
 
 === Create Data Pipelines
 
-You can xref:clc-job.adoc[create and manage] data pipelines using the Hazelcast CLC. Check out the Platform documentation for more information about data pipelines.
+You can xref:clc-job.adoc[create and manage] data pipelines using the Hazelcast CLC. Check out xref:hazelcast:pipelines:overview.adoc[Platform documentation] for more information about data pipelines.
 
 === Access Data for Debugging
 
