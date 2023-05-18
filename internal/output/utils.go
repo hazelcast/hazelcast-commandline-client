@@ -11,7 +11,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/table"
 )
 
-func MakeTableFromRows(rows []Row) (table.Row, []Row) {
+func MakeTableFromRows(rows []Row, maxWidth int) (table.Row, []Row) {
 	hd := NewOrderedSet[string]()
 	drows := make([]map[string]Column, len(rows))
 	for i, row := range rows {
@@ -25,7 +25,7 @@ func MakeTableFromRows(rows []Row) (table.Row, []Row) {
 				continue
 			}
 			// break out only complex types
-			if col.Type == serialization.TypeJSONSerialization || col.Type == serialization.TypePortable || col.Type == serialization.TypeCompact {
+			if canBreakOutValue(col) {
 				// XXX: what if col.Value == ValueNotDecoded ?
 				if col.Value != serialization.ValueNotDecoded {
 					nc, err := col.RowExtensions()
@@ -100,15 +100,40 @@ func MakeTableFromRows(rows []Row) (table.Row, []Row) {
 		rows[ri] = row
 	}
 	// remove this. prefix from header cells
-	thisPfx := fmt.Sprintf("%s.", NameValue)
+	thisPfx := NameValue + "."
 	columns := make(table.Row, len(header))
 	for i, h := range header {
 		columns[i] = table.Column{
 			Header: strings.TrimPrefix(h, thisPfx),
-			Align:  align[i] * width[i],
+			Align:  align[i] * minPositive(maxWidth, width[i]),
 		}
 	}
 	return columns, rows
+}
+
+func minPositive[T ~int](a T, b T) T {
+	if a <= 0 {
+		if b > 0 {
+			return b
+		}
+		return 0
+	}
+	if b <= 0 {
+		if a > 0 {
+			return a
+		}
+		return 0
+	}
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func canBreakOutValue(col Column) bool {
+	return col.Type == serialization.TypeJSONSerialization ||
+		col.Type == serialization.TypePortable ||
+		col.Type == serialization.TypeCompact
 }
 
 func makeTableHeaderFromRow(row Row, maxWidth int) table.Row {
@@ -137,9 +162,9 @@ func alignmentForType(t int32) int {
 		serialization.TypeInt16, serialization.TypeInt32, serialization.TypeInt64,
 		serialization.TypeFloat32, serialization.TypeFloat64,
 		serialization.TypeJavaBigInteger, serialization.TypeJavaDecimal:
-		return -1 // align right
+		return table.AlignRight
 	default:
-		return 1 // align left
+		return table.AlignLeft
 	}
 }
 
