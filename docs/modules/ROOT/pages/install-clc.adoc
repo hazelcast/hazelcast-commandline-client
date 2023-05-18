@@ -19,6 +19,12 @@ ZIP (Intel)::
 +
 . Go to the https://github.com/hazelcast/hazelcast-commandline-client/releases/latest[latest release page], and locate the AMD compressed file (`hazelcast-clc_v{full-version}_darwin_amd64.zip`).
 . Download and unzip the file.
+. Remove the `clc` binary from quarantine if you get a security warning when running it:
++
+[source,shell,subs="attributes"]
+----
+xattr -d com.apple.quarantine hazelcast-clc_v{full-version}_darwin_amd64/clc
+----
 . Optionally make `clc` available without using its full path. You can do that by moving `clc` to one of the directories in the  `$PATH` environment variable. `/usr/local/bin` is a safe choice.
 +
 [source,shell,subs="attributes"]
@@ -30,6 +36,12 @@ ZIP (Apple Silicon)::
 +
 . Go to the https://github.com/hazelcast/hazelcast-commandline-client/releases/latest[latest release page], and locate the ARM compressed file (`hazelcast-clc_v{full-version}_darwin_arm64.zip`).
 . Download and unzip the file.
+. Remove the `clc` binary from quarantine if you get a security warning when running it:
++
+[source,shell,subs="attributes"]
+----
+xattr -d com.apple.quarantine hazelcast-clc_v{full-version}_darwin_amd64/clc
+----
 . Optionally make `clc` available without using its full path. You can do that by moving `clc` to one of the directories in the  `$PATH` environment variable. `/usr/local/bin` is a safe choice.
 +
 [source,shell,subs="attributes"]
