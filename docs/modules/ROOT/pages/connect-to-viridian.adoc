@@ -13,7 +13,7 @@ You need the following:
 - A {hazelcast-cloud} cluster
 - xref:cloud:ROOT:developer.adoc[{hazelcast-cloud} API key and secret]
 
-[[mutual]]
+[[authenticating-with-viridian]]
 == Authenticating with {hazelcast-cloud}
 
 To allow the Hazelcast CLC to do cluster operations, you must generate a {hazelcast-cloud} token.
@@ -26,7 +26,7 @@ clc viridian login
 +
 . When prompted, enter your API key and secret. If both are correct, the token is retrieved and saved.
 
-[[mutual]]
+[[list-accessible-clusters]]
 == List Accessible Clusters
 
 Run the following command to list the clusters linked to your Hazelcast {hazelcast-cloud} account:
@@ -38,7 +38,7 @@ clc viridian list-clusters
 For each cluster, the following attributes are displayed in order: Cluster ID, Cluster Name, Current Status, Hazelcast Version.
 
 
-[[mutual]]
+[[importing-the-cluster-configuration]]
 == Importing the Cluster Configuration
 
 Import the configuration of the {hazelcast-cloud} cluster that you want to connect to.
@@ -54,6 +54,6 @@ clc viridian import-config $CLUSTER-NAME --name dev
 clc -c dev
 ```
 
-CLC will start in the interactive mode, and you should see a command prompt. You're ready to start managing xref:clc-viridian.adoc[{hazelcast-viridian} clusters].
+CLC will start in the interactive mode, and you should see a command prompt. You're ready to start managing xref:clc-viridian.adoc[{hazelcast-cloud} clusters].
 
 NOTE: The Hazelcast CLC connects to the cluster on demand, that is when you issue a command that requires the connection, such as running a SQL query.

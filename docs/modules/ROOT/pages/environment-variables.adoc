@@ -8,7 +8,7 @@
 |Environment Variable|Description|Default
 
 |CLC_CLIENT_LABELS
-|Set a custom client name. The client name appears in the {hazelcast-cloud} dashboard and in the cluster metrics of Management Center.
+|Sets the client labels. The labels must be separated by commas. This value is used in {hazelcast-cloud} and Management Center.
 |`CLC,USER@HOST-TIMESTAMP`
 
 |CLC_CLIENT_NAME
