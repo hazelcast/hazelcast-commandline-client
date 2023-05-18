@@ -12,11 +12,11 @@
 |`CLC,USER@HOST-TIMESTAMP`
 
 |CLC_CLIENT_NAME
-|Sets the client name. This value is used in Viridian dashboard and Management Center.
+|Set a custom client name. The client name appears in the {hazelcast-cloud} dashboard and in the cluster metrics of Management Center.
 |`USER@HOST-TIMESTAMP`
 
 |CLC_HOME
-|Overrides the CLC home directory.
+|Overrides the CLC home directory. You can find out the current CLC home directory using xref:clc-home.adoc[clc home] command.
 |`%HOMEDRIVE%:%HOMEPATH%\AppData\Roaming\Hazelcast` on Windows, `$HOME/.hazelcast` on other platforms.
 
 |CLC_MAX_COLS
