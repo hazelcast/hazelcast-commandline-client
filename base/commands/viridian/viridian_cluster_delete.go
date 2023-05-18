@@ -2,7 +2,6 @@ package viridian
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/errors"
@@ -54,8 +53,7 @@ func (cm ClusterDeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 		return nil, nil
 	})
 	if err != nil {
-		ec.Logger().Error(err)
-		return fmt.Errorf("error deleting the cluster. Did you login?: %w", err)
+		return handleErrorResponse(ec, err)
 	}
 	stop()
 	return nil

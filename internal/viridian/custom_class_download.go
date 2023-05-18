@@ -54,7 +54,7 @@ func doCustomClassDownload(ctx context.Context, progressSetter func(progress flo
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		return fmt.Errorf("downloading custom class: %w", err)
+		return NewHTTPClientError(res.StatusCode, nil)
 	}
 	if err != nil {
 		return fmt.Errorf("downloading custom class: %w", err)

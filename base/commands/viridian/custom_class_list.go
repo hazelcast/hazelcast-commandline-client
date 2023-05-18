@@ -2,7 +2,6 @@ package viridian
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -43,8 +42,7 @@ func (cmd CustomClassListCmd) Exec(ctx context.Context, ec plug.ExecContext) err
 		return cs, nil
 	})
 	if err != nil {
-		ec.Logger().Error(err)
-		return fmt.Errorf("getting custom classes. Did you login?: %w", err)
+		return handleErrorResponse(ec, err)
 	}
 	stop()
 	cs := csi.([]viridian.CustomClass)

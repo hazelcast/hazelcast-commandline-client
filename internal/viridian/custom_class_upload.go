@@ -3,9 +3,8 @@ package viridian
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
-	"log"
+
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -71,11 +70,11 @@ func doCustomClassUpload(ctx context.Context, progressSetter func(progress float
 	resBody := &bytes.Buffer{}
 	_, err = resBody.ReadFrom(res.Body)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		return fmt.Errorf("%d: %s", res.StatusCode, resBody.String())
+		return NewHTTPClientError(res.StatusCode, resBody.Bytes())
 	}
 	return nil
 }

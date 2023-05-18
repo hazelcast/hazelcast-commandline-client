@@ -1,6 +1,6 @@
 == Managing Viridian Clusters Using the Hazelcast CLC
 
-:description: In this tutorial, you'll learn the basics of managing Viridian clusters using CLC. You'll see how to create, list, delete clusters and how to download their logs. Also, you'll learn how to perform stop/resume operations on Viridian clusters using CLC.
+:description: In this tutorial, you'll learn the basics of managing Viridian clusters using CLC. You'll see how to create, list, delete clusters and how to download their logs. Also, you'll learn how to perform pause/resume operations on Viridian clusters using CLC.
 
 {description}
 
@@ -31,7 +31,7 @@ To create a new cluster on Viridian, you can use the following command:
 
 [source, bash]
 ----
-clc viridian create-cluster --name my-cluster --development
+clc viridian create-cluster --name my-cluster
 Imported configuration: my-cluster
 OK
 ----
@@ -82,12 +82,12 @@ OK
 This command downloads the logs to the current working directory.
 By using the `--output-dir` flag, you can download the logs to the given directory of your choice.
 
-== Stop/Resume a Cluster on Viridian
+== Pause/Resume a Cluster on Viridian
 
-You can stop a running cluster by using its name or ID by executing the command below. See link:https://docs.hazelcast.com/cloud/stop-and-resume[Pausing and Resuming Clusters] documentation for more information.
+You can pause a running cluster by using its name or ID by executing the command below. See link:https://docs.hazelcast.com/cloud/stop-and-resume[Pausing and Resuming Clusters] documentation for more information.
 [source, bash]
 ----
-clc viridian stop-cluster my-cluster
+clc viridian pause-cluster my-cluster
 OK
 ----
 When you want to resume it, you can execute the following command by using its name or ID:
