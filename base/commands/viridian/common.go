@@ -113,3 +113,10 @@ func handleErrorResponse(ec plug.ExecContext, err error) error {
 	// if it is not a http client error, return it directly as always
 	return err
 }
+
+func fixClusterState(state string) string {
+	// this is a temporary workaround until this is changed in the API
+	state = strings.Replace(state, "STOPPED", "PAUSED", 1)
+	state = strings.Replace(state, "STOP", "PAUSE", 1)
+	return state
+}

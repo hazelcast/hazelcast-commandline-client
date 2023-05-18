@@ -20,6 +20,12 @@ Additionally, we provide an installer for Windows 10 and up.
 The installer can install CLC for either system-wide or just for the user.
 It adds the `clc` binary automatically to the `$PATH`, so it can be run in any terminal without additional settings.
 
+On MacOS, you may need to remove the CLC binary from quarantine, if you get a security warning:
+```
+$ xattr -d com.apple.quarantine CLC_FOLDER/clc
+```
+Use the correct path instead of `CLC_FOLDER` in the command above.
+
 If your platform is not one of the above, you may want to compile CLC yourself. Our build process is very simple and doesn't have many dependencies.
 In most cases just running `make` is sufficient to build CLC if you have the latest [Go](https://go.dev/) compiler installed.
 See [Building from source](#building-from-source) section.

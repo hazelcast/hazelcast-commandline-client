@@ -59,7 +59,7 @@ func (cm ClusterGetCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 		output.Column{
 			Name:  "State",
 			Type:  serialization.TypeString,
-			Value: c.State,
+			Value: fixClusterState(c.State),
 		},
 		output.Column{
 			Name:  "Hazelcast Version",
