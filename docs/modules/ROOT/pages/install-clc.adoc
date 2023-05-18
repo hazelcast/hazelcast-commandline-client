@@ -40,7 +40,7 @@ ZIP (Apple Silicon)::
 +
 [source,shell,subs="attributes"]
 ----
-xattr -d com.apple.quarantine hazelcast-clc_v{full-version}_darwin_amd64/clc
+xattr -d com.apple.quarantine hazelcast-clc_v{full-version}_darwin_arm64/clc
 ----
 . Optionally make `clc` available without using its full path. You can do that by moving `clc` to one of the directories in the  `$PATH` environment variable. `/usr/local/bin` is a safe choice.
 +
