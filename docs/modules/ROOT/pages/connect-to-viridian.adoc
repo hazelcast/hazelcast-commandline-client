@@ -5,8 +5,6 @@
 
 {description}
 
-You can also create a cluster using CLC, which automatically makes the cluster configuration available. See Managing {hazelcast-cloud} Clusters for more information.
-
 == Before you Begin
 
 You need the following:
@@ -41,12 +39,14 @@ For each cluster, the following attributes are displayed in order: Cluster ID, C
 
 
 [[mutual]]
-== Importing the Configuration
+== Importing the Cluster Configuration
 
-. Import the connection configuration from the {hazelcast-cloud} cluster and save it with name `dev` using the command below. Use the name of your cluster instead `CLUSTER-NAME`:
+Import the configuration of the {hazelcast-cloud} cluster that you want to connect to.
+
+. Run the following command to save the cluster configuration with the name `dev`. Replace the `$CLUSTER_NAME` placeholder with the name of your cluster.
 +
 ```bash
-clc viridian import-config CLUSTER-NAME --name dev
+clc viridian import-config $CLUSTER-NAME --name dev
 ```
 . Start an interactive shell session.
 +
@@ -54,6 +54,6 @@ clc viridian import-config CLUSTER-NAME --name dev
 clc -c dev
 ```
 
-CLC will start in the interactive mode, and you should see a command prompt.
+CLC will start in the interactive mode, and you should see a command prompt. You're ready to start managing xref:clc-viridian.adoc[{hazelcast-viridian} clusters].
 
 NOTE: The Hazelcast CLC connects to the cluster on demand, that is when you issue a command that requires the connection, such as running a SQL query.

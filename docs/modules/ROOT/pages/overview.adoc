@@ -4,7 +4,7 @@
 
 {description}
 
-The Hazelcast CLC is a single binary with no dependencies. Within minutes of installation, you can start to perform common tasks on Viridian and Hazelast clusters.
+The Hazelcast CLC is a single binary with no dependencies. Within minutes of installation, you can start to perform common tasks on {hazelcast-cloud} and Hazelcast clusters.
 
 == Install
 
@@ -20,11 +20,11 @@ Run xref:clc-sql.adoc[SQL] queries against your cluster and display the output a
 
 === Manage Viridian Clusters
 
-Using CLC, you can xref:clc-viridian.adoc[create and manage] Viridian clusters and custom classes on those clusters.
+Using the Hazelcast CLC, you can xref:clc-viridian.adoc[create and manage] {hazelcast-cloud} clusters, and the custom classes on those clusters.
 
 === Create Data Pipelines
 
-You can xref:clc-job.adoc[create and manage] data pipelines using CLC. Check out the Platform documentation for more information about data pipelines.
+You can xref:clc-job.adoc[create and manage] data pipelines using the Hazelcast CLC. Check out the Platform documentation for more information about data pipelines.
 
 === Access Data for Debugging
 

@@ -8,7 +8,7 @@
 |Environment Variable|Description|Default
 
 |CLC_CLIENT_LABELS
-|Sets the client labels. The labels must be separated by commas. This value is used in Management Center.
+|Set a custom client name. The client name appears in the {hazelcast-cloud} dashboard and in the cluster metrics of Management Center.
 |`CLC,USER@HOST-TIMESTAMP`
 
 |CLC_CLIENT_NAME
@@ -20,19 +20,19 @@
 |`%HOMEDRIVE%:%HOMEPATH%\AppData\Roaming\Hazelcast` on Windows, `$HOME/.hazelcast` on other platforms.
 
 |CLC_MAX_COLS
-|Sets the maximum width for a column of a table output. This is useful when the width cannot be determined.
+|Sets the maximum width of a column in a table output. This is useful when the width cannot be determined.
 | Terminal width.
 
 |CLC_SKIP_SERVER_VERSION_CHECK
-|Some CLC features require a Hazelcast cluster of a certain version. If set to `1`, CLC disables server version check.
+|Some Hazelcast CLC features require the cluster to be of a certain version. If set to `1`, this variable disables the version check performed by the CLC.
 |`0` (false)
 
 |CLC_VIRIDIAN_API_KEY
-|Sets the Viridian API key.
+|Sets the {hazelcast-cloud} API key.
 |
 
 |CLC_VIRIDIAN_API_SECRET
-|Sets the Viridian API secret.
+|Sets the {hazelcast-cloud} API secret.
 |
 
 |===
@@ -44,15 +44,14 @@ The following environment variables are experimental and may be removed in a fut
 |Environment Variable|Description|Default
 
 |CLC_EXPERIMENTAL_FORMATTER
-|Sets formatter for SQL syntax highlighting. One of: `terminal`, `terminal8`, `terminal16`, `terminal256`, `terminal16m`. Only with the `gohxs` readline implementation.
-|`terminal`
+|Sets a formatter for the highlighting of SQL syntax, either: `terminal`, `terminal8`, `terminal16`, `terminal256`, or `terminal16m`. Only with the `gohxs` readline implementation.
 
 |CLC_EXPERIMENTAL_READLINE
-|Sets the readline implementation. Currently one of `gohxs` or `ny`.
+|Sets the readline implementation, either `gohxs` or `ny`.
 |`ny` for Windows, `gohxs` for other platforms.
 
 |CLC_EXPERIMENTAL_STYLER
-|Sets color theme for SQL syntax highlighting. See link:https://github.com/alecthomas/chroma/tree/master/styles[Chroma styles] for the options.  Only with the `gohxs` readline implementation.
+|Sets a color theme for the highlighting of SQL syntax. See link:https://github.com/alecthomas/chroma/tree/master/styles[Chroma styles] for the options.  Only with the `gohxs` readline implementation.
 |`clc-default`
 
 |NO_COLOR
