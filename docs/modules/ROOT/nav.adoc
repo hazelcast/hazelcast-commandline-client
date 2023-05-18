@@ -2,7 +2,7 @@
 * xref:overview.adoc[What is Hazelcast CLC?]
 * xref:get-started.adoc[Get Started]
 * xref:managing-viridian-clusters.adoc[Managing Viridian CLusters]
-* xref:jet-tutorial.adoc[Jet Job Management]
+* xref:jet-job-management.adoc[Jet Job Management]
 
 
 .Manage
