@@ -1,9 +1,9 @@
 plugins {
-    id 'org.jetbrains.kotlin.jvm' version '1.7.20'
+    id 'java'
     id 'com.github.johnrengelman.shadow' version '7.1.2'
 }
 
-group = 'hz.primes'
+group = 'org.example'
 version = '1.0-SNAPSHOT'
 
 repositories {
@@ -12,22 +12,18 @@ repositories {
 
 dependencies {
     compileOnly 'com.hazelcast:hazelcast:5.3.0-BETA-2'
+    implementation 'org.hashids:hashids:1.0.3'
+    testImplementation platform('org.junit:junit-bom:5.9.1')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
 }
 
 test {
     useJUnitPlatform()
 }
 
-compileKotlin {
-    kotlinOptions.jvmTarget = '1.8'
-}
+jar.manifest.attributes 'Main-Class': 'com.example.SimplePipeline'
 
-compileTestKotlin {
-    kotlinOptions.jvmTarget = '1.8'
-}
-
-jar {
-    manifest {
-        attributes 'Main-Class': 'hz.primes.MainKt'
-    }
+compileJava {
+    sourceCompatibility = '1.8'
+    targetCompatibility = '1.8'
 }
