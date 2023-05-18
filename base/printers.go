@@ -55,7 +55,10 @@ type TablePrinter struct{}
 func (pr *TablePrinter) PrintStream(ctx context.Context, w io.Writer, rp output.RowProducer) error {
 	mc, _ := consolesize.GetConsoleSize()
 	if mc <= 0 {
-		mc = maxCols()
+		mc = tableMaxcols()
+	}
+	if mc < 1 {
+		mc = 1000
 	}
 	tr := output.NewTableResult(nil, rp, mc)
 	_, err := tr.Serialize(ctx, w)
@@ -63,9 +66,13 @@ func (pr *TablePrinter) PrintStream(ctx context.Context, w io.Writer, rp output.
 }
 
 func (pr *TablePrinter) PrintRows(ctx context.Context, w io.Writer, rows []output.Row) error {
-	header, rows := output.MakeTableFromRows(rows)
+	mc := tableMaxcols()
+	if mc <= 0 {
+		mc, _ = consolesize.GetConsoleSize()
+	}
+	header, rows := output.MakeTableFromRows(rows, mc)
 	rp := output.NewSimpleRows(rows)
-	tr := output.NewTableResult(header, rp, 0)
+	tr := output.NewTableResult(header, rp, mc)
 	_, err := tr.Serialize(ctx, w)
 	return err
 }
@@ -85,14 +92,14 @@ func (pr *CSVPrinter) PrintRows(ctx context.Context, w io.Writer, rows []output.
 	return err
 }
 
-func maxCols() int {
+func tableMaxcols() int {
 	if s, ok := os.LookupEnv(clc.EnvMaxCols); ok {
 		v, err := strconv.Atoi(s)
 		if err == nil {
 			return v
 		}
 	}
-	return 1_000
+	return 0
 }
 
 func init() {

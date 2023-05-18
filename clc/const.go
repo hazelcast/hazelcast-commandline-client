@@ -27,7 +27,6 @@ const (
 	PropertyExperimentalAPIBase = "experimental.api-base"
 	GroupDDSID                  = "dds"
 	GroupJetID                  = "jet"
-	ViridianCoordinatorURL      = "https://api.viridian.hazelcast.com"
 	EnvMaxCols                  = "CLC_MAX_COLS"
 	EnvSkipServerVersionCheck   = "CLC_SKIP_SERVER_VERSION_CHECK"
 	FlagAutoYes                 = "yes"

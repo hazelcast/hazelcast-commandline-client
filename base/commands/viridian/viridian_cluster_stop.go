@@ -2,7 +2,6 @@ package viridian
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -12,7 +11,7 @@ import (
 type ClusterStopCmd struct{}
 
 func (cm ClusterStopCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("stop-cluster [cluster-ID/name] [flags]")
+	cc.SetCommandUsage("pause-cluster [cluster-ID/name] [flags]")
 	long := `Stops the given Viridian cluster.
 
 Make sure you login before running this command.
@@ -39,13 +38,12 @@ func (cm ClusterStopCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 		return nil, nil
 	})
 	if err != nil {
-		ec.Logger().Error(err)
-		return fmt.Errorf("stopping the cluster. Did you login?: %w", err)
+		return handleErrorResponse(ec, err)
 	}
 	stop()
 	return nil
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("viridian:stop-cluster", &ClusterStopCmd{}))
+	Must(plug.Registry.RegisterCommand("viridian:pause-cluster", &ClusterStopCmd{}))
 }
