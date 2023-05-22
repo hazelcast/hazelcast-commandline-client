@@ -2,6 +2,7 @@ package viridian
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -30,7 +31,7 @@ func (cm ClusterStopCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	}
 	clusterNameOrID := ec.Args()[0]
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText("Stopping the cluster")
+		sp.SetText("Pausing the cluster")
 		err := api.StopCluster(ctx, clusterNameOrID)
 		if err != nil {
 			return nil, err
@@ -41,6 +42,7 @@ func (cm ClusterStopCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 		return handleErrorResponse(ec, err)
 	}
 	stop()
+	ec.PrintlnUnnecessary(fmt.Sprintf("Cluster %s was paused.", clusterNameOrID))
 	return nil
 }
 

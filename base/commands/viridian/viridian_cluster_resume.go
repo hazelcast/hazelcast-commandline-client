@@ -2,6 +2,7 @@ package viridian
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -41,6 +42,7 @@ func (cm ClusterResumeCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 		return handleErrorResponse(ec, err)
 	}
 	stop()
+	ec.PrintlnUnnecessary(fmt.Sprintf("Cluster %s was resumed.", clusterNameOrID))
 	return nil
 }
 

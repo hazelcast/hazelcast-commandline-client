@@ -70,7 +70,7 @@ func (cmd CustomClassDownloadCmd) Exec(ctx context.Context, ec plug.ExecContext)
 		return handleErrorResponse(ec, err)
 	}
 	stop()
-	ec.PrintlnUnnecessary("Custom class downloaded successfully.")
+	ec.PrintlnUnnecessary("Custom class was downloaded.")
 	return nil
 }
 

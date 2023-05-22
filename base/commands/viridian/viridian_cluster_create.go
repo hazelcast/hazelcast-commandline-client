@@ -28,7 +28,6 @@ Make sure you login before running this command.
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	cc.AddStringFlag(flagName, "", "", false, "specify the cluster name; if not given an auto-generated name is used.")
 	cc.AddStringFlag(flagClusterType, "", viridian.ClusterTypeServerless, false, "type for the cluster")
-	cc.AddStringFlag(flagHazelcastVersion, "", "", false, "version of the Hazelcast cluster")
 	return nil
 }
 
@@ -113,6 +112,7 @@ func tryImportConfig(ctx context.Context, ec plug.ExecContext, api *viridian.API
 		return
 	}
 	stop()
+	ec.PrintlnUnnecessary(fmt.Sprintf("Cluster %s was created.", cluster.Name))
 	ec.Logger().Info("Imported configuration %s and saved to: %s", cfgName, cp)
 	ec.PrintlnUnnecessary(fmt.Sprintf("Imported configuration: %s", cfgName))
 }

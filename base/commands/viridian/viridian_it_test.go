@@ -155,7 +155,7 @@ func createCluster_InteractiveTest(t *testing.T) {
 			ensureNoClusterRunning(ctx, tcx)
 			tcx.WithReset(func() {
 				clusterName := it.UniqueClusterName()
-				tcx.WriteStdinf("\\viridian create-cluster --verbose --name %s \n", clusterName)
+				tcx.WriteStdinf("\\viridian create-cluster --cluster-type devmode --verbose --name %s \n", clusterName)
 				time.Sleep(10 * time.Second)
 				check.Must(waitState(ctx, tcx, "", "RUNNING"))
 				tcx.AssertStdoutContains(fmt.Sprintf("Imported configuration: %s", clusterName))
@@ -345,6 +345,7 @@ func waitState(ctx context.Context, tcx it.TestContext, clusterID, state string)
 				return nil
 			}
 		} else {
+			tcx.T.Logf("Clusters: %v", cs)
 			for _, c := range cs {
 				if c.ID == clusterID {
 					found = true
