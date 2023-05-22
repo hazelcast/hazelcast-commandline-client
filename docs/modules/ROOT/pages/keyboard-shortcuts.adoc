@@ -1,5 +1,5 @@
 = Keyboard Shortcuts
-:description: The Hazelcast CLC supports the following keyboard shortcuts.
+:description: The Hazelcast CLC supports the following keyboard shortcuts in the shell (interactive) mode.
 
 {description}
 
@@ -7,25 +7,25 @@
 |===
 |Key Binding|Description
 
-|kbd:[Ctrl + A]
+|kbd:[Ctrl + A] or kbd:[Home]
 |Go to the beginning of the line.
 
-|kbd:[Ctrl + E]
+|kbd:[Ctrl + E] or kbd:[End]
 |Go to the end of the line.
 
-|kbd:[Ctrl + P]
-|Previous command.
+|kbd:[Ctrl + P] or kbd:[Up]
+|Previous command in history.
 
-|kbd:[Ctrl + N]
-|Next command.
+|kbd:[Ctrl + N] or kbd:[Down]
+|Next command in history.
 
-|kbd:[Ctrl + F]
+|kbd:[Ctrl + F] or kbd:[Right]
 |Forward one character.
 
-|kbd:[Ctrl + B]
+|kbd:[Ctrl + B] or kbd:[Left]
 |Backward one character.
 
-|kbd:[Ctrl + H]
+|kbd:[Ctrl + H] or kbd:[Backspace]
 |Delete character before the cursor.
 
 |kbd:[Ctrl + W]
@@ -34,10 +34,13 @@
 |kbd:[Ctrl + U]
 |Cut the line before the cursor to the clipboard.
 
-|kbd:[Ctrl + L]
-|Clear the screen.
-
 |kbd:[Ctrl + C]
 |Cancel running command.
+
+|kbd:[Alt + F]
+|Go forward to the beginning of the next word.
+
+|kbd:[Alt + B]
+|Go back to the beginning of the previous word.
 
 |===

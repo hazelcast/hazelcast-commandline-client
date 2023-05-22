@@ -155,7 +155,7 @@ func createCluster_InteractiveTest(t *testing.T) {
 			ensureNoClusterRunning(ctx, tcx)
 			tcx.WithReset(func() {
 				clusterName := it.UniqueClusterName()
-				tcx.WriteStdinf("\\viridian create-cluster --verbose --name %s \n", clusterName)
+				tcx.WriteStdinf("\\viridian create-cluster --cluster-type devmode --verbose --name %s \n", clusterName)
 				time.Sleep(10 * time.Second)
 				check.Must(waitState(ctx, tcx, "", "RUNNING"))
 				tcx.AssertStdoutContains(fmt.Sprintf("Imported configuration: %s", clusterName))
@@ -171,7 +171,7 @@ func createCluster_InteractiveTest(t *testing.T) {
 func stopCluster_NonInteractiveTest(t *testing.T) {
 	viridianTester(t, func(ctx context.Context, tcx it.TestContext) {
 		c := createOrGetClusterWithState(ctx, tcx, "RUNNING")
-		tcx.CLCExecute(ctx, "viridian", "stop-cluster", c.ID)
+		tcx.CLCExecute(ctx, "viridian", "pause-cluster", c.ID)
 		tcx.AssertStderrContains("OK")
 		check.Must(waitState(ctx, tcx, c.ID, "STOPPED"))
 	})
@@ -182,7 +182,7 @@ func stopCluster_InteractiveTest(t *testing.T) {
 		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			tcx.WithReset(func() {
 				c := createOrGetClusterWithState(ctx, tcx, "RUNNING")
-				tcx.WriteStdinf("\\viridian stop-cluster %s\n", c.Name)
+				tcx.WriteStdinf("\\viridian pause-cluster %s\n", c.Name)
 				tcx.AssertStderrContains("OK")
 				check.Must(waitState(ctx, tcx, c.ID, "STOPPED"))
 			})
@@ -345,6 +345,7 @@ func waitState(ctx context.Context, tcx it.TestContext, clusterID, state string)
 				return nil
 			}
 		} else {
+			tcx.T.Logf("Clusters: %v", cs)
 			for _, c := range cs {
 				if c.ID == clusterID {
 					found = true

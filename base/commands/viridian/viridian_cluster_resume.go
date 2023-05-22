@@ -39,10 +39,10 @@ func (cm ClusterResumeCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 		return nil, nil
 	})
 	if err != nil {
-		ec.Logger().Error(err)
-		return fmt.Errorf("error resuming the cluster. Did you login?: %w", err)
+		return handleErrorResponse(ec, err)
 	}
 	stop()
+	ec.PrintlnUnnecessary(fmt.Sprintf("Cluster %s was resumed.", clusterNameOrID))
 	return nil
 }
 

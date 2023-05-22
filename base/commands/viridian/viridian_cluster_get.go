@@ -2,7 +2,6 @@ package viridian
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -42,8 +41,7 @@ func (cm ClusterGetCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 		return c, nil
 	})
 	if err != nil {
-		ec.Logger().Error(err)
-		return fmt.Errorf("retrieving the cluster. Did you login?: %w", err)
+		return handleErrorResponse(ec, err)
 	}
 	stop()
 	c := ci.(viridian.Cluster)
@@ -61,7 +59,7 @@ func (cm ClusterGetCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 		output.Column{
 			Name:  "State",
 			Type:  serialization.TypeString,
-			Value: c.State,
+			Value: fixClusterState(c.State),
 		},
 		output.Column{
 			Name:  "Hazelcast Version",

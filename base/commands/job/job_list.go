@@ -113,7 +113,7 @@ func outputJetJobs(ctx context.Context, ec plug.ExecContext, lsi interface{}) er
 		rows = append(rows, row)
 	}
 	if len(rows) == 0 {
-		ec.PrintlnUnnecessary("There are no jobs.")
+		ec.PrintlnUnnecessary("No jobs found.")
 	}
 	return ec.AddOutputRows(ctx, rows...)
 }

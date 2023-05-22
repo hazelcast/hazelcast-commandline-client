@@ -3,6 +3,7 @@ package sql_test
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -126,24 +127,38 @@ func sql_shellCommandTest(t *testing.T) {
 				tcx.AssertStdoutContains(name)
 			})
 			// dm NAME
+			tnColLen := len("table_name")
 			tcx.WithReset(func() {
 				tcx.WriteStdinf("\\dm %s\n", name)
-				target := fmt.Sprintf(`$----------------------------------------------------------------------------------------------------$
-$ table_catalog | table_schema | table_name | mapping_external_name | mapping_type | mapping_options $
+				p1 := name[:tnColLen]
+				p2 := name[tnColLen:]
+				if len(p2) < tnColLen {
+					p2 += strings.Repeat(" ", tnColLen-len(p2))
+				}
+				target := fmt.Sprintf(`$table_catalog | table_schema | table_name | mapping_external_name | mapping_type | mapping_options$ 
 $----------------------------------------------------------------------------------------------------$
-$ hazelcast     | public       | test-table | "%s"    | IMAP         | {"keyFormat":"i $
-$----------------------------------------------------------------------------------------------------$`, name)
+$ hazelcast     | public       | %s | "%s"    | IMAP         | {"keyFormat":"i $
+$               |              | %s |                       |              | nt","valueForma $
+$               |              |            |                       |              | t":"varchar"}   $
+$----------------------------------------------------------------------------------------------------$`, p1, name, p2)
 				tcx.AssertStdoutDollar(target)
 			})
 			// dm+ NAME
 			tcx.WithReset(func() {
+				p1 := name[:tnColLen]
+				p2 := name[tnColLen:]
+				if len(p2) < tnColLen {
+					p2 += strings.Repeat(" ", tnColLen-len(p2))
+				}
 				tcx.WriteStdinf("\\dm+ %s\n", name)
-				target := `$-----------------------------------------------------------------------------------------------------------------------------$
+				target := fmt.Sprintf(`$-----------------------------------------------------------------------------------------------------------------------------$
 $ table_catalog | table_schema | table_name | column_name | column_external_name | ordinal_position | is_nullable | data_type $
 $-----------------------------------------------------------------------------------------------------------------------------$
-$ hazelcast     | public       | test-table | __key       | __key                |                1 | true        | INTEGER   $
-$ hazelcast     | public       | test-table | this        | this                 |                2 | true        | VARCHAR   $
-$-----------------------------------------------------------------------------------------------------------------------------$`
+$ hazelcast     | public       | %s | __key       | __key                |                1 | true        | INTEGER   $
+$               |              | %s |             |                      |                  |             |           $
+$ hazelcast     | public       | %s | this        | this                 |                2 | true        | VARCHAR   $
+$               |              | %s |             |                      |                  |             |           $
+$-----------------------------------------------------------------------------------------------------------------------------$`, p1, p2, p1, p2)
 				tcx.AssertStdoutDollar(target)
 			})
 		})

@@ -19,8 +19,8 @@ import (
 
 const (
 	envAPIBaseURL = "HZ_CLOUD_COORDINATOR_BASE_URL"
-	envAPIKey     = "VIRIDIAN_API_KEY"
-	envAPISecret  = "VIRIDIAN_API_SECRET"
+	envAPIKey     = "CLC_VIRIDIAN_API_KEY"
+	envAPISecret  = "CLC_VIRIDIAN_API_SECRET"
 )
 
 type TestCluster interface {
