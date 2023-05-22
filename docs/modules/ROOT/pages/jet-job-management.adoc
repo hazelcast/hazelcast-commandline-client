@@ -1,5 +1,5 @@
 = Get Started With Hazelcast Jet Job Management
-:description: In this tutorial, you'll learn the basics of how to manage Hazelcast stream-processing pipelines with CLC. You will connect to a Hazelcast cluster and submit a Jet Job. Also, you will learn how to list and cancel jobs.
+:description: In this tutorial, you’ll learn the basics of how to manage stream-processing pipelines using the Hazelcast CLC with Hazelcast {hazelcast-cloud}. You’ll see how to connect to a {hazelcast-cloud} cluster and submit a sample Jet job that generates a stream of numbers. You’ll also learn how to use simple commands to monitor and cancel jobs.
 
 {description}
 
@@ -7,43 +7,58 @@
 
 You need the following:
 
-- The xref:install-clc.adoc[Hazelcast CLC] installed on your local machine
-- One running Hazelcast cluster. You can create a xref:managing-viridian-clusters.adoc#creating-a-cluster-on-viridian[{hazelcast-cloud} development cluster] with CLC.
-- JRE 8 or better.
-- Gradle 8 or better.
+- xref:install-clc.adoc[Hazelcast CLC] installed on your local machine
+- One running Hazelcast {hazelcast-cloud} cluster. You can create a xref:managing-viridian-clusters.adoc#creating-a-cluster-on-viridian[{hazelcast-cloud} development cluster] using the Hazelcast CLC..adoc#creating-a-cluster-on-viridian[{hazelcast-cloud} development cluster] with CLC.
+- xref:cloud:ROOT:developer.adoc[{hazelcast-cloud} API key and secret]
+- JRE 8 or above.
+- Gradle 8 or above.
 
-[[step-1-dev-configure]]
-== Step 1. Add Configuration for the Development Cluster
+[[step-1-authenticating-with-viridian]]
+== Step 1. Authenticating with Viridian
 
-Connect to the cluster with the following command:
+To allow the Hazelcast CLC to perform cluster operations, including submitting Jet jobs, you must generate a {hazelcast-cloud} token.
 
-[tabs]
-====
-{hazelcast-cloud}::
-. Follow xref:managing-viridian-clusters.adoc[] to see how you can create and/or list your {hazelcast-cloud} clusters.
-. Import the connection configuration for your {hazelcast-cloud} cluster CLUSTER_NAME and save it as `dev`.
+. Execute the following command to retrieve the {hazelcast-cloud} token.
 +
+[source,shell]
+----
+clc viridian login
+----
+
+. When prompted, enter your API key and secret. If both are correct, the token is retrieved and saved.
+
+[[step-2-list-cluster-details]]
+== Step 1. List Cluster Details
+
+Next, check that the Hazelcast CLC can access your cluster by running the following command:
+
+[source,shell]
+----
+clc viridian list-clusters
+----
+
+The details of all clusters linked to your Hazelcast {hazelcast-cloud} account are returned, including the Cluster ID, Cluster Name, Current Status, Hazelcast Version.
+
+[[step-3-dev-configure]]
+== Step 3. Connect to Your Cluster
+
+For Hazelcast CLC to connect to your development cluster, you need to import the cluster’s configuration, including its connection details.
+
+Run the following command to save the cluster configuration with the name dev. Replace the `$CLUSTER_NAME` placeholder with the name of your cluster.
+
 [source,shell]
 ----
 clc viridian import-config $CLUSTER_NAME --name dev
 ----
---
-Other Clusters::
-+
---
-[source,shell]
-----
-clc config add dev cluster.name=<CLUSTER_NAME> cluster.address=<CLUSTER_ADDRESS>
-----
---
-====
 
-[[step-2-build-jet-job]]
-== Step 2. Build the Jet Job
+[[step-4-build-jet-job]]
+== Step 4. Build the Jet Job
+
+Now you’re ready to build the sample Jet job.
 
 The sample Jet job we use in this tutorial generates a stream of numbers and creates a link:https://hashids.org/[Hashid] for each number. The number and hashid pair is then saved to a Map with they number as the key and hashid as the value.
 
-You can find the Jet job project in https://github.com/hazelcast/hazelcast-commandline-client[the CLC repository] under the path `examples/platform/simple-streaming-pipeline`.
+. Find the Jet job project in https://github.com/hazelcast/hazelcast-commandline-client[the CLC repository] under the path `examples/platform/simple-streaming-pipeline`.
 
 Build the project with the following command:
 
@@ -52,8 +67,8 @@ Build the project with the following command:
 gradle shadowJar
 ----
 
-[[step-3-submit-jet-job]]
-== Step 3. Submit the Jet job
+[[step-5-submit-jet-job]]
+== Step 5. Submit the Jet job
 
 Submit the Jet job with the following command. It will wait for the job to be in the `RUNNING` state.
  
