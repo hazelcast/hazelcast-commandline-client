@@ -9,7 +9,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       GOPATH: "${{ github.workspace }}"
-      HZ_VERSION: "5.3.0-BETA-2"
+      HZ_VERSION: "5.3.0"
       DEFAULT_TIMEOUT: "30s"
     defaults:
       run:
@@ -47,7 +47,7 @@ jobs:
       - name: "Start Hazelcast Remote Controller (Windows)"
         if: "contains(matrix.os, 'windows')"
         run: |
-          .\\rcd-${{ matrix.os }}.exe -version 5.3.0-BETA-2 &
+          .\\rcd-${{ matrix.os }}.exe -version 5.3.0 &
           sleep 10
 
       - name: "Setup Go"
