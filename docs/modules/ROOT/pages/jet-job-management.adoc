@@ -68,24 +68,28 @@ gradle shadowJar
 ----
 
 [[step-5-submit-jet-job]]
-== Step 5. Submit the Jet job
+== Step 5. Submit and Monitor the Jet Job
 
-Submit the Jet job with the following command. It will wait for the job to be in the `RUNNING` state.
- 
+Submitting the sample Jet job generates a stream of numbers and creates a [hashid](https://hashids.org/) for each number. The number and hashid pair are then saved to a Map called ‘my-map`, with the number as the key and hashid as the value.
+
+. Execute the following command to submit the Jet job:
++
 [source,shell]
 ----
 clc -c dev job submit build/libs/simple-streaming-pipeline-1.0-SNAPSHOT-all.jar --wait
 ----
++
+The Hazelcast CLC waits until the job starts to run.
 
-Now, list the jobs in the cluster. You should see `simple-pipeline` in the `RUNNING` state
-
+. Now, list the jobs in the cluster. You should see `simple-pipeline` in the `RUNNING` state
++
 [source,shell]
 ----
 clc -c dev job list
 ----
-
-Observe that the size of the `my-map` map continuously changes.
-
++
+. Run this command to see how the size of the `my-map` increases.
++
 [source,shell]
 ----
 while true; do \
@@ -93,18 +97,18 @@ while true; do \
 done
 ----
 
-[[step-4-cancel-jet-job]]
-== Step 4. Cancel the Jet job
+[[step-6-cancel-jet-job]]
+== Step 6. Cancel the Jet job
 
-Now, cancel the Jet job.
-
+. Now, cancel the Jet job.
++
 [source,shell]
 ----
 clc -c dev job cancel prime-job
 ----
-
-Observe that the size of `my-map` doesn't increase anymore.
-
++
+. See how the size of the `my-map` remains the same.
++
 [source,shell]
 ----
 while true; do \
@@ -117,8 +121,8 @@ done
 In this tutorial, you learned how to do the following:
 
 * Connect to a Hazelcast cluster.
-* Build and submit Hazelcast Jet pipelines.
-* Manage Jet pipeline lifecycle with commands: list and cancel.
+* Build and submit a Hazelcast Jet job to create a data pipeline.
+* Manage the lifecycle of a Jet job using list and cancel commands.
 
 == Learn More
 
