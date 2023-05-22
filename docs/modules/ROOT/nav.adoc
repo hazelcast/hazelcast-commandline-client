@@ -27,6 +27,7 @@
 ** xref:clc-snapshot.adoc[]
 ** xref:clc-version.adoc[]
 ** xref:clc-viridian.adoc[]
+* xref:environment-variables.adoc[]
 * xref:keyboard-shortcuts.adoc[]
 
 .Release Notes
