@@ -36,3 +36,4 @@
 == Improvements
 
 * Viridian errors are revamped to be more user-friendly.
+* Multiline columns are supported in table output.
