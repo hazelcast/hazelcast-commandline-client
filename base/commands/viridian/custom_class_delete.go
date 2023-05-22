@@ -58,7 +58,7 @@ func (cmd CustomClassDeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) e
 		return handleErrorResponse(ec, err)
 	}
 	stop()
-	ec.PrintlnUnnecessary("Custom class deleted successfully.")
+	ec.PrintlnUnnecessary("Custom class was deleted.")
 	return nil
 }
 

@@ -42,7 +42,7 @@ func (cmd CustomClassUploadCmd) Exec(ctx context.Context, ec plug.ExecContext) e
 		return handleErrorResponse(ec, err)
 	}
 	stop()
-	ec.PrintlnUnnecessary("Custom class uploaded successfully.")
+	ec.PrintlnUnnecessary("Custom class was uploaded.")
 	return nil
 }
 

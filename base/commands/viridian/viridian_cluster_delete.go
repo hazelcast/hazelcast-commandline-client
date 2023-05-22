@@ -2,6 +2,7 @@ package viridian
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/errors"
@@ -56,6 +57,7 @@ func (cm ClusterDeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 		return handleErrorResponse(ec, err)
 	}
 	stop()
+	ec.PrintlnUnnecessary(fmt.Sprintf("Cluster %s was deleted.", clusterNameOrID))
 	return nil
 }
 
