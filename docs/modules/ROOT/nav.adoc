@@ -31,6 +31,7 @@
 * xref:keyboard-shortcuts.adoc[]
 
 .Release Notes
+* xref:release-notes-5.3.0.adoc[5.3.0]
 * xref:release-notes-5.3.0-BETA-2.adoc[5.3.0-BETA-2]
 * xref:release-notes-5.3.0-BETA-1.adoc[5.3.0-BETA-1]
 * xref:release-notes-5.2.1.adoc[5.2.1]
