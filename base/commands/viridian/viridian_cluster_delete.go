@@ -54,10 +54,10 @@ func (cm ClusterDeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 		return nil, nil
 	})
 	if err != nil {
-		ec.Logger().Error(err)
-		return fmt.Errorf("error deleting the cluster. Did you login?: %w", err)
+		return handleErrorResponse(ec, err)
 	}
 	stop()
+	ec.PrintlnUnnecessary(fmt.Sprintf("Cluster %s was deleted.", clusterNameOrID))
 	return nil
 }
 

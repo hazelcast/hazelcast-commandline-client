@@ -4,7 +4,7 @@
 
 {description}
 
-The Hazelcast CLC simplifies the client setup process for Windows and Unix-like local environments. Within minutes of installation, you can start to perform common tasks on clusters.
+The Hazelcast CLC is a single binary with no dependencies. Within minutes of installation, you can start to perform common tasks on {hazelcast-cloud} and Hazelcast clusters.
 
 == Install
 
@@ -13,6 +13,18 @@ See xref:install-clc.adoc[installation documentation].
 == Use Cases
 
 Example use cases for the Hazelcast CLC.
+
+=== Run SQL Queries
+
+Run xref:clc-sql.adoc[SQL] queries against your cluster and display the output as a table or in a variety of text formats, such as JSON and CSV.
+
+=== Manage Viridian Clusters
+
+xref:clc-viridian.adoc[Create and manage] {hazelcast-cloud} clusters, and the custom classes on those clusters.
+
+=== Create Data Pipelines
+
+xref:clc-job.adoc[Create and manage] data pipelines using the Hazelcast CLC. Check out xref:hazelcast:pipelines:overview.adoc[Platform documentation] for more information about data pipelines.
 
 === Access Data for Debugging
 

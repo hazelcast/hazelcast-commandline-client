@@ -102,3 +102,21 @@ func matchClusterState(cluster viridian.Cluster, state string) (bool, error) {
 	}
 	return false, nil
 }
+
+func handleErrorResponse(ec plug.ExecContext, err error) error {
+	ec.Logger().Error(err)
+	// if it is a http client error, return the simplified error to user
+	var err2 viridian.HTTPClientError
+	if errors.As(err, &err2) {
+		return fmt.Errorf(err2.Text())
+	}
+	// if it is not a http client error, return it directly as always
+	return err
+}
+
+func fixClusterState(state string) string {
+	// this is a temporary workaround until this is changed in the API
+	state = strings.Replace(state, "STOPPED", "PAUSED", 1)
+	state = strings.Replace(state, "STOP", "PAUSE", 1)
+	return state
+}

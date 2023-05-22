@@ -2,11 +2,12 @@ package viridian
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/errors"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/prompt"
 )
 
 type CustomClassDeleteCmd struct{}
@@ -21,6 +22,7 @@ Make sure you login before running this command.
 	cc.SetCommandHelp(long, short)
 	cc.SetPositionalArgCount(2, 2)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
+	cc.AddBoolFlag(clc.FlagAutoYes, "", false, false, "skip confirming the delete operation")
 	return nil
 }
 
@@ -28,6 +30,18 @@ func (cmd CustomClassDeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) e
 	api, err := getAPI(ec)
 	if err != nil {
 		return err
+	}
+	autoYes := ec.Props().GetBool(clc.FlagAutoYes)
+	if !autoYes {
+		p := prompt.New(ec.Stdin(), ec.Stdout())
+		yes, err := p.YesNo("Custom class will be deleted irreversibly, proceed?")
+		if err != nil {
+			ec.Logger().Info("User input could not be processed due to error: %s", err.Error())
+			return errors.ErrUserCancelled
+		}
+		if !yes {
+			return errors.ErrUserCancelled
+		}
 	}
 	// inputs
 	cluster := ec.Args()[0]
@@ -41,11 +55,10 @@ func (cmd CustomClassDeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) e
 		return nil, nil
 	})
 	if err != nil {
-		ec.Logger().Error(err)
-		return fmt.Errorf("deleting custom class. Did you login?: %w", err)
+		return handleErrorResponse(ec, err)
 	}
 	stop()
-	ec.PrintlnUnnecessary("Custom class deleted successfully.")
+	ec.PrintlnUnnecessary("Custom class was deleted.")
 	return nil
 }
 

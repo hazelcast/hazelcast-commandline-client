@@ -12,11 +12,11 @@ import (
 )
 
 func (a API) DownloadClusterLogs(ctx context.Context, destDir string, idOrName string) error {
-	cid, err := a.findClusterID(ctx, idOrName)
+	c, err := a.FindCluster(ctx, idOrName)
 	if err != nil {
 		return err
 	}
-	zipPath, stop, err := download(ctx, makeUrl(fmt.Sprintf("/cluster/%s/logs", cid)), a.token)
+	zipPath, stop, err := download(ctx, makeUrl(fmt.Sprintf("/cluster/%s/logs", c.ID)), a.token)
 	if err != nil {
 		return err
 	}

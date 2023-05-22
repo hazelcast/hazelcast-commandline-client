@@ -7,34 +7,40 @@ import (
 	"math/rand"
 	"os"
 	"path"
+	"strings"
 	"time"
 )
 
+const ClusterTypeDevMode = "DEVMODE"
+const ClusterTypeServerless = "SERVERLESS"
+
 type createClusterRequest struct {
-	KubernetesClusterID int         `json:"kubernetesClusterId"`
-	Name                string      `json:"name"`
-	ClusterTypeID       ClusterType `json:"clusterTypeId"`
-	PlanName            ClusterPlan `json:"planName"`
+	KubernetesClusterID int    `json:"kubernetesClusterId"`
+	Name                string `json:"name"`
+	ClusterTypeID       int64  `json:"clusterTypeId"`
+	PlanName            string `json:"planName"`
 }
 
 type createClusterResponse Cluster
 
-func (a API) CreateCluster(ctx context.Context, name string, plan ClusterPlan, k8sClusterID int, isDev bool) (Cluster, error) {
+func (a API) CreateCluster(ctx context.Context, name string, clusterType string, k8sClusterID int, hzVersion string) (Cluster, error) {
 	if name == "" {
 		name = clusterName()
 	}
-	if plan == "" {
-		plan = ClusterPlanServerless
+	cType, err := a.FindClusterType(ctx, clusterType)
+	if err != nil {
+		return Cluster{}, err
 	}
-	ct := ClusterTypeProd
-	if isDev {
-		ct = ClusterTypeDev
+	clusterTypeID := cType.ID
+	planName := cType.Name
+	if strings.ToUpper(cType.Name) == ClusterTypeDevMode && hzVersion == "" {
+		planName = ClusterTypeServerless
 	}
 	c := createClusterRequest{
 		KubernetesClusterID: k8sClusterID,
 		Name:                name,
-		ClusterTypeID:       ct,
-		PlanName:            plan,
+		ClusterTypeID:       clusterTypeID,
+		PlanName:            planName,
 	}
 	cluster, err := doPost[createClusterRequest, createClusterResponse](ctx, "/cluster", a.Token(), c)
 	if err != nil {
@@ -55,11 +61,11 @@ func clusterName() string {
 }
 
 func (a API) StopCluster(ctx context.Context, idOrName string) error {
-	cid, err := a.findClusterID(ctx, idOrName)
+	c, err := a.FindCluster(ctx, idOrName)
 	if err != nil {
 		return err
 	}
-	ok, err := doPost[[]byte, bool](ctx, fmt.Sprintf("/cluster/%s/stop", cid), a.Token(), nil)
+	ok, err := doPost[[]byte, bool](ctx, fmt.Sprintf("/cluster/%s/stop", c.ID), a.Token(), nil)
 	if err != nil {
 		return fmt.Errorf("stopping cluster: %w", err)
 	}
@@ -78,11 +84,11 @@ func (a API) ListClusters(ctx context.Context) ([]Cluster, error) {
 }
 
 func (a API) ResumeCluster(ctx context.Context, idOrName string) error {
-	cid, err := a.findClusterID(ctx, idOrName)
+	c, err := a.FindCluster(ctx, idOrName)
 	if err != nil {
 		return err
 	}
-	ok, err := doPost[[]byte, bool](ctx, fmt.Sprintf("/cluster/%s/resume", cid), a.Token(), nil)
+	ok, err := doPost[[]byte, bool](ctx, fmt.Sprintf("/cluster/%s/resume", c.ID), a.Token(), nil)
 	if err != nil {
 		return fmt.Errorf("resuming cluster: %w", err)
 	}
@@ -93,11 +99,11 @@ func (a API) ResumeCluster(ctx context.Context, idOrName string) error {
 }
 
 func (a API) DeleteCluster(ctx context.Context, idOrName string) error {
-	cid, err := a.findClusterID(ctx, idOrName)
+	c, err := a.FindCluster(ctx, idOrName)
 	if err != nil {
 		return err
 	}
-	err = doDelete(ctx, fmt.Sprintf("/cluster/%s", cid), a.Token())
+	err = doDelete(ctx, fmt.Sprintf("/cluster/%s", c.ID), a.Token())
 	if err != nil {
 		return fmt.Errorf("deleting cluster: %w", err)
 	}
@@ -105,13 +111,26 @@ func (a API) DeleteCluster(ctx context.Context, idOrName string) error {
 }
 
 func (a API) GetCluster(ctx context.Context, idOrName string) (Cluster, error) {
-	cid, err := a.findClusterID(ctx, idOrName)
+	cluster, err := a.FindCluster(ctx, idOrName)
 	if err != nil {
 		return Cluster{}, err
 	}
-	c, err := doGet[Cluster](ctx, fmt.Sprintf("/cluster/%s", cid), a.Token())
+	c, err := doGet[Cluster](ctx, fmt.Sprintf("/cluster/%s", cluster.ID), a.Token())
 	if err != nil {
 		return Cluster{}, fmt.Errorf("retrieving cluster: %w", err)
 	}
 	return c, nil
+}
+
+type ClusterType struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+}
+
+func (a API) ListClusterTypes(ctx context.Context) ([]ClusterType, error) {
+	csw, err := doGet[Wrapper[[]ClusterType]](ctx, "/cluster_types", a.Token())
+	if err != nil {
+		return nil, fmt.Errorf("listing cluster types: %w", err)
+	}
+	return csw.Content, nil
 }

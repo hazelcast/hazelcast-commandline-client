@@ -234,27 +234,26 @@ func (ec *ExecContext) WrapResult(f func() error) error {
 	took := time.Since(t)
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	if err != nil {
-		if errors.Is(err, context.Canceled) {
-			I2(fmt.Fprintln(ec.stderr, "User cancelled"))
+		if errors.Is(err, context.Canceled) || errors.Is(err, cmderrors.ErrUserCancelled) {
+			return nil
+		}
+		var errStr string
+		var msg string
+		var httpErr cmderrors.HTTPError
+		if errors.As(err, &httpErr) {
+			errStr = makeErrorStringFromHTTPResponse(httpErr.Text())
 		} else {
-			var errStr string
-			var msg string
-			var httpErr cmderrors.HTTPError
-			if errors.As(err, &httpErr) {
-				errStr = makeErrorStringFromHTTPResponse(httpErr.Text())
-			} else {
-				errStr = err.Error()
-			}
-			if verbose {
-				msg = fmt.Sprintf("Error in %d ms: %s", took.Milliseconds(), errStr)
-			} else {
-				msg = fmt.Sprintf("Error: %s", errStr)
-			}
-			if ec.Interactive() {
-				I2(fmt.Fprintln(ec.stderr, color.RedString(msg)))
-			} else {
-				I2(fmt.Fprintln(ec.stderr, msg))
-			}
+			errStr = err.Error()
+		}
+		if verbose {
+			msg = fmt.Sprintf("Error in %d ms: %s", took.Milliseconds(), errStr)
+		} else {
+			msg = fmt.Sprintf("Error: %s", errStr)
+		}
+		if ec.Interactive() {
+			I2(fmt.Fprintln(ec.stderr, color.RedString(msg)))
+		} else {
+			I2(fmt.Fprintln(ec.stderr, msg))
 		}
 		return cmderrors.WrappedError{Err: err}
 	}
