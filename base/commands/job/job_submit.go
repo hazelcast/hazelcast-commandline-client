@@ -1,36 +1,26 @@
 package job
 
 import (
-	"bytes"
 	"context"
-	"crypto/sha256"
 	"fmt"
-	"io"
 	"math"
-	"math/rand"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/cluster"
-	"github.com/hazelcast/hazelcast-go-client/types"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/jet"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
 )
 
 const (
-	// see: https://github.com/hazelcast/hazelcast/issues/24285
-	envExperimentalCalculateHashWorkaround = "CLC_EXPERIMENTAL_WORKAROUND_24285"
-	minServerVersion                       = "5.3.0-BETA-2"
-	defaultBatchSize                       = 2 * 1024 * 1024 // 10MB
+	minServerVersion = "5.3.0"
 )
 
 type SubmitCmd struct{}
@@ -88,70 +78,15 @@ func submitJar(ctx context.Context, ci *hazelcast.ClientInternal, ec plug.ExecCo
 	fn = strings.TrimSuffix(fn, ".jar")
 	args := ec.Args()[1:]
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		workaround := workaround24285(ci)
-		if workaround {
-			ec.Logger().Debugf("Working around https://github.com/hazelcast/hazelcast/issues/24285")
-		}
-		hashBin, err := hashOfPath(path)
-		if err != nil {
-			return nil, err
-		}
-		hash := hashWithWorkaround(hashBin, workaround)
-		err = retry(tries, ec.Logger(), func(try int) error {
-			sp.SetProgress(0)
-			sid := types.NewUUID()
-			mrReq := codec.EncodeJetUploadJobMetaDataRequest(sid, false, fn, hash, snapshot, jobName, className, args)
-			mem, err := randomMember(ctx, ci)
-			if err != nil {
-				return err
-			}
-			msg := "Uploading the metadata"
+		j := jet.New(ci, sp, ec.Logger())
+		err := retry(tries, ec.Logger(), func(try int) error {
+			msg := "Submitting the job"
 			if try == 0 {
 				sp.SetText(msg)
 			} else {
 				sp.SetText(fmt.Sprintf("%s: retry %d", msg, try))
 			}
-			if _, err = ci.InvokeOnMember(ctx, mrReq, mem, nil); err != nil {
-				return err
-			}
-			if err != nil {
-				return fmt.Errorf("uploading job metadata: %w", err)
-			}
-			msg = "Uploading the job"
-			if try == 0 {
-				sp.SetText(msg)
-			} else {
-				sp.SetText(fmt.Sprintf("%s: retry %d", msg, try))
-			}
-			pc, err := partCountOf(path, defaultBatchSize)
-			if err != nil {
-				return err
-			}
-			f, err := os.Open(path)
-			if err != nil {
-				return err
-			}
-			defer f.Close()
-			ec.Logger().Info("Sending %s in %d batch(es)", path, pc)
-			bb := newBatch(f, defaultBatchSize)
-			for i := int32(0); i < int32(pc); i++ {
-				bin, hashBin, err := bb.Next()
-				if err == io.EOF {
-					break
-				}
-				if err != nil {
-					return fmt.Errorf("sending the job: %w", err)
-				}
-				part := i + 1
-				hash := hashWithWorkaround(hashBin, workaround)
-				mrReq = codec.EncodeJetUploadJobMultipartRequest(sid, part, int32(pc), bin, int32(len(bin)), hash)
-				if _, err := ci.InvokeOnMember(ctx, mrReq, mem, nil); err != nil {
-					return fmt.Errorf("uploading part %d: %w", part, err)
-				}
-				sp.SetProgress(float32(part) / float32(pc))
-			}
-			sp.SetProgress(1)
-			return nil
+			return j.SubmitJob(ctx, path, jobName, className, snapshot, args)
 		})
 		if err != nil {
 			return nil, err
@@ -159,26 +94,18 @@ func submitJar(ctx context.Context, ci *hazelcast.ClientInternal, ec plug.ExecCo
 		return nil, nil
 	})
 	if err != nil {
-		return fmt.Errorf("uploading the job: %w", err)
+		return fmt.Errorf("submitting the job: %w", err)
 	}
 	stop()
 	if wait {
 		msg := fmt.Sprintf("Waiting for job %s to start", jobName)
 		ec.Logger().Info(msg)
-		err = WaitJobState(ctx, ec, msg, jobName, statusRunning, 2*time.Second)
+		err = WaitJobState(ctx, ec, msg, jobName, jet.JobStatusRunning, 2*time.Second)
 		if err != nil {
 			return err
 		}
 	}
 	return nil
-}
-
-func partCountOf(path string, partSize int) (int, error) {
-	st, err := os.Stat(path)
-	if err != nil {
-		return 0, err
-	}
-	return int(math.Ceil(float64(st.Size()) / float64(partSize))), nil
 }
 
 func retry(times int, lg log.Logger, f func(try int) error) error {
@@ -193,87 +120,6 @@ func retry(times int, lg log.Logger, f func(try int) error) error {
 		return nil
 	}
 	return fmt.Errorf("failed after %d tries: %w", times, err)
-}
-
-func hashOfPath(path string) ([]byte, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-	return calculateHash(f)
-}
-
-func randomMember(ctx context.Context, ci *hazelcast.ClientInternal) (types.UUID, error) {
-	var mi cluster.MemberInfo
-	for {
-		if ctx.Err() != nil {
-			return types.UUID{}, ctx.Err()
-		}
-		mems := ci.OrderedMembers()
-		if len(mems) != 0 {
-			mi = mems[rand.Intn(len(mems))]
-			if ci.ConnectedToMember(mi.UUID) {
-				return mi.UUID, nil
-			}
-		}
-	}
-}
-
-func workaround24285(ci *hazelcast.ClientInternal) bool {
-	if os.Getenv(envExperimentalCalculateHashWorkaround) == "1" {
-		return true
-	}
-	return cmd.ServerVersionOf(ci) == "5.3.0-BETA-2"
-}
-
-func hashWithWorkaround(hash []byte, workaround bool) string {
-	text := fmt.Sprintf("%x", hash)
-	if workaround && text[0] == '0' {
-		text = text[1:]
-	}
-	return text
-}
-
-func calculateHash(r io.Reader) ([]byte, error) {
-	h := sha256.New()
-	_, err := io.Copy(h, r)
-	if err != nil {
-		return nil, err
-	}
-	buf := make([]byte, 0, 32)
-	b := h.Sum(buf)
-	return b, nil
-}
-
-type binBatch struct {
-	reader io.Reader
-	buf    []byte
-}
-
-func newBatch(reader io.Reader, batchSize int) *binBatch {
-	if batchSize < 1 {
-		panic("newBatch: batchSize must be positive")
-	}
-	return &binBatch{
-		reader: reader,
-		buf:    make([]byte, batchSize),
-	}
-}
-
-// Next returns the next batch of bytes.
-// Make sure to copy it before calling Next again.
-func (bb *binBatch) Next() ([]byte, []byte, error) {
-	n, err := bb.reader.Read(bb.buf)
-	if err != nil {
-		return nil, nil, err
-	}
-	b := bb.buf[0:n:n]
-	h, err := calculateHash(bytes.NewBuffer(b))
-	if err != nil {
-		return nil, nil, err
-	}
-	return b, h, nil
 }
 
 func init() {

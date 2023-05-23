@@ -6,6 +6,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/jet"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
@@ -38,14 +39,14 @@ func (cm TerminateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if ec.Props().GetBool(flagForce) {
 		tm = cm.terminateModeForce
 	}
-	jm, err := newJobNameToIDMap(ctx, ec, false)
+	jm, err := jet.NewJobNameToIDMap(ctx, ec, false)
 	if err != nil {
 		return err
 	}
 	arg := ec.Args()[0]
 	jid, ok := jm.GetIDForName(arg)
 	if !ok {
-		return ErrInvalidJobID
+		return jet.ErrInvalidJobID
 	}
 	if err = terminateJob(ctx, ec, jid, arg, tm, cm.msg, cm.waitState); err != nil {
 		return err
@@ -65,7 +66,7 @@ func init() {
 		terminateMode:      terminateModeCancelGraceful,
 		terminateModeForce: terminateModeCancelForceful,
 		msg:                "Cancelling the job",
-		waitState:          statusFailed,
+		waitState:          jet.JobStatusFailed,
 	}))
 	Must(plug.Registry.RegisterCommand("job:suspend", &TerminateCmd{
 		name:               "suspend",
@@ -74,7 +75,7 @@ func init() {
 		terminateMode:      terminateModeSuspendGraceful,
 		terminateModeForce: terminateModeSuspendForceful,
 		msg:                "Suspending the job",
-		waitState:          statusSuspended,
+		waitState:          jet.JobStatusSuspended,
 	}))
 	Must(plug.Registry.RegisterCommand("job:restart", &TerminateCmd{
 		name:               "restart",
@@ -83,6 +84,6 @@ func init() {
 		terminateMode:      terminateModeRestartGraceful,
 		terminateModeForce: terminateModeRestartForceful,
 		msg:                "Restarting the job",
-		waitState:          statusRunning,
+		waitState:          jet.JobStatusRunning,
 	}))
 }

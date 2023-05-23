@@ -8,6 +8,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/jet"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
 )
@@ -30,7 +31,7 @@ func (cm ExportSnapshotCmd) Exec(ctx context.Context, ec plug.ExecContext) error
 	if err != nil {
 		return err
 	}
-	var jm *jobNameToIDMap
+	var jm *jet.JobNameToIDMap
 	var jid int64
 	var ok bool
 	jobNameOrID := ec.Args()[0]
@@ -38,13 +39,13 @@ func (cm ExportSnapshotCmd) Exec(ctx context.Context, ec plug.ExecContext) error
 	cancel := ec.Props().GetBool(flagCancel)
 	if name == "" {
 		// create the default snapshot name
-		jm, err = newJobNameToIDMap(ctx, ec, true)
+		jm, err = jet.NewJobNameToIDMap(ctx, ec, true)
 		if err != nil {
 			return err
 		}
 		jid, ok = jm.GetIDForName(jobNameOrID)
 		if !ok {
-			return ErrInvalidJobID
+			return jet.ErrInvalidJobID
 		}
 		name, ok = jm.GetNameForID(jid)
 		if !ok {
@@ -52,13 +53,13 @@ func (cm ExportSnapshotCmd) Exec(ctx context.Context, ec plug.ExecContext) error
 		}
 		name = autoGenerateSnapshotName(name)
 	} else {
-		jm, err = newJobNameToIDMap(ctx, ec, false)
+		jm, err = jet.NewJobNameToIDMap(ctx, ec, false)
 		if err != nil {
 			return err
 		}
 		jid, ok = jm.GetIDForName(jobNameOrID)
 		if !ok {
-			return ErrInvalidJobID
+			return jet.ErrInvalidJobID
 		}
 	}
 	if err != nil {

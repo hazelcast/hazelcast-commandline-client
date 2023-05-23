@@ -8,6 +8,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/jet"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec/control"
@@ -33,7 +34,7 @@ func (cm ListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	}
 	ls, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Getting the job list")
-		return GetJobList(ctx, ci)
+		return jet.GetJobList(ctx, ci)
 	})
 	if err != nil {
 		return err
@@ -62,6 +63,10 @@ func outputJetJobs(ctx context.Context, ec plug.ExecContext, lsi interface{}) er
 		if name == id {
 			name = "N/A"
 		}
+		status := jet.StatusToString(v.Status)
+		if status == "FAILED" && v.UserCancelled {
+			status = "CANCELLED"
+		}
 		row := output.Row{
 			output.Column{
 				Name:  "Job ID",
@@ -76,7 +81,7 @@ func outputJetJobs(ctx context.Context, ec plug.ExecContext, lsi interface{}) er
 			output.Column{
 				Name:  "Status",
 				Type:  serialization.TypeString,
-				Value: statusToString(v.Status),
+				Value: status,
 			},
 			msToOffsetDateTimeColumn(v.SubmissionTime, "Submitted"),
 			msToOffsetDateTimeColumn(v.CompletionTime, "Completed"),
@@ -90,13 +95,6 @@ func outputJetJobs(ctx context.Context, ec plug.ExecContext, lsi interface{}) er
 				Name:  "Unbounded",
 				Type:  serialization.TypeBool,
 				Value: v.SqlSummary.Unbounded,
-			})
-		}
-		if user {
-			row = append(row, output.Column{
-				Name:  "User Cancelled",
-				Type:  serialization.TypeBool,
-				Value: v.UserCancelled,
 			})
 		}
 		if verbose {
@@ -130,28 +128,6 @@ func msToOffsetDateTimeColumn(ms int64, name string) output.Column {
 		Type:  serialization.TypeJavaLocalDateTime,
 		Value: types.LocalDateTime(time.UnixMilli(ms)),
 	}
-}
-
-func statusToString(status int32) string {
-	switch status {
-	case statusNotRunning:
-		return "NOT_RUNNING"
-	case statusStarting:
-		return "STARTING"
-	case statusRunning:
-		return "RUNNING"
-	case statusSuspended:
-		return "SUSPENDED"
-	case statusSuspendedExportingSnapshot:
-		return "SUSPENDED_EXPORTING_SNAPSHOT"
-	case statusCompleting:
-		return "COMPLETING"
-	case statusFailed:
-		return "FAILED"
-	case statusCompleted:
-		return "COMPLETED"
-	}
-	return "UNKNOWN"
 }
 
 func init() {
