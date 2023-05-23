@@ -22,6 +22,7 @@ clc viridian [command] [options]
 * <<clc-viridian-resume-cluster, clc viridian resume-cluster>>
 * <<clc-viridian-delete-cluster, clc viridian delete-cluster>>
 * <<clc-viridian-download-logs, clc viridian download-logs>>
+* <<clc-viridian-stream-logs, clc viridian stream-logs>>
 * <<clc-viridian-import-config, clc viridian import-config>>
 * <<clc-viridian-list-custom-classes, clc viridian list-custom-classes>>
 * <<clc-viridian-upload-custom-class, clc viridian upload-custom-class>>
@@ -68,7 +69,7 @@ Parameters:
 
 Lists available cluster types that can be used while creating a Viridian cluster.
 
-Make sure you login before running this command.
+Make sure you authenticate to the Viridian API using `viridian login` before running this command.
 
 Usage:
 
@@ -94,7 +95,7 @@ Parameters:
 
 Creates a Viridian cluster.
 
-Make sure you login before running this command.
+Make sure you authenticate to the Viridian API using `viridian login` before running this command.
 
 Usage:
 
@@ -124,17 +125,13 @@ Parameters:
 |Sets the cluster-type for the created cluster.
 |
 
-|`--hazelcast-version`
-|Optional
-|Sets the version of the Hazelcast cluster to be created.
-|
 |===
 
 == clc viridian get-cluster
 
 Gets the information about the given Viridian cluster.
 
-Make sure you login before running this command.
+Make sure you authenticate to the Viridian API using `viridian login` before running this command.
 
 Usage:
 
@@ -160,7 +157,7 @@ Parameters:
 
 Lists all Viridian clusters for the logged in API key.
 
-Make sure you login before running this command.
+Make sure you authenticate to the Viridian API using `viridian login` before running this command.
 
 Usage:
 
@@ -186,7 +183,7 @@ Parameters:
 
 Stops the given Viridian cluster.
 
-Make sure you login before running this command.
+Make sure you authenticate to the Viridian API using `viridian login` before running this command.
 
 Usage:
 
@@ -212,7 +209,7 @@ Parameters:
 
 Resumes the given Viridian cluster.
 
-Make sure you login before running this command.
+Make sure you authenticate to the Viridian API using `viridian login` before running this command.
 
 Usage:
 
@@ -238,7 +235,7 @@ Parameters:
 
 Deletes the given Viridian cluster. Note that, all data in the cluster is deleted irreversibly.
 
-Make sure you login before running this command.
+Make sure you authenticate to the Viridian API using `viridian login` before running this command.
 
 Usage:
 
@@ -269,7 +266,7 @@ Parameters:
 
 Downloads the logs of the given Viridian cluster.
 
-Make sure you login before running this command.
+Make sure you authenticate to the Viridian API using `viridian login` before running this command.
 
 Usage:
 
@@ -296,11 +293,49 @@ Parameters:
 
 |===
 
+== clc viridian stream-logs
+
+Outputs the logs of the given Viridian cluster as a stream.
+
+Make sure you authenticate to the Viridian API using `viridian login` before running this command.
+
+The log format may be one of:
+
+* minimal: Only the log message
+* basic: Time, level and the log message
+* detailed: Time, level, thread, logger and the log message
+* free form template, see: https://pkg.go.dev/text/template for the format.
+You can use the following placeholders: `msg`, `level`, `time`, `thread` and `logger`.
+Usage:
+
+[source,bash]
+----
+clc viridian stream-logs [cluster-ID/name] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--api-key`
+|Optional
+|Sets the API key. Overrides the `CLC_VIRIDIAN_API_KEY` environment variable. If not given, one of the existing API keys will be used.
+|
+
+|`--log-format`
+|Optional
+|Format of log lines. Either a predefined or free form format
+|`basic`
+
+|===
+
 == clc viridian import-config
 
 Imports connection configuration of the given Viridian cluster.
 
-Make sure you login before running this command.
+Make sure you authenticate to the Viridian API using `viridian login` before running this command.
 
 Usage:
 
@@ -326,7 +361,7 @@ Parameters:
 
 Lists all custom classes in the Viridian cluster.
 
-Make sure you login before running this command.
+Make sure you authenticate to the Viridian API using `viridian login` before running this command.
 
 Usage:
 
@@ -352,7 +387,7 @@ Parameters:
 
 Uploads a custom class to the Viridian cluster.
 
-Make sure you login before running this command.
+Make sure you authenticate to the Viridian API using `viridian login` before running this command.
 
 Usage:
 
@@ -365,7 +400,7 @@ clc viridian upload-custom-class [cluster-name/cluster-ID] [file-name] [flags]
 
 Downloads a custom class from the Viridian cluster.
 
-Make sure you login before running this command.
+Make sure you authenticate to the Viridian API using `viridian login` before running this command.
 
 Usage:
 
@@ -391,7 +426,7 @@ Parameters:
 
 Deletes a custom class from the Viridian cluster.
 
-Make sure you login before running this command.
+Make sure you authenticate to the Viridian API using `viridian login` before running this command.
 
 Usage:
 

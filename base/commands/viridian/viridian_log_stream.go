@@ -23,15 +23,23 @@ type StreamLogCmd struct{}
 
 func (cm StreamLogCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("stream-logs [cluster-ID/name]")
-	long := `Streams logs of the given Viridian cluster.
+	long := `Outputs the logs of the given Viridian cluster as a stream.
 
-Make sure you login before running this command.
+Make sure you authenticate to the Viridian API using 'viridian login' before running this command.
+
+The log format may be one of:
+	* minimal: Only the log message
+	* basic: Time, level and the log message
+	* detailed: Time, level, thread, logger and the log message
+	* free form template, see: https://pkg.go.dev/text/template for the format.
+	You can use the following placeholders: msg, level, time, thread and logger.
 `
 	short := "Streams logs of a Viridian cluster"
 	cc.SetCommandHelp(long, short)
 	cc.SetPositionalArgCount(1, 1)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
-	cc.AddStringFlag(propLogFormat, "", "{{.level}} {{.time}}: {{.msg}}", false, "Set the log format")
+	cc.AddStringFlag(propLogFormat, "", "basic", false,
+		"set the log format, either predefined or free form")
 	return nil
 }
 
@@ -41,7 +49,7 @@ func (cm StreamLogCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 		return err
 	}
 	f := ec.Props().GetString(propLogFormat)
-	t, err := template.New("log").Parse(f)
+	t, err := template.New("log").Parse(loggerTemplate(f))
 	if err != nil {
 		return fmt.Errorf("invalid log format %s: %w", f, err)
 	}
@@ -50,7 +58,6 @@ func (cm StreamLogCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 		if s, ok := sp.(clc.SpinnerPauser); ok {
 			s.Pause()
 		}
-		//sp.SetText("Streaming the logs")
 		lf := newLogFixer(ec.Stdout(), t)
 		if err = api.StreamLogs(ctx, clusterNameOrID, lf); err != nil {
 			return nil, err
@@ -98,10 +105,10 @@ func (lf *logFixer) Write(p []byte) (int, error) {
 		}
 		if err = json.Unmarshal([]byte(line), &kvs); err != nil {
 			kvs["msg"] = line
-			kvs["level"] = "INFO"
-			kvs["time"] = "UNKNOWN"
-			kvs["thread"] = "UNKNOWN"
-			kvs["logger"] = "UNKNOWN"
+			kvs["level"] = "DEBUG"
+			kvs["time"] = "N/A"
+			kvs["thread"] = "N/A"
+			kvs["logger"] = "N/A"
 		}
 		if err = lf.tmpl.Execute(lf.inner, kvs); err != nil {
 			return 0, fmt.Errorf("logFixer.Write: writing: %w", err)
@@ -111,6 +118,18 @@ func (lf *logFixer) Write(p []byte) (int, error) {
 		}
 	}
 	return n, nil
+}
+
+func loggerTemplate(format string) string {
+	switch format {
+	case "minimal":
+		return "{{.msg}}"
+	case "basic", "":
+		return "{{.time}} [{{.level}}] {{.msg}}"
+	case "detailed":
+		return "{{.time}} [{{.level}}] [{{.thread}}] [{{.logger}}] {{.msg}}"
+	}
+	return format
 }
 
 func init() {
