@@ -17,9 +17,16 @@ func (nc NopWriteCloser) Close() error {
 }
 
 type Spinner interface {
-	Start() error
 	SetText(text string)
 	// SetProgress sets the progress of an operation.
 	// progress should be in the range of [0, 1].
 	SetProgress(progress float32)
+}
+
+type SpinnerStarter interface {
+	Start()
+}
+
+type SpinnerPauser interface {
+	Pause()
 }
