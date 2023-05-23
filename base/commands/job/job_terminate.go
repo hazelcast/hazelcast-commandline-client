@@ -39,7 +39,7 @@ func (cm TerminateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if ec.Props().GetBool(flagForce) {
 		tm = cm.terminateModeForce
 	}
-	jm, err := jet.NewJobNameToIDMap(ctx, ec, false)
+	jm, err := NewJobNameToIDMap(ctx, ec, false)
 	if err != nil {
 		return err
 	}
@@ -63,8 +63,8 @@ func init() {
 		name:               "cancel",
 		longHelp:           "Cancels the job with the given ID or name.",
 		shortHelp:          "Cancels the job with the given ID or name",
-		terminateMode:      terminateModeCancelGraceful,
-		terminateModeForce: terminateModeCancelForceful,
+		terminateMode:      jet.TerminateModeCancelGraceful,
+		terminateModeForce: jet.TerminateModeCancelForceful,
 		msg:                "Cancelling the job",
 		waitState:          jet.JobStatusFailed,
 	}))
@@ -72,8 +72,8 @@ func init() {
 		name:               "suspend",
 		longHelp:           "Suspends the job with the given ID or name.",
 		shortHelp:          "Suspends the job with the given ID or name",
-		terminateMode:      terminateModeSuspendGraceful,
-		terminateModeForce: terminateModeSuspendForceful,
+		terminateMode:      jet.TerminateModeSuspendGraceful,
+		terminateModeForce: jet.TerminateModeSuspendForceful,
 		msg:                "Suspending the job",
 		waitState:          jet.JobStatusSuspended,
 	}))
@@ -81,8 +81,8 @@ func init() {
 		name:               "restart",
 		longHelp:           "Restarts the job with the given ID or name.",
 		shortHelp:          "Restarts the job with the given ID or name",
-		terminateMode:      terminateModeRestartGraceful,
-		terminateModeForce: terminateModeRestartForceful,
+		terminateMode:      jet.TerminateModeRestartGraceful,
+		terminateModeForce: jet.TerminateModeRestartForceful,
 		msg:                "Restarting the job",
 		waitState:          jet.JobStatusRunning,
 	}))

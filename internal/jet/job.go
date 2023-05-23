@@ -87,6 +87,40 @@ func (j Jet) SubmitJob(ctx context.Context, path, jobName, className, snapshot s
 	return nil
 }
 
+func (j Jet) GetJobList(ctx context.Context) ([]control.JobAndSqlSummary, error) {
+	req := codec.EncodeJetGetJobAndSqlSummaryListRequest()
+	resp, err := j.ci.InvokeOnRandomTarget(ctx, req, nil)
+	if err != nil {
+		return nil, err
+	}
+	ls := codec.DecodeJetGetJobAndSqlSummaryListResponse(resp)
+	return ls, nil
+}
+
+func (j Jet) TerminateJob(ctx context.Context, jobID int64, terminateMode int32) error {
+	req := codec.EncodeJetTerminateJobRequest(jobID, terminateMode, types.UUID{})
+	if _, err := j.ci.InvokeOnRandomTarget(ctx, req, nil); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (j Jet) ExportSnapshot(ctx context.Context, jobID int64, name string, cancel bool) error {
+	req := codec.EncodeJetExportSnapshotRequest(jobID, name, cancel)
+	if _, err := j.ci.InvokeOnRandomTarget(ctx, req, nil); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (j Jet) ResumeJob(ctx context.Context, jobID int64) error {
+	req := codec.EncodeJetResumeJobRequest(jobID)
+	if _, err := j.ci.InvokeOnRandomTarget(ctx, req, nil); err != nil {
+		return err
+	}
+	return nil
+}
+
 func EnsureJobState(jobs []control.JobAndSqlSummary, jobNameOrID string, state int32) (bool, error) {
 	for _, j := range jobs {
 		if j.NameOrId == jobNameOrID {
