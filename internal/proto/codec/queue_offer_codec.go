@@ -34,7 +34,7 @@ const (
 // Inserts the specified element into this queue, waiting up to the specified wait time if necessary for space to
 // become available.
 
-func EncodeQueueOfferRequest(name string, value iserialization.Data, timeoutMillis int64) *proto.ClientMessage {
+func EncodeQueueOfferRequest(ci *proto.ClientInternal, name string, value iserialization.Data, timeoutMillis int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -42,7 +42,9 @@ func EncodeQueueOfferRequest(name string, value iserialization.Data, timeoutMill
 	EncodeLong(initialFrame.Content, QueueOfferCodecRequestTimeoutMillisOffset, timeoutMillis)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(QueueOfferCodecRequestMessageType)
-	clientMessage.SetPartitionId(-1)
+	//TODO: handle error?
+	pID, _ := stringToPartitionID(ci, name)
+	clientMessage.SetPartitionId(pID)
 
 	EncodeString(clientMessage, name)
 	EncodeData(clientMessage, value)

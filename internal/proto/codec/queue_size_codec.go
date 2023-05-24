@@ -32,14 +32,16 @@ const (
 // Returns the number of elements in this collection.  If this collection contains more than Integer.MAX_VALUE
 // elements, returns Integer.MAX_VALUE
 
-func EncodeQueueSizeRequest(name string) *proto.ClientMessage {
+func EncodeQueueSizeRequest(ci *proto.ClientInternal, name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrameWith(make([]byte, QueueSizeCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(QueueSizeCodecRequestMessageType)
-	clientMessage.SetPartitionId(-1)
+	//TODO: handle error?
+	pID, _ := stringToPartitionID(ci, name)
+	clientMessage.SetPartitionId(pID)
 
 	EncodeString(clientMessage, name)
 

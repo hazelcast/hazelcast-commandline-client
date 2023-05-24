@@ -254,3 +254,14 @@ func DecodeListMultiFrameForData(frameIterator *proto.ForwardFrameIterator) []*i
 	frameIterator.Next()
 	return result
 }
+
+func stringToPartitionID(ci *proto.ClientInternal, key string) (int32, error) {
+	idx := strings.Index(key, "@")
+	if keyData, err := ci.EncodeData(key[idx+1:]); err != nil {
+		return 0, err
+	} else if partitionID, err := ci.GetPartitionID(keyData); err != nil {
+		return 0, err
+	} else {
+		return partitionID, nil
+	}
+}

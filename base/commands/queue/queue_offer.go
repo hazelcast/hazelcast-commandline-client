@@ -9,7 +9,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
+	"github.com/hazelcast/hazelcast-go-client"
 )
 
 type QueueOfferCommand struct {
@@ -26,11 +26,12 @@ func (qc *QueueOfferCommand) Init(cc plug.InitContext) error {
 
 func (qc *QueueOfferCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	queueName := ec.Props().GetString(queueFlagName)
-	ci, err := ec.ClientInternal(ctx)
+	qv, err := ec.Props().GetBlocking(queuePropertyName)
 	if err != nil {
 		return err
 	}
-	if _, err := ec.Props().GetBlocking(queuePropertyName); err != nil {
+	ci, err := ec.ClientInternal(ctx)
+	if err != nil {
 		return err
 	}
 	valStr := ec.Args()[0]
@@ -38,10 +39,10 @@ func (qc *QueueOfferCommand) Exec(ctx context.Context, ec plug.ExecContext) erro
 	if err != nil {
 		return err
 	}
-	req := codec.EncodeQueueOfferRequest(queueName, vd, 0)
+	q := qv.(*hazelcast.Queue)
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText(fmt.Sprintf("Adding value into queue %s", queueName))
-		return ci.InvokeOnKey(ctx, req, vd, nil)
+		return q.Add(ctx, vd)
 	})
 	if err != nil {
 		return nil

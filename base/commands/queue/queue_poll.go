@@ -9,7 +9,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
+	"github.com/hazelcast/hazelcast-go-client"
 )
 
 type QueuePollCommand struct {
@@ -26,14 +26,14 @@ func (qc *QueuePollCommand) Init(cc plug.InitContext) error {
 
 func (qc *QueuePollCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	queueName := ec.Props().GetString(queueFlagName)
-	ci, err := ec.ClientInternal(ctx)
+	qv, err := ec.Props().GetBlocking(queuePropertyName)
 	if err != nil {
 		return err
 	}
-	req := codec.EncodeQueuePollRequest(queueName, 0)
+	q := qv.(*hazelcast.Queue)
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText(fmt.Sprintf("Polling from queue %s", queueName))
-		return ci.InvokeOnRandomTarget(ctx, req, nil)
+		return q.Poll(ctx)
 	})
 	if err != nil {
 		return err

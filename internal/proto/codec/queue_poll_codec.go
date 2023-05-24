@@ -17,6 +17,8 @@
 package codec
 
 import (
+	"fmt"
+
 	iserialization "github.com/hazelcast/hazelcast-go-client"
 	proto "github.com/hazelcast/hazelcast-go-client"
 )
@@ -32,7 +34,7 @@ const (
 // Retrieves and removes the head of this queue, waiting up to the specified wait time if necessary for an element
 // to become available.
 
-func EncodeQueuePollRequest(name string, timeoutMillis int64) *proto.ClientMessage {
+func EncodeQueuePollRequest(ci *proto.ClientInternal, name string, timeoutMillis int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -40,7 +42,12 @@ func EncodeQueuePollRequest(name string, timeoutMillis int64) *proto.ClientMessa
 	EncodeLong(initialFrame.Content, QueuePollCodecRequestTimeoutMillisOffset, timeoutMillis)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(QueuePollCodecRequestMessageType)
-	clientMessage.SetPartitionId(-1)
+	//TODO: handle error?
+	pID, err := stringToPartitionID(ci, name)
+	if err != nil {
+		fmt.Errorf(err.Error())
+	}
+	clientMessage.SetPartitionId(pID)
 
 	EncodeString(clientMessage, name)
 

@@ -30,14 +30,16 @@ const (
 // Removes all of the elements from this collection (optional operation). The collection will be empty after this
 // method returns.
 
-func EncodeQueueClearRequest(name string) *proto.ClientMessage {
+func EncodeQueueClearRequest(ci *proto.ClientInternal, name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrameWith(make([]byte, QueueClearCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(QueueClearCodecRequestMessageType)
-	clientMessage.SetPartitionId(-1)
+	//TODO: handle error?
+	pID, _ := stringToPartitionID(ci, name)
+	clientMessage.SetPartitionId(pID)
 
 	EncodeString(clientMessage, name)
 
