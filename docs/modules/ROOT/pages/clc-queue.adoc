@@ -75,7 +75,7 @@ Example:
 
 [source,bash]
 ----
-clc queue offer --type f32 19.94 --name my-queue
+clc queue offer --type f32 19.94 --name myQueue
 ----
 
 == clc queue poll
@@ -116,7 +116,7 @@ Example:
 
 [source,bash]
 ----
-clc queue poll --name my-queue 5
+clc queue poll --name myQueue 5
 k1
 ----
 
@@ -143,3 +143,11 @@ Parameters:
 |`default`
 
 |===
+
+Example:
+
+[source,bash]
+----
+clc queue size --name myQueue
+k1
+----

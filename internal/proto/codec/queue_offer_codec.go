@@ -42,9 +42,7 @@ func EncodeQueueOfferRequest(ci *proto.ClientInternal, name string, value iseria
 	EncodeLong(initialFrame.Content, QueueOfferCodecRequestTimeoutMillisOffset, timeoutMillis)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(QueueOfferCodecRequestMessageType)
-	//TODO: handle error?
-	pID, _ := stringToPartitionID(ci, name)
-	clientMessage.SetPartitionId(pID)
+	clientMessage.SetPartitionId(-1)
 
 	EncodeString(clientMessage, name)
 	EncodeData(clientMessage, value)

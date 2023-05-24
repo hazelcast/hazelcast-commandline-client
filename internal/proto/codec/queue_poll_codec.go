@@ -17,8 +17,6 @@
 package codec
 
 import (
-	"fmt"
-
 	iserialization "github.com/hazelcast/hazelcast-go-client"
 	proto "github.com/hazelcast/hazelcast-go-client"
 )
@@ -42,12 +40,7 @@ func EncodeQueuePollRequest(ci *proto.ClientInternal, name string, timeoutMillis
 	EncodeLong(initialFrame.Content, QueuePollCodecRequestTimeoutMillisOffset, timeoutMillis)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(QueuePollCodecRequestMessageType)
-	//TODO: handle error?
-	pID, err := stringToPartitionID(ci, name)
-	if err != nil {
-		fmt.Errorf(err.Error())
-	}
-	clientMessage.SetPartitionId(pID)
+	clientMessage.SetPartitionId(-1)
 
 	EncodeString(clientMessage, name)
 

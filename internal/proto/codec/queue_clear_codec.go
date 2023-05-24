@@ -37,9 +37,7 @@ func EncodeQueueClearRequest(ci *proto.ClientInternal, name string) *proto.Clien
 	initialFrame := proto.NewFrameWith(make([]byte, QueueClearCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(QueueClearCodecRequestMessageType)
-	//TODO: handle error?
-	pID, _ := stringToPartitionID(ci, name)
-	clientMessage.SetPartitionId(pID)
+	clientMessage.SetPartitionId(-1)
 
 	EncodeString(clientMessage, name)
 
