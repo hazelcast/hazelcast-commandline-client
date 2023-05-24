@@ -24,3 +24,19 @@ func MapTester(t *testing.T, fn func(tcx TestContext, m *hz.Map)) {
 		})
 	})
 }
+
+func WithQueue(tcx TestContext, fn func(m *hz.Queue)) {
+	name := NewUniqueObjectName("queue")
+	ctx := context.Background()
+	m := check.MustValue(tcx.Client.GetQueue(ctx, name))
+	fn(m)
+}
+
+func QueueTester(t *testing.T, fn func(tcx TestContext, m *hz.Queue)) {
+	tcx := TestContext{T: t}
+	tcx.Tester(func(tcx TestContext) {
+		WithQueue(tcx, func(m *hz.Queue) {
+			fn(tcx, m)
+		})
+	})
+}
