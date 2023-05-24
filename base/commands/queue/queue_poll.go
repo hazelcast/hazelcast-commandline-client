@@ -16,8 +16,8 @@ type QueuePollCommand struct {
 }
 
 func (qc *QueuePollCommand) Init(cc plug.InitContext) error {
-	addQueueTypeFlag(cc)
-	help := "Remove a value from the given Queue"
+	addValueTypeFlag(cc)
+	help := "Remove the given number of elements from the given Queue"
 	cc.SetCommandHelp(help, help)
 	cc.SetCommandUsage("poll [-n queue-name] [flags]")
 	cc.SetPositionalArgCount(1, 1)
@@ -39,7 +39,7 @@ func (qc *QueuePollCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 		return err
 	}
 	stop()
-	//TODO: Decode Response?
+	//TODO: Decode Response? Yes, return the value polled.
 	return nil
 }
 

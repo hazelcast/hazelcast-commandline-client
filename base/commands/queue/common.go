@@ -10,8 +10,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 )
 
-func addQueueTypeFlag(cc plug.InitContext) {
-	help := fmt.Sprintf("queue type (one of: %s)", strings.Join(internal.SupportedTypeNames, ", "))
+func addValueTypeFlag(cc plug.InitContext) {
+	help := fmt.Sprintf("value type (one of: %s)", strings.Join(internal.SupportedTypeNames, ", "))
 	cc.AddStringFlag(queueFlagValueType, "t", "string", false, help)
 }
 

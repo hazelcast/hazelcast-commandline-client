@@ -16,7 +16,7 @@ type QueueOfferCommand struct {
 }
 
 func (qc *QueueOfferCommand) Init(cc plug.InitContext) error {
-	addQueueTypeFlag(cc)
+	addValueTypeFlag(cc)
 	cc.SetPositionalArgCount(1, 1)
 	help := "Add a value to the given Queue"
 	cc.SetCommandHelp(help, help)

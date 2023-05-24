@@ -1,0 +1,145 @@
+= clc queue
+
+Queue commands are a group of queue operations.
+
+Usage:
+
+[source,bash]
+----
+clc queue [command] [flags]
+----
+
+== Commands
+
+* <<clc-queue-clear, clc queue clear>>
+* <<clc-queue-offer, clc queue offer>>
+* <<clc-queue-poll, clc queue poll>>
+* <<clc-queue-size, clc queue size>>
+
+== clc queue clear
+
+Delete all entries of a Queue.
+
+Usage:
+
+[source,bash]
+----
+clc queue clear [flags]
+----
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the queue.
+|`default`
+
+|===
+
+== clc queue offer
+
+Add a value to the given Queue.
+
+Usage:
+
+[source,bash]
+----
+clc queue offer [value] [flags]
+----
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`value`
+|Required
+|Value to add to the queue.
+|N/A
+
+|`--name`, `-n`
+|Optional
+|Name of the queue.
+|`default`
+
+|`--type`, `-v`
+|Optional
+|Data type of the value. One of: `string`, `bool`, `json`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`
+|String
+
+|===
+Example:
+
+[source,bash]
+----
+clc queue offer --type f32 19.94 --name my-queue
+----
+
+== clc queue poll
+
+Remove the given number of elements from the given Queue.
+
+Usage:
+
+[source,bash]
+----
+clc queue poll [flags] [key]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the queue.
+|`default`
+
+|`--format`, `-f`
+|Optional
+|Output format. Supported formats:
+
+- `csv`
+- `delimited`
+- `json`
+- `table`
+|`delimited` in non-interactive mode, `table` in interactive mode.
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc queue poll --name my-queue 5
+k1
+----
+
+== clc queue size
+
+Return the size of the given Queue.
+
+Usage:
+
+[source,bash]
+----
+clc queue size [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the queue.
+|`default`
+
+|===
