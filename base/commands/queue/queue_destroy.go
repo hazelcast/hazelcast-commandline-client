@@ -21,7 +21,7 @@ This command will delete the Queue and the data in it will not be available anym
 	short := "Destroy a Queue"
 	cc.SetCommandHelp(long, short)
 	cc.AddBoolFlag(clc.FlagAutoYes, "", false, false, "skip confirming the destroy operation")
-	cc.SetCommandUsage("destroy")
+	cc.SetCommandUsage("destroy [flags]")
 	return nil
 }
 

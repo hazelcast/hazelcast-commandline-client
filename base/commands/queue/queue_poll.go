@@ -23,7 +23,7 @@ func (qc *QueuePollCommand) Init(cc plug.InitContext) error {
 	addValueTypeFlag(cc)
 	help := "Remove the given number of elements from the given Queue"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("poll [-n queue-name] [flags]")
+	cc.SetCommandUsage("poll [value] [flags]")
 	cc.SetPositionalArgCount(1, 1)
 	return nil
 }

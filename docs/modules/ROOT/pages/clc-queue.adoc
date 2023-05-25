@@ -39,6 +39,13 @@ Parameters:
 
 |===
 
+Example:
+
+[source,bash]
+----
+clc queue clear --name myQueue
+----
+
 == clc queue offer
 
 Add a value to the given Queue.
@@ -86,7 +93,7 @@ Usage:
 
 [source,bash]
 ----
-clc queue poll [flags] [key]
+clc queue poll [value] [flags]
 ----
 
 Parameters:
@@ -117,7 +124,6 @@ Example:
 [source,bash]
 ----
 clc queue poll --name myQueue 5
-k1
 ----
 
 == clc queue size
@@ -149,5 +155,4 @@ Example:
 [source,bash]
 ----
 clc queue size --name myQueue
-k1
 ----
