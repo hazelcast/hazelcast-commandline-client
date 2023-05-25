@@ -21,6 +21,7 @@ func (g GlobalInitializer) Init(cc plug.InitContext) error {
 	updateFormatFlag(cc)
 	cc.AddBoolFlag(clc.PropertyVerbose, "", false, false, "enable verbose output")
 	cc.AddBoolFlag(clc.PropertyQuiet, "q", false, false, "disable unnecessary output")
+	cc.AddStringFlag(clc.PropertyTimeout, "t", "", false, "timeout for operation to complete")
 	lp := paths.DefaultLogPath(time.Now())
 	if !cc.Interactive() {
 		cc.AddStringFlag(clc.PropertyConfig, clc.ShortcutConfig, "", false, "set the configuration")
