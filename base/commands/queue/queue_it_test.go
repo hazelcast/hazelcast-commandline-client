@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
 	hz "github.com/hazelcast/hazelcast-go-client"
@@ -12,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestMap(t *testing.T) {
+func TestQueue(t *testing.T) {
 	testCases := []struct {
 		name string
 		f    func(t *testing.T)
@@ -24,7 +25,6 @@ func TestMap(t *testing.T) {
 		{name: "Size_Noninteractive", f: size_NoninteractiveTest},
 		{name: "Destroy_NonInteractive", f: destroy_NonInteractiveTest},
 		{name: "Destroy_AutoYes_NonInteractiveTest", f: destroy_autoYes_NonInteractiveTest},
-		{name: "Destroy_InteractiveTest", f: destroy_InteractiveTest},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, tc.f)
@@ -38,6 +38,7 @@ func clear_NonInteractiveTest(t *testing.T) {
 		tcx.WithReset(func() {
 			check.MustValue(q.Add(ctx, "foo"))
 			require.Equal(t, 1, check.MustValue(q.Size(ctx)))
+			go tcx.WriteStdin([]byte("y\n"))
 			check.Must(tcx.CLC().Execute(ctx, "queue", "-n", q.Name(), "clear", "-q"))
 			require.Equal(t, 0, check.MustValue(q.Size(ctx)))
 		})
@@ -125,23 +126,6 @@ func destroy_autoYes_NonInteractiveTest(t *testing.T) {
 			check.Must(tcx.CLC().Execute(ctx, "queue", "-n", q.Name(), "destroy", "--yes"))
 			objects := check.MustValue(tcx.Client.GetDistributedObjectsInfo(ctx))
 			require.False(t, objectExists(hz.ServiceNameQueue, q.Name(), objects))
-		})
-	})
-}
-
-func destroy_InteractiveTest(t *testing.T) {
-	t.Skip()
-	it.QueueTester(t, func(tcx it.TestContext, q *hz.Queue) {
-		t := tcx.T
-		ctx := context.Background()
-		tcx.WithShell(ctx, func(tcx it.TestContext) {
-			tcx.WithReset(func() {
-				tcx.WriteStdin([]byte(fmt.Sprintf("\\queue -n %s destroy\n", q.Name())))
-				tcx.AssertStdoutContains("(y/n)")
-				tcx.WriteStdin([]byte("y"))
-				objects := check.MustValue(tcx.Client.GetDistributedObjectsInfo(ctx))
-				require.False(t, objectExists(hz.ServiceNameQueue, q.Name(), objects))
-			})
 		})
 	})
 }

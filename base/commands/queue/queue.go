@@ -69,5 +69,5 @@ func (qc *QueueCommand) Augment(ec plug.ExecContext, props *plug.Properties) err
 func init() {
 	cmd := &QueueCommand{}
 	check.Must(plug.Registry.RegisterCommand("queue", cmd))
-	plug.Registry.RegisterAugmentor("30-queue", cmd)
+	plug.Registry.RegisterAugmentor("20-queue", cmd)
 }
