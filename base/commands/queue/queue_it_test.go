@@ -38,8 +38,8 @@ func clear_NonInteractiveTest(t *testing.T) {
 		tcx.WithReset(func() {
 			check.MustValue(q.Add(ctx, "foo"))
 			require.Equal(t, 1, check.MustValue(q.Size(ctx)))
-			go tcx.WriteStdin([]byte("y\n"))
-			check.Must(tcx.CLC().Execute(ctx, "queue", "-n", q.Name(), "clear", "-q"))
+			// go tcx.WriteStdin([]byte("y\n"))
+			check.Must(tcx.CLC().Execute(ctx, "queue", "-n", q.Name(), "clear", "-q", "--yes"))
 			require.Equal(t, 0, check.MustValue(q.Size(ctx)))
 		})
 	})
