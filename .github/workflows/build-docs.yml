@@ -15,4 +15,3 @@ jobs:
     steps:
     - name: Trigger build
       run: curl -X POST -d {} https://api.netlify.com/build_hooks/63e51b633069a8009cc0ea22
-      
