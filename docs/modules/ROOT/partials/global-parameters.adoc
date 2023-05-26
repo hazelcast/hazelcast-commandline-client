@@ -49,6 +49,28 @@ a|Set the log level, one of:
 |--timeout
 |Timeout for operation to complete.
 
+The duration is a string in the form of `AMOUNTunit` where `AMOUNT` is an `integer`, and `unit` is one of the following:
+
+- `ms: milliseconds`
+
+- `s: seconds`
+
+- `m: minutes`
+
+- `h: hours`
+
+Underscore (_) character is ignored in the `AMOUNT`. `unit` is optional and defaults to `s` if not specified.
+
+The following are a few of the valid DURATIONs:
+
+- `5: 5 seconds`
+
+- `5s: 5 seconds`
+
+- `10000ms: 10000 milliseconds`
+
+- `10_000_000ms: 10000000 milliseconds`
+
 WARNING: This is a client-side timeout, the operation you started maybe in progress on the server-side even if the given timeout is exceeded.
 |
 
