@@ -326,7 +326,7 @@ Parameters:
 
 |`--log-format`
 |Optional
-|Format of log lines. Either a predefined or free form format
+|Format of log lines. Either a predefined or free form format.
 |`basic`
 
 |===
