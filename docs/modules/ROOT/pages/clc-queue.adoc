@@ -107,6 +107,11 @@ Parameters:
 |Name of the queue.
 |`default`
 
+|`--count`
+|Optional
+|Number of element to be removed from the given queue.
+|1
+
 |`--format`, `-f`
 |Optional
 |Output format. Supported formats:
@@ -123,7 +128,7 @@ Example:
 
 [source,bash]
 ----
-clc queue poll --name myQueue 5
+clc queue poll --count 2 --name myQueue 5
 ----
 
 == clc queue size

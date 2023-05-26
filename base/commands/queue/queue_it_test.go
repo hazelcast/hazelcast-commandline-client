@@ -52,7 +52,7 @@ func poll_NonInteractiveTest(t *testing.T) {
 		tcx.WithReset(func() {
 			check.MustValue(q.Add(ctx, "foo"))
 			require.Equal(t, 1, check.MustValue(q.Size(ctx)))
-			check.Must(tcx.CLC().Execute(ctx, "queue", "-n", q.Name(), "poll", "foo", "-q", "--show-type"))
+			check.Must(tcx.CLC().Execute(ctx, "queue", "-n", q.Name(), "poll", "--count", "1", "-q", "--show-type"))
 			tcx.AssertStdoutEquals("foo\tSTRING\n")
 			require.Equal(t, 0, check.MustValue(q.Size(ctx)))
 		})
