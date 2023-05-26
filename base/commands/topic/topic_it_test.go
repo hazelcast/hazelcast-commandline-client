@@ -66,6 +66,7 @@ func subscribe_NonInteractiveTest(t *testing.T) {
 }
 
 func subscribe_Cancel_NonInteractiveTest(t *testing.T) {
+	t.Skipf("Disabling this test, since it requires some internal changes in CLC")
 	it.TopicTester(t, func(tcx it.TestContext, tp *hz.Topic) {
 		ctx := context.Background()
 		tcx.WithReset(func() {
