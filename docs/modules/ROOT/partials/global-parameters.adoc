@@ -46,4 +46,10 @@ a|Set the log level, one of:
 |Enable output with more information.
 |false
 
+|--timeout
+|Timeout for operation to complete.
+
+WARNING: This is a client-side timeout, the operation you started maybe in progress on the server-side even if the given timeout is exceeded.
+|
+
 |===
