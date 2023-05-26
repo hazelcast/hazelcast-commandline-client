@@ -96,7 +96,7 @@ Submitting the sample Jet job generates a stream of numbers and creates a link:h
 +
 [source,shell]
 ----
-clc -c dev job submit build/libs/simple-streaming-pipeline-1.0-SNAPSHOT-all.jar --wait
+clc -c dev job submit build/libs/simple-streaming-pipeline-1.0-SNAPSHOT-all.jar --name simple-pipeline --wait
 ----
 +
 The Hazelcast CLC waits until the job starts to run.
@@ -108,16 +108,64 @@ The Hazelcast CLC waits until the job starts to run.
 clc -c dev job list
 ----
 +
-. Run this command to see how the number of entries in `my-map` increases.
+. See how the size of `my-map` increases as entries are written to it.
++
+
+[tabs] 
+==== 
+Unix::
++
+.	Create a new shell script in your favorite text editor. For example:
 +
 [source,shell]
 ----
-while true; do \
-  clc -c dev map size -n my-map; sleep 3; \
+vi monitor.sh
+----
+. Add the following:
++
+[source,shell]
+----
+#! /bin/bash
+while true; 
+do clc -c dev map size -n my-map; sleep 3;
 done
 ----
 
-. Press kbd:[Ctrl + C] to cancel the command.
+. Run your script.
++
+[source,shell]
+----
+./monitor.sh
+----
+. Press kbd:[Ctrl + C] when you're ready to cancel the script.
+
+Windows::
++
+. Create a new batch file in your favorite text editor. For example:
++
+[source,shell]
+----
+notepad monitor.bat
+----
+. Add the following:
++
+[source,shell]
+----
+@echo off
+:start
+clc -c dev map size -n my-map
+timeout 5
+goto start
+----
+. Run the batch file.
++
+[source,shell]
+----
+monitor
+----
+. Press kbd:[Ctrl + C] when you're ready to cancel the script.
+====
+
 
 [[step-6-cancel-jet-job]]
 == Step 6. Cancel the Jet job
@@ -126,19 +174,10 @@ done
 +
 [source,shell]
 ----
-clc -c dev job cancel prime-job
+clc -c dev job cancel simple-pipeline
 ----
 
-. See how the size of the `my-map` no longer increases.
-+
-[source,shell]
-----
-while true; do \
-  clc -c dev map size -n my-map; sleep 3; \
-done
-----
-
-. Press kbd:[Ctrl + C] to cancel the command.
+. Run your script (from step 5) to see the size of `my-map` now.
 
 == Summary
 
