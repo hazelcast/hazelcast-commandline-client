@@ -86,7 +86,8 @@ func submitJar(ctx context.Context, ci *hazelcast.ClientInternal, ec plug.ExecCo
 			} else {
 				sp.SetText(fmt.Sprintf("%s: retry %d", msg, try))
 			}
-			return j.SubmitJob(ctx, path, jobName, className, snapshot, args)
+			br := jet.CreateBinaryReaderForPath(path)
+			return j.SubmitJob(ctx, path, jobName, className, snapshot, args, br)
 		})
 		if err != nil {
 			return nil, err

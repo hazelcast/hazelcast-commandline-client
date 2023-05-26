@@ -4,9 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -19,6 +17,13 @@ import (
 
 type spinner interface {
 	SetProgress(progress float32)
+}
+
+type BinaryReader interface {
+	Hash() ([]byte, error)
+	Reader() (io.ReadCloser, error)
+	FileName() string
+	PartCount(batchSize int) (int, error)
 }
 
 type Jet struct {
@@ -35,11 +40,11 @@ func New(ci *hazelcast.ClientInternal, sp spinner, lg log.Logger) *Jet {
 	}
 }
 
-func (j Jet) SubmitJob(ctx context.Context, path, jobName, className, snapshot string, args []string) error {
+func (j Jet) SubmitJob(ctx context.Context, path, jobName, className, snapshot string, args []string, br BinaryReader) error {
 	_, fn := filepath.Split(path)
-	fn = strings.TrimSuffix(fn, ".jar")
+	fn = br.FileName()
 	j.sp.SetProgress(0)
-	hashBin, err := hashOfPath(path)
+	hashBin, err := br.Hash()
 	if err != nil {
 		return err
 	}
@@ -56,14 +61,15 @@ func (j Jet) SubmitJob(ctx context.Context, path, jobName, className, snapshot s
 	if err != nil {
 		return fmt.Errorf("uploading job metadata: %w", err)
 	}
-	pc, err := partCountOf(path, defaultBatchSize)
+	pc, err := br.PartCount(defaultBatchSize)
 	if err != nil {
 		return err
 	}
-	f, err := os.Open(path)
+	f, err := br.Reader()
 	if err != nil {
 		return err
 	}
+	// TODO: decide whether to close or not to close the reader
 	defer f.Close()
 	j.lg.Info("Sending %s in %d batch(es)", path, pc)
 	bb := newBatch(f, defaultBatchSize)

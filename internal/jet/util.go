@@ -6,6 +6,8 @@ import (
 	"io"
 	"math"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 const (
@@ -104,4 +106,38 @@ func (bb *binBatch) Next() ([]byte, []byte, error) {
 		return nil, nil, err
 	}
 	return b, h, nil
+}
+
+type PathBinaryReader struct {
+	path string
+}
+
+func CreateBinaryReaderForPath(path string) PathBinaryReader {
+	return PathBinaryReader{path: path}
+}
+
+func (pch PathBinaryReader) Hash() ([]byte, error) {
+	f, err := os.Open(pch.path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	return calculateHash(f)
+}
+
+func (pch PathBinaryReader) Reader() (io.ReadCloser, error) {
+	return os.Open(pch.path)
+}
+
+func (pch PathBinaryReader) FileName() string {
+	_, fn := filepath.Split(pch.path)
+	return strings.TrimSuffix(fn, ".jar")
+}
+
+func (pch PathBinaryReader) PartCount(partSize int) (int, error) {
+	st, err := os.Stat(pch.path)
+	if err != nil {
+		return 0, err
+	}
+	return int(math.Ceil(float64(st.Size()) / float64(partSize))), nil
 }
