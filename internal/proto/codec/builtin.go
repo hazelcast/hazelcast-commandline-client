@@ -222,6 +222,18 @@ func EncodeUUID(buffer []byte, offset int32, uuid types.UUID) {
 	EncodeLong(buffer, bufferOffset+proto.LongSizeInBytes, int64(uuid.LeastSignificantBits()))
 }
 
+func DecodeUUID(buffer []byte, offset int32) types.UUID {
+	isNull := DecodeBoolean(buffer, offset)
+	if isNull {
+		return types.UUID{}
+	}
+	mostSignificantOffset := offset + proto.BooleanSizeInBytes
+	leastSignificantOffset := mostSignificantOffset + proto.LongSizeInBytes
+	mostSignificant := uint64(DecodeLong(buffer, mostSignificantOffset))
+	leastSignificant := uint64(DecodeLong(buffer, leastSignificantOffset))
+	return types.NewUUIDWith(mostSignificant, leastSignificant)
+}
+
 func EncodeByteArray(message *proto.ClientMessage, value []byte) {
 	message.AddFrame(proto.NewFrame(value))
 }
