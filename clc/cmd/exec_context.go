@@ -178,9 +178,8 @@ func (ec *ExecContext) ExecuteBlocking(ctx context.Context, f func(context.Conte
 	var sp clc.Spinner
 	if !ec.Quiet() {
 		sc := yacspin.Config{
-			Frequency: 100 * time.Millisecond,
-			CharSet:   yacspin.CharSets[59],
-			//Prefix:       cancelMsg,
+			Frequency:    100 * time.Millisecond,
+			CharSet:      yacspin.CharSets[59],
 			SpinnerAtEnd: true,
 			Writer:       ec.stderr,
 		}
@@ -318,11 +317,6 @@ type simpleSpinner struct {
 func (s *simpleSpinner) Start() {
 	// ignoring the error here
 	_ = s.sp.Start()
-}
-
-func (s *simpleSpinner) Pause() {
-	// ignoring the error here
-	_ = s.sp.Pause()
 }
 
 func (s *simpleSpinner) SetText(text string) {
