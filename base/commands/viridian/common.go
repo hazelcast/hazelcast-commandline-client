@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"sort"
 	"strings"
@@ -108,6 +109,9 @@ func handleErrorResponse(ec plug.ExecContext, err error) error {
 	// if it is a http client error, return the simplified error to user
 	var err2 viridian.HTTPClientError
 	if errors.As(err, &err2) {
+		if err2.Code() == http.StatusUnauthorized {
+			return fmt.Errorf("authentication error, did you login?")
+		}
 		return fmt.Errorf(err2.Text())
 	}
 	// if it is not a http client error, return it directly as always
