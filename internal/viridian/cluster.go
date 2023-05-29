@@ -122,11 +122,6 @@ func (a API) GetCluster(ctx context.Context, idOrName string) (Cluster, error) {
 	return c, nil
 }
 
-type ClusterType struct {
-	ID   int64  `json:"id"`
-	Name string `json:"name"`
-}
-
 func (a API) ListClusterTypes(ctx context.Context) ([]ClusterType, error) {
 	csw, err := doGet[Wrapper[[]ClusterType]](ctx, "/cluster_types", a.Token())
 	if err != nil {
