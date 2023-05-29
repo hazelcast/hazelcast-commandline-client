@@ -6,9 +6,9 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/types"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
@@ -71,8 +71,8 @@ func eventRow(e *topic.TopicEvent, ec plug.ExecContext) output.Row {
 	row := output.Row{
 		output.Column{
 			Name:  "Time",
-			Type:  serialization.TypeJavaLocalDateTime,
-			Value: types.LocalDateTime(e.PublishTime),
+			Type:  serialization.TypeString,
+			Value: e.PublishTime.Format(time.RFC3339),
 		},
 		output.Column{
 			Name:  "Topic",
