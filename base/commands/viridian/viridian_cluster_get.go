@@ -68,11 +68,6 @@ func (cm ClusterGetCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 			Value: c.HazelcastVersion,
 		},
 		output.Column{
-			Name:  "Type",
-			Type:  serialization.TypeString,
-			Value: c.ClusterType.Name,
-		},
-		output.Column{
 			Name:  "Creation Time",
 			Type:  serialization.TypeString,
 			Value: time.UnixMilli(c.CreationTime).Format(time.RFC3339),
@@ -101,6 +96,11 @@ func (cm ClusterGetCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if ec.Props().GetBool(clc.PropertyVerbose) {
 		row = append(row,
 			output.Column{
+				Name:  "Type",
+				Type:  serialization.TypeString,
+				Value: c.ClusterType.Name,
+			},
+			output.Column{
 				Name:  "Desired State",
 				Type:  serialization.TypeString,
 				Value: c.DesiredState,
@@ -122,9 +122,8 @@ func (cm ClusterGetCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 func boolToYesNo(b bool) string {
 	if b {
 		return "yes"
-	} else {
-		return "no"
 	}
+	return "no"
 }
 
 func regionTitleSlice(regions []viridian.Region) []string {
