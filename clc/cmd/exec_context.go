@@ -8,8 +8,6 @@ import (
 	"io"
 	"os"
 	"os/signal"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/fatih/color"
@@ -197,16 +195,6 @@ func (ec *ExecContext) ExecuteBlocking(ctx context.Context, f func(context.Conte
 	} else {
 		sp = nopSpinner{}
 	}
-	t, err := ec.Timeout()
-	if err != nil {
-		return nil, func() {}, err
-	}
-	timeoutCtx := context.Background()
-	var cancel context.CancelFunc
-	if t != 0 {
-		timeoutCtx, cancel = context.WithTimeout(ctx, t)
-		defer cancel()
-	}
 	go func() {
 		v, err := f(ctx, sp)
 		if err != nil {
@@ -236,9 +224,6 @@ func (ec *ExecContext) ExecuteBlocking(ctx context.Context, f func(context.Conte
 				// ignoring the error here
 				_ = sp.Start()
 			}
-		case <-timeoutCtx.Done():
-			cancel()
-			return nil, func() {}, cmderrors.ErrTimeout
 		}
 	}
 }
@@ -292,24 +277,6 @@ func (ec *ExecContext) PrintlnUnnecessary(text string) {
 
 func (ec *ExecContext) Quiet() bool {
 	return ec.Props().GetBool(clc.PropertyQuiet) || terminal.IsPipe(ec.Stdin()) || terminal.IsPipe(ec.Stdout())
-}
-
-func (ec *ExecContext) Timeout() (time.Duration, error) {
-	// input can be like: 10_000_000 or 10_000_000ms, so remove underscores
-	i := strings.ReplaceAll(ec.Props().GetString(clc.PropertyTimeout), "_", "")
-	if i == "" {
-		return 0, nil
-	}
-	// if it can be parsed to int, then it means it does not have any prefix ms, s, m, h (default is second)
-	d, err := strconv.Atoi(i)
-	if err == nil {
-		return time.Duration(d) * time.Second, nil
-	}
-	pd, err := time.ParseDuration(i)
-	if err != nil {
-		return time.Duration(0), err
-	}
-	return pd, nil
 }
 
 func (ec *ExecContext) ensurePrinter() error {

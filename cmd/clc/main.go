@@ -14,6 +14,12 @@ import (
 	hzerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 )
 
+const (
+	ExitCodeSuccess        = 0
+	ExitCodeGenericFailure = 1
+	ExitCodeTimeout        = 2
+)
+
 func bye(err error) {
 	_, _ = fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
 	os.Exit(1)
@@ -46,9 +52,9 @@ func main() {
 	_ = m.Exit()
 	if err != nil {
 		if errors.Is(err, hzerrors.ErrTimeout) {
-			os.Exit(2)
+			os.Exit(ExitCodeTimeout)
 		}
-		os.Exit(1)
+		os.Exit(ExitCodeGenericFailure)
 	}
-	os.Exit(0)
+	os.Exit(ExitCodeSuccess)
 }
