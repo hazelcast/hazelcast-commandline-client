@@ -9,6 +9,7 @@ import (
 	"io"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -32,7 +33,7 @@ The log format may be one of:
 	* basic: Time, level and the log message
 	* detailed: Time, level, thread, logger and the log message
 	* free form template, see: https://pkg.go.dev/text/template for the format.
-	You can use the following placeholders: msg, level, time, thread and logger.
+	  You can use the following placeholders: msg, level, time, thread and logger.
 `
 	short := "Streams logs of a Viridian cluster"
 	cc.SetCommandHelp(long, short)
@@ -59,8 +60,15 @@ func (cm StreamLogCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 			s.Pause()
 		}
 		lf := newLogFixer(ec.Stdout(), t)
-		if err = api.StreamLogs(ctx, clusterNameOrID, lf); err != nil {
-			return nil, err
+		for {
+			if err = api.StreamLogs(ctx, clusterNameOrID, lf); err != nil {
+				if err.Error() == "unexpected EOF" {
+					lf.Reset()
+					continue
+				}
+				return nil, err
+			}
+			break
 		}
 		return nil, nil
 	})
@@ -72,9 +80,11 @@ func (cm StreamLogCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 }
 
 type logFixer struct {
-	buf   *bytes.Buffer
-	inner io.Writer
-	tmpl  *template.Template
+	buf      *bytes.Buffer
+	inner    io.Writer
+	tmpl     *template.Template
+	lastTime time.Time
+	old      bool
 }
 
 func newLogFixer(wrapped io.Writer, tmpl *template.Template) *logFixer {
@@ -85,6 +95,10 @@ func newLogFixer(wrapped io.Writer, tmpl *template.Template) *logFixer {
 	}
 }
 
+func (lf *logFixer) Reset() {
+	lf.old = false
+}
+
 func (lf *logFixer) Write(p []byte) (int, error) {
 	n, err := lf.buf.Write(p)
 	if err != nil {
@@ -92,23 +106,73 @@ func (lf *logFixer) Write(p []byte) (int, error) {
 	}
 	kvs := map[string]any{}
 	scn := bufio.NewScanner(lf.buf)
+	// using a custom splitter to keep CR at the end of the line
+	scn.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+		if atEOF && len(data) == 0 {
+			return 0, nil, nil
+		}
+		if i := bytes.IndexByte(data, '\n'); i >= 0 {
+			// We have a full newline-terminated line.
+			return i + 1, data[0 : i+1], nil
+		}
+		// If we're at EOF, we have a final, non-terminated line. Return it.
+		if atEOF {
+			return len(data), data, nil
+		}
+		// Request more data.
+		return 0, nil, nil
+	})
+	var nullTime time.Time
 	for scn.Scan() {
 		if scn.Err() != nil {
 			return 0, fmt.Errorf("logFixer.Write: scanning: %w", scn.Err())
 		}
 		line := scn.Text()
+		if !strings.HasSuffix(line, "\n") {
+			// this is the last part of the input
+			// write it back and quit
+			lf.buf.Write(scn.Bytes())
+			continue
+		}
 		if strings.HasPrefix(line, "data:") {
 			line = line[5:]
 		}
+		line = strings.TrimSuffix(line, "\n")
 		if line == "" {
 			continue
 		}
+		var logTime time.Time
 		if err = json.Unmarshal([]byte(line), &kvs); err != nil {
 			kvs["msg"] = line
 			kvs["level"] = "DEBUG"
 			kvs["time"] = "N/A"
 			kvs["thread"] = "N/A"
 			kvs["logger"] = "N/A"
+		} else {
+			// try to convert the time
+			if v, ok := kvs["time"]; ok {
+				t, err := time.Parse(time.RFC3339, v.(string))
+				// note: checking err == nil
+				if err == nil {
+					logTime = t
+				}
+			}
+		}
+		if logTime.After(nullTime) {
+			// time for the log line was calculated
+			if !logTime.After(lf.lastTime) {
+				if lf.old {
+					// this log line was already observed
+					continue
+				}
+				lf.old = true
+			}
+			// this is a new log line
+			lf.lastTime = logTime
+		} else if lf.lastTime.After(nullTime) {
+			// time for the log line was not calculated
+			// this is probably an old log line
+			continue
 		}
 		if err = lf.tmpl.Execute(lf.inner, kvs); err != nil {
 			return 0, fmt.Errorf("logFixer.Write: writing: %w", err)
