@@ -26,7 +26,3 @@ type Spinner interface {
 type SpinnerStarter interface {
 	Start()
 }
-
-type SpinnerPauser interface {
-	Pause()
-}

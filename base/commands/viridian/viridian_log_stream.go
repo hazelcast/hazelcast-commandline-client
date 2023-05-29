@@ -56,14 +56,13 @@ func (cm StreamLogCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	}
 	clusterNameOrID := ec.Args()[0]
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		if s, ok := sp.(clc.SpinnerPauser); ok {
-			s.Pause()
-		}
 		lf := newLogFixer(ec.Stdout(), t)
 		for {
 			if err = api.StreamLogs(ctx, clusterNameOrID, lf); err != nil {
 				if err.Error() == "unexpected EOF" {
-					lf.Reset()
+					// disconnected, advance the log time so observed log lines aren't displayed again
+					// then reconnect
+					lf.Advance()
 					continue
 				}
 				return nil, err
@@ -80,11 +79,11 @@ func (cm StreamLogCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 }
 
 type logFixer struct {
-	buf      *bytes.Buffer
-	inner    io.Writer
-	tmpl     *template.Template
-	lastTime time.Time
-	old      bool
+	buf          *bytes.Buffer
+	inner        io.Writer
+	tmpl         *template.Template
+	lastTime     time.Time
+	nextLastTime time.Time
 }
 
 func newLogFixer(wrapped io.Writer, tmpl *template.Template) *logFixer {
@@ -95,8 +94,8 @@ func newLogFixer(wrapped io.Writer, tmpl *template.Template) *logFixer {
 	}
 }
 
-func (lf *logFixer) Reset() {
-	lf.old = false
+func (lf *logFixer) Advance() {
+	lf.lastTime = lf.nextLastTime
 }
 
 func (lf *logFixer) Write(p []byte) (int, error) {
@@ -161,14 +160,12 @@ func (lf *logFixer) Write(p []byte) (int, error) {
 		if logTime.After(nullTime) {
 			// time for the log line was calculated
 			if !logTime.After(lf.lastTime) {
-				if lf.old {
-					// this log line was already observed
-					continue
-				}
-				lf.old = true
+				// this log line was already observed
+				continue
 			}
 			// this is a new log line
-			lf.lastTime = logTime
+			// activate it in the next call to the API
+			lf.nextLastTime = logTime
 		} else if lf.lastTime.After(nullTime) {
 			// time for the log line was not calculated
 			// this is probably an old log line
