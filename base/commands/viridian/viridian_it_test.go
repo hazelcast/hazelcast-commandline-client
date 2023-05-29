@@ -3,6 +3,7 @@ package viridian_test
 import (
 	"context"
 	"fmt"
+	"syscall"
 	"testing"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/it/skip"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
@@ -57,6 +59,7 @@ func TestViridian(t *testing.T) {
 		{"resumeCluster_NonInteractive", resumeCluster_NonInteractiveTest},
 		{"stopCluster_Interactive", stopCluster_InteractiveTest},
 		{"stopCluster_NonInteractive", stopCluster_NonInteractiveTest},
+		{"streamLogs_nonInteractive", streamLogs_nonInteractiveTest},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, tc.f)
@@ -265,6 +268,20 @@ func deleteCluster_InteractiveTest(t *testing.T) {
 				}, 1*time.Minute, 5*time.Second)
 			})
 		})
+	})
+}
+
+func streamLogs_nonInteractiveTest(t *testing.T) {
+	skip.If(t, "os = windows")
+	viridianTester(t, func(ctx context.Context, tcx it.TestContext) {
+		c := createOrGetClusterWithState(ctx, tcx, "RUNNING")
+		go func() {
+			time.Sleep(10 * time.Second)
+			t.Logf("Sending interrupt signal to this process")
+			syscall.Kill(syscall.Getpid(), syscall.SIGINT)
+		}()
+		tcx.CLCExecute(ctx, "viridian", "stream-logs", c.ID)
+		tcx.AssertStdoutContains("Loading configuration")
 	})
 }
 
