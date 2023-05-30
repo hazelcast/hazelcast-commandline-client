@@ -135,7 +135,7 @@ func (a API) FindClusterType(ctx context.Context, name string) (ClusterType, err
 			return ct, nil
 		}
 	}
-	return ClusterType{}, nil
+	return ClusterType{}, fmt.Errorf("no such cluster type found: %s", name)
 }
 
 func (a API) StreamLogs(ctx context.Context, idOrName string, out io.Writer) error {
