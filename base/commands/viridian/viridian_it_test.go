@@ -109,26 +109,20 @@ func loginWithEnvVariables_NonInteractiveTest(t *testing.T) {
 
 func listClusters_NonInteractiveTest(t *testing.T) {
 	viridianTester(t, func(ctx context.Context, tcx it.TestContext) {
-		tcx.CLCExecute(ctx, "viridian", "list-clusters")
-		tcx.AssertStderrContains("OK")
-		c := createOrGetClusterWithState(ctx, tcx, "RUNNING")
-		tcx.CLCExecute(ctx, "viridian", "list-clusters")
-		tcx.AssertStderrContains("OK")
-		tcx.AssertStdoutContains(c.ID)
+		tcx.WithReset(func() {
+			c := createOrGetClusterWithState(ctx, tcx, "RUNNING")
+			tcx.CLCExecute(ctx, "viridian", "list-clusters")
+			tcx.AssertStdoutContains(c.ID)
+		})
 	})
 }
 
 func listClusters_InteractiveTest(t *testing.T) {
 	viridianTester(t, func(ctx context.Context, tcx it.TestContext) {
 		tcx.WithShell(ctx, func(tcx it.TestContext) {
-			tcx.WithReset(func() {
-				tcx.WriteStdin([]byte("\\viridian list-clusters\n"))
-				tcx.AssertStderrContains("OK")
-			})
 			c := createOrGetClusterWithState(ctx, tcx, "RUNNING")
 			tcx.WithReset(func() {
 				tcx.WriteStdin([]byte("\\viridian list-clusters\n"))
-				tcx.AssertStderrContains("OK")
 				tcx.AssertStdoutContains(c.ID)
 			})
 		})
@@ -158,11 +152,8 @@ func createCluster_InteractiveTest(t *testing.T) {
 				tcx.WriteStdinf("\\viridian create-cluster --cluster-type devmode --verbose --name %s \n", clusterName)
 				time.Sleep(10 * time.Second)
 				check.Must(waitState(ctx, tcx, "", "RUNNING"))
-				tcx.AssertStdoutContains(fmt.Sprintf("Imported configuration: %s", clusterName))
-				tcx.AssertStderrContains("OK")
 				require.True(t, paths.Exists(paths.ResolveConfigDir(clusterName)))
 				_ = check.MustValue(tcx.Viridian.GetClusterWithName(ctx, clusterName))
-
 			})
 		})
 	})
@@ -172,7 +163,7 @@ func stopCluster_NonInteractiveTest(t *testing.T) {
 	viridianTester(t, func(ctx context.Context, tcx it.TestContext) {
 		c := createOrGetClusterWithState(ctx, tcx, "RUNNING")
 		tcx.CLCExecute(ctx, "viridian", "pause-cluster", c.ID)
-		tcx.AssertStderrContains("OK")
+		tcx.AssertStderrContains("Viridian cluster paused")
 		check.Must(waitState(ctx, tcx, c.ID, "STOPPED"))
 	})
 }
@@ -183,7 +174,7 @@ func stopCluster_InteractiveTest(t *testing.T) {
 			tcx.WithReset(func() {
 				c := createOrGetClusterWithState(ctx, tcx, "RUNNING")
 				tcx.WriteStdinf("\\viridian pause-cluster %s\n", c.Name)
-				tcx.AssertStderrContains("OK")
+				tcx.AssertStderrContains("Viridian cluster paused")
 				check.Must(waitState(ctx, tcx, c.ID, "STOPPED"))
 			})
 		})
@@ -194,7 +185,7 @@ func resumeCluster_NonInteractiveTest(t *testing.T) {
 	viridianTester(t, func(ctx context.Context, tcx it.TestContext) {
 		c := createOrGetClusterWithState(ctx, tcx, "STOPPED")
 		tcx.CLCExecute(ctx, "viridian", "resume-cluster", c.ID)
-		tcx.AssertStderrContains("OK")
+		tcx.AssertStderrContains("Viridian cluster resumed")
 		check.Must(waitState(ctx, tcx, c.ID, "RUNNING"))
 	})
 }
@@ -205,7 +196,7 @@ func resumeCluster_InteractiveTest(t *testing.T) {
 			tcx.WithReset(func() {
 				c := createOrGetClusterWithState(ctx, tcx, "STOPPED")
 				tcx.WriteStdinf("\\viridian resume-cluster %s\n", c.Name)
-				tcx.AssertStderrContains("OK")
+				tcx.AssertStderrContains("Viridian cluster resumed")
 				check.Must(waitState(ctx, tcx, c.ID, "RUNNING"))
 			})
 		})
@@ -216,10 +207,8 @@ func getCluster_NonInteractiveTest(t *testing.T) {
 	viridianTester(t, func(ctx context.Context, tcx it.TestContext) {
 		c := createOrGetClusterWithState(ctx, tcx, "")
 		tcx.CLCExecute(ctx, "viridian", "get-cluster", c.ID, "--verbose")
-		tcx.AssertStderrContains("OK")
-		fields := tcx.AssertStdoutHasRowWithFields("ID", "Name", "State", "Version")
-		require.Equal(t, c.ID, fields["ID"])
-		require.Equal(t, c.Name, fields["Name"])
+		tcx.AssertStdoutContains(c.ID)
+		tcx.AssertStdoutContains(c.Name)
 	})
 }
 
@@ -229,7 +218,6 @@ func getCluster_InteractiveTest(t *testing.T) {
 			tcx.WithReset(func() {
 				c := createOrGetClusterWithState(ctx, tcx, "")
 				tcx.WriteStdinf("\\viridian get-cluster %s\n", c.Name)
-				tcx.AssertStderrContains("OK")
 				tcx.AssertStdoutContains(c.Name)
 				tcx.AssertStdoutContains(c.ID)
 			})
@@ -241,7 +229,7 @@ func deleteCluster_NonInteractiveTest(t *testing.T) {
 	viridianTester(t, func(ctx context.Context, tcx it.TestContext) {
 		c := createOrGetClusterWithState(ctx, tcx, "RUNNING")
 		tcx.CLCExecute(ctx, "viridian", "delete-cluster", c.ID, "--yes")
-		tcx.AssertStderrContains("OK")
+		tcx.AssertStderrContains("Viridian cluster deleted")
 		require.Eventually(t, func() bool {
 			_, err := tcx.Viridian.GetCluster(ctx, c.ID)
 			return err != nil
@@ -258,7 +246,7 @@ func deleteCluster_InteractiveTest(t *testing.T) {
 				tcx.WriteStdinf("\\viridian delete-cluster %s\n", c.Name)
 				tcx.AssertStdoutContains("(y/n)")
 				tcx.WriteStdin([]byte("y"))
-				tcx.AssertStderrContains("OK")
+				tcx.AssertStderrContains("Viridian cluster deleted")
 				require.Eventually(t, func() bool {
 					_, err := tcx.Viridian.GetCluster(ctx, c.ID)
 					return err == nil

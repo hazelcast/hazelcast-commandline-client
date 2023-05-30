@@ -146,7 +146,6 @@ func size_InteractiveTest(t *testing.T) {
 			tcx.WithReset(func() {
 				check.Must(m.Set(ctx, "foo", "bar"))
 				tcx.WriteStdin([]byte(fmt.Sprintf("\\map -n %s size\n", m.Name())))
-				tcx.AssertStderrContains("OK")
 				tcx.AssertStdoutDollarWithPath("testdata/map_size_1.txt")
 			})
 		})
@@ -188,14 +187,12 @@ func keySet_InteractiveTest(t *testing.T) {
 			tcx.WithReset(func() {
 				check.Must(m.Set(ctx, "foo", "bar"))
 				tcx.WriteStdin([]byte(fmt.Sprintf("\\map -n %s key-set\n", m.Name())))
-				tcx.AssertStderrContains("OK")
 				tcx.AssertStdoutDollarWithPath("testdata/map_key_set.txt")
 			})
 			// show type
 			tcx.WithReset(func() {
 				check.Must(m.Set(ctx, "foo", "bar"))
 				tcx.WriteStdin([]byte(fmt.Sprintf("\\map -n %s key-set --show-type\n", m.Name())))
-				tcx.AssertStderrContains("OK")
 				tcx.AssertStdoutDollarWithPath("testdata/map_key_set_show_type.txt")
 			})
 		})

@@ -40,6 +40,7 @@ func (mc *MapClearCommand) Exec(ctx context.Context, ec plug.ExecContext) error 
 		return err
 	}
 	stop()
+	ec.SetResultString(fmt.Sprintf("Map cleared: %s", m.Name()))
 	return nil
 }
 

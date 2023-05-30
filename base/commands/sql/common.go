@@ -19,7 +19,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
-func UpdateOutput(ctx context.Context, ec plug.ExecContext, res sql.Result, verbose bool) error {
+func UpdateOutput(ctx context.Context, ec plug.ExecContext, res sql.Result) error {
 	if !res.IsRowSet() {
 		return nil
 	}

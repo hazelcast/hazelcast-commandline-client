@@ -70,8 +70,7 @@ func (cm *SQLCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	}
 	// this should be deferred because UpdateOutput will iterate on the result
 	defer stop()
-	verbose := ec.Props().GetBool(clc.PropertyVerbose)
-	return UpdateOutput(ctx, ec, res, verbose)
+	return UpdateOutput(ctx, ec, res)
 }
 
 func (cm *SQLCommand) execQuery(ctx context.Context, query string, ec plug.ExecContext) (sql.Result, context.CancelFunc, error) {

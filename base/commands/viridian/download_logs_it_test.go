@@ -19,7 +19,7 @@ func downloadLogs_NonInteractiveTest(t *testing.T) {
 		c := createOrGetClusterWithState(ctx, tcx, "RUNNING")
 		tcx.WithReset(func() {
 			tcx.CLCExecute(ctx, "viridian", "download-logs", c.ID, "--output-dir", dir)
-			tcx.AssertStderrContains("OK")
+			tcx.AssertStderrContains("Downloaded logs")
 			require.FileExists(t, paths.Join(dir, "node-1.log"))
 		})
 	})
@@ -34,7 +34,7 @@ func downloadLogs_InteractiveTest(t *testing.T) {
 			tcx.WithReset(func() {
 				c := createOrGetClusterWithState(ctx, tcx, "RUNNING")
 				tcx.WriteStdinf("\\viridian download-logs %s -o %s\n", c.Name, dir)
-				tcx.AssertStderrContains("OK")
+				tcx.AssertStderrContains("Downloaded logs")
 				require.FileExists(t, paths.Join(dir, "node-1.log"))
 			})
 		})

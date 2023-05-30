@@ -35,10 +35,6 @@ func (cm ListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		ec.Logger().Warn("Cannot access configs directory at: %s: %s", cd, err.Error())
 	}
-	if len(cs) == 0 {
-		ec.PrintlnUnnecessary("No configurations found.")
-		return nil
-	}
 	var rows []output.Row
 	for _, c := range cs {
 		rows = append(rows, output.Row{output.Column{
@@ -46,6 +42,10 @@ func (cm ListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 			Type:  serialization.TypeString,
 			Value: c,
 		}})
+	}
+	if len(cs) == 0 {
+		ec.SetResultString("No configurations found")
+		return nil
 	}
 	return ec.AddOutputRows(ctx, rows...)
 }

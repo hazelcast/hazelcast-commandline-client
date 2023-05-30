@@ -2,6 +2,7 @@ package snapshot
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -43,6 +44,7 @@ func (cm DeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 		return err
 	}
 	stop()
+	ec.SetResultString(fmt.Sprintf("Snapshot deleted: %s", name))
 	return nil
 }
 

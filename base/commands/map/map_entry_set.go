@@ -44,13 +44,11 @@ func (mc *MapEntrySetCommand) Exec(ctx context.Context, ec plug.ExecContext) err
 	stop()
 	pairs := codec.DecodeMapEntrySetResponse(rv.(*hazelcast.ClientMessage))
 	rows := output.DecodePairs(ci, pairs, showType)
-	if len(rows) > 0 {
-		return ec.AddOutputRows(ctx, rows...)
+	if len(rows) == 0 {
+		ec.SetResultString(fmt.Sprintf("No entries found for map: %s", mapName))
+		return nil
 	}
-
-	ec.PrintlnUnnecessary("No entries found.")
-
-	return nil
+	return ec.AddOutputRows(ctx, rows...)
 }
 
 func init() {

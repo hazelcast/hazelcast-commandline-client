@@ -2,6 +2,7 @@ package viridian
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/errors"
@@ -58,7 +59,7 @@ func (cmd CustomClassDeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) e
 		return handleErrorResponse(ec, err)
 	}
 	stop()
-	ec.PrintlnUnnecessary("Custom class was deleted.")
+	ec.SetResultString(fmt.Sprintf("Custom class deleted: %s", artifact))
 	return nil
 }
 

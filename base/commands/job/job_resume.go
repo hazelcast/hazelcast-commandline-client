@@ -56,10 +56,7 @@ func (cm ResumeCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 			return err
 		}
 	}
-	verbose := ec.Props().GetBool(clc.PropertyVerbose)
-	if verbose {
-		ec.PrintlnUnnecessary(fmt.Sprintf("Job resumed: %s", idToString(jid)))
-	}
+	ec.SetResultString(fmt.Sprintf("Job resumed: %s", idToString(jid)))
 	return nil
 }
 

@@ -53,7 +53,12 @@ func (cm ListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 		return err
 	}
 	stop()
-	return ec.AddOutputRows(ctx, rows.([]output.Row)...)
+	r := rows.([]output.Row)
+	if len(r) == 0 {
+		ec.SetResultString("No snapshots found")
+		return nil
+	}
+	return ec.AddOutputRows(ctx, r...)
 }
 
 func init() {

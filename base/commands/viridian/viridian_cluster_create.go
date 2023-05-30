@@ -71,8 +71,12 @@ func (cm ClusterCreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 				Value: c.Name,
 			},
 		}
-		return ec.AddOutputRows(ctx, row)
+		err = ec.AddOutputRows(ctx, row)
+		if err != nil {
+			return err
+		}
 	}
+	ec.SetResultString(fmt.Sprintf("Viridian cluster created: %s", name))
 	return nil
 }
 

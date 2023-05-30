@@ -5,6 +5,7 @@ package _map
 import (
 	"context"
 	"fmt"
+
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 
@@ -58,13 +59,11 @@ func (mc *MapKeySetCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 		}
 		rows = append(rows, row)
 	}
-	if len(rows) > 0 {
-		return ec.AddOutputRows(ctx, rows...)
+	if len(rows) == 0 {
+		ec.SetResultString(fmt.Sprintf("No keys found for map: %s", mapName))
+		return nil
 	}
-
-	ec.PrintlnUnnecessary("No entries found.")
-
-	return nil
+	return ec.AddOutputRows(ctx, rows...)
 }
 
 func init() {

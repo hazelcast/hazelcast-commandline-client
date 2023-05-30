@@ -58,7 +58,7 @@ func (cmd ImportConfigCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 	}
 	stop()
 	ec.Logger().Info("Imported configuration %s and saved to: %s", cfgName, cp)
-	ec.PrintlnUnnecessary(fmt.Sprintf("Imported configuration: %s", cfgName))
+	ec.SetResultString(fmt.Sprintf("Imported configuration: %s", cfgName))
 	return nil
 }
 

@@ -105,13 +105,12 @@ func (cm ObjectListCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 			valueCol,
 		})
 	}
-	if len(rows) > 0 {
-		return ec.AddOutputRows(ctx, rows...)
+	if len(rows) == 0 {
+		ec.SetResultString("No objects found")
+		return nil
 	}
-	if !ec.Props().GetBool(clc.PropertyQuiet) {
-		I2(fmt.Fprintln(ec.Stdout(), "No objects found"))
-	}
-	return nil
+	return ec.AddOutputRows(ctx, rows...)
+
 }
 
 func objectFilterTypes() string {

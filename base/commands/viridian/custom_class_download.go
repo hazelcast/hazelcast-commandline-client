@@ -2,6 +2,7 @@ package viridian
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/errors"
@@ -70,7 +71,7 @@ func (cmd CustomClassDownloadCmd) Exec(ctx context.Context, ec plug.ExecContext)
 		return handleErrorResponse(ec, err)
 	}
 	stop()
-	ec.PrintlnUnnecessary("Custom class was downloaded.")
+	ec.SetResultString(fmt.Sprintf("Custom class downloaded: %s", artifact))
 	return nil
 }
 

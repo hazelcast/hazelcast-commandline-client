@@ -79,6 +79,10 @@ func (cmd CustomClassListCmd) Exec(ctx context.Context, ec plug.ExecContext) err
 		}
 		rows[i] = r
 	}
+	if len(rows) == 0 {
+		ec.SetResultString("No custom classes found")
+		return nil
+	}
 	return ec.AddOutputRows(ctx, rows...)
 }
 

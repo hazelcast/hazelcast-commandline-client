@@ -46,6 +46,7 @@ type ExecContext struct {
 	spinnerWait   time.Duration
 	printer       plug.Printer
 	cp            config.Provider
+	result        string
 }
 
 func NewExecContext(lg log.Logger, sio clc.IO, props *plug.Properties, clientFn ClientFn, interactive bool) (*ExecContext, error) {
@@ -77,6 +78,10 @@ func (ec *ExecContext) SetMain(main *Main) {
 	ec.main = main
 }
 
+func (ec *ExecContext) SetResultString(res string) {
+	ec.result = res
+}
+
 func (ec *ExecContext) Main() *Main {
 	return ec.main
 }
@@ -103,6 +108,10 @@ func (ec *ExecContext) Args() []string {
 
 func (ec *ExecContext) Props() plug.ReadOnlyProperties {
 	return ec.props
+}
+
+func (ec *ExecContext) ResultString() string {
+	return ec.result
 }
 
 func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInternal, error) {
@@ -260,11 +269,8 @@ func (ec *ExecContext) WrapResult(f func() error) error {
 	if ec.Quiet() {
 		return nil
 	}
-	if verbose || ec.Interactive() {
-		msg := fmt.Sprintf("OK (%d ms)", took.Milliseconds())
-		I2(fmt.Fprintln(ec.stderr, msg))
-	} else {
-		I2(fmt.Fprintln(ec.stderr, "OK"))
+	if ec.result != "" {
+		I2(fmt.Fprintln(ec.stderr, ec.result))
 	}
 	return nil
 }

@@ -257,20 +257,6 @@ func (tcx TestContext) AssertStdoutDollar(text string) {
 	}
 }
 
-func (tcx TestContext) AssertStdoutHasRowWithFields(fields ...string) map[string]string {
-	stdout := tcx.ExpectStdout.String()
-	out := strings.Fields(stdout)
-	if len(fields) != len(out) {
-		tcx.T.Log("STDOUT:", stdout)
-		tcx.T.Fatalf("stdout does not have the same fields as %v", fields)
-	}
-	fm := map[string]string{}
-	for i, f := range fields {
-		fm[f] = out[i]
-	}
-	return fm
-}
-
 func (tcx TestContext) AssertStdoutDollarWithPath(path string) {
 	p := string(check.MustValue(os.ReadFile(path)))
 	tcx.AssertStdoutDollar(p)

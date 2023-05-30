@@ -76,6 +76,7 @@ func (cm ExportSnapshotCmd) Exec(ctx context.Context, ec plug.ExecContext) error
 		return err
 	}
 	stop()
+	ec.SetResultString(fmt.Sprintf("Snapshot exported: %s", name))
 	return nil
 }
 

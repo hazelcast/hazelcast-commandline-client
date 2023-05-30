@@ -36,7 +36,7 @@ func importTest(t *testing.T) {
 		ctx := context.Background()
 		tcx.WithReset(func() {
 			check.Must(tcx.CLC().Execute(ctx, "config", "import", name, configURL))
-			tcx.AssertStderrContains("OK\n")
+			tcx.AssertStderrContains("Configuration imported")
 			path := paths.Join(paths.ResolveConfigPath(name))
 			tcx.T.Logf("config path: %s", path)
 			assert.True(tcx.T, paths.Exists(path))
@@ -55,7 +55,7 @@ func addTest(t *testing.T) {
 		ctx := context.Background()
 		tcx.WithReset(func() {
 			check.Must(tcx.CLC().Execute(ctx, "config", "add", name, "cluster.address=foobar.com"))
-			tcx.AssertStderrContains("OK\n")
+			tcx.AssertStderrContains("Configuration created at")
 		})
 		tcx.WithReset(func() {
 			check.Must(tcx.CLC().Execute(ctx, "config", "list"))

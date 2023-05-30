@@ -58,6 +58,10 @@ func (ct ClusterTypeListCmd) Exec(ctx context.Context, ec plug.ExecContext) erro
 		})
 		rows = append(rows, r)
 	}
+	if len(rows) == 0 {
+		ec.SetResultString("No Viridian cluster types found")
+		return nil
+	}
 	return ec.AddOutputRows(ctx, rows...)
 }
 

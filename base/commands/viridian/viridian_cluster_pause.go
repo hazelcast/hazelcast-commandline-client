@@ -9,22 +9,22 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-type ClusterStopCmd struct{}
+type ClusterPauseCmd struct{}
 
-func (cm ClusterStopCmd) Init(cc plug.InitContext) error {
+func (cm ClusterPauseCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("pause-cluster [cluster-ID/name] [flags]")
-	long := `Stops the given Viridian cluster.
+	long := `Pauses the given Viridian cluster.
 
 Make sure you login before running this command.
 `
-	short := "Stops the given Viridian cluster"
+	short := "Pauses the given Viridian cluster"
 	cc.SetCommandHelp(long, short)
 	cc.SetPositionalArgCount(1, 1)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	return nil
 }
 
-func (cm ClusterStopCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (cm ClusterPauseCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	api, err := getAPI(ec)
 	if err != nil {
 		return err
@@ -42,10 +42,10 @@ func (cm ClusterStopCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 		return handleErrorResponse(ec, err)
 	}
 	stop()
-	ec.PrintlnUnnecessary(fmt.Sprintf("Cluster %s was paused.", clusterNameOrID))
+	ec.SetResultString(fmt.Sprintf("Viridian cluster paused: %s", clusterNameOrID))
 	return nil
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("viridian:pause-cluster", &ClusterStopCmd{}))
+	Must(plug.Registry.RegisterCommand("viridian:pause-cluster", &ClusterPauseCmd{}))
 }

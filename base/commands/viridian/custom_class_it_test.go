@@ -25,14 +25,13 @@ func customClass_NonInteractiveTest(t *testing.T) {
 		// test upload custom class
 		tcx.WithReset(func() {
 			tcx.CLCExecute(ctx, "viridian", "upload-custom-class", c.ID, fd)
-			tcx.AssertStderrContains("OK")
+			tcx.AssertStderrContains("Custom class uploaded")
 			check.Must(waitCustomClassOperation(ctx, tcx, "Custom class was uploaded."))
 		})
 		id := ""
 		// test list custom class
 		tcx.WithReset(func() {
 			tcx.CLCExecute(ctx, "viridian", "list-custom-classes", c.ID)
-			tcx.AssertStderrContains("OK")
 			id = customClassID(tcx.ExpectStdout.String())
 			tcx.AssertStdoutContains(f)
 		})
@@ -42,7 +41,7 @@ func customClass_NonInteractiveTest(t *testing.T) {
 			path := paths.Join(dir, "myfile.zip")
 			defer os.Remove(path)
 			tcx.CLCExecute(ctx, "viridian", "download-custom-class", c.ID, f, "-o", path)
-			tcx.AssertStderrContains("OK")
+			tcx.AssertStderrContains("Custom class downloaded")
 			tcx.AssertStdoutContains("Custom class was downloaded.")
 			require.True(t, paths.Exists(path))
 		})
@@ -51,12 +50,11 @@ func customClass_NonInteractiveTest(t *testing.T) {
 			check.Must(waitState(ctx, tcx, c.ID, "RUNNING"))
 			tcx.CLCExecute(ctx, "viridian", "delete-custom-class", c.ID, id)
 			check.Must(waitCustomClassOperation(ctx, tcx, "Custom class was deleted."))
-			tcx.AssertStderrContains("OK")
+			tcx.AssertStderrContains("Custom class deleted")
 		})
 		// check the list output again to be sure that delete was really successful
 		tcx.WithReset(func() {
 			tcx.CLCExecute(ctx, "viridian", "list-custom-classes", c.ID)
-			tcx.AssertStderrContains("OK")
 			tcx.AssertStderrNotContains(f)
 		})
 	})

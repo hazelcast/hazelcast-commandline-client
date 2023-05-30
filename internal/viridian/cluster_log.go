@@ -45,15 +45,6 @@ func unzip(zipFile *os.File, destDir string) error {
 	if err != nil {
 		return err
 	}
-
-	if destDir == "" {
-		dir, err := os.Getwd()
-		if err != nil {
-			return err
-		}
-		destDir = dir
-	}
-
 	err = os.MkdirAll(destDir, 0700)
 	if err != nil {
 		return err

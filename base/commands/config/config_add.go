@@ -63,9 +63,7 @@ func (cm AddCmd) Exec(_ context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		return err
 	}
-	if ec.Interactive() || ec.Props().GetBool(clc.PropertyVerbose) {
-		I2(fmt.Fprintf(ec.Stdout(), "Created configuration at: %s\n", filepath.Join(dir, cfgPath)))
-	}
+	ec.SetResultString(fmt.Sprintf("Configuration created at: %s\n", filepath.Join(dir, cfgPath)))
 	return nil
 }
 

@@ -41,6 +41,7 @@ type ExecContext interface {
 	Stdin() io.Reader
 	ExecuteBlocking(ctx context.Context, f func(context.Context, clc.Spinner) (any, error)) (value any, stop context.CancelFunc, err error)
 	PrintlnUnnecessary(text string)
+	SetResultString(text string)
 }
 
 type ResultWrapper interface {

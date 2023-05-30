@@ -57,7 +57,7 @@ func (cm ClusterDeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 		return handleErrorResponse(ec, err)
 	}
 	stop()
-	ec.PrintlnUnnecessary(fmt.Sprintf("Cluster %s was deleted.", clusterNameOrID))
+	ec.SetResultString(fmt.Sprintf("Viridian cluster deleted: %s", clusterNameOrID))
 	return nil
 }
 

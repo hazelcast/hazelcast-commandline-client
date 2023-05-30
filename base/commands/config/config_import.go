@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -47,9 +46,7 @@ func (cm ImportCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		return err
 	}
-	if ec.Interactive() || ec.Props().GetBool(clc.PropertyVerbose) {
-		I2(fmt.Fprintf(ec.Stdout(), "Created configuration at: %s\n", path))
-	}
+	ec.SetResultString(fmt.Sprintf("Configuration imported at: %s\n", path))
 	return nil
 }
 

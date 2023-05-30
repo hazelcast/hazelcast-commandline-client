@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
@@ -50,10 +49,7 @@ func (cm TerminateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err = terminateJob(ctx, ec, jid, arg, tm, cm.msg, cm.waitState); err != nil {
 		return err
 	}
-	verbose := ec.Props().GetBool(clc.PropertyVerbose)
-	if verbose {
-		ec.PrintlnUnnecessary(fmt.Sprintf("Job %sed: %s", cm.name, idToString(jid)))
-	}
+	ec.SetResultString(fmt.Sprintf("Job %sed: %s", cm.name, idToString(jid)))
 	return nil
 }
 

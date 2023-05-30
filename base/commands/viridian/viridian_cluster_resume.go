@@ -42,7 +42,7 @@ func (cm ClusterResumeCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 		return handleErrorResponse(ec, err)
 	}
 	stop()
-	ec.PrintlnUnnecessary(fmt.Sprintf("Cluster %s was resumed.", clusterNameOrID))
+	ec.SetResultString(fmt.Sprintf("Viridian cluster resumed: %s", clusterNameOrID))
 	return nil
 }
 

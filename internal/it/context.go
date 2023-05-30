@@ -80,6 +80,7 @@ type ExecContext struct {
 	args   []string
 	props  *plug.Properties
 	Rows   []output.Row
+	result string
 }
 
 func NewExecuteContext(args []string) *ExecContext {
@@ -182,6 +183,10 @@ func (ec *ExecContext) PrintlnUnnecessary(text string) {
 	if !quiet {
 		check.I2(fmt.Fprintln(ec.Stdout(), text))
 	}
+}
+
+func (ec *ExecContext) SetResultString(res string) {
+	ec.result = res
 }
 
 func (ec *ExecContext) WrapResult(f func() error) error {

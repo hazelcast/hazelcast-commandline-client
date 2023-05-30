@@ -55,6 +55,7 @@ func (mc *MapDestroyCommand) Exec(ctx context.Context, ec plug.ExecContext) erro
 		return err
 	}
 	stop()
+	ec.SetResultString(fmt.Sprintf("Map destroyed: %s", m.Name()))
 	return nil
 }
 

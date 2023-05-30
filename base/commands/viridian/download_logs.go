@@ -3,6 +3,7 @@ package viridian
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
@@ -33,6 +34,13 @@ func (cm DownloadLogsCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	}
 	clusterNameOrID := ec.Args()[0]
 	outDir := ec.Props().GetString(flagOutputDir)
+	if outDir == "" {
+		dir, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+		outDir = dir
+	}
 	// extract target info
 	if err := validateOutputDir(outDir); err != nil {
 		return err
@@ -49,6 +57,7 @@ func (cm DownloadLogsCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 		return handleErrorResponse(ec, err)
 	}
 	stop()
+	ec.SetResultString(fmt.Sprintf("Downloaded logs into path: %s", outDir))
 	return nil
 }
 

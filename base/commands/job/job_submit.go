@@ -68,7 +68,12 @@ func (cm SubmitCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if sv, ok := cmd.CheckServerCompatible(ci, minServerVersion); !ok {
 		return fmt.Errorf("server (%s) does not support this command, at least %s is expected", sv, minServerVersion)
 	}
-	return submitJar(ctx, ci, ec, path)
+	err = submitJar(ctx, ci, ec, path)
+	if err != nil {
+		return err
+	}
+	ec.SetResultString(fmt.Sprintf("Job submitted: %s", ec.Props().GetString(flagName)))
+	return nil
 }
 
 func submitJar(ctx context.Context, ci *hazelcast.ClientInternal, ec plug.ExecContext, path string) error {

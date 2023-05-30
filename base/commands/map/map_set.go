@@ -60,6 +60,7 @@ func (mc *MapSetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		return err
 	}
 	stop()
+	ec.SetResultString(fmt.Sprintf("Entry %s set for map: %s", keyStr, mapName))
 	return nil
 }
 

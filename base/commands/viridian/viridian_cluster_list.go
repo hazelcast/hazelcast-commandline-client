@@ -72,6 +72,10 @@ func (cm ClusterListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 			},
 		}
 	}
+	if len(rows) == 0 {
+		ec.SetResultString("No Viridian clusters found")
+		return nil
+	}
 	return ec.AddOutputRows(ctx, rows...)
 }
 

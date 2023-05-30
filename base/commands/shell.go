@@ -82,7 +82,6 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 		}
 		I2(fmt.Fprintf(ec.Stdout(), banner, internal.Version, cfgText, logText))
 	}
-	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	clcMultilineContinue := false
 	endLineFn := func(line string, multiline bool) (string, bool) {
 		// not caching trimmed line, since we want the backslash at the very end of the line. --YT
@@ -136,7 +135,7 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 			}
 			defer stop()
 			// TODO: update sql.UpdateOutput to use stdout
-			if err := sql.UpdateOutput(ctx, ec, res, verbose); err != nil {
+			if err := sql.UpdateOutput(ctx, ec, res); err != nil {
 				return err
 			}
 			return nil
