@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"strings"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -48,6 +47,7 @@ func (sc *SetRemoveCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 			return err
 		}
 		stop()
+		//TODO: output rows
 		done := codec.DecodeSetRemoveResponse(sv.(*hazelcast.ClientMessage))
 		if !done {
 			err = fmt.Errorf("the value for %s was not decoded, due to an unknown error", arg)
@@ -60,15 +60,4 @@ func (sc *SetRemoveCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 
 func init() {
 	Must(plug.Registry.RegisterCommand("set:remove", &SetRemoveCommand{}))
-}
-
-func stringToPartitionID(ci *hazelcast.ClientInternal, name string) (int32, error) {
-	idx := strings.Index(name, "@")
-	if keyData, err := ci.EncodeData(name[idx+1:]); err != nil {
-		return 0, err
-	} else if partitionID, err := ci.GetPartitionID(keyData); err != nil {
-		return 0, err
-	} else {
-		return partitionID, nil
-	}
 }

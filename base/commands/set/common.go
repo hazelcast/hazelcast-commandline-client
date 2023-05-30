@@ -26,3 +26,14 @@ func makeValueData(ec plug.ExecContext, ci *hazelcast.ClientInternal, valueStr s
 	}
 	return ci.EncodeData(value)
 }
+
+func stringToPartitionID(ci *hazelcast.ClientInternal, name string) (int32, error) {
+	idx := strings.Index(name, "@")
+	if keyData, err := ci.EncodeData(name[idx+1:]); err != nil {
+		return 0, err
+	} else if partitionID, err := ci.GetPartitionID(keyData); err != nil {
+		return 0, err
+	} else {
+		return partitionID, nil
+	}
+}
