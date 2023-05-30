@@ -7,8 +7,10 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client"
 )
 
@@ -29,6 +31,7 @@ func (sc *SetRemoveCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 	if err != nil {
 		return err
 	}
+	var rows []output.Row
 	for _, arg := range ec.Args() {
 		vd, err := makeValueData(ec, ci, arg)
 		if err != nil {
@@ -47,15 +50,16 @@ func (sc *SetRemoveCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 			return err
 		}
 		stop()
-		//TODO: output rows
-		done := codec.DecodeSetRemoveResponse(sv.(*hazelcast.ClientMessage))
-		if !done {
-			err = fmt.Errorf("the value for %s was not decoded, due to an unknown error", arg)
-			ec.Logger().Error(err)
-			return err
-		}
+		resp := codec.DecodeSetRemoveResponse(sv.(*hazelcast.ClientMessage))
+		rows = append(rows, output.Row{
+			{
+				Name:  "result",
+				Type:  serialization.TypeBool,
+				Value: resp,
+			},
+		})
 	}
-	return nil
+	return ec.AddOutputRows(ctx, rows...)
 }
 
 func init() {
