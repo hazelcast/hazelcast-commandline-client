@@ -20,7 +20,7 @@ func (sc *SetAddCommand) Init(cc plug.InitContext) error {
 	cc.SetPositionalArgCount(1, math.MaxInt)
 	help := "Add values to the given Set"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("set add [value] [flags]")
+	cc.SetCommandUsage("add [values] [flags]")
 	return nil
 }
 
