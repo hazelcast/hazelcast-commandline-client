@@ -7,10 +7,8 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client"
 )
 
@@ -31,7 +29,6 @@ func (sc *SetRemoveCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 	if err != nil {
 		return err
 	}
-	var rows []output.Row
 	for _, arg := range ec.Args() {
 		vd, err := makeValueData(ec, ci, arg)
 		if err != nil {
@@ -46,30 +43,14 @@ func (sc *SetRemoveCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 			return err
 		}
 		stop()
-		raw := codec.DecodeSetRemoveResponse(sv.(*hazelcast.ClientMessage))
-		vt := raw.Type()
-		value, err := ci.DecodeData(raw)
-		if err != nil {
-			ec.Logger().Info("The value for %s was not decoded, due to error: %s", arg, err.Error())
-			value = serialization.NondecodedType(serialization.TypeToLabel(vt))
+		done := codec.DecodeSetRemoveResponse(sv.(*hazelcast.ClientMessage))
+		if !done {
+			err = fmt.Errorf("the value for %s was not decoded, due to an unknown error", arg)
+			ec.Logger().Error(err)
+			return err
 		}
-		row := output.Row{
-			output.Column{
-				Name:  output.NameValue,
-				Type:  vt,
-				Value: value,
-			},
-		}
-		if ec.Props().GetBool(setFlagShowType) {
-			row = append(row, output.Column{
-				Name:  output.NameValueType,
-				Type:  serialization.TypeString,
-				Value: serialization.TypeToLabel(vt),
-			})
-		}
-		rows = append(rows, row)
 	}
-	return ec.AddOutputRows(ctx, rows...)
+	return nil
 }
 
 func init() {
