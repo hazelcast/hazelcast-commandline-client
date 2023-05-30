@@ -16,11 +16,11 @@ func WithSet(tcx TestContext, fn func(m *hz.Set)) {
 	fn(m)
 }
 
-func SetTester(t *testing.T, fn func(tcx TestContext, m *hz.Set)) {
+func SetTester(t *testing.T, fn func(tcx TestContext, s *hz.Set)) {
 	tcx := TestContext{T: t}
 	tcx.Tester(func(tcx TestContext) {
-		WithSet(tcx, func(m *hz.Set) {
-			fn(tcx, m)
+		WithSet(tcx, func(s *hz.Set) {
+			fn(tcx, s)
 		})
 	})
 }

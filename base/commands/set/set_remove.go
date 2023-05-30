@@ -51,13 +51,21 @@ func (sc *SetRemoveCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 		}
 		stop()
 		resp := codec.DecodeSetRemoveResponse(sv.(*hazelcast.ClientMessage))
-		rows = append(rows, output.Row{
-			{
-				Name:  "result",
+		row := output.Row{
+			output.Column{
+				Name:  output.NameValue,
 				Type:  serialization.TypeBool,
 				Value: resp,
 			},
-		})
+		}
+		if ec.Props().GetBool(setFlagShowType) {
+			row = append(row, output.Column{
+				Name:  output.NameValueType,
+				Type:  serialization.TypeString,
+				Value: serialization.TypeToLabel(serialization.TypeBool),
+			})
+		}
+		rows = append(rows, row)
 	}
 	return ec.AddOutputRows(ctx, rows...)
 }
