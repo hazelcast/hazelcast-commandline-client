@@ -23,6 +23,7 @@
 ** xref:clc-job.adoc[]
 ** xref:clc-object.adoc[]
 ** xref:clc-map.adoc[]
+** xref:clc-set.adoc[]
 ** xref:clc-sql.adoc[]
 ** xref:clc-snapshot.adoc[]
 ** xref:clc-version.adoc[]
