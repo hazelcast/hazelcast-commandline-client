@@ -77,7 +77,7 @@ func (qc *QueuePollCommand) poll(ctx context.Context, ec plug.ExecContext, ci *h
 		return 0, nil, err
 	}
 	stop()
-	raw := codec.DecodeMapRemoveResponse(rv.(*hazelcast.ClientMessage))
+	raw := codec.DecodeQueuePollResponse(rv.(*hazelcast.ClientMessage))
 	vt := raw.Type()
 	value, err := ci.DecodeData(raw)
 	if err != nil {
