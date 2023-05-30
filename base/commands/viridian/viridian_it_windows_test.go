@@ -1,3 +1,5 @@
+//go:build windows
+
 package viridian_test
 
 func streamLogs_nonInteractiveTest(t *testing.T) {
