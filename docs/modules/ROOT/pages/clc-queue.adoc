@@ -15,6 +15,7 @@ clc queue [command] [flags]
 * <<clc-queue-offer, clc queue offer>>
 * <<clc-queue-poll, clc queue poll>>
 * <<clc-queue-size, clc queue size>>
+* <<clc-queue-destroy, clc queue destroy>>
 
 == clc queue clear
 
@@ -62,9 +63,9 @@ Parameters:
 |===
 |Parameter|Required|Description|Default
 
-|`value`
+|`values`
 |Required
-|Value to add to the queue.
+|Values to add to the queue.
 |N/A
 
 |`--name`, `-n`
@@ -93,7 +94,7 @@ Usage:
 
 [source,bash]
 ----
-clc queue poll [value] [flags]
+clc queue poll [flags]
 ----
 
 Parameters:
@@ -161,3 +162,32 @@ Example:
 ----
 clc queue size --name myQueue
 ----
+
+== clc queue destroy
+
+Deletes the queue and all the data in it.
+
+Usage:
+
+[source,bash]
+----
+clc queue destroy [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the queue.
+|`default`
+
+|`--yes`
+|Optional
+|Skip confirming the destroy operation.
+|`false`
+
+|===
