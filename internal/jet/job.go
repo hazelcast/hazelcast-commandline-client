@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -91,9 +92,9 @@ func (j Jet) SubmitJob(ctx context.Context, path, jobName, className, snapshot s
 			return fmt.Errorf("sending the job: %w", err)
 		}
 		part := i + 1
-		hash := fmt.Sprintf("%x", hashBin)
+		hash = fmt.Sprintf("%x", hashBin)
 		if workaround && hash[0] == '0' {
-			hash = hash[1:]
+			hash = strings.TrimLeft(hash, "0")
 		}
 		mrReq = codec.EncodeJetUploadJobMultipartRequest(sid, part, int32(pc), bin, int32(len(bin)), hash)
 		if _, err := j.ci.InvokeOnMember(ctx, mrReq, mem, nil); err != nil {

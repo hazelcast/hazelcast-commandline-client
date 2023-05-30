@@ -29,7 +29,7 @@ func (cm SubmitCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("submit [jar-file] [arg, ...]")
 	long := fmt.Sprintf(`Submits a jar file to create a Jet job
 	
-This command requires a Viridian or a Hazelcast cluster having version %s or better.
+This command requires a Viridian or a Hazelcast cluster having version %s or newer.
 `, minServerVersion)
 	short := "Submits a jar file to create a Jet job"
 	cc.SetCommandHelp(long, short)
