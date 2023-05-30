@@ -54,7 +54,7 @@ func compactPrimitiveArraysTest(t *testing.T) {
 			fullNullableInt8Array: []*int8{nil, &i8},
 		}
 		ctx := context.Background()
-		it.WithMap(tcx, func(m *hazelcast.Map) {
+		it.WithRandomMap(tcx, func(m *hazelcast.Map) {
 			check.Must(m.Set(ctx, "value", value))
 			testCases := []struct {
 				format string
@@ -115,7 +115,7 @@ func compactPrimitivesTest(t *testing.T) {
 			nullBoolNotNull: &b,
 		}
 		ctx := context.Background()
-		it.WithMap(tcx, func(m *hazelcast.Map) {
+		it.WithRandomMap(tcx, func(m *hazelcast.Map) {
 			check.Must(m.Set(ctx, "value", value))
 			testCases := []struct {
 				format string
@@ -175,7 +175,7 @@ func compactOthersTest(t *testing.T) {
 			decimalNotNull:        &dc,
 		}
 		ctx := context.Background()
-		it.WithMap(tcx, func(m *hazelcast.Map) {
+		it.WithRandomMap(tcx, func(m *hazelcast.Map) {
 			check.Must(m.Set(ctx, "value", value))
 			testCases := []struct {
 				format string
@@ -282,7 +282,7 @@ func compactOtherArraysTest(t *testing.T) {
 				},
 			}
 			tcx.Tester(func(tcx it.TestContext) {
-				it.WithMap(tcx, func(m *hazelcast.Map) {
+				it.WithRandomMap(tcx, func(m *hazelcast.Map) {
 					check.Must(m.Set(ctx, "value", value))
 					tcx.WithReset(func() {
 						ctx := context.Background()

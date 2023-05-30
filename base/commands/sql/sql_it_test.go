@@ -169,7 +169,7 @@ func sqlSuggestion_Interactive(t *testing.T) {
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
 		ctx := context.Background()
-		it.WithMap(tcx, func(m *hazelcast.Map) {
+		it.WithRandomMap(tcx, func(m *hazelcast.Map) {
 			check.Must(m.Set(ctx, "foo", "bar"))
 			tcx.WithShell(ctx, func(tcx it.TestContext) {
 				tcx.WriteStdinf(`SELECT * FROM "%s";`+"\n", m.Name())
@@ -184,7 +184,7 @@ func sqlSuggestion_NonInteractive(t *testing.T) {
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
 		ctx := context.Background()
-		it.WithMap(tcx, func(m *hazelcast.Map) {
+		it.WithRandomMap(tcx, func(m *hazelcast.Map) {
 			check.Must(m.Set(ctx, "foo", "bar"))
 			// ignoring the error here
 			_ = tcx.CLC().Execute(ctx, "sql", fmt.Sprintf(`SELECT * FROM "%s";`, m.Name()))

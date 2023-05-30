@@ -128,6 +128,11 @@ func XMLConfig(clusterName string, port int) string {
                <port>%d</port>
             </network>
 			<jet enabled="true" resource-upload-enabled="true" />
+			<map name="test-mapstore">
+				<map-store enabled="true">
+					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
+				</map-store>
+			</map>
         </hazelcast>
 	`, clusterName, port)
 }

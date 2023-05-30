@@ -76,7 +76,7 @@ func TestBuiltinSerialization(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			tcx := it.TestContext{T: t}
 			tcx.Tester(func(tcx it.TestContext) {
-				it.WithMap(tcx, func(m *hazelcast.Map) {
+				it.WithRandomMap(tcx, func(m *hazelcast.Map) {
 					key := tc.name
 					check.Must(m.Set(ctx, key, tc.value))
 					for _, format := range []string{"delimited", "json", "csv", "table"} {
