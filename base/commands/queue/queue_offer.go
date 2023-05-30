@@ -21,7 +21,7 @@ func (qc *QueueOfferCommand) Init(cc plug.InitContext) error {
 	cc.SetPositionalArgCount(1, math.MaxInt)
 	help := "Add values to the given Queue"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("[values] [flags]")
+	cc.SetCommandUsage("offer [values] [flags]")
 	return nil
 }
 

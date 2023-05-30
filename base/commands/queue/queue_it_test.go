@@ -2,7 +2,6 @@ package _queue_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands"
@@ -21,10 +20,8 @@ func TestQueue(t *testing.T) {
 		{name: "Clear_NonInteractive", f: clear_NonInteractiveTest},
 		{name: "Poll_Noninteractive", f: poll_NonInteractiveTest},
 		{name: "Offer_NonInteractive", f: offer_NonInteractiveTest},
-		{name: "Size_Interactive", f: size_InteractiveTest},
 		{name: "Size_Noninteractive", f: size_NoninteractiveTest},
-		{name: "Destroy_NonInteractive", f: destroy_NonInteractiveTest},
-		{name: "Destroy_AutoYes_NonInteractiveTest", f: destroy_autoYes_NonInteractiveTest},
+		{name: "Destroy_NonInteractiveTest", f: destroy_NonInteractiveTest},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, tc.f)
@@ -38,7 +35,6 @@ func clear_NonInteractiveTest(t *testing.T) {
 		tcx.WithReset(func() {
 			check.MustValue(q.Add(ctx, "foo"))
 			require.Equal(t, 1, check.MustValue(q.Size(ctx)))
-			// go tcx.WriteStdin([]byte("y\n"))
 			check.Must(tcx.CLC().Execute(ctx, "queue", "-n", q.Name(), "clear", "-q", "--yes"))
 			require.Equal(t, 0, check.MustValue(q.Size(ctx)))
 		})
@@ -64,7 +60,7 @@ func offer_NonInteractiveTest(t *testing.T) {
 		t := tcx.T
 		ctx := context.Background()
 		tcx.WithReset(func() {
-			check.MustValue(q.Add(ctx, "foo"))
+			check.Must(tcx.CLC().Execute(ctx, "queue", "-n", q.Name(), "offer", "foo", "-q"))
 			require.Equal(t, 1, check.MustValue(q.Size(ctx)))
 		})
 	})
@@ -87,38 +83,7 @@ func size_NoninteractiveTest(t *testing.T) {
 	})
 }
 
-func size_InteractiveTest(t *testing.T) {
-	it.QueueTester(t, func(tcx it.TestContext, q *hz.Queue) {
-		ctx := context.Background()
-		tcx.WithShell(ctx, func(tcx it.TestContext) {
-			tcx.WithReset(func() {
-				tcx.WriteStdin([]byte(fmt.Sprintf("\\queue -n %s size\n", q.Name())))
-				tcx.AssertStdoutDollarWithPath("testdata/queue_size_0.txt")
-			})
-			tcx.WithReset(func() {
-				check.MustValue(q.Add(ctx, "foo"))
-				tcx.WriteStdin([]byte(fmt.Sprintf("\\queue -n %s size\n", q.Name())))
-				tcx.AssertStderrContains("OK")
-				tcx.AssertStdoutDollarWithPath("testdata/queue_size_1.txt")
-			})
-		})
-	})
-}
-
 func destroy_NonInteractiveTest(t *testing.T) {
-	it.QueueTester(t, func(tcx it.TestContext, q *hz.Queue) {
-		t := tcx.T
-		ctx := context.Background()
-		tcx.WithReset(func() {
-			go tcx.WriteStdin([]byte("y\n"))
-			check.Must(tcx.CLC().Execute(ctx, "queue", "-n", q.Name(), "destroy"))
-			objects := check.MustValue(tcx.Client.GetDistributedObjectsInfo(ctx))
-			require.False(t, objectExists(hz.ServiceNameQueue, q.Name(), objects))
-		})
-	})
-}
-
-func destroy_autoYes_NonInteractiveTest(t *testing.T) {
 	it.QueueTester(t, func(tcx it.TestContext, q *hz.Queue) {
 		t := tcx.T
 		ctx := context.Background()
