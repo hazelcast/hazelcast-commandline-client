@@ -17,7 +17,7 @@ type SetSizeCommand struct{}
 func (sc *SetSizeCommand) Init(cc plug.InitContext) error {
 	help := "Return the size of the given Set"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("set size [flags]")
+	cc.SetCommandUsage("size [flags]")
 	cc.SetPositionalArgCount(0, 0)
 	return nil
 }

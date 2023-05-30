@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"strings"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -35,9 +36,13 @@ func (sc *SetRemoveCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 			return err
 		}
 		req := codec.EncodeSetRemoveRequest(setName, vd)
+		pID, err := stringToPartitionID(ci, setName)
+		if err != nil {
+			return err
+		}
 		sv, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 			sp.SetText(fmt.Sprintf("Removing from set %s", setName))
-			return ci.InvokeOnRandomTarget(ctx, req, nil)
+			return ci.InvokeOnPartition(ctx, req, pID, nil)
 		})
 		if err != nil {
 			return err
@@ -55,4 +60,15 @@ func (sc *SetRemoveCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 
 func init() {
 	Must(plug.Registry.RegisterCommand("set:remove", &SetRemoveCommand{}))
+}
+
+func stringToPartitionID(ci *hazelcast.ClientInternal, name string) (int32, error) {
+	idx := strings.Index(name, "@")
+	if keyData, err := ci.EncodeData(name[idx+1:]); err != nil {
+		return 0, err
+	} else if partitionID, err := ci.GetPartitionID(keyData); err != nil {
+		return 0, err
+	} else {
+		return partitionID, nil
+	}
 }

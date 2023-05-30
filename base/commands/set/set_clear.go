@@ -18,7 +18,7 @@ func (qc *SetClearCommand) Init(cc plug.InitContext) error {
 	help := "Delete all entries of a Set"
 	cc.SetCommandHelp(help, help)
 	cc.AddBoolFlag(clc.FlagAutoYes, "", false, false, "skip confirming the clear operation")
-	cc.SetCommandUsage("set clear [flags]")
+	cc.SetCommandUsage("clear [flags]")
 	return nil
 }
 
