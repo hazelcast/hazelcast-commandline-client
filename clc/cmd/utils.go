@@ -61,10 +61,10 @@ func parseDuration(duration string) (time.Duration, error) {
 	if ds == "" {
 		return 0, nil
 	}
-	// if it can be parsed to int, then it means it does not have any prefix ms, s, m, h (default is second)
+	// if it can be parsed to int, then it means it does not have any prefix ms, s, m, h (default is millisecond)
 	d, err := strconv.Atoi(ds)
 	if err == nil {
-		return time.Duration(d) * time.Second, nil
+		return time.Duration(d) * time.Millisecond, nil
 	}
 	pd, err := time.ParseDuration(ds)
 	if err != nil {
