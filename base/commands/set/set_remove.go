@@ -19,7 +19,7 @@ type SetRemoveCommand struct{}
 func (sc *SetRemoveCommand) Init(cc plug.InitContext) error {
 	addValueTypeFlag(cc)
 	cc.SetPositionalArgCount(1, math.MaxInt)
-	help := "Remove values to the given Set"
+	help := "Remove values from the given Set"
 	cc.SetCommandHelp(help, help)
 	cc.SetCommandUsage("remove [values] [flags]")
 	return nil

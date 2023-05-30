@@ -1,34 +1,31 @@
-= clc map
+= clc set
 
-Map commands are a group of map operations.
+Set commands are a group of set operations.
 
 Usage:
 
 [source,bash]
 ----
-clc map [command] [flags]
+clc set [command] [flags]
 ----
 
 == Commands
 
-* <<clc-map-clear, clc map clear>>
-* <<clc-map-get, clc map get>>
-* <<clc-map-set, clc map set>>
-* <<clc-map-entry-set, clc map entry-set>>
-* <<clc-map-key-set, clc map key-set>>
-* <<clc-map-size, clc map size>>
-* <<clc-map-remove, clc map remove>>
-* <<clc-map-destroy, clc map destroy>>
+* <<clc-set-clear, clc set clear>>
+* <<clc-set-add, clc set add>>
+* <<clc-set-remove, clc set remove>>
+* <<clc-set-size, clc set size>>
+* <<clc-set-destroy, clc set destroy>>
 
-== clc map clear
+== clc set clear
 
-Removes all entries from the map.
+Deletes all entries of a Set.
 
 Usage:
 
 [source,bash]
 ----
-clc map clear [flags]
+clc set clear [flags]
 ----
 
 Parameters:
@@ -39,301 +36,7 @@ Parameters:
 
 |`--name`, `-n`
 |Optional
-|Name of the map.
-|`default`
-
-|===
-
-== clc map get
-
-Prints a single entry from the map as a key-value pair.
-
-Usage:
-
-[source,bash]
-----
-clc map get [key] [flags]
-----
-
-Parameters:
-
-[cols="1m,1a,2a,1a"]
-|===
-|Parameter|Required|Description|Default
-
-|`--name`, `-n`
-|Optional
-|Name of the map.
-|`default`
-
-|`key`
-|Required
-|Key of the map entry.
-|N/A
-
-|`--key-type`, `-k`
-|Optional
-|Data type of the key. One of: `string`, `bool`, `json`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`.
-|string
-
-|`--format`, `-f`
-|Optional
-|Output format. Supported formats:
-
-- `csv`
-- `delimited`
-- `json`
-- `table`
-|`delimited` in non-interactive mode, `table` in interactive mode.
-
-|===
-
-Example:
-
-[source,bash]
-----
-clc map get --name yearbook 2012 --key-type i16
-----
-
-== clc map set
-
-Sets the given key-value entry pair in a map.
-
-Usage:
-
-[source,bash]
-----
-clc map set [key] [value] [flags]
-----
-
-Parameters:
-
-[cols="1m,1a,2a,1a"]
-|===
-|Parameter|Required|Description|Default
-
-|`--name`, `-n`
-|Optional
-|Name of the map.
-|`default`
-
-|`key`
-|Required
-|Key of the map entry.
-|N/A
-
-|`value`,
-|Required
-|Value to set for the key.
-|N/A
-
-|`--key-type`, `-k`
-|Optional
-|Data type of the key. One of: `string`, `bool`, `json`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`
-|String
-
-|`--value-type`, `-v`
-|Optional
-|Data type of the value. One of: `string`, `bool`, `json`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`
-|String
-
-|`--ttl`
-|Optional
-|Duration in milliseconds after which the entry will expire and be evicted. It cannot be shorter than 1 second (1000 ms).
-|N/A
-
-|`--max-idle`
-|Optional
-|Maximum time for this entry to stay idle in the map. It cannot be shorter than 1 second (1000 ms).
-|N/A
-
-|===
-
-Example:
-
-[source,bash]
-----
-clc map set --key-type string hello --value-type f32 19.94 --name myMap --ttl 1300
-----
-
-== clc map entry-set
-
-Gets all the entries of the specified map.
-
-Usage:
-
-[source,bash]
-----
-clc map entry-set [flags]
-----
-
-Parameters:
-
-[cols="1m,1a,2a,1a"]
-|===
-|Parameter|Required|Description|Default
-
-|`--name`, `-n`
-|Optional
-|Name of the map.
-|`default`
-
-|`--format`, `-f`
-|Optional
-|Output format. Supported formats:
-
-- `csv`
-- `delimited`
-- `json`
-- `table`
-|`delimited` in non-interactive mode, `table` in interactive mode.
-
-|===
-
-Example:
-
-[source,bash]
-----
-clc map entry-set -n myMap
-----
-
-== clc map key-set
-
-Gets all the keys of the specified map.
-
-Usage:
-
-[source,bash]
-----
-clc map key-set [flags]
-----
-
-Parameters:
-
-[cols="1m,1a,2a,1a"]
-|===
-|Parameter|Required|Description|Default
-
-|`--name`, `-n`
-|Optional
-|Name of the map.
-|`default`
-
-|`--format`, `-f`
-|Optional
-|Output format. Supported formats:
-
-- `csv`
-- `delimited`
-- `json`
-- `table`
-|`delimited` in non-interactive mode, `table` in interactive mode.
-
-|===
-
-Example:
-
-[source,bash]
-----
-clc map key-set -n myMap
-----
-
-== clc map size
-
-Prints the size of the given the map.
-
-Usage:
-
-[source,bash]
-----
-clc map size [flags]
-----
-
-Parameters:
-
-[cols="1m,1a,2a,1a"]
-|===
-|Parameter|Required|Description|Default
-
-|`--name`, `-n`
-|Optional
-|Name of the map.
-|`default`
-
-|===
-
-== clc map remove
-
-Deletes the value of a given key in a map and returns the key.
-
-Usage:
-
-[source,bash]
-----
-clc map remove [flags] [key]
-----
-
-Parameters:
-
-[cols="1m,1a,2a,1a"]
-|===
-|Parameter|Required|Description|Default
-
-|`--name`, `-n`
-|Optional
-|Name of the map.
-|`default`
-
-|`key`
-|Required
-|Key of the map entry.
-|N/A
-
-|`--key-type`, `-k`
-|Optional
-|Data type of the key. One of: `string`, `bool`, `json`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`
-|String
-
-|`--format`, `-f`
-|Optional
-|Output format. Supported formats:
-
-- `csv`
-- `delimited`
-- `json`
-- `table`
-|`delimited` in non-interactive mode, `table` in interactive mode.
-
-|===
-
-Example:
-
-[source,bash]
-----
-clc map remove --name myMap --key-type string k1
-k1
-----
-
-== clc map destroy
-
-Deletes the map and all the data in it.
-
-Usage:
-
-[source,bash]
-----
-clc map destroy [flags]
-----
-
-Parameters:
-
-[cols="1m,1a,2a,1a"]
-|===
-|Parameter|Required|Description|Default
-
-|`--name`, `-n`
-|Optional
-|Name of the map.
+|Name of the set.
 |`default`
 
 |`--yes`
@@ -342,3 +45,139 @@ Parameters:
 |`false`
 
 |===
+
+Example:
+
+[source,bash]
+----
+clc set clear --name mySet
+----
+
+== clc set add
+
+Adds values to the given Set.
+
+Usage:
+
+[source,bash]
+----
+clc set add [values] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the set.
+|`default`
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc set add 1 2 3 4 --name mySet
+----
+
+== clc set remove
+
+Removes values from the given Set.
+
+Usage:
+
+[source,bash]
+----
+clc set remove [values] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the set.
+|`default`
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc set remove 1 2 3 4 --name mySet
+----
+
+== clc set size
+
+Returns the size of the given Set.
+
+Usage:
+
+[source,bash]
+----
+clc set size [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the set.
+|`default`
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc set size --name mySet
+----
+
+== clc set destroy
+
+Destroys a Set. This command will delete the Set and the data in it will not be available anymore.
+
+Usage:
+
+[source,bash]
+----
+clc set destroy [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the set.
+|`default`
+
+|`--yes`
+|Optional
+|Skip confirming the destroy operation.
+|`false`
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc set destroy --name mySet
+----
