@@ -6,13 +6,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"strings"
 	"sync"
 
-	"github.com/google/shlex"
-
-	"github.com/hazelcast/hazelcast-commandline-client/base/commands/sql"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
@@ -64,7 +60,7 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 	if len(ec.Args()) > 0 {
 		return puberrors.ErrNotAvailable
 	}
-	m, err := ec.(*cmd.ExecContext).Main().CloneForInteractiveMode()
+	m, err := ec.(*cmd.ExecContext).Main().Clone(true)
 	if err != nil {
 		return fmt.Errorf("cloning Main: %w", err)
 	}
@@ -83,69 +79,13 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 		I2(fmt.Fprintf(ec.Stdout(), banner, internal.Version, cfgText, logText))
 	}
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
-	clcMultilineContinue := false
-	endLineFn := func(line string, multiline bool) (string, bool) {
-		// not caching trimmed line, since we want the backslash at the very end of the line. --YT
-		clcCmd := strings.HasPrefix(strings.TrimSpace(line), shell.CmdPrefix)
-		if clcCmd || multiline && clcMultilineContinue {
-			clcMultilineContinue = true
-			end := !strings.HasSuffix(line, "\\")
-			if !end {
-				line = line[:len(line)-1]
-			}
-			return line, end
-		}
-		clcMultilineContinue = false
-		line = strings.TrimSpace(line)
-		end := strings.HasPrefix(line, "help") || strings.HasPrefix(line, shell.CmdPrefix) || strings.HasSuffix(line, ";")
-		if !end {
-			line = fmt.Sprintf("%s\n", line)
-		}
-		return line, end
-	}
-	textFn := func(ctx context.Context, stdout io.Writer, text string) error {
-		if strings.HasPrefix(strings.TrimSpace(text), shell.CmdPrefix) {
-			parts := strings.Fields(text)
-			cm.mu.RLock()
-			_, ok := cm.shortcuts[parts[0]]
-			cm.mu.RUnlock()
-			if !ok {
-				// this is a CLC command
-				text = strings.TrimSpace(text)
-				text = strings.TrimPrefix(text, shell.CmdPrefix)
-				args, err := shlex.Split(text)
-				if err != nil {
-					return err
-				}
-				args[0] = shell.CmdPrefix + args[0]
-				return m.Execute(ctx, args...)
-			}
-		}
-		text, err := convertStatement(text)
-		if err != nil {
-			if errors.Is(err, errHelp) {
-				I2(fmt.Fprintln(stdout, interactiveHelp()))
-				return nil
-			}
-			return err
-		}
-		f := func() error {
-			res, stop, err := sql.ExecSQL(ctx, ec, text)
-			if err != nil {
-				return err
-			}
-			defer stop()
-			// TODO: update sql.UpdateOutput to use stdout
-			if err := sql.UpdateOutput(ctx, ec, res, verbose); err != nil {
-				return err
-			}
-			return nil
-		}
-		if w, ok := ec.(plug.ResultWrapper); ok {
-			return w.WrapResult(f)
-		}
-		return f()
-	}
+	endLineFn := makeEndLineFunc()
+	textFn := makeTextFunc(m, ec, verbose, false, false, func(shortcut string) bool {
+		cm.mu.RLock()
+		_, ok := cm.shortcuts[shortcut]
+		cm.mu.RUnlock()
+		return ok
+	})
 	path := paths.Join(paths.Home(), "shell.history")
 	if terminal.IsPipe(ec.Stdin()) {
 		sio := clc.IO{
@@ -166,7 +106,7 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 	return sh.Start(ctx)
 }
 
-func (ShellCommand) Unwrappable() {}
+func (*ShellCommand) Unwrappable() {}
 
 func convertStatement(stmt string) (string, error) {
 	stmt = strings.TrimSpace(stmt)
