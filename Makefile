@@ -1,7 +1,7 @@
 .PHONY: build test test-cover view-cover
 
 GIT_COMMIT = $(shell git rev-parse HEAD 2> /dev/null || echo unknown)
-CLC_VERSION ?= v0.0.0
+CLC_VERSION ?= v0.0.0-CUSTOMBUILD
 LDFLAGS = "-s -w -X 'github.com/hazelcast/hazelcast-commandline-client/internal.GitCommit=$(GIT_COMMIT)' -X 'github.com/hazelcast/hazelcast-commandline-client/internal.Version=$(CLC_VERSION)' -X 'github.com/hazelcast/hazelcast-go-client/internal.ClientType=CLC' -X 'github.com/hazelcast/hazelcast-go-client/internal.ClientVersion=$(CLC_VERSION)'"
 TEST_FLAGS ?= -v -count 1 -timeout 50m
 COVERAGE_OUT = coverage.out
@@ -27,10 +27,11 @@ view-cover:
 	go tool cover -html $(COVERAGE_OUT) -o coverage.html
 
 release: build
-	mkdir -p build/$(RELEASE_BASE)
+	mkdir -p build/$(RELEASE_BASE)/examples
 	cp LICENSE build/$(RELEASE_BASE)/LICENSE.txt
 	cp README.md build/$(RELEASE_BASE)/README.txt
 	cp build/$(BINARY_NAME) build/$(RELEASE_BASE)
+	cp examples/sql/dessert.sql build/$(RELEASE_BASE)/examples
 ifeq ($(TARGZ), false)
 	cd build && zip -r $(RELEASE_BASE).zip $(RELEASE_BASE)
 	echo $(RELEASE_BASE).zip >> build/$(RELEASE_FILE)
