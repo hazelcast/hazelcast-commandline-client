@@ -210,6 +210,9 @@ func (ec *ExecContext) ExecuteBlocking(ctx context.Context, f func(context.Conte
 		case <-ctx.Done():
 			// calling stop but also returning no-op just in case...
 			stop()
+			if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+				return nil, func() {}, cmderrors.ErrTimeout
+			}
 			return nil, func() {}, cmderrors.ErrUserCancelled
 		case v := <-ch:
 			if err, ok := v.(error); ok {

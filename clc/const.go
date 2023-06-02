@@ -11,6 +11,7 @@ const (
 	PropertyFormat                = "format"
 	PropertyVerbose               = "verbose"
 	PropertyQuiet                 = "quiet"
+	PropertyTimeout               = "timeout"
 	// PropertyConfig is the config name or path
 	// TODO: Separate config name and path
 	PropertyConfig              = "config"
