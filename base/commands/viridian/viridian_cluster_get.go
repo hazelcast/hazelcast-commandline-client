@@ -68,16 +68,6 @@ func (cm ClusterGetCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 			Value: c.HazelcastVersion,
 		},
 		output.Column{
-			Name:  "Creation Time",
-			Type:  serialization.TypeString,
-			Value: time.UnixMilli(c.CreationTime).Format(time.RFC3339),
-		},
-		output.Column{
-			Name:  "Start Time",
-			Type:  serialization.TypeString,
-			Value: time.UnixMilli(c.StartTime).Format(time.RFC3339),
-		},
-		output.Column{
 			Name:  "Hot Backup Enabled",
 			Type:  serialization.TypeString,
 			Value: boolToYesNo(c.HotBackupEnabled),
@@ -92,23 +82,18 @@ func (cm ClusterGetCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 			Type:  serialization.TypeString,
 			Value: boolToYesNo(c.IPWhitelistEnabled),
 		},
+		output.Column{
+			Name:  "Creation Time",
+			Type:  serialization.TypeJavaLocalDateTime,
+			Value: time.UnixMilli(c.CreationTime),
+		},
 	}
 	if ec.Props().GetBool(clc.PropertyVerbose) {
 		row = append(row,
 			output.Column{
-				Name:  "Type",
-				Type:  serialization.TypeString,
-				Value: c.ClusterType.Name,
-			},
-			output.Column{
-				Name:  "Desired State",
-				Type:  serialization.TypeString,
-				Value: c.DesiredState,
-			},
-			output.Column{
-				Name:  "Client Count",
-				Type:  serialization.TypeInt64,
-				Value: c.ClientCount,
+				Name:  "Start Time",
+				Type:  serialization.TypeJavaLocalDateTime,
+				Value: time.UnixMilli(c.StartTime),
 			},
 			output.Column{
 				Name:  "Regions",
