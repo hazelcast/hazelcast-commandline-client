@@ -15,6 +15,7 @@ clc multimap [command] [flags]
 * <<clc-multimap-get, clc multimap get>>
 * <<clc-multimap-remove, clc multimap remove>>
 * <<clc-multimap-size, clc multimap size>>
+* <<clc-multimap-clear, clc multimap clear>>
 
 == clc multimap put
 
@@ -184,5 +185,34 @@ Parameters:
 |Optional
 |Name of the multimap.
 |`default`
+
+|===
+
+== clc multimap clear
+
+Removes all entries from the multimap.
+
+Usage:
+
+[source,bash]
+----
+clc multimap clear [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the multimap.
+|`default`
+
+|`--yes`
+|Optional
+|Skip confirming the clear operation.
+|`false`
 
 |===

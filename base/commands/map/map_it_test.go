@@ -48,7 +48,6 @@ func clear_NonInteractiveTest(t *testing.T) {
 			require.Equal(t, 0, check.MustValue(m.Size(ctx)))
 		})
 	})
-
 }
 
 func entrySet_NonInteractiveTest(t *testing.T) {
