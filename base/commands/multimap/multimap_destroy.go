@@ -14,17 +14,20 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 )
 
-type MultiMapClearCommand struct{}
+type MultiMapDestroyCommand struct{}
 
-func (mc *MultiMapClearCommand) Init(cc plug.InitContext) error {
-	help := "Delete all entries of a MultiMap"
-	cc.SetCommandHelp(help, help)
+func (mc *MultiMapDestroyCommand) Init(cc plug.InitContext) error {
+	long := `Destroy a MultiMap
+
+This command will delete the MultiMap and the data in it will not be available anymore.`
+	short := "Destroy a MultiMap"
+	cc.SetCommandHelp(long, short)
 	cc.AddBoolFlag(clc.FlagAutoYes, "", false, false, "skip confirming the destroy operation")
-	cc.SetCommandUsage("clear")
+	cc.SetCommandUsage("destroy")
 	return nil
 }
 
-func (mc *MultiMapClearCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (mc *MultiMapDestroyCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	mv, err := ec.Props().GetBlocking(multiMapPropertyName)
 	if err != nil {
 		return err
@@ -43,8 +46,8 @@ func (mc *MultiMapClearCommand) Exec(ctx context.Context, ec plug.ExecContext) e
 	}
 	m := mv.(*hazelcast.MultiMap)
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Clearing multimap %s", m.Name()))
-		if err := m.Clear(ctx); err != nil {
+		sp.SetText(fmt.Sprintf("Destroying multimap %s", m.Name()))
+		if err := m.Destroy(ctx); err != nil {
 			return nil, err
 		}
 		return nil, nil
@@ -57,5 +60,5 @@ func (mc *MultiMapClearCommand) Exec(ctx context.Context, ec plug.ExecContext) e
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("multimap:clear", &MultiMapClearCommand{}))
+	Must(plug.Registry.RegisterCommand("multimap:destroy", &MultiMapDestroyCommand{}))
 }

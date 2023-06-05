@@ -8,6 +8,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/types"
 	"github.com/stretchr/testify/require"
 )
 
@@ -21,6 +22,7 @@ func TestMultimap(t *testing.T) {
 		{name: "Remove_Noninteractive", f: remove_NonInteractiveTest},
 		{name: "Size_Noninteractive", f: size_NoninteractiveTest},
 		{name: "Clear_NonInteractive", f: clear_NonInteractiveTest},
+		{name: "Destroy_NonInteractive", f: destroy_NonInteractiveTest},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, tc.f)
@@ -102,5 +104,25 @@ func clear_NonInteractiveTest(t *testing.T) {
 			require.Equal(t, 0, check.MustValue(m.Size(ctx)))
 		})
 	})
+}
 
+func destroy_NonInteractiveTest(t *testing.T) {
+	it.MultiMapTester(t, func(tcx it.TestContext, m *hazelcast.MultiMap) {
+		t := tcx.T
+		ctx := context.Background()
+		tcx.WithReset(func() {
+			check.Must(tcx.CLC().Execute(ctx, "multimap", "-n", m.Name(), "destroy", "--yes"))
+			objects := check.MustValue(tcx.Client.GetDistributedObjectsInfo(ctx))
+			require.False(t, objectExists(hazelcast.ServiceNameMap, m.Name(), objects))
+		})
+	})
+}
+
+func objectExists(sn, name string, objects []types.DistributedObjectInfo) bool {
+	for _, obj := range objects {
+		if sn == obj.ServiceName && name == obj.Name {
+			return true
+		}
+	}
+	return false
 }
