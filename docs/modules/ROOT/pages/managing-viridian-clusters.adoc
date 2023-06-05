@@ -1,4 +1,4 @@
-== Managing Viridian Clusters Using the Hazelcast CLC
+= Managing Viridian Clusters Using the Hazelcast CLC
 
 :description: In this tutorial, you'll learn the basics of managing {hazelcast-cloud} clusters using the Hazelcast CLC. You'll see how to create, list, and delete clusters, and how to download their logs. You'll also learn how to perform pause/resume operations on {hazelcast-cloud} clusters using the Hazelcast CLC.
 
