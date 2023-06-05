@@ -23,6 +23,7 @@ func TestMultimap(t *testing.T) {
 		{name: "Size_Noninteractive", f: size_NoninteractiveTest},
 		{name: "Clear_NonInteractive", f: clear_NonInteractiveTest},
 		{name: "Destroy_NonInteractive", f: destroy_NonInteractiveTest},
+		{name: "KeySet_NoninteractiveTest", f: keySet_NoninteractiveTest},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, tc.f)
@@ -114,6 +115,28 @@ func destroy_NonInteractiveTest(t *testing.T) {
 			check.Must(tcx.CLC().Execute(ctx, "multimap", "-n", m.Name(), "destroy", "--yes"))
 			objects := check.MustValue(tcx.Client.GetDistributedObjectsInfo(ctx))
 			require.False(t, objectExists(hazelcast.ServiceNameMap, m.Name(), objects))
+		})
+	})
+}
+
+func keySet_NoninteractiveTest(t *testing.T) {
+	it.MultiMapTester(t, func(tcx it.TestContext, m *hazelcast.MultiMap) {
+		ctx := context.Background()
+		// no entry
+		tcx.WithReset(func() {
+			check.Must(tcx.CLC().Execute(ctx, "multimap", "-n", m.Name(), "key-set", "-q"))
+			tcx.AssertStdoutEquals("")
+		})
+		// set an entry
+		tcx.WithReset(func() {
+			check.MustValue(m.Put(context.Background(), "foo", "bar"))
+			check.Must(tcx.CLC().Execute(ctx, "multimap", "-n", m.Name(), "key-set", "-q"))
+			tcx.AssertStdoutContains("foo\n")
+		})
+		// show type
+		tcx.WithReset(func() {
+			check.Must(tcx.CLC().Execute(ctx, "multimap", "-n", m.Name(), "key-set", "--show-type", "-q"))
+			tcx.AssertStdoutContains("foo\tSTRING\n")
 		})
 	})
 }

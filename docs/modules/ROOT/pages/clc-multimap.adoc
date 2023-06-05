@@ -17,6 +17,7 @@ clc multimap [command] [flags]
 * <<clc-multimap-size, clc multimap size>>
 * <<clc-multimap-clear, clc multimap clear>>
 * <<clc-multimap-destroy, clc multimap destroy>>
+* <<clc-multimap-key-set, clc multimap key-set>>
 
 == clc multimap put
 
@@ -244,3 +245,53 @@ Parameters:
 |Optional
 |Skip confirming the destroy operation.
 |`false`
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc multimap destroy -n myMultiMap
+----
+
+== clc multimap key-set
+
+Gets all the keys of the specified multimap.
+
+Usage:
+
+[source,bash]
+----
+clc multimap key-set [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the multimap.
+|`default`
+
+|`--format`, `-f`
+|Optional
+|Output format. Supported formats:
+
+- `csv`
+- `delimited`
+- `json`
+- `table`
+|`delimited` in non-interactive mode, `table` in interactive mode.
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc multimap key-set -n myMultiMap
+----
