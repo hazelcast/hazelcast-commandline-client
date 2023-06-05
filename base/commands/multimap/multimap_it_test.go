@@ -17,6 +17,7 @@ func TestMultimap(t *testing.T) {
 		f    func(t *testing.T)
 	}{
 		{name: "Put_NonInteractive", f: put_NonInteractiveTest},
+		{name: "Get_Noninteractive", f: get_NonInteractiveTest},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, tc.f)
@@ -34,6 +35,23 @@ func put_NonInteractiveTest(t *testing.T) {
 			v := check.MustValue(m.Get(context.Background(), "foo"))
 			require.Contains(t, v, "bar")
 			require.Contains(t, v, "bar2")
+		})
+	})
+}
+
+func get_NonInteractiveTest(t *testing.T) {
+	it.MultiMapTester(t, func(tcx it.TestContext, m *hazelcast.MultiMap) {
+		ctx := context.Background()
+		// no entry
+		tcx.WithReset(func() {
+			check.Must(tcx.CLC().Execute(ctx, "multimap", "-n", m.Name(), "get", "foo", "-q"))
+			tcx.AssertStdoutEquals("")
+		})
+		// set an entry
+		tcx.WithReset(func() {
+			check.MustValue(m.Put(context.Background(), "foo", "bar"))
+			check.Must(tcx.CLC().Execute(ctx, "multimap", "-n", m.Name(), "get", "foo", "-q", "--show-type"))
+			tcx.AssertStdoutEquals("bar\tSTRING\n")
 		})
 	})
 }

@@ -12,6 +12,7 @@ clc multimap [command] [flags]
 == Commands
 
 * <<clc-multimap-put, clc multimap put>>
+* <<clc-multimap-get, clc multimap get>>
 
 == clc multimap put
 
@@ -32,12 +33,12 @@ Parameters:
 
 |`--name`, `-n`
 |Optional
-|Name of the map.
+|Name of the multimap.
 |`default`
 
 |`key`
 |Required
-|Key of the map entry.
+|Key of the multimap entry.
 |N/A
 
 |`value`,
@@ -61,5 +62,49 @@ Example:
 
 [source,bash]
 ----
-clc multimap put --key-type string hello --value-type f32 19.94 --name myMap
+clc multimap put --key-type string hello --value-type f32 19.94 --name myMultiMap
 ----
+
+== clc multimap get
+
+Prints entries from the multimap.
+
+Usage:
+
+[source,bash]
+----
+clc multimap get [key] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the multimap.
+|`default`
+
+|`key`
+|Required
+|Key of the multimap entry.
+|N/A
+
+|`--key-type`, `-k`
+|Optional
+|Data type of the key. One of: `string`, `bool`, `json`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`.
+|string
+
+|`--format`, `-f`
+|Optional
+|Output format. Supported formats:
+
+- `csv`
+- `delimited`
+- `json`
+- `table`
+|`delimited` in non-interactive mode, `table` in interactive mode.
+
+|===
