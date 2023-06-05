@@ -1,0 +1,65 @@
+= clc multimap
+
+Multimap commands are a group of multimap operations.
+
+Usage:
+
+[source,bash]
+----
+clc multimap [command] [flags]
+----
+
+== Commands
+
+* <<clc-multimap-put, clc multimap put>>
+
+== clc multimap put
+
+Put a value in the given MultiMap
+
+Usage:
+
+[source,bash]
+----
+clc multimap put [key] [value] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the map.
+|`default`
+
+|`key`
+|Required
+|Key of the map entry.
+|N/A
+
+|`value`,
+|Required
+|Value to set for the key.
+|N/A
+
+|`--key-type`, `-k`
+|Optional
+|Data type of the key. One of: `string`, `bool`, `json`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`
+|String
+
+|`--value-type`, `-v`
+|Optional
+|Data type of the value. One of: `string`, `bool`, `json`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`
+|String
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc multimap put --key-type string hello --value-type f32 19.94 --name myMap
+----

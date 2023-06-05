@@ -3,5 +3,7 @@
 package _multimap
 
 const (
-	defaultMultiMapName = "default"
+	multiMapFlagKeyType   = "key-type"
+	multiMapFlagValueType = "value-type"
+	defaultMultiMapName   = "default"
 )

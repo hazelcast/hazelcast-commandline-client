@@ -24,14 +24,14 @@ type MultiMapCommand struct {
 
 func (m MultiMapCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandGroup(clc.GroupDDSID)
-	cc.AddStringFlag(multiMapFlagName, "n", defaultMultiMapName, false, "multiMap name")
+	cc.AddStringFlag(multiMapFlagName, "n", defaultMultiMapName, false, "multimap name")
 	cc.AddBoolFlag(multiMapFlagShowType, "", false, false, "add the type names to the output")
 	if !cc.Interactive() {
 		cc.AddStringFlag(clc.PropertySchemaDir, "", paths.Schemas(), false, "set the schema directory")
 	}
 	cc.SetTopLevel(true)
-	cc.SetCommandUsage("multiMap [command] [flags]")
-	help := "MultiMap operations"
+	cc.SetCommandUsage("multimap [command] [flags]")
+	help := "Multimap operations"
 	cc.SetCommandHelp(help, help)
 	return nil
 }
@@ -50,8 +50,8 @@ func (m MultiMapCommand) Augment(ec plug.ExecContext, props *plug.Properties) er
 			return nil, err
 		}
 		mv, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-			sp.SetText(fmt.Sprintf("Getting multiMap %s", mmName))
-			m, err := ci.Client().GetMap(ctx, mmName)
+			sp.SetText(fmt.Sprintf("Getting multimap %s", mmName))
+			m, err := ci.Client().GetMultiMap(ctx, mmName)
 			if err != nil {
 				return nil, err
 			}
@@ -68,6 +68,6 @@ func (m MultiMapCommand) Augment(ec plug.ExecContext, props *plug.Properties) er
 
 func init() {
 	cmd := &MultiMapCommand{}
-	Must(plug.Registry.RegisterCommand("multiMap", cmd))
-	plug.Registry.RegisterAugmentor("20-multiMap", cmd)
+	Must(plug.Registry.RegisterCommand("multimap", cmd))
+	plug.Registry.RegisterAugmentor("20-multimap", cmd)
 }
