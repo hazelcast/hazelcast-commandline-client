@@ -13,6 +13,7 @@ clc multimap [command] [flags]
 
 * <<clc-multimap-put, clc multimap put>>
 * <<clc-multimap-get, clc multimap get>>
+* <<clc-map-remove, clc map remove>>
 
 == clc multimap put
 
@@ -108,3 +109,55 @@ Parameters:
 |`delimited` in non-interactive mode, `table` in interactive mode.
 
 |===
+
+== clc multimap remove
+
+Remove values from the given MultiMap.
+
+Usage:
+
+[source,bash]
+----
+clc multimap remove [flags] [key]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the multimap.
+|`default`
+
+|`key`
+|Required
+|Key of the multimap entries.
+|N/A
+
+|`--key-type`, `-k`
+|Optional
+|Data type of the key. One of: `string`, `bool`, `json`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`
+|String
+
+|`--format`, `-f`
+|Optional
+|Output format. Supported formats:
+
+- `csv`
+- `delimited`
+- `json`
+- `table`
+|`delimited` in non-interactive mode, `table` in interactive mode.
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc multimap remove --name myMultiMap --key-type string k1
+k1
+----
