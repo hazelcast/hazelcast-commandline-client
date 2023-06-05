@@ -337,3 +337,44 @@ Example:
 ----
 clc multimap entry-set -n myMultiMap
 ----
+
+== clc multimap values
+
+Gets all values of the specified multimap.
+
+Usage:
+
+[source,bash]
+----
+clc multimap values [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the multimap.
+|`default`
+
+|`--format`, `-f`
+|Optional
+|Output format. Supported formats:
+
+- `csv`
+- `delimited`
+- `json`
+- `table`
+|`delimited` in non-interactive mode, `table` in interactive mode.
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc multimap values -n myMultiMap
+----
