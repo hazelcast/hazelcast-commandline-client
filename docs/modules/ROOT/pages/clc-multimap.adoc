@@ -18,6 +18,7 @@ clc multimap [command] [flags]
 * <<clc-multimap-clear, clc multimap clear>>
 * <<clc-multimap-destroy, clc multimap destroy>>
 * <<clc-multimap-key-set, clc multimap key-set>>
+* <<clc-multimap-entry-set, clc multimap entry-set>>
 
 == clc multimap put
 
@@ -294,4 +295,45 @@ Example:
 [source,bash]
 ----
 clc multimap key-set -n myMultiMap
+----
+
+== clc multimap entry-set
+
+Gets all the entries of the specified multimap.
+
+Usage:
+
+[source,bash]
+----
+clc multimap entry-set [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the multimap.
+|`default`
+
+|`--format`, `-f`
+|Optional
+|Output format. Supported formats:
+
+- `csv`
+- `delimited`
+- `json`
+- `table`
+|`delimited` in non-interactive mode, `table` in interactive mode.
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc multimap entry-set -n myMultiMap
 ----
