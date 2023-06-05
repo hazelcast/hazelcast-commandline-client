@@ -21,7 +21,7 @@ func (mc *MultiMapRemoveCommand) Init(cc plug.InitContext) error {
 	addKeyTypeFlag(cc)
 	help := "Remove values from the given MultiMap"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("remove [-n multimap-name] [key] [flags]")
+	cc.SetCommandUsage("remove [key] [flags]")
 	cc.SetPositionalArgCount(1, 1)
 	return nil
 }

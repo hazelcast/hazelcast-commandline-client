@@ -13,7 +13,8 @@ clc multimap [command] [flags]
 
 * <<clc-multimap-put, clc multimap put>>
 * <<clc-multimap-get, clc multimap get>>
-* <<clc-map-remove, clc map remove>>
+* <<clc-multimap-remove, clc multimap remove>>
+* <<clc-multimap-size, clc multimap size>>
 
 == clc multimap put
 
@@ -118,7 +119,7 @@ Usage:
 
 [source,bash]
 ----
-clc multimap remove [flags] [key]
+clc multimap remove [key] [flags]
 ----
 
 Parameters:
@@ -161,3 +162,27 @@ Example:
 clc multimap remove --name myMultiMap --key-type string k1
 k1
 ----
+
+== clc multimap size
+
+Prints the size of the given the multimap.
+
+Usage:
+
+[source,bash]
+----
+clc multimap size [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the multimap.
+|`default`
+
+|===

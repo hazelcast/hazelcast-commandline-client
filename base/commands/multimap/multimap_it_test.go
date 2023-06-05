@@ -19,6 +19,7 @@ func TestMultimap(t *testing.T) {
 		{name: "Put_NonInteractive", f: put_NonInteractiveTest},
 		{name: "Get_Noninteractive", f: get_NonInteractiveTest},
 		{name: "Remove_Noninteractive", f: remove_NonInteractiveTest},
+		{name: "Size_Noninteractive", f: size_NoninteractiveTest},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, tc.f)
@@ -68,6 +69,23 @@ func remove_NonInteractiveTest(t *testing.T) {
 			tcx.AssertStdoutEquals("bar\tSTRING\n")
 			size = check.MustValue(m.Size(ctx))
 			require.Equal(tcx.T, 0, size)
+		})
+	})
+}
+
+func size_NoninteractiveTest(t *testing.T) {
+	it.MultiMapTester(t, func(tcx it.TestContext, m *hazelcast.MultiMap) {
+		ctx := context.Background()
+		// no entry
+		tcx.WithReset(func() {
+			check.Must(tcx.CLC().Execute(ctx, "multimap", "-n", m.Name(), "size", "-q"))
+			tcx.AssertStdoutEquals("0\n")
+		})
+		// set an entry
+		tcx.WithReset(func() {
+			check.MustValue(m.Put(ctx, "foo", "bar"))
+			check.Must(tcx.CLC().Execute(ctx, "multimap", "-n", m.Name(), "size", "-q"))
+			tcx.AssertStdoutEquals("1\n")
 		})
 	})
 }
