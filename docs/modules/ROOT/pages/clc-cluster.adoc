@@ -1,0 +1,88 @@
+= clc cluster
+
+cluster commands are a group of cluster operations.
+
+Usage:
+
+[source,bash]
+----
+clc cluster [command] [flags]
+----
+
+== Commands
+
+* <<clc-cluster-get, clc cluster get>>
+* <<clc-cluster-list-members, clc cluster list-members>>
+
+
+== clc cluster get
+
+Get information about the connected cluster.
+
+Usage:
+
+[source,bash]
+----
+clc cluster get [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--format`, `-f`
+|Optional
+|Output format. Supported formats:
+
+- `csv`
+- `delimited`
+- `json`
+- `table`
+|`delimited` in non-interactive mode, `table` in interactive mode.
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc cluster get -f table
+----
+
+== clc cluster list-members
+
+Lists information about connected cluster members.
+
+Usage:
+
+[source,bash]
+----
+clc cluster list-members [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--format`, `-f`
+|Optional
+|Output format. Supported formats:
+
+- `csv`
+- `delimited`
+- `json`
+- `table`
+|`delimited` in non-interactive mode, `table` in interactive mode.
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc cluster list-members -f table
+----

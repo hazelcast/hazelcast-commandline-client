@@ -47,7 +47,7 @@ func MakeHzConfig(props plug.ReadOnlyProperties, lg log.Logger) (hazelcast.Confi
 	wd := filepath.Dir(props.GetString(clc.PropertyConfig))
 	var cfg hazelcast.Config
 	cfg.Logger.CustomLogger = lg
-	cfg.Cluster.Unisocket = true
+	cfg.Cluster.Unisocket = false
 	cfg.Stats.Enabled = true
 	if ca := props.GetString(clc.PropertyClusterAddress); ca != "" {
 		lg.Debugf("Cluster address: %s", ca)
