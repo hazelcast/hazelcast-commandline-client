@@ -15,44 +15,38 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 )
 
-type MultiMapPutCommand struct {
-}
+type MultiMapTryLockCommand struct{}
 
-func (m MultiMapPutCommand) Init(cc plug.InitContext) error {
+func (m MultiMapTryLockCommand) Init(cc plug.InitContext) error {
 	addKeyTypeFlag(cc)
-	addValueTypeFlag(cc)
-	cc.SetPositionalArgCount(2, 2)
-	help := "Put a value in the given MultiMap"
+	help := "Try to lock a key in the given MultiMap"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("put [key] [value] [flags]")
+	cc.SetCommandUsage("try-lock [key] [flags]")
+	cc.SetPositionalArgCount(1, 1)
 	return nil
 }
 
-func (m MultiMapPutCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (m MultiMapTryLockCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	mmName := ec.Props().GetString(multiMapFlagName)
 	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
 		return err
 	}
-	if _, err := ec.Props().GetBlocking(multiMapPropertyName); err != nil {
-		return err
-	}
 	keyStr := ec.Args()[0]
-	valueStr := ec.Args()[1]
-	kd, vd, err := makeKeyValueData(ec, ci, keyStr, valueStr)
+	keyData, err := makeKeyData(ec, ci, keyStr)
 	if err != nil {
 		return err
 	}
-	req := codec.EncodeMultiMapPutRequest(mmName, kd, vd, 0)
+	req := codec.EncodeMultiMapTryLockRequest(mmName, keyData, 0, 0, 600, 0)
 	rv, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Putting value into multimap %s", mmName))
-		return ci.InvokeOnKey(ctx, req, kd, nil)
+		sp.SetText(fmt.Sprintf("Trying to lock multimap %s", mmName))
+		return ci.InvokeOnKey(ctx, req, keyData, nil)
 	})
 	if err != nil {
 		return err
 	}
 	stop()
-	resp := codec.DecodeMultiMapPutResponse(rv.(*hazelcast.ClientMessage))
+	resp := codec.DecodeMultiMapTryLockResponse(rv.(*hazelcast.ClientMessage))
 	row := output.Row{
 		output.Column{
 			Name:  output.NameValue,
@@ -71,5 +65,5 @@ func (m MultiMapPutCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("multimap:put", &MultiMapPutCommand{}))
+	Must(plug.Registry.RegisterCommand("multimap:try-lock", &MultiMapTryLockCommand{}))
 }
