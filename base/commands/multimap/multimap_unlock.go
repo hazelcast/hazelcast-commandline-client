@@ -51,5 +51,5 @@ func (m MultiMapUnlockCommand) Exec(ctx context.Context, ec plug.ExecContext) er
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("multimap:unlock", &MultiMapUnlockCommand{}))
+	Must(plug.Registry.RegisterCommand("multimap:unlock", &MultiMapUnlockCommand{}, true))
 }

@@ -12,10 +12,11 @@ import (
 var Registry = newRegistry()
 
 type registry struct {
-	initters   map[string]Initializer
-	commands   map[string]Commander
-	augmentors map[string]Augmentor
-	printers   map[string]Printer
+	initters        map[string]Initializer
+	commands        map[string]Commander
+	augmentors      map[string]Augmentor
+	printers        map[string]Printer
+	onlyInteractive []string
 }
 
 func newRegistry() *registry {
@@ -31,12 +32,24 @@ func (rg *registry) RegisterGlobalInitializer(name string, ita Initializer) {
 	rg.initters[name] = ita
 }
 
-func (rg *registry) RegisterCommand(name string, cmd Commander) error {
+func (rg *registry) RegisterCommand(name string, cmd Commander, onlyInteractive ...bool) error {
 	if ok := validName(name); !ok {
 		return fmt.Errorf("invalid name: %s", name)
 	}
 	rg.commands[name] = cmd
+	if len(onlyInteractive) > 0 && onlyInteractive[0] {
+		rg.onlyInteractive = append(rg.onlyInteractive, name)
+	}
 	return nil
+}
+
+func (rg *registry) IsAvailable(isInteractive bool, cmdName string) bool {
+	for _, o := range rg.onlyInteractive {
+		if cmdName == o && !isInteractive {
+			return false
+		}
+	}
+	return true
 }
 
 func (rg *registry) RegisterAugmentor(name string, ag Augmentor) {
