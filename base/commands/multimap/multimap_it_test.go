@@ -25,7 +25,6 @@ func TestMultimap(t *testing.T) {
 		{name: "Destroy_NonInteractive", f: destroy_NonInteractiveTest},
 		{name: "KeySet_NoninteractiveTest", f: keySet_NoninteractiveTest},
 		{name: "EntrySet_NonInteractive", f: entrySet_NonInteractiveTest},
-		{name: "EntrySet_NonInteractive", f: entrySet_NonInteractiveTest},
 		{name: "Values_NonInteractive", f: values_NonInteractiveTest},
 	}
 	for _, tc := range testCases {

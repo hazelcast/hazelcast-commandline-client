@@ -19,6 +19,7 @@ type MultiMapTryLockCommand struct{}
 
 func (m MultiMapTryLockCommand) Init(cc plug.InitContext) error {
 	addKeyTypeFlag(cc)
+	cc.AddIntFlag(multiMapTTL, "", ttlUnset, false, "time-to-live (ms)")
 	help := "Try to lock a key in the given MultiMap"
 	cc.SetCommandHelp(help, help)
 	cc.SetCommandUsage("try-lock [key] [flags]")
@@ -28,6 +29,7 @@ func (m MultiMapTryLockCommand) Init(cc plug.InitContext) error {
 
 func (m MultiMapTryLockCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	mmName := ec.Props().GetString(multiMapFlagName)
+	ttl := GetTTL(ec)
 	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
 		return err
@@ -37,7 +39,7 @@ func (m MultiMapTryLockCommand) Exec(ctx context.Context, ec plug.ExecContext) e
 	if err != nil {
 		return err
 	}
-	req := codec.EncodeMultiMapTryLockRequest(mmName, keyData, 0, 0, 600, 0)
+	req := codec.EncodeMultiMapTryLockRequest(mmName, keyData, 0, 0, ttl, 0)
 	rv, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText(fmt.Sprintf("Trying to lock multimap %s", mmName))
 		return ci.InvokeOnKey(ctx, req, keyData, nil)
