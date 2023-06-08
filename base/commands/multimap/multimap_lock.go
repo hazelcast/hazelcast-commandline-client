@@ -32,13 +32,21 @@ func (m MultiMapLockCommand) Exec(ctx context.Context, ec plug.ExecContext) erro
 		return err
 	}
 	keyStr := ec.Args()[0]
+	ci, err := ec.ClientInternal(ctx)
+	if err != nil {
+		return err
+	}
+	keyData, err := makeKeyData(ec, ci, keyStr)
+	if err != nil {
+		return err
+	}
 	mm := mv.(*hazelcast.MultiMap)
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText(fmt.Sprintf("Locking key of multimap %s", mmName))
 		if ttl := GetTTL(ec); ttl != ttlUnset {
-			return mm.LockWithLease(ctx, keyStr, time.Duration(GetTTL(ec))), nil
+			return mm.LockWithLease(ctx, keyData, time.Duration(GetTTL(ec))), nil
 		}
-		return mm.Lock(ctx, keyStr), nil
+		return mm.Lock(ctx, keyData), nil
 	})
 	if err != nil {
 		return err
@@ -48,5 +56,5 @@ func (m MultiMapLockCommand) Exec(ctx context.Context, ec plug.ExecContext) erro
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("multimap:lock", &MultiMapLockCommand{}, true))
+	Must(plug.Registry.RegisterCommand("multimap:lock", &MultiMapLockCommand{}, plug.OnlyInteractive{}))
 }

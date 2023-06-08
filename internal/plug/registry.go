@@ -28,17 +28,27 @@ func newRegistry() *registry {
 	}
 }
 
+type RegisterCommandOption interface {
+	Apply(*registry, string)
+}
+
+type OnlyInteractive struct{}
+
+func (OnlyInteractive) Apply(r *registry, name string) {
+	r.onlyInteractive = append(r.onlyInteractive, name)
+}
+
 func (rg *registry) RegisterGlobalInitializer(name string, ita Initializer) {
 	rg.initters[name] = ita
 }
 
-func (rg *registry) RegisterCommand(name string, cmd Commander, onlyInteractive ...bool) error {
+func (rg *registry) RegisterCommand(name string, cmd Commander, opts ...RegisterCommandOption) error {
 	if ok := validName(name); !ok {
 		return fmt.Errorf("invalid name: %s", name)
 	}
 	rg.commands[name] = cmd
-	if len(onlyInteractive) > 0 && onlyInteractive[0] {
-		rg.onlyInteractive = append(rg.onlyInteractive, name)
+	for _, opt := range opts {
+		opt.Apply(rg, name)
 	}
 	return nil
 }
