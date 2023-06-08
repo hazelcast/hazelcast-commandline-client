@@ -39,7 +39,7 @@ func (mc *MultiMapGetCommand) Exec(ctx context.Context, ec plug.ExecContext) err
 	}
 	req := codec.EncodeMultiMapGetRequest(mmName, keyData, 0)
 	rv, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Getting from multimap %s", mmName))
+		sp.SetText(fmt.Sprintf("Getting value from multimap %s", mmName))
 		return ci.InvokeOnKey(ctx, req, keyData, nil)
 	})
 	if err != nil {
