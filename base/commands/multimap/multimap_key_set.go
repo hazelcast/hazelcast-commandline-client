@@ -64,5 +64,5 @@ func (mc *MultiMapKeySetCommand) Exec(ctx context.Context, ec plug.ExecContext) 
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("multimap:key-set", &MultiMapKeySetCommand{}))
+	Must(plug.Registry.RegisterCommand("multi-map:key-set", &MultiMapKeySetCommand{}))
 }

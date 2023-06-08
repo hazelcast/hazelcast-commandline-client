@@ -50,5 +50,5 @@ func (mc *MultiMapEntrySetCommand) Exec(ctx context.Context, ec plug.ExecContext
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("multimap:entry-set", &MultiMapEntrySetCommand{}))
+	Must(plug.Registry.RegisterCommand("multi-map:entry-set", &MultiMapEntrySetCommand{}))
 }

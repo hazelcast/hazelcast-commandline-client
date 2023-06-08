@@ -69,5 +69,5 @@ func (m MultiMapValuesCommand) Exec(ctx context.Context, ec plug.ExecContext) er
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("multimap:values", &MultiMapValuesCommand{}))
+	Must(plug.Registry.RegisterCommand("multi-map:values", &MultiMapValuesCommand{}))
 }

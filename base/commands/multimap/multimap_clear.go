@@ -57,5 +57,5 @@ func (mc *MultiMapClearCommand) Exec(ctx context.Context, ec plug.ExecContext) e
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("multimap:clear", &MultiMapClearCommand{}))
+	Must(plug.Registry.RegisterCommand("multi-map:clear", &MultiMapClearCommand{}))
 }

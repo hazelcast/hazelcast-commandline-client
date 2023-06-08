@@ -1,29 +1,29 @@
-= clc multimap
+= clc multi-map
 
-multimap commands are a group of MultiMap operations.
+multi-map commands are a group of MultiMap operations.
 
 Usage:
 
 [source,bash]
 ----
-clc multimap [command] [flags]
+clc multi-map [command] [flags]
 ----
 
 == Commands
 
-* <<clc-multimap-put, clc multimap put>>
-* <<clc-multimap-get, clc multimap get>>
-* <<clc-multimap-remove, clc multimap remove>>
-* <<clc-multimap-size, clc multimap size>>
-* <<clc-multimap-clear, clc multimap clear>>
-* <<clc-multimap-destroy, clc multimap destroy>>
-* <<clc-multimap-key-set, clc multimap key-set>>
-* <<clc-multimap-entry-set, clc multimap entry-set>>
-* <<clc-multimap-lock, clc multimap lock>>
-* <<clc-multimap-try-lock, clc multimap try-lock>>
-* <<clc-multimap-unlock, clc multimap unlock>>
+* <<clc-multi-map-put, clc multi-map put>>
+* <<clc-multi-map-get, clc multi-map get>>
+* <<clc-multi-map-remove, clc multi-map remove>>
+* <<clc-multi-map-size, clc multi-map size>>
+* <<clc-multi-map-clear, clc multi-map clear>>
+* <<clc-multi-map-destroy, clc multi-map destroy>>
+* <<clc-multi-map-key-set, clc multi-map key-set>>
+* <<clc-multi-map-entry-set, clc multi-map entry-set>>
+* <<clc-multi-map-lock, clc multi-map lock>>
+* <<clc-multi-map-try-lock, clc multi-map try-lock>>
+* <<clc-multi-map-unlock, clc multi-map unlock>>
 
-== clc multimap put
+== clc multi-map put
 
 Put a value in the given MultiMap
 
@@ -31,7 +31,7 @@ Usage:
 
 [source,bash]
 ----
-clc multimap put [key] [value] [flags]
+clc multi-map put [key] [value] [flags]
 ----
 
 Parameters:
@@ -71,10 +71,10 @@ Example:
 
 [source,bash]
 ----
-clc multimap put --key-type string hello --value-type f32 19.94 --name myMultiMap
+clc multi-map put --key-type string hello --value-type f32 19.94 --name myMultiMap
 ----
 
-== clc multimap get
+== clc multi-map get
 
 Prints entries from the MultiMap.
 
@@ -82,7 +82,7 @@ Usage:
 
 [source,bash]
 ----
-clc multimap get [key] [flags]
+clc multi-map get [key] [flags]
 ----
 
 Parameters:
@@ -118,15 +118,15 @@ Parameters:
 
 |===
 
-== clc multimap remove
+== clc multi-map remove
 
-Remove values from the given MultiMap.
+Remove values from the given multi-map.
 
 Usage:
 
 [source,bash]
 ----
-clc multimap remove [key] [flags]
+clc multi-map remove [key] [flags]
 ----
 
 Parameters:
@@ -166,11 +166,11 @@ Example:
 
 [source,bash]
 ----
-clc multimap remove --name myMultiMap --key-type string k1
+clc multi-map remove --name mymulti-map --key-type string k1
 k1
 ----
 
-== clc multimap size
+== clc multi-map size
 
 Prints the size of the given the MultiMap.
 
@@ -178,7 +178,7 @@ Usage:
 
 [source,bash]
 ----
-clc multimap size [flags]
+clc multi-map size [flags]
 ----
 
 Parameters:
@@ -194,7 +194,7 @@ Parameters:
 
 |===
 
-== clc multimap clear
+== clc multi-map clear
 
 Removes all entries from the MultiMap.
 
@@ -202,7 +202,7 @@ Usage:
 
 [source,bash]
 ----
-clc multimap clear [flags]
+clc multi-map clear [flags]
 ----
 
 Parameters:
@@ -223,7 +223,7 @@ Parameters:
 
 |===
 
-== clc multimap destroy
+== clc multi-map destroy
 
 Deletes the MultiMap and all the data in it.
 
@@ -231,7 +231,7 @@ Usage:
 
 [source,bash]
 ----
-clc multimap destroy [flags]
+clc multi-map destroy [flags]
 ----
 
 Parameters:
@@ -256,10 +256,10 @@ Example:
 
 [source,bash]
 ----
-clc multimap destroy -n myMultiMap
+clc multi-map destroy -n myMultiMap
 ----
 
-== clc multimap key-set
+== clc multi-map key-set
 
 Gets all the keys of the specified MultiMap.
 
@@ -267,7 +267,7 @@ Usage:
 
 [source,bash]
 ----
-clc multimap key-set [flags]
+clc multi-map key-set [flags]
 ----
 
 Parameters:
@@ -297,10 +297,10 @@ Example:
 
 [source,bash]
 ----
-clc multimap key-set -n myMultiMap
+clc multi-map key-set -n myMultiMap
 ----
 
-== clc multimap entry-set
+== clc multi-map entry-set
 
 Gets all the entries of the specified MultiMap.
 
@@ -308,7 +308,7 @@ Usage:
 
 [source,bash]
 ----
-clc multimap entry-set [flags]
+clc multi-map entry-set [flags]
 ----
 
 Parameters:
@@ -338,10 +338,10 @@ Example:
 
 [source,bash]
 ----
-clc multimap entry-set -n myMultiMap
+clc multi-map entry-set -n myMultiMap
 ----
 
-== clc multimap values
+== clc multi-map values
 
 Gets all values of the specified MultiMap.
 
@@ -349,7 +349,7 @@ Usage:
 
 [source,bash]
 ----
-clc multimap values [flags]
+clc multi-map values [flags]
 ----
 
 Parameters:
@@ -379,10 +379,10 @@ Example:
 
 [source,bash]
 ----
-clc multimap values -n myMultiMap
+clc multi-map values -n myMultiMap
 ----
 
-== clc multimap lock
+== clc multi-map lock
 
 Lock a key in the given MultiMap.
 
@@ -390,7 +390,7 @@ Usage:
 
 [source,bash]
 ----
-clc multimap lock [key] [flags]
+clc multi-map lock [key] [flags]
 ----
 
 Parameters:
@@ -415,7 +415,7 @@ Example:
 
 [source,bash]
 ----
-clc multimap lock 1
+clc multi-map lock 1
 ----
 
 == clc multimap try-lock
@@ -426,7 +426,7 @@ Usage:
 
 [source,bash]
 ----
-clc multimap try-lock [key] [flags]
+clc multi-map try-lock [key] [flags]
 ----
 
 Parameters:
@@ -451,10 +451,10 @@ Example:
 
 [source,bash]
 ----
-clc multimap try-lock 1
+clc multi-map try-lock 1
 ----
 
-== clc multimap unlock
+== clc multi-map unlock
 
 Unlock a key in the given MultiMap.
 
@@ -462,7 +462,7 @@ Usage:
 
 [source,bash]
 ----
-clc multimap unlock [key] [flags]
+clc multi-map unlock [key] [flags]
 ----
 
 Parameters:
@@ -487,5 +487,5 @@ Example:
 
 [source,bash]
 ----
-clc multimap unlock 1
+clc multi-map unlock 1
 ----

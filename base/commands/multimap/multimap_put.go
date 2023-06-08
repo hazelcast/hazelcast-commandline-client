@@ -71,5 +71,5 @@ func (m MultiMapPutCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("multimap:put", &MultiMapPutCommand{}))
+	Must(plug.Registry.RegisterCommand("multi-map:put", &MultiMapPutCommand{}))
 }

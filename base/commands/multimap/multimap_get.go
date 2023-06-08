@@ -75,5 +75,5 @@ func (mc *MultiMapGetCommand) Exec(ctx context.Context, ec plug.ExecContext) err
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("multimap:get", &MultiMapGetCommand{}))
+	Must(plug.Registry.RegisterCommand("multi-map:get", &MultiMapGetCommand{}))
 }

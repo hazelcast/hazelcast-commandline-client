@@ -60,5 +60,5 @@ func (mc *MultiMapDestroyCommand) Exec(ctx context.Context, ec plug.ExecContext)
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("multimap:destroy", &MultiMapDestroyCommand{}))
+	Must(plug.Registry.RegisterCommand("multi-map:destroy", &MultiMapDestroyCommand{}))
 }

@@ -49,5 +49,5 @@ func (mc *MultiMapSizeCommand) Exec(ctx context.Context, ec plug.ExecContext) er
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("multimap:size", &MultiMapSizeCommand{}))
+	Must(plug.Registry.RegisterCommand("multi-map:size", &MultiMapSizeCommand{}))
 }

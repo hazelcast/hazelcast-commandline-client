@@ -56,5 +56,5 @@ func (m MultiMapLockCommand) Exec(ctx context.Context, ec plug.ExecContext) erro
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("multimap:lock", &MultiMapLockCommand{}, plug.OnlyInteractive{}))
+	Must(plug.Registry.RegisterCommand("multi-map:lock", &MultiMapLockCommand{}, plug.OnlyInteractive{}))
 }

@@ -30,8 +30,8 @@ func (m MultiMapCommand) Init(cc plug.InitContext) error {
 		cc.AddStringFlag(clc.PropertySchemaDir, "", paths.Schemas(), false, "set the schema directory")
 	}
 	cc.SetTopLevel(true)
-	cc.SetCommandUsage("multimap [command] [flags]")
-	help := "Multimap operations"
+	cc.SetCommandUsage("multi-map [command] [flags]")
+	help := "MultiMap operations"
 	cc.SetCommandHelp(help, help)
 	return nil
 }
@@ -68,6 +68,6 @@ func (m MultiMapCommand) Augment(ec plug.ExecContext, props *plug.Properties) er
 
 func init() {
 	cmd := &MultiMapCommand{}
-	Must(plug.Registry.RegisterCommand("multimap", cmd))
-	plug.Registry.RegisterAugmentor("20-multimap", cmd)
+	Must(plug.Registry.RegisterCommand("multi-map", cmd))
+	plug.Registry.RegisterAugmentor("20-multi-map", cmd)
 }
