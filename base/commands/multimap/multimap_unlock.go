@@ -43,10 +43,6 @@ func (m MultiMapUnlockCommand) Exec(ctx context.Context, ec plug.ExecContext) er
 		return err
 	}
 	stop()
-	if err != nil {
-		return err
-	}
-	stop()
 	return nil
 }
 
