@@ -5,12 +5,12 @@ package _multimap
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client"
 )
@@ -29,31 +29,28 @@ func (m MultiMapTryLockCommand) Init(cc plug.InitContext) error {
 
 func (m MultiMapTryLockCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	mmName := ec.Props().GetString(multiMapFlagName)
-	ttl := GetTTL(ec)
-	ci, err := ec.ClientInternal(ctx)
+	mv, err := ec.Props().GetBlocking(multiMapPropertyName)
 	if err != nil {
 		return err
 	}
 	keyStr := ec.Args()[0]
-	keyData, err := makeKeyData(ec, ci, keyStr)
-	if err != nil {
-		return err
-	}
-	req := codec.EncodeMultiMapTryLockRequest(mmName, keyData, 0, 0, ttl, 0)
-	rv, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+	mm := mv.(*hazelcast.MultiMap)
+	lv, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText(fmt.Sprintf("Trying to lock multimap %s", mmName))
-		return ci.InvokeOnKey(ctx, req, keyData, nil)
+		if ttl := GetTTL(ec); ttl != ttlUnset {
+			return mm.TryLockWithLease(ctx, keyStr, time.Duration(GetTTL(ec)))
+		}
+		return mm.TryLock(ctx, keyStr)
 	})
 	if err != nil {
 		return err
 	}
 	stop()
-	resp := codec.DecodeMultiMapTryLockResponse(rv.(*hazelcast.ClientMessage))
 	row := output.Row{
 		output.Column{
 			Name:  output.NameValue,
 			Type:  serialization.TypeBool,
-			Value: resp,
+			Value: lv.(bool),
 		},
 	}
 	if ec.Props().GetBool(multiMapFlagShowType) {

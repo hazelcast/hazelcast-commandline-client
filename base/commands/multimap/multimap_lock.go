@@ -5,11 +5,12 @@ package _multimap
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
+	"github.com/hazelcast/hazelcast-go-client"
 )
 
 type MultiMapLockCommand struct{}
@@ -26,20 +27,18 @@ func (m MultiMapLockCommand) Init(cc plug.InitContext) error {
 
 func (m MultiMapLockCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	mmName := ec.Props().GetString(multiMapFlagName)
-	ttl := GetTTL(ec)
-	ci, err := ec.ClientInternal(ctx)
+	mv, err := ec.Props().GetBlocking(multiMapPropertyName)
 	if err != nil {
 		return err
 	}
 	keyStr := ec.Args()[0]
-	keyData, err := makeKeyData(ec, ci, keyStr)
-	if err != nil {
-		return err
-	}
-	req := codec.EncodeMultiMapLockRequest(mmName, keyData, 0, ttl, 0)
+	mm := mv.(*hazelcast.MultiMap)
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText(fmt.Sprintf("Locking key of multimap %s", mmName))
-		return ci.InvokeOnKey(ctx, req, keyData, nil)
+		if ttl := GetTTL(ec); ttl != ttlUnset {
+			return mm.LockWithLease(ctx, keyStr, time.Duration(GetTTL(ec))), nil
+		}
+		return mm.Lock(ctx, keyStr), nil
 	})
 	if err != nil {
 		return err
