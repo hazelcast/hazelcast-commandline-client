@@ -16,6 +16,10 @@ clc map [command] [flags]
 * <<clc-map-set, clc map set>>
 * <<clc-map-entry-set, clc map entry-set>>
 * <<clc-map-key-set, clc map key-set>>
+* <<clc-map-values, clc map values>>
+* <<clc-map-lock, clc map lock>>
+* <<clc-map-try-lock, clc map try-lock>>
+* <<clc-map-unlock, clc map unlock>>
 * <<clc-map-size, clc map size>>
 * <<clc-map-load-all, clc map load-all>>
 * <<clc-map-remove, clc map remove>>
@@ -237,6 +241,184 @@ Example:
 [source,bash]
 ----
 clc map key-set -n myMap
+----
+
+== clc map values
+
+Gets all the values of the given map.
+
+Usage:
+
+[source,bash]
+----
+clc map values [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the map.
+|`default`
+
+|`--format`, `-f`
+|Optional
+|Output format. Supported formats:
+
+- `csv`
+- `delimited`
+- `json`
+- `table`
+|`delimited` in non-interactive mode, `table` in interactive mode.
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc map values -n myMap
+----
+
+== clc map lock
+
+Locks the key of the given the map.
+
+This command is only available in the interactive mode.
+
+Usage:
+
+[source,bash]
+----
+clc map lock [key] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the map.
+|`default`
+
+|`key`
+|Required
+|Key of the map entry.
+|N/A
+
+|`--key-type`, `-k`
+|Optional
+|Data type of the key. One of: `string`, `bool`, `json`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`
+|String
+|===
+
+|`--ttl`
+|Optional
+|Duration in milliseconds after which the lock will expire.
+|-1
+
+Example:
+
+[source,bash]
+----
+clc map lock -n myMap --key-type string key1
+----
+
+== clc map try-lock
+
+Tries to lock the key of the given the map. Returns a result without waiting.
+
+This command is only available in the interactive mode.
+
+Usage:
+
+[source,bash]
+----
+clc map try-lock [key] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the map.
+|`default`
+
+|`key`
+|Required
+|Key of the map entry.
+|N/A
+
+|`--key-type`, `-k`
+|Optional
+|Data type of the key. One of: `string`, `bool`, `json`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`
+|String
+
+|`--ttl`
+|Optional
+|Duration in milliseconds after which the lock will expire.
+|-1
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc map try-lock -n myMap --key-type string key1
+----
+
+== clc map unlock
+
+Unlocks the key of the given the map.
+
+This command is only available in the interactive mode.
+
+Usage:
+
+[source,bash]
+----
+clc map unlock [key] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the map.
+|`default`
+
+|`key`
+|Required
+|Key of the map entry.
+|N/A
+
+|`--key-type`, `-k`
+|Optional
+|Data type of the key. One of: `string`, `bool`, `json`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`
+|String
+|===
+
+Example:
+
+[source,bash]
+----
+clc map unlock -n myMap --key-type string key1
 ----
 
 == clc map size

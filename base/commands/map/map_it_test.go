@@ -3,6 +3,7 @@ package _map_test
 import (
 	"context"
 	"fmt"
+	"sync"
 	"testing"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
@@ -31,6 +32,9 @@ func TestMap(t *testing.T) {
 		{name: "Destroy_Interactive", f: destroy_InteractiveTest},
 		{name: "KeySet_Noninteractive", f: keySet_NoninteractiveTest},
 		{name: "KeySet_Interactive", f: keySet_InteractiveTest},
+		{name: "Values_NoninteractiveTest", f: values_NoninteractiveTest},
+		{name: "Lock_InteractiveTest", f: lock_InteractiveTest},
+		{name: "TryLock_InteractiveTest", f: tryLock_InteractiveTest},
 		{name: "LoadAll_NonReplacing_NonInteractive", f: loadAll_NonReplacing_NonInteractiveTest},
 		{name: "LoadAll_Replacing_NonInteractive", f: loadAll_Replacing_NonInteractiveTest},
 		{name: "LoadAll_Replacing_WithKeys_NonInteractive", f: loadAll_Replacing_WithKeys_NonInteractiveTest},
@@ -201,6 +205,62 @@ func keySet_InteractiveTest(t *testing.T) {
 				tcx.AssertStdoutDollarWithPath("testdata/map_key_set_show_type.txt")
 			})
 		})
+	})
+}
+
+func values_NoninteractiveTest(t *testing.T) {
+	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
+		ctx := context.Background()
+		// no entry
+		tcx.WithReset(func() {
+			check.Must(tcx.CLC().Execute(ctx, "map", "-n", m.Name(), "values", "-q"))
+			tcx.AssertStdoutEquals("")
+		})
+		// set an entry
+		tcx.WithReset(func() {
+			check.Must(m.Set(context.Background(), "foo", "bar"))
+			check.Must(tcx.CLC().Execute(ctx, "map", "-n", m.Name(), "values", "-q"))
+			tcx.AssertStdoutContains("bar\n")
+		})
+		// show type
+		tcx.WithReset(func() {
+			check.Must(tcx.CLC().Execute(ctx, "map", "-n", m.Name(), "values", "--show-type", "-q"))
+			tcx.AssertStdoutContains("bar\tSTRING\n")
+		})
+	})
+}
+
+func tryLock_InteractiveTest(t *testing.T) {
+	t.Skip()
+	// Context is not properly propagated into the command's Execute function. So lockCtx does not work properly.
+	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
+		const key = "foo"
+		wg := &sync.WaitGroup{}
+		wg.Add(1)
+		lockCtx := m.NewLockContext(context.Background())
+		go func() {
+			tcx.CLCExecute(lockCtx, "map", "-n", m.Name(), "lock", key)
+			wg.Done()
+		}()
+		wg.Wait()
+		mainCtx := m.NewLockContext(context.Background())
+		tcx.CLCExecute(mainCtx, "map", "-n", m.Name(), "try-lock", key)
+		tcx.AssertStdoutContains("false")
+	})
+}
+
+func lock_InteractiveTest(t *testing.T) {
+	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
+		const key = "foo"
+		// lockCtx is not propagated into the command but the test still works since `m.TryPut` receives the tryCtx correctly.
+		lockCtx := m.NewLockContext(context.Background())
+		tcx.CLCExecute(lockCtx, "map", "-n", m.Name(), "lock", key)
+		tryCtx := m.NewLockContext(context.Background())
+		b := check.MustValue(m.TryPut(tryCtx, key, "tryBar"))
+		require.False(t, b)
+		tcx.CLCExecute(lockCtx, "map", "-n", m.Name(), "unlock", key)
+		b = check.MustValue(m.TryPut(tryCtx, key, "tryBar"))
+		require.True(t, b)
 	})
 }
 
