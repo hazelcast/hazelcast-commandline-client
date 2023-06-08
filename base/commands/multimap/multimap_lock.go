@@ -38,7 +38,7 @@ func (m MultiMapLockCommand) Exec(ctx context.Context, ec plug.ExecContext) erro
 	}
 	req := codec.EncodeMultiMapLockRequest(mmName, keyData, 0, ttl, 0)
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Locking multimap %s", mmName))
+		sp.SetText(fmt.Sprintf("Locking key of multimap %s", mmName))
 		return ci.InvokeOnKey(ctx, req, keyData, nil)
 	})
 	if err != nil {
