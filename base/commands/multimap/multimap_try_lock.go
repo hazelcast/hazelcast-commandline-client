@@ -20,8 +20,11 @@ type MultiMapTryLockCommand struct{}
 func (m MultiMapTryLockCommand) Init(cc plug.InitContext) error {
 	addKeyTypeFlag(cc)
 	cc.AddIntFlag(multiMapTTL, "", ttlUnset, false, "time-to-live (ms)")
-	help := "Try to lock a key in the given MultiMap"
-	cc.SetCommandHelp(help, help)
+	long := `Try to lock a key in the given MultiMap. Directly returns the result
+
+This command is only available in the interactive mode.`
+	short := "Try to lock a key in the given MultiMap. Directly returns the result"
+	cc.SetCommandHelp(long, short)
 	cc.SetCommandUsage("try-lock [key] [flags]")
 	cc.SetPositionalArgCount(1, 1)
 	return nil

@@ -17,9 +17,11 @@ type MultiMapLockCommand struct{}
 
 func (m MultiMapLockCommand) Init(cc plug.InitContext) error {
 	addKeyTypeFlag(cc)
-	cc.AddIntFlag(multiMapTTL, "", ttlUnset, false, "time-to-live (ms)")
-	help := "Lock a key in the given MultiMap"
-	cc.SetCommandHelp(help, help)
+	long := `Lock a key in the given MultiMap
+
+This command is only available in the interactive mode.`
+	short := "Lock a key in the given MultiMap"
+	cc.SetCommandHelp(long, short)
 	cc.SetCommandUsage("lock [key] [flags]")
 	cc.SetPositionalArgCount(1, 1)
 	return nil

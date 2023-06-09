@@ -16,8 +16,11 @@ type MultiMapUnlockCommand struct{}
 
 func (m MultiMapUnlockCommand) Init(cc plug.InitContext) error {
 	addKeyTypeFlag(cc)
-	help := "Unlock a key in the given MultiMap"
-	cc.SetCommandHelp(help, help)
+	long := `Unlock a key in the given MultiMap
+
+This command is only available in the interactive mode.`
+	short := "Unlock a key in the given MultiMap"
+	cc.SetCommandHelp(long, short)
 	cc.SetCommandUsage("unlock [key] [flags]")
 	cc.SetPositionalArgCount(1, 1)
 	return nil

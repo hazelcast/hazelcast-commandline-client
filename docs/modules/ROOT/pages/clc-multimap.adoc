@@ -386,6 +386,8 @@ clc multi-map values -n myMultiMap
 
 Lock a key in the given MultiMap.
 
+This command is only available in the interactive mode.
+
 Usage:
 
 [source,bash]
@@ -418,9 +420,11 @@ Example:
 clc multi-map lock 1
 ----
 
-== clc multimap try-lock
+== clc multi-map try-lock
 
-Try to lock a key in the given MultiMap.
+Tries to lock the key of the given the MultiMap. Returns a result without waiting.
+
+This command is only available in the interactive mode.
 
 Usage:
 
@@ -457,6 +461,8 @@ clc multi-map try-lock 1
 == clc multi-map unlock
 
 Unlock a key in the given MultiMap.
+
+This command is only available in the interactive mode.
 
 Usage:
 

@@ -65,7 +65,11 @@ func (m MultiMapValuesCommand) Exec(ctx context.Context, ec plug.ExecContext) er
 		}
 		rows = append(rows, row)
 	}
-	return ec.AddOutputRows(ctx, rows...)
+	if len(rows) > 0 {
+		return ec.AddOutputRows(ctx, rows...)
+	}
+	ec.PrintlnUnnecessary("No values found.")
+	return nil
 }
 
 func init() {
