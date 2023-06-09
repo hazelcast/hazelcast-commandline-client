@@ -62,26 +62,3 @@ func init() {
 	Must(plug.Registry.RegisterCommand("map:lock", &MapLock{}, plug.OnlyInteractive{}))
 }
 
-const (
-	defaultLockID = 0
-)
-
-type lockID int64
-type lockIDKey struct{}
-
-// extractLockID extracts lock ID from the context.
-// If the lock ID is not found, it returns the default lock ID.
-func extractLockID(ctx context.Context) int64 {
-	if ctx == nil {
-		return defaultLockID
-	}
-	lidv := ctx.Value(lockIDKey{})
-	if lidv == nil {
-		return defaultLockID
-	}
-	lid, ok := lidv.(lockID)
-	if !ok {
-		return defaultLockID
-	}
-	return int64(lid)
-}
