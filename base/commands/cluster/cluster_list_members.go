@@ -36,7 +36,7 @@ func (mc *ClusterListMembersCommand) Exec(ctx context.Context, ec plug.ExecConte
 	infos, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		cn := ci.ClusterService().FailoverService().Current().ClusterName
 		sp.SetText(fmt.Sprintf("Getting member list for cluster: %s", cn))
-		return GetMemberInfos(ctx, ci)
+		return memberInfos(ctx, ci)
 	})
 	if err != nil {
 		return err
@@ -118,7 +118,7 @@ type memberData struct {
 	Name           string
 }
 
-func newMemberData(m cluster.MemberInfo, order int64) *memberData {
+func newMemberData(order int64, m cluster.MemberInfo, s control.TimedMemberState) *memberData {
 	priv, pub := findMemberAddresses(m)
 	return &memberData{
 		Order:          order,
@@ -127,6 +127,9 @@ func newMemberData(m cluster.MemberInfo, order int64) *memberData {
 		UUID:           m.UUID.String(),
 		Version:        fmt.Sprintf("%d.%d.%d", m.Version.Major, m.Version.Minor, m.Version.Patch),
 		LiteMember:     m.LiteMember,
+		Master:         s.Master,
+		MemberState:    s.MemberState.NodeState.State,
+		Name:           s.MemberState.Name,
 	}
 }
 
@@ -146,13 +149,8 @@ func findMemberAddresses(m cluster.MemberInfo) (string, string) {
 	}
 	return priv, pub
 }
-func (m *memberData) enrichMemberData(s control.TimedMemberState) {
-	m.Master = s.Master
-	m.MemberState = s.MemberState.NodeState.State
-	m.Name = s.MemberState.Name
-}
 
-func GetMemberInfos(ctx context.Context, ci *hazelcast.ClientInternal) (map[types.UUID]*memberData, error) {
+func memberInfos(ctx context.Context, ci *hazelcast.ClientInternal) (map[types.UUID]*memberData, error) {
 	activeMemberList := ci.OrderedMembers()
 	activeMembers := make(map[types.UUID]*memberData, len(activeMemberList))
 	for i, memberInfo := range activeMemberList {
@@ -165,8 +163,7 @@ func GetMemberInfos(ctx context.Context, ci *hazelcast.ClientInternal) (map[type
 		if string(this) != string(returned) {
 			return nil, fmt.Errorf("Timed member state returned info for wrong member, this: %s, returned: %s", this, returned)
 		}
-		activeMembers[memberInfo.UUID] = newMemberData(memberInfo, int64(i))
-		activeMembers[memberInfo.UUID].enrichMemberData(state.TimedMemberState)
+		activeMembers[memberInfo.UUID] = newMemberData(int64(i), memberInfo, state.TimedMemberState)
 	}
 	return activeMembers, nil
 }
