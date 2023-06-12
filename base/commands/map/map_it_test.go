@@ -181,7 +181,7 @@ func keySet_InteractiveTest(t *testing.T) {
 		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			tcx.WithReset(func() {
 				tcx.WriteStdin([]byte(fmt.Sprintf("\\map -n %s key-set\n", m.Name())))
-				tcx.AssertStdoutContains("No keys found for map")
+				tcx.AssertStderrContains("No keys found for map")
 			})
 			// set an entry
 			tcx.WithReset(func() {
