@@ -217,7 +217,11 @@ func (m *Main) createLogger(path, level string) error {
 			f = os.Stderr
 		}
 	}
-	m.lg, err = logger.New(f, weight)
+	lg, err := logger.New(f, weight)
+	if err != nil {
+		return err
+	}
+	m.lg = lg
 	return nil
 }
 

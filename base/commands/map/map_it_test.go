@@ -3,9 +3,9 @@ package _map_test
 import (
 	"context"
 	"fmt"
-	"sync"
 	"testing"
 
+	"github.com/hazelcast/hazelcast-go-client"
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/types"
 	"github.com/stretchr/testify/require"
@@ -231,34 +231,48 @@ func values_NoninteractiveTest(t *testing.T) {
 }
 
 func tryLock_InteractiveTest(t *testing.T) {
-	t.Skip()
-	// Context is not properly propagated into the command's Execute function. So lockCtx does not work properly.
 	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
 		const key = "foo"
-		wg := &sync.WaitGroup{}
-		wg.Add(1)
-		lockCtx := m.NewLockContext(context.Background())
+		fence := make(chan bool)
 		go func() {
-			tcx.CLCExecute(lockCtx, "map", "-n", m.Name(), "lock", key)
-			wg.Done()
+			lockCtx := m.NewLockContext(context.Background())
+			cl := check.MustValue(hazelcast.StartNewClientWithConfig(lockCtx, *tcx.ClientConfig))
+			mp := check.MustValue(cl.GetMap(lockCtx, m.Name()))
+			check.Must(mp.Lock(lockCtx, key))
+			fence <- true
 		}()
-		wg.Wait()
-		mainCtx := m.NewLockContext(context.Background())
-		tcx.CLCExecute(mainCtx, "map", "-n", m.Name(), "try-lock", key)
-		tcx.AssertStdoutContains("false")
+		tcx.WithShell(context.TODO(), func(tcx it.TestContext) {
+			<-fence
+			tcx.WriteStdinf(fmt.Sprintf("\\map -n %s try-lock %s\n", m.Name(), key))
+			tcx.AssertStdoutContains("false")
+		})
 	})
 }
 
 func lock_InteractiveTest(t *testing.T) {
+	const key = "foo"
+	contLock := make(chan bool)
+	contUnlock := make(chan bool)
 	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
-		const key = "foo"
-		// lockCtx is not propagated into the command but the test still works since `m.TryPut` receives the tryCtx correctly.
-		lockCtx := m.NewLockContext(context.Background())
-		tcx.CLCExecute(lockCtx, "map", "-n", m.Name(), "lock", key)
+		go tcx.WithShell(context.TODO(), func(tcx it.TestContext) {
+			tcx.WithReset(func() {
+				tcx.WriteStdinf(fmt.Sprintf("\\map -n %s lock %s\n", m.Name(), key))
+				tcx.AssertStderrContains("OK")
+				contUnlock <- true
+			})
+			tcx.WithReset(func() {
+				<-contLock
+				tcx.WriteStdinf(fmt.Sprintf("\\map -n %s unlock %s\n", m.Name(), key))
+				tcx.AssertStderrContains("OK")
+				contUnlock <- true
+			})
+		})
 		tryCtx := m.NewLockContext(context.Background())
+		<-contUnlock
 		b := check.MustValue(m.TryPut(tryCtx, key, "tryBar"))
 		require.False(t, b)
-		tcx.CLCExecute(lockCtx, "map", "-n", m.Name(), "unlock", key)
+		contLock <- true
+		<-contUnlock
 		b = check.MustValue(m.TryPut(tryCtx, key, "tryBar"))
 		require.True(t, b)
 	})
