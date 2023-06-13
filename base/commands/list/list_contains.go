@@ -47,7 +47,7 @@ func (mc *ListContainsCommand) Exec(ctx context.Context, ec plug.ExecContext) er
 		return err
 	}
 	cmi, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Checking if values exists in the list %s", listName))
+		sp.SetText(fmt.Sprintf("Checking if value exists in the list %s", listName))
 		req := codec.EncodeListContainsRequest(listName, vd)
 		return ci.InvokeOnPartition(ctx, req, pid, nil)
 	})
