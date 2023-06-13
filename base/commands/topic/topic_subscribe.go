@@ -17,7 +17,7 @@ import (
 
 type topicSubscribeCommand struct{}
 
-func (mc *topicSubscribeCommand) Init(cc plug.InitContext) error {
+func (tsc *topicSubscribeCommand) Init(cc plug.InitContext) error {
 	help := "Subscribe to a Topic for new messages."
 	cc.SetCommandHelp(help, help)
 	cc.AddIntFlag(topicFlagCount, "", 0, false, "number of messages to receive")
@@ -25,7 +25,7 @@ func (mc *topicSubscribeCommand) Init(cc plug.InitContext) error {
 	return nil
 }
 
-func (mc *topicSubscribeCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (tsc *topicSubscribeCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	topicName := ec.Props().GetString(topicFlagName)
 	tp, err := ec.Props().GetBlocking(topicPropertyName)
 	if err != nil {

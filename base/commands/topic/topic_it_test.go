@@ -50,7 +50,6 @@ func publish_NonInteractiveTest(t *testing.T) {
 
 func subscribe_NonInteractiveTest(t *testing.T) {
 	it.TopicTester(t, func(tcx it.TestContext, tp *hz.Topic) {
-		// t := tcx.T
 		ctx := context.Background()
 		tcx.WithReset(func() {
 			go func() {

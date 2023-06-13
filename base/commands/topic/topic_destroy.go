@@ -17,7 +17,7 @@ import (
 
 type topicDestroyCommand struct{}
 
-func (mc *topicDestroyCommand) Init(cc plug.InitContext) error {
+func (tdc *topicDestroyCommand) Init(cc plug.InitContext) error {
 	long := `Destroy a Topic
 
 This command will delete the Topic and the data in it will not be available anymore.`
@@ -28,7 +28,7 @@ This command will delete the Topic and the data in it will not be available anym
 	return nil
 }
 
-func (mc *topicDestroyCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (tdc *topicDestroyCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	tp, err := ec.Props().GetBlocking(topicPropertyName)
 	if err != nil {
 		return err

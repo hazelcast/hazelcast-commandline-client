@@ -37,11 +37,11 @@ func (mc *TopicCommand) Init(cc plug.InitContext) error {
 	return nil
 }
 
-func (mc *TopicCommand) Exec(context.Context, plug.ExecContext) error {
+func (tc *TopicCommand) Exec(context.Context, plug.ExecContext) error {
 	return nil
 }
 
-func (mc *TopicCommand) Augment(ec plug.ExecContext, props *plug.Properties) error {
+func (tc *TopicCommand) Augment(ec plug.ExecContext, props *plug.Properties) error {
 	ctx := context.TODO()
 	props.SetBlocking(topicPropertyName, func() (any, error) {
 		topicName := ec.Props().GetString(topicFlagName)
@@ -50,19 +50,19 @@ func (mc *TopicCommand) Augment(ec plug.ExecContext, props *plug.Properties) err
 		if err != nil {
 			return nil, err
 		}
-		mv, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		tv, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 			sp.SetText(fmt.Sprintf("Getting topic %s", topicName))
-			m, err := ci.Client().GetTopic(ctx, topicName)
+			t, err := ci.Client().GetTopic(ctx, topicName)
 			if err != nil {
 				return nil, err
 			}
-			return m, nil
+			return t, nil
 		})
 		if err != nil {
 			return nil, err
 		}
 		stop()
-		return mv.(*hazelcast.Topic), nil
+		return tv.(*hazelcast.Topic), nil
 	})
 	return nil
 }
