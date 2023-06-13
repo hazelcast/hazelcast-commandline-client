@@ -1,6 +1,6 @@
 //go:build base || list
 
-package _list
+package list
 
 import (
 	"context"

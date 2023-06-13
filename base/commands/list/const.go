@@ -1,4 +1,4 @@
-package _list
+package list
 
 const (
 	listFlagKeyType   = "key-type"
