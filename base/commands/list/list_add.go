@@ -53,7 +53,7 @@ func (mc *ListAddCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		return err
 	}
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Adding value into list %s", listName))
+		sp.SetText(fmt.Sprintf("Adding value at index %d into list %s", index, listName))
 		return ci.InvokeOnPartition(ctx, req, pid, nil)
 	})
 	if err != nil {
