@@ -1,4 +1,4 @@
-package _cluster_test
+package cluster_test
 
 import (
 	"context"

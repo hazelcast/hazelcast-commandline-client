@@ -1,6 +1,6 @@
 //go:build base || cluster
 
-package _cluster
+package cluster
 
 import (
 	"context"
