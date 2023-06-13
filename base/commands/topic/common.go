@@ -71,8 +71,8 @@ func eventRow(e *topic.TopicEvent, ec plug.ExecContext) output.Row {
 	row := output.Row{
 		output.Column{
 			Name:  "Time",
-			Type:  serialization.TypeString,
-			Value: e.PublishTime.Format(time.RFC3339),
+			Type:  serialization.TypeJavaLocalDateTime,
+			Value: e.PublishTime,
 		},
 		output.Column{
 			Name:  "Topic",
@@ -88,8 +88,8 @@ func eventRow(e *topic.TopicEvent, ec plug.ExecContext) output.Row {
 		row = append(row,
 			output.Column{
 				Name:  "Member UUID",
-				Type:  serialization.TypeString,
-				Value: e.Member.UUID.String(),
+				Type:  serialization.TypeUUID,
+				Value: e.Member.UUID,
 			},
 			output.Column{
 				Name:  "Member Address",

@@ -25,7 +25,7 @@ type TopicCommand struct {
 
 func (mc *TopicCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandGroup(clc.GroupDDSID)
-	cc.AddStringFlag(topicFlagName, "n", defaulttopicName, false, "topic name")
+	cc.AddStringFlag(topicFlagName, "n", defaultTopicName, false, "topic name")
 	cc.AddBoolFlag(topicFlagShowType, "", false, false, "add the type names to the output")
 	if !cc.Interactive() {
 		cc.AddStringFlag(clc.PropertySchemaDir, "", paths.Schemas(), false, "set the schema directory")

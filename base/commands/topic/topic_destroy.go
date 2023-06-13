@@ -24,7 +24,7 @@ This command will delete the Topic and the data in it will not be available anym
 	short := "Destroy a Topic"
 	cc.SetCommandHelp(long, short)
 	cc.AddBoolFlag(clc.FlagAutoYes, "", false, false, "skip confirming the destroy operation")
-	cc.SetCommandUsage("destroy [flags]")
+	cc.SetCommandUsage("destroy")
 	return nil
 }
 

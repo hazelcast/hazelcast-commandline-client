@@ -35,7 +35,7 @@ func publish_NonInteractiveTest(t *testing.T) {
 		t := tcx.T
 		ctx := context.Background()
 		tcx.WithReset(func() {
-			values := []string{}
+			var values []string
 			sid := check.MustValue(tp.AddMessageListener(ctx, func(event *hz.MessagePublished) {
 				values = append(values, event.Value.(string))
 			}))

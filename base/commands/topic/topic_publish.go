@@ -20,7 +20,7 @@ func (mc *topicPublishCommand) Init(cc plug.InitContext) error {
 	addValueTypeFlag(cc)
 	help := "Publish new messages for a Topic."
 	cc.SetCommandHelp(help, help)
-	cc.SetPositionalArgCount(1, 1)
+	cc.SetPositionalArgCount(1, math.MaxInt)
 	cc.SetCommandUsage("publish [values] [flags]")
 	return nil
 }
@@ -36,7 +36,7 @@ func (mc *topicPublishCommand) Exec(ctx context.Context, ec plug.ExecContext) er
 	if err != nil {
 		return err
 	}
-	vals := []hazelcast.Data{}
+	var vals []hazelcast.Data
 	for _, valStr := range ec.Args() {
 		val, err := makeValueData(ec, ci, valStr)
 		if err != nil {

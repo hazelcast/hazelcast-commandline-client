@@ -21,7 +21,7 @@ func (mc *topicSubscribeCommand) Init(cc plug.InitContext) error {
 	help := "Subscribe to a Topic for new messages."
 	cc.SetCommandHelp(help, help)
 	cc.AddIntFlag(topicFlagCount, "", 0, false, "number of messages to receive")
-	cc.SetCommandUsage("subscribe [flags]")
+	cc.SetCommandUsage("subscribe")
 	return nil
 }
 
