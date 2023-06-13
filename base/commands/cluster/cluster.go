@@ -15,7 +15,6 @@ type ClusterCommand struct {
 }
 
 func (mc *ClusterCommand) Init(cc plug.InitContext) error {
-	cc.SetCommandGroup(clc.GroupDDSID)
 	if !cc.Interactive() {
 		cc.AddStringFlag(clc.PropertySchemaDir, "", paths.Schemas(), false, "set the schema directory")
 	}
