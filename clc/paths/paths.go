@@ -43,6 +43,14 @@ func Secrets() string {
 	return filepath.Join(Home(), "secrets")
 }
 
+func Templates() string {
+	return filepath.Join(Home(), "templates")
+}
+
+func TemplatePath(t string) string {
+	return filepath.Join(Templates(), t)
+}
+
 func DefaultConfigPath() string {
 	if p := nearbyConfigPath(); p != "" {
 		return p
