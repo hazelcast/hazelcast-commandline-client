@@ -32,7 +32,7 @@ const (
 // Retrieves and removes the head of this queue, waiting up to the specified wait time if necessary for an element
 // to become available.
 
-func EncodeQueuePollRequest(ci *proto.ClientInternal, name string, timeoutMillis int64) *proto.ClientMessage {
+func EncodeQueuePollRequest(name string, timeoutMillis int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

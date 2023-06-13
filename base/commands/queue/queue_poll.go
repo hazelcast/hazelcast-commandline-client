@@ -1,6 +1,6 @@
 //go:build base || queue
 
-package _queue
+package queue
 
 import (
 	"context"
@@ -34,57 +34,56 @@ func (qc *QueuePollCommand) Init(cc plug.InitContext) error {
 func (qc *QueuePollCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	queueName := ec.Props().GetString(queueFlagName)
 	count := int(ec.Props().GetInt(flagCount))
+	if count < 0 {
+		return fmt.Errorf("%s cannot be negative", flagCount)
+	}
 	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
 		return err
 	}
-	var rows []output.Row
-	for i := 0; i < count; i++ {
-		valueType, value, err := qc.poll(ctx, ec, ci, queueName, err)
-		if err != nil {
-			return err
-		}
-		row := output.Row{
-			output.Column{
-				Name:  output.NameValue,
-				Type:  valueType,
-				Value: value,
-			},
-		}
-		if ec.Props().GetBool(queueFlagShowType) {
-			row = append(row, output.Column{
-				Name:  output.NameValueType,
-				Type:  serialization.TypeString,
-				Value: serialization.TypeToLabel(valueType),
-			})
-		}
-		rows = append(rows, row)
-	}
-	return ec.AddOutputRows(ctx, rows...)
-}
-
-func (qc *QueuePollCommand) poll(ctx context.Context, ec plug.ExecContext, ci *hazelcast.ClientInternal, queueName string, err error) (int32, interface{}, error) {
-	req := codec.EncodeQueuePollRequest(ci, queueName, 0)
-	pID, err := stringToPartitionID(ci, queueName)
-	if err != nil {
-		return 0, nil, err
-	}
-	rv, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+	rows, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText(fmt.Sprintf("Polling from queue %s", queueName))
-		return ci.InvokeOnPartition(ctx, req, pID, nil)
+		var rows []output.Row
+		for i := 0; i < count; i++ {
+			req := codec.EncodeQueuePollRequest(queueName, 0)
+			pID, err := stringToPartitionID(ci, queueName)
+			if err != nil {
+				return nil, err
+			}
+			rv, err := ci.InvokeOnPartition(ctx, req, pID, nil)
+			if err != nil {
+				return nil, err
+			}
+			raw := codec.DecodeQueuePollResponse(rv)
+			valueType := raw.Type()
+			value, err := ci.DecodeData(raw)
+			if err != nil {
+				ec.Logger().Info("The value was not decoded, due to error: %s", err.Error())
+				value = serialization.NondecodedType(serialization.TypeToLabel(valueType))
+			}
+			if err != nil {
+				return nil, err
+			}
+			row := output.Row{
+				output.Column{
+					Name:  output.NameValue,
+					Type:  valueType,
+					Value: value,
+				},
+			}
+			if ec.Props().GetBool(queueFlagShowType) {
+				row = append(row, output.Column{
+					Name:  output.NameValueType,
+					Type:  serialization.TypeString,
+					Value: serialization.TypeToLabel(valueType),
+				})
+			}
+			rows = append(rows, row)
+		}
+		return rows, nil
 	})
-	if err != nil {
-		return 0, nil, err
-	}
 	stop()
-	raw := codec.DecodeQueuePollResponse(rv.(*hazelcast.ClientMessage))
-	vt := raw.Type()
-	value, err := ci.DecodeData(raw)
-	if err != nil {
-		ec.Logger().Info("The value was not decoded, due to error: %s", err.Error())
-		value = serialization.NondecodedType(serialization.TypeToLabel(vt))
-	}
-	return vt, value, nil
+	return ec.AddOutputRows(ctx, rows.([]output.Row)...)
 }
 
 func init() {
@@ -92,12 +91,12 @@ func init() {
 }
 
 func stringToPartitionID(ci *hazelcast.ClientInternal, name string) (int32, error) {
+	var partitionID int32
 	idx := strings.Index(name, "@")
 	if keyData, err := ci.EncodeData(name[idx+1:]); err != nil {
 		return 0, err
-	} else if partitionID, err := ci.GetPartitionID(keyData); err != nil {
+	} else if partitionID, err = ci.GetPartitionID(keyData); err != nil {
 		return 0, err
-	} else {
-		return partitionID, nil
 	}
+	return partitionID, nil
 }

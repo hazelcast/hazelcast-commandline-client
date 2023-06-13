@@ -1,4 +1,4 @@
-package _queue_test
+package queue_test
 
 import (
 	"context"

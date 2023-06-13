@@ -1,6 +1,6 @@
 //go:build base || queue
 
-package _queue
+package queue
 
 import (
 	"context"

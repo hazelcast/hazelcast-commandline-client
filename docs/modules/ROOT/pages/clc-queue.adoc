@@ -44,7 +44,7 @@ Example:
 
 [source,bash]
 ----
-clc queue clear --name myQueue
+clc queue clear --name my-queue
 ----
 
 == clc queue offer
@@ -73,7 +73,7 @@ Parameters:
 |Name of the queue.
 |`default`
 
-|`--type`, `-t`
+|`--value-type`, `-t`
 |Optional
 |Data type of the value. One of: `string`, `bool`, `json`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`
 |String
@@ -83,7 +83,7 @@ Example:
 
 [source,bash]
 ----
-clc queue offer --type f32 19.94 19.92 --name myQueue
+clc queue offer --value-type f32 19.94 19.92 --name my-queue
 ----
 
 == clc queue poll
@@ -129,7 +129,7 @@ Example:
 
 [source,bash]
 ----
-clc queue poll --count 2 --name myQueue 5
+clc queue poll --count 2 --name my-queue 5
 ----
 
 == clc queue size
@@ -160,7 +160,7 @@ Example:
 
 [source,bash]
 ----
-clc queue size --name myQueue
+clc queue size --name my-queue
 ----
 
 == clc queue destroy

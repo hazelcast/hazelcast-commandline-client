@@ -1,4 +1,4 @@
-package _queue
+package queue
 
 import (
 	"fmt"
@@ -12,7 +12,7 @@ import (
 
 func addValueTypeFlag(cc plug.InitContext) {
 	help := fmt.Sprintf("value type (one of: %s)", strings.Join(internal.SupportedTypeNames, ", "))
-	cc.AddStringFlag(queueFlagValueType, "t", "string", false, help)
+	cc.AddStringFlag(queueFlagValueType, "v", "string", false, help)
 }
 
 func makeValueData(ec plug.ExecContext, ci *hazelcast.ClientInternal, valueStr string) (hazelcast.Data, error) {

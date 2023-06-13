@@ -1,6 +1,6 @@
-package _queue
+package queue
 
 const (
-	queueFlagValueType = "type"
+	queueFlagValueType = "value-type"
 	defaultQueueName   = "default"
 )

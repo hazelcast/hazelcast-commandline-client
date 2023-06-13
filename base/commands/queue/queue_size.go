@@ -1,6 +1,6 @@
 //go:build base || queue
 
-package _queue
+package queue
 
 import (
 	"context"
@@ -19,7 +19,7 @@ type QueueSizeCommand struct{}
 func (qc *QueueSizeCommand) Init(cc plug.InitContext) error {
 	help := "Return the size of the given Queue"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("size [flags]")
+	cc.SetCommandUsage("size")
 	cc.SetPositionalArgCount(0, 0)
 	return nil
 }
