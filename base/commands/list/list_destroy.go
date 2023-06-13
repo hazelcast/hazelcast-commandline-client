@@ -35,8 +35,8 @@ func (mc *ListDestroyCommand) Exec(ctx context.Context, ec plug.ExecContext) err
 	}
 	autoYes := ec.Props().GetBool(clc.FlagAutoYes)
 	if !autoYes {
-		prompt := prompt.New(ec.Stdin(), ec.Stdout())
-		yes, err := prompt.YesNo("List will be deleted irreversibly, proceed?")
+		p := prompt.New(ec.Stdin(), ec.Stdout())
+		yes, err := p.YesNo("List will be deleted irreversibly, proceed?")
 		if err != nil {
 			ec.Logger().Info("User input could not be processed due to error: %s", err.Error())
 			return errors.ErrUserCancelled
