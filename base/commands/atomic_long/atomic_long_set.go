@@ -1,6 +1,6 @@
 //go:build base || atomiclong
 
-package _atomiclong
+package atomiclong
 
 import (
 	"context"

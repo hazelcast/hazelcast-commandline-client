@@ -1,4 +1,4 @@
-package _atomiclong_test
+package atomiclong_test
 
 import (
 	"context"

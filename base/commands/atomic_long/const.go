@@ -1,4 +1,4 @@
-package _atomiclong
+package atomiclong
 
 const (
 	atomicLongFlagBy      = "by"
