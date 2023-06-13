@@ -1,6 +1,6 @@
 //go:build base || topic
 
-package _topic
+package topic
 
 import (
 	"context"

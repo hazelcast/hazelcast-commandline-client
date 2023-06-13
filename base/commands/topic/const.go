@@ -1,4 +1,4 @@
-package _topic
+package topic
 
 const (
 	topicFlagValueType = "value-type"
