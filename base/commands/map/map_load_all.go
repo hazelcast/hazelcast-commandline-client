@@ -33,7 +33,7 @@ func (mc *MapLoadAllCommand) Exec(ctx context.Context, ec plug.ExecContext) erro
 	if err != nil {
 		return err
 	}
-	keys := []hazelcast.Data{}
+	var keys []hazelcast.Data
 	for _, keyStr := range ec.Args() {
 		keyData, err := makeKeyData(ec, ci, keyStr)
 		if err != nil {
