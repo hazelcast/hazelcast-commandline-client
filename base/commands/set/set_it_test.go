@@ -1,4 +1,4 @@
-package _set_test
+package set_test
 
 import (
 	"context"
@@ -34,12 +34,12 @@ func getAll_NonInteractiveTest(t *testing.T) {
 		t := tcx.T
 		ctx := context.Background()
 		tcx.WithReset(func() {
-			done, err := s.Add(ctx, "foo")
+			added, err := s.Add(ctx, "foo")
 			require.Equal(t, nil, err)
-			require.Equal(t, true, done)
-			done, err = s.Add(ctx, "foo2")
+			require.Equal(t, true, added)
+			added, err = s.Add(ctx, "foo2")
 			require.Equal(t, nil, err)
-			require.Equal(t, true, done)
+			require.Equal(t, true, added)
 			check.Must(tcx.CLC().Execute(ctx, "set", "-n", s.Name(), "get-all", "-q"))
 			tcx.AssertStdoutContains("foo")
 			tcx.AssertStdoutContains("foo2")
@@ -85,7 +85,6 @@ func clear_NonInteractiveTest(t *testing.T) {
 			require.Equal(t, nil, err)
 			require.Equal(t, true, done)
 			require.Equal(t, 1, check.MustValue(s.Size(ctx)))
-			// this line never ends, why???
 			check.Must(tcx.CLC().Execute(ctx, "set", "-n", s.Name(), "clear", "--yes", "-q"))
 			require.Equal(t, 0, check.MustValue(s.Size(ctx)))
 		})
@@ -96,9 +95,9 @@ func remove_NonInteractiveTest(t *testing.T) {
 	it.SetTester(t, func(tcx it.TestContext, s *hz.Set) {
 		ctx := context.Background()
 		tcx.WithReset(func() {
-			done, err := s.Add(ctx, "foo")
+			added, err := s.Add(ctx, "foo")
 			require.Equal(t, nil, err)
-			require.Equal(t, true, done)
+			require.Equal(t, true, added)
 			require.Equal(tcx.T, 1, check.MustValue(s.Size(ctx)))
 			check.Must(tcx.CLC().Execute(ctx, "set", "-n", s.Name(), "remove", "foo", "-q", "--show-type"))
 			tcx.AssertStdoutEquals("true\tBOOL\n")

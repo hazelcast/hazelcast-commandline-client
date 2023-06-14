@@ -1,6 +1,6 @@
 //go:build base || set
 
-package _set
+package set
 
 import (
 	"context"
@@ -30,25 +30,29 @@ func (sc *SetAddCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		return err
 	}
-	for _, arg := range ec.Args() {
-		ci, err := ec.ClientInternal(ctx)
-		if err != nil {
-			return err
-		}
-		vd, err := makeValueData(ec, ci, arg)
-		if err != nil {
-			return err
-		}
-		s := sv.(*hazelcast.Set)
-		_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-			sp.SetText(fmt.Sprintf("Adding values into set %s", setName))
-			return s.Add(ctx, vd)
-		})
-		if err != nil {
-			return nil
-		}
-		stop()
+	ci, err := ec.ClientInternal(ctx)
+	if err != nil {
+		return err
 	}
+	s := sv.(*hazelcast.Set)
+	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		sp.SetText(fmt.Sprintf("Adding values into set %s", setName))
+		for _, arg := range ec.Args() {
+			vd, err := makeValueData(ec, ci, arg)
+			if err != nil {
+				return nil, err
+			}
+			_, err = s.Add(ctx, vd)
+			if err != nil {
+				return nil, err
+			}
+		}
+		return nil, nil
+	})
+	if err != nil {
+		return nil
+	}
+	stop()
 	return nil
 }
 

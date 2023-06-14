@@ -1,4 +1,4 @@
-package _set
+package set
 
 import (
 	"context"
@@ -20,7 +20,7 @@ This command will delete the Set and the data in it will not be available anymor
 	short := "Destroy a Set"
 	cc.SetCommandHelp(long, short)
 	cc.AddBoolFlag(clc.FlagAutoYes, "", false, false, "skip confirming the destroy operation")
-	cc.SetCommandUsage("destroy [flags]")
+	cc.SetCommandUsage("destroy")
 	return nil
 }
 

@@ -1,6 +1,6 @@
 //go:build base || set
 
-package _set
+package set
 
 import (
 	"context"
@@ -30,7 +30,7 @@ func (sc *SetCommand) Init(cc plug.InitContext) error {
 	}
 	cc.SetTopLevel(true)
 	cc.SetCommandUsage("set [command] [flags]")
-	help := "set operations"
+	help := "Set operations"
 	cc.SetCommandHelp(help, help)
 	return nil
 }

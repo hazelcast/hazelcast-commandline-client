@@ -1,6 +1,6 @@
-package _set
+package set
 
 const (
-	setFlagValueType = "type"
+	setFlagValueType = "value-type"
 	defaultSetName   = "default"
 )

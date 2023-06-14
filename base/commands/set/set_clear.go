@@ -1,4 +1,4 @@
-package _set
+package set
 
 import (
 	"context"
@@ -18,7 +18,7 @@ func (qc *SetClearCommand) Init(cc plug.InitContext) error {
 	help := "Delete all entries of a Set"
 	cc.SetCommandHelp(help, help)
 	cc.AddBoolFlag(clc.FlagAutoYes, "", false, false, "skip confirming the clear operation")
-	cc.SetCommandUsage("clear [flags]")
+	cc.SetCommandUsage("clear")
 	return nil
 }
 

@@ -1,4 +1,4 @@
-package _set
+package set
 
 import (
 	"fmt"
@@ -12,7 +12,7 @@ import (
 
 func addValueTypeFlag(cc plug.InitContext) {
 	help := fmt.Sprintf("value type (one of: %s)", strings.Join(internal.SupportedTypeNames, ", "))
-	cc.AddStringFlag(setFlagValueType, "t", "string", false, help)
+	cc.AddStringFlag(setFlagValueType, "v", "string", false, help)
 }
 
 func makeValueData(ec plug.ExecContext, ci *hazelcast.ClientInternal, valueStr string) (hazelcast.Data, error) {

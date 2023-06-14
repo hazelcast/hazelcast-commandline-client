@@ -1,4 +1,4 @@
-package _set
+package set
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client"
 )
 
@@ -48,13 +49,21 @@ func (sc *SetGetAllCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 		if err != nil {
 			return err
 		}
-		rows = append(rows, output.Row{
+		row := output.Row{
 			{
-				Name:  "element",
+				Name:  "Value",
 				Type:  r.Type(),
 				Value: val,
 			},
-		})
+		}
+		if ec.Props().GetBool(setFlagShowType) {
+			row = append(row, output.Column{
+				Name:  output.NameValueType,
+				Type:  serialization.TypeString,
+				Value: serialization.TypeToLabel(r.Type()),
+			})
+		}
+		rows = append(rows, row)
 	}
 	return ec.AddOutputRows(ctx, rows...)
 }
