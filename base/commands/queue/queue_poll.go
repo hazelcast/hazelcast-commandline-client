@@ -79,6 +79,9 @@ func (qc *QueuePollCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 		}
 		return rows, nil
 	})
+	if err != nil {
+		return err
+	}
 	stop()
 	return ec.AddOutputRows(ctx, rows.([]output.Row)...)
 }
