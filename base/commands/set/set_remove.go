@@ -11,7 +11,6 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
-	"github.com/hazelcast/hazelcast-go-client"
 )
 
 type SetRemoveCommand struct{}
@@ -31,43 +30,48 @@ func (sc *SetRemoveCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 	if err != nil {
 		return err
 	}
-	var rows []output.Row
-	for _, arg := range ec.Args() {
-		vd, err := makeValueData(ec, ci, arg)
-		if err != nil {
-			return err
+
+	rows, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		sp.SetText(fmt.Sprintf("Removing from set %s", setName))
+		var rows []output.Row
+		for _, arg := range ec.Args() {
+			vd, err := makeValueData(ec, ci, arg)
+			if err != nil {
+				return nil, err
+			}
+			req := codec.EncodeSetRemoveRequest(setName, vd)
+			pID, err := stringToPartitionID(ci, setName)
+			if err != nil {
+				return nil, err
+			}
+			sv, err := ci.InvokeOnPartition(ctx, req, pID, nil)
+			if err != nil {
+				return nil, err
+			}
+			resp := codec.DecodeSetRemoveResponse(sv)
+			row := output.Row{
+				output.Column{
+					Name:  output.NameValue,
+					Type:  serialization.TypeBool,
+					Value: resp,
+				},
+			}
+			if ec.Props().GetBool(setFlagShowType) {
+				row = append(row, output.Column{
+					Name:  output.NameValueType,
+					Type:  serialization.TypeString,
+					Value: serialization.TypeToLabel(serialization.TypeBool),
+				})
+			}
+			rows = append(rows, row)
 		}
-		req := codec.EncodeSetRemoveRequest(setName, vd)
-		pID, err := stringToPartitionID(ci, setName)
-		if err != nil {
-			return err
-		}
-		sv, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-			sp.SetText(fmt.Sprintf("Removing from set %s", setName))
-			return ci.InvokeOnPartition(ctx, req, pID, nil)
-		})
-		if err != nil {
-			return err
-		}
-		stop()
-		resp := codec.DecodeSetRemoveResponse(sv.(*hazelcast.ClientMessage))
-		row := output.Row{
-			output.Column{
-				Name:  output.NameValue,
-				Type:  serialization.TypeBool,
-				Value: resp,
-			},
-		}
-		if ec.Props().GetBool(setFlagShowType) {
-			row = append(row, output.Column{
-				Name:  output.NameValueType,
-				Type:  serialization.TypeString,
-				Value: serialization.TypeToLabel(serialization.TypeBool),
-			})
-		}
-		rows = append(rows, row)
+		return rows, nil
+	})
+	if err != nil {
+		return err
 	}
-	return ec.AddOutputRows(ctx, rows...)
+	stop()
+	return ec.AddOutputRows(ctx, rows.([]output.Row)...)
 }
 
 func init() {
