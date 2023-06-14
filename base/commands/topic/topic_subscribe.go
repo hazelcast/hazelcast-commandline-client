@@ -36,11 +36,11 @@ func (tsc *topicSubscribeCommand) Exec(ctx context.Context, ec plug.ExecContext)
 		return err
 	}
 	t := tp.(*hazelcast.Topic)
-	events := make(chan *topic.TopicEvent, 1)
+	events := make(chan topic.TopicEvent, 1)
 	// Channel is not closed intentionally
 	sid, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText(fmt.Sprintf("Listening for messages for topic %s", t.Name()))
-		sid, err := topic.AddListener(ctx, ci, topicName, ec.Logger(), func(event *topic.TopicEvent) {
+		sid, err := topic.AddListener(ctx, ci, topicName, ec.Logger(), func(event topic.TopicEvent) {
 			select {
 			case events <- event:
 			case <-ctx.Done():

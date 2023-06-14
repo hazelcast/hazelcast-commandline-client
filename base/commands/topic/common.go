@@ -35,17 +35,17 @@ func makeValueData(ec plug.ExecContext, ci *hazelcast.ClientInternal, valueStr s
 	return ci.EncodeData(value)
 }
 
-func updateOutput(ctx context.Context, ec plug.ExecContext, events <-chan *topic.TopicEvent) error {
+func updateOutput(ctx context.Context, ec plug.ExecContext, events <-chan topic.TopicEvent) error {
 	wantedCount := ec.Props().GetInt(topicFlagCount)
 	printedCount := 0
-	rowCh := make(chan output.Row, 1)
+	rowCh := make(chan output.Row)
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, os.Kill)
 	defer stop()
 	ec.PrintlnUnnecessary(fmt.Sprintf("Listening for messages for topic %s", ec.Props().GetString(topicFlagName)))
 	go func() {
 	loop:
 		for {
-			var e *topic.TopicEvent
+			var e topic.TopicEvent
 			select {
 			case e = <-events:
 			case <-ctx.Done():
@@ -67,7 +67,7 @@ func updateOutput(ctx context.Context, ec plug.ExecContext, events <-chan *topic
 	return ec.AddOutputStream(ctx, rowCh)
 }
 
-func eventRow(e *topic.TopicEvent, ec plug.ExecContext) output.Row {
+func eventRow(e topic.TopicEvent, ec plug.ExecContext) output.Row {
 	row := output.Row{
 		output.Column{
 			Name:  "Time",
