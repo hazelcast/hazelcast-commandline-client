@@ -79,10 +79,19 @@ func eventRow(e topic.TopicEvent, ec plug.ExecContext) output.Row {
 			Type:  serialization.TypeString,
 			Value: e.TopicName,
 		},
-		output.NewValueColumn(e.ValueType, e.Value),
+		output.Column{
+			Name:  "Value",
+			Type:  e.ValueType,
+			Value: e.Value,
+		},
 	}
 	if ec.Props().GetBool(topicFlagShowType) {
-		row = append(row, output.NewKeyTypeColumn(e.ValueType))
+		row = append(row,
+			output.Column{
+				Name:  "Type",
+				Type:  serialization.TypeString,
+				Value: serialization.TypeToLabel(e.ValueType),
+			})
 	}
 	if ec.Props().GetBool(clc.PropertyVerbose) {
 		row = append(row,
