@@ -132,7 +132,7 @@ func portableTestValue(t *testing.T, format, target string, value any) {
 	ctx := context.Background()
 	t.Run(format, func(t *testing.T) {
 		portableTester(t, func(tcx it.TestContext) {
-			it.WithRandomMap(tcx, func(m *hazelcast.Map) {
+			it.WithMap(tcx, func(m *hazelcast.Map) {
 				check.Must(m.Set(ctx, "value", value))
 				tcx.WithReset(func() {
 					ctx := context.Background()
