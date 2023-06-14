@@ -61,9 +61,6 @@ func (qc *QueuePollCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 				ec.Logger().Info("The value was not decoded, due to error: %s", err.Error())
 				value = serialization.NondecodedType(serialization.TypeToLabel(valueType))
 			}
-			if err != nil {
-				return nil, err
-			}
 			row := output.Row{
 				output.Column{
 					Name:  output.NameValue,
@@ -92,10 +89,13 @@ func init() {
 
 func stringToPartitionID(ci *hazelcast.ClientInternal, name string) (int32, error) {
 	var partitionID int32
+	var keyData hazelcast.Data
+	var err error
 	idx := strings.Index(name, "@")
-	if keyData, err := ci.EncodeData(name[idx+1:]); err != nil {
+	if keyData, err = ci.EncodeData(name[idx+1:]); err != nil {
 		return 0, err
-	} else if partitionID, err = ci.GetPartitionID(keyData); err != nil {
+	}
+	if partitionID, err = ci.GetPartitionID(keyData); err != nil {
 		return 0, err
 	}
 	return partitionID, nil
