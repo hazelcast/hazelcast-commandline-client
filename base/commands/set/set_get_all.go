@@ -47,7 +47,8 @@ func (sc *SetGetAllCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 	for _, r := range raw {
 		val, err := ci.DecodeData(*r)
 		if err != nil {
-			return err
+			ec.Logger().Info("The value was not decoded, due to error: %s", err.Error())
+			val = serialization.NondecodedType(serialization.TypeToLabel(r.Type()))
 		}
 		row := output.Row{
 			{
