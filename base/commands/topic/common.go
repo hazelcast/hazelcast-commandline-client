@@ -67,22 +67,7 @@ func updateOutput(ctx context.Context, ec plug.ExecContext, events <-chan topic.
 	return ec.AddOutputStream(ctx, rowCh)
 }
 
-func eventRow(e topic.TopicEvent, ec plug.ExecContext) output.Row {
-	row := output.Row{
-		output.Column{
-			Name:  "Value",
-			Type:  e.ValueType,
-			Value: e.Value,
-		},
-	}
-	if ec.Props().GetBool(topicFlagShowType) {
-		row = append(row,
-			output.Column{
-				Name:  "Type",
-				Type:  serialization.TypeString,
-				Value: serialization.TypeToLabel(e.ValueType),
-			})
-	}
+func eventRow(e topic.TopicEvent, ec plug.ExecContext) (row output.Row) {
 	if ec.Props().GetBool(clc.PropertyVerbose) {
 		row = append(row,
 			output.Column{
@@ -96,6 +81,21 @@ func eventRow(e topic.TopicEvent, ec plug.ExecContext) output.Row {
 				Value: e.TopicName,
 			},
 			output.Column{
+				Name:  "Value",
+				Type:  e.ValueType,
+				Value: e.Value,
+			},
+		)
+		if ec.Props().GetBool(topicFlagShowType) {
+			row = append(row,
+				output.Column{
+					Name:  "Type",
+					Type:  serialization.TypeString,
+					Value: serialization.TypeToLabel(e.ValueType),
+				})
+		}
+		row = append(row,
+			output.Column{
 				Name:  "Member UUID",
 				Type:  serialization.TypeUUID,
 				Value: e.Member.UUID,
@@ -104,6 +104,22 @@ func eventRow(e topic.TopicEvent, ec plug.ExecContext) output.Row {
 				Name:  "Member Address",
 				Type:  serialization.TypeString,
 				Value: string(e.Member.Address),
+			})
+		return row
+	}
+	row = output.Row{
+		output.Column{
+			Name:  "Value",
+			Type:  e.ValueType,
+			Value: e.Value,
+		},
+	}
+	if ec.Props().GetBool(topicFlagShowType) {
+		row = append(row,
+			output.Column{
+				Name:  "Type",
+				Type:  serialization.TypeString,
+				Value: serialization.TypeToLabel(e.ValueType),
 			})
 	}
 	return row
