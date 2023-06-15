@@ -70,16 +70,6 @@ func updateOutput(ctx context.Context, ec plug.ExecContext, events <-chan topic.
 func eventRow(e topic.TopicEvent, ec plug.ExecContext) output.Row {
 	row := output.Row{
 		output.Column{
-			Name:  "Time",
-			Type:  serialization.TypeJavaLocalDateTime,
-			Value: e.PublishTime,
-		},
-		output.Column{
-			Name:  "Topic",
-			Type:  serialization.TypeString,
-			Value: e.TopicName,
-		},
-		output.Column{
 			Name:  "Value",
 			Type:  e.ValueType,
 			Value: e.Value,
@@ -95,6 +85,16 @@ func eventRow(e topic.TopicEvent, ec plug.ExecContext) output.Row {
 	}
 	if ec.Props().GetBool(clc.PropertyVerbose) {
 		row = append(row,
+			output.Column{
+				Name:  "Time",
+				Type:  serialization.TypeJavaLocalDateTime,
+				Value: e.PublishTime,
+			},
+			output.Column{
+				Name:  "Topic",
+				Type:  serialization.TypeString,
+				Value: e.TopicName,
+			},
 			output.Column{
 				Name:  "Member UUID",
 				Type:  serialization.TypeUUID,
