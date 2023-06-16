@@ -135,7 +135,22 @@ func (a API) FindClusterType(ctx context.Context, name string) (ClusterType, err
 			return ct, nil
 		}
 	}
-	return ClusterType{}, nil
+	return ClusterType{}, fmt.Errorf("no such cluster type found: %s", name)
+}
+
+func (a API) StreamLogs(ctx context.Context, idOrName string, out io.Writer) error {
+	c, err := a.FindCluster(ctx, idOrName)
+	if err != nil {
+		return err
+	}
+	path := fmt.Sprintf("/cluster/%s/logstream", c.ID)
+	r, err := doGetRaw(ctx, path, a.token)
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+	_, err = io.Copy(out, r)
+	return err
 }
 
 func (a API) findArtifactIDAndName(ctx context.Context, clusterName, artifact string) (int64, string, error) {
@@ -183,6 +198,7 @@ func doGet[Res any](ctx context.Context, path, token string) (res Res, err error
 	if err != nil {
 		return res, fmt.Errorf("sending request: %w", err)
 	}
+	defer rawRes.Body.Close()
 	rb, err := io.ReadAll(rawRes.Body)
 	if err != nil {
 		return res, fmt.Errorf("reading response: %w", err)
@@ -192,6 +208,31 @@ func doGet[Res any](ctx context.Context, path, token string) (res Res, err error
 			return res, err
 		}
 		return res, nil
+	}
+	return res, NewHTTPClientError(rawRes.StatusCode, rb)
+}
+
+func doGetRaw(ctx context.Context, path, token string) (res io.ReadCloser, err error) {
+	req, err := http.NewRequest(http.MethodGet, makeUrl(path), nil)
+	if err != nil {
+		return res, fmt.Errorf("creating request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	req = req.WithContext(ctx)
+	rawRes, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return res, fmt.Errorf("sending request: %w", err)
+	}
+	if rawRes.StatusCode == 200 {
+		return rawRes.Body, nil
+	}
+	defer rawRes.Body.Close()
+	rb, err := io.ReadAll(rawRes.Body)
+	if err != nil {
+		return res, fmt.Errorf("reading response: %w", err)
 	}
 	return res, NewHTTPClientError(rawRes.StatusCode, rb)
 }
@@ -226,6 +267,7 @@ func doPostBytes(ctx context.Context, url, token string, body []byte) ([]byte, e
 	if err != nil {
 		return nil, fmt.Errorf("sending request: %w", err)
 	}
+	defer res.Body.Close()
 	rb, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, fmt.Errorf("reading response: %w", err)

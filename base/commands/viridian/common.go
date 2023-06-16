@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"sort"
 	"strings"
@@ -106,9 +107,12 @@ func matchClusterState(cluster viridian.Cluster, state string) (bool, error) {
 func handleErrorResponse(ec plug.ExecContext, err error) error {
 	ec.Logger().Error(err)
 	// if it is a http client error, return the simplified error to user
-	var err2 viridian.HTTPClientError
-	if errors.As(err, &err2) {
-		return fmt.Errorf(err2.Text())
+	var ce viridian.HTTPClientError
+	if errors.As(err, &ce) {
+		if ce.Code() == http.StatusUnauthorized {
+			return fmt.Errorf("authentication error, did you login?")
+		}
+		return fmt.Errorf(ce.Text())
 	}
 	// if it is not a http client error, return it directly as always
 	return err

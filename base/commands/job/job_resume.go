@@ -7,8 +7,8 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/jet"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
 )
 
 type ResumeCmd struct{}
@@ -27,22 +27,19 @@ func (cm ResumeCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		return err
 	}
-	jm, err := newJobNameToIDMap(ctx, ec, false)
+	jm, err := NewJobNameToIDMap(ctx, ec, false)
 	if err != nil {
 		return err
 	}
 	nameOrID := ec.Args()[0]
 	jid, ok := jm.GetIDForName(nameOrID)
 	if !ok {
-		return ErrInvalidJobID
+		return jet.ErrInvalidJobID
 	}
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText(fmt.Sprintf("Resuming job: %s", idToString(jid)))
-		req := codec.EncodeJetResumeJobRequest(jid)
-		if _, err := ci.InvokeOnRandomTarget(ctx, req, nil); err != nil {
-			return nil, err
-		}
-		return nil, nil
+		j := jet.New(ci, sp, ec.Logger())
+		return nil, j.ResumeJob(ctx, jid)
 	})
 	if err != nil {
 		return err
@@ -51,7 +48,7 @@ func (cm ResumeCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if ec.Props().GetBool(flagWait) {
 		msg := fmt.Sprintf("Waiting for job %s to start", nameOrID)
 		ec.Logger().Info(msg)
-		err = WaitJobState(ctx, ec, msg, nameOrID, statusRunning, 2*time.Second)
+		err = WaitJobState(ctx, ec, msg, nameOrID, jet.JobStatusRunning, 2*time.Second)
 		if err != nil {
 			return err
 		}

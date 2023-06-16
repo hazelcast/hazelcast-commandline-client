@@ -22,6 +22,7 @@ import (
 
 var (
 	ErrUserCancelled   = errors.New("cancelled")
+	ErrTimeout         = errors.New("timeout")
 	ErrNotDecoded      = errors.New("not decoded")
 	ErrNotAvailable    = errors.New("not available")
 	ErrNoClusterConfig = errors.New("no configuration was specified")
