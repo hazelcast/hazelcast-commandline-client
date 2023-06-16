@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/stretchr/testify/require"
 
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
@@ -68,10 +69,11 @@ func sql_NonInteractiveStreamingTest(t *testing.T) {
 		defer cancel()
 		tcx.WithReset(func() {
 			go func() {
-				tcx.CLCExecute(ctx, "sql", "select * from table(generate_stream(1))")
+				err := tcx.CLCExecuteErr(ctx, "sql", "select * from table(generate_stream(1))", "--timeout", "5s")
+				require.Error(t, err)
 			}()
-			time.Sleep(5 * time.Second)
 			tcx.AssertStdoutContains("1\n2\n")
+			tcx.AssertStderrContains("Timeout\n")
 		})
 	})
 }
@@ -228,22 +230,6 @@ func sqlOutput_NonInteractiveTest(t *testing.T) {
 		})
 	}
 }
-
-/*
-func sql_NonInteractiveStreamingTest(t *testing.T) {
-	tcx := it.TestContext{T: t}
-	tcx.Tester(func(tcx it.TestContext) {
-		ctx := context.Background()
-		tcx.WithShell(ctx, func(tcx it.TestContext) {
-			tcx.WithReset(func() {
-				tcx.CLCExecute(ctx, "sql", "select * from table(generate_stream(1)) limit 3")
-				tcx.AssertStdoutEquals("0\n1\n2\n")
-			})
-		})
-	})
-}
-
-*/
 
 func sqlOutput_JSONTest(t *testing.T) {
 	formats := []string{"delimited", "json", "csv", "table"}

@@ -41,7 +41,8 @@ func updateOutput(ctx context.Context, ec plug.ExecContext, events <-chan topic.
 	rowCh := make(chan output.Row)
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, os.Kill)
 	defer stop()
-	ec.PrintlnUnnecessary(fmt.Sprintf("Listening for messages of topic %s", ec.Props().GetString(topicFlagName)))
+	name := ec.Props().GetString(topicFlagName)
+	ec.PrintlnUnnecessary(fmt.Sprintf("Listening to messages of topic %s", name))
 	go func() {
 	loop:
 		for {
