@@ -1,36 +1,30 @@
 package generate
 
 import (
-	"bytes"
-	"fmt"
 	"os"
-	"os/exec"
 
-	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
+	"github.com/go-git/go-git/v5"
 )
 
-func cloneTemplates(tsDir string, t string) error {
-	err := os.MkdirAll(tsDir, 0700)
+func cloneTemplate(tsDir string, t string) error {
+	repo, err := git.PlainClone(tsDir, false, &git.CloneOptions{
+		URL:        hzTemplatesRepository,
+		NoCheckout: true,
+		Progress:   os.Stdout,
+		Depth:      1,
+	})
+	repo.Config()
 	if err != nil {
 		return err
 	}
-	exists, err := templateExists(tsDir, t)
+	w, err := repo.Worktree()
+	options := git.CheckoutOptions{
+		SparseCheckoutDirectories: []string{t},
+		Branch:                    "refs/heads/main",
+	}
+	err = w.Checkout(&options)
 	if err != nil {
 		return err
-	}
-	if !exists {
-		//TODO: sparse checkout to be able to download single template instead of cloning the whole template repository
-		// it requires git config core.sparseCheckout true
-		// and directories should be listed inside .git/info/sparse-checkout
-		// https://stackoverflow.com/questions/600079/how-do-i-clone-a-subdirectory-only-of-a-git-repository
-		cmd := exec.Command("git", "clone", "--depth", "1", hzTemplatesRepository)
-		cmd.Dir = paths.Home()
-		var stderr bytes.Buffer
-		cmd.Stderr = &stderr
-		err = cmd.Run()
-		if err != nil {
-			return fmt.Errorf("cloning templates repository (%s): %s", hzTemplatesRepository, stderr.String())
-		}
 	}
 	return nil
 }

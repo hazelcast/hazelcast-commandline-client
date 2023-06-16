@@ -1,7 +1,7 @@
 package generate
 
 const (
-	projectTemplate           = "template"
+	projectName               = "name"
 	projectOutput             = "output"
 	keepExt                   = ".keep"
 	templateExt               = ".template"

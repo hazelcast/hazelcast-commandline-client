@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
+	"math"
 	"os"
 	"path"
 	"path/filepath"
@@ -20,25 +21,30 @@ import (
 type ProjectCmd struct{}
 
 func (g ProjectCmd) Init(cc plug.InitContext) error {
-	cc.AddStringFlag(projectTemplate, "", "", true, "name of the template")
 	cc.AddStringFlag(projectOutput, "", ".", false, "output directory for the project to be generated")
-	cc.SetCommandUsage("project [--template] [flags]")
+	cc.AddStringFlag(projectName, "", ".", false, "name of the created project")
+	cc.SetPositionalArgCount(1, math.MaxInt)
+	cc.SetCommandUsage("project [template-name] [flags]")
 	help := "Generate a project from template"
 	cc.SetCommandHelp(help, help)
 	return nil
 }
 
 func (g ProjectCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
-	templateName := ec.Props().GetString(projectTemplate)
+	templateName := ec.Args()[0]
 	outputDir := ec.Props().GetString(projectOutput)
+	pName := ec.Props().GetString(projectName)
 	templatesDir := paths.Templates()
-	err := cloneTemplates(templatesDir, templateName)
-	if err != nil {
-		return err
+	templateExists := paths.Exists(filepath.Join(templatesDir, templateName))
+	if !templateExists {
+		err := cloneTemplate(templatesDir, templateName)
+		if err != nil {
+			return err
+		}
 	}
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText(fmt.Sprintf("Generating project from template %s", templateName))
-		return nil, generateProject(outputDir, ec, templateName)
+		return nil, createProject(ec, outputDir, templateName, pName)
 	})
 	stop()
 	if err != nil {
@@ -47,32 +53,33 @@ func (g ProjectCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	return nil
 }
 
-func generateProject(outputDir string, ec plug.ExecContext, templateName string) error {
-	currentTemplateDir := paths.TemplatePath(templateName)
-	return filepath.WalkDir(currentTemplateDir, func(p string, d fs.DirEntry, err error) error {
+func createProject(ec plug.ExecContext, outputDir, templateName, pName string) error {
+	sourceDir := paths.TemplatePath(templateName)
+	return filepath.WalkDir(sourceDir, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
+		target := filepath.Join(outputDir, pName, strings.Split(p, templateName)[1])
 		if d.IsDir() {
-			err = os.MkdirAll(filepath.Join(outputDir, d.Name()), 0700)
+			err = os.MkdirAll(target, 0700)
 			if err != nil {
 				return err
 			}
 		} else {
 			ext := path.Ext(d.Name())
 			// skip files with . and _ prefix unless their extension is ".keep"
-			if ext != keepExt && (strings.HasPrefix(d.Name(), hiddenFilePrefix) || strings.HasPrefix(d.Name(), underscorePrefix)) {
+			if ext != keepExt && (strings.HasPrefix(d.Name(), hiddenFilePrefix) || strings.HasPrefix(d.Name(), underscorePrefix)) || d.Name() == "default.properties" {
 				return nil
 			}
 			if ext == templateExt {
-				err = applyTemplateAndCopyToTarget(ec, currentTemplateDir, d.Name(), filepath.Join(outputDir, templateName))
+				err = applyTemplateAndCopyToTarget(ec, sourceDir, p, target)
 				if err != nil {
 					return err
 				}
 				return nil
 			}
 			// copy everything else
-			err = copyToTarget(currentTemplateDir, d.Name(), filepath.Join(outputDir, templateName))
+			err = copyToTarget(p, target, path.Ext(d.Name()) != "")
 			if err != nil {
 				return err
 			}
