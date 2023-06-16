@@ -24,6 +24,7 @@
 ** xref:clc-object.adoc[]
 ** xref:clc-map.adoc[]
 ** xref:clc-set.adoc[]
+** xref:clc-queue.adoc[]
 ** xref:clc-topic.adoc[]
 ** xref:clc-sql.adoc[]
 ** xref:clc-snapshot.adoc[]

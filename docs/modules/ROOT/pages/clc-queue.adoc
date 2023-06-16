@@ -1,0 +1,193 @@
+= clc queue
+
+Queue commands are a group of queue operations.
+
+Usage:
+
+[source,bash]
+----
+clc queue [command] [flags]
+----
+
+== Commands
+
+* <<clc-queue-clear, clc queue clear>>
+* <<clc-queue-offer, clc queue offer>>
+* <<clc-queue-poll, clc queue poll>>
+* <<clc-queue-size, clc queue size>>
+* <<clc-queue-destroy, clc queue destroy>>
+
+== clc queue clear
+
+Delete all entries of a Queue.
+
+Usage:
+
+[source,bash]
+----
+clc queue clear [flags]
+----
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the queue.
+|`default`
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc queue clear --name my-queue
+----
+
+== clc queue offer
+
+Add a value to the given Queue.
+
+Usage:
+
+[source,bash]
+----
+clc queue offer [values] [flags]
+----
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`values`
+|Required
+|Values to add to the queue.
+|N/A
+
+|`--name`, `-n`
+|Optional
+|Name of the queue.
+|`default`
+
+|`--value-type`, `-v`
+|Optional
+|Data type of the value. One of: `string`, `bool`, `json`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`
+|String
+
+|===
+Example:
+
+[source,bash]
+----
+clc queue offer --value-type f32 19.94 19.92 --name my-queue
+----
+
+== clc queue poll
+
+Remove the given number of elements from the given Queue.
+
+Usage:
+
+[source,bash]
+----
+clc queue poll [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the queue.
+|`default`
+
+|`--count`
+|Optional
+|Number of element to be removed from the given queue.
+|1
+
+|`--format`, `-f`
+|Optional
+|Output format. Supported formats:
+
+- `csv`
+- `delimited`
+- `json`
+- `table`
+|`delimited` in non-interactive mode, `table` in interactive mode.
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc queue poll --count 2 --name my-queue 5
+----
+
+== clc queue size
+
+Return the size of the given Queue.
+
+Usage:
+
+[source,bash]
+----
+clc queue size [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the queue.
+|`default`
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc queue size --name my-queue
+----
+
+== clc queue destroy
+
+Deletes the queue and all the data in it.
+
+Usage:
+
+[source,bash]
+----
+clc queue destroy [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the queue.
+|`default`
+
+|`--yes`
+|Optional
+|Skip confirming the destroy operation.
+|`false`
+
+|===

@@ -292,10 +292,14 @@ func (tcx TestContext) WithReset(f func()) {
 }
 
 func (tcx TestContext) CLCExecute(ctx context.Context, args ...string) {
+	check.Must(tcx.CLCExecuteErr(ctx, args...))
+}
+
+func (tcx TestContext) CLCExecuteErr(ctx context.Context, args ...string) error {
 	a := []string{"-c", tcx.ConfigPath}
 	a = append(a, args...)
 	main := check.MustValue(tcx.createMain())
-	check.Must(main.Execute(ctx, a...))
+	return main.Execute(ctx, a...)
 }
 
 func (tcx TestContext) WithShell(ctx context.Context, f func(tcx TestContext)) {

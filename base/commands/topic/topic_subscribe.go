@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/types"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
@@ -27,19 +26,14 @@ func (tsc *topicSubscribeCommand) Init(cc plug.InitContext) error {
 
 func (tsc *topicSubscribeCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	topicName := ec.Props().GetString(topicFlagName)
-	tp, err := ec.Props().GetBlocking(topicPropertyName)
-	if err != nil {
-		return err
-	}
 	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
 		return err
 	}
-	t := tp.(*hazelcast.Topic)
 	events := make(chan topic.TopicEvent, 1)
 	// Channel is not closed intentionally
 	sid, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Listening for messages of topic %s", t.Name()))
+		sp.SetText(fmt.Sprintf("Listening to messages of topic %s", topicName))
 		sid, err := topic.AddListener(ctx, ci, topicName, ec.Logger(), func(event topic.TopicEvent) {
 			select {
 			case events <- event:
