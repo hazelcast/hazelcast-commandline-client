@@ -6,6 +6,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/jet"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
@@ -38,14 +39,14 @@ func (cm TerminateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if ec.Props().GetBool(flagForce) {
 		tm = cm.terminateModeForce
 	}
-	jm, err := newJobNameToIDMap(ctx, ec, false)
+	jm, err := NewJobNameToIDMap(ctx, ec, false)
 	if err != nil {
 		return err
 	}
 	arg := ec.Args()[0]
 	jid, ok := jm.GetIDForName(arg)
 	if !ok {
-		return ErrInvalidJobID
+		return jet.ErrInvalidJobID
 	}
 	if err = terminateJob(ctx, ec, jid, arg, tm, cm.msg, cm.waitState); err != nil {
 		return err
@@ -62,27 +63,27 @@ func init() {
 		name:               "cancel",
 		longHelp:           "Cancels the job with the given ID or name.",
 		shortHelp:          "Cancels the job with the given ID or name",
-		terminateMode:      terminateModeCancelGraceful,
-		terminateModeForce: terminateModeCancelForceful,
+		terminateMode:      jet.TerminateModeCancelGraceful,
+		terminateModeForce: jet.TerminateModeCancelForceful,
 		msg:                "Cancelling the job",
-		waitState:          statusFailed,
+		waitState:          jet.JobStatusFailed,
 	}))
 	Must(plug.Registry.RegisterCommand("job:suspend", &TerminateCmd{
 		name:               "suspend",
 		longHelp:           "Suspends the job with the given ID or name.",
 		shortHelp:          "Suspends the job with the given ID or name",
-		terminateMode:      terminateModeSuspendGraceful,
-		terminateModeForce: terminateModeSuspendForceful,
+		terminateMode:      jet.TerminateModeSuspendGraceful,
+		terminateModeForce: jet.TerminateModeSuspendForceful,
 		msg:                "Suspending the job",
-		waitState:          statusSuspended,
+		waitState:          jet.JobStatusSuspended,
 	}))
 	Must(plug.Registry.RegisterCommand("job:restart", &TerminateCmd{
 		name:               "restart",
 		longHelp:           "Restarts the job with the given ID or name.",
 		shortHelp:          "Restarts the job with the given ID or name",
-		terminateMode:      terminateModeRestartGraceful,
-		terminateModeForce: terminateModeRestartForceful,
+		terminateMode:      jet.TerminateModeRestartGraceful,
+		terminateModeForce: jet.TerminateModeRestartForceful,
 		msg:                "Restarting the job",
-		waitState:          statusRunning,
+		waitState:          jet.JobStatusRunning,
 	}))
 }

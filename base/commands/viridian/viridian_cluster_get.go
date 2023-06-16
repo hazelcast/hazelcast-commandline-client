@@ -2,6 +2,7 @@ package viridian
 
 import (
 	"context"
+	"time"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -66,8 +67,56 @@ func (cm ClusterGetCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 			Type:  serialization.TypeString,
 			Value: c.HazelcastVersion,
 		},
+		output.Column{
+			Name:  "Hot Backup Enabled",
+			Type:  serialization.TypeString,
+			Value: boolToYesNo(c.HotBackupEnabled),
+		},
+		output.Column{
+			Name:  "Hot Restart Enabled",
+			Type:  serialization.TypeString,
+			Value: boolToYesNo(c.HotRestartEnabled),
+		},
+		output.Column{
+			Name:  "IP Whitelist Enabled",
+			Type:  serialization.TypeString,
+			Value: boolToYesNo(c.IPWhitelistEnabled),
+		},
+		output.Column{
+			Name:  "Creation Time",
+			Type:  serialization.TypeJavaLocalDateTime,
+			Value: time.UnixMilli(c.CreationTime),
+		},
+	}
+	if ec.Props().GetBool(clc.PropertyVerbose) {
+		row = append(row,
+			output.Column{
+				Name:  "Start Time",
+				Type:  serialization.TypeJavaLocalDateTime,
+				Value: time.UnixMilli(c.StartTime),
+			},
+			output.Column{
+				Name:  "Regions",
+				Type:  serialization.TypeStringArray,
+				Value: regionTitleSlice(c.Regions),
+			})
 	}
 	return ec.AddOutputRows(ctx, row)
+}
+
+func boolToYesNo(b bool) string {
+	if b {
+		return "yes"
+	}
+	return "no"
+}
+
+func regionTitleSlice(regions []viridian.Region) []string {
+	titles := []string{}
+	for _, region := range regions {
+		titles = append(titles, region.Title)
+	}
+	return titles
 }
 
 func init() {

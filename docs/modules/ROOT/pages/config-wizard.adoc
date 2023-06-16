@@ -1,6 +1,6 @@
 == CLC Configuration Wizard
 
-:description: Hazelcast CLC provides a wizard functionlity in the interactice mode to manage multiple configuration easily. It runs when a client connection need and asks for a configuration choice.
+:description: Hazelcast CLC provides a configuration wizard in interactive mode, which allows you to easily manage multiple cluster configurations. The configuration wizard runs when a client connection needs and asks for a single cluster configuration.
 
 :page-product: cloud
 

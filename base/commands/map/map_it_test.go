@@ -27,10 +27,13 @@ func TestMap(t *testing.T) {
 		{name: "Size_Interactive", f: size_InteractiveTest},
 		{name: "Size_Noninteractive", f: size_NoninteractiveTest},
 		{name: "Destroy_NonInteractive", f: destroy_NonInteractiveTest},
-		{name: "Destroy_AutoYes_NonInteractiveTest", f: destroy_autoYes_NonInteractiveTest},
-		{name: "Destroy_InteractiveTest", f: destroy_InteractiveTest},
-		{name: "KeySet_NoninteractiveTest", f: keySet_NoninteractiveTest},
-		{name: "KeySet_InteractiveTest", f: keySet_InteractiveTest},
+		{name: "Destroy_AutoYes_NonInteractive", f: destroy_autoYes_NonInteractiveTest},
+		{name: "Destroy_Interactive", f: destroy_InteractiveTest},
+		{name: "KeySet_Noninteractive", f: keySet_NoninteractiveTest},
+		{name: "KeySet_Interactive", f: keySet_InteractiveTest},
+		{name: "LoadAll_NonReplacing_NonInteractive", f: loadAll_NonReplacing_NonInteractiveTest},
+		{name: "LoadAll_Replacing_NonInteractive", f: loadAll_Replacing_NonInteractiveTest},
+		{name: "LoadAll_Replacing_WithKeys_NonInteractive", f: loadAll_Replacing_WithKeys_NonInteractiveTest},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, tc.f)
@@ -240,6 +243,63 @@ func destroy_InteractiveTest(t *testing.T) {
 				objects := check.MustValue(tcx.Client.GetDistributedObjectsInfo(ctx))
 				require.False(t, objectExists(hz.ServiceNameMap, m.Name(), objects))
 			})
+		})
+	})
+}
+
+func loadAll_Replacing_NonInteractiveTest(t *testing.T) {
+	// map name should be test-mapstore for mapstore config
+	it.MapTesterWithName(t, "test-mapstore", func(tcx it.TestContext, m *hz.Map) {
+		ctx := context.Background()
+		defer func() { check.Must(m.Clear(ctx)) }()
+		tcx.WithReset(func() {
+			check.MustValue(m.Put(context.Background(), "k0", "v0"))
+			check.MustValue(m.Put(context.Background(), "k1", "v1"))
+			check.Must(m.EvictAll(context.Background()))
+			check.Must(m.PutTransient(context.Background(), "k0", "new-v0"))
+			check.Must(m.PutTransient(context.Background(), "k1", "new-v1"))
+			check.Must(tcx.CLC().Execute(ctx, "map", "-n", m.Name(), "load-all", "--replace"))
+			tcx.AssertStderrContains("OK")
+			require.Equal(t, "v0", check.MustValue(m.Get(ctx, "k0")))
+			require.Equal(t, "v1", check.MustValue(m.Get(ctx, "k1")))
+		})
+	})
+}
+
+func loadAll_NonReplacing_NonInteractiveTest(t *testing.T) {
+	// map name should be test-mapstore for mapstore config
+	it.MapTesterWithName(t, "test-mapstore", func(tcx it.TestContext, m *hz.Map) {
+		ctx := context.Background()
+		defer func() { check.Must(m.Clear(ctx)) }()
+		tcx.WithReset(func() {
+			check.MustValue(m.Put(context.Background(), "k0", "v0"))
+			check.MustValue(m.Put(context.Background(), "k1", "v1"))
+			check.Must(m.EvictAll(context.Background()))
+			check.Must(m.PutTransient(context.Background(), "k0", "new-v0"))
+			check.Must(m.PutTransient(context.Background(), "k1", "new-v1"))
+			check.Must(tcx.CLC().Execute(ctx, "map", "-n", m.Name(), "load-all"))
+			tcx.AssertStderrContains("OK")
+			require.Equal(t, "new-v0", check.MustValue(m.Get(ctx, "k0")))
+			require.Equal(t, "new-v1", check.MustValue(m.Get(ctx, "k1")))
+		})
+	})
+}
+
+func loadAll_Replacing_WithKeys_NonInteractiveTest(t *testing.T) {
+	// map name should be test-mapstore for mapstore config
+	it.MapTesterWithName(t, "test-mapstore", func(tcx it.TestContext, m *hz.Map) {
+		ctx := context.Background()
+		defer func() { check.Must(m.Clear(ctx)) }()
+		tcx.WithReset(func() {
+			check.MustValue(m.Put(context.Background(), "k0", "v0"))
+			check.MustValue(m.Put(context.Background(), "k1", "v1"))
+			check.Must(m.EvictAll(context.Background()))
+			check.Must(m.PutTransient(context.Background(), "k0", "new-v0"))
+			check.Must(m.PutTransient(context.Background(), "k1", "new-v1"))
+			check.Must(tcx.CLC().Execute(ctx, "map", "-n", m.Name(), "load-all", "k0", "--replace"))
+			tcx.AssertStderrContains("OK")
+			require.Equal(t, "v0", check.MustValue(m.Get(ctx, "k0")))
+			require.Equal(t, "new-v1", check.MustValue(m.Get(ctx, "k1")))
 		})
 	})
 }

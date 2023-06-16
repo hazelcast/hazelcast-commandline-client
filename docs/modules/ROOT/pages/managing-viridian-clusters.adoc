@@ -1,115 +1,190 @@
-== Managing Viridian Clusters Using the Hazelcast CLC
+= Managing Viridian Clusters Using the Hazelcast CLC
 
-:description: In this tutorial, you'll learn the basics of managing Viridian clusters using CLC. You'll see how to create, list, delete clusters and how to download their logs. Also, you'll learn how to perform pause/resume operations on Viridian clusters using CLC.
+:description: In this tutorial, you'll learn the basics of managing {hazelcast-cloud} clusters using the Hazelcast CLC. You'll see how to create, list, and delete clusters, and how to download their logs. You'll also learn how to perform pause/resume operations on {hazelcast-cloud} clusters using the Hazelcast CLC.
 
 {description}
 
 == Before You Begin
 
-CLC  requires an API key and API secret to perform Viridian operations.
-You can create them on link:https://viridian.hazelcast.com/settings/developer[Viridian Developer Settings Page].
-After creating the Viridian API key and secret, run the following command for CLC to remember them:
+You need the following:
 
+- xref:install-clc.adoc[Hazelcast CLC] installed on your local machine
+- xref:cloud:ROOT:create-account.adoc[{hazelcast-cloud} account]
+- xref:cloud:ROOT:developer.adoc[{hazelcast-cloud} API key and secret]
+
+[[step-1-authenticating-with-viridian]]
+== Step 1. Authenticating with Viridian
+
+To allow the Hazelcast CLC to perform cluster operations, you must generate a Viridian token.
+
+. Execute the following command to retrieve the {hazelcast-cloud} token. 
++
 [source, bash]
 ----
 clc viridian login
 ----
 
-You will be asked for the API key and secret. Press kbd:[Enter] to confirm the input.
-If the API key and secret are correct, you will get the following output:
+. When prompted, enter your API key and secret. If both are correct, the output looks like this.
++
 [source, bash]
 ----
 Viridian token was fetched and saved.
 OK
 ----
++
+If an error is displayed, make sure that your API key and secret are correct and try again.
 
-If you get an error, make sure your Viridian API key and secret are correct and try again.
+== Step 2. Create a Cluster
 
-== Creating a Cluster on Viridian
-
-To create a new cluster on Viridian, you can use the following command:
+Next, execute the following command to create a development cluster called `my-cluster`.
 
 [source, bash]
 ----
 clc viridian create-cluster --name my-cluster
+----
+
+You should see the following output.
+
+[source, bash]
+----
 Imported configuration: my-cluster
 OK
 ----
-This command creates a development cluster named `my-cluster`.
 
-== Listing Clusters on Viridian
+[[step-3-list-cluster]]
+== Step 3. List Your Cluster Details
 
-To list existing clusters on Viridian, you can use the following command:
+To check that the `my-cluster` is up and running, use the following command. 
 
 [source, bash]
 ----
 clc viridian list-clusters
 ----
-This command lists the clusters, and you will see such an output:
-[source, bash]
+The details of all clusters linked to your Hazelcast {hazelcast-cloud} account are returned, including the Cluster ID, Cluster Name, Current Status, Hazelcast Version.
+
+[source, bash, subs="attributes+"]
 ----
-x1qvpphn        my-cluster     RUNNING 5.3.0-BETA-2
+x1qvpphn        my-cluster     RUNNING {full-version}
 OK
 ----
 
-== Create Data on the Viridian Cluster
+== Step 4. Create Some Data on Your Cluster
 
-Creating a Viridian cluster automatically makes the connection configuration available to CLC.
-The configuration has the same name with the cluster, `my-cluster` in this tutorial.
+Next, write some data to a map on `my-cluster`. 
 
-Let's set a key on a map using this configuration:
+Creating your cluster using the Hazelcast CLC means that the connection details for the cluster, also called `my-cluster`, are made available to the CLC. If you created the cluster in the console, you would need to import the xref:configuration.adoc[cluster's configuration to connect to it].
+
+. Let's add an entry to a map called `my-map` using a key of `my-key` and a value of `my-value`.
++
 [source, bash]
 ----
 clc -c my-cluster map set -n my-map my-key my-value
-OK
 ----
 
-Let's retrieve the value we just set:
+. Now, let's retrieve the value of the key that you just set.
+
++
 [source, bash]
 ----
 clc -c my-cluster map get -n my-map my-key
+----
++
+You should see the following output.
++
+[source, bash]
+----
 my-value
 OK
 ----
-== Downloading the Logs of the Viridian Cluster
 
-You can download logs for your cluster by using the following command:
+== Step 5. Downloading the Cluster Logs
+
+You can download logs from your cluster to your local machine. Hazelcast CLC gives the cluster logs a standard name, which means that they are overwritten every time you download them to the same location. 
+
+. Run the following command to download the logs of `my-cluster` to your working directory. 
++
 [source, bash]
 ----
 clc viridian download-logs my-cluster
-OK
 ----
-This command downloads the logs to the current working directory.
-By using the `--output-dir` flag, you can download the logs to the given directory of your choice.
++
+In this command `my-cluster` is the cluster name rather than the configuration name.
++
+. Use the following command to quickly check the location of your working directory.
++
+[source, bash]
+----
+clc home
+----
 
-== Pause/Resume a Cluster on Viridian
+. Now, try downloading the logs to a directory of your choice by adding the `--output-dir` flag. Replace the placeholder `$DIRECTORY_PATH` with the absolute or relative path to your chosen directory.
++
+[source, bash]
+----
+clc viridian download-logs my-cluster --output-dir $DIRECTORY_PATH
+----
 
-You can pause a running cluster by using its name or ID by executing the command below. See link:https://docs.hazelcast.com/cloud/stop-and-resume[Pausing and Resuming Clusters] documentation for more information.
+== Step 6. Pause/Resume Your Cluster
+
+To avoid charges accumulating in your account, you can xref:cloud:ROOT:stop-and-resume.adoc[pause a running cluster].
+
+. Try pausing your cluster. You can use either the cluster name or ID.
++
 [source, bash]
 ----
 clc viridian pause-cluster my-cluster
-OK
-----
-When you want to resume it, you can execute the following command by using its name or ID:
-----
-clc viridian resume-cluster my-cluster
-OK
 ----
 
-== Deleting a Cluster on Viridian
-
-You can delete an existing cluster on Viridian using its name or ID by executing the command below. See link:https://docs.hazelcast.com/cloud/deleting-a-cluster[Deleting a Cluster] documentation for more information.
+. When you're ready to resume the cluster, run the following command.
++
 [source, bash]
 ----
-clc viridian delete-cluster x1qvpphn
+clc viridian resume-cluster my-cluster
 ----
-when you hit kbd:[Enter], it is going to ask you:
+
+== Step 7. Delete Your Cluster
+
+You can also xref:cloud:ROOT:deleting-a-cluster.adoc[delete an existing cluster] on {hazelcast-cloud} using its name or ID. 
+
+. Run the following command to delete `my-cluster` replacing the placeholder `CLUSTER_ID`. See <<step-3-list-cluster,Step 3>>, for details of how to look up a cluster ID.
++
+[source, bash]
+----
+clc viridian delete-cluster $CLUSTER_ID
+----
++
+A confirmation message is displayed.
++
 [source, bash]
 ----
 Cluster will be deleted irreversibly, proceed? (y/n)
 ----
-You can just type `y` to confirm or if you don't want it to ask it, and directly delete the cluster, you can add `--yes` to your command:
+
+. Type `y` to proceed with the deletion.
+
++
+To avoid receiving a confirmation message on cluster deletion, add `--yes` to your command. This may be useful if you are scripting the deletion of multiple clusters.
+
++
 [source, bash]
 ----
 clc viridian delete-cluster my-cluster --yes
 ----
+
+== Summary
+
+In this tutorial, you learned how to do the following:
+
+* Authenticate with {hazelcast-cloud}.
+* Create a cluster and check that it is running.
+* Write and retrieve some data from a map.
+* Download cluster logs for analysis.
+* Pause, resume and delete a cluster.
+
+== Learn More
+
+Use these resources to continue learning:
+
+- xref:clc-viridian.adoc[].
+
+- xref:configuration.adoc[].
