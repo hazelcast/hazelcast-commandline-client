@@ -13,6 +13,7 @@ clc set [command] [flags]
 
 * <<clc-set-clear, clc set clear>>
 * <<clc-set-add, clc set add>>
+* <<clc-set-get-all, clc set get-all>>
 * <<clc-set-remove, clc set remove>>
 * <<clc-set-size, clc set size>>
 * <<clc-set-destroy, clc set destroy>>
@@ -87,6 +88,37 @@ Example:
 [source,bash]
 ----
 clc set add 1 2 3 4 --name mySet
+----
+
+== clc set get-all
+
+List all values in the given set.
+
+Usage:
+
+[source,bash]
+----
+clc set get-all [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the set.
+|`default`
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc set get-all --name mySet
 ----
 
 == clc set remove
