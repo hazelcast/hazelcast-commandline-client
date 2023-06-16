@@ -49,11 +49,11 @@ func (mc *ClusterListMembersCommand) Exec(ctx context.Context, ec plug.ExecConte
 	}
 	mems := memsv.(map[types.UUID]*memberData)
 	rows := []output.Row{}
-	for uuid, info := range mems {
+	for uuid, mem := range mems {
 		row := output.Row{
 			output.Column{
 				Name:  "Order",
-				Value: info.Order,
+				Value: mem.Order,
 				Type:  serialization.TypeInt64,
 			},
 			output.Column{
@@ -63,22 +63,22 @@ func (mc *ClusterListMembersCommand) Exec(ctx context.Context, ec plug.ExecConte
 			},
 			output.Column{
 				Name:  "Public Address",
-				Value: info.PublicAddress,
+				Value: mem.PublicAddress,
 				Type:  serialization.TypeString,
 			},
 			output.Column{
 				Name:  "Private Address",
-				Value: info.PrivateAddress,
+				Value: mem.PrivateAddress,
 				Type:  serialization.TypeString,
 			},
 			output.Column{
 				Name:  "Hazelcast Version",
-				Value: info.Version,
+				Value: mem.Version,
 				Type:  serialization.TypeString,
 			},
 			output.Column{
 				Name:  "IsLite",
-				Value: info.LiteMember,
+				Value: mem.LiteMember,
 				Type:  serialization.TypeBool,
 			},
 		}
@@ -86,12 +86,12 @@ func (mc *ClusterListMembersCommand) Exec(ctx context.Context, ec plug.ExecConte
 			row = append(row,
 				output.Column{
 					Name:  "Member State",
-					Value: info.MemberState,
+					Value: mem.MemberState,
 					Type:  serialization.TypeString,
 				},
 				output.Column{
 					Name:  "Member Name",
-					Value: info.Name,
+					Value: mem.Name,
 					Type:  serialization.TypeString,
 				},
 			)
@@ -143,6 +143,9 @@ func findMemberAddresses(m cluster.MemberInfo) (string, string) {
 		case "public":
 			pub = val.String()
 		}
+	}
+	if priv == "" && pub == "" {
+		priv = m.Address.String()
 	}
 	return priv, pub
 }
