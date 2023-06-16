@@ -24,27 +24,27 @@ func (sc *SetGetAllCommand) Init(cc plug.InitContext) error {
 }
 
 func (sc *SetGetAllCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
-	setName := ec.Props().GetString(setFlagName)
+	name := ec.Props().GetString(setFlagName)
 	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
 		return err
 	}
-	req := codec.EncodeSetGetAllRequest(setName)
-	pID, err := stringToPartitionID(ci, setName)
+	req := codec.EncodeSetGetAllRequest(name)
+	pID, err := stringToPartitionID(ci, name)
 	if err != nil {
 		return err
 	}
 	sv, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Removing from set %s", setName))
+		sp.SetText(fmt.Sprintf("Removing from set %s", name))
 		return ci.InvokeOnPartition(ctx, req, pID, nil)
 	})
 	if err != nil {
 		return err
 	}
 	stop()
-	raw := codec.DecodeSetGetAllResponse(sv.(*hazelcast.ClientMessage))
+	resp := codec.DecodeSetGetAllResponse(sv.(*hazelcast.ClientMessage))
 	var rows []output.Row
-	for _, r := range raw {
+	for _, r := range resp {
 		val, err := ci.DecodeData(*r)
 		if err != nil {
 			ec.Logger().Info("The value was not decoded, due to error: %s", err.Error())

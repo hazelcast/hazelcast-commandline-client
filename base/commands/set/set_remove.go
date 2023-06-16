@@ -25,22 +25,22 @@ func (sc *SetRemoveCommand) Init(cc plug.InitContext) error {
 }
 
 func (sc *SetRemoveCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
-	setName := ec.Props().GetString(setFlagName)
+	name := ec.Props().GetString(setFlagName)
 	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
 		return err
 	}
 
 	rows, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Removing from set %s", setName))
+		sp.SetText(fmt.Sprintf("Removing from set %s", name))
 		var rows []output.Row
 		for _, arg := range ec.Args() {
 			vd, err := makeValueData(ec, ci, arg)
 			if err != nil {
 				return nil, err
 			}
-			req := codec.EncodeSetRemoveRequest(setName, vd)
-			pID, err := stringToPartitionID(ci, setName)
+			req := codec.EncodeSetRemoveRequest(name, vd)
+			pID, err := stringToPartitionID(ci, name)
 			if err != nil {
 				return nil, err
 			}

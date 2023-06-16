@@ -51,7 +51,7 @@ Example:
 
 [source,bash]
 ----
-clc set clear --name mySet
+clc set clear --name my-set
 ----
 
 == clc set add
@@ -79,7 +79,7 @@ Parameters:
 |`--value-type`, `-v`
 |Optional
 |Data type of the value. One of: `string`, `bool`, `json`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`
-|String
+|string
 
 |===
 
@@ -87,7 +87,7 @@ Example:
 
 [source,bash]
 ----
-clc set add 1 2 3 4 --name mySet
+clc set add 1 2 3 4 --name my-set
 ----
 
 == clc set get-all
@@ -118,7 +118,7 @@ Example:
 
 [source,bash]
 ----
-clc set get-all --name mySet
+clc set get-all --name my-set
 ----
 
 == clc set remove
@@ -146,7 +146,7 @@ Parameters:
 |`--value-type`, `-v`
 |Optional
 |Data type of the value. One of: `string`, `bool`, `json`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`
-|String
+|string
 
 |===
 
@@ -154,7 +154,7 @@ Example:
 
 [source,bash]
 ----
-clc set remove 1 2 3 4 --name mySet
+clc set remove 1 2 3 4 --name my-set
 ----
 
 == clc set size
@@ -185,7 +185,7 @@ Example:
 
 [source,bash]
 ----
-clc set size --name mySet
+clc set size --name my-set
 ----
 
 == clc set destroy
@@ -221,5 +221,5 @@ Example:
 
 [source,bash]
 ----
-clc set destroy --name mySet
+clc set destroy --name my-set
 ----

@@ -23,14 +23,14 @@ func (sc *SetSizeCommand) Init(cc plug.InitContext) error {
 }
 
 func (sc *SetSizeCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
-	setName := ec.Props().GetString(setFlagName)
+	name := ec.Props().GetString(setFlagName)
 	qv, err := ec.Props().GetBlocking(setPropertyName)
 	if err != nil {
 		return err
 	}
 	s := qv.(*hazelcast.Set)
 	sv, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Getting the size of the set %s", setName))
+		sp.SetText(fmt.Sprintf("Getting the size of the set %s", name))
 		return s.Size(ctx)
 	})
 	if err != nil {

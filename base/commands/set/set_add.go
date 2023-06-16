@@ -25,7 +25,7 @@ func (sc *SetAddCommand) Init(cc plug.InitContext) error {
 }
 
 func (sc *SetAddCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
-	setName := ec.Props().GetString(setFlagName)
+	name := ec.Props().GetString(setFlagName)
 	sv, err := ec.Props().GetBlocking(setPropertyName)
 	if err != nil {
 		return err
@@ -36,7 +36,7 @@ func (sc *SetAddCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	}
 	s := sv.(*hazelcast.Set)
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Adding values into set %s", setName))
+		sp.SetText(fmt.Sprintf("Adding values into set %s", name))
 		for _, arg := range ec.Args() {
 			vd, err := makeValueData(ec, ci, arg)
 			if err != nil {

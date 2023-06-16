@@ -42,15 +42,15 @@ func (sc *SetCommand) Exec(context.Context, plug.ExecContext) error {
 func (sc *SetCommand) Augment(ec plug.ExecContext, props *plug.Properties) error {
 	ctx := context.TODO()
 	props.SetBlocking(setPropertyName, func() (any, error) {
-		setName := ec.Props().GetString(setFlagName)
+		name := ec.Props().GetString(setFlagName)
 		// empty set name is allowed
 		ci, err := ec.ClientInternal(ctx)
 		if err != nil {
 			return nil, err
 		}
 		val, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-			sp.SetText(fmt.Sprintf("Getting set %s", setName))
-			q, err := ci.Client().GetSet(ctx, setName)
+			sp.SetText(fmt.Sprintf("Getting set %s", name))
+			q, err := ci.Client().GetSet(ctx, name)
 			if err != nil {
 				return nil, err
 			}
