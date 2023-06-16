@@ -7,6 +7,6 @@ const (
 	templateExt               = ".template"
 	hiddenFilePrefix          = "."
 	underscorePrefix          = "_"
-	hzTemplatesRepository     = "https://github.com/kutluhanmetin/templates"
+	hzTemplatesRepository     = "https://github.com/kutluhanmetin/"
 	defaultPropertiesFileName = "default.properties"
 )
