@@ -4,7 +4,12 @@ package cluster
 
 import (
 	"context"
+	"errors"
 	"fmt"
+
+	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/types"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -13,9 +18,6 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec/control"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
-	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/cluster"
-	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 type ClusterListMembersCommand struct{}
@@ -33,17 +35,21 @@ func (mc *ClusterListMembersCommand) Exec(ctx context.Context, ec plug.ExecConte
 	if err != nil {
 		return err
 	}
-	infos, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		cn := ci.ClusterService().FailoverService().Current().ClusterName
-		sp.SetText(fmt.Sprintf("Getting member list for cluster: %s", cn))
+	memsv, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		cl := ci.ClusterService().FailoverService().Current()
+		if cl == nil {
+			return nil, errors.New("could not connect to the cluster")
+
+		}
+		sp.SetText(fmt.Sprintf("Getting member list for cluster: %s", cl.ClusterName))
 		return memberInfos(ctx, ci)
 	})
 	if err != nil {
 		return err
 	}
-	inf := infos.(map[types.UUID]*memberData)
+	mems := memsv.(map[types.UUID]*memberData)
 	rows := []output.Row{}
-	for uuid, info := range inf {
+	for uuid, info := range mems {
 		row := output.Row{
 			output.Column{
 				Name:  "Order",
@@ -71,11 +77,6 @@ func (mc *ClusterListMembersCommand) Exec(ctx context.Context, ec plug.ExecConte
 				Type:  serialization.TypeString,
 			},
 			output.Column{
-				Name:  "IsMaster",
-				Value: info.Master,
-				Type:  serialization.TypeBool,
-			},
-			output.Column{
 				Name:  "IsLite",
 				Value: info.LiteMember,
 				Type:  serialization.TypeBool,
@@ -89,7 +90,7 @@ func (mc *ClusterListMembersCommand) Exec(ctx context.Context, ec plug.ExecConte
 					Type:  serialization.TypeString,
 				},
 				output.Column{
-					Name:  "Name",
+					Name:  "Member Name",
 					Value: info.Name,
 					Type:  serialization.TypeString,
 				},
@@ -97,8 +98,7 @@ func (mc *ClusterListMembersCommand) Exec(ctx context.Context, ec plug.ExecConte
 		}
 		rows = append(rows, row)
 	}
-
-	ec.AddOutputRows(ctx, rows...)
+	err = ec.AddOutputRows(ctx, rows...)
 	if err != nil {
 		return err
 	}
@@ -114,7 +114,6 @@ type memberData struct {
 	Version        string
 	LiteMember     bool
 	MemberState    string
-	Master         bool
 	Name           string
 }
 
@@ -127,15 +126,13 @@ func newMemberData(order int64, m cluster.MemberInfo, s control.TimedMemberState
 		UUID:           m.UUID.String(),
 		Version:        fmt.Sprintf("%d.%d.%d", m.Version.Major, m.Version.Minor, m.Version.Patch),
 		LiteMember:     m.LiteMember,
-		Master:         s.Master,
 		MemberState:    s.MemberState.NodeState.State,
 		Name:           s.MemberState.Name,
 	}
 }
 
 func findMemberAddresses(m cluster.MemberInfo) (string, string) {
-	pub := ""
-	priv := ""
+	var priv, pub string
 	for key, val := range m.AddressMap {
 		if key.Type != cluster.EndpointQualifierTypeClient {
 			continue
@@ -151,21 +148,21 @@ func findMemberAddresses(m cluster.MemberInfo) (string, string) {
 }
 
 func memberInfos(ctx context.Context, ci *hazelcast.ClientInternal) (map[types.UUID]*memberData, error) {
-	activeMemberList := ci.OrderedMembers()
-	activeMembers := make(map[types.UUID]*memberData, len(activeMemberList))
-	for i, memberInfo := range activeMemberList {
-		state, err := fetchTimedMemberState(ctx, ci, memberInfo.UUID)
+	members := ci.OrderedMembers()
+	active := make(map[types.UUID]*memberData, len(members))
+	for i, mi := range members {
+		state, err := fetchTimedMemberState(ctx, ci, mi.UUID)
 		if err != nil {
 			return nil, err
 		}
-		this := memberInfo.Address
+		this := mi.Address
 		returned := state.TimedMemberState.MemberState.Address
 		if string(this) != string(returned) {
 			return nil, fmt.Errorf("Timed member state returned info for wrong member, this: %s, returned: %s", this, returned)
 		}
-		activeMembers[memberInfo.UUID] = newMemberData(int64(i), memberInfo, state.TimedMemberState)
+		active[mi.UUID] = newMemberData(int64(i), mi, state.TimedMemberState)
 	}
-	return activeMembers, nil
+	return active, nil
 }
 
 func fetchTimedMemberState(ctx context.Context, ci *hazelcast.ClientInternal, uuid types.UUID) (*control.TimedMemberStateWrapper, error) {

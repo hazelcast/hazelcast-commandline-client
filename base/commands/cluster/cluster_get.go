@@ -4,6 +4,7 @@ package cluster
 
 import (
 	"context"
+	"errors"
 
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
@@ -27,11 +28,14 @@ func (mc *ClusterGetCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 		return err
 	}
 	uuid := ci.ClusterID()
-	cn := ci.ClusterService().FailoverService().Current().ClusterName
+	cl := ci.ClusterService().FailoverService().Current()
+	if cl == nil {
+		return errors.New("could not connect to the cluster")
+	}
 	rows := output.Row{
 		output.Column{
 			Name:  "Name",
-			Value: cn,
+			Value: cl.ClusterName,
 			Type:  serialization.TypeString,
 		},
 		output.Column{

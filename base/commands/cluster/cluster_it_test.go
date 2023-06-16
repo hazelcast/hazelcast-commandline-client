@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/types"
 
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -50,13 +49,4 @@ func listMembers_NonInteractiveTest(t *testing.T) {
 			}
 		})
 	})
-}
-
-func objectExists(sn, name string, objects []types.DistributedObjectInfo) bool {
-	for _, obj := range objects {
-		if sn == obj.ServiceName && name == obj.Name {
-			return true
-		}
-	}
-	return false
 }
