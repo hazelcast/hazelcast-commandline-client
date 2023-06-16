@@ -18,7 +18,7 @@ type SetGetAllCommand struct{}
 func (sc *SetGetAllCommand) Init(cc plug.InitContext) error {
 	help := "Return the elements of the given Set"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("get-all [flags]")
+	cc.SetCommandUsage("get-all")
 	cc.SetPositionalArgCount(0, 0)
 	return nil
 }
