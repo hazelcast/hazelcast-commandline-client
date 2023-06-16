@@ -50,7 +50,7 @@ func (sc *SetAddCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		return nil, nil
 	})
 	if err != nil {
-		return nil
+		return err
 	}
 	stop()
 	return nil
