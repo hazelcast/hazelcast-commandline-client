@@ -163,7 +163,7 @@ func memberInfos(ctx context.Context, ci *hazelcast.ClientInternal) (map[types.U
 		if string(this) != string(returned) {
 			return nil, fmt.Errorf("Timed member state returned info for wrong member, this: %s, returned: %s", this, returned)
 		}
-		active[mi.UUID] = newMemberData(int64(i), mi, state.TimedMemberState)
+		active[mi.UUID] = newMemberData(int64(i+1), mi, state.TimedMemberState)
 	}
 	return active, nil
 }
