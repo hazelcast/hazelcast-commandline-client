@@ -61,17 +61,20 @@ func createProject(ec plug.ExecContext, outputDir, templateName, pName string) e
 		}
 		target := filepath.Join(outputDir, pName, strings.Split(p, templateName)[1])
 		if d.IsDir() {
+			if isSkip(d) {
+				// skip dir and its subdirectories and files
+				return filepath.SkipDir
+			}
 			err = os.MkdirAll(target, 0700)
 			if err != nil {
 				return err
 			}
 		} else {
-			ext := path.Ext(d.Name())
-			// skip files with . and _ prefix unless their extension is ".keep"
-			if ext != keepExt && (strings.HasPrefix(d.Name(), hiddenFilePrefix) || strings.HasPrefix(d.Name(), underscorePrefix)) || d.Name() == "default.properties" {
+			if isSkip(d) {
+				// skip only current file
 				return nil
 			}
-			if ext == templateExt {
+			if path.Ext(d.Name()) == templateExt {
 				err = applyTemplateAndCopyToTarget(ec, sourceDir, p, target)
 				if err != nil {
 					return err
@@ -86,6 +89,25 @@ func createProject(ec plug.ExecContext, outputDir, templateName, pName string) e
 		}
 		return nil
 	})
+}
+
+func isSkip(d fs.DirEntry) bool {
+	if (isHidden(d) && !hasKeepExt(d)) || isDefaultPropertiesFile(d) {
+		return true
+	}
+	return false
+}
+
+func isHidden(d fs.DirEntry) bool {
+	return strings.HasPrefix(d.Name(), hiddenFilePrefix) || strings.HasPrefix(d.Name(), underscorePrefix)
+}
+
+func hasKeepExt(d fs.DirEntry) bool {
+	return path.Ext(d.Name()) == keepExt
+}
+
+func isDefaultPropertiesFile(d fs.DirEntry) bool {
+	return d.Name() == defaultPropertiesFileName
 }
 
 func init() {
