@@ -1,12 +1,12 @@
-= clc generate project
+= clc project create
 
-You can generate projects from templates by using `generate project` command.
+You can create projects from templates by using `project create` command.
 
 Usage:
 
 [source,bash]
 ----
-clc generate project [template-name] [vars] [flags]
+clc create project [template-name] [vars] [flags]
 ----
 
 Parameters:
@@ -15,15 +15,10 @@ Parameters:
 |===
 |Parameter|Required|Description|Default
 
-|`output`
+|`output-dir`
 |Optional
 |
 |Current directory.
-
-|`name`
-|Optional
-|Name of the project to be created. If it is not given and `output` directory provided, then project will be created under `output`.
-|Name of the current directory.
 
 |`template`
 |Required
