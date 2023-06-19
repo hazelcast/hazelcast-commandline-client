@@ -2,7 +2,7 @@ package generate
 
 const (
 	projectName               = "name"
-	projectOutput             = "output"
+	projectOutput             = "output-dir"
 	keepExt                   = ".keep"
 	templateExt               = ".template"
 	hiddenFilePrefix          = "."

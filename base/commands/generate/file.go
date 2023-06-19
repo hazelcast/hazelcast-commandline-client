@@ -12,7 +12,7 @@ import (
 )
 
 func applyTemplateAndCopyToTarget(ec plug.ExecContext, sourceDir, source, dest string) error {
-	destFile, err := os.Create(dest)
+	destFile, err := os.Create(removeFileExt(dest))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -42,7 +42,7 @@ func copyToTarget(source string, dest string, removeExt bool) error {
 	}
 	defer sourceFile.Close()
 	if removeExt {
-		dest = strings.TrimSuffix(dest, filepath.Ext(dest))
+		dest = removeFileExt(dest)
 	}
 	destinationFile, err := os.Create(dest)
 	if err != nil {
@@ -54,4 +54,8 @@ func copyToTarget(source string, dest string, removeExt bool) error {
 		return err
 	}
 	return nil
+}
+
+func removeFileExt(dest string) string {
+	return strings.TrimSuffix(dest, filepath.Ext(dest))
 }

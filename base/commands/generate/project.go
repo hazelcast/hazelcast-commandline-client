@@ -21,8 +21,13 @@ import (
 type ProjectCmd struct{}
 
 func (g ProjectCmd) Init(cc plug.InitContext) error {
-	cc.AddStringFlag(projectOutput, "", ".", false, "output directory for the project to be generated")
-	cc.AddStringFlag(projectName, "", ".", false, "name of the created project")
+	wd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	_, f := filepath.Split(wd)
+	cc.AddStringFlag(projectOutput, "o", wd, false, "output directory for the project to be generated")
+	cc.AddStringFlag(projectName, "", f, false, "name of the created project")
 	cc.SetPositionalArgCount(1, math.MaxInt)
 	cc.SetCommandUsage("project [template-name] [flags]")
 	help := "Generate a project from template"
@@ -82,7 +87,7 @@ func createProject(ec plug.ExecContext, outputDir, templateName, pName string) e
 				return nil
 			}
 			// copy everything else
-			err = copyToTarget(p, target, path.Ext(d.Name()) != "")
+			err = copyToTarget(p, target, path.Ext(d.Name()) == ".keep")
 			if err != nil {
 				return err
 			}
