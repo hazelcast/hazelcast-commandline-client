@@ -84,8 +84,9 @@ func (cm GenerateDataCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	ec.PrintlnUnnecessary(fmt.Sprintf(`Run the following SQL query to see the generated data
 	
 	SELECT
-	id, meta_id, user_
-	FROM %s;
+	__key, meta_dt as "timestamp", user_, comment
+	FROM %s
+	LIMIT 10;
 	
 Generating event stream...
 `, m.Name()))

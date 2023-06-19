@@ -61,7 +61,7 @@ func findSqlType(v any) string {
 	case float64:
 		return "DOUBLE"
 	case time.Time:
-		return "TIME"
+		return "TIMESTAMP WITH TIME ZONE"
 	default:
 		panic(fmt.Sprintf("sql type conversion not supported for type %s", t))
 	}
