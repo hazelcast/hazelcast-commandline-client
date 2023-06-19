@@ -8,7 +8,6 @@ import (
 	"io/fs"
 	"math"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -72,7 +71,7 @@ func createProject(ec plug.ExecContext, outputDir, templateName string) error {
 				// skip only current file
 				return nil
 			}
-			if path.Ext(d.Name()) == templateExt {
+			if hasTemplateExt(d) {
 				err = applyTemplateAndCopyToTarget(ec, sourceDir, p, target)
 				if err != nil {
 					return err
@@ -101,7 +100,11 @@ func isHidden(d fs.DirEntry) bool {
 }
 
 func hasKeepExt(d fs.DirEntry) bool {
-	return path.Ext(d.Name()) == keepExt
+	return filepath.Ext(d.Name()) == keepExt
+}
+
+func hasTemplateExt(d fs.DirEntry) bool {
+	return filepath.Ext(d.Name()) == templateExt
 }
 
 func isDefaultPropertiesFile(d fs.DirEntry) bool {
