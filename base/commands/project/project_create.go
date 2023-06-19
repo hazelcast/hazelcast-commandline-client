@@ -21,13 +21,9 @@ import (
 type CreateCmd struct{}
 
 func (pc CreateCmd) Init(cc plug.InitContext) error {
-	wd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-	cc.AddStringFlag(projectOutputDir, "", wd, false, "output directory for the project to be created")
+	cc.AddStringFlag(projectOutputDir, "o", "", true, "output directory for the project to be created")
 	cc.SetPositionalArgCount(1, math.MaxInt)
-	cc.SetCommandUsage("create [template-name] [flags]")
+	cc.SetCommandUsage("create [template-name] [output-dir] [flags]")
 	help := "Create project from the given template"
 	cc.SetCommandHelp(help, help)
 	return nil

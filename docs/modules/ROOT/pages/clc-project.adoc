@@ -30,10 +30,10 @@ Parameters:
 |===
 |Parameter|Required|Description|Default
 
-|`output-dir`
-|Optional
+|`--output-dir` `-o`
+|Required
 |Output directory for the project to be created.
-|Current working directory
+|
 
 |`template`
 |Required
