@@ -17,6 +17,7 @@ clc map [command] [flags]
 * <<clc-map-entry-set, clc map entry-set>>
 * <<clc-map-key-set, clc map key-set>>
 * <<clc-map-size, clc map size>>
+* <<clc-map-load-all, clc map load-all>>
 * <<clc-map-remove, clc map remove>>
 * <<clc-map-destroy, clc map destroy>>
 
@@ -261,6 +262,47 @@ Parameters:
 |`default`
 
 |===
+
+== clc map load-all
+
+Load keys from map-store into the map. If no key is given, all keys are loaded.
+
+Usage:
+
+[source,bash]
+----
+clc map load-all [keys] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the map.
+|`default`
+
+|`keys`
+|Required
+|Keys of the map entries.
+|N/A
+
+|`--key-type`, `-k`
+|Optional
+|Data type of the key. One of: `string`, `bool`, `json`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`
+|String
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc map load-all --key-type string key1 key2 --name myMap --replace
+----
 
 == clc map remove
 

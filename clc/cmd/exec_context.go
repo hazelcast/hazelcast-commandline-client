@@ -208,10 +208,10 @@ func (ec *ExecContext) ExecuteBlocking(ctx context.Context, f func(context.Conte
 		case <-ctx.Done():
 			// calling stop but also returning no-op just in case...
 			stop()
-			if errors.Is(ctx.Err(), context.DeadlineExceeded) {
-				return nil, func() {}, cmderrors.ErrTimeout
+			if errors.Is(ctx.Err(), context.Canceled) {
+				return nil, func() {}, cmderrors.ErrUserCancelled
 			}
-			return nil, func() {}, cmderrors.ErrUserCancelled
+			return nil, func() {}, ctx.Err()
 		case v := <-ch:
 			if err, ok := v.(error); ok {
 				// if an error came out from the channel, return that as the error
@@ -239,19 +239,7 @@ func (ec *ExecContext) WrapResult(f func() error) error {
 		if errors.Is(err, context.Canceled) || errors.Is(err, cmderrors.ErrUserCancelled) {
 			return nil
 		}
-		var errStr string
-		var msg string
-		var httpErr cmderrors.HTTPError
-		if errors.As(err, &httpErr) {
-			errStr = makeErrorStringFromHTTPResponse(httpErr.Text())
-		} else {
-			errStr = err.Error()
-		}
-		if verbose {
-			msg = fmt.Sprintf("Error in %d ms: %s", took.Milliseconds(), errStr)
-		} else {
-			msg = fmt.Sprintf("Error: %s", errStr)
-		}
+		msg := MakeErrStr(err)
 		if ec.Interactive() {
 			I2(fmt.Fprintln(ec.stderr, color.RedString(msg)))
 		} else {

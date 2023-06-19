@@ -1,40 +1,42 @@
-package _map
+//go:build base || topic
+
+package topic
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/hazelcast/hazelcast-go-client"
-
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/errors"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/prompt"
+	"github.com/hazelcast/hazelcast-go-client"
+
+	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 )
 
-type MapDestroyCommand struct{}
+type topicDestroyCommand struct{}
 
-func (mc *MapDestroyCommand) Init(cc plug.InitContext) error {
-	long := `Destroy a Map
+func (tdc *topicDestroyCommand) Init(cc plug.InitContext) error {
+	long := `Destroy a Topic
 
-This command will delete the Map and the data in it will not be available anymore.`
-	short := "Destroy a Map"
+This command will delete the Topic and the data in it will not be available anymore.`
+	short := "Destroy a Topic"
 	cc.SetCommandHelp(long, short)
 	cc.AddBoolFlag(clc.FlagAutoYes, "", false, false, "skip confirming the destroy operation")
 	cc.SetCommandUsage("destroy")
 	return nil
 }
 
-func (mc *MapDestroyCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
-	mv, err := ec.Props().GetBlocking(mapPropertyName)
+func (tdc *topicDestroyCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+	tp, err := ec.Props().GetBlocking(topicPropertyName)
 	if err != nil {
 		return err
 	}
 	autoYes := ec.Props().GetBool(clc.FlagAutoYes)
 	if !autoYes {
 		p := prompt.New(ec.Stdin(), ec.Stdout())
-		yes, err := p.YesNo("Map will be deleted irreversibly, proceed?")
+		yes, err := p.YesNo("Topic will be deleted irreversibly, proceed?")
 		if err != nil {
 			ec.Logger().Info("User input could not be processed due to error: %s", err.Error())
 			return errors.ErrUserCancelled
@@ -43,10 +45,11 @@ func (mc *MapDestroyCommand) Exec(ctx context.Context, ec plug.ExecContext) erro
 			return errors.ErrUserCancelled
 		}
 	}
-	m := mv.(*hazelcast.Map)
+	t := tp.(*hazelcast.Topic)
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Destroying map %s", m.Name()))
-		if err := m.Destroy(ctx); err != nil {
+		sp.SetText(fmt.Sprintf("Destroying topic %s", t.Name()))
+		err := t.Destroy(ctx)
+		if err != nil {
 			return nil, err
 		}
 		return nil, nil
@@ -59,5 +62,5 @@ func (mc *MapDestroyCommand) Exec(ctx context.Context, ec plug.ExecContext) erro
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("map:destroy", &MapDestroyCommand{}))
+	Must(plug.Registry.RegisterCommand("topic:destroy", &topicDestroyCommand{}))
 }
