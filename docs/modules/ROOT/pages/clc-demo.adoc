@@ -49,6 +49,12 @@ Parameters:
 |Optional
 |Print the generated data.
 |
+
+|`--max-values`
+|Optional
+|Number of events to create.
+|
+
 |===
 
 Example:

@@ -44,6 +44,7 @@ Generate data for given name, supported names are:
 	short := "Generates stream events"
 	cc.SetCommandHelp(long, short)
 	cc.SetPositionalArgCount(1, math.MaxInt)
+	cc.AddIntFlag(flagMaxValues, "", 0, false, "number of events to create")
 	cc.AddBoolFlag(flagPreview, "", false, false, "print the generated data")
 	return nil
 }
@@ -95,36 +96,56 @@ Generating event stream...
 
 func generateResult(ctx context.Context, ec plug.ExecContext, m *hazelcast.Map, itemCh <-chan demo.StreamItem) error {
 	outCh := make(chan output.Row)
-	defer close(outCh)
+	errCh := make(chan error, 1)
 	preview := ec.Props().GetBool(flagPreview)
-	if preview {
-		go ec.AddOutputStream(ctx, outCh)
-	}
-	for {
-		var ev demo.StreamItem
-		select {
-		case ev = <-itemCh:
-		case <-ctx.Done():
-			return ctx.Err()
-		}
-		fm := ev.FlatMap()
-		b, err := json.Marshal(fm)
-		if err != nil {
-			ec.Logger().Warn("Could not marshall stream item: %s", err.Error())
-			continue
-		}
-		_, err = m.Put(ctx, ev.ID(), serialization.JSON(b))
-		if err != nil {
-			ec.Logger().Warn("Could not put stream item into map %s: %s", m.Name(), err.Error())
-			continue
-		}
-		if preview {
+	previewCount := 0
+	maxCount := ec.Props().GetInt(flagMaxValues)
+	createdCount := 0
+	go func() {
+	loop:
+		for {
+			var ev demo.StreamItem
 			select {
-			case outCh <- ev.Row():
+			case ev = <-itemCh:
 			case <-ctx.Done():
-				return ctx.Err()
+				break loop
+			}
+			fm := ev.FlatMap()
+			b, err := json.Marshal(fm)
+			if err != nil {
+				ec.Logger().Warn("Could not marshall stream item: %s", err.Error())
+				continue
+			}
+			_, err = m.Put(ctx, ev.ID(), serialization.JSON(b))
+			if err != nil {
+				ec.Logger().Warn("Could not put stream item into map %s: %s", m.Name(), err.Error())
+				continue
+			}
+			if preview && previewCount < 10 {
+				previewCount++
+				select {
+				case outCh <- ev.Row():
+				case <-ctx.Done():
+					break loop
+				}
+			}
+			createdCount++
+			if maxCount > 0 && createdCount == int(maxCount) {
+				errCh <- nil
+				break
 			}
 		}
+		close(outCh)
+	}()
+	if preview {
+		// XXX: the error is ignored, the reason must be noted.
+		_ = ec.AddOutputStream(ctx, outCh)
+	}
+	select {
+	case err := <-errCh:
+		return err
+	case <-ctx.Done():
+		return ctx.Err()
 	}
 }
 
