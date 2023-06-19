@@ -17,7 +17,7 @@ Parameters:
 
 |`output-dir`
 |Optional
-|
+|Directory the project will be created.
 |Current directory.
 
 |`template`
