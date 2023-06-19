@@ -1,6 +1,6 @@
 //go:build base
 
-package generate
+package project
 
 import (
 	"context"
@@ -18,24 +18,24 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-type ProjectCmd struct{}
+type CreateCmd struct{}
 
-func (g ProjectCmd) Init(cc plug.InitContext) error {
+func (pc CreateCmd) Init(cc plug.InitContext) error {
 	wd, err := os.Getwd()
 	if err != nil {
 		return err
 	}
-	cc.AddStringFlag(projectOutput, "o", wd, false, "output directory for the project to be generated")
+	cc.AddStringFlag(projectOutputDir, "", wd, false, "output directory for the project to be created")
 	cc.SetPositionalArgCount(1, math.MaxInt)
-	cc.SetCommandUsage("project [template-name] [flags]")
-	help := "Generate a project from template"
+	cc.SetCommandUsage("create [template-name] [flags]")
+	help := "Create a project from template"
 	cc.SetCommandHelp(help, help)
 	return nil
 }
 
-func (g ProjectCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (pc CreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	templateName := ec.Args()[0]
-	outputDir := ec.Props().GetString(projectOutput)
+	outputDir := ec.Props().GetString(projectOutputDir)
 	templatesDir := paths.Templates()
 	templateExists := paths.Exists(filepath.Join(templatesDir, templateName))
 	if !templateExists {
@@ -45,7 +45,7 @@ func (g ProjectCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 		}
 	}
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Generating project from template %s", templateName))
+		sp.SetText(fmt.Sprintf("Creating project from template %s", templateName))
 		return nil, createProject(ec, outputDir, templateName)
 	})
 	stop()
@@ -84,7 +84,7 @@ func createProject(ec plug.ExecContext, outputDir, templateName string) error {
 				return nil
 			}
 			// copy everything else
-			err = copyToTarget(p, target, path.Ext(d.Name()) == ".keep")
+			err = copyToTarget(p, target, hasKeepExt(d))
 			if err != nil {
 				return err
 			}
@@ -113,5 +113,5 @@ func isDefaultPropertiesFile(d fs.DirEntry) bool {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("generate:project", &ProjectCmd{}))
+	Must(plug.Registry.RegisterCommand("project:create", &CreateCmd{}))
 }

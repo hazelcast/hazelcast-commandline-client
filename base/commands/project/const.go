@@ -1,8 +1,7 @@
-package generate
+package project
 
 const (
-	projectName               = "name"
-	projectOutput             = "output-dir"
+	projectOutputDir          = "output-dir"
 	keepExt                   = ".keep"
 	templateExt               = ".template"
 	hiddenFilePrefix          = "."

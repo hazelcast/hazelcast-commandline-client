@@ -1,4 +1,4 @@
-package generate
+package project
 
 import (
 	"context"
@@ -15,17 +15,17 @@ import (
 
 const (
 	templateName   = "my-template"
-	pName          = "my-project"
+	outputDir      = "my-project"
 	testProjectDir = "testdata/my-project"
 )
 
-func TestGenerateCommand(t *testing.T) {
+func TestCreateCommand(t *testing.T) {
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
 		ctx := context.Background()
 		tcx.WithReset(func() {
-			check.Must(tcx.CLC().Execute(ctx, "generate", "project", templateName, "myName=foo", "mySurname=bar", "--name", pName))
-			check.MustValue(compareDirectories(pName, testProjectDir))
+			check.Must(tcx.CLC().Execute(ctx, "project", "create", templateName, "--output-dir", outputDir, "myName=foo", "mySurname=bar"))
+			check.MustValue(compareDirectories(outputDir, testProjectDir))
 		})
 	})
 	teardown()
@@ -99,5 +99,5 @@ func compareHashes(hashes1, hashes2 map[string]string) bool {
 }
 
 func teardown() {
-	os.RemoveAll(pName)
+	os.RemoveAll(outputDir)
 }
