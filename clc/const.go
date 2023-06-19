@@ -31,6 +31,7 @@ const (
 	GroupDDSTitle               = "Distributed Data Structures"
 	GroupJetID                  = "jet"
 	GroupJetTitle               = "Jet"
+	GroupDemoID                 = "demo"
 	EnvMaxCols                  = "CLC_MAX_COLS"
 	EnvConfig                   = "CLC_CONFIG"
 	EnvSkipServerVersionCheck   = "CLC_SKIP_SERVER_VERSION_CHECK"

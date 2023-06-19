@@ -1,0 +1,59 @@
+= clc demo
+
+This command group provides commands for creating and preparing demos.
+
+Usage:
+
+[source,bash]
+----
+clc demo [command] [options]
+----
+
+== Commands
+
+* <<clc-demo-generate-data, clc demo generate-data>>
+
+== clc demo submit
+
+Generates stream events
+	
+Generate data for given name, supported names are:
+
+- wikipedia-event-stream: Real-time Wikipedia event stream. Following key-value pairs can be set
+	- map-name=<MAP-NAME>: generated stream items are written into the map
+
+Usage:
+
+[source,bash]
+----
+clc demo generate-data [event-stream-name] [key=val, ...] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`event-stream-name`
+|Required
+|Name for the event stream source. Supported sources are mentioned above.
+|
+
+|`key=val`
+|Optional
+|Key value pairs used by event stream sources.
+|
+
+|`--preview`
+|Optional
+|Print the generated data.
+|
+|===
+
+Example:
+
+[source,bash]
+----
+clc demo generate-data wikipedia-event-stream map-name=wiki-events --preview
+----
