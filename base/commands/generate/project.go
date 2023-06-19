@@ -25,9 +25,7 @@ func (g ProjectCmd) Init(cc plug.InitContext) error {
 	if err != nil {
 		return err
 	}
-	_, f := filepath.Split(wd)
 	cc.AddStringFlag(projectOutput, "o", wd, false, "output directory for the project to be generated")
-	cc.AddStringFlag(projectName, "", f, false, "name of the created project")
 	cc.SetPositionalArgCount(1, math.MaxInt)
 	cc.SetCommandUsage("project [template-name] [flags]")
 	help := "Generate a project from template"
@@ -38,7 +36,6 @@ func (g ProjectCmd) Init(cc plug.InitContext) error {
 func (g ProjectCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	templateName := ec.Args()[0]
 	outputDir := ec.Props().GetString(projectOutput)
-	pName := ec.Props().GetString(projectName)
 	templatesDir := paths.Templates()
 	templateExists := paths.Exists(filepath.Join(templatesDir, templateName))
 	if !templateExists {
@@ -49,7 +46,7 @@ func (g ProjectCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	}
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText(fmt.Sprintf("Generating project from template %s", templateName))
-		return nil, createProject(ec, outputDir, templateName, pName)
+		return nil, createProject(ec, outputDir, templateName)
 	})
 	stop()
 	if err != nil {
@@ -58,13 +55,13 @@ func (g ProjectCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	return nil
 }
 
-func createProject(ec plug.ExecContext, outputDir, templateName, pName string) error {
+func createProject(ec plug.ExecContext, outputDir, templateName string) error {
 	sourceDir := paths.TemplatePath(templateName)
 	return filepath.WalkDir(sourceDir, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		target := filepath.Join(outputDir, pName, strings.Split(p, templateName)[1])
+		target := filepath.Join(outputDir, strings.Split(p, templateName)[1])
 		if d.IsDir() {
 			if isSkip(d) {
 				// skip dir and its subdirectories and files
