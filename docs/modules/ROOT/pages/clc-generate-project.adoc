@@ -6,7 +6,7 @@ Usage:
 
 [source,bash]
 ----
-clc create project [template-name] [vars] [flags]
+clc project create [template-name] [vars] [flags]
 ----
 
 Parameters:
