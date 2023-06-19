@@ -1,6 +1,21 @@
-= clc project create
+= clc project
 
-You can create projects from templates by using `project create` command.
+Project commands are a group of project operations.
+
+Usage:
+
+[source,bash]
+----
+clc project [command] [flags]
+----
+
+== Commands
+
+* <<clc-project-create, clc project create>>
+
+== clc project create
+
+Creates project from the given template.
 
 Usage:
 
@@ -17,8 +32,8 @@ Parameters:
 
 |`output-dir`
 |Optional
-|Directory the project will be created.
-|Current directory.
+|Output directory for the project to be created.
+|Current working directory
 
 |`template`
 |Required

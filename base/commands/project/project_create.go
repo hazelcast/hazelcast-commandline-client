@@ -28,7 +28,7 @@ func (pc CreateCmd) Init(cc plug.InitContext) error {
 	cc.AddStringFlag(projectOutputDir, "", wd, false, "output directory for the project to be created")
 	cc.SetPositionalArgCount(1, math.MaxInt)
 	cc.SetCommandUsage("create [template-name] [flags]")
-	help := "Create a project from template"
+	help := "Create project from the given template"
 	cc.SetCommandHelp(help, help)
 	return nil
 }
