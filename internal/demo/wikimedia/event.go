@@ -66,14 +66,19 @@ func (ev event) Row() output.Row {
 			Value: ev.Meta.ID,
 		},
 		output.Column{
-			Name:  "Second ID",
-			Type:  serialization.TypeInt64,
-			Value: ev.ID_,
+			Name:  "Timestamp",
+			Type:  serialization.TypeJavaOffsetDateTime,
+			Value: ev.Meta.Dt,
 		},
 		output.Column{
-			Name:  "Bot",
-			Type:  serialization.TypeBool,
-			Value: ev.Bot,
+			Name:  "User",
+			Type:  serialization.TypeString,
+			Value: ev.User,
+		},
+		output.Column{
+			Name:  "Comment",
+			Type:  serialization.TypeString,
+			Value: ev.Comment,
 		},
 	}
 	return row
