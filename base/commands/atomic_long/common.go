@@ -9,31 +9,22 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
-type AtomicLongGetCommand struct{}
-
-func (mc *AtomicLongGetCommand) Init(cc plug.InitContext) error {
-	help := "Get the value of the AtomicLong"
-	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("get")
-	cc.SetPositionalArgCount(0, 0)
-	return nil
-}
-
-func (mc *AtomicLongGetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+func atomicLongChangeValue(ctx context.Context, ec plug.ExecContext, verb string, change func(int64) int64) error {
 	al, err := ec.Props().GetBlocking(atomicLongPropertyName)
 	if err != nil {
 		return err
 	}
+	by := ec.Props().GetInt(atomicLongFlagBy)
+	by = change(by)
 	ali := al.(*hazelcast.AtomicLong)
 	vali, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Setting value into AtomicLong %s", ali.Name()))
-		val, err := ali.Get(ctx)
+		sp.SetText(fmt.Sprintf("%sing the AtomicLong %s", verb, ali.Name()))
+		val, err := ali.AddAndGet(ctx, by)
 		if err != nil {
 			return nil, err
 		}
@@ -52,8 +43,5 @@ func (mc *AtomicLongGetCommand) Exec(ctx context.Context, ec plug.ExecContext) e
 		},
 	}
 	return ec.AddOutputRows(ctx, row)
-}
 
-func init() {
-	Must(plug.Registry.RegisterCommand("atomic-long:get", &AtomicLongGetCommand{}))
 }
