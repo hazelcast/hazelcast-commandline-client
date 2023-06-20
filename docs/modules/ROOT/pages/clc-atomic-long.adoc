@@ -1,6 +1,6 @@
 = clc atomic-long
 
-atomic-long commands are a group of atomic long operations.
+atomic-long commands are a group of AtomicLong operations.
 
 Usage:
 
@@ -18,7 +18,7 @@ clc atomic-long [command] [flags]
 
 == clc atomic-long get
 
-Get the value of the atomic long.
+Get the value of the AtomicLong.
 
 Usage:
 
@@ -49,7 +49,7 @@ clc atomic-long get --name transactionCount
 
 == clc atomic-long set
 
-Sets the value of the atomic long.
+Sets the value of the AtomicLong.
 
 Usage:
 
@@ -85,7 +85,7 @@ clc atomic-long set --name atomicSum  123
 
 == clc atomic-long increment-get
 
-Increment the atomic long by the given value.
+Increment the AtomicLong by the given value.
 
 Usage:
 
@@ -102,7 +102,7 @@ Parameters:
 
 |`--name`, `-n`
 |Optional
-|Name of the atomic-long.
+|Name of the AtomicLong.
 |`default`
 
 |`--by`
@@ -121,7 +121,7 @@ clc atomic-long increment-get --name atomicSum --by 10
 
 == clc atomic-long decrement-get
 
-Decrement the atomic long by the given value.
+Decrement the AtomicLong by the given value.
 
 Usage:
 
@@ -138,7 +138,7 @@ Parameters:
 
 |`--name`, `-n`
 |Optional
-|Name of the atomic-long.
+|Name of the AtomicLong.
 |`default`
 
 |`--by`

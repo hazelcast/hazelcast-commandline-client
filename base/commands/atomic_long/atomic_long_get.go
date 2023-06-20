@@ -18,9 +18,9 @@ import (
 type AtomicLongGetCommand struct{}
 
 func (mc *AtomicLongGetCommand) Init(cc plug.InitContext) error {
-	help := "Get the value of the atomic long"
+	help := "Get the value of the AtomicLong"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("get [flags]")
+	cc.SetCommandUsage("get")
 	cc.SetPositionalArgCount(0, 0)
 	return nil
 }
@@ -32,7 +32,7 @@ func (mc *AtomicLongGetCommand) Exec(ctx context.Context, ec plug.ExecContext) e
 	}
 	ali := al.(*hazelcast.AtomicLong)
 	vali, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Setting value into atomicLong %s", ali.Name()))
+		sp.SetText(fmt.Sprintf("Setting value into AtomicLong %s", ali.Name()))
 		val, err := ali.Get(ctx)
 		if err != nil {
 			return nil, err

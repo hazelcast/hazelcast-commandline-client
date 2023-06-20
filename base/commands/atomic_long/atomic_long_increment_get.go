@@ -34,7 +34,7 @@ func (mc *AtomicLongIncrementGetCommand) Exec(ctx context.Context, ec plug.ExecC
 	inc := ec.Props().GetInt(atomicLongFlagBy)
 	ali := al.(*hazelcast.AtomicLong)
 	vali, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Incrementing the atomic long %s", ali.Name()))
+		sp.SetText(fmt.Sprintf("Incrementing the AtomicLong %s", ali.Name()))
 		val, err := ali.AddAndGet(ctx, inc)
 		if err != nil {
 			return nil, err

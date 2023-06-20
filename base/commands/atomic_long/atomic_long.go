@@ -42,7 +42,7 @@ func (mc *AtomicLongCommand) Exec(context.Context, plug.ExecContext) error {
 func (mc *AtomicLongCommand) Augment(ec plug.ExecContext, props *plug.Properties) error {
 	ctx := context.TODO()
 	props.SetBlocking(atomicLongPropertyName, func() (any, error) {
-		atomicLongName := ec.Props().GetString(atomicLongFlagName)
+		name := ec.Props().GetString(atomicLongFlagName)
 		// empty atomic long name is allowed
 		ci, err := ec.ClientInternal(ctx)
 		if err != nil {

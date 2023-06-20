@@ -18,7 +18,7 @@ type AtomicLongSetCommand struct{}
 
 func (mc *AtomicLongSetCommand) Init(cc plug.InitContext) error {
 	cc.SetPositionalArgCount(1, 1)
-	help := "Set the value of the atomic long"
+	help := "Set the value of the AtomicLong"
 	cc.SetCommandHelp(help, help)
 	cc.SetCommandUsage("set [value] [flags]")
 	return nil
@@ -35,7 +35,7 @@ func (mc *AtomicLongSetCommand) Exec(ctx context.Context, ec plug.ExecContext) e
 	}
 	ali := al.(*hazelcast.AtomicLong)
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Setting value of atomic long %s", ali.Name()))
+		sp.SetText(fmt.Sprintf("Setting value of AtomicLong %s", ali.Name()))
 		err := ali.Set(ctx, int64(value))
 		if err != nil {
 			return nil, err
