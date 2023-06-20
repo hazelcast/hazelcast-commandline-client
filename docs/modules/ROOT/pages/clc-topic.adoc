@@ -44,7 +44,7 @@ Parameters:
 |`--value-type`, `-v`
 |Optional
 |Data type of the values. One of: `string`, `bool`, `json`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`
-|String
+|string
 
 |===
 
