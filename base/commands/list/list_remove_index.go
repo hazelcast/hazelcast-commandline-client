@@ -39,7 +39,7 @@ func (mc *ListRemoveIndexCommand) Exec(ctx context.Context, ec plug.ExecContext)
 		return err
 	}
 	if index < 0 {
-		return errors.New("Index cannot be smaller than 0")
+		return errors.New("index cannot be smaller than 0")
 	}
 	pid, err := stringToPartitionID(ci, name)
 	if err != nil {
