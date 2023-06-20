@@ -47,7 +47,7 @@ Parameters:
 
 |`--preview`
 |Optional
-|Print the generated data.
+|Print the generated data without interacting with the cluster.
 |
 
 |`--max-values`
