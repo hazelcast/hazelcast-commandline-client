@@ -24,7 +24,7 @@ This command will delete the List and the data in it will not be available anymo
 	short := "Destroy a List"
 	cc.SetCommandHelp(long, short)
 	cc.AddBoolFlag(clc.FlagAutoYes, "", false, false, "skip confirming the destroy operation")
-	cc.SetCommandUsage("destroy [flags]")
+	cc.SetCommandUsage("destroy")
 	return nil
 }
 
