@@ -25,7 +25,7 @@ func (mc *ListRemoveIndexCommand) Init(cc plug.InitContext) error {
 }
 
 func (mc *ListRemoveIndexCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
-	listName := ec.Props().GetString(listFlagName)
+	name := ec.Props().GetString(listFlagName)
 	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
 		return err
@@ -41,13 +41,13 @@ func (mc *ListRemoveIndexCommand) Exec(ctx context.Context, ec plug.ExecContext)
 	if index < 0 {
 		return errors.New("Index cannot be smaller than 0")
 	}
-	pid, err := stringToPartitionID(ci, listName)
+	pid, err := stringToPartitionID(ci, name)
 	if err != nil {
 		return err
 	}
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Removing value from the list %s", listName))
-		req := codec.EncodeListRemoveWithIndexRequest(listName, int32(index))
+		sp.SetText(fmt.Sprintf("Removing value from the list %s", name))
+		req := codec.EncodeListRemoveWithIndexRequest(name, int32(index))
 		return ci.InvokeOnPartition(ctx, req, pid, nil)
 	})
 	if err != nil {

@@ -26,14 +26,14 @@ func (mc *ListSizeCommand) Init(cc plug.InitContext) error {
 }
 
 func (mc *ListSizeCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
-	listName := ec.Props().GetString(listFlagName)
+	name := ec.Props().GetString(listFlagName)
 	lv, err := ec.Props().GetBlocking(listPropertyName)
 	if err != nil {
 		return err
 	}
 	l := lv.(*hazelcast.List)
 	sv, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Getting the size of list %s", listName))
+		sp.SetText(fmt.Sprintf("Getting the size of list %s", name))
 		return l.Size(ctx)
 	})
 	if err != nil {

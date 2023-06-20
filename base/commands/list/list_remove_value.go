@@ -24,7 +24,7 @@ func (mc *ListRemoveValueCommand) Init(cc plug.InitContext) error {
 }
 
 func (mc *ListRemoveValueCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
-	listName := ec.Props().GetString(listFlagName)
+	name := ec.Props().GetString(listFlagName)
 	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
 		return err
@@ -38,13 +38,13 @@ func (mc *ListRemoveValueCommand) Exec(ctx context.Context, ec plug.ExecContext)
 	if err != nil {
 		return err
 	}
-	pid, err := stringToPartitionID(ci, listName)
+	pid, err := stringToPartitionID(ci, name)
 	if err != nil {
 		return err
 	}
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Removing value from the list %s", listName))
-		req := codec.EncodeListRemoveRequest(listName, vd)
+		sp.SetText(fmt.Sprintf("Removing value from the list %s", name))
+		req := codec.EncodeListRemoveRequest(name, vd)
 		return ci.InvokeOnPartition(ctx, req, pid, nil)
 	})
 	if err != nil {

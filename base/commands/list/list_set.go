@@ -25,7 +25,7 @@ func (mc *ListSetCommand) Init(cc plug.InitContext) error {
 }
 
 func (mc *ListSetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
-	listName := ec.Props().GetString(listFlagName)
+	name := ec.Props().GetString(listFlagName)
 	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
 		return err
@@ -43,13 +43,13 @@ func (mc *ListSetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		return err
 	}
-	pid, err := stringToPartitionID(ci, listName)
+	pid, err := stringToPartitionID(ci, name)
 	if err != nil {
 		return err
 	}
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Setting the value of the list %s", listName))
-		req := codec.EncodeListSetRequest(listName, int32(index), vd)
+		sp.SetText(fmt.Sprintf("Setting the value of the list %s", name))
+		req := codec.EncodeListSetRequest(name, int32(index), vd)
 		return ci.InvokeOnPartition(ctx, req, pid, nil)
 	})
 	if err != nil {

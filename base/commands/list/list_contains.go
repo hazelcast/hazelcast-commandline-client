@@ -28,7 +28,7 @@ func (mc *ListContainsCommand) Init(cc plug.InitContext) error {
 }
 
 func (mc *ListContainsCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
-	listName := ec.Props().GetString(listFlagName)
+	name := ec.Props().GetString(listFlagName)
 	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
 		return err
@@ -42,13 +42,13 @@ func (mc *ListContainsCommand) Exec(ctx context.Context, ec plug.ExecContext) er
 	if err != nil {
 		return err
 	}
-	pid, err := stringToPartitionID(ci, listName)
+	pid, err := stringToPartitionID(ci, name)
 	if err != nil {
 		return err
 	}
 	cmi, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Checking if value exists in the list %s", listName))
-		req := codec.EncodeListContainsRequest(listName, vd)
+		sp.SetText(fmt.Sprintf("Checking if value exists in the list %s", name))
+		req := codec.EncodeListContainsRequest(name, vd)
 		return ci.InvokeOnPartition(ctx, req, pid, nil)
 	})
 	if err != nil {

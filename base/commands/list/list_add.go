@@ -27,7 +27,7 @@ func (mc *ListAddCommand) Init(cc plug.InitContext) error {
 }
 
 func (mc *ListAddCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
-	listName := ec.Props().GetString(listFlagName)
+	name := ec.Props().GetString(listFlagName)
 	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
 		return err
@@ -44,16 +44,16 @@ func (mc *ListAddCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	index := ec.Props().GetInt(listFlagIndex)
 	var req *hazelcast.ClientMessage
 	if index >= 0 {
-		req = codec.EncodeListAddWithIndexRequest(listName, int32(index), vd)
+		req = codec.EncodeListAddWithIndexRequest(name, int32(index), vd)
 	} else {
-		req = codec.EncodeListAddRequest(listName, vd)
+		req = codec.EncodeListAddRequest(name, vd)
 	}
-	pid, err := stringToPartitionID(ci, listName)
+	pid, err := stringToPartitionID(ci, name)
 	if err != nil {
 		return err
 	}
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Adding value at index %d into list %s", index, listName))
+		sp.SetText(fmt.Sprintf("Adding value at index %d into list %s", index, name))
 		return ci.InvokeOnPartition(ctx, req, pid, nil)
 	})
 	if err != nil {
