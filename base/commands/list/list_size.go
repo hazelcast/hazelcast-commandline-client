@@ -20,7 +20,7 @@ type ListSizeCommand struct{}
 func (mc *ListSizeCommand) Init(cc plug.InitContext) error {
 	help := "Return the size of the given List"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("size [flags]")
+	cc.SetCommandUsage("size")
 	cc.SetPositionalArgCount(0, 0)
 	return nil
 }
