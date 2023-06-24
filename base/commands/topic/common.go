@@ -1,3 +1,5 @@
+//go:build base || topic
+
 package topic
 
 import (

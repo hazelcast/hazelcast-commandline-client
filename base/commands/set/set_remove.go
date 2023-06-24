@@ -1,3 +1,5 @@
+//go:build base || set
+
 package set
 
 import (

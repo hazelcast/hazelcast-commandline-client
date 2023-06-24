@@ -1,3 +1,5 @@
+//go:build base || viridian
+
 package viridian
 
 const (

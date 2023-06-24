@@ -1,3 +1,5 @@
+//go:build base || job
+
 package job
 
 import (
