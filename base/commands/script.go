@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
@@ -22,11 +23,22 @@ const (
 	prefixHTTPS = "https://"
 )
 
-type RunScriptCommand struct{}
+type ScriptCommand struct{}
 
-func (cm RunScriptCommand) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("run-script")
-	long := "Runs the given script."
+func (cm ScriptCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("script [path] [flags]")
+	long := `Runs the script in the given local or HTTP location.
+	
+The script can contain:
+	1. SQL statements
+	2. CLC commands prefixed with backslash.
+	3. Comments starting with -- (double dash)
+
+The script should have either .clc or .sql extension.
+Files with one of these two extensions are interpreted equivalently.
+	
+See examples/sql/dessert.sql for a sample script.
+`
 	short := "Runs the given script"
 	cc.SetCommandHelp(long, short)
 	cc.SetPositionalArgCount(0, 1)
@@ -35,7 +47,7 @@ func (cm RunScriptCommand) Init(cc plug.InitContext) error {
 	return nil
 }
 
-func (cm RunScriptCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (cm ScriptCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	args := ec.Args()
 	in := ec.Stdin()
 	if len(args) > 0 {
@@ -68,9 +80,12 @@ func (cm RunScriptCommand) Exec(ctx context.Context, ec plug.ExecContext) error 
 	return sh.Run(ctx)
 }
 
-func (cm RunScriptCommand) Unwrappable() {}
+func (cm ScriptCommand) Unwrappable() {}
 
 func openScript(location string) (io.ReadCloser, error) {
+	if filepath.Ext(location) != ".clc" && filepath.Ext(location) != ".sql" {
+		return nil, errors.New("the script should have either .clc or .sql extension")
+	}
 	if strings.HasPrefix(location, prefixFile) {
 		location = location[len(prefixFile):]
 		return os.Open(location)
@@ -93,5 +108,5 @@ func openScript(location string) (io.ReadCloser, error) {
 }
 
 func init() {
-	check.Must(plug.Registry.RegisterCommand("run-script", &RunScriptCommand{}))
+	check.Must(plug.Registry.RegisterCommand("script", &ScriptCommand{}))
 }

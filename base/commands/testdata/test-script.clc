@@ -1,0 +1,20 @@
+-- This is a script command
+
+\map -n test-script clear --yes
+\map -n test-script set foo bar
+\map -n test-script get foo
+
+CREATE MAPPING person (
+    __key INT,
+    name VARCHAR
+) TYPE IMAP OPTIONS (
+    'keyFormat' = 'int',
+    'valueFormat' = 'varchar'
+)
+
+-- The following command fails
+--\foo bar
+
+\map -n test-script get foo
+
+
