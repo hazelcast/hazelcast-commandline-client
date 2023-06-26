@@ -16,6 +16,9 @@ TARGZ ?= true
 build:
 	CGO_ENABLED=0 go build -tags base,hazelcastinternal,hazelcastinternaltest -ldflags $(LDFLAGS)  -o build/$(BINARY_NAME) ./cmd/clc
 
+build-migration:
+	CGO_ENABLED=0 go build -tags migration,hazelcastinternal,hazelcastinternaltest -ldflags $(LDFLAGS)  -o build/$(BINARY_NAME) ./cmd/clc
+
 test:
 	go test -tags base,hazelcastinternal,hazelcastinternaltest -p 1 $(TEST_FLAGS) ./...
 
