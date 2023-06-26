@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 
@@ -10,7 +11,13 @@ import (
 	clc "github.com/hazelcast/hazelcast-commandline-client/clc"
 	cmd "github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config/wizard"
-	"github.com/hazelcast/hazelcast-commandline-client/errors"
+	hzerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
+)
+
+const (
+	ExitCodeSuccess        = 0
+	ExitCodeGenericFailure = 1
+	ExitCodeTimeout        = 2
 )
 
 func bye(err error) {
@@ -37,14 +44,19 @@ func main() {
 	err = m.Execute(context.Background(), args...)
 	if err != nil {
 		// print the error only if it wasn't printed before
-		if _, ok := err.(errors.WrappedError); !ok {
-			fmt.Println("Error:", err)
+		if _, ok := err.(hzerrors.WrappedError); !ok {
+			fmt.Println(cmd.MakeErrStr(err))
 		}
 	}
 	// ignoring the error here
 	_ = m.Exit()
 	if err != nil {
-		os.Exit(1)
+		// keeping the hzerrors.ErrTimeout for now
+		// it may be useful to send that error in the future. --YT
+		if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, hzerrors.ErrTimeout) {
+			os.Exit(ExitCodeTimeout)
+		}
+		os.Exit(ExitCodeGenericFailure)
 	}
-	os.Exit(0)
+	os.Exit(ExitCodeSuccess)
 }

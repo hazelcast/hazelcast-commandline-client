@@ -2,13 +2,16 @@ package jet
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"path/filepath"
+	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/types"
 
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
@@ -72,6 +75,13 @@ func (j Jet) SubmitJob(ctx context.Context, path, jobName, className, snapshot s
 	// TODO: decide whether to close or not to close the reader
 	defer f.Close()
 	j.lg.Info("Sending %s in %d batch(es)", path, pc)
+	conn := j.ci.ConnectionManager().RandomConnection()
+	if conn == nil {
+		return errors.New("no connection to the server")
+	}
+	// see: https://hazelcast.atlassian.net/browse/HZ-2492
+	sv := conn.ServerVersion()
+	workaround := internal.CheckVersion(sv, "=", "5.3.0")
 	bb := newBatch(f, defaultBatchSize)
 	for i := int32(0); i < int32(pc); i++ {
 		bin, hashBin, err := bb.Next()
@@ -82,7 +92,10 @@ func (j Jet) SubmitJob(ctx context.Context, path, jobName, className, snapshot s
 			return fmt.Errorf("sending the job: %w", err)
 		}
 		part := i + 1
-		hash := fmt.Sprintf("%x", hashBin)
+		hash = fmt.Sprintf("%x", hashBin)
+		if workaround && hash[0] == '0' {
+			hash = strings.TrimLeft(hash, "0")
+		}
 		mrReq = codec.EncodeJetUploadJobMultipartRequest(sid, part, int32(pc), bin, int32(len(bin)), hash)
 		if _, err := j.ci.InvokeOnMember(ctx, mrReq, mem, nil); err != nil {
 			return fmt.Errorf("uploading part %d: %w", part, err)

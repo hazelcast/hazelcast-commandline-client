@@ -330,6 +330,15 @@ func (m *Main) createCommands() error {
 				ec.SetArgs(args)
 				ec.SetCmd(cmd)
 				ctx := context.Background()
+				t, err := parseDuration(ec.Props().GetString(clc.PropertyTimeout))
+				if err != nil {
+					return err
+				}
+				var cancel context.CancelFunc
+				if t != 0 {
+					ctx, cancel = context.WithTimeout(ctx, t)
+					defer cancel()
+				}
 				if err := m.runAugmentors(ec, props); err != nil {
 					return err
 				}

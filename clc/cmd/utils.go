@@ -1,12 +1,19 @@
 package cmd
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	cmderrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
@@ -50,4 +57,36 @@ func CheckServerCompatible(ci *hazelcast.ClientInternal, targetVersion string) (
 	}
 	ok := internal.CheckVersion(sv, ">=", targetVersion)
 	return sv, ok
+}
+
+func MakeErrStr(err error) string {
+	var httpErr cmderrors.HTTPError
+	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, hzerrors.ErrTimeout) {
+		return "Timeout"
+	}
+	var errStr string
+	if errors.As(err, &httpErr) {
+		errStr = makeErrorStringFromHTTPResponse(httpErr.Text())
+	} else {
+		errStr = err.Error()
+	}
+	return fmt.Sprintf("Error: %s", errStr)
+}
+
+func parseDuration(duration string) (time.Duration, error) {
+	// input can be like: 10_000_000 or 10_000_000ms, so remove underscores
+	ds := strings.ReplaceAll(duration, "_", "")
+	if ds == "" {
+		return 0, nil
+	}
+	// if it can be parsed to int, then it means it does not have any prefix ms, s, m, h (default is millisecond)
+	d, err := strconv.Atoi(ds)
+	if err == nil {
+		return time.Duration(d) * time.Millisecond, nil
+	}
+	pd, err := time.ParseDuration(ds)
+	if err != nil {
+		return 0, err
+	}
+	return pd, nil
 }

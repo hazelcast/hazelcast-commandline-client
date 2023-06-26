@@ -28,7 +28,10 @@ func (d DelimitedResult) Serialize(ctx context.Context, w io.Writer) (int, error
 		if ctx.Err() != nil {
 			return n, ctx.Err()
 		}
-		row, ok := d.rp.NextRow(ctx)
+		row, ok, err := d.rp.NextRow(ctx)
+		if err != nil {
+			return 0, err
+		}
 		if !ok {
 			return n, nil
 		}

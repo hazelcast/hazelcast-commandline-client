@@ -29,15 +29,14 @@ func (cm SubmitCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("submit [jar-file] [arg, ...]")
 	long := fmt.Sprintf(`Submits a jar file to create a Jet job
 	
-This command requires a Viridian or a Hazelcast cluster
-having version %s or better.
+This command requires a Viridian or a Hazelcast cluster having version %s or newer.
 `, minServerVersion)
 	short := "Submits a jar file to create a Jet job"
 	cc.SetCommandHelp(long, short)
 	cc.AddStringFlag(flagName, "", "", false, "override the job name")
 	cc.AddStringFlag(flagSnapshot, "", "", false, "initial snapshot to start the job from")
 	cc.AddStringFlag(flagClass, "", "", false, "the class that contains the main method that creates the Jet job")
-	cc.AddIntFlag(flagRetries, "", 3, false, "number of times to retry a failed upload attempt")
+	cc.AddIntFlag(flagRetries, "", 0, false, "number of times to retry a failed upload attempt")
 	cc.AddBoolFlag(flagWait, "", false, false, "wait for the job to be started")
 	cc.SetPositionalArgCount(1, math.MaxInt)
 	return nil

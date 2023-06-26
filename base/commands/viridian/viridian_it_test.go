@@ -57,6 +57,7 @@ func TestViridian(t *testing.T) {
 		{"resumeCluster_NonInteractive", resumeCluster_NonInteractiveTest},
 		{"stopCluster_Interactive", stopCluster_InteractiveTest},
 		{"stopCluster_NonInteractive", stopCluster_NonInteractiveTest},
+		{"streamLogs_nonInteractive", streamLogs_nonInteractiveTest},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, tc.f)
