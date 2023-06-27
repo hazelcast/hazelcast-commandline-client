@@ -116,8 +116,8 @@ func (j Jet) GetJobList(ctx context.Context) ([]control.JobAndSqlSummary, error)
 	return ls, nil
 }
 
-func (j Jet) TerminateJob(ctx context.Context, jobID int64, terminateMode int32) error {
-	req := codec.EncodeJetTerminateJobRequest(jobID, terminateMode, types.UUID{})
+func (j Jet) TerminateJob(ctx context.Context, jobID int64, terminateMode int32, coordinator types.UUID) error {
+	req := codec.EncodeJetTerminateJobRequest(jobID, terminateMode, coordinator)
 	if _, err := j.ci.InvokeOnRandomTarget(ctx, req, nil); err != nil {
 		return err
 	}
