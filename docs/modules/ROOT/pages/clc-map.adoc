@@ -131,12 +131,12 @@ Parameters:
 |`--key-type`, `-k`
 |Optional
 |Data type of the key. One of: `string`, `bool`, `json`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`
-|String
+|string
 
 |`--value-type`, `-v`
 |Optional
 |Data type of the value. One of: `string`, `bool`, `json`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`
-|String
+|string
 
 |`--ttl`
 |Optional
@@ -293,7 +293,7 @@ Parameters:
 |`--key-type`, `-k`
 |Optional
 |Data type of the key. One of: `string`, `bool`, `json`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`
-|String
+|string
 
 |===
 
@@ -334,7 +334,7 @@ Parameters:
 |`--key-type`, `-k`
 |Optional
 |Data type of the key. One of: `string`, `bool`, `json`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`
-|String
+|string
 
 |`--format`, `-f`
 |Optional

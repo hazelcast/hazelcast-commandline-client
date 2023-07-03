@@ -1,0 +1,156 @@
+= clc atomic-long
+
+atomic-long commands are a group of AtomicLong operations.
+
+Usage:
+
+[source,bash]
+----
+clc atomic-long [command] [flags]
+----
+
+== Commands
+
+* <<clc-atomic-long-get, clc atomic-long get>>
+* <<clc-atomic-long-set, clc atomic-long set>>
+* <<clc-atomic-long-increment-get, clc atomic-long increment-get>>
+* <<clc-atomic-long-decrement-get, clc atomic-long decrement-get>>
+
+== clc atomic-long get
+
+Get the value of the AtomicLong.
+
+Usage:
+
+[source,bash]
+----
+clc atomic-long get [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the atomic-long.
+|`default`
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc atomic-long get --name transactionCount
+----
+
+== clc atomic-long set
+
+Sets the value of the AtomicLong.
+
+Usage:
+
+[source,bash]
+----
+clc atomic-long set [value] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the atomic-long.
+|`default`
+
+|`value`,
+|Required
+|Value to set for the atomic long.
+|N/A
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc atomic-long set --name atomicSum  123
+----
+
+== clc atomic-long increment-get
+
+Increment the AtomicLong by the given value.
+
+Usage:
+
+[source,bash]
+----
+clc atomic-long increment-get [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the AtomicLong.
+|`default`
+
+|`--by`
+|Optional
+|Value to increment by
+|1
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc atomic-long increment-get --name atomicSum --by 10
+----
+
+== clc atomic-long decrement-get
+
+Decrement the AtomicLong by the given value.
+
+Usage:
+
+[source,bash]
+----
+clc atomic-long decrement-get [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the AtomicLong.
+|`default`
+
+|`--by`
+|Optional
+|Value to decrement by
+|1
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc atomic-long decrement-get --name atomicSum --by 10
+----
