@@ -20,8 +20,7 @@ import (
 type CreateCmd struct{}
 
 func (pc CreateCmd) Init(cc plug.InitContext) error {
-	cc.AddStringFlag(projectOutputDir, "o", "", true, "output directory for the project to be created")
-	cc.SetPositionalArgCount(1, math.MaxInt)
+	cc.SetPositionalArgCount(2, math.MaxInt)
 	cc.SetCommandUsage("create [template-name] [output-dir] [flags]")
 	help := "Create project from the given template"
 	cc.SetCommandHelp(help, help)
@@ -30,7 +29,7 @@ func (pc CreateCmd) Init(cc plug.InitContext) error {
 
 func (pc CreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	templateName := ec.Args()[0]
-	outputDir := ec.Props().GetString(projectOutputDir)
+	outputDir := ec.Args()[1]
 	templatesDir := paths.Templates()
 	templateExists := paths.Exists(filepath.Join(templatesDir, templateName))
 	if !templateExists {
@@ -52,6 +51,10 @@ func (pc CreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 
 func createProject(ec plug.ExecContext, outputDir, templateName string) error {
 	sourceDir := paths.TemplatePath(templateName)
+	vars, err := loadVars(ec, sourceDir)
+	if err != nil {
+		return err
+	}
 	return filepath.WalkDir(sourceDir, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -72,7 +75,7 @@ func createProject(ec plug.ExecContext, outputDir, templateName string) error {
 				return nil
 			}
 			if hasTemplateExt(d) {
-				err = applyTemplateAndCopyToTarget(ec, sourceDir, p, target)
+				err = applyTemplateAndCopyToTarget(vars, p, target)
 				if err != nil {
 					return err
 				}
@@ -86,6 +89,17 @@ func createProject(ec plug.ExecContext, outputDir, templateName string) error {
 		}
 		return nil
 	})
+}
+
+func loadVars(ec plug.ExecContext, sourceDir string) (map[string]string, error) {
+	vars := make(map[string]string)
+	err := loadFromDefaults(sourceDir, &vars)
+	if err != nil {
+		return nil, err
+	}
+	loadFromProps(ec, &vars)
+	loadFromUserInput(ec, &vars)
+	return vars, nil
 }
 
 func isSkip(d fs.DirEntry) bool {
@@ -108,7 +122,7 @@ func hasTemplateExt(d fs.DirEntry) bool {
 }
 
 func isDefaultPropertiesFile(d fs.DirEntry) bool {
-	return d.Name() == defaultPropertiesFileName
+	return d.Name() == defaultsFileName
 }
 
 func init() {

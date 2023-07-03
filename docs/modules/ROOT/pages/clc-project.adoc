@@ -21,7 +21,7 @@ Usage:
 
 [source,bash]
 ----
-clc project create [template-name] [vars] [flags]
+clc project create [template-name] [output-dir] [vars] [flags]
 ----
 
 Parameters:
@@ -30,7 +30,7 @@ Parameters:
 |===
 |Parameter|Required|Description|Default
 
-|`--output-dir` `-o`
+|`output-dir`
 |Required
 |Output directory for the project to be created.
 |

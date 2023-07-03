@@ -7,23 +7,14 @@ import (
 	"path/filepath"
 	"strings"
 	"text/template"
-
-	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-func applyTemplateAndCopyToTarget(ec plug.ExecContext, sourceDir, source, dest string) error {
+func applyTemplateAndCopyToTarget(vars map[string]string, source, dest string) error {
 	destFile, err := os.Create(removeFileExt(dest))
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer destFile.Close()
-	vars := make(map[string]string)
-	err = loadFromDefaultProperties(sourceDir, &vars)
-	if err != nil {
-		return err
-	}
-	loadFromProps(ec, &vars)
-	loadFromUserInput(ec, &vars)
 	tmpl, err := template.ParseFiles(source)
 	if err != nil {
 		return err
