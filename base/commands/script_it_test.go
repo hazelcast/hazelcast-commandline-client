@@ -6,6 +6,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 
+	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/map"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
 )
 
@@ -26,5 +27,6 @@ func script_NonInteractiveTest(t *testing.T) {
 	it.MapTester(t, func(tcx it.TestContext, m *hazelcast.Map) {
 		tcx.CLCExecute(ctx, "script", "testdata/test-script.clc", "--echo", "--ignore-errors")
 		tcx.AssertStdoutContains("bar")
+		tcx.AssertStderrContains("unknown command")
 	})
 }
