@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/google/shlex"
+	_map "github.com/hazelcast/hazelcast-commandline-client/base/commands/map"
 
 	"github.com/hazelcast/hazelcast-commandline-client/base/commands/sql"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
@@ -48,6 +49,7 @@ func (cm *ShellCommand) Init(cc plug.InitContext) error {
 	cc.Hide()
 	cm.mu.Lock()
 	cm.shortcuts = map[string]struct{}{
+		`\di`:   {},
 		`\dm`:   {},
 		`\dm+`:  {},
 		`\exit`: {},
@@ -121,25 +123,13 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 				return m.Execute(ctx, args...)
 			}
 		}
-		text, err := convertStatement(text)
+		f, err := convertStatement(ctx, ec, text, verbose)
 		if err != nil {
 			if errors.Is(err, errHelp) {
 				I2(fmt.Fprintln(stdout, interactiveHelp()))
 				return nil
 			}
 			return err
-		}
-		f := func() error {
-			res, stop, err := sql.ExecSQL(ctx, ec, text)
-			if err != nil {
-				return err
-			}
-			defer stop()
-			// TODO: update sql.UpdateOutput to use stdout
-			if err := sql.UpdateOutput(ctx, ec, res, verbose); err != nil {
-				return err
-			}
-			return nil
 		}
 		if w, ok := ec.(plug.ResultWrapper); ok {
 			return w.WrapResult(f)
@@ -168,53 +158,76 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 
 func (ShellCommand) Unwrappable() {}
 
-func convertStatement(stmt string) (string, error) {
+func convertStatement(ctx context.Context, ec plug.ExecContext, stmt string, verbose bool) (func() error, error) {
+	var query string
 	stmt = strings.TrimSpace(stmt)
 	if strings.HasPrefix(stmt, "help") {
-		return "", errHelp
+		return nil, errHelp
 	}
 	if strings.HasPrefix(stmt, shell.CmdPrefix) {
 		// this is a shell command
 		stmt = strings.TrimPrefix(stmt, "\\")
 		parts := strings.Fields(stmt)
 		switch parts[0] {
+		case "di":
+			return func() error {
+				return _map.Exec(ctx, ec)
+			}, nil
 		case "dm":
 			if len(parts) == 1 {
-				return "show mappings;", nil
-			}
-			if len(parts) == 2 {
+				query = "show mappings;"
+				return nil, nil
+			} else if len(parts) == 2 {
 				// escape single quote
 				mn := strings.Replace(parts[1], "'", "''", -1)
-				return fmt.Sprintf(`
+				query = fmt.Sprintf(`
 					SELECT * FROM information_schema.mappings
 					WHERE table_name = '%s';
-				`, mn), nil
+				`, mn)
+			} else {
+				return nil, fmt.Errorf("Usage: %sdm [mapping]", shell.CmdPrefix)
 			}
-			return "", fmt.Errorf("Usage: %sdm [mapping]", shell.CmdPrefix)
 		case "dm+":
 			if len(parts) == 1 {
-				return "show mappings;", nil
-			}
-			if len(parts) == 2 {
+				query = "show mappings;"
+				return nil, nil
+			} else if len(parts) == 2 {
 				// escape single quote
 				mn := strings.Replace(parts[1], "'", "''", -1)
-				return fmt.Sprintf(`
+				query = fmt.Sprintf(`
 					SELECT * FROM information_schema.columns
 					WHERE table_name = '%s';
-				`, mn), nil
+				`, mn)
+				return nil, nil
+			} else {
+				return nil, fmt.Errorf("Usage: %sdm+ [mapping]", shell.CmdPrefix)
 			}
-			return "", fmt.Errorf("Usage: %sdm+ [mapping]", shell.CmdPrefix)
 		case "exit":
-			return "", shell.ErrExit
+			return nil, shell.ErrExit
+		default:
+			return nil, fmt.Errorf("Unknown shell command: %s", stmt)
 		}
-		return "", fmt.Errorf("Unknown shell command: %s", stmt)
 	}
-	return stmt, nil
+	f := func() error {
+		res, stop, err := sql.ExecSQL(ctx, ec, query)
+		if err != nil {
+			return err
+		}
+		defer stop()
+		// TODO: update sql.UpdateOutput to use stdout
+		if err := sql.UpdateOutput(ctx, ec, res, verbose); err != nil {
+			return err
+		}
+		return nil
+	}
+	return f, nil
 }
 
 func interactiveHelp() string {
 	return `
 Shortcut Commands:
+	\di			  List Indexes
+	\di	 MAPPING  List Indexes for a specific map
 	\dm           List mappings
 	\dm  MAPPING  Display information about a mapping
 	\dm+ MAPPING  Describe a mapping

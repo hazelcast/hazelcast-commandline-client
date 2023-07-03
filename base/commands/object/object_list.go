@@ -81,7 +81,7 @@ func (cm ObjectListCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 		typeFilter = ec.Args()[0]
 	}
 	showHidden := ec.Props().GetBool(flagShowHidden)
-	objs, err := getObjects(ctx, ec, typeFilter, showHidden)
+	objs, err := GetObjects(ctx, ec, typeFilter, showHidden)
 	if err != nil {
 		return err
 	}
@@ -122,7 +122,7 @@ func objectFilterTypes() string {
 	return sb.String()
 }
 
-func getObjects(ctx context.Context, ec plug.ExecContext, typeFilter string, showHidden bool) ([]types.DistributedObjectInfo, error) {
+func GetObjects(ctx context.Context, ec plug.ExecContext, typeFilter string, showHidden bool) ([]types.DistributedObjectInfo, error) {
 	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
 		return nil, err
