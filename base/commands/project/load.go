@@ -32,12 +32,16 @@ func loadFromDefaults(tDir string, m *map[string]string) error {
 
 func renameDefaults(m *map[string]string) {
 	var rmList []string
+	addMap := make(map[string]string)
 	for k, v := range *m {
-		(*m)[strcase.ToCamel(k)] = v
+		addMap[strcase.ToCamel(k)] = v
 		rmList = append(rmList, k)
 	}
 	for _, k := range rmList {
 		delete(*m, k)
+	}
+	for k, v := range addMap {
+		(*m)[k] = v
 	}
 }
 
@@ -61,15 +65,19 @@ func loadFromProps(ec plug.ExecContext, p *map[string]string) {
 }
 
 func maybeRenameProps(m *map[string]any) {
+	addMap := make(map[string]any)
 	var rmList []string
 	for k, v := range *m {
 		if strings.Contains(k, ".") {
-			(*m)[strcase.ToCamel(k)] = v
+			addMap[strcase.ToCamel(k)] = v
 			rmList = append(rmList, k)
 		}
 	}
 	for _, k := range rmList {
 		delete(*m, k)
+	}
+	for k, v := range addMap {
+		(*m)[k] = v
 	}
 }
 
