@@ -210,8 +210,9 @@ func convertStatement(ctx context.Context, ec plug.ExecContext, stmt string, ver
 		default:
 			return nil, fmt.Errorf("Unknown shell command: %s", stmt)
 		}
+	} else {
+		query = stmt
 	}
-	query = stmt
 	f := func() error {
 		res, stop, err := sql.ExecSQL(ctx, ec, query)
 		if err != nil {
