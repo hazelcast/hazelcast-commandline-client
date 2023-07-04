@@ -59,14 +59,14 @@ func UpdateOutput(ctx context.Context, ec plug.ExecContext, res sql.Result, verb
 		close(rowCh)
 		errCh <- err
 	}()
+	// XXX: the error is ignored, the reason must be noted.
 	_ = ec.AddOutputStream(ctx, rowCh)
 	select {
 	case err = <-errCh:
 		return err
 	case <-ctx.Done():
-		break
+		return ctx.Err()
 	}
-	return nil
 }
 
 func ExecSQL(ctx context.Context, ec plug.ExecContext, query string) (sql.Result, context.CancelFunc, error) {

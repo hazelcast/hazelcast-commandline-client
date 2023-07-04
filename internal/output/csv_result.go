@@ -25,7 +25,10 @@ func (cr *CSVResult) Serialize(ctx context.Context, w io.Writer) (int, error) {
 		if ctx.Err() != nil {
 			return 0, ctx.Err()
 		}
-		row, ok := cr.rp.NextRow(ctx)
+		row, ok, err := cr.rp.NextRow(ctx)
+		if err != nil {
+			return 0, err
+		}
 		if !ok {
 			break
 		}

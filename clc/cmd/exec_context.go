@@ -26,8 +26,7 @@ import (
 )
 
 const (
-	cancelMsg     = " (Ctrl+C to cancel) "
-	maxErrorLines = 5
+	cancelMsg = " (Ctrl+C to cancel) "
 )
 
 type ClientFn func(ctx context.Context, cfg hazelcast.Config) (*hazelcast.ClientInternal, error)
@@ -181,7 +180,6 @@ func (ec *ExecContext) ExecuteBlocking(ctx context.Context, f func(context.Conte
 		sc := yacspin.Config{
 			Frequency:    100 * time.Millisecond,
 			CharSet:      yacspin.CharSets[59],
-			Prefix:       cancelMsg,
 			SpinnerAtEnd: true,
 			Writer:       ec.stderr,
 		}
@@ -210,10 +208,10 @@ func (ec *ExecContext) ExecuteBlocking(ctx context.Context, f func(context.Conte
 		case <-ctx.Done():
 			// calling stop but also returning no-op just in case...
 			stop()
-			if errors.Is(ctx.Err(), context.DeadlineExceeded) {
-				return nil, func() {}, cmderrors.ErrTimeout
+			if errors.Is(ctx.Err(), context.Canceled) {
+				return nil, func() {}, cmderrors.ErrUserCancelled
 			}
-			return nil, func() {}, cmderrors.ErrUserCancelled
+			return nil, func() {}, ctx.Err()
 		case v := <-ch:
 			if err, ok := v.(error); ok {
 				// if an error came out from the channel, return that as the error
@@ -224,8 +222,9 @@ func (ec *ExecContext) ExecuteBlocking(ctx context.Context, f func(context.Conte
 			return v, stop, nil
 		case <-timer.C:
 			if !ec.Quiet() {
-				// ignoring the error here
-				_ = sp.Start()
+				if s, ok := sp.(clc.SpinnerStarter); ok {
+					s.Start()
+				}
 			}
 		}
 	}
@@ -240,19 +239,7 @@ func (ec *ExecContext) WrapResult(f func() error) error {
 		if errors.Is(err, context.Canceled) || errors.Is(err, cmderrors.ErrUserCancelled) {
 			return nil
 		}
-		var errStr string
-		var msg string
-		var httpErr cmderrors.HTTPError
-		if errors.As(err, &httpErr) {
-			errStr = makeErrorStringFromHTTPResponse(httpErr.Text())
-		} else {
-			errStr = err.Error()
-		}
-		if verbose {
-			msg = fmt.Sprintf("Error in %d ms: %s", took.Milliseconds(), errStr)
-		} else {
-			msg = fmt.Sprintf("Error: %s", errStr)
-		}
+		msg := MakeErrStr(err)
 		if ec.Interactive() {
 			I2(fmt.Fprintln(ec.stderr, color.RedString(msg)))
 		} else {
@@ -318,12 +305,17 @@ type simpleSpinner struct {
 	text string
 }
 
-func (s *simpleSpinner) Start() error {
-	return s.sp.Start()
+func (s *simpleSpinner) Start() {
+	// ignoring the error here
+	_ = s.sp.Start()
 }
 
 func (s *simpleSpinner) SetText(text string) {
 	s.text = text
+	if text == "" {
+		s.sp.Prefix("")
+		return
+	}
 	s.sp.Prefix(text + cancelMsg)
 }
 
@@ -340,10 +332,6 @@ func (s *simpleSpinner) SetProgress(progress float32) {
 }
 
 type nopSpinner struct{}
-
-func (n nopSpinner) Start() error {
-	return nil
-}
 
 func (n nopSpinner) SetText(text string) {
 	// pass
