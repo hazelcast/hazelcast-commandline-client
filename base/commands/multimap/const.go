@@ -1,6 +1,6 @@
 //go:build base || multimap
 
-package _multimap
+package multimap
 
 const (
 	multiMapFlagKeyType   = "key-type"

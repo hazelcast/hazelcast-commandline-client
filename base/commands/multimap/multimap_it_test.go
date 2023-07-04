@@ -1,4 +1,4 @@
-package _multimap_test
+package multimap_test
 
 import (
 	"context"

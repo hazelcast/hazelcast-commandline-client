@@ -1,4 +1,4 @@
-package _multimap
+package multimap
 
 import "github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 
