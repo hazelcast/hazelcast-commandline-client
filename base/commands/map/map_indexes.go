@@ -10,7 +10,6 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
-	serialization2 "github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -74,29 +73,4 @@ func Indexes(ctx context.Context, ec plug.ExecContext, mapName string) error {
 		}
 	}
 	return ec.AddOutputRows(ctx, rows...)
-}
-
-func addIndex(ctx context.Context, ec plug.ExecContext) error {
-	client, err := ec.ClientInternal(ctx)
-	if err != nil {
-		return err
-	}
-	m, err := client.Client().GetMap(ctx, "kutlu-map")
-	if err != nil {
-		return err
-	}
-	err = m.Set(context.Background(), "k1", serialization2.JSON(`{"A": 10, "B": 40}`))
-	if err != nil {
-		return err
-	}
-	indexConfig := types.IndexConfig{
-		Name:               "my-index",
-		Type:               types.IndexTypeSorted,
-		Attributes:         []string{"A"},
-		BitmapIndexOptions: types.BitmapIndexOptions{UniqueKey: "B", UniqueKeyTransformation: types.UniqueKeyTransformationLong},
-	}
-	if err = m.AddIndex(context.Background(), indexConfig); err != nil {
-		return err
-	}
-	return nil
 }
