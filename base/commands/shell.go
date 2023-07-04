@@ -170,13 +170,18 @@ func convertStatement(ctx context.Context, ec plug.ExecContext, stmt string, ver
 		parts := strings.Fields(stmt)
 		switch parts[0] {
 		case "di":
-			return func() error {
-				return _map.Exec(ctx, ec)
-			}, nil
+			if len(parts) == 1 {
+				return func() error {
+					return _map.Indexes(ctx, ec, "")
+				}, nil
+			} else if len(parts) == 2 {
+				return func() error {
+					return _map.Indexes(ctx, ec, parts[1])
+				}, nil
+			}
 		case "dm":
 			if len(parts) == 1 {
 				query = "show mappings;"
-				return nil, nil
 			} else if len(parts) == 2 {
 				// escape single quote
 				mn := strings.Replace(parts[1], "'", "''", -1)
@@ -190,7 +195,6 @@ func convertStatement(ctx context.Context, ec plug.ExecContext, stmt string, ver
 		case "dm+":
 			if len(parts) == 1 {
 				query = "show mappings;"
-				return nil, nil
 			} else if len(parts) == 2 {
 				// escape single quote
 				mn := strings.Replace(parts[1], "'", "''", -1)
@@ -198,7 +202,6 @@ func convertStatement(ctx context.Context, ec plug.ExecContext, stmt string, ver
 					SELECT * FROM information_schema.columns
 					WHERE table_name = '%s';
 				`, mn)
-				return nil, nil
 			} else {
 				return nil, fmt.Errorf("Usage: %sdm+ [mapping]", shell.CmdPrefix)
 			}

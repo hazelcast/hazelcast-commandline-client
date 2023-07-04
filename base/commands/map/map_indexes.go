@@ -10,15 +10,20 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
-	"github.com/hazelcast/hazelcast-go-client"
 	serialization2 "github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
-func Exec(ctx context.Context, ec plug.ExecContext) error {
+func Indexes(ctx context.Context, ec plug.ExecContext, mapName string) error {
+	/*
+		err := addIndex(ctx, ec)
+		if err != nil {
+			return err
+		}
+	*/
 	var mapNames []string
-	if len(ec.Args()) > 0 {
-		mapNames = append(mapNames, ec.Args()[0])
+	if mapName != "" {
+		mapNames = append(mapNames, mapName)
 	} else {
 		maps, err := object.GetObjects(ctx, ec, object.Map, false)
 		if err != nil {
@@ -71,8 +76,16 @@ func Exec(ctx context.Context, ec plug.ExecContext) error {
 	return ec.AddOutputRows(ctx, rows...)
 }
 
-func addIndex(m *hazelcast.Map) error {
-	err := m.Set(context.Background(), "k1", serialization2.JSON(`{"A": 10, "B": 40}`))
+func addIndex(ctx context.Context, ec plug.ExecContext) error {
+	client, err := ec.ClientInternal(ctx)
+	if err != nil {
+		return err
+	}
+	m, err := client.Client().GetMap(ctx, "kutlu-map")
+	if err != nil {
+		return err
+	}
+	err = m.Set(context.Background(), "k1", serialization2.JSON(`{"A": 10, "B": 40}`))
 	if err != nil {
 		return err
 	}
