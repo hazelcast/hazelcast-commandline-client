@@ -234,7 +234,7 @@ func interactiveHelp() string {
 	return `
 Shortcut Commands:
 	\di			  List Indexes
-	\di	 MAPPING  List Indexes for a specific map
+	\di	 MAPPING  List Indexes for a specific mapping
 	\dm           List mappings
 	\dm  MAPPING  Display information about a mapping
 	\dm+ MAPPING  Describe a mapping
