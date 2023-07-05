@@ -29,6 +29,7 @@ func (cm StartCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	stages = append(stages, stage.Stage{
 		ProgressMsg: "Validating the setup",
 		SuccessMsg:  "Validated the setup",
+		FailureMsg:  "Could not validate the setup",
 		Func: func(status stage.Statuser) error {
 			for i := 0; i < 10; i++ {
 				time.Sleep(1 * time.Second)
@@ -43,21 +44,27 @@ func (cm StartCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	stages = append(stages, stage.Stage{
 		ProgressMsg: "Connecting to the source cluster",
 		SuccessMsg:  "Connected to the source cluster",
+		FailureMsg:  "Could not connect to the source cluster",
 		Func: func(status stage.Statuser) error {
-			for i := 0; i < 5; i++ {
-				time.Sleep(2 * time.Second)
-				remaining -= 2 * time.Second
-				status.SetRemainingDuration(remaining)
-			}
+			time.Sleep(1 * time.Second)
+			return nil
+		},
+	})
+	stages = append(stages, stage.Stage{
+		ProgressMsg: "Connecting to the target cluster",
+		SuccessMsg:  "Connected to the target cluster",
+		FailureMsg:  "Could not connect to the target cluster",
+		Func: func(status stage.Statuser) error {
+			time.Sleep(1 * time.Second)
 			return nil
 		},
 	})
 	for i := 0; i < 1000; i++ {
-		name := fmt.Sprintf("map.%04d", i)
+		name := fmt.Sprintf("map-%04d", i)
 		stages = append(stages, stage.Stage{
 			ProgressMsg: fmt.Sprintf("Migrating IMap: %s", name),
 			SuccessMsg:  fmt.Sprintf("Migrated IMap: %s", name),
-			FailureMsg:  fmt.Sprintf("Migrating IMap: %s", name),
+			FailureMsg:  fmt.Sprintf("Could not migrate IMap: %s", name),
 			Func: func(status stage.Statuser) error {
 				for i := 0; i < 3; i++ {
 					time.Sleep(1 * time.Second)
