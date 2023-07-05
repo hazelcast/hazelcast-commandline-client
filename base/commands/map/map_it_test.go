@@ -167,8 +167,6 @@ func listIndexes_InteractiveTest(t *testing.T) {
 				check.Must(addIndex(mm))
 				tcx.WriteStdin([]byte("\\di\n"))
 				tcx.AssertStderrContains("OK")
-				s := tcx.ExpectStdout.String()
-				fmt.Println(s)
 				tcx.AssertStdoutDollarWithPath("testdata/list_indexes.txt")
 			})
 		})
