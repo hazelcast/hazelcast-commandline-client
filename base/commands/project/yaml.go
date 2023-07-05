@@ -12,10 +12,8 @@ func parseYAML(prefix string, yamlFile []byte, result *map[string]string) error 
 	if err != nil {
 		return err
 	}
-
 	for k, v := range parsedData {
 		fullKey := joinKeys(prefix, k)
-
 		switch val := v.(type) {
 		case string:
 			(*result)[fullKey] = val
@@ -24,7 +22,6 @@ func parseYAML(prefix string, yamlFile []byte, result *map[string]string) error 
 				(*result)[fullKey] = fmt.Sprintf("%v", val)
 			}
 		}
-
 		if subMap, isMap := v.(map[any]any); isMap {
 			err = parseYAML(fullKey, marshalYAML(subMap), result)
 			if err != nil {
@@ -32,7 +29,6 @@ func parseYAML(prefix string, yamlFile []byte, result *map[string]string) error 
 			}
 		}
 	}
-
 	return nil
 }
 
