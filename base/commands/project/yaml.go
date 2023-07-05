@@ -13,6 +13,9 @@ func parseYAML(prefix string, yamlFile []byte, result *map[string]string) error 
 		return err
 	}
 	for k, v := range parsedData {
+		if puncReg.MatchString(k) {
+			return fmt.Errorf("%s contains special chars", k)
+		}
 		fullKey := joinKeys(prefix, k)
 		switch val := v.(type) {
 		case string:

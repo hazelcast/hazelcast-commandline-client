@@ -9,6 +9,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
@@ -17,11 +18,15 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
+const puncPattern = "[[:punct:]]+"
+
+var puncReg = regexp.MustCompile(puncPattern)
+
 type CreateCmd struct{}
 
 func (pc CreateCmd) Init(cc plug.InitContext) error {
 	cc.SetPositionalArgCount(2, math.MaxInt)
-	cc.SetCommandUsage("create [template-name] [output-dir] [flags]")
+	cc.SetCommandUsage("create [template-name] [output-dir] [flags] (Beta)")
 	help := "Create project from the given template"
 	cc.SetCommandHelp(help, help)
 	return nil
@@ -98,7 +103,10 @@ func loadVars(ec plug.ExecContext, sourceDir string) (map[string]string, error) 
 		return nil, err
 	}
 	loadFromProps(ec, &vars)
-	loadFromUserInput(ec, &vars)
+	err = loadFromUserInput(ec, &vars)
+	if err != nil {
+		return nil, err
+	}
 	return vars, nil
 }
 

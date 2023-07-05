@@ -8,7 +8,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/iancoleman/strcase"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/str"
 )
 
 func loadFromDefaults(tDir string, m *map[string]string) error {
@@ -34,7 +34,7 @@ func renameDefaults(m *map[string]string) {
 	var rmList []string
 	addMap := make(map[string]string)
 	for k, v := range *m {
-		addMap[strcase.ToCamel(k)] = v
+		addMap[str.ToCamel(k)] = v
 		rmList = append(rmList, k)
 	}
 	for _, k := range rmList {
@@ -45,15 +45,19 @@ func renameDefaults(m *map[string]string) {
 	}
 }
 
-func loadFromUserInput(ec plug.ExecContext, p *map[string]string) {
+func loadFromUserInput(ec plug.ExecContext, p *map[string]string) error {
 	if len(ec.Args()) > 0 {
 		for _, arg := range ec.Args() {
 			k, v := parseKVPairs(arg)
+			if puncReg.MatchString(k) {
+				return fmt.Errorf("%s contains special chars", k)
+			}
 			if k != "" {
 				(*p)[k] = v
 			}
 		}
 	}
+	return nil
 }
 
 func loadFromProps(ec plug.ExecContext, p *map[string]string) {
@@ -69,7 +73,7 @@ func maybeRenameProps(m *map[string]any) {
 	var rmList []string
 	for k, v := range *m {
 		if strings.Contains(k, ".") {
-			addMap[strcase.ToCamel(k)] = v
+			addMap[str.ToCamel(k)] = v
 			rmList = append(rmList, k)
 		}
 	}
