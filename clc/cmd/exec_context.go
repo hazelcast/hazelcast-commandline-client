@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"strings"
 	"time"
 
 	"github.com/fatih/color"
@@ -261,7 +262,7 @@ func (ec *ExecContext) WrapResult(f func() error) error {
 
 func (ec *ExecContext) PrintlnUnnecessary(text string) {
 	if !ec.Quiet() {
-		I2(fmt.Fprintln(ec.Stdout(), text))
+		I2(fmt.Fprintln(ec.Stdout(), colorizeText(text)))
 	}
 }
 
@@ -280,6 +281,16 @@ func (ec *ExecContext) ensurePrinter() error {
 	}
 	ec.printer = pr
 	return nil
+}
+
+func colorizeText(text string) string {
+	if strings.HasPrefix(text, "OK ") {
+		return fmt.Sprintf(" %s   %s", color.GreenString("OK"), text[3:])
+	}
+	if strings.HasPrefix(text, "FAIL ") {
+		return fmt.Sprintf(" %s %s", color.RedString("FAIL"), text[5:])
+	}
+	return text
 }
 
 func makeErrorStringFromHTTPResponse(text string) string {
@@ -310,13 +321,18 @@ func (s *simpleSpinner) Start() {
 	_ = s.sp.Start()
 }
 
+func (s *simpleSpinner) Stop() {
+	// ignoring the error here
+	_ = s.sp.Stop()
+}
+
 func (s *simpleSpinner) SetText(text string) {
 	s.text = text
 	if text == "" {
 		s.sp.Prefix("")
 		return
 	}
-	s.sp.Prefix(text + cancelMsg)
+	s.sp.Prefix("      " + text + cancelMsg)
 }
 
 func (s *simpleSpinner) SetProgress(progress float32) {
