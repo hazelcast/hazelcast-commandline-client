@@ -14,12 +14,6 @@ import (
 )
 
 func Indexes(ctx context.Context, ec plug.ExecContext, mapName string) error {
-	/*
-		err := addIndex(ctx, ec)
-		if err != nil {
-			return err
-		}
-	*/
 	var mapNames []string
 	if mapName != "" {
 		mapNames = append(mapNames, mapName)
@@ -38,9 +32,9 @@ func Indexes(ctx context.Context, ec plug.ExecContext, mapName string) error {
 	}
 	resp, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		allIndexes := make(map[string][]types.IndexConfig)
-		for _, mapName := range mapNames {
-			sp.SetText(fmt.Sprintf("Getting indexes of map %s", mapName))
-			req := codec.EncodeMCGetMapConfigRequest(mapName)
+		for _, mn := range mapNames {
+			sp.SetText(fmt.Sprintf("Getting indexes of map %s", mn))
+			req := codec.EncodeMCGetMapConfigRequest(mn)
 			resp, err := ci.InvokeOnRandomTarget(ctx, req, nil)
 			if err != nil {
 				return nil, err
@@ -49,18 +43,18 @@ func Indexes(ctx context.Context, ec plug.ExecContext, mapName string) error {
 			if err != nil {
 				return nil, err
 			}
-			allIndexes[mapName] = globalIndexes
+			allIndexes[mn] = globalIndexes
 		}
 		return allIndexes, nil
 	})
 	stop()
 	var rows []output.Row
-	for mapName, indexes := range resp.(map[string][]types.IndexConfig) {
+	for mn, indexes := range resp.(map[string][]types.IndexConfig) {
 		for _, index := range indexes {
 			rows = append(rows, output.Row{output.Column{
 				Name:  "Map Name",
 				Type:  serialization.TypeString,
-				Value: mapName,
+				Value: mn,
 			}, output.Column{
 				Name:  "Name",
 				Type:  serialization.TypeString,
