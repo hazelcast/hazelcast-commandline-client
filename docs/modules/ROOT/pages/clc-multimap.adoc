@@ -1,0 +1,497 @@
+= clc multi-map
+
+multi-map commands are a group of MultiMap operations.
+
+Usage:
+
+[source,bash]
+----
+clc multi-map [command] [flags]
+----
+
+== Commands
+
+* <<clc-multi-map-put, clc multi-map put>>
+* <<clc-multi-map-get, clc multi-map get>>
+* <<clc-multi-map-remove, clc multi-map remove>>
+* <<clc-multi-map-size, clc multi-map size>>
+* <<clc-multi-map-clear, clc multi-map clear>>
+* <<clc-multi-map-destroy, clc multi-map destroy>>
+* <<clc-multi-map-key-set, clc multi-map key-set>>
+* <<clc-multi-map-entry-set, clc multi-map entry-set>>
+* <<clc-multi-map-lock, clc multi-map lock>>
+* <<clc-multi-map-try-lock, clc multi-map try-lock>>
+* <<clc-multi-map-unlock, clc multi-map unlock>>
+
+== clc multi-map put
+
+Put a value in the given MultiMap
+
+Usage:
+
+[source,bash]
+----
+clc multi-map put [key] [value] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the MultiMap.
+|`default`
+
+|`key`
+|Required
+|Key of the MultiMap entry.
+|N/A
+
+|`value`,
+|Required
+|Value to set for the key.
+|N/A
+
+|`--key-type`, `-k`
+|Optional
+|Data type of the key. One of: `string`, `bool`, `json`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`
+|String
+
+|`--value-type`, `-v`
+|Optional
+|Data type of the value. One of: `string`, `bool`, `json`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`
+|String
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc multi-map put --key-type string hello --value-type f32 19.94 --name myMultiMap
+----
+
+== clc multi-map get
+
+Prints entries from the MultiMap.
+
+Usage:
+
+[source,bash]
+----
+clc multi-map get [key] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the MultiMap.
+|`default`
+
+|`key`
+|Required
+|Key of the MultiMap entry.
+|N/A
+
+|`--key-type`, `-k`
+|Optional
+|Data type of the key. One of: `string`, `bool`, `json`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`.
+|string
+
+|`--format`, `-f`
+|Optional
+|Output format. Supported formats:
+
+- `csv`
+- `delimited`
+- `json`
+- `table`
+|`delimited` in non-interactive mode, `table` in interactive mode.
+
+|===
+
+== clc multi-map remove
+
+Remove values from the given multi-map.
+
+Usage:
+
+[source,bash]
+----
+clc multi-map remove [key] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the MultiMap.
+|`default`
+
+|`key`
+|Required
+|Key of the MultiMap entries.
+|N/A
+
+|`--key-type`, `-k`
+|Optional
+|Data type of the key. One of: `string`, `bool`, `json`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`
+|String
+
+|`--format`, `-f`
+|Optional
+|Output format. Supported formats:
+
+- `csv`
+- `delimited`
+- `json`
+- `table`
+|`delimited` in non-interactive mode, `table` in interactive mode.
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc multi-map remove --name mymulti-map --key-type string k1
+k1
+----
+
+== clc multi-map size
+
+Prints the size of the given the MultiMap.
+
+Usage:
+
+[source,bash]
+----
+clc multi-map size [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the MultiMap.
+|`default`
+
+|===
+
+== clc multi-map clear
+
+Removes all entries from the MultiMap.
+
+Usage:
+
+[source,bash]
+----
+clc multi-map clear [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the MultiMap.
+|`default`
+
+|`--yes`
+|Optional
+|Skip confirming the clear operation.
+|`false`
+
+|===
+
+== clc multi-map destroy
+
+Deletes the MultiMap and all the data in it.
+
+Usage:
+
+[source,bash]
+----
+clc multi-map destroy [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the MultiMap.
+|`default`
+
+|`--yes`
+|Optional
+|Skip confirming the destroy operation.
+|`false`
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc multi-map destroy -n myMultiMap
+----
+
+== clc multi-map key-set
+
+Gets all the keys of the specified MultiMap.
+
+Usage:
+
+[source,bash]
+----
+clc multi-map key-set [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the MultiMap.
+|`default`
+
+|`--format`, `-f`
+|Optional
+|Output format. Supported formats:
+
+- `csv`
+- `delimited`
+- `json`
+- `table`
+|`delimited` in non-interactive mode, `table` in interactive mode.
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc multi-map key-set -n myMultiMap
+----
+
+== clc multi-map entry-set
+
+Gets all the entries of the specified MultiMap.
+
+Usage:
+
+[source,bash]
+----
+clc multi-map entry-set [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the MultiMap.
+|`default`
+
+|`--format`, `-f`
+|Optional
+|Output format. Supported formats:
+
+- `csv`
+- `delimited`
+- `json`
+- `table`
+|`delimited` in non-interactive mode, `table` in interactive mode.
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc multi-map entry-set -n myMultiMap
+----
+
+== clc multi-map values
+
+Gets all values of the specified MultiMap.
+
+Usage:
+
+[source,bash]
+----
+clc multi-map values [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the MultiMap.
+|`default`
+
+|`--format`, `-f`
+|Optional
+|Output format. Supported formats:
+
+- `csv`
+- `delimited`
+- `json`
+- `table`
+|`delimited` in non-interactive mode, `table` in interactive mode.
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc multi-map values -n myMultiMap
+----
+
+== clc multi-map lock
+
+Lock a key in the given MultiMap.
+
+This command is only available in the interactive mode.
+
+Usage:
+
+[source,bash]
+----
+clc multi-map lock [key] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the MultiMap.
+|`default`
+
+|`--key-type`, `-k`
+|Optional
+|Data type of the key. One of: `string`, `bool`, `json`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`
+|String
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc multi-map lock 1
+----
+
+== clc multi-map try-lock
+
+Tries to lock the key of the given the MultiMap. Returns a result without waiting.
+
+This command is only available in the interactive mode.
+
+Usage:
+
+[source,bash]
+----
+clc multi-map try-lock [key] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the MultiMap.
+|`default`
+
+|`--key-type`, `-k`
+|Optional
+|Data type of the key. One of: `string`, `bool`, `json`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`
+|String
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc multi-map try-lock 1
+----
+
+== clc multi-map unlock
+
+Unlock a key in the given MultiMap.
+
+This command is only available in the interactive mode.
+
+Usage:
+
+[source,bash]
+----
+clc multi-map unlock [key] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the MultiMap.
+|`default`
+
+|`--key-type`, `-k`
+|Optional
+|Data type of the key. One of: `string`, `bool`, `json`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`
+|String
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc multi-map unlock 1
+----
