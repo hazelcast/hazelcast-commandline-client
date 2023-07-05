@@ -178,6 +178,8 @@ func convertStatement(ctx context.Context, ec plug.ExecContext, stmt string, ver
 				return func() error {
 					return _map.Indexes(ctx, ec, parts[1])
 				}, nil
+			} else {
+				return nil, fmt.Errorf("Usage: %sdi [mapping]", shell.CmdPrefix)
 			}
 		case "dm":
 			if len(parts) == 1 {
