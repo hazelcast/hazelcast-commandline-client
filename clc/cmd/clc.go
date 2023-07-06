@@ -254,6 +254,10 @@ func (m *Main) runInitializers(cc *CommandContext) error {
 func (m *Main) createCommands() error {
 	for _, c := range plug.Registry.Commands() {
 		c := c
+		// check if current command available in current mode
+		if !plug.Registry.IsAvailable(m.isInteractive, c.Name) {
+			continue
+		}
 		// skip interactive commands in interactive mode
 		if m.isInteractive {
 			if _, ok := c.Item.(plug.InteractiveCommander); ok {
