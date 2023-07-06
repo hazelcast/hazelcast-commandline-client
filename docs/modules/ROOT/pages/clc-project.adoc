@@ -57,7 +57,7 @@ Parameters:
 |Optional
 |Variables can be defined to be used in templates as key-value pairs. Example: `key`=`value`
 
-WARNING: key cannot contain punctuation
+WARNING: keys cannot contain punctuation
 |
 |===
 
