@@ -10,6 +10,7 @@ import (
 )
 
 func TestCreateCommand(t *testing.T) {
+	os.Setenv(envTemplateSource, "https://github.com/kutluhanmetin")
 	testCases := []struct {
 		inputTemplateName string
 		inputOutputDir    string
