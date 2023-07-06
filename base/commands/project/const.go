@@ -5,6 +5,7 @@ const (
 	templateExt           = ".template"
 	hiddenFilePrefix      = "."
 	underscorePrefix      = "_"
-	hzTemplatesRepository = "https://github.com/kutluhanmetin/"
+	hzTemplatesRepository = "https://github.com/hazelcast-templates"
 	defaultsFileName      = "defaults.yaml"
+	envTemplateSource     = "CLC_EXPERIMENTAL_TEMPLATE_SOURCE"
 )

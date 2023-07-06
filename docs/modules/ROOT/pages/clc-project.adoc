@@ -59,3 +59,19 @@ Parameters:
 
 WARNING: key cannot contain punctuation
 |
+|===
+
+=== Creating and Using Your Own Templates
+Templates are located under %s by default, however you can override it by using `CLC_EXPERIMENTAL_TEMPLATE_SOURCE` env variable.
+
+==== Rules while creating your own templates:
+- Templates are in link:.https://pkg.go.dev/text/template[Go template] format.
+- You can create a `defaults.yaml` file for default values in template's root directory.
+- Template files must have the `.template` extension.
+- Files with `.` and `_` prefixes are ignored by default but, if want to keep them, you must add `.keep` extension to them.
+- Other files are copied verbatim.
+
+==== Properties are read from the following resources in order:
+1. `defaults.yaml` (keys cannot contain punctuation)
+2. `config.yaml`
+3. User passed key-values (keys cannot contain punctuation)

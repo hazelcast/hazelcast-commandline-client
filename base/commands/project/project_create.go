@@ -9,6 +9,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"strings"
 
@@ -26,9 +27,30 @@ type CreateCmd struct{}
 
 func (pc CreateCmd) Init(cc plug.InitContext) error {
 	cc.SetPositionalArgCount(2, math.MaxInt)
-	cc.SetCommandUsage("create [template-name] [output-dir] [flags] (Beta)")
-	help := "Create project from the given template"
-	cc.SetCommandHelp(help, help)
+	cc.SetCommandUsage("create [template-name] [output-dir] [flags]")
+	short := "Create project from the given template"
+	long := fmt.Sprintf(`Create project from the given template and project will be created to the given output-dir.
+	
+Templates are located under %s by default, however you can override it by using CLC_EXPERIMENTAL_TEMPLATE_SOURCE env variable.
+Rules while creating your own templates:
+- Templates are in Go template format. See: https://pkg.go.dev/text/template
+- You can create a "defaults.yaml" file for default values in template's root directory.
+- Template files must have the ".template" extension.
+- Files with "." and "_" prefixes are ignored by default but, if want to keep them, you must add ".keep" extension to them.
+- Other files are copied verbatim.
+Properties are read from the following resources in order:
+1. defaults.yaml file (keys cannot contain punctuation)
+2. config.yaml file
+3. User passed key-values (keys cannot contain punctuation)
+You can use the variables in "defaults.yaml"" and "config.yaml" by specifying them in templates as placeholders in camel case format. For example, if you have the following variable in one of the configuration files:
+cluster:
+  name: my-cluster
+Then you can use it in templates as "ClusterName".
+
+Example:
+	$ CLC_EXPERIMENTAL_TEMPLATE_SOURCE=https://github.com/my-template-organization project create simple-streaming-pipeline-template /Users/kmetin/projects/my-simple-streaming-pipeline myValue=myKey -c my-cluster
+`, hzTemplatesRepository)
+	cc.SetCommandHelp(long, short)
 	return nil
 }
 
@@ -38,8 +60,10 @@ func (pc CreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	templatesDir := paths.Templates()
 	templateExists := paths.Exists(filepath.Join(templatesDir, templateName))
 	if !templateExists {
+		ec.Logger().Info(fmt.Sprintf("template %s does not exist, cloning it into %s", templateName, templatesDir))
 		err := cloneTemplate(templatesDir, templateName)
 		if err != nil {
+			ec.Logger().Error(err)
 			return err
 		}
 	}
@@ -60,7 +84,8 @@ func createProject(ec plug.ExecContext, outputDir, templateName string) error {
 	if err != nil {
 		return err
 	}
-	return filepath.WalkDir(sourceDir, func(p string, d fs.DirEntry, err error) error {
+	ec.Logger().Info(fmt.Sprintf("available placeholders: %+v", reflect.ValueOf(vars).MapKeys()))
+	err = filepath.WalkDir(sourceDir, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -94,6 +119,11 @@ func createProject(ec plug.ExecContext, outputDir, templateName string) error {
 		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+	ec.Logger().Info(fmt.Sprintf("Successfully created project: %s", outputDir))
+	return nil
 }
 
 func loadVars(ec plug.ExecContext, sourceDir string) (map[string]string, error) {
