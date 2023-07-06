@@ -28,27 +28,60 @@ type CreateCmd struct{}
 func (pc CreateCmd) Init(cc plug.InitContext) error {
 	cc.SetPositionalArgCount(2, math.MaxInt)
 	cc.SetCommandUsage("create [template-name] [output-dir] [flags]")
-	short := "Create project from the given template"
-	long := fmt.Sprintf(`Create project from the given template and project will be created to the given output-dir.
+	short := "(Beta) Create project from the given template"
+	long := fmt.Sprintf(` (Beta) Create project from the given template and project will be created to the given output-dir.
 	
-Templates are located under %s by default, however you can override it by using CLC_EXPERIMENTAL_TEMPLATE_SOURCE env variable.
-Rules while creating your own templates:
-- Templates are in Go template format. See: https://pkg.go.dev/text/template
-- You can create a "defaults.yaml" file for default values in template's root directory.
-- Template files must have the ".template" extension.
-- Files with "." and "_" prefixes are ignored by default but, if want to keep them, you must add ".keep" extension to them.
-- Other files are copied verbatim.
-Properties are read from the following resources in order:
-1. defaults.yaml file (keys cannot contain punctuation)
-2. config.yaml file
-3. User passed key-values (keys cannot contain punctuation)
-You can use the variables in "defaults.yaml"" and "config.yaml" by specifying them in templates as placeholders in camel case format. For example, if you have the following variable in one of the configuration files:
-cluster:
-  name: my-cluster
-Then you can use it in templates as "ClusterName".
+Templates are located in the %s organization by default.
+You can override it by using CLC_EXPERIMENTAL_TEMPLATE_SOURCE environment variable.
 
-Example:
-	$ CLC_EXPERIMENTAL_TEMPLATE_SOURCE=https://github.com/my-template-organization project create simple-streaming-pipeline-template /Users/kmetin/projects/my-simple-streaming-pipeline myValue=myKey -c my-cluster
+Rules while creating your own templates:
+
+	* Templates are in Go template format.
+	  See: https://pkg.go.dev/text/template
+	* You can create a "defaults.yaml" file for default values in template's root directory.
+	* Template files must have the ".template" extension.
+	* Files with "." and "_" prefixes are ignored by default.
+	 If want to keep them you must add ".keep" extension to them.
+	* Other files are copied verbatim.
+
+Properties are read from the following resources in order:
+
+	1. defaults.yaml (keys cannot contain punctuation)
+	2. config.yaml
+	3. User passed key-values (keys cannot contain punctuation)
+
+You can use the placeholders in "defaults.yaml" and the following configuration item placeholders:
+
+	* ClusterName
+	* ClusterAddress
+	* ClusterUser
+	* ClusterPassword
+	* ClusterDiscoveryToken
+	* SslEnabled
+	* SslServer
+	* SslSkipVerify
+	* SslCaPath
+	* SslKeyPath
+	* SslKeyPassword
+	* LogPath
+	* LogLevel
+
+Example (Linux and MacOS):
+
+$ export CLC_EXPERIMENTAL_TEMPLATE_SOURCE=https://github.com/my-template-organization
+$ clc project create \
+	simple-streaming-pipeline-template\
+	my-project\
+	MyKey1=MyValue1 MyKey2=MyValue2
+
+Example (Windows):
+
+
+> set CLC_EXPERIMENTAL_TEMPLATE_SOURCE=https://github.com/my-template-organization
+> clc project create^
+	simple-streaming-pipeline-template^
+	my-project^
+	MyKey1=MyValue1 MyKey2=MyValue2
 `, hzTemplatesRepository)
 	cc.SetCommandHelp(long, short)
 	return nil

@@ -15,20 +15,7 @@ clc project [command] [flags]
 
 == clc project create
 
-Creates project from the given template. It reads placeholder values from multiple resources, in order:
-
-- `defaults.yaml` file, which maybe included in the template repository.
-- `config.yaml` file, included in `$HOME/.hazelcast/config/<config-name>` directory.
-- User defined variables.
-
-=== Using Configuration Variables
-You can use the variables in `defaults.yaml` and `config.yaml` by specifying them in templates as placeholders in camel case format. For example, if you have the following variable in one of the configuration files:
-```
-cluster:
-    name: my-cluster
-```
-Then you can use it in templates as `ClusterName`.
-
+Creates project from the given template.
 
 Usage:
 
@@ -62,16 +49,54 @@ WARNING: keys cannot contain punctuation
 |===
 
 === Creating and Using Your Own Templates
-Templates are located under %s by default, however you can override it by using `CLC_EXPERIMENTAL_TEMPLATE_SOURCE` env variable.
+Templates are located under https://github.com/hazelcast-templates  organization by default. You can override it by using `CLC_EXPERIMENTAL_TEMPLATE_SOURCE` environment variable.
 
 ==== Rules while creating your own templates:
-- Templates are in link:.https://pkg.go.dev/text/template[Go template] format.
-- You can create a `defaults.yaml` file for default values in template's root directory.
-- Template files must have the `.template` extension.
-- Files with `.` and `_` prefixes are ignored by default but, if want to keep them, you must add `.keep` extension to them.
-- Other files are copied verbatim.
+* Templates are in link:.https://pkg.go.dev/text/template[Go template] format.
+* You can create a `defaults.yaml` file for default values in template's root directory.
+* Template files must have the `.template` extension.
+* Files with `.` and `_` prefixes are ignored by default. If want to keep them you must add `.keep` extension to them.
+* Other files are copied verbatim.
 
 ==== Properties are read from the following resources in order:
 1. `defaults.yaml` (keys cannot contain punctuation)
 2. `config.yaml`
 3. User passed key-values (keys cannot contain punctuation)
+
+You can use the placeholders in "defaults.yaml" and the following configuration item placeholders:
+
+* ClusterName
+* ClusterAddress
+* ClusterUser
+* ClusterPassword
+* ClusterDiscoveryToken
+* SslEnabled
+* SslServer
+* SslSkipVerify
+* SslCaPath
+* SslKeyPath
+* SslKeyPassword
+* LogPath
+* LogLevel
+
+Example (Linux and MacOS):
+
+[source,bash]
+----
+export CLC_EXPERIMENTAL_TEMPLATE_SOURCE=https://github.com/my-template-organization
+clc project create \
+simple-streaming-pipeline-template\
+my-project\
+MyKey1=MyValue1 MyKey2=MyValue2
+----
+
+Example (Windows):
+
+[source,bash]
+----
+set CLC_EXPERIMENTAL_TEMPLATE_SOURCE=https://github.com/my-template-organization
+clc project create^
+simple-streaming-pipeline-template^
+my-project^
+MyKey1=MyValue1 MyKey2=MyValue2
+----
