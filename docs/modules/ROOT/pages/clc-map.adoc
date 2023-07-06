@@ -328,7 +328,7 @@ Example:
 
 [source,bash]
 ----
-clc map lock -n myMap --key-type string key1
+clc map lock -n my-map --key-type string key1
 ----
 
 == clc map try-lock
@@ -376,7 +376,7 @@ Example:
 
 [source,bash]
 ----
-clc map try-lock -n myMap --key-type string key1
+clc map try-lock -n my-map --key-type string key1
 ----
 
 == clc map unlock
@@ -418,7 +418,7 @@ Example:
 
 [source,bash]
 ----
-clc map unlock -n myMap --key-type string key1
+clc map unlock -n my-map --key-type string key1
 ----
 
 == clc map size
