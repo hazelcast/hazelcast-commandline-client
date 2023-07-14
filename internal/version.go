@@ -9,7 +9,7 @@ import (
 // being initialized at compile-time.
 var (
 	GitCommit string
-	Version   = "UNKNOWN"
+	Version   = "0.0.0"
 )
 
 // CheckVersion checks whether left OP right condition holds.

@@ -33,6 +33,11 @@ const banner = `Hazelcast CLC %s (c) 2023 Hazelcast Inc.
 
 `
 
+const newVersion = `A newer version of CLC is available!
+Click to read release notes and download: https://github.com/hazelcast/hazelcast-commandline-client/releases/%s
+
+`
+
 var errHelp = errors.New("interactive help")
 
 type ShellCommand struct {
@@ -80,6 +85,7 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 			logLevel := strings.ToUpper(ec.Props().GetString(clc.PropertyLogLevel))
 			logText = fmt.Sprintf("Log %9s : %s", logLevel, logPath)
 		}
+		maybePrintNewerVersion(ec)
 		I2(fmt.Fprintf(ec.Stdout(), banner, internal.Version, cfgText, logText))
 	}
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
@@ -210,6 +216,17 @@ func convertStatement(stmt string) (string, error) {
 		return "", fmt.Errorf("Unknown shell command: %s", stmt)
 	}
 	return stmt, nil
+}
+
+func maybePrintNewerVersion(ec plug.ExecContext) {
+	v, err := internal.LatestReleaseVersion()
+	if err != nil {
+		ec.Logger().Error(err)
+		return
+	}
+	if v != "" && internal.CheckVersion(strings.TrimPrefix(v, "v"), ">", internal.Version) {
+		I2(fmt.Fprintf(ec.Stdout(), newVersion, v))
+	}
 }
 
 func interactiveHelp() string {
