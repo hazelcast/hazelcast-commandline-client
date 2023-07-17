@@ -23,8 +23,9 @@ func LatestReleaseVersion() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if data["tag_name"] == nil {
+	if t, ok := data["tag_name"].(string); !ok {
 		return "", errors.New("fetching tag_name")
+	} else {
+		return t, nil
 	}
-	return data["tag_name"].(string), nil
 }
