@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client"
 	"golang.org/x/exp/slices"
 
@@ -118,6 +119,7 @@ func MakeHzConfig(props plug.ReadOnlyProperties, lg log.Logger) (hazelcast.Confi
 			lg.Error(fmt.Errorf("setting environment variable: %s: %w", viridian.EnvAPIBaseURL, err))
 		}
 	}
+	cfg.Serialization.SetIdentifiedDataSerializableFactories(serialization.SnapshotFactory{})
 	cfg.Labels = makeClientLabels()
 	cfg.ClientName = makeClientName()
 	usr := props.GetString(clc.PropertyClusterUser)
