@@ -2,6 +2,7 @@ package internal
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 )
@@ -21,6 +22,9 @@ func LatestReleaseVersion() (string, error) {
 	err = json.Unmarshal(respData, &data)
 	if err != nil {
 		return "", err
+	}
+	if data["tag_name"] == nil {
+		return "", errors.New("fetching tag_name")
 	}
 	return data["tag_name"].(string), nil
 }
