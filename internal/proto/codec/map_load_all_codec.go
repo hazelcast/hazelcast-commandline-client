@@ -12,38 +12,35 @@
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and
 * limitations under the License.
-*/
+ */
 
 package codec
 
-import (    
-    proto "github.com/hazelcast/hazelcast-go-client"
+import (
+	proto "github.com/hazelcast/hazelcast-go-client"
 )
 
+const (
+	MapLoadAllCodecRequestMessageType  = int32(0x012000)
+	MapLoadAllCodecResponseMessageType = int32(0x012001)
 
-const(
-    MapLoadAllCodecRequestMessageType  = int32(0x012000)
-    MapLoadAllCodecResponseMessageType = int32(0x012001)
-
-    MapLoadAllCodecRequestReplaceExistingValuesOffset = proto.PartitionIDOffset + proto.IntSizeInBytes
-    MapLoadAllCodecRequestInitialFrameSize = MapLoadAllCodecRequestReplaceExistingValuesOffset + proto.BooleanSizeInBytes
-
+	MapLoadAllCodecRequestReplaceExistingValuesOffset = proto.PartitionIDOffset + proto.IntSizeInBytes
+	MapLoadAllCodecRequestInitialFrameSize            = MapLoadAllCodecRequestReplaceExistingValuesOffset + proto.BooleanSizeInBytes
 )
 
 // Loads all keys into the store. This is a batch load operation so that an implementation can optimize the multiple loads.
 
 func EncodeMapLoadAllRequest(name string, replaceExistingValues bool) *proto.ClientMessage {
-    clientMessage := proto.NewClientMessageForEncode()
-    clientMessage.SetRetryable(false)
+	clientMessage := proto.NewClientMessageForEncode()
+	clientMessage.SetRetryable(false)
 
-    initialFrame := proto.NewFrameWith(make([]byte, MapLoadAllCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-    EncodeBoolean(initialFrame.Content, MapLoadAllCodecRequestReplaceExistingValuesOffset, replaceExistingValues)
-    clientMessage.AddFrame(initialFrame)
-    clientMessage.SetMessageType(MapLoadAllCodecRequestMessageType)
-    clientMessage.SetPartitionId(-1)
+	initialFrame := proto.NewFrameWith(make([]byte, MapLoadAllCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
+	EncodeBoolean(initialFrame.Content, MapLoadAllCodecRequestReplaceExistingValuesOffset, replaceExistingValues)
+	clientMessage.AddFrame(initialFrame)
+	clientMessage.SetMessageType(MapLoadAllCodecRequestMessageType)
+	clientMessage.SetPartitionId(-1)
 
-    EncodeString(clientMessage, name)
+	EncodeString(clientMessage, name)
 
-    return clientMessage
+	return clientMessage
 }
-

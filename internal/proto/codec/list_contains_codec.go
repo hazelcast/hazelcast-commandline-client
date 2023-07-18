@@ -12,45 +12,44 @@
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and
 * limitations under the License.
-*/
+ */
 
 package codec
 
-import (    
-    iserialization "github.com/hazelcast/hazelcast-go-client"
-    proto "github.com/hazelcast/hazelcast-go-client"
+import (
+	iserialization "github.com/hazelcast/hazelcast-go-client"
+	proto "github.com/hazelcast/hazelcast-go-client"
 )
 
+const (
+	ListContainsCodecRequestMessageType  = int32(0x050200)
+	ListContainsCodecResponseMessageType = int32(0x050201)
 
-const(
-    ListContainsCodecRequestMessageType  = int32(0x050200)
-    ListContainsCodecResponseMessageType = int32(0x050201)
+	ListContainsCodecRequestInitialFrameSize = proto.PartitionIDOffset + proto.IntSizeInBytes
 
-    ListContainsCodecRequestInitialFrameSize = proto.PartitionIDOffset + proto.IntSizeInBytes
-
-    ListContainsResponseResponseOffset = proto.ResponseBackupAcksOffset + proto.ByteSizeInBytes
+	ListContainsResponseResponseOffset = proto.ResponseBackupAcksOffset + proto.ByteSizeInBytes
 )
 
 // Returns true if this list contains the specified element.
 
 func EncodeListContainsRequest(name string, value iserialization.Data) *proto.ClientMessage {
-    clientMessage := proto.NewClientMessageForEncode()
-    clientMessage.SetRetryable(true)
+	clientMessage := proto.NewClientMessageForEncode()
+	clientMessage.SetRetryable(true)
 
-    initialFrame := proto.NewFrameWith(make([]byte, ListContainsCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-    clientMessage.AddFrame(initialFrame)
-    clientMessage.SetMessageType(ListContainsCodecRequestMessageType)
-    clientMessage.SetPartitionId(-1)
+	initialFrame := proto.NewFrameWith(make([]byte, ListContainsCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
+	clientMessage.AddFrame(initialFrame)
+	clientMessage.SetMessageType(ListContainsCodecRequestMessageType)
+	clientMessage.SetPartitionId(-1)
 
-    EncodeString(clientMessage, name)
-    EncodeData(clientMessage, value)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, value)
 
-    return clientMessage
+	return clientMessage
 }
 
 func DecodeListContainsResponse(clientMessage *proto.ClientMessage) bool {
-    frameIterator := clientMessage.FrameIterator()
-    initialFrame := frameIterator.Next()
+	frameIterator := clientMessage.FrameIterator()
+	initialFrame := frameIterator.Next()
 
-    return DecodeBoolean(initialFrame.Content, ListContainsResponseResponseOffset)
+	return DecodeBoolean(initialFrame.Content, ListContainsResponseResponseOffset)
 }

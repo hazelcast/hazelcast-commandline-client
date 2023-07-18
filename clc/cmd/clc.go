@@ -109,7 +109,7 @@ func NewMain(arg0, cfgPath string, cfgProvider config.Provider, logPath, logLeve
 	return m, nil
 }
 
-func (m *Main) CloneForInteractiveMode() (*Main, error) {
+func (m *Main) Clone(interactive bool) (*Main, error) {
 	mc := *m
 	mc.isInteractive = true
 	rc := &cobra.Command{
@@ -128,7 +128,7 @@ func (m *Main) CloneForInteractiveMode() (*Main, error) {
 		},
 	})
 	mc.cmds = map[string]*cobra.Command{}
-	mc.cc = NewCommandContext(rc, mc.cp, mc.isInteractive)
+	mc.cc = NewCommandContext(rc, mc.cp, interactive)
 	if err := mc.runInitializers(mc.cc); err != nil {
 		return nil, err
 	}
