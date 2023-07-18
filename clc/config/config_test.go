@@ -69,6 +69,7 @@ func TestMakeConfiguration_Viridian(t *testing.T) {
 	target.Cluster.Network.SSL.SetTLSConfig(&tls.Config{ServerName: "hazelcast.cloud"})
 	target.Stats.Enabled = true
 	target.Logger.CustomLogger = lg
+	target.Serialization.SetIdentifiedDataSerializableFactories(serialization.SnapshotFactory{})
 	require.Equal(t, target, cfg)
 }
 
