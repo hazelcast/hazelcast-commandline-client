@@ -18,7 +18,7 @@ clc viridian [command] [options]
 * <<clc-viridian-create-cluster, clc viridian create-cluster>>
 * <<clc-viridian-get-cluster, clc viridian get-cluster>>
 * <<clc-viridian-list-clusters, clc viridian list-clusters>>
-* <<clc-viridian-pause-cluster, clc viridian pause-cluster>>
+* <<clc-viridian-stop-cluster, clc viridian stop-cluster>>
 * <<clc-viridian-resume-cluster, clc viridian resume-cluster>>
 * <<clc-viridian-delete-cluster, clc viridian delete-cluster>>
 * <<clc-viridian-download-logs, clc viridian download-logs>>
@@ -179,7 +179,7 @@ Parameters:
 
 |===
 
-== clc viridian pause-cluster
+== clc viridian stop-cluster
 
 Stops the given Viridian cluster.
 
@@ -189,7 +189,7 @@ Usage:
 
 [source,bash]
 ----
-clc viridian pause-cluster [cluster-ID/name] [flags]
+clc viridian stop-cluster [cluster-ID/name] [flags]
 ----
 
 Parameters:
