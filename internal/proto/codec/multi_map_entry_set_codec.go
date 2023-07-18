@@ -17,39 +17,37 @@
 package codec
 
 import (
-	iserialization "github.com/hazelcast/hazelcast-go-client"
 	proto "github.com/hazelcast/hazelcast-go-client"
 )
 
 const (
-	ListContainsCodecRequestMessageType  = int32(0x050200)
-	ListContainsCodecResponseMessageType = int32(0x050201)
+	MultiMapEntrySetCodecRequestMessageType  = int32(0x020600)
+	MultiMapEntrySetCodecResponseMessageType = int32(0x020601)
 
-	ListContainsCodecRequestInitialFrameSize = proto.PartitionIDOffset + proto.IntSizeInBytes
-
-	ListContainsResponseResponseOffset = proto.ResponseBackupAcksOffset + proto.ByteSizeInBytes
+	MultiMapEntrySetCodecRequestInitialFrameSize = proto.PartitionIDOffset + proto.IntSizeInBytes
 )
 
-// Returns true if this list contains the specified element.
+// Returns the set of key-value pairs in the multimap.The collection is NOT backed by the map, so changes to the map
+// are NOT reflected in the collection, and vice-versa
 
-func EncodeListContainsRequest(name string, value iserialization.Data) *proto.ClientMessage {
+func EncodeMultiMapEntrySetRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrameWith(make([]byte, ListContainsCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
+	initialFrame := proto.NewFrameWith(make([]byte, MultiMapEntrySetCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
-	clientMessage.SetMessageType(ListContainsCodecRequestMessageType)
+	clientMessage.SetMessageType(MultiMapEntrySetCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
 	EncodeString(clientMessage, name)
-	EncodeData(clientMessage, value)
 
 	return clientMessage
 }
 
-func DecodeListContainsResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeMultiMapEntrySetResponse(clientMessage *proto.ClientMessage) []proto.Pair {
 	frameIterator := clientMessage.FrameIterator()
-	initialFrame := frameIterator.Next()
+	// empty initial frame
+	frameIterator.Next()
 
-	return DecodeBoolean(initialFrame.Content, ListContainsResponseResponseOffset)
+	return DecodeEntryListForDataAndData(frameIterator)
 }

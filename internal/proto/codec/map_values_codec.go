@@ -22,34 +22,35 @@ import (
 )
 
 const (
-	ListContainsCodecRequestMessageType  = int32(0x050200)
-	ListContainsCodecResponseMessageType = int32(0x050201)
+	MapValuesCodecRequestMessageType  = int32(0x012400)
+	MapValuesCodecResponseMessageType = int32(0x012401)
 
-	ListContainsCodecRequestInitialFrameSize = proto.PartitionIDOffset + proto.IntSizeInBytes
-
-	ListContainsResponseResponseOffset = proto.ResponseBackupAcksOffset + proto.ByteSizeInBytes
+	MapValuesCodecRequestInitialFrameSize = proto.PartitionIDOffset + proto.IntSizeInBytes
 )
 
-// Returns true if this list contains the specified element.
+// Returns a collection clone of the values contained in this map.
+// The collection is NOT backed by the map, so changes to the map are NOT reflected in the collection, and vice-versa.
+// This method is always executed by a distributed query, so it may throw a QueryResultSizeExceededException
+// if query result size limit is configured.
 
-func EncodeListContainsRequest(name string, value iserialization.Data) *proto.ClientMessage {
+func EncodeMapValuesRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrameWith(make([]byte, ListContainsCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
+	initialFrame := proto.NewFrameWith(make([]byte, MapValuesCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
-	clientMessage.SetMessageType(ListContainsCodecRequestMessageType)
+	clientMessage.SetMessageType(MapValuesCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
 	EncodeString(clientMessage, name)
-	EncodeData(clientMessage, value)
 
 	return clientMessage
 }
 
-func DecodeListContainsResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeMapValuesResponse(clientMessage *proto.ClientMessage) []*iserialization.Data {
 	frameIterator := clientMessage.FrameIterator()
-	initialFrame := frameIterator.Next()
+	// empty initial frame
+	frameIterator.Next()
 
-	return DecodeBoolean(initialFrame.Content, ListContainsResponseResponseOffset)
+	return DecodeListMultiFrameForData(frameIterator)
 }

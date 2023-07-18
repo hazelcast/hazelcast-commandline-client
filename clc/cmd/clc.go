@@ -109,7 +109,7 @@ func NewMain(arg0, cfgPath string, cfgProvider config.Provider, logPath, logLeve
 	return m, nil
 }
 
-func (m *Main) CloneForInteractiveMode() (*Main, error) {
+func (m *Main) Clone(interactive bool) (*Main, error) {
 	mc := *m
 	mc.isInteractive = true
 	rc := &cobra.Command{
@@ -128,7 +128,7 @@ func (m *Main) CloneForInteractiveMode() (*Main, error) {
 		},
 	})
 	mc.cmds = map[string]*cobra.Command{}
-	mc.cc = NewCommandContext(rc, mc.cp, mc.isInteractive)
+	mc.cc = NewCommandContext(rc, mc.cp, interactive)
 	if err := mc.runInitializers(mc.cc); err != nil {
 		return nil, err
 	}
@@ -217,7 +217,11 @@ func (m *Main) createLogger(path, level string) error {
 			f = os.Stderr
 		}
 	}
-	m.lg, err = logger.New(f, weight)
+	lg, err := logger.New(f, weight)
+	if err != nil {
+		return err
+	}
+	m.lg = lg
 	return nil
 }
 
@@ -254,6 +258,10 @@ func (m *Main) runInitializers(cc *CommandContext) error {
 func (m *Main) createCommands() error {
 	for _, c := range plug.Registry.Commands() {
 		c := c
+		// check if current command available in current mode
+		if !plug.Registry.IsAvailable(m.isInteractive, c.Name) {
+			continue
+		}
 		// skip interactive commands in interactive mode
 		if m.isInteractive {
 			if _, ok := c.Item.(plug.InteractiveCommander); ok {

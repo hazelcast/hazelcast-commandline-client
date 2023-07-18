@@ -26,6 +26,7 @@
 ** xref:clc-set.adoc[]
 ** xref:clc-queue.adoc[]
 ** xref:clc-topic.adoc[]
+** xref:clc-script.adoc[]
 ** xref:clc-sql.adoc[]
 ** xref:clc-snapshot.adoc[]
 ** xref:clc-version.adoc[]

@@ -22,35 +22,35 @@ import (
 )
 
 const (
-	ListRemoveWithIndexCodecRequestMessageType  = int32(0x051200)
-	ListRemoveWithIndexCodecResponseMessageType = int32(0x051201)
+	MultiMapRemoveCodecRequestMessageType  = int32(0x020300)
+	MultiMapRemoveCodecResponseMessageType = int32(0x020301)
 
-	ListRemoveWithIndexCodecRequestIndexOffset      = proto.PartitionIDOffset + proto.IntSizeInBytes
-	ListRemoveWithIndexCodecRequestInitialFrameSize = ListRemoveWithIndexCodecRequestIndexOffset + proto.IntSizeInBytes
+	MultiMapRemoveCodecRequestThreadIdOffset   = proto.PartitionIDOffset + proto.IntSizeInBytes
+	MultiMapRemoveCodecRequestInitialFrameSize = MultiMapRemoveCodecRequestThreadIdOffset + proto.LongSizeInBytes
 )
 
-// Removes the element at the specified position in this list (optional operation). Shifts any subsequent elements
-// to the left (subtracts one from their indices). Returns the element that was removed from the list.
+// Removes the given key value pair from the multimap.
 
-func EncodeListRemoveWithIndexRequest(name string, index int32) *proto.ClientMessage {
+func EncodeMultiMapRemoveRequest(name string, key iserialization.Data, threadId int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrameWith(make([]byte, ListRemoveWithIndexCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-	EncodeInt(initialFrame.Content, ListRemoveWithIndexCodecRequestIndexOffset, index)
+	initialFrame := proto.NewFrameWith(make([]byte, MultiMapRemoveCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
+	EncodeLong(initialFrame.Content, MultiMapRemoveCodecRequestThreadIdOffset, threadId)
 	clientMessage.AddFrame(initialFrame)
-	clientMessage.SetMessageType(ListRemoveWithIndexCodecRequestMessageType)
+	clientMessage.SetMessageType(MultiMapRemoveCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
 	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, key)
 
 	return clientMessage
 }
 
-func DecodeListRemoveWithIndexResponse(clientMessage *proto.ClientMessage) iserialization.Data {
+func DecodeMultiMapRemoveResponse(clientMessage *proto.ClientMessage) []*iserialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()
 
-	return DecodeNullableForData(frameIterator)
+	return DecodeListMultiFrameForData(frameIterator)
 }

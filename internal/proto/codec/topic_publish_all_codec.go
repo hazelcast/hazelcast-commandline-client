@@ -12,38 +12,35 @@
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and
 * limitations under the License.
-*/
+ */
 
 package codec
 
-import (    
-    iserialization "github.com/hazelcast/hazelcast-go-client"
-    proto "github.com/hazelcast/hazelcast-go-client"
+import (
+	iserialization "github.com/hazelcast/hazelcast-go-client"
+	proto "github.com/hazelcast/hazelcast-go-client"
 )
 
+const (
+	TopicPublishAllCodecRequestMessageType  = int32(0x040400)
+	TopicPublishAllCodecResponseMessageType = int32(0x040401)
 
-const(
-    TopicPublishAllCodecRequestMessageType  = int32(0x040400)
-    TopicPublishAllCodecResponseMessageType = int32(0x040401)
-
-    TopicPublishAllCodecRequestInitialFrameSize = proto.PartitionIDOffset + proto.IntSizeInBytes
-
+	TopicPublishAllCodecRequestInitialFrameSize = proto.PartitionIDOffset + proto.IntSizeInBytes
 )
 
 // Publishes all messages to all subscribers of this topic
 
 func EncodeTopicPublishAllRequest(name string, messages []iserialization.Data) *proto.ClientMessage {
-    clientMessage := proto.NewClientMessageForEncode()
-    clientMessage.SetRetryable(false)
+	clientMessage := proto.NewClientMessageForEncode()
+	clientMessage.SetRetryable(false)
 
-    initialFrame := proto.NewFrameWith(make([]byte, TopicPublishAllCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-    clientMessage.AddFrame(initialFrame)
-    clientMessage.SetMessageType(TopicPublishAllCodecRequestMessageType)
-    clientMessage.SetPartitionId(-1)
+	initialFrame := proto.NewFrameWith(make([]byte, TopicPublishAllCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
+	clientMessage.AddFrame(initialFrame)
+	clientMessage.SetMessageType(TopicPublishAllCodecRequestMessageType)
+	clientMessage.SetPartitionId(-1)
 
-    EncodeString(clientMessage, name)
-    EncodeListMultiFrameForData(clientMessage, messages)
+	EncodeString(clientMessage, name)
+	EncodeListMultiFrameForData(clientMessage, messages)
 
-    return clientMessage
+	return clientMessage
 }
-

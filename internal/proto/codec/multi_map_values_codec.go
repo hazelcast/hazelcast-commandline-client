@@ -22,34 +22,33 @@ import (
 )
 
 const (
-	ListContainsCodecRequestMessageType  = int32(0x050200)
-	ListContainsCodecResponseMessageType = int32(0x050201)
+	MultiMapValuesCodecRequestMessageType  = int32(0x020500)
+	MultiMapValuesCodecResponseMessageType = int32(0x020501)
 
-	ListContainsCodecRequestInitialFrameSize = proto.PartitionIDOffset + proto.IntSizeInBytes
-
-	ListContainsResponseResponseOffset = proto.ResponseBackupAcksOffset + proto.ByteSizeInBytes
+	MultiMapValuesCodecRequestInitialFrameSize = proto.PartitionIDOffset + proto.IntSizeInBytes
 )
 
-// Returns true if this list contains the specified element.
+// Returns the collection of values in the multimap.The collection is NOT backed by the map, so changes to the map
+// are NOT reflected in the collection, and vice-versa.
 
-func EncodeListContainsRequest(name string, value iserialization.Data) *proto.ClientMessage {
+func EncodeMultiMapValuesRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrameWith(make([]byte, ListContainsCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
+	initialFrame := proto.NewFrameWith(make([]byte, MultiMapValuesCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
-	clientMessage.SetMessageType(ListContainsCodecRequestMessageType)
+	clientMessage.SetMessageType(MultiMapValuesCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
 	EncodeString(clientMessage, name)
-	EncodeData(clientMessage, value)
 
 	return clientMessage
 }
 
-func DecodeListContainsResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeMultiMapValuesResponse(clientMessage *proto.ClientMessage) []*iserialization.Data {
 	frameIterator := clientMessage.FrameIterator()
-	initialFrame := frameIterator.Next()
+	// empty initial frame
+	frameIterator.Next()
 
-	return DecodeBoolean(initialFrame.Content, ListContainsResponseResponseOffset)
+	return DecodeListMultiFrameForData(frameIterator)
 }

@@ -12,47 +12,45 @@
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and
 * limitations under the License.
-*/
+ */
 
 package codec
 
-import (    
-    iserialization "github.com/hazelcast/hazelcast-go-client"
-    proto "github.com/hazelcast/hazelcast-go-client"
+import (
+	iserialization "github.com/hazelcast/hazelcast-go-client"
+	proto "github.com/hazelcast/hazelcast-go-client"
 )
 
+const (
+	ListSetCodecRequestMessageType  = int32(0x051000)
+	ListSetCodecResponseMessageType = int32(0x051001)
 
-const(
-    ListSetCodecRequestMessageType  = int32(0x051000)
-    ListSetCodecResponseMessageType = int32(0x051001)
-
-    ListSetCodecRequestIndexOffset = proto.PartitionIDOffset + proto.IntSizeInBytes
-    ListSetCodecRequestInitialFrameSize = ListSetCodecRequestIndexOffset + proto.IntSizeInBytes
-
+	ListSetCodecRequestIndexOffset      = proto.PartitionIDOffset + proto.IntSizeInBytes
+	ListSetCodecRequestInitialFrameSize = ListSetCodecRequestIndexOffset + proto.IntSizeInBytes
 )
 
 // The element previously at the specified position
 
 func EncodeListSetRequest(name string, index int32, value iserialization.Data) *proto.ClientMessage {
-    clientMessage := proto.NewClientMessageForEncode()
-    clientMessage.SetRetryable(false)
+	clientMessage := proto.NewClientMessageForEncode()
+	clientMessage.SetRetryable(false)
 
-    initialFrame := proto.NewFrameWith(make([]byte, ListSetCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-    EncodeInt(initialFrame.Content, ListSetCodecRequestIndexOffset, index)
-    clientMessage.AddFrame(initialFrame)
-    clientMessage.SetMessageType(ListSetCodecRequestMessageType)
-    clientMessage.SetPartitionId(-1)
+	initialFrame := proto.NewFrameWith(make([]byte, ListSetCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
+	EncodeInt(initialFrame.Content, ListSetCodecRequestIndexOffset, index)
+	clientMessage.AddFrame(initialFrame)
+	clientMessage.SetMessageType(ListSetCodecRequestMessageType)
+	clientMessage.SetPartitionId(-1)
 
-    EncodeString(clientMessage, name)
-    EncodeData(clientMessage, value)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, value)
 
-    return clientMessage
+	return clientMessage
 }
 
 func DecodeListSetResponse(clientMessage *proto.ClientMessage) iserialization.Data {
-    frameIterator := clientMessage.FrameIterator()
-    // empty initial frame
-    frameIterator.Next()
+	frameIterator := clientMessage.FrameIterator()
+	// empty initial frame
+	frameIterator.Next()
 
-    return DecodeNullableForData(frameIterator)
+	return DecodeNullableForData(frameIterator)
 }

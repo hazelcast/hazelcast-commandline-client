@@ -22,36 +22,37 @@ import (
 )
 
 const (
-	ListRemoveCodecRequestMessageType  = int32(0x050500)
-	ListRemoveCodecResponseMessageType = int32(0x050501)
+	MultiMapPutCodecRequestMessageType  = int32(0x020100)
+	MultiMapPutCodecResponseMessageType = int32(0x020101)
 
-	ListRemoveCodecRequestInitialFrameSize = proto.PartitionIDOffset + proto.IntSizeInBytes
+	MultiMapPutCodecRequestThreadIdOffset   = proto.PartitionIDOffset + proto.IntSizeInBytes
+	MultiMapPutCodecRequestInitialFrameSize = MultiMapPutCodecRequestThreadIdOffset + proto.LongSizeInBytes
 
-	ListRemoveResponseResponseOffset = proto.ResponseBackupAcksOffset + proto.ByteSizeInBytes
+	MultiMapPutResponseResponseOffset = proto.ResponseBackupAcksOffset + proto.ByteSizeInBytes
 )
 
-// Removes the first occurrence of the specified element from this list, if it is present (optional operation).
-// If this list does not contain the element, it is unchanged.
-// Returns true if this list contained the specified element (or equivalently, if this list changed as a result of the call).
+// Stores a key-value pair in the multimap.
 
-func EncodeListRemoveRequest(name string, value iserialization.Data) *proto.ClientMessage {
+func EncodeMultiMapPutRequest(name string, key iserialization.Data, value iserialization.Data, threadId int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrameWith(make([]byte, ListRemoveCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
+	initialFrame := proto.NewFrameWith(make([]byte, MultiMapPutCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
+	EncodeLong(initialFrame.Content, MultiMapPutCodecRequestThreadIdOffset, threadId)
 	clientMessage.AddFrame(initialFrame)
-	clientMessage.SetMessageType(ListRemoveCodecRequestMessageType)
+	clientMessage.SetMessageType(MultiMapPutCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
 	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, key)
 	EncodeData(clientMessage, value)
 
 	return clientMessage
 }
 
-func DecodeListRemoveResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeMultiMapPutResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return DecodeBoolean(initialFrame.Content, ListRemoveResponseResponseOffset)
+	return DecodeBoolean(initialFrame.Content, MultiMapPutResponseResponseOffset)
 }
