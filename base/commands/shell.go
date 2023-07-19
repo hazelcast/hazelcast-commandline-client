@@ -33,8 +33,11 @@ const banner = `Hazelcast CLC %s (c) 2023 Hazelcast Inc.
 
 `
 
-const newVersion = `A newer version of CLC is available!
-Click to read release notes and download: https://github.com/hazelcast/hazelcast-commandline-client/releases/%s
+const newVersionWarning = `
+A newer version of CLC is available.
+
+Visit the following link for release notes and to download:
+https://github.com/hazelcast/hazelcast-commandline-client/releases/%s
 
 `
 
