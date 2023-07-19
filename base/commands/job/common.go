@@ -104,7 +104,6 @@ func terminateJob(ctx context.Context, ec plug.ExecContext, name string, termina
 		return err
 	}
 	stop()
-	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	err = nil
 	if wait {
 		msg := fmt.Sprintf("Waiting for the operation to finish for job %s", nameOrID)
@@ -112,12 +111,12 @@ func terminateJob(ctx context.Context, ec plug.ExecContext, name string, termina
 		err = WaitJobState(ctx, ec, msg, nameOrID, waitState, 1*time.Second)
 	}
 	if err != nil {
-		if verbose {
+		if ec.Props().GetBool(clc.PropertyVerbose) {
 			ec.PrintlnUnnecessary(fmt.Sprintf("Job %sed: %s", name, idToString(jidv.(int64))))
 		}
-		return nil
+		return err
 	}
-	return err
+	return nil
 }
 
 func MakeJobNameIDMaps(jobList []control.JobAndSqlSummary) (jobNameToID map[string]int64, jobIDToInfo map[int64]control.JobAndSqlSummary) {
