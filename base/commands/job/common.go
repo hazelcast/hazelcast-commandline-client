@@ -65,7 +65,6 @@ func idToString(id int64) string {
 
 func terminateJob(ctx context.Context, ec plug.ExecContext, name string, terminateMode int32, text string, waitState int32) error {
 	nameOrID := ec.Args()[0]
-	wait := ec.Props().GetBool(flagWait)
 	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
 		return err
@@ -105,7 +104,7 @@ func terminateJob(ctx context.Context, ec plug.ExecContext, name string, termina
 	}
 	stop()
 	err = nil
-	if wait {
+	if ec.Props().GetBool(flagWait) {
 		msg := fmt.Sprintf("Waiting for the operation to finish for job %s", nameOrID)
 		ec.Logger().Info(msg)
 		err = WaitJobState(ctx, ec, msg, nameOrID, waitState, 1*time.Second)
