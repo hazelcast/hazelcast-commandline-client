@@ -6,10 +6,14 @@ import (
 	"strings"
 )
 
+const UnknownVersion = "UNKNOWN"
+const CustomBuildSuffix = "CUSTOMBUILD"
+
 // being initialized at compile-time.
 var (
-	GitCommit string
-	Version   = "0.0.0"
+	GitCommit      string
+	Version        = UnknownVersion
+	IsCheckVersion = "disabled"
 )
 
 // CheckVersion checks whether left OP right condition holds.

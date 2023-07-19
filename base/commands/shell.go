@@ -88,8 +88,8 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 			logLevel := strings.ToUpper(ec.Props().GetString(clc.PropertyLogLevel))
 			logText = fmt.Sprintf("Log %9s : %s", logLevel, logPath)
 		}
-		maybePrintNewerVersion(ec)
 		I2(fmt.Fprintf(ec.Stdout(), banner, internal.Version, cfgText, logText))
+		maybePrintNewerVersion(ec)
 	}
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	clcMultilineContinue := false
@@ -222,14 +222,29 @@ func convertStatement(stmt string) (string, error) {
 }
 
 func maybePrintNewerVersion(ec plug.ExecContext) {
+	if internal.IsCheckVersion == "disabled" {
+		fmt.Println("I am not checking version")
+		return
+	}
 	v, err := internal.LatestReleaseVersion()
 	if err != nil {
 		ec.Logger().Error(err)
 		return
 	}
-	if v != "" && internal.CheckVersion(strings.TrimPrefix(v, "v"), ">", internal.Version) {
-		I2(fmt.Fprintf(ec.Stdout(), newVersion, v))
+	if isSkipNewerVersion() {
+		return
 	}
+	if v != "" && internal.CheckVersion(trimVersion(v), ">", trimVersion(internal.Version)) {
+		I2(fmt.Fprintf(ec.Stdout(), newVersionWarning, v))
+	}
+}
+
+func isSkipNewerVersion() bool {
+	return internal.Version == internal.UnknownVersion || strings.Contains(internal.Version, internal.CustomBuildSuffix)
+}
+
+func trimVersion(v string) string {
+	return strings.TrimPrefix(strings.Split(v, "-")[0], "v")
 }
 
 func interactiveHelp() string {

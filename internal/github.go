@@ -7,10 +7,11 @@ import (
 	"net/http"
 )
 
-const latestRelease = "https://api.github.com/repos/hazelcast/hazelcast-commandline-client/releases/latest"
+const latestReleaseURL = "https://api.github.com/repos/hazelcast/hazelcast-commandline-client/releases"
 
+// LatestReleaseVersion returns the latest release version, except beta ones
 func LatestReleaseVersion() (string, error) {
-	resp, err := http.Get(latestRelease)
+	resp, err := http.Get(latestReleaseURL)
 	if err != nil {
 		return "", err
 	}
@@ -18,14 +19,21 @@ func LatestReleaseVersion() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	var data map[string]any
+	var data []map[string]any
 	err = json.Unmarshal(respData, &data)
 	if err != nil {
 		return "", err
 	}
-	if t, ok := data["tag_name"].(string); !ok {
-		return "", errors.New("fetching tag_name")
-	} else {
-		return t, nil
+	var release map[string]any
+	for _, d := range data {
+		if d["prerelease"].(bool) == false {
+			release = d
+			break
+		}
 	}
+	t, ok := release["tag_name"].(string)
+	if !ok {
+		return "", errors.New("fetching tag_name")
+	}
+	return t, nil
 }
