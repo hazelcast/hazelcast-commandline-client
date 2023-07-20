@@ -9,6 +9,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -39,7 +40,7 @@ func (mc *MapGetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		return err
 	}
 	req := codec.EncodeMapGetRequest(mapName, keyData, 0)
-	rv, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+	r, stop, err := cmd.ExecuteBlocking(ctx, ec, func(ctx context.Context, sp clc.Spinner) (*hazelcast.ClientMessage, error) {
 		sp.SetText(fmt.Sprintf("Getting from map %s", mapName))
 		return ci.InvokeOnKey(ctx, req, keyData, nil)
 	})
@@ -47,7 +48,7 @@ func (mc *MapGetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		return err
 	}
 	stop()
-	raw := codec.DecodeMapGetResponse(rv.(*hazelcast.ClientMessage))
+	raw := codec.DecodeMapGetResponse(r)
 	vt := raw.Type()
 	value, err := ci.DecodeData(raw)
 	if err != nil {
