@@ -11,9 +11,9 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/transport"
 )
 
-func cloneTemplate(tsDir string, t string) error {
-	u := templateRepoURL(t)
-	_, err := git.PlainClone(filepath.Join(tsDir, t), false, &git.CloneOptions{
+func cloneTemplate(baseDir string, name string) error {
+	u := templateRepoURL(name)
+	_, err := git.PlainClone(filepath.Join(baseDir, name), false, &git.CloneOptions{
 		URL:      u,
 		Progress: nil,
 		Depth:    1,
@@ -27,11 +27,11 @@ func cloneTemplate(tsDir string, t string) error {
 	return nil
 }
 
-func templateRepoURL(tName string) string {
+func templateRepoURL(templateName string) string {
 	u := os.Getenv(envTemplateSource)
 	if u == "" {
-		u = hzTemplatesRepository
+		u = hzTemplatesOrganization
 	}
 	u = strings.TrimSuffix(u, "/")
-	return fmt.Sprintf("%s/%s", u, tName)
+	return fmt.Sprintf("%s/%s", u, templateName)
 }

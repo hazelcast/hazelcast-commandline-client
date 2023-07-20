@@ -21,7 +21,7 @@ Usage:
 
 [source,bash]
 ----
-clc project create [template-name] [output-dir] [vars] [flags]
+clc project create [template-name] [output-dir] [placeholder-values] [flags]
 ----
 
 Parameters:
@@ -40,28 +40,32 @@ Parameters:
 |Name of the template.
 |
 
-|`vars`
+|`placeholder-values`
 |Optional
-|Variables can be defined to be used in templates as key-value pairs. Example: `key`=`value`
+|Template placeholder values can be specified as key-value pairs. You can use letters and numbers in keys. Example: `key`=`value`
 
 WARNING: keys cannot contain punctuation
 |
 |===
 
 === Creating and Using Your Own Templates
-Templates are located under https://github.com/hazelcast-templates  organization by default. You can override it by using `CLC_EXPERIMENTAL_TEMPLATE_SOURCE` environment variable.
+
+Templates are located in https://github.com/hazelcast-templates. You can override it by using `CLC_EXPERIMENTAL_TEMPLATE_SOURCE` environment variable.
 
 ==== Rules while creating your own templates:
+
 * Templates are in link:.https://pkg.go.dev/text/template[Go template] format.
-* You can create a `defaults.yaml` file for default values in template's root directory.
-* Template files must have the `.template` extension.
-* Files with `.` and `_` prefixes are ignored by default. If want to keep them you must add `.keep` extension to them.
+* You can create a "defaults.yaml" file for default values in template's root directory.
+* Template files must have the ".template" extension.
+* Files with "." and "_" prefixes are ignored unless they have the ".keep" extension.
+* All files with ".keep" extension are copied by stripping the ".keep" extension.
 * Other files are copied verbatim.
 
 ==== Properties are read from the following resources in order:
+
 1. `defaults.yaml` (keys cannot contain punctuation)
 2. `config.yaml`
-3. User passed key-values (keys cannot contain punctuation)
+3. User passed key-values in the "KEY=VALUE" format. The keys can only contain letters and numbers.
 
 You can use the placeholders in "defaults.yaml" and the following configuration item placeholders:
 
@@ -83,9 +87,8 @@ Example (Linux and MacOS):
 
 [source,bash]
 ----
-export CLC_EXPERIMENTAL_TEMPLATE_SOURCE=https://github.com/my-template-organization
 clc project create \
-simple-streaming-pipeline-template\
+simple-streaming-pipeline\
 my-project\
 MyKey1=MyValue1 MyKey2=MyValue2
 ----
@@ -94,9 +97,8 @@ Example (Windows):
 
 [source,bash]
 ----
-set CLC_EXPERIMENTAL_TEMPLATE_SOURCE=https://github.com/my-template-organization
 clc project create^
-simple-streaming-pipeline-template^
+simple-streaming-pipeline^
 my-project^
 MyKey1=MyValue1 MyKey2=MyValue2
 ----

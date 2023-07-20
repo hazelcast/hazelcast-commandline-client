@@ -78,3 +78,7 @@ func ToCamel(s string) string {
 func ToLowerCamel(s string) string {
 	return toCamelInitCase(s, false)
 }
+
+var uppercaseAcronym = map[string]string{
+	"ID": "id",
+}

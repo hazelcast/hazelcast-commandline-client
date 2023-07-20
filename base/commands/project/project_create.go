@@ -19,19 +19,17 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-const puncPattern = "[[:punct:]]+"
-
-var puncReg = regexp.MustCompile(puncPattern)
+var regexpValidKey = regexp.MustCompile(`^[[:alnum:]]+$`)
 
 type CreateCmd struct{}
 
 func (pc CreateCmd) Init(cc plug.InitContext) error {
 	cc.SetPositionalArgCount(2, math.MaxInt)
-	cc.SetCommandUsage("create [template-name] [output-dir] [flags]")
+	cc.SetCommandUsage("create [template-name] [output-dir] [placeholder-values] [flags]")
 	short := "(Beta) Create project from the given template"
-	long := fmt.Sprintf(` (Beta) Create project from the given template and project will be created to the given output-dir.
+	long := fmt.Sprintf(`(Beta) Create project from the given template.
 	
-Templates are located in the %s organization by default.
+Templates are located in %s.
 You can override it by using CLC_EXPERIMENTAL_TEMPLATE_SOURCE environment variable.
 
 Rules while creating your own templates:
@@ -40,15 +38,15 @@ Rules while creating your own templates:
 	  See: https://pkg.go.dev/text/template
 	* You can create a "defaults.yaml" file for default values in template's root directory.
 	* Template files must have the ".template" extension.
-	* Files with "." and "_" prefixes are ignored by default.
-	 If want to keep them you must add ".keep" extension to them.
+	* Files with "." and "_" prefixes are ignored unless they have the ".keep" extension.
+	* All files with ".keep" extension are copied by stripping the ".keep" extension.
 	* Other files are copied verbatim.
 
 Properties are read from the following resources in order:
 
 	1. defaults.yaml (keys cannot contain punctuation)
 	2. config.yaml
-	3. User passed key-values (keys cannot contain punctuation)
+	3. User passed key-values in the "KEY=VALUE" format. The keys can only contain letters and numbers.
 
 You can use the placeholders in "defaults.yaml" and the following configuration item placeholders:
 
@@ -68,21 +66,18 @@ You can use the placeholders in "defaults.yaml" and the following configuration 
 
 Example (Linux and MacOS):
 
-$ export CLC_EXPERIMENTAL_TEMPLATE_SOURCE=https://github.com/my-template-organization
 $ clc project create \
-	simple-streaming-pipeline-template\
+	simple-streaming-pipeline\
 	my-project\
 	MyKey1=MyValue1 MyKey2=MyValue2
 
 Example (Windows):
 
-
-> set CLC_EXPERIMENTAL_TEMPLATE_SOURCE=https://github.com/my-template-organization
 > clc project create^
-	simple-streaming-pipeline-template^
+	simple-streaming-pipeline^
 	my-project^
 	MyKey1=MyValue1 MyKey2=MyValue2
-`, hzTemplatesRepository)
+`, hzTemplatesOrganization)
 	cc.SetCommandHelp(long, short)
 	return nil
 }
@@ -93,7 +88,9 @@ func (pc CreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	templatesDir := paths.Templates()
 	templateExists := paths.Exists(filepath.Join(templatesDir, templateName))
 	if !templateExists {
-		ec.Logger().Info(fmt.Sprintf("template %s does not exist, cloning it into %s", templateName, templatesDir))
+		ec.Logger().Debug(func() string {
+			return fmt.Sprintf("template %s does not exist, cloning it into %s", templateName, templatesDir)
+		})
 		err := cloneTemplate(templatesDir, templateName)
 		if err != nil {
 			ec.Logger().Error(err)
@@ -112,19 +109,21 @@ func (pc CreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 }
 
 func createProject(ec plug.ExecContext, outputDir, templateName string) error {
-	sourceDir := paths.TemplatePath(templateName)
+	sourceDir := paths.ResolveTemplatePath(templateName)
 	vars, err := loadVars(ec, sourceDir)
 	if err != nil {
 		return err
 	}
-	ec.Logger().Info(fmt.Sprintf("available placeholders: %+v", reflect.ValueOf(vars).MapKeys()))
-	err = filepath.WalkDir(sourceDir, func(p string, d fs.DirEntry, err error) error {
+	ec.Logger().Debug(func() string {
+		return fmt.Sprintf("available placeholders: %+v", reflect.ValueOf(vars).MapKeys())
+	})
+	err = filepath.WalkDir(sourceDir, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		target := filepath.Join(outputDir, strings.Split(p, templateName)[1])
-		if d.IsDir() {
-			if isSkip(d) {
+		target := filepath.Join(outputDir, strings.Split(path, templateName)[1])
+		if entry.IsDir() {
+			if isSkip(entry) {
 				// skip dir and its subdirectories and files
 				return filepath.SkipDir
 			}
@@ -133,19 +132,19 @@ func createProject(ec plug.ExecContext, outputDir, templateName string) error {
 				return err
 			}
 		} else {
-			if isSkip(d) {
+			if isSkip(entry) {
 				// skip only current file
 				return nil
 			}
-			if hasTemplateExt(d) {
-				err = applyTemplateAndCopyToTarget(vars, p, target)
+			if hasTemplateExt(entry) {
+				err = applyTemplateAndCopyToTarget(vars, path, target)
 				if err != nil {
 					return err
 				}
 				return nil
 			}
 			// copy everything else
-			err = copyToTarget(p, target, hasKeepExt(d))
+			err = copyToTarget(path, target, hasKeepExt(entry))
 			if err != nil {
 				return err
 			}
@@ -166,7 +165,7 @@ func loadVars(ec plug.ExecContext, sourceDir string) (map[string]string, error) 
 		return nil, err
 	}
 	loadFromProps(ec, &vars)
-	err = loadFromUserInput(ec, &vars)
+	err = updatePropsWithUserInput(ec, &vars)
 	if err != nil {
 		return nil, err
 	}

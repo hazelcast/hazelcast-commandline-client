@@ -2,51 +2,44 @@ package project
 
 import (
 	"io"
-	"log"
 	"os"
-	"path/filepath"
-	"strings"
 	"text/template"
+
+	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 )
 
 func applyTemplateAndCopyToTarget(vars map[string]string, source, dest string) error {
-	destFile, err := os.Create(removeFileExt(dest))
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer destFile.Close()
-	tmpl, err := template.ParseFiles(source)
+	f, err := os.Create(paths.SplitExt(dest))
 	if err != nil {
 		return err
 	}
-	err = tmpl.Execute(destFile, vars)
+	defer f.Close()
+	t, err := template.ParseFiles(source)
 	if err != nil {
+		return err
+	}
+	if err = t.Execute(f, vars); err != nil {
 		return err
 	}
 	return nil
 }
 
-func copyToTarget(source string, dest string, removeExt bool) error {
-	sourceFile, err := os.Open(source)
+func copyToTarget(source, dest string, removeExt bool) error {
+	sf, err := os.Open(source)
 	if err != nil {
 		return err
 	}
-	defer sourceFile.Close()
+	defer sf.Close()
 	if removeExt {
-		dest = removeFileExt(dest)
+		dest = paths.SplitExt(dest)
 	}
-	destinationFile, err := os.Create(dest)
+	df, err := os.Create(dest)
 	if err != nil {
 		return err
 	}
-	defer destinationFile.Close()
-	_, err = io.Copy(destinationFile, sourceFile)
-	if err != nil {
+	defer df.Close()
+	if _, err = io.Copy(df, sf); err != nil {
 		return err
 	}
 	return nil
-}
-
-func removeFileExt(dest string) string {
-	return strings.TrimSuffix(dest, filepath.Ext(dest))
 }

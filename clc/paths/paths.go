@@ -47,7 +47,7 @@ func Templates() string {
 	return filepath.Join(Home(), "templates")
 }
 
-func TemplatePath(t string) string {
+func ResolveTemplatePath(t string) string {
 	return filepath.Join(Templates(), t)
 }
 
@@ -172,4 +172,8 @@ func nearbyConfigPath() string {
 		}
 	}
 	return ""
+}
+
+func SplitExt(dest string) string {
+	return strings.TrimSuffix(dest, filepath.Ext(dest))
 }
