@@ -7,9 +7,11 @@ import (
 	"net/http"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/secrets"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
@@ -21,8 +23,7 @@ const (
 )
 
 var (
-	ErrClusterFailed   = errors.New("cluster failed")
-	ErrClusterNotFound = errors.New("cluster not found")
+	ErrClusterFailed = errors.New("cluster failed")
 )
 
 func findToken(apiKey string) (string, error) {
@@ -48,10 +49,77 @@ func findToken(apiKey string) (string, error) {
 			break
 		}
 	}
+	token := strings.Split(tp, "-")[1]
+	expired, err := isTokenExpired(token)
+	if err != nil {
+		return "", err
+	}
+	if expired {
+		refreshTokenFile, err := paths.FindAll(paths.Join(paths.Secrets(), secretPrefix), func(basePath string, entry os.DirEntry) (ok bool) {
+			return !entry.IsDir() && strings.Contains(entry.Name(), "refresh") && strings.Contains(entry.Name(), token)
+		})
+		if err != nil {
+			return "", err
+		}
+		api := viridian.API{}
+		refreshToken, err := secrets.Read(secretPrefix, refreshTokenFile[0])
+		if err != nil {
+			return "", err
+		}
+		refresh, err := api.RefreshAccessToken(context.Background(), string(refreshToken))
+		if err != nil {
+			return "", err
+		}
+		if err = secrets.Write(secretPrefix, tp, []byte(refresh.AccessToken)); err != nil {
+			return "", err
+		}
+		if err = secrets.Write(secretPrefix, refreshTokenFile[0], []byte(refresh.RefreshToken)); err != nil {
+			return "", err
+		}
+		// update expiry file's date
+		expiryFile, err := paths.FindAll(paths.Join(paths.Secrets(), secretPrefix), func(basePath string, entry os.DirEntry) (ok bool) {
+			return !entry.IsDir() && strings.Contains(entry.Name(), "expiry") && strings.Contains(entry.Name(), token)
+		})
+		if err != nil {
+			return "", err
+		}
+		expiresInFile := fmt.Sprintf(fmt.Sprintf("%s-expiry-%s-%d", viridian.APIClass(), token, time.Now().Unix()))
+		err = os.Rename(paths.Join(paths.Secrets(), secretPrefix, expiryFile[0]), paths.Join(paths.Secrets(), secretPrefix, expiresInFile))
+		if err != nil {
+			return "", err
+		}
+	}
 	if tp == "" {
 		return "", fmt.Errorf("no secrets found, did you login?")
 	}
 	return tp, nil
+}
+
+func isTokenExpired(token string) (bool, error) {
+	expiryFile, err := paths.FindAll(paths.Join(paths.Secrets(), secretPrefix), func(basePath string, entry os.DirEntry) (ok bool) {
+		return !entry.IsDir() && strings.Contains(entry.Name(), "expiry") && strings.Contains(entry.Name(), token)
+	})
+	if err != nil {
+		return false, err
+	}
+	expiry, err := secrets.Read(secretPrefix, expiryFile[0])
+	if err != nil {
+		return false, err
+	}
+	expiryDuration, err := strconv.Atoi(string(expiry))
+	if err != nil {
+		return false, err
+	}
+	ts := strings.Split(expiryFile[0], "-")[len(strings.Split(expiryFile[0], "-"))-1]
+	i, err := strconv.ParseInt(ts, 10, 64)
+	if err != nil {
+		return false, err
+	}
+	t := time.Unix(i, 0)
+	if t.Add(time.Second * time.Duration(expiryDuration)).After(time.Now()) {
+		return false, nil
+	}
+	return true, nil
 }
 
 func getAPI(ec plug.ExecContext) (*viridian.API, error) {

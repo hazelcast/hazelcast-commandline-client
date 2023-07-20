@@ -25,7 +25,9 @@ type Wrapper[T any] struct {
 }
 
 type API struct {
-	token string
+	token        string
+	expiresIn    int
+	refreshToken string
 }
 
 func NewAPI(token string) *API {
@@ -34,6 +36,32 @@ func NewAPI(token string) *API {
 
 func (a API) Token() string {
 	return a.token
+}
+
+func (a API) RefreshToken() string {
+	return a.refreshToken
+}
+
+func (a API) ExpiresIn() int {
+	return a.expiresIn
+}
+
+type refreshTokenRequest struct {
+	RefreshToken string `json:"refreshToken"`
+}
+
+type RefreshTokenResponse struct {
+	AccessToken  string `json:"accessToken"`
+	RefreshToken string `json:"refreshToken"`
+}
+
+func (a API) RefreshAccessToken(ctx context.Context, refreshToken string) (RefreshTokenResponse, error) {
+	r := refreshTokenRequest{RefreshToken: refreshToken}
+	resp, err := doPost[refreshTokenRequest, RefreshTokenResponse](ctx, "/customers/api/token/refresh", "", r)
+	if err != nil {
+		return RefreshTokenResponse{}, fmt.Errorf("refreshing token: %w", err)
+	}
+	return resp, nil
 }
 
 func (a API) ListAvailableK8sClusters(ctx context.Context) ([]K8sCluster, error) {

@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
@@ -47,11 +49,11 @@ func (cm LoginCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		return err
 	}
-	token, err := cm.retrieveToken(ctx, ec, key, secret)
+	api, err := cm.retrieveAPI(ctx, ec, key, secret)
 	if err != nil {
 		return err
 	}
-	if err = cm.saveSecrets(ctx, key, token); err != nil {
+	if err = cm.saveSecrets(ctx, key, api); err != nil {
 		return err
 	}
 	ec.PrintlnUnnecessary("")
@@ -59,31 +61,48 @@ func (cm LoginCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	return nil
 }
 
-func (cm LoginCmd) retrieveToken(ctx context.Context, ec plug.ExecContext, key, secret string) (string, error) {
+func (cm LoginCmd) retrieveAPI(ctx context.Context, ec plug.ExecContext, key, secret string) (viridian.API, error) {
 	ti, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Logging in")
 		api, err := viridian.Login(ctx, key, secret)
 		if err != nil {
 			return nil, err
 		}
-		return api.Token(), err
+		return api, err
 	})
 	if err != nil {
-		return "", handleErrorResponse(ec, err)
+		return viridian.API{}, handleErrorResponse(ec, err)
 	}
 	stop()
-	return ti.(string), nil
+	return ti.(viridian.API), nil
 }
 
-func (cm LoginCmd) saveSecrets(ctx context.Context, key, token string) error {
-	key = fmt.Sprintf("%s-%s", viridian.APIClass(), key)
+func (cm LoginCmd) saveSecrets(ctx context.Context, key string, api viridian.API) error {
+	tokenFile := fmt.Sprintf("%s-%s", viridian.APIClass(), key)
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	refreshTokenFile := fmt.Sprintf("%s-refresh-%s", viridian.APIClass(), key)
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	expiresInFile := fmt.Sprintf(fmt.Sprintf("%s-expiry-%s-%d", viridian.APIClass(), key, time.Now().Unix()))
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
 	if err := os.MkdirAll(paths.Secrets(), 0700); err != nil {
 		return fmt.Errorf("creating secrets directory: %w", err)
 	}
-	return secrets.Write(secretPrefix, key, []byte(token))
+	if err := secrets.Write(secretPrefix, tokenFile, []byte(api.Token())); err != nil {
+		return err
+	}
+	if err := secrets.Write(secretPrefix, refreshTokenFile, []byte(api.RefreshToken())); err != nil {
+		return err
+	}
+	if err := secrets.Write(secretPrefix, expiresInFile, []byte(strconv.Itoa(api.ExpiresIn()))); err != nil {
+		return err
+	}
+	return nil
 }
 
 func apiKeySecret(ec plug.ExecContext) (key, secret string, err error) {

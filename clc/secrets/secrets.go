@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 )
@@ -38,6 +39,8 @@ func Read(prefix, name string) ([]byte, error) {
 
 func FindAll(prefix string) ([]string, error) {
 	return paths.FindAll(paths.Join(paths.Secrets(), prefix), func(basePath string, entry os.DirEntry) (ok bool) {
-		return !entry.IsDir()
+		return !entry.IsDir() &&
+			!strings.Contains(entry.Name(), "expiry") &&
+			!strings.Contains(entry.Name(), "refresh")
 	})
 }
