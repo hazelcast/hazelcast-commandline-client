@@ -2,10 +2,13 @@ package job
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/types"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/jet"
@@ -60,89 +63,89 @@ func idToString(id int64) string {
 	return string(buf[:])
 }
 
-func terminateJob(ctx context.Context, ec plug.ExecContext, jobID int64, nameOrID string, terminateMode int32, text string, waitState int32) error {
-	wait := ec.Props().GetBool(flagWait)
+func terminateJob(ctx context.Context, ec plug.ExecContext, name string, terminateMode int32, text string, waitState int32) error {
+	nameOrID := ec.Args()[0]
 	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
 		return err
 	}
-	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+	jidv, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText(fmt.Sprintf("%s %s", text, nameOrID))
-		ec.Logger().Info("%s %s (%s)", text, nameOrID, idToString(jobID))
 		j := jet.New(ci, sp, ec.Logger())
-		return nil, j.TerminateJob(ctx, jobID, terminateMode)
+		jis, err := j.GetJobList(ctx)
+		if err != nil {
+			return nil, err
+		}
+		jm, err := NewJobNameToIDMap(jis)
+		if err != nil {
+			return nil, err
+		}
+		jid, ok := jm.GetIDForName(nameOrID)
+		if !ok {
+			return nil, jet.ErrInvalidJobID
+		}
+		ec.Logger().Info("%s %s (%s)", text, nameOrID, idToString(jid))
+		ji, ok := jm.GetInfoForID(jid)
+		if !ok {
+			return nil, jet.ErrInvalidJobID
+		}
+		var coord types.UUID
+		if ji.LightJob {
+			conns := ci.ConnectionManager().ActiveConnections()
+			if len(conns) == 0 {
+				return nil, errors.New("not connected")
+			}
+			coord = conns[0].MemberUUID()
+		}
+		return jid, j.TerminateJob(ctx, jid, terminateMode, coord)
 	})
 	if err != nil {
 		return err
 	}
 	stop()
-	if wait {
+	err = nil
+	if ec.Props().GetBool(flagWait) {
 		msg := fmt.Sprintf("Waiting for the operation to finish for job %s", nameOrID)
 		ec.Logger().Info(msg)
 		err = WaitJobState(ctx, ec, msg, nameOrID, waitState, 1*time.Second)
-		if err != nil {
-			return err
+	}
+	if err != nil {
+		if ec.Props().GetBool(clc.PropertyVerbose) {
+			ec.PrintlnUnnecessary(fmt.Sprintf("Job %sed: %s", name, idToString(jidv.(int64))))
 		}
+		return err
 	}
 	return nil
 }
 
-func MakeJobNameIDMaps(jobList []control.JobAndSqlSummary) (jobNameToID map[string]int64, idToJobName map[int64]string) {
+func MakeJobNameIDMaps(jobList []control.JobAndSqlSummary) (jobNameToID map[string]int64, jobIDToInfo map[int64]control.JobAndSqlSummary) {
 	jobNameToID = make(map[string]int64, len(jobList))
-	idToJobName = make(map[int64]string, len(jobList))
+	jobIDToInfo = make(map[int64]control.JobAndSqlSummary, len(jobList))
 	for _, j := range jobList {
-		idToJobName[j.JobId] = j.NameOrId
+		jobIDToInfo[j.JobId] = j
 		if j.Status == jet.JobStatusFailed || j.Status == jet.JobStatusCompleted {
 			continue
 		}
 		jobNameToID[j.NameOrId] = j.JobId
 
 	}
-	return jobNameToID, idToJobName
+	return jobNameToID, jobIDToInfo
 }
 
-type JobNameToIDMap struct {
+type JobsInfo struct {
 	nameToID map[string]int64
-	IDToName map[int64]string
+	IDToInfo map[int64]control.JobAndSqlSummary
 }
 
-func NewJobNameToIDMap(ctx context.Context, ec plug.ExecContext, forceLoadJobList bool) (*JobNameToIDMap, error) {
-	hasJobName := false
-	for _, arg := range ec.Args() {
-		if _, err := stringToID(arg); err != nil {
-			hasJobName = true
-			break
-		}
-	}
-	if !hasJobName && !forceLoadJobList {
-		// relies on m.GetIDForName returning the numeric jobID
-		// if s is a UUID
-		return &JobNameToIDMap{
-			nameToID: map[string]int64{},
-			IDToName: map[int64]string{},
-		}, nil
-	}
-	ci, err := ec.ClientInternal(ctx)
-	if err != nil {
-		return nil, err
-	}
-	jl, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText("Getting job list")
-		j := jet.New(ci, sp, ec.Logger())
-		return j.GetJobList(ctx)
-	})
-	if err != nil {
-		return nil, err
-	}
-	stop()
-	n2i, i2j := MakeJobNameIDMaps(jl.([]control.JobAndSqlSummary))
-	return &JobNameToIDMap{
+func NewJobNameToIDMap(jobs []control.JobAndSqlSummary) (*JobsInfo, error) {
+	n2i, i2j := MakeJobNameIDMaps(jobs)
+	return &JobsInfo{
 		nameToID: n2i,
-		IDToName: i2j,
+		IDToInfo: i2j,
 	}, nil
 }
 
-func (m JobNameToIDMap) GetIDForName(idOrName string) (int64, bool) {
+func (m JobsInfo) GetIDForName(idOrName string) (int64, bool) {
 	id, err := stringToID(idOrName)
 	// note that comparing err to nil
 	if err == nil {
@@ -152,8 +155,8 @@ func (m JobNameToIDMap) GetIDForName(idOrName string) (int64, bool) {
 	return v, ok
 }
 
-func (m JobNameToIDMap) GetNameForID(id int64) (string, bool) {
-	v, ok := m.IDToName[id]
+func (m JobsInfo) GetInfoForID(id int64) (control.JobAndSqlSummary, bool) {
+	v, ok := m.IDToInfo[id]
 	return v, ok
 }
 
