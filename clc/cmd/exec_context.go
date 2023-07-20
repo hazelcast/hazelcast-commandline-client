@@ -282,6 +282,17 @@ func (ec *ExecContext) ensurePrinter() error {
 	return nil
 }
 
+// ExecuteBlocking runs the given blocking function.
+// It displays a spinner in the interactive mode after a timeout.
+// The returned stop function must be called at least once to prevent leaks if there's no error.
+// Calling returned stop more than once has no effect.
+func ExecuteBlocking[T any](ctx context.Context, ec plug.ExecContext, f func(context.Context, clc.Spinner) (T, error)) (value T, stop context.CancelFunc, err error) {
+	v, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		return f(ctx, sp)
+	})
+	return v.(T), stop, err
+}
+
 func makeErrorStringFromHTTPResponse(text string) string {
 	m := map[string]any{}
 	if err := json.Unmarshal([]byte(text), &m); err != nil {
