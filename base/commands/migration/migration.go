@@ -3,28 +3,16 @@
 package migration
 
 import (
-	"context"
-
-	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-type Cmd struct{}
+type Initializer struct{}
 
-func (cm Cmd) Init(cc plug.InitContext) error {
-	cc.SetTopLevel(true)
-	cc.SetCommandUsage("migration [command]")
-	help := "Data migration operations"
-	cc.SetCommandHelp(help, help)
+func (Initializer) Init(cc plug.InitContext) error {
 	cc.AddCommandGroup("migration", "Data Migration")
-	cc.SetCommandGroup("migration")
-	return nil
-}
-
-func (cm Cmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	return nil
 }
 
 func init() {
-	check.Must(plug.Registry.RegisterCommand("migration", &Cmd{}))
+	plug.Registry.RegisterGlobalInitializer("01-migration", &Initializer{})
 }
