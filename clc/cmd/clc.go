@@ -26,6 +26,8 @@ import (
 )
 
 var (
+	MainCommandShortHelp = "Hazelcast CLC"
+	MainCommandLongHelp  = "Hazelcast CLC"
 	// client is currently global in order to have a single client.
 	// This is bad.
 	// TODO: make the client unique without making it global.
@@ -62,8 +64,8 @@ type Main struct {
 func NewMain(arg0, cfgPath string, cfgProvider config.Provider, logPath, logLevel string, sio clc.IO) (*Main, error) {
 	rc := &cobra.Command{
 		Use:               arg0,
-		Short:             "Hazelcast CLC",
-		Long:              "Hazelcast CLC",
+		Short:             MainCommandShortHelp,
+		Long:              MainCommandShortHelp,
 		Args:              cobra.NoArgs,
 		CompletionOptions: cobra.CompletionOptions{DisableDescriptions: true},
 		SilenceErrors:     true,
