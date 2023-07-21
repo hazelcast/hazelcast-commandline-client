@@ -5,11 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strconv"
-	"time"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/secrets"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -20,8 +17,6 @@ import (
 const (
 	propAPIKey    = "api-key"
 	propAPISecret = "api-secret"
-	propEmail     = "email"
-	propPassword  = "password"
 	secretPrefix  = "viridian"
 )
 
@@ -49,11 +44,11 @@ func (cm LoginCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		return err
 	}
-	api, err := cm.retrieveAPI(ctx, ec, key, secret)
+	api, err := cm.retrieveTokens(ctx, ec, key, secret)
 	if err != nil {
 		return err
 	}
-	if err = cm.saveSecrets(ctx, key, api); err != nil {
+	if err = secrets.Save(secretPrefix, key, api.Token(), api.RefreshToken(), api.ExpiresIn()); err != nil {
 		return err
 	}
 	ec.PrintlnUnnecessary("")
@@ -61,7 +56,7 @@ func (cm LoginCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	return nil
 }
 
-func (cm LoginCmd) retrieveAPI(ctx context.Context, ec plug.ExecContext, key, secret string) (viridian.API, error) {
+func (cm LoginCmd) retrieveTokens(ctx context.Context, ec plug.ExecContext, key, secret string) (viridian.API, error) {
 	ti, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Logging in")
 		api, err := viridian.Login(ctx, key, secret)
@@ -75,34 +70,6 @@ func (cm LoginCmd) retrieveAPI(ctx context.Context, ec plug.ExecContext, key, se
 	}
 	stop()
 	return ti.(viridian.API), nil
-}
-
-func (cm LoginCmd) saveSecrets(ctx context.Context, key string, api viridian.API) error {
-	tokenFile := fmt.Sprintf("%s-%s", viridian.APIClass(), key)
-	if ctx.Err() != nil {
-		return ctx.Err()
-	}
-	refreshTokenFile := fmt.Sprintf("%s-refresh-%s", viridian.APIClass(), key)
-	if ctx.Err() != nil {
-		return ctx.Err()
-	}
-	expiresInFile := fmt.Sprintf(fmt.Sprintf("%s-expiry-%s-%d", viridian.APIClass(), key, time.Now().Unix()))
-	if ctx.Err() != nil {
-		return ctx.Err()
-	}
-	if err := os.MkdirAll(paths.Secrets(), 0700); err != nil {
-		return fmt.Errorf("creating secrets directory: %w", err)
-	}
-	if err := secrets.Write(secretPrefix, tokenFile, []byte(api.Token())); err != nil {
-		return err
-	}
-	if err := secrets.Write(secretPrefix, refreshTokenFile, []byte(api.RefreshToken())); err != nil {
-		return err
-	}
-	if err := secrets.Write(secretPrefix, expiresInFile, []byte(strconv.Itoa(api.ExpiresIn()))); err != nil {
-		return err
-	}
-	return nil
 }
 
 func apiKeySecret(ec plug.ExecContext) (key, secret string, err error) {
