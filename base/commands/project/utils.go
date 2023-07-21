@@ -52,6 +52,9 @@ func camelizeMapKeys(m *map[string]string) {
 func updatePropsWithUserInput(ec plug.ExecContext, props *map[string]string) error {
 	for _, arg := range ec.Args() {
 		k, v := str.ParseKeyValue(arg)
+		if k == "" {
+			continue
+		}
 		if !regexpValidKey.MatchString(k) {
 			return fmt.Errorf("invalid key: %s, only letters and numbers are allowed", k)
 		}
@@ -95,7 +98,7 @@ func parseYAML(prefix string, yamlFile []byte, result *map[string]string) error 
 		return err
 	}
 	for k, v := range parsedData {
-		if regexpValidKey.MatchString(k) {
+		if !regexpValidKey.MatchString(k) {
 			return fmt.Errorf("%s contains special chars", k)
 		}
 		fullKey := joinKeys(prefix, k)
