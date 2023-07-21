@@ -24,7 +24,8 @@ var (
 	ErrClusterFailed = errors.New("cluster failed")
 )
 
-func findToken(apiKey string) (string, error) {
+func findToken(ec plug.ExecContext) (string, error) {
+	apiKey := ec.Props().GetString(propAPIKey)
 	ac := viridian.APIClass()
 	if apiKey == "" {
 		apiKey = os.Getenv(viridian.EnvAPIKey)
@@ -47,27 +48,28 @@ func findToken(apiKey string) (string, error) {
 			break
 		}
 	}
-	if err = secrets.RefreshTokenIfExpired(secretPrefix, tp); err != nil {
-		return "", err
-	}
 	if tp == "" {
 		return "", fmt.Errorf("no secrets found, did you login?")
 	}
-	return tp, nil
-}
-
-func getAPI(ec plug.ExecContext) (*viridian.API, error) {
-	tp, err := findToken(ec.Props().GetString(propAPIKey))
-	if err != nil {
-		return nil, err
+	if err = secrets.RefreshTokenIfExpired(secretPrefix, tp); err != nil {
+		return "", err
 	}
 	ec.Logger().Info("Using Viridian secret at: %s", tp)
 	token, err := secrets.Read(secretPrefix, tp)
 	if err != nil {
 		ec.Logger().Error(err)
-		return nil, fmt.Errorf("could not load Viridian secrets, did you login?")
+		return "", fmt.Errorf("could not load Viridian secrets, did you login?")
 	}
-	return viridian.NewAPI(string(token)), nil
+	secrets.FindRefreshToken(secretPrefix, apiKey)
+	return string(token), nil
+}
+
+func getAPI(ec plug.ExecContext) (*viridian.API, error) {
+	token, err := findToken(ec)
+	if err != nil {
+		return nil, err
+	}
+	return viridian.NewAPI(token), nil
 }
 
 func waitClusterState(ctx context.Context, ec plug.ExecContext, api *viridian.API, clusterIDOrName, state string) error {
