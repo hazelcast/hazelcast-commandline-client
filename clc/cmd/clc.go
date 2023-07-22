@@ -27,7 +27,6 @@ import (
 
 var (
 	MainCommandShortHelp = "Hazelcast CLC"
-	MainCommandLongHelp  = "Hazelcast CLC"
 	// client is currently global in order to have a single client.
 	// This is bad.
 	// TODO: make the client unique without making it global.
