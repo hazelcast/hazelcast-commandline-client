@@ -84,7 +84,7 @@ func findAccessTokenFile(ec plug.ExecContext, secretPrefix, propAPIKey string) (
 
 func findAllAccessTokenFiles(prefix string) ([]string, error) {
 	return paths.FindAll(paths.Join(paths.Secrets(), prefix), func(basePath string, entry os.DirEntry) (ok bool) {
-		return !entry.IsDir() && filepath.Ext(entry.Name()) == ".access"
+		return !entry.IsDir() && filepath.Ext(entry.Name()) == filepath.Ext(accessTokenFileFormat)
 	})
 }
 
@@ -135,7 +135,9 @@ func refreshTokenIfExpired(secretPrefix, accessTokenFileName string) error {
 }
 
 func findAPIKey(accessTokenFileName string) string {
-	return strings.TrimPrefix(strings.TrimSuffix(accessTokenFileName, ".access"), "api-")
+	pre := fmt.Sprintf("%s-", viridian.APIClass())
+	ext := fmt.Sprintf(".%s", filepath.Ext(accessTokenFileFormat))
+	return strings.TrimPrefix(strings.TrimSuffix(accessTokenFileName, ext), pre)
 }
 
 func isTokenExpired(secretPrefix, expiryFileName string) (bool, error) {
