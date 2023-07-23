@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hazelcast/hazelcast-commandline-client/clc/secrets"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
@@ -23,11 +22,11 @@ var (
 )
 
 func getAPI(ec plug.ExecContext) (*viridian.API, error) {
-	t, err := secrets.FindTokens(ec, secretPrefix, propAPIKey)
+	t, err := FindTokens(ec, secretPrefix, propAPIKey)
 	if err != nil {
 		return nil, err
 	}
-	return viridian.NewAPI(t.Token, t.RefreshToken, t.ExpiresIn), nil
+	return viridian.NewAPI(secretPrefix, t.Key, t.Token, t.RefreshToken, t.ExpiresIn), nil
 }
 
 func waitClusterState(ctx context.Context, ec plug.ExecContext, api *viridian.API, clusterIDOrName, state string) error {

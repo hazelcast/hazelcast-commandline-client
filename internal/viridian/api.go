@@ -10,6 +10,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/hazelcast/hazelcast-commandline-client/clc/secrets"
 )
 
 const (
@@ -25,13 +27,17 @@ type Wrapper[T any] struct {
 }
 
 type API struct {
+	Key          string
+	SecretPrefix string
 	Token        string
 	RefreshToken string
 	ExpiresIn    int
 }
 
-func NewAPI(token, refreshToken string, expiresIn int) *API {
+func NewAPI(secretPrefix, key, token, refreshToken string, expiresIn int) *API {
 	return &API{
+		SecretPrefix: secretPrefix,
+		Key:          key,
 		Token:        token,
 		RefreshToken: refreshToken,
 		ExpiresIn:    expiresIn,
@@ -47,14 +53,18 @@ type RefreshTokenResponse struct {
 	RefreshToken string `json:"refreshToken"`
 }
 
-func (a API) RefreshAccessToken(ctx context.Context) (RefreshTokenResponse, error) {
+func (a *API) RefreshAccessToken(ctx context.Context) (RefreshTokenResponse, error) {
 	r := refreshTokenRequest{RefreshToken: a.RefreshToken}
-	resp, err := doPost[refreshTokenRequest, RefreshTokenResponse](ctx, "/customers/api/token/refresh", a, r, false)
+	resp, err := doPost[refreshTokenRequest, RefreshTokenResponse](ctx, "/customers/api/token/refresh", *a, r, false)
 	if err != nil {
 		return RefreshTokenResponse{}, fmt.Errorf("refreshing token: %w", err)
 	}
 	a.Token = resp.AccessToken
 	a.RefreshToken = resp.RefreshToken
+	err = secrets.Save(a.SecretPrefix, a.Key, APIClass(), a.Token, a.RefreshToken, a.ExpiresIn)
+	if err != nil {
+		return RefreshTokenResponse{}, err
+	}
 	return resp, nil
 }
 

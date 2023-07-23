@@ -48,7 +48,7 @@ func (cm LoginCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		return err
 	}
-	if err = secrets.Save(secretPrefix, key, api.Token, api.RefreshToken, api.ExpiresIn); err != nil {
+	if err = secrets.Save(secretPrefix, viridian.APIClass(), key, api.Token, api.RefreshToken, api.ExpiresIn); err != nil {
 		return err
 	}
 	ec.PrintlnUnnecessary("")
