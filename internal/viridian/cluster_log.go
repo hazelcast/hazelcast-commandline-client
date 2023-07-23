@@ -16,7 +16,7 @@ func (a API) DownloadClusterLogs(ctx context.Context, destDir string, idOrName s
 	if err != nil {
 		return err
 	}
-	zipPath, stop, err := download(ctx, makeUrl(fmt.Sprintf("/cluster/%s/logs", c.ID)), a.token)
+	zipPath, stop, err := download(ctx, makeUrl(fmt.Sprintf("/cluster/%s/logs", c.ID)), a, true)
 	if err != nil {
 		return err
 	}

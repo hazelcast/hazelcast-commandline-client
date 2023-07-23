@@ -28,12 +28,12 @@ func Login(ctx context.Context, key, secret string) (API, error) {
 		APIKey:    key,
 		APISecret: secret,
 	}
-	resp, err := doPost[loginRequest, loginResponse](ctx, "/customers/api/login", "", c)
+	resp, err := doPost[loginRequest, loginResponse](ctx, "/customers/api/login", api, c, false)
 	if err != nil {
 		return api, err
 	}
-	api.token = resp.Token
-	api.expiresIn = resp.ExpiresIn
-	api.refreshToken = resp.RefreshToken
+	api.Token = resp.Token
+	api.ExpiresIn = resp.ExpiresIn
+	api.RefreshToken = resp.RefreshToken
 	return api, nil
 }
