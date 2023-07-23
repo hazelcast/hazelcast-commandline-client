@@ -1,21 +1,18 @@
 package secrets
 
 import (
-	"context"
 	"encoding/base64"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
-	"time"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
 const (
-	tokenFileFormat        = "%s-%s.access"
+	accessTokenFileFormat  = "%s-%s.access"
 	refreshTokenFileFormat = "%s-%s.refresh"
 	expiresInFileFormat    = "%s-%s.expiry"
 )
@@ -47,105 +44,48 @@ func Read(prefix, name string) ([]byte, error) {
 	return b[:n], nil
 }
 
-func FindAllAccessTokens(prefix string) ([]string, error) {
-	return paths.FindAll(paths.Join(paths.Secrets(), prefix), func(basePath string, entry os.DirEntry) (ok bool) {
-		return !entry.IsDir() &&
-			!strings.Contains(entry.Name(), "expiry") &&
-			!strings.Contains(entry.Name(), "refresh")
-	})
-}
-
-func FindRefreshToken(prefix, apiKey string) ([]string, error) {
-	return paths.FindAll(paths.Join(paths.Secrets(), prefix), func(basePath string, entry os.DirEntry) (ok bool) {
-		return !entry.IsDir() && strings.Contains(entry.Name(), "refresh") && strings.Contains(entry.Name(), apiKey)
-	})
-}
-
 func Save(secretPrefix, key, token, refreshToken string, expiresIn int) error {
-	tokenFileName := fmt.Sprintf(tokenFileFormat, viridian.APIClass(), key)
-	refreshTokenFileName := fmt.Sprintf(refreshTokenFileFormat, viridian.APIClass(), key)
-	expiresInFileName := fmt.Sprintf(fmt.Sprintf(expiresInFileFormat, viridian.APIClass(), key))
 	if err := os.MkdirAll(paths.Secrets(), 0700); err != nil {
 		return fmt.Errorf("creating secrets directory: %w", err)
 	}
-	if err := Write(secretPrefix, tokenFileName, []byte(token)); err != nil {
+	if err := saveToken(secretPrefix, key, token); err != nil {
 		return err
 	}
-	if err := Write(secretPrefix, refreshTokenFileName, []byte(refreshToken)); err != nil {
+	if err := saveRefreshToken(secretPrefix, key, refreshToken); err != nil {
 		return err
 	}
-	path := paths.ResolveSecretPath(secretPrefix, expiresInFileName)
-	ts := strconv.FormatInt(time.Now().Unix(), 10)
+	if err := saveExpiry(secretPrefix, key, expiresIn); err != nil {
+		return err
+	}
+	return nil
+}
+
+func saveToken(secretPrefix, key, token string) error {
+	fn := fmt.Sprintf(accessTokenFileFormat, viridian.APIClass(), key)
+	if err := Write(secretPrefix, fn, []byte(token)); err != nil {
+		return err
+	}
+	return nil
+}
+
+func saveRefreshToken(secretPrefix, key, refreshToken string) error {
+	fn := fmt.Sprintf(refreshTokenFileFormat, viridian.APIClass(), key)
+	if err := Write(secretPrefix, fn, []byte(refreshToken)); err != nil {
+		return err
+	}
+	return nil
+}
+
+func saveExpiry(secretPrefix, key string, expiresIn int) error {
+	fn := fmt.Sprintf(fmt.Sprintf(expiresInFileFormat, viridian.APIClass(), key))
+	path := paths.ResolveSecretPath(secretPrefix, fn)
+	ts := strconv.FormatInt(calcExpiry(expiresIn), 10)
 	ex := strconv.Itoa(expiresIn)
-	if err := os.WriteFile(path, []byte(strings.Join([]string{ts, ex}, "-")), 0600); err != nil {
+	// We have to save to this file in (expireTime + expireDuration)-expireDuration format,
+	// Because Viridian refresh token endpoint does not return expiryDuration
+	// On Viridian expiryDuration is related to api key
+	if err := os.WriteFile(path, []byte(fmt.Sprintf("%s-%s", ts, ex)), 0600); err != nil {
 		return fmt.Errorf("writing the expires in to file: %w", err)
 	}
 	return nil
-}
-
-func RefreshTokenIfExpired(secretPrefix, tokenFileName string) error {
-	s := strings.TrimPrefix(tokenFileName, "api-")
-	apiKey := strings.TrimSuffix(s, ".access")
-	expiryFile := fmt.Sprintf("api-%s.expiry", apiKey)
-	expired, err := isTokenExpired(secretPrefix, expiryFile)
-	if err != nil {
-		return err
-	}
-	if expired {
-		refreshTokenFile := fmt.Sprintf("%s/%s/api-%s.refresh", paths.Secrets(), secretPrefix, apiKey)
-		refreshToken, err := Read(secretPrefix, refreshTokenFile)
-		if err != nil {
-			return err
-		}
-		refresh, err := viridian.API{}.RefreshAccessToken(context.Background(), string(refreshToken))
-		if err != nil {
-			return err
-		}
-		if err = Write(secretPrefix, tokenFileName, []byte(refresh.AccessToken)); err != nil {
-			return err
-		}
-		if err = Write(secretPrefix, refreshTokenFile, []byte(refresh.RefreshToken)); err != nil {
-			return err
-		}
-		_, d, err := expiryValues(secretPrefix, expiryFile)
-		if err != nil {
-			return err
-		}
-		path := paths.ResolveSecretPath(secretPrefix, expiryFile)
-		ts := strconv.FormatInt(time.Now().Unix(), 10)
-		ex := strconv.Itoa(d)
-		if err := os.WriteFile(path, []byte(strings.Join([]string{ts, ex}, "-")), 0600); err != nil {
-			return fmt.Errorf("writing the expires in to file: %w", err)
-		}
-	}
-	return nil
-}
-
-func isTokenExpired(secretPrefix, expiryFileName string) (bool, error) {
-	t, d, err := expiryValues(secretPrefix, expiryFileName)
-	if err != nil {
-		return false, err
-	}
-	tt := time.Unix(t, 0)
-	if tt.Add(time.Second * time.Duration(d)).After(time.Now()) {
-		return false, nil
-	}
-	return true, nil
-}
-
-func expiryValues(secretPrefix, expiryFileName string) (int64, int, error) {
-	expiry, err := os.ReadFile(paths.Join(paths.Secrets(), secretPrefix, expiryFileName))
-	if err != nil {
-		return 0, 0, err
-	}
-	ex := strings.Split(string(expiry), "-")
-	expiryDuration, err := strconv.Atoi(string(ex[1]))
-	if err != nil {
-		return 0, 0, err
-	}
-	creationTime, err := strconv.ParseInt(ex[0], 10, 64)
-	if err != nil {
-		return 0, 0, err
-	}
-	return creationTime, expiryDuration, nil
 }

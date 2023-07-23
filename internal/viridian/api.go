@@ -30,8 +30,12 @@ type API struct {
 	refreshToken string
 }
 
-func NewAPI(token string) *API {
-	return &API{token: token}
+func NewAPI(token, refreshToken string, expiresIn int) *API {
+	return &API{
+		token:        token,
+		refreshToken: refreshToken,
+		expiresIn:    expiresIn,
+	}
 }
 
 func (a API) Token() string {
@@ -231,12 +235,13 @@ func doGet[Res any](ctx context.Context, path, token string) (res Res, err error
 	if err != nil {
 		return res, fmt.Errorf("reading response: %w", err)
 	}
-	if rawRes.StatusCode == 200 {
+	if rawRes.StatusCode == http.StatusOK {
 		if err = json.Unmarshal(rb, &res); err != nil {
 			return res, err
 		}
 		return res, nil
 	}
+	//TODO: 401 alirsa durumunda kaldim
 	return res, NewHTTPClientError(rawRes.StatusCode, rb)
 }
 
