@@ -109,7 +109,11 @@ func refreshTokenIfExpired(secretPrefix, accessTokenFileName string) error {
 		if err != nil {
 			return err
 		}
-		api := viridian.API{RefreshToken: string(refreshToken)}
+		_, e, err := expiryValues(secretPrefix, expiryFileName)
+		if err != nil {
+			return err
+		}
+		api := viridian.API{Key: apiKey, SecretPrefix: secretPrefix, RefreshToken: string(refreshToken), ExpiresIn: e}
 		r, err := api.RefreshAccessToken(context.Background())
 		if err != nil {
 			return err
@@ -123,10 +127,6 @@ func refreshTokenIfExpired(secretPrefix, accessTokenFileName string) error {
 			return err
 		}
 		// save to .expiry file
-		_, e, err := expiryValues(secretPrefix, expiryFileName)
-		if err != nil {
-			return err
-		}
 		d, err := expiryData(e)
 		if err != nil {
 			return err
@@ -140,7 +140,7 @@ func refreshTokenIfExpired(secretPrefix, accessTokenFileName string) error {
 
 func findAPIKey(accessTokenFileName string) string {
 	pre := fmt.Sprintf("%s-", viridian.APIClass())
-	ext := fmt.Sprintf(".%s", filepath.Ext(secrets.AccessTokenFileFormat))
+	ext := fmt.Sprintf("%s", filepath.Ext(secrets.AccessTokenFileFormat))
 	return strings.TrimPrefix(strings.TrimSuffix(accessTokenFileName, ext), pre)
 }
 
