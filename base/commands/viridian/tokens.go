@@ -23,7 +23,8 @@ type Tokens struct {
 	ExpiresIn    int
 }
 
-func FindTokens(ec plug.ExecContext, apiKey string) (Tokens, error) {
+func FindTokens(ec plug.ExecContext) (Tokens, error) {
+	apiKey := ec.Props().GetString(propAPIKey)
 	accessTokenFilePath, err := findAccessTokenFile(apiKey)
 	if err != nil {
 		return Tokens{}, err
