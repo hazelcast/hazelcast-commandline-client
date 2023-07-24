@@ -23,12 +23,14 @@ type Tokens struct {
 	ExpiresIn    int
 }
 
-func FindTokens(ec plug.ExecContext, secretPrefix, propAPIKey string) (Tokens, error) {
-	accessTokenFilePath, err := findAccessTokenFile(ec, secretPrefix, propAPIKey)
+func FindTokens(ec plug.ExecContext, apiKey string) (Tokens, error) {
+	accessTokenFilePath, err := findAccessTokenFile(apiKey)
 	if err != nil {
 		return Tokens{}, err
 	}
-	apiKey := findAPIKey(accessTokenFilePath)
+	if apiKey == "" {
+		apiKey = findAPIKey(accessTokenFilePath)
+	}
 	ec.Logger().Info("Using Viridian secret at: %s", accessTokenFilePath)
 	err = refreshTokenIfExpired(secretPrefix, accessTokenFilePath)
 	if err != nil {
@@ -57,17 +59,17 @@ func FindTokens(ec plug.ExecContext, secretPrefix, propAPIKey string) (Tokens, e
 	}, nil
 }
 
-func findAccessTokenFile(ec plug.ExecContext, secretPrefix, propAPIKey string) (string, error) {
-	tokenPaths, err := findAllAccessTokenFiles(secretPrefix)
-	if err != nil {
-		return "", fmt.Errorf("cannot access the secrets, did you login?: %w", err)
-	}
+func findAccessTokenFile(apiKey string) (string, error) {
 	var accessTokenFilePath string
-	if ec.Props().GetString(propAPIKey) != "" {
-		accessTokenFilePath = fmt.Sprintf(secrets.AccessTokenFileFormat, viridian.APIClass(), ec.Props().GetString(propAPIKey))
+	if apiKey != "" {
+		accessTokenFilePath = fmt.Sprintf(secrets.AccessTokenFileFormat, viridian.APIClass(), apiKey)
 	} else if os.Getenv(viridian.EnvAPIKey) != "" {
 		accessTokenFilePath = fmt.Sprintf(secrets.AccessTokenFileFormat, viridian.APIClass(), os.Getenv(viridian.EnvAPIKey))
 	} else {
+		tokenPaths, err := findAllAccessTokenFiles(secretPrefix)
+		if err != nil {
+			return "", fmt.Errorf("cannot access the secrets, did you login?: %w", err)
+		}
 		// sort tokens, so it returns the same token everytime.
 		sort.Slice(tokenPaths, func(i, j int) bool {
 			return tokenPaths[i] < tokenPaths[j]

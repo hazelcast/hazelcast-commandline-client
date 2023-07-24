@@ -22,7 +22,7 @@ var (
 )
 
 func getAPI(ec plug.ExecContext) (*viridian.API, error) {
-	t, err := FindTokens(ec, secretPrefix, propAPIKey)
+	t, err := FindTokens(ec, ec.Props().GetString(propAPIKey))
 	if err != nil {
 		return nil, err
 	}
