@@ -20,19 +20,19 @@ func TestFindToken(t *testing.T) {
 	it.WithEnv(paths.EnvCLCHome, home.Path(), func() {
 		it.WithEnv(viridian.EnvAPIKey, "", func() {
 			// should return an error if there are no secrets
-			_, err := findToken("")
+			_, err := findAllAccessTokenFiles("")
 			require.Error(t, err)
 			// fixture
 			check.Must(secrets.Write(prefix, "api-APIKEY1", []byte("token-APIKEY1")))
 			check.Must(secrets.Write(prefix, "api-APIKEY2", []byte("token-APIKEY2")))
 			check.Must(secrets.Write(prefix, "cls-CLSKEY1", []byte("token-CLSKEY1")))
 			// check the token filename for the first API key is returned if the API key was not specified
-			require.Equal(t, "api-APIKEY1", check.MustValue(findToken("")))
+			require.Equal(t, "api-APIKEY1", check.MustValue(findAllAccessTokenFiles("")))
 			// check the token filename for the given API key is returned
-			require.Equal(t, "api-APIKEY2", check.MustValue(findToken("APIKEY2")))
+			require.Equal(t, "api-APIKEY2", check.MustValue(findAllAccessTokenFiles("APIKEY2")))
 			// check the token filename for the given API class is returned
 			it.WithEnv(viridian.EnvAPI, "cls", func() {
-				require.Equal(t, "cls-CLSKEY1", check.MustValue(findToken("CLSKEY1")))
+				require.Equal(t, "cls-CLSKEY1", check.MustValue(findAllAccessTokenFiles("CLSKEY1")))
 			})
 		})
 	})
