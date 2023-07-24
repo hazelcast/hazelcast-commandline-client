@@ -1,6 +1,6 @@
 = Hazelcast Command-Line Client (CLC)
 :url-github-clc: https://github.com/hazelcast/hazelcast-cloud-cli/blob/master/README.md 
-:description: You can use the Hazelcast Command Line Client (CLC) to connect to and interact with clusters on Hazelcast Platform and {hazelcast-cloud}, direct from the command line or through scripts.
+:description: You can use the Hazelcast Command Line Client (CLC) to connect to and interact with clusters on Hazelcast Platform, direct from the command line or through scripts.
 
 {description}
 
@@ -91,6 +91,6 @@ To return to non-interactive mode, use either of the following methods:
 == Next Steps
 Install, configure, and explore Hazelcast CLC:
 
-- xref:get-started.adoc[].
+//- xref:get-started.adoc[].
 - xref:configuration.adoc[].
 - xref:clc-commands.adoc[clc commands].

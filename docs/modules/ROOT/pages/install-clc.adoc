@@ -202,6 +202,6 @@ Delete the `hazelcast-commandline-client` directory.
 In this section you've learnt how to install the Hazelcast CLC on the supported operating systems.
 To start using the Hazelcast CLC, check the following resources:
 
-* See xref:get-started.adoc[Get Started] for a complete introduction to the Hazelcast CLC.
+//* See xref:get-started.adoc[Get Started] for a complete introduction to the Hazelcast CLC.
 * See xref:configuration.adoc[Configuration] to configure the details of the connection between the Hazelcast CLC and a Hazelcast Platform cluster.
 * See xref:clc-commands.adoc[Command Reference] for a complete list and descriptions of commands you can use with the Hazelcast CLC.
