@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -12,44 +11,38 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func loadFromDefaults(templateDir string, props *map[string]string) error {
+func loadFromDefaults(templateDir string) (map[string]string, error) {
+	props := make(map[string]string)
 	path := paths.Join(templateDir, defaultsFileName)
 	if !paths.Exists(path) {
-		return nil
+		return nil, nil
 	}
 	b, err := os.ReadFile(path)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return nil
+			return nil, nil
 		}
-		return err
+		return nil, err
 	}
-	if err = parseYAML("", b, props); err != nil {
-		return err
+	if err = parseYAML("", b, &props); err != nil {
+		return nil, err
 	}
-	camelizeMapKeys(props)
+	props = camelizeMapKeys(props)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return props, nil
 }
 
-func camelizeMapKeys(m *map[string]string) {
-	var rmList []string
-	addMap := make(map[string]string)
-	for k, v := range *m {
-		addMap[str.ToCamel(k)] = v
-		rmList = append(rmList, k)
+func camelizeMapKeys(m map[string]string) map[string]string {
+	r := make(map[string]string)
+	for k, v := range m {
+		r[str.ToCamel(k)] = v
 	}
-	for _, k := range rmList {
-		delete(*m, k)
-	}
-	for k, v := range addMap {
-		(*m)[k] = v
-	}
+	return r
 }
 
-func updatePropsWithUserInput(ec plug.ExecContext, props *map[string]string) error {
+func updatePropsWithUserInput(ec plug.ExecContext, props map[string]string) error {
 	for _, arg := range ec.Args() {
 		k, v := str.ParseKeyValue(arg)
 		if k == "" {
@@ -61,34 +54,25 @@ func updatePropsWithUserInput(ec plug.ExecContext, props *map[string]string) err
 		if k == "" {
 			return fmt.Errorf("blank keys are not allowed")
 		}
-		(*props)[k] = v
+		props[k] = v
 	}
 	return nil
 }
 
-func loadFromProps(ec plug.ExecContext, p *map[string]string) {
+func loadFromProps(ec plug.ExecContext, p map[string]string) {
 	m := ec.Props().All()
-	maybeCamelizeMapKeys(&m)
+	maybeCamelizeMapKeys(m)
 	for k, v := range m {
-		(*p)[k] = fmt.Sprintf("%v", v)
+		p[k] = fmt.Sprintf("%v", v)
 	}
 }
 
-func maybeCamelizeMapKeys(m *map[string]any) {
-	addMap := make(map[string]any)
-	var rmList []string
-	for k, v := range *m {
-		if strings.Contains(k, ".") {
-			addMap[str.ToCamel(k)] = v
-			rmList = append(rmList, k)
-		}
+func maybeCamelizeMapKeys(m map[string]any) map[string]any {
+	r := make(map[string]any)
+	for k, v := range m {
+		r[str.ToCamel(k)] = v
 	}
-	for _, k := range rmList {
-		delete(*m, k)
-	}
-	for k, v := range addMap {
-		(*m)[k] = v
-	}
+	return r
 }
 
 func parseYAML(prefix string, yamlFile []byte, result *map[string]string) error {

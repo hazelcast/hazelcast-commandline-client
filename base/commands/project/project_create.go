@@ -159,13 +159,12 @@ func createProject(ec plug.ExecContext, outputDir, templateName string) error {
 }
 
 func loadVars(ec plug.ExecContext, sourceDir string) (map[string]string, error) {
-	vars := make(map[string]string)
-	err := loadFromDefaults(sourceDir, &vars)
+	vars, err := loadFromDefaults(sourceDir)
 	if err != nil {
 		return nil, err
 	}
-	loadFromProps(ec, &vars)
-	err = updatePropsWithUserInput(ec, &vars)
+	loadFromProps(ec, vars)
+	err = updatePropsWithUserInput(ec, vars)
 	if err != nil {
 		return nil, err
 	}
