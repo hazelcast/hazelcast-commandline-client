@@ -31,6 +31,8 @@
 ** xref:clc-snapshot.adoc[]
 ** xref:clc-version.adoc[]
 //** xref:clc-viridian.adoc[]
+** xref:clc-viridian.adoc[]
+** xref:clc-generate-project.adoc[]
 * xref:environment-variables.adoc[]
 * xref:keyboard-shortcuts.adoc[]
 
