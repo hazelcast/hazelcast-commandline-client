@@ -16,12 +16,23 @@ func (a API) DownloadClusterLogs(ctx context.Context, destDir string, idOrName s
 	if err != nil {
 		return err
 	}
-	zipPath, stop, err := download(ctx, makeUrl(fmt.Sprintf("/cluster/%s/logs", c.ID)), a, true)
+	type resp struct {
+		path string
+		stop func()
+	}
+	r, err := WithRetry(ctx, a, func() (resp, error) {
+		var res resp
+		res.path, res.stop, err = download(ctx, makeUrl(fmt.Sprintf("/cluster/%s/logs", c.ID)), a)
+		if err != nil {
+			return res, err
+		}
+		return res, nil
+	})
 	if err != nil {
 		return err
 	}
-	defer stop()
-	zipFile, err := os.Open(zipPath)
+	defer r.stop()
+	zipFile, err := os.Open(r.path)
 	if err != nil {
 		return err
 	}

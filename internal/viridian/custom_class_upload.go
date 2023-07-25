@@ -36,7 +36,7 @@ func (pr *UploadProgressReader) Print() {
 	}
 }
 
-func doCustomClassUpload(ctx context.Context, progressSetter func(progress float32), url, path string, api API, retryOnUnauthorized bool) error {
+func doCustomClassUpload(ctx context.Context, progressSetter func(progress float32), url, path string, api API) error {
 	reqBody := &bytes.Buffer{}
 	w := multipart.NewWriter(reqBody)
 	p, err := w.CreateFormFile("customClassesFile", filepath.Base(path))
@@ -75,13 +75,6 @@ func doCustomClassUpload(ctx context.Context, progressSetter func(progress float
 	res.Body.Close()
 	if res.StatusCode != http.StatusOK {
 		return NewHTTPClientError(res.StatusCode, resBody.Bytes())
-	}
-	if res.StatusCode == http.StatusUnauthorized && retryOnUnauthorized {
-		_, err = api.RefreshAccessToken(ctx)
-		if err != nil {
-			return err
-		}
-		return doCustomClassUpload(ctx, progressSetter, url, path, api, false)
 	}
 	return nil
 }

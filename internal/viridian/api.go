@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -55,7 +56,7 @@ type RefreshTokenResponse struct {
 
 func (a *API) RefreshAccessToken(ctx context.Context) (RefreshTokenResponse, error) {
 	r := refreshTokenRequest{RefreshToken: a.RefreshToken}
-	resp, err := doPost[refreshTokenRequest, RefreshTokenResponse](ctx, "/customers/api/token/refresh", *a, r, false)
+	resp, err := doPost[refreshTokenRequest, RefreshTokenResponse](ctx, "/customers/api/token/refresh", *a, r)
 	if err != nil {
 		return RefreshTokenResponse{}, fmt.Errorf("refreshing token: %w", err)
 	}
@@ -69,7 +70,9 @@ func (a *API) RefreshAccessToken(ctx context.Context) (RefreshTokenResponse, err
 }
 
 func (a API) ListAvailableK8sClusters(ctx context.Context) ([]K8sCluster, error) {
-	c, err := doGet[[]K8sCluster](ctx, "/kubernetes_clusters/available", a, true)
+	c, err := WithRetry(ctx, a, func() ([]K8sCluster, error) {
+		return doGet[[]K8sCluster](ctx, "/kubernetes_clusters/available", a)
+	})
 	if err != nil {
 		return nil, fmt.Errorf("listing available Kubernetes clusters: %w", err)
 	}
@@ -81,7 +84,9 @@ func (a API) ListCustomClasses(ctx context.Context, cluster string) ([]CustomCla
 	if err != nil {
 		return nil, err
 	}
-	csw, err := doGet[[]CustomClass](ctx, fmt.Sprintf("/cluster/%s/custom_classes", c.ID), a, true)
+	csw, err := WithRetry(ctx, a, func() ([]CustomClass, error) {
+		return doGet[[]CustomClass](ctx, fmt.Sprintf("/cluster/%s/custom_classes", c.ID), a)
+	})
 	if err != nil {
 		return nil, fmt.Errorf("listing custom classes: %w", err)
 	}
@@ -93,7 +98,16 @@ func (a API) UploadCustomClasses(ctx context.Context, p func(progress float32), 
 	if err != nil {
 		return err
 	}
-	err = doCustomClassUpload(ctx, p, fmt.Sprintf("/cluster/%s/custom_classes", c.ID), filePath, a, true)
+	_, err = WithRetry(ctx, a, func() (any, error) {
+		err = doCustomClassUpload(ctx, p, fmt.Sprintf("/cluster/%s/custom_classes", c.ID), filePath, a)
+		if err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	if err != nil {
+		return err
+	}
 	if err != nil {
 		return fmt.Errorf("uploading custom class: %w", err)
 	}
@@ -113,7 +127,13 @@ func (a API) DownloadCustomClass(ctx context.Context, p func(progress float32), 
 		return fmt.Errorf("no custom class artifact found with name or ID %s in cluster %s", artifact, c.ID)
 	}
 	url := fmt.Sprintf("/cluster/%s/custom_classes/%d", c.ID, artifactID)
-	err = doCustomClassDownload(ctx, p, targetInfo, url, artifactName, a, true)
+	_, err = WithRetry(ctx, a, func() (any, error) {
+		err = doCustomClassDownload(ctx, p, targetInfo, url, artifactName, a)
+		if err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
 	if err != nil {
 		return err
 	}
@@ -132,7 +152,13 @@ func (a API) DeleteCustomClass(ctx context.Context, cluster string, artifact str
 	if artifactID == 0 {
 		return fmt.Errorf("no custom class artifact found with name or ID %s in cluster %s", artifact, c.ID)
 	}
-	err = doDelete(ctx, fmt.Sprintf("/cluster/%s/custom_classes/%d", c.ID, artifactID), a, true)
+	_, err = WithRetry(ctx, a, func() (any, error) {
+		err = doDelete(ctx, fmt.Sprintf("/cluster/%s/custom_classes/%d", c.ID, artifactID), a)
+		if err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
 	if err != nil {
 		return err
 	}
@@ -141,7 +167,19 @@ func (a API) DeleteCustomClass(ctx context.Context, cluster string, artifact str
 
 func (a API) DownloadConfig(ctx context.Context, clusterID string) (path string, stop func(), err error) {
 	url := makeConfigURL(clusterID)
-	return download(ctx, url, a, true)
+	type resp struct {
+		path string
+		stop func()
+	}
+	r, err := WithRetry(ctx, a, func() (resp, error) {
+		var r resp
+		r.path, r.stop, err = download(ctx, url, a)
+		if err != nil {
+			return r, err
+		}
+		return r, nil
+	})
+	return r.path, r.stop, nil
 }
 
 func (a API) FindCluster(ctx context.Context, idOrName string) (Cluster, error) {
@@ -176,7 +214,9 @@ func (a API) StreamLogs(ctx context.Context, idOrName string, out io.Writer) err
 		return err
 	}
 	path := fmt.Sprintf("/cluster/%s/logstream", c.ID)
-	r, err := doGetRaw(ctx, path, a, true)
+	r, err := WithRetry(ctx, a, func() (io.ReadCloser, error) {
+		return doGetRaw(ctx, path, a)
+	})
 	if err != nil {
 		return err
 	}
@@ -216,7 +256,26 @@ func makeUrl(path string) string {
 	return APIBaseURL() + path
 }
 
-func doGet[Res any](ctx context.Context, path string, api API, retryOnUnauthorized bool) (res Res, err error) {
+func WithRetry[Res any](ctx context.Context, api API, f func() (Res, error)) (Res, error) {
+	r, err := f()
+	var e *HTTPClientError
+	if errors.As(err, &e) {
+		if e.Code() == http.StatusUnauthorized {
+			_, err = api.RefreshAccessToken(ctx)
+			if err != nil {
+				return r, err
+			}
+			r, err = f()
+			if err != nil {
+				return r, err
+			}
+			return r, nil
+		}
+	}
+	return r, nil
+}
+
+func doGet[Res any](ctx context.Context, path string, api API) (res Res, err error) {
 	req, err := http.NewRequest(http.MethodGet, makeUrl(path), nil)
 	if err != nil {
 		return res, fmt.Errorf("creating request: %w", err)
@@ -241,17 +300,10 @@ func doGet[Res any](ctx context.Context, path string, api API, retryOnUnauthoriz
 		}
 		return res, nil
 	}
-	if rawRes.StatusCode == http.StatusUnauthorized && retryOnUnauthorized {
-		_, err = api.RefreshAccessToken(ctx)
-		if err != nil {
-			return res, err
-		}
-		return doGet[Res](ctx, path, api, false)
-	}
 	return res, NewHTTPClientError(rawRes.StatusCode, rb)
 }
 
-func doGetRaw(ctx context.Context, path string, api API, retryOnUnauthorized bool) (res io.ReadCloser, err error) {
+func doGetRaw(ctx context.Context, path string, api API) (res io.ReadCloser, err error) {
 	req, err := http.NewRequest(http.MethodGet, makeUrl(path), nil)
 	if err != nil {
 		return res, fmt.Errorf("creating request: %w", err)
@@ -265,13 +317,6 @@ func doGetRaw(ctx context.Context, path string, api API, retryOnUnauthorized boo
 	if err != nil {
 		return res, fmt.Errorf("sending request: %w", err)
 	}
-	if rawRes.StatusCode == http.StatusUnauthorized && retryOnUnauthorized {
-		_, err = api.RefreshAccessToken(ctx)
-		if err != nil {
-			return res, err
-		}
-		return doGetRaw(ctx, path, api, false)
-	}
 	if rawRes.StatusCode == 200 {
 		return rawRes.Body, nil
 	}
@@ -283,12 +328,12 @@ func doGetRaw(ctx context.Context, path string, api API, retryOnUnauthorized boo
 	return res, NewHTTPClientError(rawRes.StatusCode, rb)
 }
 
-func doPost[Req, Res any](ctx context.Context, path string, api API, request Req, retryOnUnauthorized bool) (res Res, err error) {
+func doPost[Req, Res any](ctx context.Context, path string, api API, request Req) (res Res, err error) {
 	m, err := json.Marshal(request)
 	if err != nil {
 		return res, fmt.Errorf("creating payload: %w", err)
 	}
-	b, err := doPostBytes(ctx, makeUrl(path), api, m, retryOnUnauthorized)
+	b, err := doPostBytes(ctx, makeUrl(path), api, m)
 	if err != nil {
 		return res, err
 	}
@@ -298,7 +343,7 @@ func doPost[Req, Res any](ctx context.Context, path string, api API, request Req
 	return res, nil
 }
 
-func doPostBytes(ctx context.Context, url string, api API, body []byte, retryOnUnauthorized bool) ([]byte, error) {
+func doPostBytes(ctx context.Context, url string, api API, body []byte) ([]byte, error) {
 	reader := bytes.NewBuffer(body)
 	req, err := http.NewRequest(http.MethodPost, url, reader)
 	if err != nil {
@@ -318,20 +363,13 @@ func doPostBytes(ctx context.Context, url string, api API, body []byte, retryOnU
 	if err != nil {
 		return nil, fmt.Errorf("reading response: %w", err)
 	}
-	if res.StatusCode == http.StatusUnauthorized && retryOnUnauthorized {
-		_, err = api.RefreshAccessToken(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return doPostBytes(ctx, url, api, body, false)
-	}
 	if res.StatusCode == 200 {
 		return rb, nil
 	}
 	return nil, NewHTTPClientError(res.StatusCode, rb)
 }
 
-func doDelete(ctx context.Context, path string, api API, retryOnUnauthorized bool) error {
+func doDelete(ctx context.Context, path string, api API) error {
 	req, err := http.NewRequest(http.MethodDelete, makeUrl(path), nil)
 	if err != nil {
 		return fmt.Errorf("creating request: %w", err)
@@ -350,20 +388,13 @@ func doDelete(ctx context.Context, path string, api API, retryOnUnauthorized boo
 	if err != nil {
 		return fmt.Errorf("reading response: %w", err)
 	}
-	if res.StatusCode == http.StatusUnauthorized && retryOnUnauthorized {
-		_, err = api.RefreshAccessToken(ctx)
-		if err != nil {
-			return err
-		}
-		return doDelete(ctx, path, api, false)
-	}
 	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusNoContent {
 		return NewHTTPClientError(res.StatusCode, rb)
 	}
 	return nil
 }
 
-func download(ctx context.Context, url string, api API, retryOnUnauthorized bool) (downloadPath string, stop func(), err error) {
+func download(ctx context.Context, url string, api API) (downloadPath string, stop func(), err error) {
 	f, err := os.CreateTemp("", "clc-download-*")
 	if err != nil {
 		return "", nil, err
@@ -382,13 +413,6 @@ func download(ctx context.Context, url string, api API, retryOnUnauthorized bool
 		return "", nil, fmt.Errorf("sending request: %w", err)
 	}
 	defer rawRes.Body.Close()
-	if rawRes.StatusCode == http.StatusUnauthorized && retryOnUnauthorized {
-		_, err = api.RefreshAccessToken(ctx)
-		if err != nil {
-			return "", nil, err
-		}
-		return download(ctx, url, api, false)
-	}
 	if rawRes.StatusCode == http.StatusOK {
 		if _, err := io.Copy(f, rawRes.Body); err != nil {
 			return "", nil, fmt.Errorf("downloading file: %w", err)

@@ -42,11 +42,14 @@ func (a API) CreateCluster(ctx context.Context, name string, clusterType string,
 		ClusterTypeID:       clusterTypeID,
 		PlanName:            planName,
 	}
-	cluster, err := doPost[createClusterRequest, createClusterResponse](ctx, "/cluster", a, c, true)
+	cluster, err := WithRetry(ctx, a, func() (Cluster, error) {
+		c, err := doPost[createClusterRequest, createClusterResponse](ctx, "/cluster", a, c)
+		return Cluster(c), err
+	})
 	if err != nil {
 		return Cluster{}, fmt.Errorf("creating cluster: %w", err)
 	}
-	return Cluster(cluster), nil
+	return cluster, nil
 }
 
 func clusterName() string {
@@ -65,22 +68,26 @@ func (a API) StopCluster(ctx context.Context, idOrName string) error {
 	if err != nil {
 		return err
 	}
-	ok, err := doPost[[]byte, bool](ctx, fmt.Sprintf("/cluster/%s/stop", c.ID), a, nil, true)
+	ok, err := WithRetry(ctx, a, func() (any, error) {
+		return doPost[[]byte, bool](ctx, fmt.Sprintf("/cluster/%s/stop", c.ID), a, nil)
+	})
 	if err != nil {
 		return fmt.Errorf("stopping cluster: %w", err)
 	}
-	if !ok {
+	if !ok.(bool) {
 		return errors.New("could not stop the cluster")
 	}
 	return nil
 }
 
 func (a API) ListClusters(ctx context.Context) ([]Cluster, error) {
-	csw, err := doGet[Wrapper[[]Cluster]](ctx, "/cluster", a, true)
+	csw, err := WithRetry(ctx, a, func() (any, error) {
+		return doGet[Wrapper[[]Cluster]](ctx, "/cluster", a)
+	})
 	if err != nil {
 		return nil, fmt.Errorf("listing clusters: %w", err)
 	}
-	return csw.Content, nil
+	return csw.(Wrapper[[]Cluster]).Content, nil
 }
 
 func (a API) ResumeCluster(ctx context.Context, idOrName string) error {
@@ -88,11 +95,13 @@ func (a API) ResumeCluster(ctx context.Context, idOrName string) error {
 	if err != nil {
 		return err
 	}
-	ok, err := doPost[[]byte, bool](ctx, fmt.Sprintf("/cluster/%s/resume", c.ID), a, nil, true)
+	ok, err := WithRetry(ctx, a, func() (any, error) {
+		return doPost[[]byte, bool](ctx, fmt.Sprintf("/cluster/%s/resume", c.ID), a, nil)
+	})
 	if err != nil {
 		return fmt.Errorf("resuming cluster: %w", err)
 	}
-	if !ok {
+	if !ok.(bool) {
 		return errors.New("could not resume the cluster")
 	}
 	return nil
@@ -103,7 +112,13 @@ func (a API) DeleteCluster(ctx context.Context, idOrName string) error {
 	if err != nil {
 		return err
 	}
-	err = doDelete(ctx, fmt.Sprintf("/cluster/%s", c.ID), a, true)
+	_, err = WithRetry(ctx, a, func() (any, error) {
+		err = doDelete(ctx, fmt.Sprintf("/cluster/%s", c.ID), a)
+		if err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
 	if err != nil {
 		return fmt.Errorf("deleting cluster: %w", err)
 	}
@@ -115,17 +130,21 @@ func (a API) GetCluster(ctx context.Context, idOrName string) (Cluster, error) {
 	if err != nil {
 		return Cluster{}, err
 	}
-	c, err := doGet[Cluster](ctx, fmt.Sprintf("/cluster/%s", cluster.ID), a, true)
+	c, err := WithRetry(ctx, a, func() (any, error) {
+		return doGet[Cluster](ctx, fmt.Sprintf("/cluster/%s", cluster.ID), a)
+	})
 	if err != nil {
 		return Cluster{}, fmt.Errorf("retrieving cluster: %w", err)
 	}
-	return c, nil
+	return c.(Cluster), nil
 }
 
 func (a API) ListClusterTypes(ctx context.Context) ([]ClusterType, error) {
-	csw, err := doGet[Wrapper[[]ClusterType]](ctx, "/cluster_types", a, true)
+	csw, err := WithRetry(ctx, a, func() (any, error) {
+		return doGet[Wrapper[[]ClusterType]](ctx, "/cluster_types", a)
+	})
 	if err != nil {
 		return nil, fmt.Errorf("listing cluster types: %w", err)
 	}
-	return csw.Content, nil
+	return csw.(Wrapper[[]ClusterType]).Content, nil
 }

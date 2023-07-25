@@ -25,7 +25,7 @@ type Tokens struct {
 
 func FindTokens(ec plug.ExecContext) (Tokens, error) {
 	apiKey := ec.Props().GetString(propAPIKey)
-	accessTokenFilePath, err := findAccessTokenFile(apiKey)
+	accessTokenFilePath, err := findAccessTokenPath(apiKey)
 	if err != nil {
 		return Tokens{}, err
 	}
@@ -60,12 +60,12 @@ func FindTokens(ec plug.ExecContext) (Tokens, error) {
 	}, nil
 }
 
-func findAccessTokenFile(apiKey string) (string, error) {
-	var accessTokenFilePath string
+func findAccessTokenPath(apiKey string) (string, error) {
+	var path string
 	if apiKey != "" {
-		accessTokenFilePath = fmt.Sprintf(secrets.AccessTokenFileFormat, viridian.APIClass(), apiKey)
+		path = fmt.Sprintf(secrets.AccessTokenFileFormat, viridian.APIClass(), apiKey)
 	} else if os.Getenv(viridian.EnvAPIKey) != "" {
-		accessTokenFilePath = fmt.Sprintf(secrets.AccessTokenFileFormat, viridian.APIClass(), os.Getenv(viridian.EnvAPIKey))
+		path = fmt.Sprintf(secrets.AccessTokenFileFormat, viridian.APIClass(), os.Getenv(viridian.EnvAPIKey))
 	} else {
 		tokenPaths, err := findAllAccessTokenFiles(secretPrefix)
 		if err != nil {
@@ -77,15 +77,15 @@ func findAccessTokenFile(apiKey string) (string, error) {
 		})
 		for _, p := range tokenPaths {
 			if strings.HasPrefix(p, viridian.APIClass()) {
-				accessTokenFilePath = p
+				path = p
 				break
 			}
 		}
-		if accessTokenFilePath == "" {
+		if path == "" {
 			return "", fmt.Errorf("no secrets found, did you login?")
 		}
 	}
-	return accessTokenFilePath, nil
+	return path, nil
 }
 
 func findAllAccessTokenFiles(prefix string) ([]string, error) {

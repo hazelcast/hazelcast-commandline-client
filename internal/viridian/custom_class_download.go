@@ -29,7 +29,7 @@ func (pp *DownloadProgressPrinter) Print() {
 	pp.SetterFunc(p)
 }
 
-func doCustomClassDownload(ctx context.Context, progressSetter func(progress float32), t TargetInfo, url, className string, api API, retryOnUnauthorized bool) error {
+func doCustomClassDownload(ctx context.Context, progressSetter func(progress float32), t TargetInfo, url, className string, api API) error {
 	fn, err := t.fileToBeCreated(className)
 	if err != nil {
 		return err
@@ -54,13 +54,6 @@ func doCustomClassDownload(ctx context.Context, progressSetter func(progress flo
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		if res.StatusCode == http.StatusUnauthorized && retryOnUnauthorized {
-			_, err = api.RefreshAccessToken(ctx)
-			if err != nil {
-				return err
-			}
-			return doCustomClassDownload(ctx, progressSetter, t, url, className, api, false)
-		}
 		return NewHTTPClientError(res.StatusCode, nil)
 	}
 	if err != nil {
