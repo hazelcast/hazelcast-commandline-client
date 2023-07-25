@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/jet"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -31,29 +30,15 @@ func (cm TerminateCmd) Init(cc plug.InitContext) error {
 
 func (cm TerminateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	// just preloading the client
-	_, err := ec.ClientInternal(ctx)
-	if err != nil {
+	if _, err := ec.ClientInternal(ctx); err != nil {
 		return err
 	}
 	tm := cm.terminateMode
 	if ec.Props().GetBool(flagForce) {
 		tm = cm.terminateModeForce
 	}
-	jm, err := NewJobNameToIDMap(ctx, ec, false)
-	if err != nil {
+	if err := terminateJob(ctx, ec, cm.name, tm, cm.msg, cm.waitState); err != nil {
 		return err
-	}
-	arg := ec.Args()[0]
-	jid, ok := jm.GetIDForName(arg)
-	if !ok {
-		return jet.ErrInvalidJobID
-	}
-	if err = terminateJob(ctx, ec, jid, arg, tm, cm.msg, cm.waitState); err != nil {
-		return err
-	}
-	verbose := ec.Props().GetBool(clc.PropertyVerbose)
-	if verbose {
-		ec.PrintlnUnnecessary(fmt.Sprintf("Job %sed: %s", cm.name, idToString(jid)))
 	}
 	return nil
 }

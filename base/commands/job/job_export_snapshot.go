@@ -30,43 +30,48 @@ func (cm ExportSnapshotCmd) Exec(ctx context.Context, ec plug.ExecContext) error
 	if err != nil {
 		return err
 	}
-	var jm *JobNameToIDMap
+	var jm *JobsInfo
 	var jid int64
 	var ok bool
 	jobNameOrID := ec.Args()[0]
 	name := ec.Props().GetString(flagName)
 	cancel := ec.Props().GetBool(flagCancel)
-	if name == "" {
-		// create the default snapshot name
-		jm, err = NewJobNameToIDMap(ctx, ec, true)
-		if err != nil {
-			return err
-		}
-		jid, ok = jm.GetIDForName(jobNameOrID)
-		if !ok {
-			return jet.ErrInvalidJobID
-		}
-		name, ok = jm.GetNameForID(jid)
-		if !ok {
-			name = "UNKNOWN"
-		}
-		name = autoGenerateSnapshotName(name)
-	} else {
-		jm, err = NewJobNameToIDMap(ctx, ec, false)
-		if err != nil {
-			return err
-		}
-		jid, ok = jm.GetIDForName(jobNameOrID)
-		if !ok {
-			return jet.ErrInvalidJobID
-		}
-	}
-	if err != nil {
-		return err
-	}
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Exporting snapshot: %s", name))
 		j := jet.New(ci, sp, ec.Logger())
+		jis, err := j.GetJobList(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if name == "" {
+			// create the default snapshot name
+			jm, err = NewJobNameToIDMap(jis)
+			if err != nil {
+				return nil, err
+			}
+			jid, ok = jm.GetIDForName(jobNameOrID)
+			if !ok {
+				return nil, jet.ErrInvalidJobID
+			}
+			info, ok := jm.GetInfoForID(jid)
+			if !ok {
+				name = "UNKNOWN"
+			} else {
+				name = autoGenerateSnapshotName(info.NameOrId)
+			}
+		} else {
+			jm, err = NewJobNameToIDMap(jis)
+			if err != nil {
+				return nil, err
+			}
+			jid, ok = jm.GetIDForName(jobNameOrID)
+			if !ok {
+				return nil, jet.ErrInvalidJobID
+			}
+		}
+		if err != nil {
+			return nil, err
+		}
+		sp.SetText(fmt.Sprintf("Exporting snapshot: %s", name))
 		return nil, j.ExportSnapshot(ctx, jid, name, cancel)
 	})
 	if err != nil {

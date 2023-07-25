@@ -39,7 +39,7 @@ type ExecContext interface {
 	Stderr() io.Writer
 	Stdout() io.Writer
 	Stdin() io.Reader
-	ExecuteBlocking(ctx context.Context, f func(context.Context, clc.Spinner) (any, error)) (value any, stop context.CancelFunc, err error)
+	ExecuteBlocking(ctx context.Context, f func(ctx context.Context, sp clc.Spinner) (any, error)) (value any, stop context.CancelFunc, err error)
 	PrintlnUnnecessary(text string)
 }
 
