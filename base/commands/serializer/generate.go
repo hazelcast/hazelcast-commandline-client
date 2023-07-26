@@ -5,6 +5,7 @@ package serializer
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -56,7 +57,8 @@ func generateCompactSerializer(schemaPath, language, outputDir string) error {
 	if err != nil {
 		return err
 	}
-	err = processSchema(schemaPath, &sch)
+	schemaDir := filepath.Dir(schemaPath)
+	err = processSchema(schemaDir, &sch)
 	if err != nil {
 		return err
 	}

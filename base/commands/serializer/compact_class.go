@@ -14,15 +14,15 @@ func generateCompactClasses(lang string, schema Schema) (map[ClassInfo]string, e
 	case java:
 		generateJavaClasses(schema, classes)
 	case python:
-		panic(any("implement me"))
+		return classes, fmt.Errorf("%s is not supported yet", lang)
 	case typescript:
-		panic(any("implement me"))
+		return classes, fmt.Errorf("%s is not supported yet", lang)
 	case cpp:
-		panic(any("implement me"))
+		return classes, fmt.Errorf("%s is not supported yet", lang)
 	case golang:
-		panic(any("implement me"))
+		return classes, fmt.Errorf("%s is not supported yet", lang)
 	case cs:
-		panic(any("implement me"))
+		return classes, fmt.Errorf("%s is not supported yet", lang)
 	default:
 		return nil, fmt.Errorf("unsupported langugage")
 	}
