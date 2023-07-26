@@ -1,0 +1,8 @@
+namespace: "com.zyx"
+classes:
+  # Dummy Work class
+  - name: Work
+    fields:
+      # This is name2 just for distinguishing from name
+      - name: name2
+        type: string

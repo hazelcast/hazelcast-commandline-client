@@ -1,0 +1,90 @@
+namespace: "com.example"
+classes:
+  - name: NestedCompact
+    fields:
+      - name: foo
+        type: string
+      - name: bar
+        type: int32
+  - name: AllTypes
+    fields:
+      - name: mboolean
+        type: boolean
+      - name: mbooleanArray
+        type: boolean[]
+      - name: mbyte
+        type: int8
+      - name: mbyteArray
+        type: int8[]
+      - name: mshort
+        type: int16
+      - name: mshortArray
+        type: int16[]
+      - name: mint
+        type: int32
+      - name: mintArray
+        type: int32[]
+      - name: mlong
+        type: int64
+      - name: mlongArray
+        type: int64[]
+      - name: mfloat
+        type: float32
+      - name: mfloatArray
+        type: float32[]
+      - name: mdouble
+        type: float64
+      - name: mdoubleArray
+        type: float64[]
+      - name: mstring
+        type: string
+      - name: mstringArray
+        type: string[]
+      - name: mdate
+        type: date
+      - name: mdateArray
+        type: date[]
+      - name: mtime
+        type: time
+      - name: mtimeArray
+        type: time[]
+      - name: mtimestamp
+        type: timestamp
+      - name: mtimestampArray
+        type: timestamp[]
+      - name: mtimestampWithTimezone
+        type: timestampWithTimezone
+      - name: mtimestampWithTimezoneArray
+        type: timestampWithTimezone[]
+      - name: mnullableboolean
+        type: nullableBoolean
+      - name: mnullablebooleanArray
+        type: nullableBoolean[]
+      - name: mnullablebyte
+        type: nullableInt8
+      - name: mnullablebyteArray
+        type: nullableInt8[]
+      - name: mnullableshort
+        type: nullableInt16
+      - name: mnullableshortArray
+        type: nullableInt16[]
+      - name: mnullableint
+        type: nullableInt32
+      - name: mnullableintArray
+        type: nullableInt32[]
+      - name: mnullablelong
+        type: nullableInt64
+      - name: mnullablelongArray
+        type: nullableInt64[]
+      - name: mnullablefloat
+        type: nullableFloat32
+      - name: mnullablefloatArray
+        type: nullableFloat32[]
+      - name: mnullabledouble
+        type: nullableFloat64
+      - name: mnullabledoubleArray
+        type: nullableFloat64[]
+      - name: mcompact
+        type: NestedCompact
+      - name: mcompactArray
+        type: NestedCompact[]

@@ -1,0 +1,7 @@
+namespace: "com.xyz"
+classes:
+  # Dummy Work class
+  - name: Work
+    fields:
+      - name: name
+        type: string

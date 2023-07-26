@@ -1,0 +1,8 @@
+classes:
+  - name: External
+    fields:
+      - name: foo
+        type: boolean
+      - name: bar
+        type: com.x.y.z.SomeExternalClass
+        external: true

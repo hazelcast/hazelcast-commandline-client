@@ -1,0 +1,11 @@
+classes:
+  - name: NoNamespace
+    fields:
+      - name: foo
+        type: boolean
+      - name: bar
+        type: NoNamespaceNested
+  - name: NoNamespaceNested
+    fields:
+      - name: baz
+        type: boolean

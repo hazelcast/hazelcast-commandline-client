@@ -1,0 +1,16 @@
+namespace: "com.example"
+classes:
+  - name: Example1
+    fields:
+      - name: example
+        type: Example2
+      - name: examples
+        type: com.example.Example3[]
+  - name: Example2
+    fields:
+      - name: foo
+        type: int32
+  - name: Example3
+    fields:
+      - name: bar
+        type: int64

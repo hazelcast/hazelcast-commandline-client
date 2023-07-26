@@ -1,0 +1,8 @@
+namespace: "com.entities"
+classes:
+  - name: Student
+    fields:
+      - name: name
+        type: string 
+      - name: number
+        type: int16

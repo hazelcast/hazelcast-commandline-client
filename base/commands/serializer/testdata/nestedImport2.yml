@@ -1,0 +1,8 @@
+namespace: "com.nestedImport2"
+imports: 
+  - "nestedImport1.yml"
+classes:
+  - name: Bar
+    fields:
+      - name: fieldBar
+        type: string

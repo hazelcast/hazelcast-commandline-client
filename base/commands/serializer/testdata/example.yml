@@ -1,0 +1,6 @@
+classes:
+  # Duplicate class with same namespace and name
+  - name: Employee
+    fields:
+      - name: name
+        type: string
