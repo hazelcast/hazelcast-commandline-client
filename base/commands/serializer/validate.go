@@ -2,18 +2,20 @@ package serializer
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/xeipuuv/gojsonschema"
 )
 
-func validateInputs(schema, language string) error {
+func validateInputs(schemaPath, language string) error {
 	if !isLangSupported(language) {
 		return fmt.Errorf("unsupported language, you can provide one of %s", strings.Join(supportedLanguages, ","))
 	}
-	if !isSchemaExists(schema) {
-		return fmt.Errorf("schema %s does not exist")
+	if err := isSchemaExists(schemaPath); err != nil {
+		return err
 	}
 	return nil
 }
@@ -28,9 +30,15 @@ func isLangSupported(lang string) bool {
 	return false
 }
 
-func isSchemaExists(schema string) bool {
-	//TODO: how to check schema existence, where do the schemas
-	return true
+func isSchemaExists(schemaPath string) error {
+	_, err := os.Stat(schemaPath)
+	if errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("path %s does not exist", schemaPath)
+	}
+	if err != nil {
+		return fmt.Errorf("can not access output directory %s, err: %s", schemaPath, err.Error())
+	}
+	return nil
 }
 
 func validateWithJSONSchema(schema map[string]interface{}) (isValid bool, schemaErrors []string, err error) {
