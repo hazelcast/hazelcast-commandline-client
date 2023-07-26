@@ -8,6 +8,7 @@ import (
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/list"
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/map"
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/migration"
+	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/multimap"
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/object"
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/queue"
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/set"
