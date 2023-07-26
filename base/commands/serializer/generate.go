@@ -21,10 +21,17 @@ const (
 
 func (g GenerateCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("generate [schema] [flags]")
-	//TODO: cc.SetCommandHelp(long, short)
-	//TODO: must be same with the docs
-	cc.AddStringFlag(flagLanguage, "", "", true, "language to generate compact serializer")
-	cc.AddStringFlag(flagOutputDir, "", ".", false, "output directory")
+	short := `
+Generates compact serializer from the given schema and for the given programming language.
+`
+	long := `
+Generates compact serializer from the given schema and for the given programming language.
+You can use this command to automatically generate compact serializers instead of implementing them.
+See: https://docs.hazelcast.com/hazelcast/5.3/serialization/compact-serialization#implementing-compactserializer
+`
+	cc.SetCommandHelp(long, short)
+	cc.AddStringFlag(flagLanguage, "", "", true, "programming language that the serializer created for")
+	cc.AddStringFlag(flagOutputDir, "", ".", false, "output directory for the serialization files")
 	cc.SetPositionalArgCount(1, 1)
 	return nil
 }

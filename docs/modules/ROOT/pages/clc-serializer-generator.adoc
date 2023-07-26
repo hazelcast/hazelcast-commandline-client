@@ -1,0 +1,52 @@
+= clc serializer generator
+
+Serializer commands are a group of serializer generator operations.
+
+Check out the documentation for https://docs.hazelcast.com/hazelcast/5.3/serialization/compact-serialization[Compact Serialization] for more information.
+
+Usage:
+
+[source,bash]
+----
+clc serializer [command] [flags]
+----
+
+== Commands
+
+* <<clc-serializer-generate, clc serializer generate>>
+
+== clc serializer generate
+
+Generates compact serializer from the given schema and for the given programming language. You can use this command to automatically generate compact serializers instead of https://docs.hazelcast.com/hazelcast/5.3/serialization/compact-serialization#implementing-compactserializer[implementing them].
+
+Usage:
+
+[source, bash]
+----
+clc serializer generate [schema] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`output-dir`
+|Optional
+|Output directory for the serialization files.
+|Current working directory.
+
+|`language`
+|Required
+|Programming language that the serializer created for.
+|
+|===
+
+Example:
+
+[source,bash]
+----
+clc serializer generate my-schema.yaml --language java --output-dir my-dir
+----
+
