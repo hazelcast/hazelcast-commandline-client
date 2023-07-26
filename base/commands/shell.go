@@ -60,7 +60,7 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 	if len(ec.Args()) > 0 {
 		return puberrors.ErrNotAvailable
 	}
-	m, err := ec.(*cmd.ExecContext).Main().Clone(true)
+	m, err := ec.(*cmd.ExecContext).Main().Clone(cmd.ModeInteractive)
 	if err != nil {
 		return fmt.Errorf("cloning Main: %w", err)
 	}

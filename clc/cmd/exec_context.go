@@ -32,31 +32,31 @@ const (
 type ClientFn func(ctx context.Context, cfg hazelcast.Config) (*hazelcast.ClientInternal, error)
 
 type ExecContext struct {
-	lg            log.Logger
-	stdout        io.Writer
-	stderr        io.Writer
-	stdin         io.Reader
-	args          []string
-	props         *plug.Properties
-	clientFn      ClientFn
-	isInteractive bool
-	cmd           *cobra.Command
-	main          *Main
-	spinnerWait   time.Duration
-	printer       plug.Printer
-	cp            config.Provider
+	lg          log.Logger
+	stdout      io.Writer
+	stderr      io.Writer
+	stdin       io.Reader
+	args        []string
+	props       *plug.Properties
+	clientFn    ClientFn
+	mode        Mode
+	cmd         *cobra.Command
+	main        *Main
+	spinnerWait time.Duration
+	printer     plug.Printer
+	cp          config.Provider
 }
 
-func NewExecContext(lg log.Logger, sio clc.IO, props *plug.Properties, clientFn ClientFn, interactive bool) (*ExecContext, error) {
+func NewExecContext(lg log.Logger, sio clc.IO, props *plug.Properties, clientFn ClientFn, mode Mode) (*ExecContext, error) {
 	return &ExecContext{
-		lg:            lg,
-		stdout:        sio.Stdout,
-		stderr:        sio.Stderr,
-		stdin:         sio.Stdin,
-		props:         props,
-		clientFn:      clientFn,
-		isInteractive: interactive,
-		spinnerWait:   1 * time.Second,
+		lg:          lg,
+		stdout:      sio.Stdout,
+		stderr:      sio.Stderr,
+		stdin:       sio.Stdin,
+		props:       props,
+		clientFn:    clientFn,
+		mode:        mode,
+		spinnerWait: 1 * time.Second,
 	}, nil
 }
 
@@ -132,7 +132,7 @@ func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInt
 }
 
 func (ec *ExecContext) Interactive() bool {
-	return ec.isInteractive
+	return ec.mode == ModeInteractive
 }
 
 func (ec *ExecContext) AddOutputRows(ctx context.Context, rows ...output.Row) error {
@@ -154,7 +154,7 @@ func (ec *ExecContext) AddOutputStream(ctx context.Context, ch <-chan output.Row
 
 func (ec *ExecContext) ShowHelpAndExit() {
 	Must(ec.cmd.Help())
-	if !ec.isInteractive {
+	if !ec.Interactive() {
 		os.Exit(0)
 	}
 }
@@ -163,8 +163,8 @@ func (ec *ExecContext) CommandName() string {
 	return ec.cmd.CommandPath()
 }
 
-func (ec *ExecContext) SetInteractive(value bool) {
-	ec.isInteractive = value
+func (ec *ExecContext) SetMode(mode Mode) {
+	ec.mode = mode
 }
 
 // ExecuteBlocking runs the given blocking function.

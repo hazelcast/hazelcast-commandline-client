@@ -40,23 +40,27 @@ func setClientInternal(ci *hazelcast.ClientInternal) {
 	clientInternal.Store(ci)
 }
 
-func ServerVersionOf(ci *hazelcast.ClientInternal) string {
-	return ci.ConnectionManager().RandomConnection().ServerVersion()
-}
+type Mode int
+
+const (
+	ModeNonInteractive Mode = iota
+	ModeInteractive
+	ModeScripting
+)
 
 type Main struct {
-	root          *cobra.Command
-	cmds          map[string]*cobra.Command
-	lg            *logger.Logger
-	stderr        io.WriteCloser
-	stdout        io.WriteCloser
-	stdin         io.Reader
-	isInteractive bool
-	outputFormat  string
-	configLoaded  bool
-	props         *plug.Properties
-	cc            *CommandContext
-	cp            config.Provider
+	root         *cobra.Command
+	cmds         map[string]*cobra.Command
+	lg           *logger.Logger
+	stderr       io.WriteCloser
+	stdout       io.WriteCloser
+	stdin        io.Reader
+	mode         Mode
+	outputFormat string
+	configLoaded bool
+	props        *plug.Properties
+	cc           *CommandContext
+	cp           config.Provider
 }
 
 func NewMain(arg0, cfgPath string, cfgProvider config.Provider, logPath, logLevel string, sio clc.IO) (*Main, error) {
@@ -99,7 +103,7 @@ func NewMain(arg0, cfgPath string, cfgProvider config.Provider, logPath, logLeve
 	m.props.Set(clc.PropertyConfig, cfgPath)
 	m.props.Set(clc.PropertyLogPath, logPath)
 	m.props.Set(clc.PropertyLogLevel, logLevel)
-	m.cc = NewCommandContext(rc, cfgProvider, m.isInteractive)
+	m.cc = NewCommandContext(rc, cfgProvider, m.mode)
 	if err := m.runInitializers(m.cc); err != nil {
 		return nil, err
 	}
@@ -109,9 +113,9 @@ func NewMain(arg0, cfgPath string, cfgProvider config.Provider, logPath, logLeve
 	return m, nil
 }
 
-func (m *Main) Clone(interactive bool) (*Main, error) {
+func (m *Main) Clone(mode Mode) (*Main, error) {
 	mc := *m
-	mc.isInteractive = true
+	mc.mode = mode
 	rc := &cobra.Command{
 		SilenceErrors: true,
 	}
@@ -128,7 +132,7 @@ func (m *Main) Clone(interactive bool) (*Main, error) {
 		},
 	})
 	mc.cmds = map[string]*cobra.Command{}
-	mc.cc = NewCommandContext(rc, mc.cp, interactive)
+	mc.cc = NewCommandContext(rc, mc.cp, mode)
 	if err := mc.runInitializers(mc.cc); err != nil {
 		return nil, err
 	}
@@ -146,7 +150,7 @@ func (m *Main) Execute(ctx context.Context, args ...string) error {
 	var cm *cobra.Command
 	var cmdArgs []string
 	var err error
-	if !m.isInteractive {
+	if m.mode == ModeNonInteractive {
 		cm, cmdArgs, err = m.root.Find(args)
 		if err != nil {
 			return err
@@ -259,11 +263,11 @@ func (m *Main) createCommands() error {
 	for _, c := range plug.Registry.Commands() {
 		c := c
 		// check if current command available in current mode
-		if !plug.Registry.IsAvailable(m.isInteractive, c.Name) {
+		if !plug.Registry.IsAvailable(m.mode != ModeNonInteractive, c.Name) {
 			continue
 		}
 		// skip interactive commands in interactive mode
-		if m.isInteractive {
+		if m.mode == ModeNonInteractive {
 			if _, ok := c.Item.(plug.InteractiveCommander); ok {
 				continue
 			}
@@ -294,7 +298,7 @@ func (m *Main) createCommands() error {
 			SilenceUsage: true,
 		}
 		cmd.SetUsageTemplate(usageTemplate)
-		cc := NewCommandContext(cmd, m.cp, m.isInteractive)
+		cc := NewCommandContext(cmd, m.cp, m.mode)
 		if ci, ok := c.Item.(plug.Initializer); ok {
 			if err := ci.Init(cc); err != nil {
 				if errors.Is(err, puberrors.ErrNotAvailable) {
@@ -304,7 +308,7 @@ func (m *Main) createCommands() error {
 			}
 		}
 		// add the backslash prefix for top-level commands in the interactive mode
-		if m.isInteractive && parent == m.root {
+		if m.mode != ModeNonInteractive && parent == m.root {
 			cmd.Use = fmt.Sprintf("\\%s", cmd.Use)
 		}
 		parent.AddGroup(cc.Groups()...)
@@ -329,7 +333,7 @@ func (m *Main) createCommands() error {
 						return nil, err
 					}
 					return clientInternal.Load(), nil
-				}, m.isInteractive)
+				}, m.mode)
 				if err != nil {
 					return err
 				}
@@ -363,7 +367,7 @@ func (m *Main) createCommands() error {
 					return err
 				}
 				if ic, ok := c.Item.(plug.InteractiveCommander); ok {
-					ec.SetInteractive(true)
+					ec.SetMode(ModeInteractive)
 					if _, ok := c.Item.(plug.UnwrappableCommander); ok {
 						err = ic.ExecInteractive(ctx, ec)
 					} else {
