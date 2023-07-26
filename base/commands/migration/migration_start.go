@@ -4,11 +4,14 @@ package migration
 
 import (
 	"context"
+	"errors"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
-	"github.com/hazelcast/hazelcast-commandline-client/errors"
+	clcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/prompt"
@@ -23,12 +26,13 @@ func (StartCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandGroup("migration")
 	help := "Start the data migration"
 	cc.SetCommandHelp(help, help)
-	cc.SetPositionalArgCount(0, 1)
+	cc.SetPositionalArgCount(1, 1)
 	cc.AddBoolFlag(clc.FlagAutoYes, "", false, false, "start the migration without confirmation")
 	return nil
 }
 
 func (StartCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+	configDir := ec.Args()[0]
 	ec.PrintlnUnnecessary("")
 	ec.PrintlnUnnecessary(`Hazelcast Data Migration Tool v5.3.0
 (c) 2023 Hazelcast, Inc.
@@ -39,12 +43,15 @@ Selected data structures in the source cluster will be migrated to the target cl
 		p := prompt.New(ec.Stdin(), ec.Stdout())
 		yes, err := p.YesNo("Proceed?")
 		if err != nil {
-			return errors.ErrUserCancelled
+			return clcerrors.ErrUserCancelled
 		}
 		if !yes {
-			return errors.ErrUserCancelled
+			return clcerrors.ErrUserCancelled
 		}
 	}
+	var ci *hazelcast.ClientInternal
+	var q *hazelcast.Queue
+	var err error
 	ec.PrintlnUnnecessary("")
 	stages := []stage.Stage{
 		{
@@ -52,7 +59,14 @@ Selected data structures in the source cluster will be migrated to the target cl
 			SuccessMsg:  "Connected to the migration cluster",
 			FailureMsg:  "Could not connect to the migration cluster",
 			Func: func(status stage.Statuser) error {
-				time.Sleep(1 * time.Second)
+				ci, err = ec.ClientInternal(ctx)
+				if err != nil {
+					return err
+				}
+				q, err = ci.Client().GetQueue(ctx, startQueueName)
+				if err != nil {
+					return err
+				}
 				return nil
 			},
 		},
@@ -61,7 +75,13 @@ Selected data structures in the source cluster will be migrated to the target cl
 			SuccessMsg:  "Started the migration",
 			FailureMsg:  "Could not start the migration",
 			Func: func(status stage.Statuser) error {
-				time.Sleep(1 * time.Second)
+				bundle, err := bundleDirAsJSON(configDir)
+				if err != nil {
+					return err
+				}
+				if err := q.Put(ctx, bundle); err != nil {
+					return err
+				}
 				return nil
 			},
 		},
@@ -70,14 +90,30 @@ Selected data structures in the source cluster will be migrated to the target cl
 			SuccessMsg:  "Migrated the cluster",
 			FailureMsg:  "Could not migrate the cluster",
 			Func: func(status stage.Statuser) error {
-				time.Sleep(10 * time.Second)
-				return nil
+				m, err := ci.Client().GetMap(ctx, statusMapName)
+				if err != nil {
+					return err
+				}
+				for {
+					s, err := m.Get(ctx, statusMapEntryName)
+					if err != nil {
+						return err
+					}
+					switch s {
+					case statusComplete:
+						return nil
+					case statusCanceled:
+						return clcerrors.ErrUserCancelled
+					case statusFailed:
+						return errors.New("migration failed")
+					}
+					time.Sleep(5 * time.Second)
+				}
 			},
 		},
 	}
 	sp := stage.NewFixedProvider(stages...)
 	if err := stage.Execute(ctx, ec, sp); err != nil {
-		ec.PrintlnUnnecessary("FAIL Migration failed: " + err.Error())
 		return err
 	}
 	ec.PrintlnUnnecessary("")
