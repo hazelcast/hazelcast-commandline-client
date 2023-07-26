@@ -26,7 +26,7 @@ func getAPI(ec plug.ExecContext) (*viridian.API, error) {
 	if err != nil {
 		return nil, err
 	}
-	return viridian.NewAPI(secretPrefix, t.Key, t.Token, t.RefreshToken, t.ExpiresIn), nil
+	return viridian.NewAPI(secretPrefix, t.Key, t.AccessToken, t.RefreshToken, t.ExpiresIn), nil
 }
 
 func waitClusterState(ctx context.Context, ec plug.ExecContext, api *viridian.API, clusterIDOrName, state string) error {

@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/secrets"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/types"
 )
 
 const (
@@ -167,19 +168,14 @@ func (a API) DeleteCustomClass(ctx context.Context, cluster string, artifact str
 
 func (a API) DownloadConfig(ctx context.Context, clusterID string) (path string, stop func(), err error) {
 	url := makeConfigURL(clusterID)
-	type resp struct {
-		path string
-		stop func()
-	}
-	r, err := WithRetry(ctx, a, func() (resp, error) {
-		var r resp
-		r.path, r.stop, err = download(ctx, url, a.Token)
+	r, err := WithRetry(ctx, a, func() (types.Tuple2[string, func()], error) {
+		path, stop, err = download(ctx, url, a.Token)
 		if err != nil {
-			return r, err
+			return types.Tuple2[string, func()]{}, err
 		}
-		return r, nil
+		return types.Tuple2[string, func()]{path, stop}, nil
 	})
-	return r.path, r.stop, nil
+	return r.First, r.Second, nil
 }
 
 func (a API) FindCluster(ctx context.Context, idOrName string) (Cluster, error) {

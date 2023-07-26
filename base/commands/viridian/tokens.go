@@ -18,7 +18,7 @@ import (
 
 type Tokens struct {
 	Key          string
-	Token        string
+	AccessToken  string
 	RefreshToken string
 	ExpiresIn    int
 }
@@ -54,7 +54,7 @@ func FindTokens(ec plug.ExecContext) (Tokens, error) {
 	}
 	return Tokens{
 		Key:          apiKey,
-		Token:        token,
+		AccessToken:  token,
 		RefreshToken: refToken,
 		ExpiresIn:    expiresIn,
 	}, nil
