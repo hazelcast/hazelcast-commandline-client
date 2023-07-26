@@ -120,6 +120,6 @@ func Execute(ctx context.Context, ec plug.ExecContext, sp Provider) error {
 // paddedIntFormat returns the fmt string that can fit the given integer.
 // The padding contains spaces.
 func paddedIntFormat(maxValue int) string {
-	d := int(math.Ceil(math.Log10(float64(maxValue)))) + 1
+	d := int(math.Ceil(math.Log10(float64(maxValue))))
 	return "%" + strconv.Itoa(d) + "d"
 }

@@ -19,11 +19,11 @@ type StartCmd struct{}
 func (StartCmd) Unwrappable() {}
 
 func (StartCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("start")
+	cc.SetCommandUsage("start [dmt-config] [flags]")
 	cc.SetCommandGroup("migration")
 	help := "Start the data migration"
 	cc.SetCommandHelp(help, help)
-	cc.SetPositionalArgCount(0, 0)
+	cc.SetPositionalArgCount(0, 1)
 	cc.AddBoolFlag(clc.FlagAutoYes, "", false, false, "start the migration without confirmation")
 	return nil
 }
@@ -34,7 +34,7 @@ func (StartCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 (c) 2023 Hazelcast, Inc.
 	
 Selected data structures in the source cluster will be migrated to the target cluster.	
-Once started, the migration will continue even if this application is terminated.`)
+`)
 	if !ec.Props().GetBool(clc.FlagAutoYes) {
 		p := prompt.New(ec.Stdin(), ec.Stdout())
 		yes, err := p.YesNo("Proceed?")
