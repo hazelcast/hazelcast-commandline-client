@@ -83,7 +83,7 @@ func processSchema(schemaPath string, schema *Schema) error {
 	if err != nil {
 		return err
 	}
-	err = processImports(*schema, filepath.Dir(schemaPath), schema.Imports, map[string]struct{}{schemaPath: {}})
+	err = processImports(*schema, schemaPath, schema.Imports, map[string]struct{}{schemaPath: {}})
 	if err != nil {
 		return err
 	}

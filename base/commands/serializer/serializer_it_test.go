@@ -1,7 +1,6 @@
 package serializer
 
 import (
-	"io/ioutil"
 	"os"
 	"path"
 	"runtime"
@@ -76,7 +75,7 @@ func init() {
 }
 
 func readTestFile(dir string, fName string) string {
-	f, err := ioutil.ReadFile(path.Join(dir, fName))
+	f, err := os.ReadFile(path.Join(dir, fName))
 	if err != nil {
 		panic(err)
 	}
