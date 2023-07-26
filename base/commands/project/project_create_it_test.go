@@ -96,6 +96,8 @@ func calculateFileHash(file string) ([16]byte, error) {
 	if err != nil {
 		return [16]byte{}, err
 	}
+	fmt.Println(fmt.Sprintf("%s file content:", file))
+	fmt.Println(string(b))
 	return md5.Sum(b), nil
 }
 
