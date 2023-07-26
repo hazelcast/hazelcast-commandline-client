@@ -22,7 +22,7 @@ func (a API) DownloadClusterLogs(ctx context.Context, destDir string, idOrName s
 	}
 	r, err := WithRetry(ctx, a, func() (resp, error) {
 		var res resp
-		res.path, res.stop, err = download(ctx, makeUrl(fmt.Sprintf("/cluster/%s/logs", c.ID)), a)
+		res.path, res.stop, err = download(ctx, makeUrl(fmt.Sprintf("/cluster/%s/logs", c.ID)), a.Token)
 		if err != nil {
 			return res, err
 		}

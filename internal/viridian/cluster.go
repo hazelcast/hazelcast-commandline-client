@@ -43,7 +43,7 @@ func (a API) CreateCluster(ctx context.Context, name string, clusterType string,
 		PlanName:            planName,
 	}
 	cluster, err := WithRetry(ctx, a, func() (Cluster, error) {
-		c, err := doPost[createClusterRequest, createClusterResponse](ctx, "/cluster", a, c)
+		c, err := doPost[createClusterRequest, createClusterResponse](ctx, "/cluster", a.Token, c)
 		return Cluster(c), err
 	})
 	if err != nil {
@@ -69,7 +69,7 @@ func (a API) StopCluster(ctx context.Context, idOrName string) error {
 		return err
 	}
 	ok, err := WithRetry(ctx, a, func() (any, error) {
-		return doPost[[]byte, bool](ctx, fmt.Sprintf("/cluster/%s/stop", c.ID), a, nil)
+		return doPost[[]byte, bool](ctx, fmt.Sprintf("/cluster/%s/stop", c.ID), a.Token, nil)
 	})
 	if err != nil {
 		return fmt.Errorf("stopping cluster: %w", err)
@@ -82,7 +82,7 @@ func (a API) StopCluster(ctx context.Context, idOrName string) error {
 
 func (a API) ListClusters(ctx context.Context) ([]Cluster, error) {
 	csw, err := WithRetry(ctx, a, func() (any, error) {
-		return doGet[Wrapper[[]Cluster]](ctx, "/cluster", a)
+		return doGet[Wrapper[[]Cluster]](ctx, "/cluster", a.Token)
 	})
 	if err != nil {
 		return nil, fmt.Errorf("listing clusters: %w", err)
@@ -96,7 +96,7 @@ func (a API) ResumeCluster(ctx context.Context, idOrName string) error {
 		return err
 	}
 	ok, err := WithRetry(ctx, a, func() (any, error) {
-		return doPost[[]byte, bool](ctx, fmt.Sprintf("/cluster/%s/resume", c.ID), a, nil)
+		return doPost[[]byte, bool](ctx, fmt.Sprintf("/cluster/%s/resume", c.ID), a.Token, nil)
 	})
 	if err != nil {
 		return fmt.Errorf("resuming cluster: %w", err)
@@ -113,7 +113,7 @@ func (a API) DeleteCluster(ctx context.Context, idOrName string) error {
 		return err
 	}
 	_, err = WithRetry(ctx, a, func() (any, error) {
-		err = doDelete(ctx, fmt.Sprintf("/cluster/%s", c.ID), a)
+		err = doDelete(ctx, fmt.Sprintf("/cluster/%s", c.ID), a.Token)
 		if err != nil {
 			return nil, err
 		}
@@ -131,7 +131,7 @@ func (a API) GetCluster(ctx context.Context, idOrName string) (Cluster, error) {
 		return Cluster{}, err
 	}
 	c, err := WithRetry(ctx, a, func() (any, error) {
-		return doGet[Cluster](ctx, fmt.Sprintf("/cluster/%s", cluster.ID), a)
+		return doGet[Cluster](ctx, fmt.Sprintf("/cluster/%s", cluster.ID), a.Token)
 	})
 	if err != nil {
 		return Cluster{}, fmt.Errorf("retrieving cluster: %w", err)
@@ -141,7 +141,7 @@ func (a API) GetCluster(ctx context.Context, idOrName string) (Cluster, error) {
 
 func (a API) ListClusterTypes(ctx context.Context) ([]ClusterType, error) {
 	csw, err := WithRetry(ctx, a, func() (any, error) {
-		return doGet[Wrapper[[]ClusterType]](ctx, "/cluster_types", a)
+		return doGet[Wrapper[[]ClusterType]](ctx, "/cluster_types", a.Token)
 	})
 	if err != nil {
 		return nil, fmt.Errorf("listing cluster types: %w", err)

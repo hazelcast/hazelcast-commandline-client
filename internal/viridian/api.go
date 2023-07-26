@@ -56,7 +56,7 @@ type RefreshTokenResponse struct {
 
 func (a *API) RefreshAccessToken(ctx context.Context) (RefreshTokenResponse, error) {
 	r := refreshTokenRequest{RefreshToken: a.RefreshToken}
-	resp, err := doPost[refreshTokenRequest, RefreshTokenResponse](ctx, "/customers/api/token/refresh", API{}, r)
+	resp, err := doPost[refreshTokenRequest, RefreshTokenResponse](ctx, "/customers/api/token/refresh", "", r)
 	if err != nil {
 		return RefreshTokenResponse{}, fmt.Errorf("refreshing token: %w", err)
 	}
@@ -71,7 +71,7 @@ func (a *API) RefreshAccessToken(ctx context.Context) (RefreshTokenResponse, err
 
 func (a API) ListAvailableK8sClusters(ctx context.Context) ([]K8sCluster, error) {
 	c, err := WithRetry(ctx, a, func() ([]K8sCluster, error) {
-		return doGet[[]K8sCluster](ctx, "/kubernetes_clusters/available", a)
+		return doGet[[]K8sCluster](ctx, "/kubernetes_clusters/available", a.Token)
 	})
 	if err != nil {
 		return nil, fmt.Errorf("listing available Kubernetes clusters: %w", err)
@@ -85,7 +85,7 @@ func (a API) ListCustomClasses(ctx context.Context, cluster string) ([]CustomCla
 		return nil, err
 	}
 	csw, err := WithRetry(ctx, a, func() ([]CustomClass, error) {
-		return doGet[[]CustomClass](ctx, fmt.Sprintf("/cluster/%s/custom_classes", c.ID), a)
+		return doGet[[]CustomClass](ctx, fmt.Sprintf("/cluster/%s/custom_classes", c.ID), a.Token)
 	})
 	if err != nil {
 		return nil, fmt.Errorf("listing custom classes: %w", err)
@@ -153,7 +153,7 @@ func (a API) DeleteCustomClass(ctx context.Context, cluster string, artifact str
 		return fmt.Errorf("no custom class artifact found with name or ID %s in cluster %s", artifact, c.ID)
 	}
 	_, err = WithRetry(ctx, a, func() (any, error) {
-		err = doDelete(ctx, fmt.Sprintf("/cluster/%s/custom_classes/%d", c.ID, artifactID), a)
+		err = doDelete(ctx, fmt.Sprintf("/cluster/%s/custom_classes/%d", c.ID, artifactID), a.Token)
 		if err != nil {
 			return nil, err
 		}
@@ -173,7 +173,7 @@ func (a API) DownloadConfig(ctx context.Context, clusterID string) (path string,
 	}
 	r, err := WithRetry(ctx, a, func() (resp, error) {
 		var r resp
-		r.path, r.stop, err = download(ctx, url, a)
+		r.path, r.stop, err = download(ctx, url, a.Token)
 		if err != nil {
 			return r, err
 		}
@@ -215,7 +215,7 @@ func (a API) StreamLogs(ctx context.Context, idOrName string, out io.Writer) err
 	}
 	path := fmt.Sprintf("/cluster/%s/logstream", c.ID)
 	r, err := WithRetry(ctx, a, func() (io.ReadCloser, error) {
-		return doGetRaw(ctx, path, a)
+		return doGetRaw(ctx, path, a.Token)
 	})
 	if err != nil {
 		return err
@@ -273,14 +273,14 @@ func WithRetry[Res any](ctx context.Context, api API, f func() (Res, error)) (Re
 	return r, err
 }
 
-func doGet[Res any](ctx context.Context, path string, api API) (res Res, err error) {
+func doGet[Res any](ctx context.Context, path, token string) (res Res, err error) {
 	req, err := http.NewRequest(http.MethodGet, makeUrl(path), nil)
 	if err != nil {
 		return res, fmt.Errorf("creating request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	if api.Token != "" {
-		req.Header.Set("Authorization", "Bearer "+api.Token)
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
 	}
 	req = req.WithContext(ctx)
 	rawRes, err := http.DefaultClient.Do(req)
@@ -301,14 +301,14 @@ func doGet[Res any](ctx context.Context, path string, api API) (res Res, err err
 	return res, NewHTTPClientError(rawRes.StatusCode, rb)
 }
 
-func doGetRaw(ctx context.Context, path string, api API) (res io.ReadCloser, err error) {
+func doGetRaw(ctx context.Context, path, token string) (res io.ReadCloser, err error) {
 	req, err := http.NewRequest(http.MethodGet, makeUrl(path), nil)
 	if err != nil {
 		return res, fmt.Errorf("creating request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	if api.Token != "" {
-		req.Header.Set("Authorization", "Bearer "+api.Token)
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
 	}
 	req = req.WithContext(ctx)
 	rawRes, err := http.DefaultClient.Do(req)
@@ -326,12 +326,12 @@ func doGetRaw(ctx context.Context, path string, api API) (res io.ReadCloser, err
 	return res, NewHTTPClientError(rawRes.StatusCode, rb)
 }
 
-func doPost[Req, Res any](ctx context.Context, path string, api API, request Req) (res Res, err error) {
+func doPost[Req, Res any](ctx context.Context, path, token string, request Req) (res Res, err error) {
 	m, err := json.Marshal(request)
 	if err != nil {
 		return res, fmt.Errorf("creating payload: %w", err)
 	}
-	b, err := doPostBytes(ctx, makeUrl(path), api, m)
+	b, err := doPostBytes(ctx, makeUrl(path), token, m)
 	if err != nil {
 		return res, err
 	}
@@ -341,15 +341,15 @@ func doPost[Req, Res any](ctx context.Context, path string, api API, request Req
 	return res, nil
 }
 
-func doPostBytes(ctx context.Context, url string, api API, body []byte) ([]byte, error) {
+func doPostBytes(ctx context.Context, url, token string, body []byte) ([]byte, error) {
 	reader := bytes.NewBuffer(body)
 	req, err := http.NewRequest(http.MethodPost, url, reader)
 	if err != nil {
 		return nil, fmt.Errorf("creating request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	if api.Token != "" {
-		req.Header.Set("Authorization", "Bearer "+api.Token)
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
 	}
 	req = req.WithContext(ctx)
 	res, err := http.DefaultClient.Do(req)
@@ -367,14 +367,14 @@ func doPostBytes(ctx context.Context, url string, api API, body []byte) ([]byte,
 	return nil, NewHTTPClientError(res.StatusCode, rb)
 }
 
-func doDelete(ctx context.Context, path string, api API) error {
+func doDelete(ctx context.Context, path, token string) error {
 	req, err := http.NewRequest(http.MethodDelete, makeUrl(path), nil)
 	if err != nil {
 		return fmt.Errorf("creating request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	if api.Token != "" {
-		req.Header.Set("Authorization", "Bearer "+api.Token)
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
 	}
 	req = req.WithContext(ctx)
 	res, err := http.DefaultClient.Do(req)
@@ -392,7 +392,7 @@ func doDelete(ctx context.Context, path string, api API) error {
 	return nil
 }
 
-func download(ctx context.Context, url string, api API) (downloadPath string, stop func(), err error) {
+func download(ctx context.Context, url, token string) (downloadPath string, stop func(), err error) {
 	f, err := os.CreateTemp("", "clc-download-*")
 	if err != nil {
 		return "", nil, err
@@ -402,8 +402,8 @@ func download(ctx context.Context, url string, api API) (downloadPath string, st
 	if err != nil {
 		return "", nil, fmt.Errorf("creating request: %w", err)
 	}
-	if api.Token != "" {
-		req.Header.Set("Authorization", "Bearer "+api.Token)
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
 	}
 	req = req.WithContext(ctx)
 	rawRes, err := http.DefaultClient.Do(req)

@@ -28,7 +28,7 @@ func Login(ctx context.Context, key, secret string) (API, error) {
 		APIKey:    key,
 		APISecret: secret,
 	}
-	resp, err := doPost[loginRequest, loginResponse](ctx, "/customers/api/login", api, c)
+	resp, err := doPost[loginRequest, loginResponse](ctx, "/customers/api/login", "", c)
 	if err != nil {
 		return api, err
 	}
