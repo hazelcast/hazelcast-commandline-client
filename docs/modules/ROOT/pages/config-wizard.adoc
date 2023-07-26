@@ -1,4 +1,4 @@
-== CLC Configuration Wizard
+//== CLC Configuration Wizard
 
 :description: Hazelcast CLC provides a wizard functionlity in the interactice mode to manage multiple configuration easily. It runs when a client connection need and asks for a configuration choice.
 
