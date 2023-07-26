@@ -56,7 +56,7 @@ type RefreshTokenResponse struct {
 
 func (a *API) RefreshAccessToken(ctx context.Context) (RefreshTokenResponse, error) {
 	r := refreshTokenRequest{RefreshToken: a.RefreshToken}
-	resp, err := doPost[refreshTokenRequest, RefreshTokenResponse](ctx, "/customers/api/token/refresh", *a, r)
+	resp, err := doPost[refreshTokenRequest, RefreshTokenResponse](ctx, "/customers/api/token/refresh", API{}, r)
 	if err != nil {
 		return RefreshTokenResponse{}, fmt.Errorf("refreshing token: %w", err)
 	}
@@ -258,21 +258,19 @@ func makeUrl(path string) string {
 
 func WithRetry[Res any](ctx context.Context, api API, f func() (Res, error)) (Res, error) {
 	r, err := f()
-	var e *HTTPClientError
-	if errors.As(err, &e) {
-		if e.Code() == http.StatusUnauthorized {
-			_, err = api.RefreshAccessToken(ctx)
-			if err != nil {
-				return r, err
-			}
-			r, err = f()
-			if err != nil {
-				return r, err
-			}
-			return r, nil
+	var e HTTPClientError
+	if errors.As(err, &e) && e.Code() == http.StatusUnauthorized {
+		_, err = api.RefreshAccessToken(ctx)
+		if err != nil {
+			return r, err
 		}
+		r, err = f()
+		if err != nil {
+			return r, err
+		}
+		return r, nil
 	}
-	return r, nil
+	return r, err
 }
 
 func doGet[Res any](ctx context.Context, path string, api API) (res Res, err error) {
