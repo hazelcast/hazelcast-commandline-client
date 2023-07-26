@@ -30,6 +30,10 @@ func generateCompactClasses(lang string, schema Schema) (map[ClassInfo]string, e
 }
 
 func saveCompactClasses(outputDir string, classes map[ClassInfo]string) error {
+	err := os.MkdirAll(outputDir, fs.ModePerm)
+	if err != nil {
+		return fmt.Errorf("generating target directories at path %s: %w", outputDir, err)
+	}
 	var errString strings.Builder
 	for k, v := range classes {
 		p := path.Join(outputDir, k.FileName)
@@ -38,5 +42,8 @@ func saveCompactClasses(outputDir string, classes map[ClassInfo]string) error {
 			errString.WriteString(err.Error() + "\n")
 		}
 	}
-	return fmt.Errorf(errString.String())
+	if errString.String() != "" {
+		return fmt.Errorf(errString.String())
+	}
+	return nil
 }
