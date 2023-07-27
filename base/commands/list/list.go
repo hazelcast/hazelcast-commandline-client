@@ -1,4 +1,4 @@
-//go:build base || list
+//go:build std || list
 
 package list
 
@@ -24,6 +24,7 @@ type ListCommand struct {
 }
 
 func (mc *ListCommand) Init(cc plug.InitContext) error {
+	cc.AddCommandGroup(clc.GroupDDSID, clc.GroupDDSTitle)
 	cc.SetCommandGroup(clc.GroupDDSID)
 	cc.AddStringFlag(listFlagName, "n", defaultListName, false, "list name")
 	cc.AddBoolFlag(listFlagShowType, "", false, false, "add the type names to the output")

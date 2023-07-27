@@ -1,10 +1,9 @@
-//go:build base
+//go:build std || shell
 
 package commands
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -28,8 +27,6 @@ const banner = `Hazelcast CLC %s (c) 2023 Hazelcast Inc.
 %s%s
 
 `
-
-var errHelp = errors.New("interactive help")
 
 type ShellCommand struct {
 	shortcuts map[string]struct{}
@@ -107,61 +104,6 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 }
 
 func (*ShellCommand) Unwrappable() {}
-
-func convertStatement(stmt string) (string, error) {
-	stmt = strings.TrimSpace(stmt)
-	if strings.HasPrefix(stmt, "help") {
-		return "", errHelp
-	}
-	if strings.HasPrefix(stmt, shell.CmdPrefix) {
-		// this is a shell command
-		stmt = strings.TrimPrefix(stmt, "\\")
-		parts := strings.Fields(stmt)
-		switch parts[0] {
-		case "dm":
-			if len(parts) == 1 {
-				return "show mappings;", nil
-			}
-			if len(parts) == 2 {
-				// escape single quote
-				mn := strings.Replace(parts[1], "'", "''", -1)
-				return fmt.Sprintf(`
-					SELECT * FROM information_schema.mappings
-					WHERE table_name = '%s';
-				`, mn), nil
-			}
-			return "", fmt.Errorf("Usage: %sdm [mapping]", shell.CmdPrefix)
-		case "dm+":
-			if len(parts) == 1 {
-				return "show mappings;", nil
-			}
-			if len(parts) == 2 {
-				// escape single quote
-				mn := strings.Replace(parts[1], "'", "''", -1)
-				return fmt.Sprintf(`
-					SELECT * FROM information_schema.columns
-					WHERE table_name = '%s';
-				`, mn), nil
-			}
-			return "", fmt.Errorf("Usage: %sdm+ [mapping]", shell.CmdPrefix)
-		case "exit":
-			return "", shell.ErrExit
-		}
-		return "", fmt.Errorf("Unknown shell command: %s", stmt)
-	}
-	return stmt, nil
-}
-
-func interactiveHelp() string {
-	return `
-Shortcut Commands:
-	\dm           List mappings
-	\dm  MAPPING  Display information about a mapping
-	\dm+ MAPPING  Describe a mapping
-	\exit         Exit the shell
-	\help         Display help for CLC commands
-`
-}
 
 func init() {
 	Must(plug.Registry.RegisterCommand("shell", &ShellCommand{}))

@@ -43,6 +43,14 @@ func Secrets() string {
 	return filepath.Join(Home(), "secrets")
 }
 
+func Templates() string {
+	return filepath.Join(Home(), "templates")
+}
+
+func ResolveTemplatePath(t string) string {
+	return filepath.Join(Templates(), t)
+}
+
 func DefaultConfigPath() string {
 	if p := nearbyConfigPath(); p != "" {
 		return p
@@ -164,4 +172,8 @@ func nearbyConfigPath() string {
 		}
 	}
 	return ""
+}
+
+func SplitExt(dest string) string {
+	return strings.TrimSuffix(dest, filepath.Ext(dest))
 }

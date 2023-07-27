@@ -1,4 +1,4 @@
-//go:build base || atomiclong
+//go:build std || atomiclong
 
 package atomiclong
 

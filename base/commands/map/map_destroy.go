@@ -1,3 +1,5 @@
+//go:build std || map
+
 package _map
 
 import (
