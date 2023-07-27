@@ -11,7 +11,9 @@ type loginRequest struct {
 }
 
 type loginResponse struct {
-	Token string `json:"token"`
+	Token        string `json:"token"`
+	ExpiresIn    int    `json:"expires_in"`
+	RefreshToken string `json:"refresh_token"`
 }
 
 func Login(ctx context.Context, key, secret string) (API, error) {
@@ -30,6 +32,8 @@ func Login(ctx context.Context, key, secret string) (API, error) {
 	if err != nil {
 		return api, err
 	}
-	api.token = resp.Token
+	api.Token = resp.Token
+	api.ExpiresIn = resp.ExpiresIn
+	api.RefreshToken = resp.RefreshToken
 	return api, nil
 }

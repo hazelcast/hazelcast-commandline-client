@@ -4,12 +4,16 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/hazelcast/hazelcast-commandline-client/clc/secrets"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/types"
 )
 
 const (
@@ -25,19 +29,51 @@ type Wrapper[T any] struct {
 }
 
 type API struct {
-	token string
+	Key          string
+	SecretPrefix string
+	Token        string
+	RefreshToken string
+	ExpiresIn    int
 }
 
-func NewAPI(token string) *API {
-	return &API{token: token}
+func NewAPI(secretPrefix, key, token, refreshToken string, expiresIn int) *API {
+	return &API{
+		SecretPrefix: secretPrefix,
+		Key:          key,
+		Token:        token,
+		RefreshToken: refreshToken,
+		ExpiresIn:    expiresIn,
+	}
 }
 
-func (a API) Token() string {
-	return a.token
+type refreshTokenRequest struct {
+	RefreshToken string `json:"refreshToken"`
+}
+
+type RefreshTokenResponse struct {
+	AccessToken  string `json:"accessToken"`
+	RefreshToken string `json:"refreshToken"`
+}
+
+func (a *API) RefreshAccessToken(ctx context.Context) (RefreshTokenResponse, error) {
+	r := refreshTokenRequest{RefreshToken: a.RefreshToken}
+	resp, err := doPost[refreshTokenRequest, RefreshTokenResponse](ctx, "/customers/api/token/refresh", "", r)
+	if err != nil {
+		return RefreshTokenResponse{}, fmt.Errorf("refreshing token: %w", err)
+	}
+	a.Token = resp.AccessToken
+	a.RefreshToken = resp.RefreshToken
+	err = secrets.Save(a.SecretPrefix, a.Key, APIClass(), a.Token, a.RefreshToken, a.ExpiresIn)
+	if err != nil {
+		return RefreshTokenResponse{}, err
+	}
+	return resp, nil
 }
 
 func (a API) ListAvailableK8sClusters(ctx context.Context) ([]K8sCluster, error) {
-	c, err := doGet[[]K8sCluster](ctx, "/kubernetes_clusters/available", a.Token())
+	c, err := WithRetry(ctx, a, func() ([]K8sCluster, error) {
+		return doGet[[]K8sCluster](ctx, "/kubernetes_clusters/available", a.Token)
+	})
 	if err != nil {
 		return nil, fmt.Errorf("listing available Kubernetes clusters: %w", err)
 	}
@@ -49,7 +85,9 @@ func (a API) ListCustomClasses(ctx context.Context, cluster string) ([]CustomCla
 	if err != nil {
 		return nil, err
 	}
-	csw, err := doGet[[]CustomClass](ctx, fmt.Sprintf("/cluster/%s/custom_classes", c.ID), a.Token())
+	csw, err := WithRetry(ctx, a, func() ([]CustomClass, error) {
+		return doGet[[]CustomClass](ctx, fmt.Sprintf("/cluster/%s/custom_classes", c.ID), a.Token)
+	})
 	if err != nil {
 		return nil, fmt.Errorf("listing custom classes: %w", err)
 	}
@@ -61,7 +99,16 @@ func (a API) UploadCustomClasses(ctx context.Context, p func(progress float32), 
 	if err != nil {
 		return err
 	}
-	err = doCustomClassUpload(ctx, p, fmt.Sprintf("/cluster/%s/custom_classes", c.ID), filePath, a.Token())
+	_, err = WithRetry(ctx, a, func() (any, error) {
+		err = doCustomClassUpload(ctx, p, fmt.Sprintf("/cluster/%s/custom_classes", c.ID), filePath, a)
+		if err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	if err != nil {
+		return err
+	}
 	if err != nil {
 		return fmt.Errorf("uploading custom class: %w", err)
 	}
@@ -81,7 +128,13 @@ func (a API) DownloadCustomClass(ctx context.Context, p func(progress float32), 
 		return fmt.Errorf("no custom class artifact found with name or ID %s in cluster %s", artifact, c.ID)
 	}
 	url := fmt.Sprintf("/cluster/%s/custom_classes/%d", c.ID, artifactID)
-	err = doCustomClassDownload(ctx, p, targetInfo, url, artifactName, a.token)
+	_, err = WithRetry(ctx, a, func() (any, error) {
+		err = doCustomClassDownload(ctx, p, targetInfo, url, artifactName, a)
+		if err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
 	if err != nil {
 		return err
 	}
@@ -100,7 +153,13 @@ func (a API) DeleteCustomClass(ctx context.Context, cluster string, artifact str
 	if artifactID == 0 {
 		return fmt.Errorf("no custom class artifact found with name or ID %s in cluster %s", artifact, c.ID)
 	}
-	err = doDelete(ctx, fmt.Sprintf("/cluster/%s/custom_classes/%d", c.ID, artifactID), a.token)
+	_, err = WithRetry(ctx, a, func() (any, error) {
+		err = doDelete(ctx, fmt.Sprintf("/cluster/%s/custom_classes/%d", c.ID, artifactID), a.Token)
+		if err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
 	if err != nil {
 		return err
 	}
@@ -109,7 +168,14 @@ func (a API) DeleteCustomClass(ctx context.Context, cluster string, artifact str
 
 func (a API) DownloadConfig(ctx context.Context, clusterID string) (path string, stop func(), err error) {
 	url := makeConfigURL(clusterID)
-	return download(ctx, url, a.token)
+	r, err := WithRetry(ctx, a, func() (types.Tuple2[string, func()], error) {
+		path, stop, err = download(ctx, url, a.Token)
+		if err != nil {
+			return types.Tuple2[string, func()]{}, err
+		}
+		return types.Tuple2[string, func()]{path, stop}, nil
+	})
+	return r.First, r.Second, nil
 }
 
 func (a API) FindCluster(ctx context.Context, idOrName string) (Cluster, error) {
@@ -144,7 +210,9 @@ func (a API) StreamLogs(ctx context.Context, idOrName string, out io.Writer) err
 		return err
 	}
 	path := fmt.Sprintf("/cluster/%s/logstream", c.ID)
-	r, err := doGetRaw(ctx, path, a.token)
+	r, err := WithRetry(ctx, a, func() (io.ReadCloser, error) {
+		return doGetRaw(ctx, path, a.Token)
+	})
 	if err != nil {
 		return err
 	}
@@ -184,6 +252,23 @@ func makeUrl(path string) string {
 	return APIBaseURL() + path
 }
 
+func WithRetry[Res any](ctx context.Context, api API, f func() (Res, error)) (Res, error) {
+	r, err := f()
+	var e HTTPClientError
+	if errors.As(err, &e) && e.Code() == http.StatusUnauthorized {
+		_, err = api.RefreshAccessToken(ctx)
+		if err != nil {
+			return r, err
+		}
+		r, err = f()
+		if err != nil {
+			return r, err
+		}
+		return r, nil
+	}
+	return r, err
+}
+
 func doGet[Res any](ctx context.Context, path, token string) (res Res, err error) {
 	req, err := http.NewRequest(http.MethodGet, makeUrl(path), nil)
 	if err != nil {
@@ -203,7 +288,7 @@ func doGet[Res any](ctx context.Context, path, token string) (res Res, err error
 	if err != nil {
 		return res, fmt.Errorf("reading response: %w", err)
 	}
-	if rawRes.StatusCode == 200 {
+	if rawRes.StatusCode == http.StatusOK {
 		if err = json.Unmarshal(rb, &res); err != nil {
 			return res, err
 		}
@@ -322,7 +407,7 @@ func download(ctx context.Context, url, token string) (downloadPath string, stop
 		return "", nil, fmt.Errorf("sending request: %w", err)
 	}
 	defer rawRes.Body.Close()
-	if rawRes.StatusCode == 200 {
+	if rawRes.StatusCode == http.StatusOK {
 		if _, err := io.Copy(f, rawRes.Body); err != nil {
 			return "", nil, fmt.Errorf("downloading file: %w", err)
 		}

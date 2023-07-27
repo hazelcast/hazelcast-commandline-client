@@ -36,7 +36,7 @@ func (pr *UploadProgressReader) Print() {
 	}
 }
 
-func doCustomClassUpload(ctx context.Context, progressSetter func(progress float32), url, path, token string) error {
+func doCustomClassUpload(ctx context.Context, progressSetter func(progress float32), url, path string, api API) error {
 	reqBody := &bytes.Buffer{}
 	w := multipart.NewWriter(reqBody)
 	p, err := w.CreateFormFile("customClassesFile", filepath.Base(path))
@@ -58,8 +58,8 @@ func doCustomClassUpload(ctx context.Context, progressSetter func(progress float
 	if err != nil {
 		return err
 	}
-	if token != "" {
-		req.Header.Set("Authorization", "Bearer "+token)
+	if api.Token != "" {
+		req.Header.Set("Authorization", "Bearer "+api.Token)
 	}
 	req.Header.Set("Content-Type", w.FormDataContentType())
 	req = req.WithContext(ctx)
