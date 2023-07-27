@@ -1,4 +1,4 @@
-//go:build base || queue
+//go:build std || queue
 
 package queue
 
@@ -6,12 +6,13 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hazelcast/hazelcast-go-client"
+
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
-	"github.com/hazelcast/hazelcast-go-client"
 )
 
 type QueueSizeCommand struct{}

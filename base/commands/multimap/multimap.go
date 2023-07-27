@@ -1,4 +1,4 @@
-//go:build base || multimap
+//go:build std || multimap
 
 package multimap
 
@@ -6,11 +6,12 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hazelcast/hazelcast-go-client"
+
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-go-client"
 )
 
 const (
@@ -23,6 +24,7 @@ type MultiMapCommand struct {
 }
 
 func (m MultiMapCommand) Init(cc plug.InitContext) error {
+	cc.AddCommandGroup(clc.GroupDDSID, clc.GroupDDSTitle)
 	cc.SetCommandGroup(clc.GroupDDSID)
 	cc.AddStringFlag(multiMapFlagName, "n", defaultMultiMapName, false, "multimap name")
 	cc.AddBoolFlag(multiMapFlagShowType, "", false, false, "add the type names to the output")

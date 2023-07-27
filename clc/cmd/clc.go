@@ -251,7 +251,7 @@ func (m *Main) runInitializers(cc *CommandContext) error {
 			return err
 		}
 	}
-	m.root.AddGroup(cc.Groups()...)
+	addUniqueCommandGroup(cc, m.root)
 	return nil
 }
 
@@ -307,7 +307,7 @@ func (m *Main) createCommands() error {
 		if m.isInteractive && parent == m.root {
 			cmd.Use = fmt.Sprintf("\\%s", cmd.Use)
 		}
-		parent.AddGroup(cc.Groups()...)
+		addUniqueCommandGroup(cc, parent)
 		if !cc.TopLevel() {
 			cmd.RunE = func(cmd *cobra.Command, args []string) error {
 				cfs := cmd.Flags()
@@ -427,6 +427,20 @@ func convertUnknownCommandError(err error) error {
 		return err
 	}
 	return fmt.Errorf("unknown command \\%s", ss[1])
+}
+
+func addUniqueCommandGroup(cc *CommandContext, parent *cobra.Command) {
+	g := cc.Group()
+	if g == nil {
+		return
+	}
+	// the group should be added only once
+	for _, pg := range parent.Groups() {
+		if g.ID == pg.ID {
+			return
+		}
+	}
+	parent.AddGroup(g)
 }
 
 func init() {

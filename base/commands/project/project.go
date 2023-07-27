@@ -1,3 +1,5 @@
+//go:build std || project
+
 package project
 
 import (
@@ -10,6 +12,8 @@ import (
 type ProjectCommand struct{}
 
 func (gc *ProjectCommand) Init(cc plug.InitContext) error {
+	cc.AddCommandGroup("project", "Project")
+	cc.SetCommandGroup("project")
 	cc.SetTopLevel(true)
 	cc.SetCommandUsage("project [command] [flags]")
 	help := "Project commands"
