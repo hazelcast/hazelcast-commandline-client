@@ -1,4 +1,4 @@
-//go:build base || set
+//go:build std || set
 
 package set
 
@@ -6,11 +6,12 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hazelcast/hazelcast-go-client"
+
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-go-client"
 )
 
 const (
@@ -22,6 +23,7 @@ const (
 type SetCommand struct{}
 
 func (sc *SetCommand) Init(cc plug.InitContext) error {
+	cc.AddCommandGroup(clc.GroupDDSID, clc.GroupDDSTitle)
 	cc.SetCommandGroup(clc.GroupDDSID)
 	cc.AddStringFlag(setFlagName, "n", defaultSetName, false, "set name")
 	cc.AddBoolFlag(setFlagShowType, "", false, false, "add the type names to the output")

@@ -1,4 +1,4 @@
-//go:build base || objects
+//go:build std || object
 
 package object
 

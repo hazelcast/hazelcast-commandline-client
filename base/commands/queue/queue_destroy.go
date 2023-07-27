@@ -1,4 +1,4 @@
-//go:build base || queue
+//go:build std || queue
 
 package queue
 

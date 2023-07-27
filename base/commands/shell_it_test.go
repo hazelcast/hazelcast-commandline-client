@@ -1,3 +1,5 @@
+//go:build std || shell
+
 package commands_test
 
 import (

@@ -19,3 +19,11 @@ func SplitByComma(str string, removeEmpty bool) []string {
 	return ls[0:idx:idx]
 
 }
+
+func ParseKeyValue(kvStr string) (string, string) {
+	idx := strings.Index(kvStr, "=")
+	if idx < 0 {
+		return "", ""
+	}
+	return strings.TrimSpace(kvStr[:idx]), strings.TrimSpace(kvStr[idx+1:])
+}

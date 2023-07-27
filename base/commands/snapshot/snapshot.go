@@ -1,4 +1,4 @@
-//go:build base || snapshot
+//go:build std || snapshot
 
 package snapshot
 
@@ -13,6 +13,7 @@ import (
 type Cmd struct{}
 
 func (cm Cmd) Init(cc plug.InitContext) error {
+	cc.AddCommandGroup(clc.GroupJetID, clc.GroupJetTitle)
 	cc.SetCommandGroup(clc.GroupJetID)
 	cc.SetTopLevel(true)
 	help := "Jet snapshot operations"

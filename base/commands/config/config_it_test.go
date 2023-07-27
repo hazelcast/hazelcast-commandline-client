@@ -1,3 +1,5 @@
+//go:build std || config
+
 package config_test
 
 import (

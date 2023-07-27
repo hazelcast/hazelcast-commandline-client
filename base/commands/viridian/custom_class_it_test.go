@@ -1,4 +1,4 @@
-//go:build base || viridian
+//go:build std || viridian
 
 package viridian_test
 

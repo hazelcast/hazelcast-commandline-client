@@ -12,40 +12,37 @@
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and
 * limitations under the License.
-*/
+ */
 
 package codec
 
-import (    
-    iserialization "github.com/hazelcast/hazelcast-go-client"
-    proto "github.com/hazelcast/hazelcast-go-client"
+import (
+	iserialization "github.com/hazelcast/hazelcast-go-client"
+	proto "github.com/hazelcast/hazelcast-go-client"
 )
 
+const (
+	MapLoadGivenKeysCodecRequestMessageType  = int32(0x012100)
+	MapLoadGivenKeysCodecResponseMessageType = int32(0x012101)
 
-const(
-    MapLoadGivenKeysCodecRequestMessageType  = int32(0x012100)
-    MapLoadGivenKeysCodecResponseMessageType = int32(0x012101)
-
-    MapLoadGivenKeysCodecRequestReplaceExistingValuesOffset = proto.PartitionIDOffset + proto.IntSizeInBytes
-    MapLoadGivenKeysCodecRequestInitialFrameSize = MapLoadGivenKeysCodecRequestReplaceExistingValuesOffset + proto.BooleanSizeInBytes
-
+	MapLoadGivenKeysCodecRequestReplaceExistingValuesOffset = proto.PartitionIDOffset + proto.IntSizeInBytes
+	MapLoadGivenKeysCodecRequestInitialFrameSize            = MapLoadGivenKeysCodecRequestReplaceExistingValuesOffset + proto.BooleanSizeInBytes
 )
 
 // Loads the given keys. This is a batch load operation so that an implementation can optimize the multiple loads.
 
 func EncodeMapLoadGivenKeysRequest(name string, keys []iserialization.Data, replaceExistingValues bool) *proto.ClientMessage {
-    clientMessage := proto.NewClientMessageForEncode()
-    clientMessage.SetRetryable(false)
+	clientMessage := proto.NewClientMessageForEncode()
+	clientMessage.SetRetryable(false)
 
-    initialFrame := proto.NewFrameWith(make([]byte, MapLoadGivenKeysCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-    EncodeBoolean(initialFrame.Content, MapLoadGivenKeysCodecRequestReplaceExistingValuesOffset, replaceExistingValues)
-    clientMessage.AddFrame(initialFrame)
-    clientMessage.SetMessageType(MapLoadGivenKeysCodecRequestMessageType)
-    clientMessage.SetPartitionId(-1)
+	initialFrame := proto.NewFrameWith(make([]byte, MapLoadGivenKeysCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
+	EncodeBoolean(initialFrame.Content, MapLoadGivenKeysCodecRequestReplaceExistingValuesOffset, replaceExistingValues)
+	clientMessage.AddFrame(initialFrame)
+	clientMessage.SetMessageType(MapLoadGivenKeysCodecRequestMessageType)
+	clientMessage.SetPartitionId(-1)
 
-    EncodeString(clientMessage, name)
-    EncodeListMultiFrameForData(clientMessage, keys)
+	EncodeString(clientMessage, name)
+	EncodeListMultiFrameForData(clientMessage, keys)
 
-    return clientMessage
+	return clientMessage
 }
-

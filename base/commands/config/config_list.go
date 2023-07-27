@@ -1,4 +1,4 @@
-//go:build base || config
+//go:build std || config
 
 package config
 

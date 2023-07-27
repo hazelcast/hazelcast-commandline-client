@@ -1,4 +1,4 @@
-//go:build base || set
+//go:build std || set
 
 package set
 

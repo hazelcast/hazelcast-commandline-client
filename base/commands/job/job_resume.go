@@ -1,4 +1,4 @@
-//go:build base || job
+//go:build std || job
 
 package job
 
@@ -29,18 +29,22 @@ func (cm ResumeCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		return err
 	}
-	jm, err := NewJobNameToIDMap(ctx, ec, false)
-	if err != nil {
-		return err
-	}
 	nameOrID := ec.Args()[0]
-	jid, ok := jm.GetIDForName(nameOrID)
-	if !ok {
-		return jet.ErrInvalidJobID
-	}
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Resuming job: %s", idToString(jid)))
+		sp.SetText(fmt.Sprintf("Resuming job: %s", nameOrID))
 		j := jet.New(ci, sp, ec.Logger())
+		jis, err := j.GetJobList(ctx)
+		if err != nil {
+			return nil, err
+		}
+		jm, err := NewJobNameToIDMap(jis)
+		if err != nil {
+			return nil, err
+		}
+		jid, ok := jm.GetIDForName(nameOrID)
+		if !ok {
+			return nil, jet.ErrInvalidJobID
+		}
 		return nil, j.ResumeJob(ctx, jid)
 	})
 	if err != nil {
@@ -57,7 +61,7 @@ func (cm ResumeCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	}
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	if verbose {
-		ec.PrintlnUnnecessary(fmt.Sprintf("Job resumed: %s", idToString(jid)))
+		ec.PrintlnUnnecessary(fmt.Sprintf("Job resumed: %s", nameOrID))
 	}
 	return nil
 }

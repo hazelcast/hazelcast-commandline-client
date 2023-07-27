@@ -15,16 +15,16 @@ RELEASE_FILE ?= release.txt
 TARGZ ?= true
 
 build:
-	CGO_ENABLED=0 go build -tags base,hazelcastinternal,hazelcastinternaltest -ldflags "$(LDFLAGS)"  -o build/$(BINARY_NAME) ./cmd/clc
+	CGO_ENABLED=0 go build -tags base,std,hazelcastinternal,hazelcastinternaltest -ldflags "$(LDFLAGS)"  -o build/$(BINARY_NAME) ./cmd/clc
 
 build-dmt:
-	CGO_ENABLED=0 go build -tags migration,config,hazelcastinternal,hazelcastinternaltest -ldflags "$(LDFLAGS)"  -o build/$(BINARY_NAME) ./cmd/clc
+	CGO_ENABLED=0 go build -tags base,migration,config,hazelcastinternal,hazelcastinternaltest -ldflags "$(LDFLAGS)"  -o build/$(BINARY_NAME) ./cmd/clc
 
 test:
-	go test -tags base,hazelcastinternal,hazelcastinternaltest -p 1 $(TEST_FLAGS) ./...
+	go test -tags base,std,hazelcastinternal,hazelcastinternaltest -p 1 $(TEST_FLAGS) ./...
 
 test-cover:
-	go test -tags base,hazelcastinternal,hazelcastinternaltest -p 1 $(TEST_FLAGS) -coverprofile=coverage.out -coverpkg $(PACKAGES) -coverprofile=$(COVERAGE_OUT) ./...
+	go test -tags base,std,hazelcastinternal,hazelcastinternaltest -p 1 $(TEST_FLAGS) -coverprofile=coverage.out -coverpkg $(PACKAGES) -coverprofile=$(COVERAGE_OUT) ./...
 
 view-cover:
 	go tool cover -func $(COVERAGE_OUT) | grep total:

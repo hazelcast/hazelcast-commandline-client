@@ -1,4 +1,4 @@
-//go:build base || sql
+//go:build std || sql
 
 package sql
 
@@ -11,14 +11,14 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
+	clcsql "github.com/hazelcast/hazelcast-commandline-client/clc/sql"
 	"github.com/hazelcast/hazelcast-commandline-client/errors"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
 const (
-	propertyUseMappingSuggestion = "use-mapping-suggestion"
-	minServerVersion             = "5.0.0"
+	minServerVersion = "5.0.0"
 )
 
 type SQLCommand struct{}
@@ -47,7 +47,7 @@ This command requires a Viridian or a Hazelcast cluster
 having version %s or better.
 `, minServerVersion)
 	cc.SetCommandHelp(long, "Run SQL")
-	cc.AddBoolFlag(propertyUseMappingSuggestion, "", false, false, "execute the proposed CREATE MAPPING suggestion and retry the query")
+	cc.AddBoolFlag(clcsql.PropertyUseMappingSuggestion, "", false, false, "execute the proposed CREATE MAPPING suggestion and retry the query")
 	return nil
 }
 
@@ -71,11 +71,11 @@ func (cm *SQLCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	// this should be deferred because UpdateOutput will iterate on the result
 	defer stop()
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
-	return UpdateOutput(ctx, ec, res, verbose)
+	return clcsql.UpdateOutput(ctx, ec, res, verbose)
 }
 
 func (cm *SQLCommand) execQuery(ctx context.Context, query string, ec plug.ExecContext) (sql.Result, context.CancelFunc, error) {
-	return ExecSQL(ctx, ec, query)
+	return clcsql.ExecSQL(ctx, ec, query)
 }
 
 func init() {

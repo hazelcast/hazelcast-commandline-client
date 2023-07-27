@@ -1,17 +1,17 @@
 .Get Started
 * xref:overview.adoc[What is Hazelcast CLC?]
-* xref:get-started.adoc[Get Started]
-* Tutorials
-** xref:managing-viridian-clusters.adoc[Manage Viridian Clusters]
-** xref:jet-job-management.adoc[Manage Jet Jobs]
+//* xref:get-started.adoc[Get Started]
+//* Tutorials
+//** xref:managing-viridian-clusters.adoc[Manage Viridian Clusters]
+//** xref:jet-job-management.adoc[Manage Jet Jobs]
 
 
 .Manage
 * xref:install-clc.adoc[Install]
 * xref:configuration.adoc[Configure]
-** xref:connect-to-viridian.adoc[Connect to Viridian]
+//** xref:connect-to-viridian.adoc[Connect to Viridian]
 ** xref:connect-to-platform.adoc[Connect to Platform]
-** xref:config-wizard.adoc[CLC Configuration Wizard ]
+// ** xref:config-wizard.adoc[CLC Configuration Wizard ]
 * xref:upgrade-clc.adoc[Upgrade]
 
 .Reference
@@ -26,10 +26,12 @@
 ** xref:clc-set.adoc[]
 ** xref:clc-queue.adoc[]
 ** xref:clc-topic.adoc[]
+** xref:clc-script.adoc[]
 ** xref:clc-sql.adoc[]
 ** xref:clc-snapshot.adoc[]
 ** xref:clc-version.adoc[]
-** xref:clc-viridian.adoc[]
+//** xref:clc-viridian.adoc[]
+** xref:clc-project.adoc[]
 * xref:environment-variables.adoc[]
 * xref:keyboard-shortcuts.adoc[]
 

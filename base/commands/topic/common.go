@@ -1,4 +1,4 @@
-//go:build base || topic
+//go:build std || topic
 
 package topic
 
