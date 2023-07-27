@@ -1,4 +1,4 @@
-//go:build base || map
+//go:build std || map
 
 package _map
 
@@ -7,10 +7,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client"
+
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-go-client"
 )
 
 type MapLock struct{}
@@ -61,4 +62,3 @@ func (mc *MapLock) Exec(ctx context.Context, ec plug.ExecContext) error {
 func init() {
 	Must(plug.Registry.RegisterCommand("map:lock", &MapLock{}, plug.OnlyInteractive{}))
 }
-

@@ -1,3 +1,5 @@
+//go:build std || list
+
 package list
 
 import (

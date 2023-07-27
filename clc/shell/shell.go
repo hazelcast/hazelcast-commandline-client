@@ -21,7 +21,6 @@ import (
 )
 
 const (
-	CmdPrefix    = `\`
 	envStyler    = "CLC_EXPERIMENTAL_STYLER"
 	envFormatter = "CLC_EXPERIMENTAL_FORMATTER"
 	EnvReadline  = "CLC_EXPERIMENTAL_READLINE"

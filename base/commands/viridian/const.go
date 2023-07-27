@@ -1,3 +1,5 @@
+//go:build std || viridian
+
 package viridian
 
 const (

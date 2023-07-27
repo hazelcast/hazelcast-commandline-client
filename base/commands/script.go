@@ -1,3 +1,5 @@
+//go:build std || script
+
 package commands
 
 import (

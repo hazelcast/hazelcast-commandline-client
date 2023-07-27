@@ -1,4 +1,6 @@
-package base_test
+//go:build std || home
+
+package commands_test
 
 import (
 	"context"
