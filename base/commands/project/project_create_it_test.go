@@ -13,9 +13,12 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/it/skip"
 )
 
 func TestCreateCommand(t *testing.T) {
+	// We are skipping this test on Windows, because git-go does not allow to configure core.autocrlf option
+	skip.If(t, "os = windows")
 	os.Setenv(envTemplateSource, "https://github.com/kutluhanmetin")
 	testCases := []struct {
 		inputTemplateName string
@@ -27,14 +30,17 @@ func TestCreateCommand(t *testing.T) {
 			inputTemplateName: "simple-streaming-pipeline-template",
 			inputOutputDir:    "my-simple-streaming-pipeline",
 			inputArgs:         []string{"rootProjectName=simple-streaming-pipeline"},
-			testProjectDir:    "../../../examples/platform/simple-streaming-pipeline",
+			testProjectDir:    "testdata/simple-streaming-pipeline",
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.inputTemplateName, func(t *testing.T) {
-			defer teardown(tc.inputOutputDir)
 			tcx := it.TestContext{T: t}
 			tcx.Tester(func(tcx it.TestContext) {
+				// create project in temp dir
+				// we cannot initialize it in test case because CLC_HOME is set to a temp dir in tcx.Tester func
+				tc.inputOutputDir = filepath.Join(paths.Home(), tc.inputOutputDir)
+				defer teardown(tc.inputOutputDir)
 				ctx := context.Background()
 				tcx.WithReset(func() {
 					cmd := []string{"project", "create", tc.inputTemplateName, tc.inputOutputDir}
