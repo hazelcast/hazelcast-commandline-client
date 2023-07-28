@@ -130,7 +130,7 @@ func refreshTokenIfExpired(secretPrefix, accessTokenFileName string) error {
 			return err
 		}
 		// save to .expiry file
-		d, err := expiryData(e)
+		d, err := makeExpiryData(e)
 		if err != nil {
 			return err
 		}
@@ -175,7 +175,7 @@ func expiryValues(secretPrefix, expiryFileName string) (int64, int, error) {
 	return expiryTime, expiryDuration, nil
 }
 
-func expiryData(expiresIn int) ([]byte, error) {
+func makeExpiryData(expiresIn int) ([]byte, error) {
 	ts := strconv.FormatInt(secrets.CalculateExpiry(expiresIn), 10)
 	ex := strconv.Itoa(expiresIn)
 	return []byte(fmt.Sprintf("%s-%s", ts, ex)), nil
