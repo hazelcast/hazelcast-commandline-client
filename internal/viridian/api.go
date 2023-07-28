@@ -55,19 +55,19 @@ type RefreshTokenResponse struct {
 	RefreshToken string `json:"refreshToken"`
 }
 
-func (a *API) RefreshAccessToken(ctx context.Context) (RefreshTokenResponse, error) {
+func (a *API) RefreshAccessToken(ctx context.Context) error {
 	r := refreshTokenRequest{RefreshToken: a.RefreshToken}
 	resp, err := doPost[refreshTokenRequest, RefreshTokenResponse](ctx, "/customers/api/token/refresh", "", r)
 	if err != nil {
-		return RefreshTokenResponse{}, fmt.Errorf("refreshing token: %w", err)
+		return fmt.Errorf("refreshing token: %w", err)
 	}
 	a.Token = resp.AccessToken
 	a.RefreshToken = resp.RefreshToken
 	err = secrets.Save(a.SecretPrefix, a.Key, APIClass(), a.Token, a.RefreshToken, a.ExpiresIn)
 	if err != nil {
-		return RefreshTokenResponse{}, err
+		return err
 	}
-	return resp, nil
+	return nil
 }
 
 func (a API) ListAvailableK8sClusters(ctx context.Context) ([]K8sCluster, error) {
@@ -256,7 +256,7 @@ func WithRetry[Res any](ctx context.Context, api API, f func() (Res, error)) (Re
 	r, err := f()
 	var e HTTPClientError
 	if errors.As(err, &e) && e.Code() == http.StatusUnauthorized {
-		_, err = api.RefreshAccessToken(ctx)
+		err = api.RefreshAccessToken(ctx)
 		if err != nil {
 			return r, err
 		}

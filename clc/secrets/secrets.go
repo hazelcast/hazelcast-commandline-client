@@ -79,17 +79,25 @@ func saveRefreshToken(secretPrefix, apiClass, key, refreshToken string) error {
 func saveExpiry(secretPrefix, apiClass, key string, expiresIn int) error {
 	fn := fmt.Sprintf(fmt.Sprintf(ExpiresInFileFormat, apiClass, key))
 	path := paths.ResolveSecretPath(secretPrefix, fn)
-	ts := strconv.FormatInt(CalculateExpiry(expiresIn), 10)
-	ex := strconv.Itoa(expiresIn)
+	d, err := makeExpiryData(expiresIn)
+	if err != nil {
+		return err
+	}
 	// We have to save to this file in (expireTime + expireDuration)-expireDuration format,
 	// Because Viridian refresh token endpoint does not return expiryDuration
 	// On Viridian expiryDuration is related to api key
-	if err := os.WriteFile(path, []byte(fmt.Sprintf("%s-%s", ts, ex)), 0600); err != nil {
+	if err := os.WriteFile(path, d, 0600); err != nil {
 		return fmt.Errorf("writing the expires in to file: %w", err)
 	}
 	return nil
 }
 
-func CalculateExpiry(expiresIn int) int64 {
+func makeExpiryData(expiresIn int) ([]byte, error) {
+	ts := strconv.FormatInt(calculateExpiry(expiresIn), 10)
+	ex := strconv.Itoa(expiresIn)
+	return []byte(fmt.Sprintf("%s-%s", ts, ex)), nil
+}
+
+func calculateExpiry(expiresIn int) int64 {
 	return time.Now().Add(time.Duration(expiresIn) * time.Second).Unix()
 }

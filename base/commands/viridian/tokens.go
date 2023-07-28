@@ -117,25 +117,8 @@ func refreshTokenIfExpired(secretPrefix, accessTokenFileName string) error {
 			return err
 		}
 		api := viridian.API{Key: apiKey, SecretPrefix: secretPrefix, RefreshToken: string(refreshToken), ExpiresIn: e}
-		r, err := api.RefreshAccessToken(context.Background())
-		if err != nil {
+		if err = api.RefreshAccessToken(context.Background()); err != nil {
 			return err
-		}
-		// save to .access file
-		if err = secrets.Write(secretPrefix, accessTokenFileName, []byte(r.AccessToken)); err != nil {
-			return err
-		}
-		// save to .refresh file
-		if err = secrets.Write(secretPrefix, refreshTokenFileName, []byte(r.RefreshToken)); err != nil {
-			return err
-		}
-		// save to .expiry file
-		d, err := makeExpiryData(e)
-		if err != nil {
-			return err
-		}
-		if err := os.WriteFile(paths.ResolveSecretPath(secretPrefix, expiryFileName), d, 0600); err != nil {
-			return fmt.Errorf("writing the expires in to file: %w", err)
 		}
 	}
 	return nil
@@ -173,10 +156,4 @@ func expiryValues(secretPrefix, expiryFileName string) (int64, int, error) {
 		return 0, 0, err
 	}
 	return expiryTime, expiryDuration, nil
-}
-
-func makeExpiryData(expiresIn int) ([]byte, error) {
-	ts := strconv.FormatInt(secrets.CalculateExpiry(expiresIn), 10)
-	ex := strconv.Itoa(expiresIn)
-	return []byte(fmt.Sprintf("%s-%s", ts, ex)), nil
 }
