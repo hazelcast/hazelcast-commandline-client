@@ -26,7 +26,7 @@ func (a API) DownloadClusterLogs(ctx context.Context, destDir string, idOrName s
 		return types.Tuple2[string, func()]{path, stop}, nil
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("downloading cluster logs: %w", err)
 	}
 	defer r.Second()
 	zipFile, err := os.Open(r.First)

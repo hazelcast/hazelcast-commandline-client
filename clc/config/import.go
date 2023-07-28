@@ -135,9 +135,9 @@ func CreateFromZip(ctx context.Context, ec plug.ExecContext, target, path string
 		defer reader.Close()
 		var goPaths []string
 		var pemFiles []*zip.File
-		// find .go and .pem paths
+		// find .py and .pem paths
 		for _, rf := range reader.File {
-			if strings.HasSuffix(rf.Name, ".go") {
+			if strings.HasSuffix(rf.Name, ".py") {
 				goPaths = append(goPaths, rf.Name)
 				continue
 			}
@@ -151,7 +151,7 @@ func CreateFromZip(ctx context.Context, ec plug.ExecContext, target, path string
 		// find the configuration bits
 		token, clusterName, pw, cfgFound := extractConfigFields(reader, goPaths)
 		if !cfgFound {
-			return nil, errors.New("go file with configuration not found")
+			return nil, errors.New("python file with configuration not found")
 		}
 		opts := makeViridianOpts(clusterName, token, pw)
 		outDir, cfgPath, err := Create(target, opts)
@@ -162,7 +162,7 @@ func CreateFromZip(ctx context.Context, ec plug.ExecContext, target, path string
 		if err := copyFiles(ec, pemFiles, outDir); err != nil {
 			return nil, err
 		}
-		return cfgPath, nil
+		return paths.Join(outDir, cfgPath), nil
 	})
 	if err != nil {
 		return "", err
@@ -182,8 +182,8 @@ func makeViridianOpts(clusterName, token, password string) clc.KeyValues[string,
 	}
 }
 
-func extractConfigFields(reader *zip.ReadCloser, goPaths []string) (token, clusterName, pw string, cfgFound bool) {
-	for _, p := range goPaths {
+func extractConfigFields(reader *zip.ReadCloser, pyPaths []string) (token, clusterName, pw string, cfgFound bool) {
+	for _, p := range pyPaths {
 		rc, err := reader.Open(p)
 		if err != nil {
 			continue
@@ -233,22 +233,23 @@ func copyFiles(ec plug.ExecContext, files []*zip.File, outDir string) error {
 
 func extractClusterName(text string) string {
 	// extract from config.Cluster.Name = "pr-3814"
-	const re = `config.Cluster.Name\s+=\s+"([^"]+)"`
+	const re = `cluster_name="([^"]+)"`
 	return extractSimpleString(re, text)
 
 }
 
 func extractViridianToken(text string) string {
 	// extract from: config.Cluster.Cloud.Token = "EWEKHVOOQOjMN5mXB8OngRF4YG5aOm6N2LUEOlhdC7SWpY54hm"
-	const re = `config.Cluster.Cloud.Token\s+=\s+"([^"]+)"`
+	const re = `cloud_discovery_token="([^"]+)"`
 	return extractSimpleString(re, text)
 }
 
 func extractKeyPassword(text string) string {
 	// extract from: err = config.Cluster.Network.SSL.AddClientCertAndEncryptedKeyPath(certFile, keyFile, "12ee6ff601a")
-	const re = `config.Cluster.Network.SSL.AddClientCertAndEncryptedKeyPath\(certFile,\s+keyFile,\s+"([^"]+)"`
+	const re = `ssl_password="([^"]+)"`
 	return extractSimpleString(re, text)
 }
+
 func extractSimpleString(pattern, text string) string {
 	re, err := regexp.Compile(pattern)
 	if err != nil {
