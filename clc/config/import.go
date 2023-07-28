@@ -162,7 +162,7 @@ func CreateFromZip(ctx context.Context, ec plug.ExecContext, target, path string
 		if err := copyFiles(ec, pemFiles, outDir); err != nil {
 			return nil, err
 		}
-		return cfgPath, nil
+		return paths.Join(outDir, cfgPath), nil
 	})
 	if err != nil {
 		return "", err
