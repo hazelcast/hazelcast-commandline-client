@@ -168,16 +168,15 @@ func expiryValues(secretPrefix, expiryFileName string) (int64, int, error) {
 	if err != nil {
 		return 0, 0, err
 	}
-	creationTime, err := strconv.ParseInt(ex[0], 10, 64)
+	expiryTime, err := strconv.ParseInt(ex[0], 10, 64)
 	if err != nil {
 		return 0, 0, err
 	}
-	return creationTime, expiryDuration, nil
+	return expiryTime, expiryDuration, nil
 }
 
 func expiryData(expiresIn int) ([]byte, error) {
-	secrets.CalculateExpiry(expiresIn)
-	ts := strconv.FormatInt(time.Now().Unix(), 10)
+	ts := strconv.FormatInt(secrets.CalculateExpiry(expiresIn), 10)
 	ex := strconv.Itoa(expiresIn)
 	return []byte(fmt.Sprintf("%s-%s", ts, ex)), nil
 }
