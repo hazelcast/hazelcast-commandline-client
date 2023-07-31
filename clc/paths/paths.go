@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 )
 
 const (
@@ -55,11 +57,18 @@ func DefaultConfigPath() string {
 	if p := nearbyConfigPath(); p != "" {
 		return p
 	}
-	p := filepath.Join(ResolveConfigDir("default"), DefaultConfig)
+	p := filepath.Join(ResolveConfigDir(configName()), DefaultConfig)
 	if Exists(p) {
 		return p
 	}
 	return ""
+}
+
+func configName() string {
+	if cfg := os.Getenv(clc.EnvConfig); cfg != "" {
+		return cfg
+	}
+	return "default"
 }
 
 func DefaultLogPath(now time.Time) string {
