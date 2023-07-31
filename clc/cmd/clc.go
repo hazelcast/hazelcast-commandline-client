@@ -379,11 +379,11 @@ func (m *Main) ensureClient(ctx context.Context, cfg hazelcast.Config) error {
 	if m.ci.Load() != nil {
 		return nil
 	}
-	client, err := hazelcast.StartNewClientWithConfig(ctx, cfg)
+	c, err := hazelcast.StartNewClientWithConfig(ctx, cfg)
 	if err != nil {
 		return err
 	}
-	m.ci.Store(hazelcast.NewClientInternal(client))
+	m.ci.Store(hazelcast.NewClientInternal(c))
 	return nil
 }
 
