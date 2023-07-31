@@ -96,7 +96,7 @@ func ResolveConfigPath(path string) string {
 	if path == "" {
 		return path
 	}
-	if filepath.Ext(path) == "" {
+	if filepath.Ext(path) != ".yaml" {
 		path = filepath.Join(Configs(), path, DefaultConfig)
 	}
 	return path
