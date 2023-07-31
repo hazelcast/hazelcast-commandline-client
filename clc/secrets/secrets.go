@@ -1,6 +1,7 @@
 package secrets
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"os"
@@ -8,6 +9,24 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 )
+
+func Save(ctx context.Context, apiClass, secretPrefix, key, secret, token string) error {
+	tokenFile := fmt.Sprintf("%s-%s.access", apiClass, key)
+	secretFile := fmt.Sprintf("%s-%s.secret", apiClass, key)
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	if err := os.MkdirAll(paths.Secrets(), 0700); err != nil {
+		return fmt.Errorf("creating secrets directory: %w", err)
+	}
+	if err := Write(secretPrefix, tokenFile, []byte(token)); err != nil {
+		return err
+	}
+	if err := Write(secretPrefix, secretFile, []byte(secret)); err != nil {
+		return err
+	}
+	return nil
+}
 
 func Write(prefix, name string, token []byte) (err error) {
 	path := paths.ResolveSecretPath(prefix, name)

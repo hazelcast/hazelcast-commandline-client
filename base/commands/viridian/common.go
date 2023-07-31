@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -56,6 +57,17 @@ func findToken(apiKey string) (string, error) {
 	return tp, nil
 }
 
+func findKeyAndSecret(tokenPath string) (string, string, error) {
+	x := strings.TrimSuffix(tokenPath, filepath.Ext(tokenPath))
+	apiKey := strings.TrimPrefix(x, fmt.Sprintf("%s-", viridian.APIClass()))
+	secretFile := fmt.Sprintf("%s-%s.secret", viridian.APIClass(), apiKey)
+	secret, err := secrets.Read(secretPrefix, secretFile)
+	if err != nil {
+		return "", "", err
+	}
+	return apiKey, string(secret), nil
+}
+
 func getAPI(ec plug.ExecContext) (*viridian.API, error) {
 	tp, err := findToken(ec.Props().GetString(propAPIKey))
 	if err != nil {
@@ -67,7 +79,12 @@ func getAPI(ec plug.ExecContext) (*viridian.API, error) {
 		ec.Logger().Error(err)
 		return nil, fmt.Errorf("could not load Viridian secrets, did you login?")
 	}
-	return viridian.NewAPI(string(token)), nil
+	key, secret, err := findKeyAndSecret(tp)
+	if err != nil {
+		ec.Logger().Error(err)
+		return nil, fmt.Errorf("could not load Viridian secrets, did you login?")
+	}
+	return viridian.NewAPI(secretPrefix, key, secret, string(token)), nil
 }
 
 func waitClusterState(ctx context.Context, ec plug.ExecContext, api *viridian.API, clusterIDOrName, state string) error {
