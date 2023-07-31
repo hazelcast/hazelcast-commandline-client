@@ -41,6 +41,7 @@ The following environment variables are experimental and may be removed in a fut
 
 |CLC_EXPERIMENTAL_FORMATTER
 |Sets a formatter for the highlighting of SQL syntax, either: `terminal`, `terminal8`, `terminal16`, `terminal256`, or `terminal16m`. Only with the `gohxs` readline implementation.
+|
 
 |CLC_EXPERIMENTAL_READLINE
 |Sets the readline implementation, either `gohxs` or `ny`.
