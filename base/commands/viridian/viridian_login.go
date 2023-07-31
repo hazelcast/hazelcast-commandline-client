@@ -19,8 +19,6 @@ import (
 const (
 	propAPIKey    = "api-key"
 	propAPISecret = "api-secret"
-	propEmail     = "email"
-	propPassword  = "password"
 	secretPrefix  = "viridian"
 )
 

@@ -10,9 +10,14 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 )
 
+const (
+	TokenFileFormat  = "%s-%s.access"
+	SecretFileFormat = "%s-%s.secret"
+)
+
 func Save(ctx context.Context, apiClass, secretPrefix, key, secret, token string) error {
-	tokenFile := fmt.Sprintf("%s-%s.access", apiClass, key)
-	secretFile := fmt.Sprintf("%s-%s.secret", apiClass, key)
+	tokenFile := fmt.Sprintf(TokenFileFormat, apiClass, key)
+	secretFile := fmt.Sprintf(SecretFileFormat, apiClass, key)
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
@@ -57,6 +62,6 @@ func Read(prefix, name string) ([]byte, error) {
 
 func FindAll(prefix string) ([]string, error) {
 	return paths.FindAll(paths.Join(paths.Secrets(), prefix), func(basePath string, entry os.DirEntry) (ok bool) {
-		return !entry.IsDir()
+		return !entry.IsDir() && filepath.Ext(entry.Name()) == filepath.Ext(TokenFileFormat)
 	})
 }

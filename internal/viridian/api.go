@@ -163,7 +163,7 @@ func (a API) DownloadConfig(ctx context.Context, clusterID string) (path string,
 		if err != nil {
 			return types.Tuple2[string, func()]{}, err
 		}
-		return types.Tuple2[string, func()]{path, stop}, nil
+		return types.MakeTuple2(path, stop), nil
 	})
 	return r.First, r.Second, nil
 }
@@ -418,7 +418,7 @@ func download(ctx context.Context, url, token string) (downloadPath string, stop
 }
 
 func makeConfigURL(clusterID string) string {
-	return makeUrl(fmt.Sprintf("/client_samples/%s/go?source_identifier=default", clusterID))
+	return makeUrl(fmt.Sprintf("/client_samples/%s/python?source_identifier=default", clusterID))
 }
 
 func APIClass() string {

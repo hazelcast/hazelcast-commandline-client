@@ -23,7 +23,7 @@ func (a API) DownloadClusterLogs(ctx context.Context, destDir string, idOrName s
 		if err != nil {
 			return types.Tuple2[string, func()]{}, err
 		}
-		return types.Tuple2[string, func()]{path, stop}, nil
+		return types.MakeTuple2(path, stop), nil
 	})
 	if err != nil {
 		return err

@@ -24,8 +24,7 @@ const (
 )
 
 var (
-	ErrClusterFailed   = errors.New("cluster failed")
-	ErrClusterNotFound = errors.New("cluster not found")
+	ErrClusterFailed = errors.New("cluster failed")
 )
 
 func findToken(apiKey string) (string, error) {
@@ -58,9 +57,8 @@ func findToken(apiKey string) (string, error) {
 }
 
 func findKeyAndSecret(tokenPath string) (string, string, error) {
-	x := strings.TrimSuffix(tokenPath, filepath.Ext(tokenPath))
-	apiKey := strings.TrimPrefix(x, fmt.Sprintf("%s-", viridian.APIClass()))
-	secretFile := fmt.Sprintf("%s-%s.secret", viridian.APIClass(), apiKey)
+	apiKey := strings.TrimPrefix(strings.TrimSuffix(tokenPath, filepath.Ext(tokenPath)), fmt.Sprintf("%s-", viridian.APIClass()))
+	secretFile := fmt.Sprintf(secrets.SecretFileFormat, viridian.APIClass(), apiKey)
 	secret, err := secrets.Read(secretPrefix, secretFile)
 	if err != nil {
 		return "", "", err
