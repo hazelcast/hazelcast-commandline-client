@@ -9,7 +9,6 @@ import (
 	"os"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/types"
 )
 
 func (a API) DownloadClusterLogs(ctx context.Context, destDir string, idOrName string) error {
@@ -17,19 +16,12 @@ func (a API) DownloadClusterLogs(ctx context.Context, destDir string, idOrName s
 	if err != nil {
 		return err
 	}
-	r, err := WithRetry(ctx, a, func() (types.Tuple2[string, func()], error) {
-		u := makeUrl(fmt.Sprintf("/cluster/%s/logs", c.ID))
-		path, stop, err := download(ctx, makeUrl(u), a.Token)
-		if err != nil {
-			return types.Tuple2[string, func()]{}, err
-		}
-		return types.Tuple2[string, func()]{path, stop}, nil
-	})
+	zipPath, stop, err := download(ctx, makeUrl(fmt.Sprintf("/cluster/%s/logs", c.ID)), a.token)
 	if err != nil {
 		return fmt.Errorf("downloading cluster logs: %w", err)
 	}
-	defer r.Second()
-	zipFile, err := os.Open(r.First)
+	defer stop()
+	zipFile, err := os.Open(zipPath)
 	if err != nil {
 		return err
 	}
