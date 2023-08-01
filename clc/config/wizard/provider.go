@@ -50,9 +50,6 @@ func (p *Provider) BindFlag(name string, flag *pflag.Flag) {
 func (p *Provider) ClientConfig(ctx context.Context, ec plug.ExecContext) (hazelcast.Config, error) {
 	cfg, err := p.fp.Load().ClientConfig(ctx, ec)
 	if err != nil {
-		if !ec.Interactive() {
-			return hazelcast.Config{}, err
-		}
 		// ask the config to the user
 		name, err := p.runWizard(ctx, ec)
 		if err != nil {
