@@ -81,7 +81,7 @@ All paths in the configuration are relative to the parent directory of the confi
 * cluster
   * name: Name of the cluster. By default `dev`.
   * address: Address of a member in the cluster. By default `localhost:5701`.
-  * discovery-token: Viridian Serverless discovery token.
+  * discovery-token: {hazelcast-cloud} Serverless discovery token.
 
 * ssl
   * ca-path: TLS CA certificate path.

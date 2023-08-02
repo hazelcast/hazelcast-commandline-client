@@ -10,8 +10,7 @@ This file can exist anywhere in the file system, and can be used with the `--con
 clc -c test/config.yaml
 ----
 
-//TIP: If you don't add any configuration before and try to run an operation that requires client connection, CLC will prompt a configuration wizard to import Viridian config easily. For details, see xref:config-wizard.adoc[CLC Configuration Wizard ].
-
+TIP: If you try to run an operation that requires a client connection before you have added any configuration, CLC will prompt the configuration wizard to import a {hazelcast-cloud} configuration. For details, see xref:config-wizard.adoc[CLC Configuration Wizard].
 
 If there is a `config.yaml` in the same directory with the CLC binary and the configuration was not explicitly set, CLC tries to load that configuration file:
 [source, bash]
@@ -36,10 +35,10 @@ Known configurations can be directly specified by their names, instead of the fu
 # List configurations
 $ clc config list
 default
-prod
+pr-3066
 
 # Start CLC shell with configuration named pr-3066
-$ clc -c prod
+$ clc -c pr-3066
 ----
 
 If no configuration is specified, the `default` configuration is used.
@@ -54,7 +53,7 @@ include::partial$global-parameters.adoc[]
 
 == Related Resources
 
-//- xref:connect-to-viridian.adoc[].
+- xref:connect-to-viridian.adoc[Connecting to {hazelcast-cloud} with Hazelcast CLC].
 
-- xref:connect-to-platform.adoc[].
+- xref:connect-to-platform.adoc[Connecting to Hazelcast Platform with Hazelcast CLC].
 
