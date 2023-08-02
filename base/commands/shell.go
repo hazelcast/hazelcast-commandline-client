@@ -5,6 +5,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -61,7 +62,7 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 	if err != nil {
 		return fmt.Errorf("cloning Main: %w", err)
 	}
-	var cfgText, logText string
+	var cfgText, logText, cfgPath string
 	if !terminal.IsPipe(ec.Stdin()) {
 		cfgPathProp := ec.Props().GetString(clc.PropertyConfig)
 		cfgPath = paths.ResolveConfigPath(cfgPathProp)
@@ -94,13 +95,41 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 		sh.SetCommentPrefix("--")
 		return sh.Run(ctx)
 	}
-	sh, err := shell.New("CLC> ", " ... ", path, ec.Stdout(), ec.Stderr(), ec.Stdin(), endLineFn, textFn)
+	p := prompt(cfgPath)
+	sh, err := shell.New(p, " ... ", path, ec.Stdout(), ec.Stderr(), ec.Stdin(), endLineFn, textFn)
 	if err != nil {
 		return err
 	}
 	sh.SetCommentPrefix("--")
 	defer sh.Close()
 	return sh.Start(ctx)
+}
+
+func prompt(cfgPath string) string {
+	if cfgPath == "" {
+		return "CLC> "
+	}
+	// Best effort for absolute path
+	if !filepath.IsAbs(cfgPath) {
+		p, err := filepath.Abs(cfgPath)
+		if err == nil {
+			cfgPath = p
+		}
+	}
+	pd := parentDir(cfgPath)
+	return fmt.Sprintf("CLC (%s) > ", dotify(pd, 12))
+}
+
+func parentDir(path string) string {
+	dirs := filepath.Dir(path)
+	return filepath.Base(dirs)
+}
+
+func dotify(s string, l int) string {
+	if len(s) < 3 || len(s) < l {
+		return s
+	}
+	return fmt.Sprintf("%s...", s[:l])
 }
 
 func (*ShellCommand) Unwrappable() {}
