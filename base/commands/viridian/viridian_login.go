@@ -66,7 +66,7 @@ func (cm LoginCmd) retrieveToken(ctx context.Context, ec plug.ExecContext, key, 
 		if err != nil {
 			return nil, err
 		}
-		return api.Token(), err
+		return api.Token, err
 	})
 	if err != nil {
 		return "", handleErrorResponse(ec, err)

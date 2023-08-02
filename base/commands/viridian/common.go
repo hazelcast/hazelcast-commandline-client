@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/secrets"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
@@ -24,7 +25,8 @@ const (
 )
 
 var (
-	ErrClusterFailed = errors.New("cluster failed")
+	ErrClusterFailed  = errors.New("cluster failed")
+	ErrLoadingSecrets = errors.New("could not load Viridian secrets, did you login?")
 )
 
 func findToken(apiKey string) (string, error) {
@@ -35,7 +37,7 @@ func findToken(apiKey string) (string, error) {
 	if apiKey != "" {
 		return fmt.Sprintf("%s-%s", ac, apiKey), nil
 	}
-	tokenPaths, err := secrets.FindAll(secretPrefix)
+	tokenPaths, err := findAll(secretPrefix)
 	if err != nil {
 		return "", fmt.Errorf("cannot access the secrets, did you login?: %w", err)
 	}
@@ -56,10 +58,16 @@ func findToken(apiKey string) (string, error) {
 	return tp, nil
 }
 
+func findAll(prefix string) ([]string, error) {
+	return paths.FindAll(paths.Join(paths.Secrets(), prefix), func(basePath string, entry os.DirEntry) (ok bool) {
+		return !entry.IsDir() && filepath.Ext(entry.Name()) == filepath.Ext(secrets.TokenFileFormat)
+	})
+}
+
 func findKeyAndSecret(tokenPath string) (string, string, error) {
 	apiKey := strings.TrimPrefix(strings.TrimSuffix(tokenPath, filepath.Ext(tokenPath)), fmt.Sprintf("%s-", viridian.APIClass()))
-	secretFile := fmt.Sprintf(secrets.SecretFileFormat, viridian.APIClass(), apiKey)
-	secret, err := secrets.Read(secretPrefix, secretFile)
+	fn := fmt.Sprintf(secrets.SecretFileFormat, viridian.APIClass(), apiKey)
+	secret, err := secrets.Read(secretPrefix, fn)
 	if err != nil {
 		return "", "", err
 	}
@@ -75,12 +83,12 @@ func getAPI(ec plug.ExecContext) (*viridian.API, error) {
 	token, err := secrets.Read(secretPrefix, tp)
 	if err != nil {
 		ec.Logger().Error(err)
-		return nil, fmt.Errorf("could not load Viridian secrets, did you login?")
+		return nil, ErrLoadingSecrets
 	}
 	key, secret, err := findKeyAndSecret(tp)
 	if err != nil {
 		ec.Logger().Error(err)
-		return nil, fmt.Errorf("could not load Viridian secrets, did you login?")
+		return nil, ErrLoadingSecrets
 	}
 	return viridian.NewAPI(secretPrefix, key, secret, string(token)), nil
 }

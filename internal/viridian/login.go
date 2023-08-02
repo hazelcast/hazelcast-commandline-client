@@ -30,9 +30,9 @@ func Login(ctx context.Context, secretPrefix, key, secret string) (API, error) {
 	if err != nil {
 		return api, err
 	}
-	api.key = key
-	api.secret = secret
-	api.token = resp.Token
-	api.secretPrefix = secretPrefix
+	api.Key = key
+	api.Secret = secret
+	api.Token = resp.Token
+	api.SecretPrefix = secretPrefix
 	return api, nil
 }

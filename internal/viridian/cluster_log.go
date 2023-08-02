@@ -12,14 +12,14 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/types"
 )
 
-func (a API) DownloadClusterLogs(ctx context.Context, destDir string, idOrName string) error {
+func (a *API) DownloadClusterLogs(ctx context.Context, destDir string, idOrName string) error {
 	c, err := a.FindCluster(ctx, idOrName)
 	if err != nil {
 		return err
 	}
-	r, err := WithRetry(ctx, &a, func() (types.Tuple2[string, func()], error) {
+	r, err := RetryOnAuthFail(ctx, a, func(ctx context.Context, token string) (types.Tuple2[string, func()], error) {
 		u := makeUrl(fmt.Sprintf("/cluster/%s/logs", c.ID))
-		path, stop, err := download(ctx, makeUrl(u), a.Token())
+		path, stop, err := download(ctx, makeUrl(u), a.Token)
 		if err != nil {
 			return types.Tuple2[string, func()]{}, err
 		}
