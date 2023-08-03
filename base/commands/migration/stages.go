@@ -89,7 +89,7 @@ func (st *Stages) startStage(ctx context.Context) func(stage.Statuser) error {
 		if err != nil {
 			return err
 		}
-		if err := st.startQueue.Put(ctx, string(b)); err != nil {
+		if err := st.startQueue.Put(ctx, serialization.JSON(b)); err != nil {
 			return err
 		}
 		return nil
