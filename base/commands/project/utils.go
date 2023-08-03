@@ -31,22 +31,13 @@ func loadFromDefaults(templateDir string) (map[string]string, error) {
 	if err = parseYAML("", b, props); err != nil {
 		return nil, err
 	}
-	props = camelizeMapKeys(props)
-	if err != nil {
-		return nil, err
+	if key, ok := validateMap(props); !ok {
+		return nil, fmt.Errorf("invalid property: %s (keys can only contain lowercase letters, numbers or underscore", key)
 	}
 	return props, nil
 }
 
-func camelizeMapKeys(m map[string]string) map[string]string {
-	r := make(map[string]string)
-	for k, v := range m {
-		r[str.ToCamel(k)] = v
-	}
-	return r
-}
-
-func updatePropsWithUserInput(ec plug.ExecContext, props map[string]string) error {
+func updatePropsWithUserValues(ec plug.ExecContext, props map[string]string) error {
 	for _, arg := range ec.Args() {
 		k, v := str.ParseKeyValue(arg)
 		if k == "" {
@@ -65,18 +56,34 @@ func updatePropsWithUserInput(ec plug.ExecContext, props map[string]string) erro
 
 func loadFromProps(ec plug.ExecContext, p map[string]string) {
 	m := ec.Props().All()
-	m = maybeCamelizeMapKeys(m)
+	convertMapKeyToSnakeCase(m)
 	for k, v := range m {
-		p[k] = fmt.Sprintf("%v", v)
+		p[k] = fmt.Sprint(v)
 	}
 }
 
-func maybeCamelizeMapKeys(m map[string]any) map[string]any {
-	r := make(map[string]any)
+func convertMapKeyToSnakeCase[T any](m map[string]T) {
 	for k, v := range m {
-		r[str.ToCamel(k)] = v
+		m[convertToSnakeCase(k)] = v
 	}
-	return r
+}
+
+func convertToSnakeCase(s string) string {
+	// this function assumes s contains only letters, numbers, dot and dash
+	// this is not an efficient implementation
+	// but sufficient for our needs.
+	s = strings.ToLower(s)
+	s = strings.ReplaceAll(s, ".", "_")
+	return strings.ReplaceAll(s, "-", "_")
+}
+
+func validateMap[T any](m map[string]T) (invalid string, ok bool) {
+	for k, _ := range m {
+		if !regexpValidKey.MatchString(k) {
+			return k, false
+		}
+	}
+	return "", true
 }
 
 func parseYAML(prefix string, yamlFile []byte, result map[string]string) error {

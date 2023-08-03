@@ -9,25 +9,28 @@ import (
 	"math"
 	"os"
 	"path/filepath"
-	"reflect"
 	"regexp"
 	"strings"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/mk"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-var regexpValidKey = regexp.MustCompile(`^[[:alnum:]]+$`)
+var regexpValidKey = regexp.MustCompile(`^[a-z0-9_]+$`)
 
 type CreateCmd struct{}
 
 func (pc CreateCmd) Init(cc plug.InitContext) error {
-	cc.SetPositionalArgCount(2, math.MaxInt)
-	cc.SetCommandUsage("create [template-name] [output-dir] [placeholder-values] [flags]")
-	short := "(Beta) Create project from the given template"
-	long := fmt.Sprintf(`(Beta) Create project from the given template.
+	cc.SetPositionalArgCount(1, math.MaxInt)
+	cc.SetCommandUsage("create [template-name] [placeholder-values] [flags]")
+	cc.AddStringFlag(flagOutputDir, "o", "", false, "the directory to create the project at")
+	short := "Create project from the given template (BETA)"
+	long := fmt.Sprintf(`Create project from the given template.
+	
+This command is in BETA, it may change in future versions.
 	
 Templates are located in %s.
 You can override it by using CLC_EXPERIMENTAL_TEMPLATE_SOURCE environment variable.
@@ -44,39 +47,39 @@ Rules while creating your own templates:
 
 Properties are read from the following resources in order:
 
-	1. defaults.yaml (keys cannot contain punctuation)
+	1. defaults.yaml (keys should be in lowercase letters, digits or underscore)
 	2. config.yaml
-	3. User passed key-values in the "KEY=VALUE" format. The keys can only contain letters and numbers.
+	3. User passed key-values in the "KEY=VALUE" format. The keys can only contain lowercase letters, digits or underscore.
 
 You can use the placeholders in "defaults.yaml" and the following configuration item placeholders:
 
-	* ClusterName
-	* ClusterAddress
-	* ClusterUser
-	* ClusterPassword
-	* ClusterDiscoveryToken
-	* SslEnabled
-	* SslServer
-	* SslSkipVerify
-	* SslCaPath
-	* SslKeyPath
-	* SslKeyPassword
-	* LogPath
-	* LogLevel
+	* cluster_name
+	* cluster_address
+	* cluster_user
+	* cluster_password
+	* cluster_discovery_token
+	* ssl_enabled
+	* ssl_server
+	* ssl_skip_verify
+	* ssl_ca_path
+	* ssl_key_path
+	* ssl_key_password
+	* log_path
+	* log_level
 
 Example (Linux and MacOS):
 
 $ clc project create \
 	simple-streaming-pipeline\
-	my-project\
-	MyKey1=MyValue1 MyKey2=MyValue2
+	--output-dir my-project\
+	my_key1=my_value1 my_key2=my_value2
 
 Example (Windows):
 
 > clc project create^
 	simple-streaming-pipeline^
-	my-project^
-	MyKey1=MyValue1 MyKey2=MyValue2
+	--output-dir my-project^
+	my_key1=my_value1 my_key2=my_value2
 `, hzTemplatesOrganization)
 	cc.SetCommandHelp(long, short)
 	return nil
@@ -84,7 +87,10 @@ Example (Windows):
 
 func (pc CreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	templateName := ec.Args()[0]
-	outputDir := ec.Args()[1]
+	outputDir := ec.Props().GetString(flagOutputDir)
+	if outputDir == "" {
+		outputDir = templateName
+	}
 	templatesDir := paths.Templates()
 	templateExists := paths.Exists(filepath.Join(templatesDir, templateName))
 	if !templateExists {
@@ -110,12 +116,12 @@ func (pc CreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 
 func createProject(ec plug.ExecContext, outputDir, templateName string) error {
 	sourceDir := paths.ResolveTemplatePath(templateName)
-	vars, err := loadVars(ec, sourceDir)
+	vs, err := loadValues(ec, sourceDir)
 	if err != nil {
 		return err
 	}
 	ec.Logger().Debug(func() string {
-		return fmt.Sprintf("available placeholders: %+v", reflect.ValueOf(vars).MapKeys())
+		return fmt.Sprintf("available placeholders: %+v", mk.KeysOf(vs))
 	})
 	err = filepath.WalkDir(sourceDir, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
@@ -137,7 +143,7 @@ func createProject(ec plug.ExecContext, outputDir, templateName string) error {
 				return nil
 			}
 			if hasTemplateExt(entry) {
-				err = applyTemplateAndCopyToTarget(vars, path, target)
+				err = applyTemplateAndCopyToTarget(vs, path, target)
 				if err != nil {
 					return err
 				}
@@ -158,17 +164,16 @@ func createProject(ec plug.ExecContext, outputDir, templateName string) error {
 	return nil
 }
 
-func loadVars(ec plug.ExecContext, sourceDir string) (map[string]string, error) {
-	vars, err := loadFromDefaults(sourceDir)
+func loadValues(ec plug.ExecContext, sourceDir string) (map[string]string, error) {
+	vs, err := loadFromDefaults(sourceDir)
 	if err != nil {
 		return nil, err
 	}
-	loadFromProps(ec, vars)
-	err = updatePropsWithUserInput(ec, vars)
-	if err != nil {
+	loadFromProps(ec, vs)
+	if err = updatePropsWithUserValues(ec, vs); err != nil {
 		return nil, err
 	}
-	return vars, nil
+	return vs, nil
 }
 
 func isSkip(d fs.DirEntry) bool {
