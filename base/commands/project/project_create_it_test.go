@@ -10,33 +10,31 @@ import (
 	"path/filepath"
 	"testing"
 
+	_ "github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/it/skip"
 )
 
 func TestCreateCommand(t *testing.T) {
-	// We are skipping this test on Windows, because git-go does not allow to configure core.autocrlf option
-	skip.If(t, "os = windows")
-	home := filepath.Join(check.MustValue(filepath.Abs("testdata/home")))
-	it.WithEnv(paths.EnvCLCHome, home, func() {
-		tcx := it.TestContext{T: t}
-		tcx.Tester(func(tcx it.TestContext) {
-			outDir := check.MustValue(os.MkdirTemp("", "clc-"))
+	// TODO: create a temp home and copy the template into it
+	testDir := filepath.Join(check.MustValue(filepath.Abs("testdata")))
+	home := filepath.Join(testDir, "home")
+	tcx := it.TestContext{T: t}
+	tcx.Tester(func(tcx it.TestContext) {
+		it.WithEnv(paths.EnvCLCHome, home, func() {
+			tempDir := check.MustValue(os.MkdirTemp("", "clc-"))
+			outDir := filepath.Join(tempDir, "my-project")
+			fixture := filepath.Join(testDir, "fixture", "simple")
 			defer func() {
 				// ignoring the error here
 				_ = os.RemoveAll(outDir)
 			}()
 			ctx := context.Background()
-			tcx.WithReset(func() {
-				cmd := []string{"project", "create", "simple", "-o", outDir}
-				cmd = append(cmd, tc.inputArgs...)
-				check.Must(tcx.CLC().Execute(ctx, cmd...))
-			})
-			tcx.WithReset(func() {
-				check.Must(compareDirectories(tc.inputOutputDir, tc.testProjectDir))
-			})
+			// logging to stderr in order to avoid creating the logs directory
+			cmd := []string{"project", "create", "simple", "-o", outDir, "--log.path", "stderr", "another_key=foo", "key=bar"}
+			check.Must(tcx.CLC().Execute(ctx, cmd...))
+			check.Must(compareDirectories(fixture, outDir))
 		})
 	})
 }

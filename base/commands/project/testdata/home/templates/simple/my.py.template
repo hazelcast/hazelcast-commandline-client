@@ -1,8 +1,7 @@
 def main():
-    print("config name: {{ .config }}"
     print("key1: {{ .key1 }}")
     print("another_key: {{ .another_key }}")
-    print("discovery token: {{ .cluster_discovery_token }}")
+    print("cluster address: {{ .cluster_address }}")
 
 if __name__ == "__main__":
     main()
