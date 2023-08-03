@@ -31,7 +31,7 @@ func loadFromDefaults(templateDir string) (map[string]string, error) {
 	if err = parseYAML("", b, props); err != nil {
 		return nil, err
 	}
-	if key, ok := validateMap(props); !ok {
+	if key, ok := validateValueMap(props); !ok {
 		return nil, fmt.Errorf("invalid property: %s (keys can only contain lowercase letters, numbers or underscore", key)
 	}
 	return props, nil
@@ -79,7 +79,7 @@ func convertToSnakeCase(s string) string {
 	return strings.ReplaceAll(s, "-", "_")
 }
 
-func validateMap[T any](m map[string]T) (invalid string, ok bool) {
+func validateValueMap[T any](m map[string]T) (invalid string, ok bool) {
 	for k, _ := range m {
 		if !regexpValidKey.MatchString(k) {
 			return k, false

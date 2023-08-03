@@ -42,7 +42,7 @@ Parameters:
 
 |`placeholder-values`
 |Optional
-|Template placeholder values can be specified as key-value pairs. You can use lowercase letters, numbers and the underscore character in keys. Example: `key`=`value`
+|Template placeholder values can be specified as key-value pairs. You can use lowercase letters, numbers and the underscore character in keys. Example: `my_key1`=`value`
 
 |
 |===
