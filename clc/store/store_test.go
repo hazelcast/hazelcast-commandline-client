@@ -15,16 +15,8 @@ func bytes(s string) []byte {
 	return []byte(s)
 }
 
-func TestStore_UseBeforeOpen(t *testing.T) {
-	WithTempDir(func(dir string) {
-		s := NewStore(dir)
-		err := s.SetEntry(bytes(""), bytes(""))
-		require.Equal(t, ErrDatabaseNotOpen, err)
-	})
-}
-
 func TestStore_GetSetEntry(t *testing.T) {
-	WithStore(func(s *Store) {
+	withStore(func(s *Store) {
 		check.Must(insertValues(s.db, map[string][]byte{
 			"key1": bytes("val"),
 		}))
@@ -37,7 +29,7 @@ func TestStore_GetSetEntry(t *testing.T) {
 }
 
 func TestStore_GetKeysWithPrefix(t *testing.T) {
-	WithStore(func(s *Store) {
+	withStore(func(s *Store) {
 		check.Must(insertValues(s.db, map[string][]byte{
 			"prefix.key1": bytes(""),
 			"prefix.key2": bytes(""),
@@ -46,11 +38,12 @@ func TestStore_GetKeysWithPrefix(t *testing.T) {
 		vals := check.MustValue(s.GetKeysWithPrefix("prefix"))
 		expected := [][]byte{bytes("prefix.key1"), bytes("prefix.key2")}
 		require.ElementsMatch(t, expected, vals)
+
 	})
 }
 
 func TestStore_UpdateEntry(t *testing.T) {
-	WithStore(func(s *Store) {
+	withStore(func(s *Store) {
 		check.Must(s.UpdateEntry(bytes("key"), func(current []byte, found bool) []byte {
 			if !found {
 				return bytes("notexist")
@@ -72,7 +65,7 @@ func TestStore_UpdateEntry(t *testing.T) {
 
 func TestStore_RunForeachWithPrefix(t *testing.T) {
 	fromStore := make(map[string][]byte)
-	WithStore(func(s *Store) {
+	withStore(func(s *Store) {
 		check.Must(insertValues(s.db, map[string][]byte{
 			"prefix.key1": bytes(""),
 			"prefix.key2": bytes(""),
@@ -90,7 +83,7 @@ func TestStore_RunForeachWithPrefix(t *testing.T) {
 }
 
 func TestStore_DeleteEntriesWithPrefix(t *testing.T) {
-	WithStore(func(s *Store) {
+	withStore(func(s *Store) {
 		check.Must(insertValues(s.db, map[string][]byte{
 			"prefix.key1": bytes(""),
 			"prefix.key2": bytes(""),
@@ -157,17 +150,12 @@ func WithTempDir(fn func(string)) {
 	fn(dir)
 }
 
-func WithStore(fn func(s *Store)) {
+func withStore(fn func(s *Store)) {
 	WithTempDir(func(dir string) {
-		s := NewStore(dir)
-		err := s.Open()
-		if err != nil {
-			panic(fmt.Errorf("opening store: %w", err))
-		}
-		defer func() {
-			// errors are ignored
-			s.Close()
-		}()
-		fn(s)
+		s := NewStoreAccessor(dir)
+		s.WithLock(func(s *Store) error {
+			fn(s)
+			return nil
+		})
 	})
 }

@@ -2,7 +2,7 @@ package store
 
 import (
 	"errors"
-	"sync/atomic"
+	"sync"
 
 	badger "github.com/dgraph-io/badger/v4"
 )
@@ -12,22 +12,39 @@ var (
 	ErrDatabaseNotOpen = errors.New("database is not open")
 )
 
-type Store struct {
-	dir    string
-	db     *badger.DB
-	isOpen atomic.Bool
+type StoreAccessor struct {
+	store *Store
+	mu    sync.Mutex
 }
 
-func NewStore(dir string) *Store {
+func NewStoreAccessor(dir string) *StoreAccessor {
+	return &StoreAccessor{
+		store: newStore(dir),
+	}
+}
+
+func (s *StoreAccessor) WithLock(fn func(s *Store) error) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if err := s.store.open(); err != nil {
+		return err
+	}
+	defer s.store.close()
+	return fn(s.store)
+}
+
+type Store struct {
+	dir string
+	db  *badger.DB
+}
+
+func newStore(dir string) *Store {
 	return &Store{
 		dir: dir,
 	}
 }
 
-func (b *Store) Open() error {
-	if b.isOpen.Load() {
-		return nil
-	}
+func (b *Store) open() error {
 	opts := badger.DefaultOptions(b.dir)
 	opts.Logger = noplogger{}
 	db, err := badger.Open(opts)
@@ -35,7 +52,6 @@ func (b *Store) Open() error {
 		return err
 	}
 	b.db = db
-	b.isOpen.Store(true)
 	return nil
 }
 
@@ -46,22 +62,11 @@ func (noplogger) Warningf(string, ...interface{}) {}
 func (noplogger) Infof(string, ...interface{})    {}
 func (noplogger) Debugf(string, ...interface{})   {}
 
-func (b *Store) Close() error {
-	if !b.isOpen.Load() {
-		return nil
-	}
-	err := b.db.Close()
-	if err != nil {
-		return err
-	}
-	b.isOpen.Store(false)
-	return nil
+func (b *Store) close() error {
+	return b.db.Close()
 }
 
 func (b *Store) SetEntry(key, val []byte) error {
-	if !b.isOpen.Load() {
-		return ErrDatabaseNotOpen
-	}
 	err := b.db.Update(func(txn *badger.Txn) error {
 		e := badger.NewEntry(key, val)
 		return txn.SetEntry(e)
@@ -70,9 +75,6 @@ func (b *Store) SetEntry(key, val []byte) error {
 }
 
 func (b *Store) GetEntry(key []byte) ([]byte, error) {
-	if !b.isOpen.Load() {
-		return nil, ErrDatabaseNotOpen
-	}
 	var item []byte
 	err := b.db.View(func(txn *badger.Txn) error {
 		it, err := txn.Get(key)
@@ -92,9 +94,6 @@ func (b *Store) GetEntry(key []byte) ([]byte, error) {
 }
 
 func (b *Store) GetKeysWithPrefix(prefix string) ([][]byte, error) {
-	if !b.isOpen.Load() {
-		return nil, ErrDatabaseNotOpen
-	}
 	keys := [][]byte{}
 	pb := []byte(prefix)
 	opts := badger.DefaultIteratorOptions
@@ -117,9 +116,6 @@ func (b *Store) GetKeysWithPrefix(prefix string) ([][]byte, error) {
 type updateFn = func(current []byte, found bool) []byte
 
 func (b *Store) UpdateEntry(key []byte, f updateFn) error {
-	if !b.isOpen.Load() {
-		return ErrDatabaseNotOpen
-	}
 	var item []byte
 	err := b.db.Update(func(txn *badger.Txn) error {
 		it, err := txn.Get(key)
@@ -145,9 +141,6 @@ func (b *Store) UpdateEntry(key []byte, f updateFn) error {
 type foreachFn = func(key, val []byte)
 
 func (b *Store) RunForeachWithPrefix(prefix string, f foreachFn) error {
-	if !b.isOpen.Load() {
-		return ErrDatabaseNotOpen
-	}
 	p := []byte(prefix)
 	err := b.db.View(func(txn *badger.Txn) error {
 		it := txn.NewIterator(badger.DefaultIteratorOptions)
@@ -167,9 +160,6 @@ func (b *Store) RunForeachWithPrefix(prefix string, f foreachFn) error {
 }
 
 func (b *Store) DeleteEntriesWithPrefix(prefix string) error {
-	if !b.isOpen.Load() {
-		return ErrDatabaseNotOpen
-	}
 	keys, err := b.GetKeysWithPrefix(prefix)
 	if err != nil {
 		return err
