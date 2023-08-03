@@ -56,16 +56,18 @@ func updatePropsWithUserValues(ec plug.ExecContext, props map[string]string) err
 
 func loadFromProps(ec plug.ExecContext, p map[string]string) {
 	m := ec.Props().All()
-	convertMapKeyToSnakeCase(m)
+	m = convertMapKeyToSnakeCase(m)
 	for k, v := range m {
 		p[k] = fmt.Sprint(v)
 	}
 }
 
-func convertMapKeyToSnakeCase[T any](m map[string]T) {
+func convertMapKeyToSnakeCase[T any](m map[string]T) map[string]T {
+	r := make(map[string]T, len(m))
 	for k, v := range m {
-		m[convertToSnakeCase(k)] = v
+		r[convertToSnakeCase(k)] = v
 	}
+	return r
 }
 
 func convertToSnakeCase(s string) string {

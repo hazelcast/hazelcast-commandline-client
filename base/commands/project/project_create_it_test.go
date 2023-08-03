@@ -32,7 +32,7 @@ func TestCreateCommand(t *testing.T) {
 			}()
 			ctx := context.Background()
 			// logging to stderr in order to avoid creating the logs directory
-			cmd := []string{"project", "create", "simple", "-o", outDir, "--log.path", "stderr", "another_key=foo", "key=bar"}
+			cmd := []string{"project", "create", "simple", "-o", outDir, "--log.path", "stderr", "another_key=foo", "key1=bar"}
 			check.Must(tcx.CLC().Execute(ctx, cmd...))
 			check.Must(compareDirectories(fixture, outDir))
 		})
