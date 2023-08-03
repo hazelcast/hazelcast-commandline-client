@@ -39,10 +39,6 @@ func TestCreateCommand(t *testing.T) {
 	})
 }
 
-func teardown(dir string) {
-	os.RemoveAll(dir)
-}
-
 func compareDirectories(dir1, dir2 string) error {
 	hashes1, err := getDirectoryHashes(dir1)
 	if err != nil {
