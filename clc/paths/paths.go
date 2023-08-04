@@ -49,6 +49,10 @@ func Templates() string {
 	return filepath.Join(Home(), "templates")
 }
 
+func Store() string {
+	return filepath.Join(Home(), "store")
+}
+
 func ResolveTemplatePath(t string) string {
 	return filepath.Join(Templates(), t)
 }

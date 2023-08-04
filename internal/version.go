@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-const UnknownVersion = "UNKNOWN"
+const UnknownVersion = "5.0.0"
 const CustomBuildSuffix = "CUSTOMBUILD"
 
 // being initialized at compile-time.

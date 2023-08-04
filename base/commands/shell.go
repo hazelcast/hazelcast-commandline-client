@@ -28,16 +28,6 @@ const banner = `Hazelcast CLC %s (c) 2023 Hazelcast Inc.
 
 `
 
-const newVersionWarning = `
-A newer version of CLC is available.
-
-Visit the following link for release notes and to download:
-https://github.com/hazelcast/hazelcast-commandline-client/releases/%s
-
-`
-
-var errHelp = errors.New("interactive help")
-
 type ShellCommand struct {
 	shortcuts map[string]struct{}
 	mu        sync.RWMutex
@@ -84,7 +74,9 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 			logText = fmt.Sprintf("Log %9s : %s", logLevel, logPath)
 		}
 		I2(fmt.Fprintf(ec.Stdout(), banner, internal.Version, cfgText, logText))
-		maybePrintNewerVersion(ec)
+		if err = maybePrintNewerVersion(ec); err != nil {
+			ec.Logger().Error(err)
+		}
 	}
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	endLineFn := makeEndLineFunc()
@@ -112,32 +104,6 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 	sh.SetCommentPrefix("--")
 	defer sh.Close()
 	return sh.Start(ctx)
-}
-
-func maybePrintNewerVersion(ec plug.ExecContext) {
-	if internal.IsCheckVersion == "disabled" {
-		fmt.Println("I am not checking version")
-		return
-	}
-	v, err := internal.LatestReleaseVersion()
-	if err != nil {
-		ec.Logger().Error(err)
-		return
-	}
-	if isSkipNewerVersion() {
-		return
-	}
-	if v != "" && internal.CheckVersion(trimVersion(v), ">", trimVersion(internal.Version)) {
-		I2(fmt.Fprintf(ec.Stdout(), newVersionWarning, v))
-	}
-}
-
-func isSkipNewerVersion() bool {
-	return internal.Version == internal.UnknownVersion || strings.Contains(internal.Version, internal.CustomBuildSuffix)
-}
-
-func trimVersion(v string) string {
-	return strings.TrimPrefix(strings.Split(v, "-")[0], "v")
 }
 
 func (*ShellCommand) Unwrappable() {}
