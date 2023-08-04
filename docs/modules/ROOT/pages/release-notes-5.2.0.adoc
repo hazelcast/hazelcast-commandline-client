@@ -15,7 +15,6 @@
 ** `object list`: Lists the distributed data structures in the cluster.
 ** `completion`: Generates the autocompletion script for the specified shell, either Bash, Fish, Powershell or Zsh. Use `--help` for more information.
 ** `config add`: Adds configuration to the Hazelcast CLC. For example, to connect to a specific cluster.
-** `config import`: Imports configuration into the Hazelcast CLC from various sources. Currently only the {hazelcast-cloud} Serverless Go Client sample is supported.
 ** `config list`: Lists known configurations.
 ** `home`: Outputs the Hazelcast CLC home directory, which stores all configuration, logs and other files.
 
