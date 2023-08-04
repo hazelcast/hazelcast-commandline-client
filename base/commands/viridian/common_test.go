@@ -31,10 +31,10 @@ func TestFindToken(t *testing.T) {
 			// check the token filename for the first API key is returned if the API key was not specified
 			require.Equal(t, "api-APIKEY1.access", check.MustValue(findTokenPath("")))
 			// check the token filename for the given API key is returned
-			require.Equal(t, "api-APIKEY2.access", check.MustValue(findTokenPath("APIKEY2.access")))
+			require.Equal(t, "api-APIKEY2.access", check.MustValue(findTokenPath("APIKEY2")))
 			// check the token filename for the given API class is returned
 			it.WithEnv(viridian.EnvAPI, "cls", func() {
-				require.Equal(t, "cls-CLSKEY1.access", check.MustValue(findTokenPath("CLSKEY1.access")))
+				require.Equal(t, "cls-CLSKEY1.access", check.MustValue(findTokenPath("CLSKEY1")))
 			})
 		})
 	})
