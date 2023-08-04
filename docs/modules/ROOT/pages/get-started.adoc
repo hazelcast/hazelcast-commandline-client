@@ -86,7 +86,7 @@ As this is a new cluster, no objects are returned.
 
 Having separate local configurations for your two production clusters allows you to switch between them without leaving the command line. Make sure both clusters are running before you start.
 
-. Execute the following command to use the local configuration to connect to your Test1 cluster. Replace the placeholder `$CLUSTER_ID` with the ID of your cluster. 
+. Execute the following command to use the imported configuration to connect to your Test1 cluster. Replace the placeholder `$CLUSTER_ID` with the ID of your cluster. 
 +
 [source, shell]
 ----
