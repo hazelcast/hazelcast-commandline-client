@@ -153,9 +153,9 @@ func WithTempDir(fn func(string)) {
 func withStore(fn func(s *Store)) {
 	WithTempDir(func(dir string) {
 		s := NewStoreAccessor(dir)
-		s.WithLock(func(s *Store) error {
+		s.WithLock(func(s *Store) (any, error) {
 			fn(s)
-			return nil
+			return nil, nil
 		})
 	})
 }

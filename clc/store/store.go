@@ -23,11 +23,11 @@ func NewStoreAccessor(dir string) *StoreAccessor {
 	}
 }
 
-func (s *StoreAccessor) WithLock(fn func(s *Store) error) error {
+func (s *StoreAccessor) WithLock(fn func(s *Store) (any, error)) (any, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if err := s.store.open(); err != nil {
-		return err
+		return nil, err
 	}
 	defer s.store.close()
 	return fn(s.store)
