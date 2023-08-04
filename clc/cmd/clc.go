@@ -58,6 +58,7 @@ type Main struct {
 	props         *plug.Properties
 	cc            *CommandContext
 	cp            config.Provider
+	arg0          string
 }
 
 func NewMain(arg0, cfgPath string, cfgProvider config.Provider, logPath, logLevel string, sio clc.IO) (*Main, error) {
@@ -79,6 +80,7 @@ func NewMain(arg0, cfgPath string, cfgProvider config.Provider, logPath, logLeve
 		stdin:  sio.Stdin,
 		props:  plug.NewProperties(),
 		cp:     cfgProvider,
+		arg0:   arg0,
 	}
 	if logPath == "" {
 		logPath = cfgProvider.GetString(clc.PropertyLogPath)
@@ -152,7 +154,7 @@ func (m *Main) Execute(ctx context.Context, args ...string) error {
 		if err != nil {
 			return err
 		}
-		if cm.Use == "clc" {
+		if cm.Use == m.arg0 {
 			// check whether help or completion is requested
 			useShell := true
 			for i, arg := range cmdArgs {
