@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 
@@ -37,7 +38,8 @@ func main() {
 	if err != nil {
 		bye(err)
 	}
-	m, err := cmd.NewMain("clc", cfgPath, cp, logPath, logLevel, clc.StdIO())
+	_, name := filepath.Split(os.Args[0])
+	m, err := cmd.NewMain(name, cfgPath, cp, logPath, logLevel, clc.StdIO())
 	if err != nil {
 		bye(err)
 	}
@@ -45,13 +47,15 @@ func main() {
 	if err != nil {
 		// print the error only if it wasn't printed before
 		if _, ok := err.(hzerrors.WrappedError); !ok {
-			fmt.Println("Error:", err)
+			fmt.Println(cmd.MakeErrStr(err))
 		}
 	}
 	// ignoring the error here
 	_ = m.Exit()
 	if err != nil {
-		if errors.Is(err, hzerrors.ErrTimeout) {
+		// keeping the hzerrors.ErrTimeout for now
+		// it may be useful to send that error in the future. --YT
+		if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, hzerrors.ErrTimeout) {
 			os.Exit(ExitCodeTimeout)
 		}
 		os.Exit(ExitCodeGenericFailure)

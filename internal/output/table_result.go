@@ -45,7 +45,10 @@ func (tr *TableResult) Serialize(ctx context.Context, w io.Writer) (int, error) 
 		if ctx.Err() != nil {
 			return 0, ctx.Err()
 		}
-		vr, ok := tr.rp.NextRow(ctx)
+		vr, ok, err := tr.rp.NextRow(ctx)
+		if err != nil {
+			return 0, err
+		}
 		if !ok {
 			break
 		}

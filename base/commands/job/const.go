@@ -1,3 +1,5 @@
+//go:build std || job
+
 package job
 
 const (

@@ -1,0 +1,124 @@
+= clc topic
+
+Topic commands are a group of topic operations.
+
+Usage:
+
+[source,bash]
+----
+clc topic [command] [flags]
+----
+
+== Commands
+
+* <<clc-topic-publish, clc topic publish>>
+* <<clc-topic-subscribe, clc topic subscribe>>
+* <<clc-topic-destroy, clc topic destroy>>
+
+== clc topic publish
+
+Publish new messages for a Topic.
+
+Usage:
+
+[source,bash]
+----
+clc topic publish [values] [flags]
+----
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the topic.
+|`default`
+
+|`values`
+|Required
+|Values to publish.
+|N/A
+
+|`--value-type`, `-v`
+|Optional
+|Data type of the values. One of: `string`, `bool`, `json`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`
+|string
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc topic publish -v string string1 string2 --name topic1
+----
+
+== clc topic subscribe
+
+Subscribe to a Topic for new messages.
+
+Usage:
+
+[source,bash]
+----
+clc topic subscribe [flags]
+----
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the topic.
+|`default`
+
+
+|===
+Example:
+
+[source,bash]
+----
+clc topic subscribe --name topic1
+----
+
+
+== clc topic destroy
+
+Destroy a Topic
+
+This command will delete the Topic and the data in it will not be available anymore.
+
+Usage:
+
+[source,bash]
+----
+clc topic destroy [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the topic.
+|`default`
+
+|`--yes`
+|Optional
+|Skip confirming the destroy operation.
+|`false`
+
+|===
+Example:
+
+[source,bash]
+----
+clc topic destroy --name topic1 --yes
+----

@@ -27,8 +27,11 @@ const (
 	PropertySSLSkipVerify       = "ssl.skip-verify"
 	PropertyExperimentalAPIBase = "experimental.api-base"
 	GroupDDSID                  = "dds"
+	GroupDDSTitle               = "Distributed Data Structures"
 	GroupJetID                  = "jet"
+	GroupJetTitle               = "Jet"
 	EnvMaxCols                  = "CLC_MAX_COLS"
+	EnvConfig                   = "CLC_CONFIG"
 	EnvSkipServerVersionCheck   = "CLC_SKIP_SERVER_VERSION_CHECK"
 	FlagAutoYes                 = "yes"
 )

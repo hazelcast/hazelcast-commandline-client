@@ -18,7 +18,7 @@ type RowExtender interface {
 type Row []Column
 
 type RowProducer interface {
-	NextRow(ctx context.Context) (Row, bool)
+	NextRow(ctx context.Context) (Row, bool, error)
 }
 
 type RowConsumer interface {
@@ -34,13 +34,13 @@ func NewSimpleRows(rows []Row) *SimpleRows {
 	return &SimpleRows{rows: rows}
 }
 
-func (s *SimpleRows) NextRow(ctx context.Context) (Row, bool) {
+func (s *SimpleRows) NextRow(ctx context.Context) (Row, bool, error) {
 	if s.index >= len(s.rows) {
-		return nil, false
+		return nil, false, nil
 	}
 	row := s.rows[s.index]
 	s.index++
-	return row, true
+	return row, true, nil
 }
 
 type ChanRows struct {
@@ -51,11 +51,11 @@ func NewChanRows(ch <-chan Row) *ChanRows {
 	return &ChanRows{ch: ch}
 }
 
-func (c ChanRows) NextRow(ctx context.Context) (Row, bool) {
+func (c ChanRows) NextRow(ctx context.Context) (Row, bool, error) {
 	select {
 	case row, ok := <-c.ch:
-		return row, ok
+		return row, ok, nil
 	case <-ctx.Done():
-		return nil, false
+		return nil, false, ctx.Err()
 	}
 }

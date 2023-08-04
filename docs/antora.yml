@@ -4,13 +4,13 @@ start_page: overview.adoc
 # Version in the URL
 version: '5.3'
 # Version in the version selector (we display only the latest major.minor version)
-display_version: '5.3.1'
+display_version: '5.3.2'
 # Displays a banner to inform users that this is a prerelease version 
 prerelease: false
 asciidoc:
   attributes:
     # The full major.minor.patch version, which is used as a variable in the docs for things like download links
-    full-version: '5.3.1'
+    full-version: '5.3.2'
     # Allows us to use UI macros. See https://docs.asciidoctor.org/asciidoc/latest/macros/ui-macros/
     experimental: true
     snapshot: true

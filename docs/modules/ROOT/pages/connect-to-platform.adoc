@@ -36,7 +36,6 @@ Hazelcast CLC supports the following TLS connections for Hazelcast Platform:
 cluster:
   name: "<CLUSTER NAME>"
   address: "<MEMBER IP ADDRESS>"
-credentials:
   user: "<OPTIONAL USERNAME>"
   password: "<OPTIONAL PASSWORD>"
 ssl:

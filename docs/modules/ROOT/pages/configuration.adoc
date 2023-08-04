@@ -38,7 +38,7 @@ $ clc config list
 default
 prod
 
-# Start CLC shell with configuration named prod
+# Start CLC shell with configuration named pr-3066
 $ clc -c prod
 ----
 

@@ -1,4 +1,4 @@
-//go:build base
+//go:build std || config
 
 package config
 
@@ -23,16 +23,16 @@ Currently importing only Viridian connection configuration is supported.
 	
 1. On Viridian console, visit:
 	
-	Dashboard -> Connect Client -> Quick connection guide -> Go
+	Dashboard -> Connect Client -> Quick connection guide -> Python
 
 2. Copy the text in box 1 and pass it as the second parameter.
    Make sure the text is quoted before running:
 	
 	clc config import my-config "curl https://api.viridian.hazelcast.com ... default.zip"
 	
-Alternatively, you can use an already downloaded Go client sample:
+Alternatively, you can use an already downloaded Python client sample:
 	
-	clc config import my-config /home/me/Downloads/hazelcast-cloud-go-sample....zip
+	clc config import my-config /home/me/Downloads/hazelcast-cloud-python-sample....zip
 	
 `
 	cc.SetCommandHelp(long, short)

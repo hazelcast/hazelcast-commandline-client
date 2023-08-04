@@ -178,26 +178,6 @@ The following keyboard shortcuts are available in the interactive-mode:
 | <kbd>Ctrl + L</kbd> | Clear the screen                               |
 | <kbd>Ctrl + C</kbd> | Cancel running command        |
 
-## Connecting to Viridian Serverless
-
-1. If you don't have a running Viridian Serverless cluster, follow the steps in [Step 1. Start a Viridian Serverless Development Cluster](https://docs.hazelcast.com/cloud/get-started#step-1-start-a-viridian-serverless-development-cluster) to create a cluster.
-  Both development and production clusters will work very well.
-2. Download the Go client sample for your cluster from the Viridian Console. The sample is typically a Zip file with the following name format: "hazelcast-cloud-go-sample-client-CLUSTER-ID-default.zip". For instance: `hazelcast-cloud-csharp-sample-client-pr-3814-default.zip` 
-3. Import the configuration with CLC with `my-cluster` as the name:
-  ```
-  $ clc config import my-cluster ~/hazelcast-cloud-go-sample-client-pr-3814-default.zip
-  ```
-4. Check that the configuration is known to CLC:
-  ```
-  $ clc config list
-  default
-  my-cluster
-  ```
-5. In order to use this configuration, use `-c CONFIG_NAME` flag whenever you run CLC:
-  ```
-  $ clc -c my-cluster map set my-key my-value
-  ```
-
 ## Generating auto-completion
 
 CLC supports auto-completion in the non-interactive mode for the following shells:

@@ -4,12 +4,16 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/hazelcast/hazelcast-commandline-client/clc/secrets"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/types"
 )
 
 const (
@@ -24,51 +28,70 @@ type Wrapper[T any] struct {
 	Content T
 }
 
+//TODO: We need to separate API and secrets into two different structs
+
 type API struct {
-	token string
+	SecretPrefix string
+	Token        string
+	Key          string
+	Secret       string
 }
 
-func NewAPI(token string) *API {
-	return &API{token: token}
+func NewAPI(secretPrefix, key, secret, token string) *API {
+	return &API{
+		SecretPrefix: secretPrefix,
+		Key:          key,
+		Secret:       secret,
+		Token:        token,
+	}
 }
 
-func (a API) Token() string {
-	return a.token
-}
-
-func (a API) ListAvailableK8sClusters(ctx context.Context) ([]K8sCluster, error) {
-	c, err := doGet[[]K8sCluster](ctx, "/kubernetes_clusters/available", a.Token())
+func (a *API) ListAvailableK8sClusters(ctx context.Context) ([]K8sCluster, error) {
+	c, err := RetryOnAuthFail(ctx, a, func(ctx context.Context, token string) ([]K8sCluster, error) {
+		return doGet[[]K8sCluster](ctx, "/kubernetes_clusters/available", a.Token)
+	})
 	if err != nil {
 		return nil, fmt.Errorf("listing available Kubernetes clusters: %w", err)
 	}
 	return c, nil
 }
 
-func (a API) ListCustomClasses(ctx context.Context, cluster string) ([]CustomClass, error) {
+func (a *API) ListCustomClasses(ctx context.Context, cluster string) ([]CustomClass, error) {
 	c, err := a.FindCluster(ctx, cluster)
 	if err != nil {
 		return nil, err
 	}
-	csw, err := doGet[[]CustomClass](ctx, fmt.Sprintf("/cluster/%s/custom_classes", c.ID), a.Token())
+	csw, err := RetryOnAuthFail(ctx, a, func(ctx context.Context, token string) ([]CustomClass, error) {
+		return doGet[[]CustomClass](ctx, fmt.Sprintf("/cluster/%s/custom_classes", c.ID), a.Token)
+	})
 	if err != nil {
 		return nil, fmt.Errorf("listing custom classes: %w", err)
 	}
 	return csw, nil
 }
 
-func (a API) UploadCustomClasses(ctx context.Context, p func(progress float32), cluster, filePath string) error {
+func (a *API) UploadCustomClasses(ctx context.Context, p func(progress float32), cluster, filePath string) error {
 	c, err := a.FindCluster(ctx, cluster)
 	if err != nil {
 		return err
 	}
-	err = doCustomClassUpload(ctx, p, fmt.Sprintf("/cluster/%s/custom_classes", c.ID), filePath, a.Token())
+	_, err = RetryOnAuthFail(ctx, a, func(ctx context.Context, token string) (any, error) {
+		err = doCustomClassUpload(ctx, p, fmt.Sprintf("/cluster/%s/custom_classes", c.ID), filePath, a.Token)
+		if err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	if err != nil {
+		return err
+	}
 	if err != nil {
 		return fmt.Errorf("uploading custom class: %w", err)
 	}
 	return nil
 }
 
-func (a API) DownloadCustomClass(ctx context.Context, p func(progress float32), targetInfo TargetInfo, cluster, artifact string) error {
+func (a *API) DownloadCustomClass(ctx context.Context, p func(progress float32), targetInfo TargetInfo, cluster, artifact string) error {
 	c, err := a.FindCluster(ctx, cluster)
 	if err != nil {
 		return err
@@ -81,14 +104,20 @@ func (a API) DownloadCustomClass(ctx context.Context, p func(progress float32), 
 		return fmt.Errorf("no custom class artifact found with name or ID %s in cluster %s", artifact, c.ID)
 	}
 	url := fmt.Sprintf("/cluster/%s/custom_classes/%d", c.ID, artifactID)
-	err = doCustomClassDownload(ctx, p, targetInfo, url, artifactName, a.token)
+	_, err = RetryOnAuthFail(ctx, a, func(ctx context.Context, token string) (any, error) {
+		err = doCustomClassDownload(ctx, p, targetInfo, url, artifactName, a.Token)
+		if err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (a API) DeleteCustomClass(ctx context.Context, cluster string, artifact string) error {
+func (a *API) DeleteCustomClass(ctx context.Context, cluster string, artifact string) error {
 	c, err := a.FindCluster(ctx, cluster)
 	if err != nil {
 		return err
@@ -100,19 +129,32 @@ func (a API) DeleteCustomClass(ctx context.Context, cluster string, artifact str
 	if artifactID == 0 {
 		return fmt.Errorf("no custom class artifact found with name or ID %s in cluster %s", artifact, c.ID)
 	}
-	err = doDelete(ctx, fmt.Sprintf("/cluster/%s/custom_classes/%d", c.ID, artifactID), a.token)
+	_, err = RetryOnAuthFail(ctx, a, func(ctx context.Context, token string) (any, error) {
+		err = doDelete(ctx, fmt.Sprintf("/cluster/%s/custom_classes/%d", c.ID, artifactID), a.Token)
+		if err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (a API) DownloadConfig(ctx context.Context, clusterID string) (path string, stop func(), err error) {
+func (a *API) DownloadConfig(ctx context.Context, clusterID string) (path string, stop func(), err error) {
 	url := makeConfigURL(clusterID)
-	return download(ctx, url, a.token)
+	r, err := RetryOnAuthFail(ctx, a, func(ctx context.Context, token string) (types.Tuple2[string, func()], error) {
+		path, stop, err = download(ctx, url, a.Token)
+		if err != nil {
+			return types.Tuple2[string, func()]{}, err
+		}
+		return types.MakeTuple2(path, stop), nil
+	})
+	return r.First, r.Second, nil
 }
 
-func (a API) FindCluster(ctx context.Context, idOrName string) (Cluster, error) {
+func (a *API) FindCluster(ctx context.Context, idOrName string) (Cluster, error) {
 	clusters, err := a.ListClusters(ctx)
 	if err != nil {
 		return Cluster{}, err
@@ -125,7 +167,7 @@ func (a API) FindCluster(ctx context.Context, idOrName string) (Cluster, error) 
 	return Cluster{}, fmt.Errorf("no such cluster found: %s", idOrName)
 }
 
-func (a API) FindClusterType(ctx context.Context, name string) (ClusterType, error) {
+func (a *API) FindClusterType(ctx context.Context, name string) (ClusterType, error) {
 	cts, err := a.ListClusterTypes(ctx)
 	if err != nil {
 		return ClusterType{}, err
@@ -138,7 +180,24 @@ func (a API) FindClusterType(ctx context.Context, name string) (ClusterType, err
 	return ClusterType{}, fmt.Errorf("no such cluster type found: %s", name)
 }
 
-func (a API) findArtifactIDAndName(ctx context.Context, clusterName, artifact string) (int64, string, error) {
+func (a *API) StreamLogs(ctx context.Context, idOrName string, out io.Writer) error {
+	c, err := a.FindCluster(ctx, idOrName)
+	if err != nil {
+		return err
+	}
+	path := fmt.Sprintf("/cluster/%s/logstream", c.ID)
+	r, err := RetryOnAuthFail(ctx, a, func(ctx context.Context, token string) (io.ReadCloser, error) {
+		return doGetRaw(ctx, path, a.Token)
+	})
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+	_, err = io.Copy(out, r)
+	return err
+}
+
+func (a *API) findArtifactIDAndName(ctx context.Context, clusterName, artifact string) (int64, string, error) {
 	customClasses, err := a.ListCustomClasses(ctx, clusterName)
 	if err != nil {
 		return 0, "", err
@@ -169,6 +228,26 @@ func makeUrl(path string) string {
 	return APIBaseURL() + path
 }
 
+func RetryOnAuthFail[Res any](ctx context.Context, api *API, f func(ctx context.Context, token string) (Res, error)) (Res, error) {
+	r, err := f(ctx, api.Token)
+	var e HTTPClientError
+	if errors.As(err, &e) && e.Code() == http.StatusUnauthorized {
+		*api, err = Login(ctx, api.SecretPrefix, api.Key, api.Secret)
+		if err != nil {
+			return r, err
+		}
+		if err = secrets.Save(ctx, APIClass(), api.SecretPrefix, api.Key, api.Secret, api.Token); err != nil {
+			return r, err
+		}
+		r, err = f(ctx, api.Token)
+		if err != nil {
+			return r, err
+		}
+		return r, nil
+	}
+	return r, err
+}
+
 func doGet[Res any](ctx context.Context, path, token string) (res Res, err error) {
 	req, err := http.NewRequest(http.MethodGet, makeUrl(path), nil)
 	if err != nil {
@@ -183,15 +262,41 @@ func doGet[Res any](ctx context.Context, path, token string) (res Res, err error
 	if err != nil {
 		return res, fmt.Errorf("sending request: %w", err)
 	}
+	defer rawRes.Body.Close()
 	rb, err := io.ReadAll(rawRes.Body)
 	if err != nil {
 		return res, fmt.Errorf("reading response: %w", err)
 	}
-	if rawRes.StatusCode == 200 {
+	if rawRes.StatusCode == http.StatusOK {
 		if err = json.Unmarshal(rb, &res); err != nil {
 			return res, err
 		}
 		return res, nil
+	}
+	return res, NewHTTPClientError(rawRes.StatusCode, rb)
+}
+
+func doGetRaw(ctx context.Context, path, token string) (res io.ReadCloser, err error) {
+	req, err := http.NewRequest(http.MethodGet, makeUrl(path), nil)
+	if err != nil {
+		return res, fmt.Errorf("creating request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	req = req.WithContext(ctx)
+	rawRes, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return res, fmt.Errorf("sending request: %w", err)
+	}
+	if rawRes.StatusCode == 200 {
+		return rawRes.Body, nil
+	}
+	defer rawRes.Body.Close()
+	rb, err := io.ReadAll(rawRes.Body)
+	if err != nil {
+		return res, fmt.Errorf("reading response: %w", err)
 	}
 	return res, NewHTTPClientError(rawRes.StatusCode, rb)
 }
@@ -226,6 +331,7 @@ func doPostBytes(ctx context.Context, url, token string, body []byte) ([]byte, e
 	if err != nil {
 		return nil, fmt.Errorf("sending request: %w", err)
 	}
+	defer res.Body.Close()
 	rb, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, fmt.Errorf("reading response: %w", err)
@@ -280,7 +386,7 @@ func download(ctx context.Context, url, token string) (downloadPath string, stop
 		return "", nil, fmt.Errorf("sending request: %w", err)
 	}
 	defer rawRes.Body.Close()
-	if rawRes.StatusCode == 200 {
+	if rawRes.StatusCode == http.StatusOK {
 		if _, err := io.Copy(f, rawRes.Body); err != nil {
 			return "", nil, fmt.Errorf("downloading file: %w", err)
 		}
@@ -298,7 +404,7 @@ func download(ctx context.Context, url, token string) (downloadPath string, stop
 }
 
 func makeConfigURL(clusterID string) string {
-	return makeUrl(fmt.Sprintf("/client_samples/%s/go?source_identifier=default", clusterID))
+	return makeUrl(fmt.Sprintf("/client_samples/%s/python?source_identifier=default", clusterID))
 }
 
 func APIClass() string {

@@ -43,7 +43,7 @@
 * Removed `map get-all`, `map put` and `map put-all` commands.
 * Added the `map set` command.
 * Auto-completion is disabled in interactive mode.
-* {hazelcast-cloud} Serverless is the default cloud platform.
+//* {hazelcast-cloud} Serverless is the default cloud platform.
 * The shell connects to the cluster on demand.
 
 == Known issues

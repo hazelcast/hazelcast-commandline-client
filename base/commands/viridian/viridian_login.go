@@ -1,3 +1,5 @@
+//go:build std || viridian
+
 package viridian
 
 import (
@@ -7,7 +9,6 @@ import (
 	"os"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/secrets"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -18,8 +19,6 @@ import (
 const (
 	propAPIKey    = "api-key"
 	propAPISecret = "api-secret"
-	propEmail     = "email"
-	propPassword  = "password"
 	secretPrefix  = "viridian"
 )
 
@@ -51,7 +50,8 @@ func (cm LoginCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		return err
 	}
-	if err = cm.saveSecrets(ctx, key, token); err != nil {
+
+	if err = secrets.Save(ctx, viridian.APIClass(), secretPrefix, key, secret, token); err != nil {
 		return err
 	}
 	ec.PrintlnUnnecessary("")
@@ -62,28 +62,17 @@ func (cm LoginCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 func (cm LoginCmd) retrieveToken(ctx context.Context, ec plug.ExecContext, key, secret string) (string, error) {
 	ti, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Logging in")
-		api, err := viridian.Login(ctx, key, secret)
+		api, err := viridian.Login(ctx, secretPrefix, key, secret)
 		if err != nil {
 			return nil, err
 		}
-		return api.Token(), err
+		return api.Token, err
 	})
 	if err != nil {
 		return "", handleErrorResponse(ec, err)
 	}
 	stop()
 	return ti.(string), nil
-}
-
-func (cm LoginCmd) saveSecrets(ctx context.Context, key, token string) error {
-	key = fmt.Sprintf("%s-%s", viridian.APIClass(), key)
-	if ctx.Err() != nil {
-		return ctx.Err()
-	}
-	if err := os.MkdirAll(paths.Secrets(), 0700); err != nil {
-		return fmt.Errorf("creating secrets directory: %w", err)
-	}
-	return secrets.Write(secretPrefix, key, []byte(token))
 }
 
 func apiKeySecret(ec plug.ExecContext) (key, secret string, err error) {
