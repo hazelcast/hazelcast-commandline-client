@@ -1,3 +1,5 @@
+//go:build std || viridian
+
 package viridian
 
 import (
@@ -6,10 +8,12 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
 
+	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/secrets"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
@@ -21,23 +25,23 @@ const (
 )
 
 var (
-	ErrClusterFailed   = errors.New("cluster failed")
-	ErrClusterNotFound = errors.New("cluster not found")
+	ErrClusterFailed  = errors.New("cluster failed")
+	ErrLoadingSecrets = errors.New("could not load Viridian secrets, did you login?")
 )
 
-func findToken(apiKey string) (string, error) {
+func findTokenPath(apiKey string) (string, error) {
 	ac := viridian.APIClass()
 	if apiKey == "" {
 		apiKey = os.Getenv(viridian.EnvAPIKey)
 	}
 	if apiKey != "" {
-		return fmt.Sprintf("%s-%s", ac, apiKey), nil
+		return fmt.Sprintf(secrets.TokenFileFormat, ac, apiKey), nil
 	}
-	tokenPaths, err := secrets.FindAll(secretPrefix)
+	tokenPaths, err := findAll(secretPrefix)
 	if err != nil {
 		return "", fmt.Errorf("cannot access the secrets, did you login?: %w", err)
 	}
-	// sort tokens, so findToken returns the same token everytime.
+	// sort tokens, so findTokenPath returns the same token everytime.
 	sort.Slice(tokenPaths, func(i, j int) bool {
 		return tokenPaths[i] < tokenPaths[j]
 	})
@@ -54,8 +58,24 @@ func findToken(apiKey string) (string, error) {
 	return tp, nil
 }
 
+func findAll(prefix string) ([]string, error) {
+	return paths.FindAll(paths.Join(paths.Secrets(), prefix), func(basePath string, entry os.DirEntry) (ok bool) {
+		return !entry.IsDir() && filepath.Ext(entry.Name()) == filepath.Ext(secrets.TokenFileFormat)
+	})
+}
+
+func findKeyAndSecret(tokenPath string) (string, string, error) {
+	apiKey := strings.TrimPrefix(strings.TrimSuffix(tokenPath, filepath.Ext(tokenPath)), fmt.Sprintf("%s-", viridian.APIClass()))
+	fn := fmt.Sprintf(secrets.SecretFileFormat, viridian.APIClass(), apiKey)
+	secret, err := secrets.Read(secretPrefix, fn)
+	if err != nil {
+		return "", "", err
+	}
+	return apiKey, string(secret), nil
+}
+
 func getAPI(ec plug.ExecContext) (*viridian.API, error) {
-	tp, err := findToken(ec.Props().GetString(propAPIKey))
+	tp, err := findTokenPath(ec.Props().GetString(propAPIKey))
 	if err != nil {
 		return nil, err
 	}
@@ -63,9 +83,14 @@ func getAPI(ec plug.ExecContext) (*viridian.API, error) {
 	token, err := secrets.Read(secretPrefix, tp)
 	if err != nil {
 		ec.Logger().Error(err)
-		return nil, fmt.Errorf("could not load Viridian secrets, did you login?")
+		return nil, ErrLoadingSecrets
 	}
-	return viridian.NewAPI(string(token)), nil
+	key, secret, err := findKeyAndSecret(tp)
+	if err != nil {
+		ec.Logger().Error(err)
+		return nil, ErrLoadingSecrets
+	}
+	return viridian.NewAPI(secretPrefix, key, secret, string(token)), nil
 }
 
 func waitClusterState(ctx context.Context, ec plug.ExecContext, api *viridian.API, clusterIDOrName, state string) error {

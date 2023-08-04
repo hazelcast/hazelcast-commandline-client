@@ -1,3 +1,5 @@
+//go:build std || viridian
+
 package viridian_test
 
 import (
@@ -172,7 +174,7 @@ func createCluster_InteractiveTest(t *testing.T) {
 func stopCluster_NonInteractiveTest(t *testing.T) {
 	viridianTester(t, func(ctx context.Context, tcx it.TestContext) {
 		c := createOrGetClusterWithState(ctx, tcx, "RUNNING")
-		tcx.CLCExecute(ctx, "viridian", "pause-cluster", c.ID)
+		tcx.CLCExecute(ctx, "viridian", "stop-cluster", c.ID)
 		tcx.AssertStderrContains("OK")
 		check.Must(waitState(ctx, tcx, c.ID, "STOPPED"))
 	})
@@ -183,7 +185,7 @@ func stopCluster_InteractiveTest(t *testing.T) {
 		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			tcx.WithReset(func() {
 				c := createOrGetClusterWithState(ctx, tcx, "RUNNING")
-				tcx.WriteStdinf("\\viridian pause-cluster %s\n", c.Name)
+				tcx.WriteStdinf("\\viridian stop-cluster %s\n", c.Name)
 				tcx.AssertStderrContains("OK")
 				check.Must(waitState(ctx, tcx, c.ID, "STOPPED"))
 			})

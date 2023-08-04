@@ -1,13 +1,16 @@
+//go:build std || queue
+
 package queue
 
 import (
 	"fmt"
 	"strings"
 
+	"github.com/hazelcast/hazelcast-go-client"
+
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/mk"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-go-client"
 )
 
 func addValueTypeFlag(cc plug.InitContext) {

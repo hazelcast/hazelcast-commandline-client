@@ -124,15 +124,15 @@ clc home
 clc viridian download-logs my-cluster --output-dir $DIRECTORY_PATH
 ----
 
-== Step 6. Pause/Resume Your Cluster
+== Step 6. Stop/Resume Your Cluster
 
-To avoid charges accumulating in your account, you can xref:cloud:ROOT:stop-and-resume.adoc[pause a running cluster].
+To avoid charges accumulating in your account, you can xref:cloud:ROOT:stop-and-resume.adoc[stop a running cluster].
 
 . Try pausing your cluster. You can use either the cluster name or ID.
 +
 [source, bash]
 ----
-clc viridian pause-cluster my-cluster
+clc viridian stop-cluster my-cluster
 ----
 
 . When you're ready to resume the cluster, run the following command.

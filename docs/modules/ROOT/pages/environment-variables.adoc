@@ -27,12 +27,8 @@
 |Some Hazelcast CLC features require the cluster to be of a certain version. If set to `1`, this variable disables the version check performed by the CLC.
 |`0` (false)
 
-|CLC_VIRIDIAN_API_KEY
-|Sets the {hazelcast-cloud} API key.
-|
-
-|CLC_VIRIDIAN_API_SECRET
-|Sets the {hazelcast-cloud} API secret.
+|CLC_CONFIG
+|Sets the configuration CLC will use if `--config` flag is not specified.
 |
 
 |===
@@ -45,6 +41,7 @@ The following environment variables are experimental and may be removed in a fut
 
 |CLC_EXPERIMENTAL_FORMATTER
 |Sets a formatter for the highlighting of SQL syntax, either: `terminal`, `terminal8`, `terminal16`, `terminal256`, or `terminal16m`. Only with the `gohxs` readline implementation.
+|
 
 |CLC_EXPERIMENTAL_READLINE
 |Sets the readline implementation, either `gohxs` or `ny`.
