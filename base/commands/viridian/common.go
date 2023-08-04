@@ -29,19 +29,19 @@ var (
 	ErrLoadingSecrets = errors.New("could not load Viridian secrets, did you login?")
 )
 
-func findToken(apiKey string) (string, error) {
+func findTokenPath(apiKey string) (string, error) {
 	ac := viridian.APIClass()
 	if apiKey == "" {
 		apiKey = os.Getenv(viridian.EnvAPIKey)
 	}
 	if apiKey != "" {
-		return fmt.Sprintf("%s-%s", ac, apiKey), nil
+		return fmt.Sprintf(secrets.TokenFileFormat, ac, apiKey), nil
 	}
 	tokenPaths, err := findAll(secretPrefix)
 	if err != nil {
 		return "", fmt.Errorf("cannot access the secrets, did you login?: %w", err)
 	}
-	// sort tokens, so findToken returns the same token everytime.
+	// sort tokens, so findTokenPath returns the same token everytime.
 	sort.Slice(tokenPaths, func(i, j int) bool {
 		return tokenPaths[i] < tokenPaths[j]
 	})
@@ -75,7 +75,7 @@ func findKeyAndSecret(tokenPath string) (string, string, error) {
 }
 
 func getAPI(ec plug.ExecContext) (*viridian.API, error) {
-	tp, err := findToken(ec.Props().GetString(propAPIKey))
+	tp, err := findTokenPath(ec.Props().GetString(propAPIKey))
 	if err != nil {
 		return nil, err
 	}

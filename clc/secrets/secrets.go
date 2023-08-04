@@ -59,9 +59,3 @@ func Read(prefix, name string) ([]byte, error) {
 	}
 	return b[:n], nil
 }
-
-func FindAll(prefix string) ([]string, error) {
-	return paths.FindAll(paths.Join(paths.Secrets(), prefix), func(basePath string, entry os.DirEntry) (ok bool) {
-		return !entry.IsDir() && filepath.Ext(entry.Name()) == filepath.Ext(TokenFileFormat)
-	})
-}
