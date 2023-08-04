@@ -12,6 +12,7 @@ clc project [command] [flags]
 == Commands
 
 * <<clc-project-create, clc project create>>
+* <<clc-project-list-templates, clc project list-templates>>
 
 == clc project create
 
@@ -100,4 +101,42 @@ clc project create^
 simple-streaming-pipeline^
 --output-dir my-project^
 my_key1=my_value1 my_key2=my_value2
+----
+
+== clc project list-templates
+
+Lists templates that can be used while creating projects.
+
+Usage:
+
+[source,bash]
+----
+clc project list-templates [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|--local
+|false
+|When enabled, it only lists templates that exist in `<clc_home>/templates`
+|
+
+|--force
+|false
+|Templates are fetched and cached in a local data store. iIf you want to force CLC to fetch the latest templates from the remote repositories, you should set this parameter.
+|
+
+|===
+
+WARNING: --force and --local parameters cannot be set at the same time, because they serve for different purposes. --force is used for templates in remote repositories, while --local is used to list templates in local environment.
+
+Example:
+
+[source,bash]
+----
+clc project list-templates
 ----

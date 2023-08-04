@@ -145,11 +145,16 @@ func cloneTemplate(baseDir string, name string) error {
 	return nil
 }
 
-func templateRepoURL(templateName string) string {
+func templateOrgURL() string {
 	u := os.Getenv(envTemplateSource)
 	if u == "" {
 		u = hzTemplatesOrganization
 	}
+	return u
+}
+
+func templateRepoURL(templateName string) string {
+	u := templateOrgURL()
 	u = strings.TrimSuffix(u, "/")
 	return fmt.Sprintf("%s/%s", u, templateName)
 }
