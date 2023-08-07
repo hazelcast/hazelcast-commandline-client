@@ -11,8 +11,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 
-	"github.com/hazelcast/hazelcast-commandline-client/base/commands/sql"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/sql"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/demo"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/demo/wikimedia"
@@ -129,7 +129,7 @@ func generateResult(ctx context.Context, ec plug.ExecContext, generator DataStre
 	
 	SELECT
 	__key, meta_dt as "timestamp", user_, comment
-	FROM %s
+	FROM "%s"
 	LIMIT 10;
 	
 Generating event stream...
