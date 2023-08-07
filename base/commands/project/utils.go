@@ -80,7 +80,7 @@ func convertToSnakeCase(s string) string {
 }
 
 func validateValueMap[T any](m map[string]T) (invalid string, ok bool) {
-	for k, _ := range m {
+	for k := range m {
 		if !regexpValidKey.MatchString(k) {
 			return k, false
 		}
