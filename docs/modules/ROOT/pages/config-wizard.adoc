@@ -1,4 +1,4 @@
-//== CLC Configuration Wizard
+== CLC Configuration Wizard
 
 :description: Hazelcast CLC provides a wizard functionlity in the interactice mode to manage multiple configuration easily. It runs when a client connection need and asks for a configuration choice.
 
@@ -6,11 +6,11 @@
 
 {description}
 
-If you don't have any configuration yet, it will show a prompt screen to enter a configuration source with target name. If you have configurations
-in the Hazelcast CLC home directory, it will list them and ask for you to select one to create client connection.
+If you try to run an operation that requires a client connection before you have added any configurations to the Hazelcast CLC home directory, you are prompted to enter a configuration source with the target name. 
 
-TIP: If you have a configuration named `default`, a configuration YAML exists next to executable or in the current working directory,
-CLC directly uses it instead of running configuration wizard.
+If you have already added one or more configurations to the Hazelcast CLC home directory, you are prompted to select one to create a client connection.
+
+TIP: If you have a configuration named `default`, a configuration YAML exists next to the executable or in the current working directory. CLC uses this instead of running configuration wizard.
 
 == Before you Begin
 
@@ -60,14 +60,13 @@ Configuration Name: default
 
 . Copy the Go Client sample url from {hazelcast-cloud} console.
 
-. Paste the Go client sample CURL request link to `Source: ` in this screen.
+. Paste the Go client sample CURL request link to `Source:` in this screen.
 +
 ```bash
 Source: curl https://api.viridian.hazelcast.com/client_samples/download/...
 ```
 +
-. Press `[ Submit ]` and it will automatically connect to your Viridian cluster. Notice that if you didn't specify the
-configuration name or leave it as default, it will automatically connect to this client unless you specify it with `--config` flag.
+. Press `[ Submit ]` and it will automatically connect to your {hazelcast-cloud} cluster. Notice that if you didn't specify the configuration name or leave it as default, it will automatically connect to this client unless you specify it with `--config` flag.
 
 == Multiple Configurations
 

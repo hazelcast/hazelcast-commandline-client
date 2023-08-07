@@ -91,6 +91,6 @@ To return to non-interactive mode, use either of the following methods:
 == Next Steps
 Install, configure, and explore Hazelcast CLC:
 
-//- xref:get-started.adoc[].
+- xref:get-started.adoc[].
 - xref:configuration.adoc[].
 - xref:clc-commands.adoc[clc commands].
