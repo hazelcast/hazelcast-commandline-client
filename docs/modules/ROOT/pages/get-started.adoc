@@ -97,7 +97,7 @@ NOTE: This command shows the cluster ID prefixed with `pr` instead of the cluste
 Having separate local configurations for your two production clusters allows you to switch between them without leaving the command line. Make sure both clusters are running before you start.
 
 . Execute the following command to connect to your Test1 cluster.
-
++
 [source, shell]
 ----
 clc -c Test1
