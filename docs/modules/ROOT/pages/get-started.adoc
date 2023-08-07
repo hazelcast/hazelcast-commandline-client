@@ -55,7 +55,7 @@ The details of all clusters linked to your Hazelcast {hazelcast-cloud} account a
 
 
 [[step-2-prod-configure]]
-== Step 2. Add Configuration to Connect to {hazelcast-cloud}
+== Step 3. Add Configuration to Connect to {hazelcast-cloud}
 
 To connect to each production cluster, you need to import additional cluster configuration from {hazelcast-cloud}. 
 
@@ -92,7 +92,7 @@ NOTE: This command shows the cluster ID prefixed with `pr` instead of the cluste
 . Repeat steps 1 to 4 for Test2.
 
 [[step-3-cluster-switch]]
-== Step 3. Switch Between Clusters
+== Step 4. Switch Between Clusters
 
 Having separate local configurations for your two production clusters allows you to switch between them without leaving the command line. Make sure both clusters are running before you start.
 
@@ -105,6 +105,7 @@ clc -c Test1
 
 +
 As before, the Hazelcast CLC connects to your Test1 cluster.
+
 . Type `\exit` to return to the command line.
 . Execute the same command to connect to Test2.
 +
@@ -112,11 +113,11 @@ As before, the Hazelcast CLC connects to your Test1 cluster.
 ----
 clc -c Test2
 ----
-+
+
 . Again, type `\exit` to return to the command line.
 
 [[step-4-write-data]]
-== Step 4. Write Data to a Map
+== Step 5. Write Data to a Map
 
 Now that you've connected to both your clusters, try using the Hazelcast CLC to create a map on Test1, write some data to it, and query the data. You can use SQL to do this.
 
@@ -240,7 +241,7 @@ type myscript.sql | clc -c Test2
 --
 ====
 
-== Step 5. Clean Up
+== Step 7. Clean Up
 
 To delete both test clusters from your account.
 
