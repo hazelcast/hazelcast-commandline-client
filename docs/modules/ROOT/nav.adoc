@@ -26,6 +26,7 @@
 ** xref:clc-set.adoc[]
 ** xref:clc-queue.adoc[]
 ** xref:clc-topic.adoc[]
+** xref:clc-multimap.adoc[]
 ** xref:clc-script.adoc[]
 ** xref:clc-sql.adoc[]
 ** xref:clc-snapshot.adoc[]
@@ -36,6 +37,7 @@
 * xref:keyboard-shortcuts.adoc[]
 
 .Release Notes
+* xref:release-notes-5.3.2.adoc[5.3.2]
 * xref:release-notes-5.3.1.adoc[5.3.1]
 * xref:release-notes-5.3.0.adoc[5.3.0]
 * xref:release-notes-5.3.0-BETA-2.adoc[5.3.0-BETA-2]

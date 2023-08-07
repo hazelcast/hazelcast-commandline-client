@@ -46,11 +46,12 @@ func (cm LoginCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		return err
 	}
-	api, err := cm.retrieveTokens(ctx, ec, key, secret)
+	token, err := cm.retrieveToken(ctx, ec, key, secret)
 	if err != nil {
 		return err
 	}
-	if err = secrets.Save(secretPrefix, key, viridian.APIClass(), api.Token, api.RefreshToken, api.ExpiresIn); err != nil {
+
+	if err = secrets.Save(ctx, viridian.APIClass(), secretPrefix, key, secret, token); err != nil {
 		return err
 	}
 	ec.PrintlnUnnecessary("")
@@ -58,20 +59,20 @@ func (cm LoginCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	return nil
 }
 
-func (cm LoginCmd) retrieveTokens(ctx context.Context, ec plug.ExecContext, key, secret string) (viridian.API, error) {
+func (cm LoginCmd) retrieveToken(ctx context.Context, ec plug.ExecContext, key, secret string) (string, error) {
 	ti, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Logging in")
-		api, err := viridian.Login(ctx, key, secret)
+		api, err := viridian.Login(ctx, secretPrefix, key, secret)
 		if err != nil {
 			return nil, err
 		}
-		return api, err
+		return api.Token, err
 	})
 	if err != nil {
-		return viridian.API{}, handleErrorResponse(ec, err)
+		return "", handleErrorResponse(ec, err)
 	}
 	stop()
-	return ti.(viridian.API), nil
+	return ti.(string), nil
 }
 
 func apiKeySecret(ec plug.ExecContext) (key, secret string, err error) {

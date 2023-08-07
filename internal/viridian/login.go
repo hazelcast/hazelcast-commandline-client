@@ -11,12 +11,10 @@ type loginRequest struct {
 }
 
 type loginResponse struct {
-	Token        string `json:"token"`
-	ExpiresIn    int    `json:"expires_in"`
-	RefreshToken string `json:"refresh_token"`
+	Token string `json:"token"`
 }
 
-func Login(ctx context.Context, key, secret string) (API, error) {
+func Login(ctx context.Context, secretPrefix, key, secret string) (API, error) {
 	var api API
 	if key == "" {
 		return api, errors.New("api key cannot be blank")
@@ -32,8 +30,9 @@ func Login(ctx context.Context, key, secret string) (API, error) {
 	if err != nil {
 		return api, err
 	}
+	api.Key = key
+	api.Secret = secret
 	api.Token = resp.Token
-	api.ExpiresIn = resp.ExpiresIn
-	api.RefreshToken = resp.RefreshToken
+	api.SecretPrefix = secretPrefix
 	return api, nil
 }

@@ -10,53 +10,33 @@ import (
 	"path/filepath"
 	"testing"
 
+	_ "github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/it/skip"
 )
 
 func TestCreateCommand(t *testing.T) {
-	// We are skipping this test on Windows, because git-go does not allow to configure core.autocrlf option
-	skip.If(t, "os = windows")
-	os.Setenv(envTemplateSource, "https://github.com/kutluhanmetin")
-	testCases := []struct {
-		inputTemplateName string
-		inputOutputDir    string
-		inputArgs         []string
-		testProjectDir    string
-	}{
-		{
-			inputTemplateName: "simple-streaming-pipeline-template",
-			inputOutputDir:    "my-simple-streaming-pipeline",
-			inputArgs:         []string{"rootProjectName=simple-streaming-pipeline"},
-			testProjectDir:    "testdata/simple-streaming-pipeline",
-		},
-	}
-	for _, tc := range testCases {
-		t.Run(tc.inputTemplateName, func(t *testing.T) {
-			tcx := it.TestContext{T: t}
-			tcx.Tester(func(tcx it.TestContext) {
-				// create project in temp dir
-				// we cannot initialize it in test case because CLC_HOME is set to a temp dir in tcx.Tester func
-				tc.inputOutputDir = filepath.Join(paths.Home(), tc.inputOutputDir)
-				defer teardown(tc.inputOutputDir)
-				ctx := context.Background()
-				tcx.WithReset(func() {
-					cmd := []string{"project", "create", tc.inputTemplateName, tc.inputOutputDir}
-					cmd = append(cmd, tc.inputArgs...)
-					check.Must(tcx.CLC().Execute(ctx, cmd...))
-				})
-				tcx.WithReset(func() {
-					check.Must(compareDirectories(tc.inputOutputDir, tc.testProjectDir))
-				})
-			})
+	// TODO: create a temp home and copy the template into it
+	testDir := filepath.Join(check.MustValue(filepath.Abs("testdata")))
+	home := filepath.Join(testDir, "home")
+	tcx := it.TestContext{T: t}
+	tcx.Tester(func(tcx it.TestContext) {
+		it.WithEnv(paths.EnvCLCHome, home, func() {
+			tempDir := check.MustValue(os.MkdirTemp("", "clc-"))
+			outDir := filepath.Join(tempDir, "my-project")
+			fixture := filepath.Join(testDir, "fixture", "simple")
+			defer func() {
+				// ignoring the error here
+				_ = os.RemoveAll(outDir)
+			}()
+			ctx := context.Background()
+			// logging to stderr in order to avoid creating the logs directory
+			cmd := []string{"project", "create", "simple", "-o", outDir, "--log.path", "stderr", "another_key=foo", "key1=bar"}
+			check.Must(tcx.CLC().Execute(ctx, cmd...))
+			check.Must(compareDirectories(fixture, outDir))
 		})
-	}
-}
-
-func teardown(dir string) {
-	os.RemoveAll(dir)
+	})
 }
 
 func compareDirectories(dir1, dir2 string) error {
