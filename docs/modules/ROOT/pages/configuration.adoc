@@ -10,7 +10,7 @@ This file can exist anywhere in the file system, and can be used with the `--con
 clc -c test/config.yaml
 ----
 
-TIP: If you try to run an operation that requires a client connection before you have added any configuration, CLC will prompt the configuration wizard to import a {hazelcast-cloud} configuration. For details, see xref:config-wizard.adoc[CLC Configuration Wizard].
+//TIP: If you try to run an operation that requires a client connection before you have added any configuration, CLC will prompt the configuration wizard to import a {hazelcast-cloud} configuration. For details, see xref:config-wizard.adoc[CLC Configuration Wizard].
 
 If there is a `config.yaml` in the same directory with the CLC binary and the configuration was not explicitly set, CLC tries to load that configuration file:
 [source, bash]

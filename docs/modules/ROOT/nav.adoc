@@ -11,7 +11,7 @@
 * xref:configuration.adoc[Configure]
 ** xref:connect-to-viridian.adoc[Connect to {hazelcast-cloud}]
 ** xref:connect-to-platform.adoc[Connect to Platform]
-** xref:config-wizard.adoc[CLC Configuration Wizard ]
+//** xref:config-wizard.adoc[CLC Configuration Wizard ]
 * xref:upgrade-clc.adoc[Upgrade]
 
 .Reference
