@@ -93,7 +93,7 @@ All paths in the configuration are relative to the parent directory of the confi
   * path: Path to the log file, or `stderr`. By default, the logs are written to `$CLC_HOME/logs` with the current date as the name.
   * level: Log level, one of: `debug`, `info`, `warn`, `error`. The default is `info`.
 
-Here's a sample Viridian Serverless configuration:
+Here's a sample {hazelcast-cloud} Serverless configuration:
 ```
 cluster:
   name: "pr-3814"  

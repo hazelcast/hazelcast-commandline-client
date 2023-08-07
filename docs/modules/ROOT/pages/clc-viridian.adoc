@@ -2,7 +2,7 @@
 
 This command group provides commands for doing various {hazelcast-cloud} operations, such as creating and managing clusters.
 
-All commands except `viridian login` require the generation of a token using an API key and secret, which you can retrieve from {hazelcast-cloud} console. Running `viridian login` prompts you for this information, and creates and saves the token.
+All commands except `viridian login` require the generation of a token using an API key and secret, which you can retrieve from the {hazelcast-cloud} console. Running `viridian login` prompts you for this information, and creates and saves the token.
 
 Usage:
 

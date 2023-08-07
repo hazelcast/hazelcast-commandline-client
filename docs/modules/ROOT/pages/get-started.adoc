@@ -59,13 +59,21 @@ The details of all clusters linked to your Hazelcast {hazelcast-cloud} account a
 
 To connect to each production cluster, you need to import additional cluster configuration from {hazelcast-cloud}. 
 
-. link:https://viridian.hazelcast.com/[Sign in to {hazelcast-cloud}] and select your Test1 cluster.
+. Run the `clc config import` to update the cluster configuration on your local machine.
 
-. From the cluster dashboard, click *CLI* to open the *Quick Connection Guide* for the Hazelcast CLC client.
++
+[source, shell]
+----
+clc viridian import-config Test1
+----
 
-. Run the `clc config import` command in step 2. This command updates the cluster configuration on your local machine.
+. Run the following command to connect to your cluster using the Hazelcast CLC.
 
-. Run the `clc -c pr-<CLUSTER_ID>` command in step 3 to connect to your cluster using the Hazelcast CLC.
++
+[source, shell]
+----
+clc -c Test1
+----
 
 . The Hazelcast CLC only connects to the cluster when necessary. Run a command that requires a connection to the cluster, such as `object list`:
 +
@@ -76,31 +84,33 @@ Connected to cluster: pr-<CLUSTER-ID>
 ----
 +
 As this is a new cluster, no objects are returned.
++
+NOTE: This command shows the cluster ID prefixed with `pr` instead of the cluster name. You can see the cluster ID in *Cluster Details* on the {hazelcast-cloud} console.
 
 . Press kbd:[Ctrl+D] or type `\exit` to shut down the Hazelcast CLC while you complete the configuration of your second production cluster.
 
-. Repeat steps 2 to 7 for Test2.
+. Repeat steps 1 to 4 for Test2.
 
 [[step-3-cluster-switch]]
 == Step 3. Switch Between Clusters
 
 Having separate local configurations for your two production clusters allows you to switch between them without leaving the command line. Make sure both clusters are running before you start.
 
-. Execute the following command to use the imported configuration to connect to your Test1 cluster. Replace the placeholder `$CLUSTER_ID` with the ID of your cluster. 
-+
+. Execute the following command to connect to your Test1 cluster.
+
 [source, shell]
 ----
-clc -c pr-$CLUSTER_ID
+clc -c Test1
 ----
 
 +
 As before, the Hazelcast CLC connects to your Test1 cluster.
 . Type `\exit` to return to the command line.
-. Execute the same command to connect to Test2, using the ID of this cluster.
+. Execute the same command to connect to Test2.
 +
 [source, shell]
 ----
-clc -c pr-$CLUSTER_ID
+clc -c Test2
 ----
 +
 . Again, type `\exit` to return to the command line.
@@ -110,12 +120,12 @@ clc -c pr-$CLUSTER_ID
 
 Now that you've connected to both your clusters, try using the Hazelcast CLC to create a map on Test1, write some data to it, and query the data. You can use SQL to do this.
 
-. Start by creating a mapping to a new `currency`` map. As before replace the placeholder value `$CLUSTER_ID` in all commands.
+. Start by creating a mapping to a new `currency` map. 
 
 +
 [source,shell]
 ----
-clc sql -c pr-$CLUSTER_ID "CREATE OR REPLACE MAPPING currency (__key INT, Code VARCHAR, Currency VARCHAR) TYPE IMap OPTIONS('keyFormat'='int', 'valueFormat'='json-flat');"
+clc sql -c Test1 "CREATE OR REPLACE MAPPING currency (__key INT, Code VARCHAR, Currency VARCHAR) TYPE IMap OPTIONS('keyFormat'='int', 'valueFormat'='json-flat');"
 ----
 +
 The SQL mapping statement does a number of things:
@@ -128,14 +138,14 @@ The SQL mapping statement does a number of things:
 +
 [source,shell]
 ----
-clc sql -c pr-$CLUSTER_ID "INSERT INTO currency VALUES (1, 'CAD','Canadian Dollar'),(2, 'INR','Indian Rupee'),(3, 'MXN', 'Mexican Peso'),(4, 'GBP', 'Pounds Sterling'),(5, 'TRY', 'Turkish Lira'),(6, 'USD', 'United States Dollar');"
+clc sql -c Test1 "INSERT INTO currency VALUES (1, 'CAD','Canadian Dollar'),(2, 'INR','Indian Rupee'),(3, 'MXN', 'Mexican Peso'),(4, 'GBP', 'Pounds Sterling'),(5, 'TRY', 'Turkish Lira'),(6, 'USD', 'United States Dollar');"
 ----
 
 . Try running some simple queries against the `currency` map. For example, this query returns all data in the map and orders it by the currency code.  
 +
 [source,shell]
 ----
-clc sql -c pr-$CLUSTER_ID "SELECT * FROM currency ORDER BY Code" -f table
+clc sql -c Test1 "SELECT * FROM currency ORDER BY Code" -f table
 ----
 +
 The results look like this:
@@ -195,36 +205,36 @@ SELECT * FROM currencydata ORDER BY Code;
 Linux and MacOS::
 + 
 --
-. To run the script on your Test1 cluster, execute the following command replacing the placeholder $CLUSTER_ID:
+. To run the script on your Test1 cluster, execute the following command.
 +
 [source,shell]
 ----
-cat myscript.sql | clc -c pr-$CLUSTER_ID
+cat myscript.sql | clc -c Test1
 ----
 +
-. Then, to run the script on your Test2 cluster, execute the same command using the ID of this cluster.
+. Then, to run the script on your Test2 cluster, execute the same command replacing the cluster name.
 +
 [source,shell]
 ----
-cat myscript.sql | clc -c pr-$CLUSTER_ID
+cat myscript.sql | clc -c Test2
 ----
 
 --
 Windows::
 +
 --
-. To run the script on your Test1 cluster, execute the following command replacing the placeholder $CLUSTER_ID:
+. To run the script on your Test1 cluster, execute the following command.
 +
 [source,shell]
 ----
-type myscript.sql | clc -c pr-$CLUSTER_ID
+type myscript.sql | clc -c Test1
 ----
 +
-. Then, to run the script on your Test2 cluster, execute the same command using the ID of this cluster.
+. Then, to run the script on your Test2 cluster, execute the same command replacing the cluster name.
 +
 [source,shell]
 ----
-type myscript.sql | clc -c pr-$CLUSTER_ID
+type myscript.sql | clc -c Test2
 ----
 
 --
