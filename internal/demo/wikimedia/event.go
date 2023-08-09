@@ -1,9 +1,8 @@
 package wikimedia
 
 import (
+	"encoding/json"
 	"time"
-
-	"github.com/fatih/structs"
 
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
@@ -117,9 +116,10 @@ func (ev event) FlatMap() map[string]any {
 		Wiki:             ev.Wiki,
 		Parsedcomment:    ev.Parsedcomment,
 	}
-	s := structs.New(fe)
-	s.TagName = "json"
-	return s.Map()
+	var sm map[string]any
+	inrec, _ := json.Marshal(fe)
+	json.Unmarshal(inrec, &sm)
+	return sm
 }
 
 type flatEvent struct {

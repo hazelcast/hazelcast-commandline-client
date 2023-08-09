@@ -79,7 +79,6 @@ require (
 	github.com/charmbracelet/bubbletea v0.23.2
 	github.com/charmbracelet/lipgloss v0.7.1
 	github.com/fatih/color v1.13.0
-	github.com/fatih/structs v1.1.0
 	github.com/go-git/go-git/v5 v5.8.1
 	github.com/mattn/go-colorable v0.1.12
 	github.com/nyaosorg/go-readline-ny v0.9.1

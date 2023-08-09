@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/fatih/structs"
-
 	"github.com/hazelcast/hazelcast-commandline-client/internal/demo"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/sse"
 )
@@ -68,7 +66,5 @@ func handleEvents(ctx context.Context, client *sse.Client, itemCh chan demo.Stre
 }
 
 func (StreamGenerator) MappingQuery(mapName string) (string, error) {
-	s := structs.New(flatEvent{})
-	s.TagName = "json"
-	return demo.GenerateMappingQuery(mapName, s.Map())
+	return demo.GenerateMappingQuery(mapName, event{}.FlatMap())
 }
