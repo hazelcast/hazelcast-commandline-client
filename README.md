@@ -75,7 +75,7 @@ All paths in the configuration are relative to the parent directory of the confi
 * cluster
   * name: Name of the cluster. By default `dev`.
   * address: Address of a member in the cluster. By default `localhost:5701`.
-  * discovery-token: Viridian Serverless discovery token.
+  * discovery-token: {hazelcast-cloud} discovery token.
 
 * ssl
   * ca-path: TLS CA certificate path.
@@ -87,7 +87,7 @@ All paths in the configuration are relative to the parent directory of the confi
   * path: Path to the log file, or `stderr`. By default, the logs are written to `$CLC_HOME/logs` with the current date as the name.
   * level: Log level, one of: `debug`, `info`, `warn`, `error`. The default is `info`.
 
-Here's a sample Viridian Serverless configuration:
+Here's a sample {hazelcast-cloud} Serverless configuration:
 ```
 cluster:
   name: "pr-3814"  

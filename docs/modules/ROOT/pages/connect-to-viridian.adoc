@@ -19,19 +19,16 @@ TIP: You can find all connection credentials such as the cluster name and discov
 [[mutual]]
 == Connecting to Clusters
 
-. Download the Go Client sample from {hazelcast-cloud} console.
+Make sure that your cluster is running before you start.
 
-. Import the configuration from the sample as `dev`:
-+
-```bash
-clc config dev import PATH-TO-GO-CLIENT-SAMPLE.zip
-```
-. Start an interactive shell session.
-+
-```bash
-clc -c dev
-```
+. link:https://viridian.hazelcast.com/[Sign in to {hazelcast-cloud}] and select your cluster.
 
-CLC will start in the interactive mode, and you should see a command prompt.
+. From the cluster dashboard, click *CLI* to open the *Quick Connection Guide* for the Hazelcast CLC client.
+
+. Run the `clc config import` command in step 2. This command updates the cluster configuration on your local machine.
+
+. Run the `clc -c pr-<CLUSTER_ID>` command in step 3 to connect to your cluster using the Hazelcast CLC.
++
+CLC will start in the interactive mode, and you should see a CLC prompt.
 
 NOTE: The Hazelcast CLC connects to the cluster on demand, that is when you issue a command that requires the connection, such as running a SQL query.

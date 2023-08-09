@@ -1,5 +1,5 @@
 = Get Started With the Hazelcast CLC
-:description: In this tutorial, you'll learn the basics of how to configure the Hazelcast CLC, start it, and connect it to a Hazelcast {hazelcast-cloud} Serverless development cluster and a Serverless production cluster. You'll also see how to switch between clusters, using the Hazelcast CLC. Finally, you'll perform some basic operations on a cluster from the command line and then by running a script to automate the same actions.
+:description: In this tutorial, you'll learn the basics of how to configure the Hazelcast CLC, start it, and connect it to a {hazelcast-cloud} cluster. You'll also see how to switch between clusters, using the Hazelcast CLC. Finally, you'll perform some basic operations on a cluster from the command line and then by running a script to automate the same actions.
 
 {description}
 
@@ -8,29 +8,21 @@
 You need the following:
 
 - The xref:install-clc.adoc[Hazelcast CLC] installed on your local machine
-- Two xref:cloud:ROOT:create-serverless-cluster.adoc[Hazelcast {hazelcast-cloud} Serverless clusters]. For this tutorial, you'll use one development and one production cluster, to show how you might use the CLC for basic administration and deployment tasks.
+- Two xref:cloud:ROOT:create-serverless-cluster.adoc[Hazelcast {hazelcast-cloud} clusters]. For this tutorial, you'll use one development and one production cluster, to show how you might use the CLC for basic administration and deployment tasks.
 
-TIP: You can download Go client samples from the Hazelcast {hazelcast-cloud} console. For details, see xref:cloud:ROOT:connect-to-cluster.adoc[].
 
 [[step-1-dev-configure]]
 == Step 1. Add Configuration for the Development Cluster
 
-Make sure that your Viridian development cluster is running before you start.
+Make sure that your {hazelcast-cloud} development cluster is running before you start.
 
-The Hazelcast CLC can use a Go client sample for Viridian to discover the configuration for your Viridian cluster.
+. link:https://viridian.hazelcast.com/[Sign in to {hazelcast-cloud}] and select the development cluster.
 
-. Download the Go client sample for your development cluster from the Viridian console.
-Once the sample is downloaded, you can use the `clc config import` command to import the configuration.
+. From the cluster dashboard, click *CLI* to open the *Quick Connection Guide* for the Hazelcast CLC client.
 
-. From the command line, execute the following command, replacing `PATH-TO-SAMPLE.zip` with the path to the downloaded sample:
+. Run the `clc config import` command in step 2. This command imports the cluster configuration to your local machine.
 
-+
-[source, bash]
-----
-clc config import dev PATH-TO-SAMPLE.zip
-clc -c dev
-----
-
+. Run the `clc -c pr-<CLUSTER_ID>` command in step 3 to connect to your cluster using the Hazelcast CLC.
 +
 . You can use the `clc config list` command to confirm that the configuration was imported. The output will look something like this:
 +
@@ -62,55 +54,62 @@ As this is a new cluster, no objects are returned.
 
 The configuration of the production cluster is the same as the previous step, but using the production cluster configuration.
 
-Make sure that your Viridian production cluster is running before you start.
+Make sure that your {hazelcast-cloud} production cluster is running before you start.
 
-. Download the Go client sample for your production cluster from the Viridian console.
-. From the command line, execute the following command, replacing `PATH-TO-SAMPLE.zip` with the path to the downloaded sample:
+. link:https://viridian.hazelcast.com/[Sign in to {hazelcast-cloud}] and select the production cluster.
 
+. From the cluster dashboard, click *CLI* to open the *Quick Connection Guide* for the Hazelcast CLC client.
+
+. Run the `clc config import` command in step 2. This command imports the cluster configuration to your local machine.
+
+. Run the `clc -c pr-<CLUSTER_ID>` command in step 3 to connect to your cluster using the Hazelcast CLC.
++
+. You can use the `clc config list` command to confirm that the configuration was imported. The output will look something like this:
 +
 [source, bash]
 ----
-clc config import prod PATH-TO-SAMPLE.zip
-clc -c prod
+clc config list
+default
+prod
 ----
 
 +
-. CLC only connects to the cluster when necessary.
-Run a command that requires a connection to the cluster, such as `object list`:
+. The CLC only connects to the cluster when necessary. Run a command that requires a connection to the cluster, such as `object list`:
 
 +
 [source, clc]
 ----
 CLC> \object list
-Connected to cluster: pr-3690
-
-------------------------------------
- Service Name | Object Name
-------------------------------------
- executor     | hot-backup-executor
-------------------------------------
+Connected to cluster: pr-3814
 ----
+
++
+As this is a new cluster, no objects are returned.
+
++
+. Press kbd:[Ctrl+D] or type `\exit` to shut down the Hazelcast CLC.
 
 [[step-3-cluster-switch]]
 == Step 3. Switch Between Clusters
 
 Having separate local configurations for your development and production clusters allows you to switch between them without leaving the command line. Make sure both clusters are running before you start.
 
-. Execute the following command to use the `dev` configuration to connect to your development cluster:
+. Execute the following command to connect to the development cluster. Replace the placeholder `$CLUSTER_NAME` with the name of your cluster:
 +
 [source, bash]
 ----
-clc -c dev
+clc -c $CLUSTER_NAME
 ----
 
 +
 As before, the Hazelcast CLC connects to your development cluster.
+
 . Type `\exit` to return to the command line.
-. Execute the following command to use the new configuration file for your production cluster.
+. Execute the following command to use the production cluster.
 +
 [source, bash]
 ----
-clc -c prod
+clc -c $CLUSTER_NAME
 ----
 +
 The Hazelcast CLC shell is started, using the configuration for the production cluster. You can exit the shell by typing `\exit`.
@@ -118,66 +117,33 @@ The Hazelcast CLC shell is started, using the configuration for the production c
 [[step-4-write-data]]
 == Step 4. Write Data to a Map
 
-Now that you've connected to both your clusters, try using the Hazelcast CLC to write data to a map on your development cluster.
-Let's write a script that adds some data to a map.
+Now that you've connected to both your clusters, try using the Hazelcast CLC to create a map on your development cluster, write some data to it, and query the data. You can use SQL to do this.
 
-. Create a file called `data.script` on your local machine and copy in the following lines.
+. Start by creating a mapping to a new `currency` map. Replace the placeholder `$CLUSTER_NAME` with the name of your cluster:
 +
-.data.script
-[source]
+[source,shell]
 ----
-\map set -n currency -k i32 1 -v json '{"Code": "CAD", "Currency": "Canadian Dollar"}'
-\map set -n currency -k i32 2 -v json '{"Code": "INR", "Currency": "Indian Rupee"}'
-\map set -n currency -k i32 3 -v json '{"Code": "MXN", "Currency": "Mexican Peso"}'
-\map set -n currency -k i32 4 -v json '{"Code": "GBP", "Currency": "Pounds Sterling"}'
-\map set -n currency -k i32 5 -v json '{"Code": "TRY", "Currency": "Turkish Lira"}'
-\map set -n currency -k i32 6 -v json '{"Code": "USD", "Currency": "United States Dollar"}'
-----
-
-. Run the script in the `data.script` file to update the `currency` map:
-+
-On Linux and MacOS:
-+
-[source,bash]
-----
-cat data.script | clc -c dev
+clc sql -c $CLUSTER_NAME "CREATE OR REPLACE MAPPING currency (__key INT, Code VARCHAR, Currency VARCHAR) TYPE IMap OPTIONS('keyFormat'='int', 'valueFormat'='json-flat');"
 ----
 +
-On Windows:
-+
-[source,bash]
-----
-type data.script | clc -c dev
-----
-
-
-Do a quick check on your cluster to make sure that your data has been written successfully.
-
-. Open the dashboard of the development cluster and click *Management Center*.
-. Go to *Storage* > *Maps*. You'll see that your cluster has a map called `currency` with six entries. 
-
-[[step-5-query-map]]
-== Step 5. Query Map Data
-You can use SQL to query the data in your `currency` map.
-
-. Start by creating a mapping to the `currency` map.
-
-+
-[source,bash]
-----
-clc sql -c dev "CREATE OR REPLACE MAPPING currency (__key INT, Code VARCHAR, Currency VARCHAR) TYPE IMap OPTIONS('keyFormat'='int', 'valueFormat'='json-flat')"
-----
 The SQL mapping statement does a number of things:
 
 ** Adds column headings for currencies and codes
 ** Creates a SQL connection to the map
 ** Tells Hazelcast how to serialize and deserialize the keys and values.
 
-. Try running some simple queries against the `currency` map. For example, this query returns all data in the map and orders it by the currency code.  
+. Add some data to the map.
 +
-[source,bash]
+[source,shell]
 ----
-clc sql -c dev "SELECT * FROM currency ORDER BY Code" -f table
+clc sql -c $CLUSTER_NAME "INSERT INTO currency VALUES (1, 'CAD','Canadian Dollar'),(2, 'INR','Indian Rupee'),(3, 'MXN', 'Mexican Peso'),(4, 'GBP', 'Pounds Sterling'),(5, 'TRY', 'Turkish Lira'),(6, 'USD', 'United States Dollar');"
+----
+
+. Try running some simple queries against the `currency` map. For example, this query returns all data in the map and orders it by the currency code.
++
+[source,shell]
+----
+clc sql -c $CLUSTER_NAME "SELECT * FROM currency ORDER BY Code" -f table
 ----
 +
 The results look like this:
@@ -198,11 +164,11 @@ The results look like this:
 ----
 
 [[step-6-automate]]
-== Step 6. Automate Actions
+== Step 5. Automate Actions
 
 When you're ready, combine the commands that you've learned about so far into a script and run them from the command line.
 
-The script first writes the currency data to a new map called `currencydata` on your development server, queries it and then switches to your production cluster to perform the same actions.
+The script first writes the currency data to a new map called `currencydata` on a cluster.
 
 . Copy the following commands into a script.
 +
@@ -237,40 +203,48 @@ SELECT * FROM currencydata ORDER BY Code;
 Linux and MacOS::
 + 
 --
-. To run the script on your development cluster, execute the following command:
+. To run the script on your development cluster, replacing the placeholder `$CLUSTER_NAME` with the name of your development cluster:
 +
 [source,bash]
 ----
-cat myscript.sql | clc -c dev
+cat myscript.sql | clc -c $CLUSTER_NAME
 ----
 +
 . Then, to run the script on your production cluster, execute the following command:
 +
 [source,bash]
 ----
-cat myscript.sql | clc -c prod
+cat myscript.sql | clc -c $CLUSTER_NAME
 ----
 
 --
 Windows::
 +
 --
-. To run the script on your development cluster, execute the following command:
+. To run the script on your development cluster, replacing the placeholder `$CLUSTER_NAME` with the name of your development cluster:
 +
 [source,bash]
 ----
-type myscript.sql | clc -c dev
+type myscript.sql | clc -c $CLUSTER_NAME
 ----
 +
 . Then, to run the script on your production cluster, execute the following command:
 +
 [source,bash]
 ----
-type myscript.sql | clc -c prod
+type myscript.sql | clc -c $CLUSTER_NAME
 ----
 
 --
 ====
+
+== Step 6. Clean Up
+
+To delete both test clusters from your account.
+
+. link:https://viridian.hazelcast.com/[Sign in to {hazelcast-cloud}] and select a test cluster.
+. Click *Delete* and confirm your deletion.
+
 
 == Summary
 

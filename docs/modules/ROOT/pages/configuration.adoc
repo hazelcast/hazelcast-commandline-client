@@ -36,10 +36,10 @@ Known configurations can be directly specified by their names, instead of the fu
 # List configurations
 $ clc config list
 default
-prod
+pr-3066
 
 # Start CLC shell with configuration named prod
-$ clc -c prod
+$ clc -c pr-3066
 ----
 
 If no configuration is specified, the `default` configuration is used.
@@ -54,7 +54,7 @@ include::partial$global-parameters.adoc[]
 
 == Related Resources
 
-//- xref:connect-to-viridian.adoc[].
+- xref:connect-to-viridian.adoc[Connecting to {hazelcast-cloud} with Hazelcast CLC].
 
-- xref:connect-to-platform.adoc[].
+- xref:connect-to-platform.adoc[Connecting to Hazelcast Platform with Hazelcast CLC].
 
