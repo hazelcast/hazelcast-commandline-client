@@ -73,8 +73,7 @@ func (e *Expect) Match(m Matcher, options ...Option) bool {
 	var done atomic.Bool
 	go func() {
 		for !done.Load() {
-			ok := m.Match(e.String())
-			if ok {
+			if m.Match(e.String()) {
 				ch <- struct{}{}
 				return
 			}
