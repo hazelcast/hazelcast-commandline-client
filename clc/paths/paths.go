@@ -183,6 +183,7 @@ func nearbyConfigPath() string {
 	return ""
 }
 
-func SplitExt(dest string) string {
-	return strings.TrimSuffix(dest, filepath.Ext(dest))
+func SplitExt(dest string) (base, ext string) {
+	ext = filepath.Ext(dest)
+	return dest[:len(dest)-len(ext)], ext
 }

@@ -14,7 +14,7 @@ type loginResponse struct {
 	Token string `json:"token"`
 }
 
-func Login(ctx context.Context, secretPrefix, key, secret string) (API, error) {
+func Login(ctx context.Context, secretPrefix, key, secret, apiBase string) (API, error) {
 	var api API
 	if key == "" {
 		return api, errors.New("api key cannot be blank")
@@ -26,7 +26,7 @@ func Login(ctx context.Context, secretPrefix, key, secret string) (API, error) {
 		APIKey:    key,
 		APISecret: secret,
 	}
-	resp, err := doPost[loginRequest, loginResponse](ctx, "/customers/api/login", "", c)
+	resp, err := doPost[loginRequest, loginResponse](ctx, apiBase+"/customers/api/login", "", c)
 	if err != nil {
 		return api, err
 	}

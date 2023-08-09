@@ -35,7 +35,7 @@ func findTokenPath(apiKey string) (string, error) {
 		apiKey = os.Getenv(viridian.EnvAPIKey)
 	}
 	if apiKey != "" {
-		return fmt.Sprintf(secrets.TokenFileFormat, ac, apiKey), nil
+		return fmt.Sprintf(viridian.FmtTokenFileName, ac, apiKey), nil
 	}
 	tokenPaths, err := findAll(secretPrefix)
 	if err != nil {
@@ -60,18 +60,25 @@ func findTokenPath(apiKey string) (string, error) {
 
 func findAll(prefix string) ([]string, error) {
 	return paths.FindAll(paths.Join(paths.Secrets(), prefix), func(basePath string, entry os.DirEntry) (ok bool) {
-		return !entry.IsDir() && filepath.Ext(entry.Name()) == filepath.Ext(secrets.TokenFileFormat)
+		return !entry.IsDir() && filepath.Ext(entry.Name()) == filepath.Ext(viridian.FmtTokenFileName)
 	})
 }
 
-func findKeyAndSecret(tokenPath string) (string, string, error) {
-	apiKey := strings.TrimPrefix(strings.TrimSuffix(tokenPath, filepath.Ext(tokenPath)), fmt.Sprintf("%s-", viridian.APIClass()))
-	fn := fmt.Sprintf(secrets.SecretFileFormat, viridian.APIClass(), apiKey)
-	secret, err := secrets.Read(secretPrefix, fn)
+func findKeyAndSecret(tokenPath string) (key, secret, apiBase string, err error) {
+	key, _ = paths.SplitExt(tokenPath)
+	key = strings.TrimPrefix(key, viridian.APIClass()+"-")
+	fn := fmt.Sprintf(fmtSecretFileName, viridian.APIClass(), key)
+	b, err := secrets.Read(secretPrefix, fn)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
-	return apiKey, string(secret), nil
+	ss := string(b)
+	// secret and API base
+	ls := strings.SplitN(ss, "\n", 2)
+	if len(ls) == 1 {
+		return key, ls[0], "", nil
+	}
+	return key, ls[0], ls[1], nil
 }
 
 func getAPI(ec plug.ExecContext) (*viridian.API, error) {
@@ -85,12 +92,15 @@ func getAPI(ec plug.ExecContext) (*viridian.API, error) {
 		ec.Logger().Error(err)
 		return nil, ErrLoadingSecrets
 	}
-	key, secret, err := findKeyAndSecret(tp)
+	key, secret, base, err := findKeyAndSecret(tp)
 	if err != nil {
 		ec.Logger().Error(err)
 		return nil, ErrLoadingSecrets
 	}
-	return viridian.NewAPI(secretPrefix, key, secret, string(token)), nil
+	if base == "" {
+		base = viridian.APIBaseURL()
+	}
+	return viridian.NewAPI(secretPrefix, key, secret, string(token), base), nil
 }
 
 func waitClusterState(ctx context.Context, ec plug.ExecContext, api *viridian.API, clusterIDOrName, state string) error {
