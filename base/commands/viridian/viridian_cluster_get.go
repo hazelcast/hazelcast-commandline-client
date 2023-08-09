@@ -69,39 +69,40 @@ func (cm ClusterGetCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 			Type:  serialization.TypeString,
 			Value: c.HazelcastVersion,
 		},
-		output.Column{
-			Name:  "Hot Backup Enabled",
-			Type:  serialization.TypeString,
-			Value: boolToYesNo(c.HotBackupEnabled),
-		},
-		output.Column{
-			Name:  "Hot Restart Enabled",
-			Type:  serialization.TypeString,
-			Value: boolToYesNo(c.HotRestartEnabled),
-		},
-		output.Column{
-			Name:  "IP Whitelist Enabled",
-			Type:  serialization.TypeString,
-			Value: boolToYesNo(c.IPWhitelistEnabled),
-		},
-		output.Column{
-			Name:  "Creation Time",
-			Type:  serialization.TypeJavaLocalDateTime,
-			Value: time.UnixMilli(c.CreationTime),
-		},
 	}
 	if ec.Props().GetBool(clc.PropertyVerbose) {
 		row = append(row,
+			output.Column{
+				Name:  "Creation Time",
+				Type:  serialization.TypeJavaLocalDateTime,
+				Value: time.UnixMilli(c.CreationTime),
+			},
 			output.Column{
 				Name:  "Start Time",
 				Type:  serialization.TypeJavaLocalDateTime,
 				Value: time.UnixMilli(c.StartTime),
 			},
 			output.Column{
+				Name:  "Hot Backup Enabled",
+				Type:  serialization.TypeString,
+				Value: boolToYesNo(c.HotBackupEnabled),
+			},
+			output.Column{
+				Name:  "Hot Restart Enabled",
+				Type:  serialization.TypeString,
+				Value: boolToYesNo(c.HotRestartEnabled),
+			},
+			output.Column{
+				Name:  "IP Whitelist Enabled",
+				Type:  serialization.TypeString,
+				Value: boolToYesNo(c.IPWhitelistEnabled),
+			},
+			output.Column{
 				Name:  "Regions",
 				Type:  serialization.TypeStringArray,
 				Value: regionTitleSlice(c.Regions),
-			})
+			},
+		)
 	}
 	return ec.AddOutputRows(ctx, row)
 }

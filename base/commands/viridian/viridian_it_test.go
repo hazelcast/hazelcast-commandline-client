@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands"
+	_ "github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
@@ -220,7 +220,7 @@ func getCluster_NonInteractiveTest(t *testing.T) {
 		c := createOrGetClusterWithState(ctx, tcx, "")
 		tcx.CLCExecute(ctx, "viridian", "get-cluster", c.ID, "--verbose")
 		tcx.AssertStderrContains("OK")
-		fields := tcx.AssertStdoutHasRowWithFields("ID", "Name", "State", "Version")
+		fields := tcx.AssertStdoutHasRowWithFields("ID", "Name", "State", "Hazelcast Version", "Creation Time", "Start Time", "Hot Backup Enabled", "Hot Restart Enabled", "IP Whitelist Enabled", "Regions")
 		require.Equal(t, c.ID, fields["ID"])
 		require.Equal(t, c.Name, fields["Name"])
 	})
