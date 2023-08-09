@@ -29,7 +29,7 @@ clc viridian login
 [[list-accessible-clusters]]
 == List Accessible Clusters
 
-Run the following command to list the clusters linked to your Hazelcast {hazelcast-cloud} account:
+Run the following command to list the clusters linked to your {hazelcast-cloud} account:
 
 ```bash
 clc viridian list-clusters
