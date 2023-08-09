@@ -15,6 +15,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
 func ImportSource(ctx context.Context, ec plug.ExecContext, target, src string) (string, error) {
@@ -175,6 +176,7 @@ func makeViridianOpts(clusterName, token, password string) clc.KeyValues[string,
 	return clc.KeyValues[string, string]{
 		{Key: "cluster.name", Value: clusterName},
 		{Key: "cluster.discovery-token", Value: token},
+		{Key: "cluster.api-base", Value: viridian.APIBaseURL()},
 		{Key: "ssl.ca-path", Value: "ca.pem"},
 		{Key: "ssl.cert-path", Value: "cert.pem"},
 		{Key: "ssl.key-path", Value: "key.pem"},

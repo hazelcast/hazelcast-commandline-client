@@ -43,6 +43,7 @@ func TestMakeConfiguration_Viridian(t *testing.T) {
 	props := plug.NewProperties()
 	props.Set(clc.PropertyClusterDiscoveryToken, "TOKEN")
 	props.Set(clc.PropertyClusterName, "pr-3066")
+	props.Set(clc.PropertyClusterAPIBase, "https://api.dev2.viridian.cloud")
 	/*
 		// TODO: need to figure out how to specify these config options --YT
 		props.Set(clc.PropertySSLCertPath, "my-cert.pem")
@@ -63,6 +64,7 @@ func TestMakeConfiguration_Viridian(t *testing.T) {
 	target.Cluster.Name = "pr-3066"
 	target.Cluster.Cloud.Enabled = true
 	target.Cluster.Cloud.Token = "TOKEN"
+	target.Cluster.Cloud.ExperimentalAPIBaseURL = "https://api.dev2.viridian.cloud"
 	target.Cluster.Network.SSL.Enabled = true
 	target.Cluster.Network.SSL.SetTLSConfig(&tls.Config{ServerName: "hazelcast.cloud"})
 	target.Stats.Enabled = true
