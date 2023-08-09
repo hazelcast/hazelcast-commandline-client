@@ -45,7 +45,7 @@ goto :end
     goto :end
 
 :test
-    go test -tags base,std,hazelcastinternal,hazelcastinternaltest -p 1 -v -count 1 ./...
+    go test -tags base,std,hazelcastinternal,hazelcastinternaltest -p 1 -v -count 1 -timeout 30m -race ./...
     if errorlevel 1 (
         echo Test failed
         set target_failed=1
