@@ -3,11 +3,12 @@ package wikimedia
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/fatih/structs"
-	"github.com/r3labs/sse"
 
 	"github.com/hazelcast/hazelcast-commandline-client/internal/demo"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/sse"
 )
 
 const (
@@ -17,27 +18,53 @@ const (
 type StreamGenerator struct{}
 
 func (StreamGenerator) Stream(ctx context.Context) chan demo.StreamItem {
-	eventCh := make(chan *sse.Event)
-	itemCh := make(chan demo.StreamItem)
+	itemCh := make(chan demo.StreamItem, 1)
 	client := sse.NewClient(streamURL)
-	client.SubscribeChanWithContext(ctx, "messages", eventCh)
 	go func() {
+		// retry logic
 		for {
-			select {
-			case ev := <-eventCh:
-				it := &event{}
-				err := json.Unmarshal(ev.Data, it)
-				if err != nil {
-					// XXX: should we log
-					continue
+			err := handleEvents(ctx, client, itemCh)
+			if err != nil {
+				if err == sse.ErrNoConnection {
+					break
 				}
-				itemCh <- it
-			case <-ctx.Done():
-				return
+				if err == context.Canceled {
+					break
+				}
+				// Retry all other errors including EOF
+				time.Sleep(2 * time.Second)
+				continue
 			}
 		}
+		close(itemCh)
 	}()
 	return itemCh
+}
+
+func handleEvents(ctx context.Context, client *sse.Client, itemCh chan demo.StreamItem) error {
+	evCh, errCh := client.Subscribe(ctx)
+	for {
+		select {
+		case ev := <-evCh:
+			if ev == nil {
+				continue
+			}
+			it := &event{}
+			err := json.Unmarshal(ev.Data, it)
+			if err != nil {
+				// XXX: should we log
+				continue
+			}
+			select {
+			case <-ctx.Done():
+				// allows to exit from the loop when consumer exits without reading last item
+				return ctx.Err()
+			case itemCh <- it:
+			}
+		case err := <-errCh:
+			return err
+		}
+	}
 }
 
 func (StreamGenerator) MappingQuery(mapName string) (string, error) {

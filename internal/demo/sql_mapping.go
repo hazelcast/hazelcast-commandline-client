@@ -18,7 +18,8 @@ TYPE IMap
 OPTIONS (
     'keyFormat' = 'varchar',
     'valueFormat' = 'json-flat'
-);`
+);
+`
 
 func GenerateMappingQuery(mapName string, fields map[string]any) (string, error) {
 	sqlFields := map[string]string{}
@@ -26,7 +27,7 @@ func GenerateMappingQuery(mapName string, fields map[string]any) (string, error)
 		sqlFields[k] = findSqlType(v)
 	}
 	values := map[string]any{
-		"MapName": mapName,
+		"MapName": overrideMapName(mapName),
 		// template sorts map by key
 		"Fields": sqlFields,
 	}
@@ -40,6 +41,13 @@ func GenerateMappingQuery(mapName string, fields map[string]any) (string, error)
 		return "", err
 	}
 	return buf.String(), nil
+}
+
+func overrideMapName(mn string) string {
+	if mn != "" {
+		return mn
+	}
+	return "<map-name>"
 }
 
 func findSqlType(v any) string {

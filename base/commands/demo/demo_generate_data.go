@@ -9,6 +9,7 @@ import (
 	"math"
 	"os"
 	"os/signal"
+	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -67,7 +68,6 @@ func (cm GenerateDataCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 		sp.SetText(fmt.Sprintf("Generating wikipedia stream events: %s", name))
 		ch := generator.Stream(ctx)
 		return ch, nil
-
 	})
 	if err != nil {
 		return err
@@ -93,16 +93,18 @@ func generatePreviewResult(ctx context.Context, ec plug.ExecContext, generator D
 	if err != nil {
 		return err
 	}
-	ec.PrintlnUnnecessary(fmt.Sprintf("Following mapping will be created when run without preview:\n%s", mq))
+	ec.PrintlnUnnecessary(fmt.Sprintf("Following mapping will be created when run without preview:\n\n%s", mq))
 	ec.PrintlnUnnecessary("Generating preview items...")
 	go func() {
 	loop:
 		for createdCount < int(maxCount) {
 			var ev demo.StreamItem
 			select {
-			case ev = <-itemCh:
-			case <-ctx.Done():
-				break loop
+			case event, open := <-itemCh:
+				if !open {
+					break loop
+				}
+				ev = event
 			}
 			select {
 			case outCh <- ev.Row():
@@ -123,8 +125,6 @@ func generateResult(ctx context.Context, ec plug.ExecContext, generator DataStre
 	}
 	m := mv.(*hazelcast.Map)
 	err = runMappingQuery(ctx, ec, m, wikimedia.StreamGenerator{})
-	outCh := make(chan output.Row)
-	errCh := make(chan error, 1)
 	maxCount := ec.Props().GetInt(flagMaxValues)
 	createdCount := 0
 	ec.PrintlnUnnecessary(fmt.Sprintf(`Run the following SQL query to see the generated data
@@ -136,14 +136,19 @@ func generateResult(ctx context.Context, ec plug.ExecContext, generator DataStre
 	
 Generating event stream...
 `, m.Name()))
+	outCh := make(chan output.Row)
+	errCh := make(chan error)
 	go func() {
 	loop:
 		for {
 			var ev demo.StreamItem
 			select {
-			case ev = <-itemCh:
-			case <-ctx.Done():
-				break loop
+			case event, open := <-itemCh:
+				if !open {
+					errCh <- nil
+					break loop
+				}
+				ev = event
 			}
 			fm := ev.FlatMap()
 			b, err := json.Marshal(fm)
@@ -164,12 +169,20 @@ Generating event stream...
 		}
 		close(outCh)
 	}()
-	select {
-	case err := <-errCh:
-		return err
-	case <-ctx.Done():
-		return ctx.Err()
-	}
+	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		ticker := time.NewTicker(1 * time.Second)
+		for {
+			select {
+			case err := <-errCh:
+				return nil, err
+			case <-ticker.C:
+				sp.SetText(fmt.Sprintf("Generated %d events", createdCount))
+			}
+		}
+	})
+	stop()
+	ec.PrintlnUnnecessary(fmt.Sprintf("Generated %d events", createdCount))
+	return err
 }
 
 func runMappingQuery(ctx context.Context, ec plug.ExecContext, m *hazelcast.Map, generator DataStreamGenerator) error {
