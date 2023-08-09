@@ -222,6 +222,25 @@ func (a *API) findArtifactIDAndName(ctx context.Context, clusterName, artifact s
 	return artifactID, artifactName, nil
 }
 
+func (a *API) login(ctx context.Context) error {
+	if a.Key == "" {
+		return errors.New("api key cannot be blank")
+	}
+	if a.Secret == "" {
+		return errors.New("api secret cannot be blank")
+	}
+	c := loginRequest{
+		APIKey:    a.Key,
+		APISecret: a.Secret,
+	}
+	resp, err := doPost[loginRequest, loginResponse](ctx, a.APIBaseURL+"/customers/api/login", "", c)
+	if err != nil {
+		return err
+	}
+	a.Token = resp.Token
+	return nil
+}
+
 func APIBaseURL() string {
 	u := os.Getenv(EnvAPIBaseURL)
 	if u != "" {
@@ -234,8 +253,7 @@ func RetryOnAuthFail[Res any](ctx context.Context, api *API, f func(ctx context.
 	r, err := f(ctx, api.Token)
 	var e HTTPClientError
 	if errors.As(err, &e) && e.Code() == http.StatusUnauthorized {
-		*api, err = Login(ctx, api.SecretPrefix, api.Key, api.Secret, api.APIBaseURL)
-		if err != nil {
+		if err := api.login(ctx); err != nil {
 			return r, err
 		}
 		tk := fmt.Sprintf(FmtTokenFileName, APIClass(), api.Key)

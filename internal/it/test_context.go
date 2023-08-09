@@ -19,6 +19,7 @@ package it
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -257,18 +258,15 @@ func (tcx TestContext) AssertStdoutDollar(text string) {
 	}
 }
 
-func (tcx TestContext) AssertStdoutHasRowWithFields(fields ...string) map[string]string {
+func (tcx TestContext) AssertJSONStdoutHasRowWithFields(fields ...string) map[string]any {
 	stdout := tcx.ExpectStdout.String()
-	out := strings.Fields(stdout)
-	if len(fields) != len(out) {
+	var m map[string]any
+	check.Must(json.Unmarshal([]byte(stdout), &m))
+	if len(fields) != len(m) {
 		tcx.T.Log("STDOUT:", stdout)
 		tcx.T.Fatalf("stdout does not have the same fields as %v", fields)
 	}
-	fm := map[string]string{}
-	for i, f := range fields {
-		fm[f] = out[i]
-	}
-	return fm
+	return m
 }
 
 func (tcx TestContext) AssertStdoutDollarWithPath(path string) {
