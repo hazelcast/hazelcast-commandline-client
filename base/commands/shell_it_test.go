@@ -9,7 +9,6 @@ import (
 
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/object"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/it/skip"
 )
 
 func TestShell(t *testing.T) {
@@ -61,10 +60,7 @@ func shellErrorsTest(t *testing.T) {
 }
 
 func shellNoDoubleErrorTest(t *testing.T) {
-	// this test times out on Windows on CI,
-	// but passes on Windows on local.
-	// so skipping for now... --YT
-	skip.If(t, "os = windows")
+	it.MarkFlaky(t, "https://github.com/hazelcast/hazelcast-commandline-client/issues/332")
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
 		ctx := context.Background()
