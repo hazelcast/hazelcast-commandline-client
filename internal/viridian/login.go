@@ -15,12 +15,11 @@ type loginResponse struct {
 }
 
 func Login(ctx context.Context, secretPrefix, key, secret, apiBase string) (API, error) {
-	var api API
 	if key == "" {
-		return api, errors.New("api key cannot be blank")
+		return API{}, errors.New("api key cannot be blank")
 	}
 	if secret == "" {
-		return api, errors.New("api secret cannot be blank")
+		return API{}, errors.New("api secret cannot be blank")
 	}
 	c := loginRequest{
 		APIKey:    key,
@@ -28,11 +27,8 @@ func Login(ctx context.Context, secretPrefix, key, secret, apiBase string) (API,
 	}
 	resp, err := doPost[loginRequest, loginResponse](ctx, apiBase+"/customers/api/login", "", c)
 	if err != nil {
-		return api, err
+		return API{}, err
 	}
-	api.Key = key
-	api.Secret = secret
-	api.Token = resp.Token
-	api.SecretPrefix = secretPrefix
-	return api, nil
+	api := NewAPI(secretPrefix, key, secret, resp.Token, apiBase)
+	return *api, nil
 }
