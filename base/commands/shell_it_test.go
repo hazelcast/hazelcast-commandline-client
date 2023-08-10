@@ -17,6 +17,7 @@ func TestShell(t *testing.T) {
 		name string
 		f    func(t *testing.T)
 	}{
+		{name: "DefaultOutputFormat", f: shellDefaultOutputFormatTest},
 		{name: "ShellErrors", f: shellErrorsTest},
 		{name: "ShellNoDoubleError", f: shellNoDoubleErrorTest},
 		{name: "ShellHelp", f: shellHelpTest},
@@ -87,6 +88,20 @@ func shellHelpTest(t *testing.T) {
 			tcx.WithReset(func() {
 				tcx.WriteStdinString("\\help\n")
 				tcx.AssertStdoutContains("Usage:")
+			})
+		})
+	})
+}
+
+func shellDefaultOutputFormatTest(t *testing.T) {
+	tcx := it.TestContext{T: t}
+	tcx.Tester(func(tcx it.TestContext) {
+		ctx := context.Background()
+		tcx.WithShell(ctx, func(tcx it.TestContext) {
+			tcx.WithReset(func() {
+				tcx.WriteStdinString("\\map set foo bar\n")
+				tcx.WriteStdinString("\\map entry-set\n")
+				tcx.AssertStdoutDollarWithPath("testdata/default_output_format.txt")
 			})
 		})
 	})
