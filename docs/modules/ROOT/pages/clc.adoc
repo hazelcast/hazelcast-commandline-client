@@ -14,7 +14,7 @@ The shell defaults to running SQL queries, which you can execute from a command 
 
 [source,clc]
 ----
-CLC> select * from cities;
+(default)> select * from cities;
 ---------------------------------------------------------------------------------
       __key | country                   | city                      | population
 ---------------------------------------------------------------------------------
@@ -27,7 +27,7 @@ CLC> select * from cities;
 In order to run Hazelcast CLC commands, prefix them with a backslash (`\`):
 [source,clc]
 ----
-CLC> \object list --show-hidden
+(default)> \object list --show-hidden
 -------------------------------------------------
  Service Name     | Object Name
 -------------------------------------------------
@@ -41,7 +41,7 @@ CLC> \object list --show-hidden
 You can enter multiline commands by ending all lines except the last line with a backslash (`\`):
 [source,clc]
 ----
-CLC> \object list \
+(default)> \object list \
  ... --show-hidden
 -------------------------------------------------
  Service Name     | Object Name

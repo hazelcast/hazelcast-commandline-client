@@ -150,12 +150,12 @@ $ clc
 
 Run SQL commands:
 ```
-CLC> select * from cities;
+(default)> select * from cities;
 ```
 
 Run CLC commands:
 ```
-CLC> \map set my-key my-value
+(default)> \map set my-key my-value
 ```
  
 ### Keyboard Shortcuts

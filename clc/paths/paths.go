@@ -187,3 +187,8 @@ func SplitExt(dest string) (base, ext string) {
 	ext = filepath.Ext(dest)
 	return dest[:len(dest)-len(ext)], ext
 }
+
+func ParentDir(path string) string {
+	dirs := filepath.Dir(path)
+	return filepath.Base(dirs)
+}
