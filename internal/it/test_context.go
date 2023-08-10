@@ -320,7 +320,7 @@ func (tcx TestContext) createMain() (*cmd.Main, error) {
 	if err != nil {
 		panic(err)
 	}
-	return cmd.NewMain("clc", tcx.ConfigPath, fp, tcx.LogPath, tcx.LogLevel, tcx.IO())
+	return cmd.NewMain("clctest", tcx.ConfigPath, fp, tcx.LogPath, tcx.LogLevel, tcx.IO())
 }
 
 func WithEnv(name, value string, f func()) {
