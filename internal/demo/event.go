@@ -7,5 +7,5 @@ import (
 type StreamItem interface {
 	ID() string
 	Row() output.Row
-	FlatMap() map[string]any
+	KeyValues() map[string]any
 }

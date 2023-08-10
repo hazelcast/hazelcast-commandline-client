@@ -21,6 +21,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/demo/wikimedia"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/str"
 )
 
 type DataStreamGenerator interface {
@@ -59,10 +60,7 @@ func (cm GenerateDataCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if !ok {
 		return fmt.Errorf("stream generator '%s' is not supported, run --help to see supported ones", name)
 	}
-	keyVals, err := keyValMap(ec)
-	if err != nil {
-		return err
-	}
+	keyVals := keyValMap(ec)
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt, os.Kill)
 	defer cancel()
 	chv, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
@@ -88,9 +86,12 @@ func generatePreviewResult(ctx context.Context, ec plug.ExecContext, generator D
 	if maxCount < 1 {
 		maxCount = 10
 	}
-	createdCount := 0
-	mn := keyVals[pairMapName]
-	mq, err := generator.MappingQuery(mn)
+	count := 0
+	mapName := keyVals[pairMapName]
+	if mapName == "" {
+		mapName = "<map-name>"
+	}
+	mq, err := generator.MappingQuery(mapName)
 	if err != nil {
 		return err
 	}
@@ -98,11 +99,11 @@ func generatePreviewResult(ctx context.Context, ec plug.ExecContext, generator D
 	ec.PrintlnUnnecessary("Generating preview items...")
 	go func() {
 	loop:
-		for createdCount < int(maxCount) {
+		for count < int(maxCount) {
 			var ev demo.StreamItem
 			select {
-			case event, open := <-itemCh:
-				if !open {
+			case event, ok := <-itemCh:
+				if !ok {
 					break loop
 				}
 				ev = event
@@ -112,7 +113,7 @@ func generatePreviewResult(ctx context.Context, ec plug.ExecContext, generator D
 			case <-ctx.Done():
 				break loop
 			}
-			createdCount++
+			count++
 		}
 		close(outCh)
 	}()
@@ -120,14 +121,17 @@ func generatePreviewResult(ctx context.Context, ec plug.ExecContext, generator D
 }
 
 func generateResult(ctx context.Context, ec plug.ExecContext, generator DataStreamGenerator, itemCh <-chan demo.StreamItem, keyVals map[string]string) error {
-	mv, err := ec.Props().GetBlocking(demoMapPropertyName)
+	mapName, ok := keyVals[pairMapName]
+	if !ok {
+		return fmt.Errorf("%s key-value pair must be given", pairMapName)
+	}
+	m, err := getMap(ctx, ec, mapName)
 	if err != nil {
 		return err
 	}
-	m := mv.(*hazelcast.Map)
-	err = runMappingQuery(ctx, ec, m, wikimedia.StreamGenerator{})
+	err = runMappingQuery(ctx, ec, m, generator)
 	maxCount := ec.Props().GetInt(flagMaxValues)
-	createdCount := 0
+	count := 0
 	ec.PrintlnUnnecessary(fmt.Sprintf(`Run the following SQL query to see the generated data
 	
 	SELECT
@@ -137,21 +141,20 @@ func generateResult(ctx context.Context, ec plug.ExecContext, generator DataStre
 	
 Generating event stream...
 `, m.Name()))
-	outCh := make(chan output.Row)
 	errCh := make(chan error)
 	go func() {
 	loop:
 		for {
 			var ev demo.StreamItem
 			select {
-			case event, open := <-itemCh:
-				if !open {
+			case event, ok := <-itemCh:
+				if !ok {
 					errCh <- nil
 					break loop
 				}
 				ev = event
 			}
-			fm := ev.FlatMap()
+			fm := ev.KeyValues()
 			b, err := json.Marshal(fm)
 			if err != nil {
 				ec.Logger().Warn("Could not marshall stream item: %s", err.Error())
@@ -162,27 +165,27 @@ Generating event stream...
 				ec.Logger().Warn("Could not put stream item into map %s: %s", m.Name(), err.Error())
 				continue
 			}
-			createdCount++
-			if maxCount > 0 && createdCount == int(maxCount) {
+			count++
+			if maxCount > 0 && count == int(maxCount) {
 				errCh <- nil
 				break
 			}
 		}
-		close(outCh)
 	}()
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		ticker := time.NewTicker(1 * time.Second)
+		defer ticker.Stop()
 		for {
 			select {
 			case err := <-errCh:
 				return nil, err
 			case <-ticker.C:
-				sp.SetText(fmt.Sprintf("Generated %d events", createdCount))
+				sp.SetText(fmt.Sprintf("Generated %d events", count))
 			}
 		}
 	})
 	stop()
-	ec.PrintlnUnnecessary(fmt.Sprintf("Generated %d events", createdCount))
+	ec.PrintlnUnnecessary(fmt.Sprintf("Generated %d events", count))
 	return err
 }
 
@@ -204,6 +207,37 @@ func runMappingQuery(ctx context.Context, ec plug.ExecContext, m *hazelcast.Map,
 	return err
 }
 
+func getMap(ctx context.Context, ec plug.ExecContext, mapName string) (*hazelcast.Map, error) {
+	ci, err := ec.ClientInternal(ctx)
+	if err != nil {
+		return nil, err
+	}
+	mv, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		sp.SetText(fmt.Sprintf("Getting map %s", mapName))
+		m, err := ci.Client().GetMap(ctx, mapName)
+		if err != nil {
+			return nil, err
+		}
+		return m, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	stop()
+	return mv.(*hazelcast.Map), nil
+}
+
+func keyValMap(ec plug.ExecContext) map[string]string {
+	keyVals := map[string]string{}
+	for _, keyval := range ec.Args()[1:] {
+		k, v := str.ParseKeyValue(keyval)
+		if k == "" {
+			continue
+		}
+		keyVals[k] = v
+	}
+	return keyVals
+}
 func init() {
 	Must(plug.Registry.RegisterCommand("demo:generate-data", &GenerateDataCmd{}))
 }

@@ -7,9 +7,9 @@ import (
 	"time"
 )
 
-const addMapping = `CREATE OR REPLACE MAPPING "{{ .MapName }}"
+const addMapping = `CREATE OR REPLACE MAPPING "{{ .map_name }}"
 (
-	{{ range $key, $val := .Fields -}}
+	{{ range $key, $val := .fields -}}
 	{{ $key }} {{ $val }},
 	{{ end -}}
 	__key VARCHAR
@@ -27,9 +27,9 @@ func GenerateMappingQuery(mapName string, fields map[string]any) (string, error)
 		sqlFields[k] = findSqlType(v)
 	}
 	values := map[string]any{
-		"MapName": overrideMapName(mapName),
+		"map_name": mapName,
 		// template sorts map by key
-		"Fields": sqlFields,
+		"fields": sqlFields,
 	}
 	t, err := template.New("query").Parse(addMapping)
 	if err != nil {
@@ -41,13 +41,6 @@ func GenerateMappingQuery(mapName string, fields map[string]any) (string, error)
 		return "", err
 	}
 	return buf.String(), nil
-}
-
-func overrideMapName(mn string) string {
-	if mn != "" {
-		return mn
-	}
-	return "<map-name>"
 }
 
 func findSqlType(v any) string {

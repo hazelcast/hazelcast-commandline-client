@@ -1,7 +1,6 @@
 package wikimedia
 
 import (
-	"encoding/json"
 	"time"
 
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
@@ -35,7 +34,7 @@ type Meta struct {
 	URI       string    `json:"uri,omitempty"`
 	RequestID string    `json:"request_id,omitempty"`
 	ID        string    `json:"id,omitempty"`
-	Dt        time.Time `json:"dt,omitempty"`
+	Timestamp time.Time `json:"dt,omitempty"`
 	Domain    string    `json:"domain,omitempty"`
 	Stream    string    `json:"stream,omitempty"`
 	Topic     string    `json:"topic,omitempty"`
@@ -67,7 +66,7 @@ func (ev event) Row() output.Row {
 		output.Column{
 			Name:  "Timestamp",
 			Type:  serialization.TypeJavaOffsetDateTime,
-			Value: ev.Meta.Dt,
+			Value: ev.Meta.Timestamp,
 		},
 		output.Column{
 			Name:  "User",
@@ -83,74 +82,37 @@ func (ev event) Row() output.Row {
 	return row
 }
 
-func (ev event) FlatMap() map[string]any {
-	fe := flatEvent{
-		Schema:           ev.Schema,
-		MetaURI:          ev.Meta.URI,
-		MetaRequestID:    ev.Meta.RequestID,
-		MetaID:           ev.Meta.ID,
-		MetaDt:           ev.Meta.Dt,
-		MetaDomain:       ev.Meta.Domain,
-		MetaStream:       ev.Meta.Stream,
-		MetaTopic:        ev.Meta.Topic,
-		MetaPartition:    ev.Meta.Partition,
-		MetaOffset:       ev.Meta.Offset,
-		ID:               ev.ID_,
-		Type:             ev.Type,
-		Namespace:        ev.Namespace,
-		Title:            ev.Title,
-		TitleURL:         ev.TitleURL,
-		Comment:          ev.Comment,
-		Timestamp:        ev.Timestamp,
-		User:             ev.User,
-		Bot:              ev.Bot,
-		NotifyURL:        ev.NotifyURL,
-		Minor:            ev.Minor,
-		LengthOld:        ev.Length.Old,
-		LengthNew:        ev.Length.New,
-		RevisionOld:      ev.Revision.Old,
-		RevisionNew:      ev.Revision.New,
-		ServerURL:        ev.ServerURL,
-		ServerName:       ev.ServerName,
-		ServerScriptPath: ev.ServerScriptPath,
-		Wiki:             ev.Wiki,
-		Parsedcomment:    ev.Parsedcomment,
+func (ev event) KeyValues() map[string]any {
+	return map[string]any{
+		"Schema":           ev.Schema,
+		"MetaURI":          ev.Meta.URI,
+		"MetaRequestID":    ev.Meta.RequestID,
+		"MetaID":           ev.Meta.ID,
+		"MetaDt":           ev.Meta.Timestamp,
+		"MetaDomain":       ev.Meta.Domain,
+		"MetaStream":       ev.Meta.Stream,
+		"MetaTopic":        ev.Meta.Topic,
+		"MetaPartition":    ev.Meta.Partition,
+		"MetaOffset":       ev.Meta.Offset,
+		"ID":               ev.ID_,
+		"Type":             ev.Type,
+		"Namespace":        ev.Namespace,
+		"Title":            ev.Title,
+		"TitleURL":         ev.TitleURL,
+		"Comment":          ev.Comment,
+		"Timestamp":        ev.Timestamp,
+		"User":             ev.User,
+		"Bot":              ev.Bot,
+		"NotifyURL":        ev.NotifyURL,
+		"Minor":            ev.Minor,
+		"LengthOld":        ev.Length.Old,
+		"LengthNew":        ev.Length.New,
+		"RevisionOld":      ev.Revision.Old,
+		"RevisionNew":      ev.Revision.New,
+		"ServerURL":        ev.ServerURL,
+		"ServerName":       ev.ServerName,
+		"ServerScriptPath": ev.ServerScriptPath,
+		"Wiki":             ev.Wiki,
+		"Parsedcomment":    ev.Parsedcomment,
 	}
-	var sm map[string]any
-	inrec, _ := json.Marshal(fe)
-	json.Unmarshal(inrec, &sm)
-	return sm
-}
-
-type flatEvent struct {
-	Schema           string    `json:"schema"`
-	MetaURI          string    `json:"meta_uri"`
-	MetaRequestID    string    `json:"meta_request_id"`
-	MetaID           string    `json:"meta_id"`
-	MetaDt           time.Time `json:"meta_dt"`
-	MetaDomain       string    `json:"meta_domain"`
-	MetaStream       string    `json:"meta_stream"`
-	MetaTopic        string    `json:"meta_topic"`
-	MetaPartition    int64     `json:"meta_partition"`
-	MetaOffset       int64     `json:"meta_offset"`
-	ID               int64     `json:"id"`
-	Type             string    `json:"type"`
-	Namespace        int64     `json:"namespace"`
-	Title            string    `json:"title"`
-	TitleURL         string    `json:"title_url"`
-	Comment          string    `json:"comment"`
-	Timestamp        int64     `json:"time_stamp"`
-	User             string    `json:"user_"`
-	Bot              bool      `json:"bot"`
-	NotifyURL        string    `json:"notify_url"`
-	Minor            bool      `json:"minor"`
-	LengthOld        int64     `json:"length_old"`
-	LengthNew        int64     `json:"length_new"`
-	RevisionOld      int64     `json:"revision_old"`
-	RevisionNew      int64     `json:"revision_new"`
-	ServerURL        string    `json:"server_url"`
-	ServerName       string    `json:"server_name"`
-	ServerScriptPath string    `json:"server_script_path"`
-	Wiki             string    `json:"wiki"`
-	Parsedcomment    string    `json:"parsedcomment"`
 }

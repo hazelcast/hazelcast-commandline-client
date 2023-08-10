@@ -40,15 +40,15 @@ func (StreamGenerator) Stream(ctx context.Context) chan demo.StreamItem {
 }
 
 func handleEvents(ctx context.Context, client *sse.Client, itemCh chan demo.StreamItem) error {
-	evCh, errCh := client.Subscribe(ctx)
+	rawEventCh, errCh := client.Subscribe(ctx)
 	for {
 		select {
-		case ev := <-evCh:
-			if ev == nil {
+		case rawEv := <-rawEventCh:
+			if rawEv == nil {
 				continue
 			}
-			it := &event{}
-			err := json.Unmarshal(ev.Data, it)
+			ev := &event{}
+			err := json.Unmarshal(rawEv.Data, ev)
 			if err != nil {
 				// XXX: should we log
 				continue
@@ -57,7 +57,7 @@ func handleEvents(ctx context.Context, client *sse.Client, itemCh chan demo.Stre
 			case <-ctx.Done():
 				// allows to exit from the loop when consumer exits without reading last item
 				return ctx.Err()
-			case itemCh <- it:
+			case itemCh <- ev:
 			}
 		case err := <-errCh:
 			return err
@@ -66,5 +66,5 @@ func handleEvents(ctx context.Context, client *sse.Client, itemCh chan demo.Stre
 }
 
 func (StreamGenerator) MappingQuery(mapName string) (string, error) {
-	return demo.GenerateMappingQuery(mapName, event{}.FlatMap())
+	return demo.GenerateMappingQuery(mapName, event{}.KeyValues())
 }
