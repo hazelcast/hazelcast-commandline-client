@@ -25,8 +25,10 @@ type SQLCommand struct{}
 
 func (cm *SQLCommand) Augment(ec plug.ExecContext, props *plug.Properties) error {
 	// set the default format to table in the interactive mode
-	if ec.CommandName() == "clc shell" && len(ec.Args()) == 0 {
-		props.Set(clc.PropertyFormat, base.PrinterTable)
+	if ecc, ok := ec.(*cmd.ExecContext); ok {
+		if ecc.CommandName() == ecc.Main().Arg0()+" shell" && len(ec.Args()) == 0 {
+			props.Set(clc.PropertyFormat, base.PrinterTable)
+		}
 	}
 	return nil
 }

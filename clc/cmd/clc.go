@@ -194,6 +194,10 @@ func (m *Main) Exit() error {
 	return nil
 }
 
+func (m *Main) Arg0() string {
+	return m.arg0
+}
+
 func (m *Main) createLogger(path, level string) error {
 	weight, err := logger.WeightForLevel(level)
 	if err != nil {
