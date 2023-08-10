@@ -67,7 +67,7 @@ func getDirectoryHashes(dir string) (map[string][16]byte, error) {
 				return err
 			}
 			if filepath.Ext(relativePath) == keepExt || filepath.Ext(relativePath) == templateExt {
-				relativePath = paths.SplitExt(relativePath)
+				relativePath, _ = paths.SplitExt(relativePath)
 			}
 			hashes[relativePath] = fileHash
 		}

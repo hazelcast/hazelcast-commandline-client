@@ -75,8 +75,8 @@ github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da/go.mod h1:cIg4er
 github.com/google/go-cmp v0.5.9 h1:O2Tfq5qg4qc4AmwVlvv0oLiVAGB7enBSJ2x2DqQFi38=
 github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 h1:El6M4kTTCOh6aBiKaUGG7oYTSPP8MxqL4YI3kZKwcP4=
 github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510/go.mod h1:pupxD2MaaD3pAXIBCelhxNneeOaAeabZDe5s4K6zSpQ=
-github.com/hazelcast/hazelcast-go-client v1.4.1-0.20230525070313-5912aa215603 h1:JhoQe+QsOt1lIuNXJjAgGAD0xCwfvSDiaT+U8Pwkmz4=
-github.com/hazelcast/hazelcast-go-client v1.4.1-0.20230525070313-5912aa215603/go.mod h1:PJ38lqXJ18S0YpkrRznPDlUH8GnnMAQCx3jpQtBPZ6Q=
+github.com/hazelcast/hazelcast-go-client v1.4.1-0.20230809052932-73bc747e32b9 h1:V1jVTVLL6BXU+yv2zWrfhhTcQ5oXDH+Q06umd2Z0HB8=
+github.com/hazelcast/hazelcast-go-client v1.4.1-0.20230809052932-73bc747e32b9/go.mod h1:PJ38lqXJ18S0YpkrRznPDlUH8GnnMAQCx3jpQtBPZ6Q=
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
 github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 h1:BQSFePA1RWJOlocH6Fxy8MmwDt+yVQYULKfN0RoTN8A=

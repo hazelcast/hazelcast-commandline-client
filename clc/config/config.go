@@ -18,7 +18,6 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/str"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
 const (
@@ -112,11 +111,10 @@ func MakeHzConfig(props plug.ReadOnlyProperties, lg log.Logger) (hazelcast.Confi
 			}
 		}
 	}
-	apiBase := props.GetString(clc.PropertyExperimentalAPIBase)
+	apiBase := props.GetString(clc.PropertyClusterAPIBase)
 	if apiBase != "" {
-		if err := os.Setenv(viridian.EnvAPIBaseURL, apiBase); err != nil {
-			lg.Error(fmt.Errorf("setting environment variable: %s: %w", viridian.EnvAPIBaseURL, err))
-		}
+		lg.Debugf("Viridan API Base: %s", apiBase)
+		cfg.Cluster.Cloud.ExperimentalAPIBaseURL = apiBase
 	}
 	cfg.Labels = makeClientLabels()
 	cfg.ClientName = makeClientName()
