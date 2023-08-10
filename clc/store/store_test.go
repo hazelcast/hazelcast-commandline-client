@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 )
 
 func bytes(s string) []byte {
@@ -153,7 +153,7 @@ func WithTempDir(fn func(string)) {
 
 func withStore(fn func(s *Store)) {
 	WithTempDir(func(dir string) {
-		s := NewStoreAccessor(dir, it.NewLogger())
+		s := NewStoreAccessor(dir, log.NopLogger{})
 		s.WithLock(func(s *Store) (any, error) {
 			fn(s)
 			return nil, nil
