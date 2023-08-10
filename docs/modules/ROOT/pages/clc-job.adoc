@@ -25,7 +25,7 @@ clc job [command] [options]
 
 Creates a Jet job using the provided Jar file.
 
-This command requires a Hazelcast cluster of 5.3.0-BETA-2 or better.
+This command requires a {hazelcast-cloud} or Hazelcast cluster of version 5.3.0 or above.
 
 Usage:
 
@@ -250,7 +250,7 @@ Parameters:
 
 == clc job export-snapshot
 
-Exports a snapshot from a Jet job. This feature requires a Hazelcast Enterprise cluster.
+Exports a snapshot from a Jet job. This feature requires a {hazelcast-cloud} or Hazelcast Enterprise cluster.
 
 Usage:
 

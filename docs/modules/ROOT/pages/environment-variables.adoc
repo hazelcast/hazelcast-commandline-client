@@ -27,6 +27,14 @@
 |Some Hazelcast CLC features require the cluster to be of a certain version. If set to `1`, this variable disables the version check performed by the CLC.
 |`0` (false)
 
+|CLC_VIRIDIAN_API_KEY
+|Sets the {hazelcast-cloud} API key.
+|
+
+|CLC_VIRIDIAN_API_SECRET
+|Sets the {hazelcast-cloud} API secret.
+|
+
 |CLC_CONFIG
 |Sets the configuration CLC will use if `--config` flag is not specified.
 |
