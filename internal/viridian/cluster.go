@@ -84,7 +84,7 @@ func (a *API) StopCluster(ctx context.Context, idOrName string) error {
 
 func (a *API) ListClusters(ctx context.Context) ([]Cluster, error) {
 	csw, err := RetryOnAuthFail(ctx, a, func(ctx context.Context, token string) (Wrapper[[]Cluster], error) {
-		u := a.makeURL("/cluster")
+		u := a.makeURL("/cluster?size=500")
 		return doGet[Wrapper[[]Cluster]](ctx, u, a.Token)
 	})
 	if err != nil {
