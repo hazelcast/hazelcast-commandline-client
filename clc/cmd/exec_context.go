@@ -98,6 +98,10 @@ func (ec *ExecContext) Args() []string {
 	return ec.args
 }
 
+func (ec *ExecContext) Arg0() string {
+	return ec.main.Arg0()
+}
+
 func (ec *ExecContext) Props() plug.ReadOnlyProperties {
 	return ec.props
 }

@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/object"
+	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/sql"
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it/skip"
 )
@@ -97,11 +99,16 @@ func shellDefaultOutputFormatTest(t *testing.T) {
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
 		ctx := context.Background()
-		tcx.WithShell(ctx, func(tcx it.TestContext) {
-			tcx.WithReset(func() {
-				tcx.WriteStdinString("\\map set foo bar\n")
-				tcx.WriteStdinString("\\map entry-set\n")
-				tcx.AssertStdoutDollarWithPath("testdata/default_output_format.txt")
+		it.WithEnv(clc.EnvMaxCols, "16", func() {
+			tcx.WithShell(ctx, func(tcx it.TestContext) {
+				tcx.WithReset(func() {
+					tcx.WriteStdinString("create mapping t(__key varchar, this varchar) type imap options ('keyFormat' = 'varchar', 'valueFormat' = 'varchar');\n")
+					tcx.WriteStdinString("\\map -n t set foo bar\n")
+				})
+				tcx.WithReset(func() {
+					tcx.WriteStdinString("select * from t;\n")
+					tcx.AssertStdoutDollarWithPath("testdata/default_output_format.txt")
+				})
 			})
 		})
 	})
