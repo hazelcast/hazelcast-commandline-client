@@ -36,18 +36,19 @@ type GenerateDataCmd struct{}
 
 func (cm GenerateDataCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("generate-data [name] [key=value, ...] [--preview]")
-	long := `Generates stream events
+	long := `Generates a stream of events
 	
 Generate data for given name, supported names are:
 
-- wikipedia-event-stream: Real-time Wikipedia event stream. Following key-value pairs can be set
-	- map-name=<MAP-NAME>: generated stream items are written into the map
+* wikipedia-event-stream: Real-time Wikipedia event stream.
+   Following key-value pairs can be set:
+	* map=<MAP-NAME>: the target map to update with the generated stream entries.
 
 `
-	short := "Generates stream events"
+	short := "Generates a stream of events"
 	cc.SetCommandHelp(long, short)
 	cc.SetPositionalArgCount(1, math.MaxInt)
-	cc.AddIntFlag(flagMaxValues, "", 0, false, "number of events to create")
+	cc.AddIntFlag(flagMaxValues, "", 0, false, "number of events to create (default: 0, no limits)")
 	cc.AddBoolFlag(flagPreview, "", false, false, "print the generated data without interacting with the cluster")
 	return nil
 }
@@ -56,7 +57,7 @@ func (cm GenerateDataCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	name := ec.Args()[0]
 	generator, ok := supportedEventStreams[name]
 	if !ok {
-		return fmt.Errorf("Stream generator '%s' is not supported, run --help to see supported ones", name)
+		return fmt.Errorf("stream generator '%s' is not supported, run --help to see supported ones", name)
 	}
 	keyVals, err := keyValMap(ec)
 	if err != nil {

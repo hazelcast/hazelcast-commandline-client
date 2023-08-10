@@ -20,7 +20,7 @@ func (cm *Cmd) Init(cc plug.InitContext) error {
 	cc.AddCommandGroup(clc.GroupDemoID, "Demo")
 	cc.SetCommandGroup(clc.GroupDemoID)
 	cc.SetTopLevel(true)
-	help := "Demo operations"
+	help := "Demonstration commands"
 	cc.SetCommandUsage("demo [command]")
 	cc.SetCommandHelp(help, help)
 	return nil
