@@ -68,7 +68,7 @@ clc
 In the interactive mode, you can run SQL queries directly. Make sure to add a semicolumn (`;`) to the end of the query, otherwise it is assumed that you want to enter a multiline query.
 
 ----
-CLC> select * from cities;
+(default)> select * from cities;
 ---------------------------------------------------------------------------------
       __key | country                   | city                      | population
 ---------------------------------------------------------------------------------
@@ -80,7 +80,7 @@ CLC> select * from cities;
 
 In order to run CLC commands, prefix them with a backslash `\`:
 ----
-CLC> \object list
+(default)> \object list
 ------------------------------------
  Service Name | Object Name
 ------------------------------------
