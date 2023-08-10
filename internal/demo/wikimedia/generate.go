@@ -47,8 +47,8 @@ func handleEvents(ctx context.Context, client *sse.Client, itemCh chan demo.Stre
 			if rawEv == nil {
 				continue
 			}
-			ev := &event{}
-			err := json.Unmarshal(rawEv.Data, ev)
+			ev := event{}
+			err := json.Unmarshal(rawEv.Data, &ev)
 			if err != nil {
 				// XXX: should we log
 				continue

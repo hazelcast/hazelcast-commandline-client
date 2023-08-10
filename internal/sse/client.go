@@ -22,7 +22,7 @@ func NewClient(url string) *Client {
 	}
 }
 
-func (c *Client) Subscribe(ctx context.Context) (<-chan *Event, chan error) {
+func (c *Client) Subscribe(ctx context.Context) (<-chan *Event, <-chan error) {
 	errCh := make(chan error)
 	evCh := make(chan *Event)
 	go func() {
