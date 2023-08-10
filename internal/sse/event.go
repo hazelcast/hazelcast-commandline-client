@@ -21,25 +21,25 @@ func (e Event) Empty() bool {
 }
 
 func (e *Event) Unmarshal(msg []byte) {
-	var tmp Event
+	var data []byte
 	// Normalize the new lines in the event
 	normalizedMsg := bytes.Replace(msg, []byte("\n\r"), []byte("\n"), -1)
-	msgHeaders := bytes.Split(normalizedMsg, []byte("\n"))
-	for _, line := range msgHeaders {
-		// Implementation spec is taken from:
-		// https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events#fields
+	lines := bytes.Split(normalizedMsg, []byte("\n"))
+	// Implementation spec is taken from:
+	// https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events#fields
+	for _, line := range lines {
 		switch headerName(line) {
 		case headerData:
-			tmp.Data = append(tmp.Data, dataValue(line)...)
+			data = append(data, dataValue(line)...)
 			// append new line after each data line per spec
-			tmp.Data = append(tmp.Data, []byte("\n")...)
+			data = append(data, '\n')
 		default:
 			// Ignore all other headers. Note we omitted the "id", "event", and "retry" headers.
 		}
 	}
 	// Trim trailing new lines as specified in the spec
-	tmp.Data = bytes.TrimRight(tmp.Data, "\n")
-	*e = tmp
+	data = bytes.TrimRight(data, "\n")
+	e.Data = data
 }
 
 func headerName(data []byte) string {
@@ -53,12 +53,15 @@ func headerName(data []byte) string {
 
 func dataValue(data []byte) []byte {
 	cIndex := bytes.Index(data, []byte(":"))
-	// If there is no colon, value is empty
-	if cIndex == -1 {
-		return []byte{}
+	if cIndex == -1 || len(data) == cIndex+1 {
+		return nil
 	}
-	// If there is a colon, return the value after the colon
-	return append(data[cIndex+1:])
+	data = data[cIndex+1:]
+	// remove the space after the colon
+	if len(data) > 0 && data[0] == ' ' {
+		data = data[1:]
+	}
+	return data
 }
 
 type EventScanner struct {
