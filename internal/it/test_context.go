@@ -262,9 +262,14 @@ func (tcx TestContext) AssertJSONStdoutHasRowWithFields(fields ...string) map[st
 	stdout := tcx.ExpectStdout.String()
 	var m map[string]any
 	check.Must(json.Unmarshal([]byte(stdout), &m))
+	tcx.T.Log("STDOUT:", stdout)
 	if len(fields) != len(m) {
-		tcx.T.Log("STDOUT:", stdout)
-		tcx.T.Fatalf("stdout does not have the same fields as %v", fields)
+		tcx.T.Fatalf("stdout does not have the same number fields as %v", fields)
+	}
+	for _, k := range fields {
+		if _, ok := m[k]; !ok {
+			tcx.T.Fatalf("stdout does not have the same fields as %v", fields)
+		}
 	}
 	return m
 }

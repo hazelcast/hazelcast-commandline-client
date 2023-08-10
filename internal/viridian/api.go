@@ -233,7 +233,8 @@ func (a *API) login(ctx context.Context) error {
 		APIKey:    a.Key,
 		APISecret: a.Secret,
 	}
-	resp, err := doPost[loginRequest, loginResponse](ctx, a.APIBaseURL+"/customers/api/login", "", c)
+	u := a.makeURL("/customers/api/login")
+	resp, err := doPost[loginRequest, loginResponse](ctx, u, "", c)
 	if err != nil {
 		return err
 	}
