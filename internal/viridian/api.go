@@ -151,7 +151,7 @@ func (a *API) DeleteCustomClass(ctx context.Context, cluster string, artifact st
 }
 
 func (a *API) DownloadConfig(ctx context.Context, clusterID string) (path string, stop func(), err error) {
-	url := makeConfigURL(a.APIBaseURL, clusterID)
+	url := makeConfigURL(a.APIBaseURL, clusterID, "python")
 	r, err := RetryOnAuthFail(ctx, a, func(ctx context.Context, token string) (types.Tuple2[string, func()], error) {
 		path, stop, err = download(ctx, url, a.Token)
 		if err != nil {
@@ -425,8 +425,8 @@ func download(ctx context.Context, url, token string) (downloadPath string, stop
 	return "", nil, fmt.Errorf("%d: %s", rawRes.StatusCode, string(rb))
 }
 
-func makeConfigURL(base, clusterID string) string {
-	return fmt.Sprintf("%s/client_samples/%s/python?source_identifier=default", base, clusterID)
+func makeConfigURL(base, clusterID string, language string) string {
+	return fmt.Sprintf("%s/client_samples/%s/%s?source_identifier=default", base, clusterID, language)
 }
 
 func APIClass() string {
