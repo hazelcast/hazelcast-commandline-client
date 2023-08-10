@@ -116,7 +116,7 @@ func makePrompt(cfgPath string) string {
 		cfgPath = p
 	}
 	pd := paths.ParentDir(cfgPath)
-	return fmt.Sprintf("(%s)> ", str.MaybeShorten(pd, 12))
+	return fmt.Sprintf("%s> ", str.MaybeShorten(pd, 12))
 }
 
 func (*ShellCommand) Unwrappable() {}

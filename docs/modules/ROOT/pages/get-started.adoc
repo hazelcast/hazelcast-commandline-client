@@ -79,7 +79,7 @@ clc -c Test1
 +
 [source, shell]
 ----
-(default)> \object list
+> \object list
 Connected to cluster: pr-<CLUSTER-ID>
 ----
 +
