@@ -192,3 +192,9 @@ func ParentDir(path string) string {
 	dirs := filepath.Dir(path)
 	return filepath.Base(dirs)
 }
+
+// ReplaceExt removes path's extension and appends ext
+func ReplaceExt(path string, ext string) string {
+	p, _ := SplitExt(path)
+	return p + ext
+}

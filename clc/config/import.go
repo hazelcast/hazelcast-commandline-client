@@ -159,6 +159,12 @@ func CreateFromZip(ctx context.Context, ec plug.ExecContext, target, path string
 		if err != nil {
 			return nil, err
 		}
+		mopts := makeViridianOptsMap(clusterName, token, pw, apiBase)
+		// ignoring the JSON path for now
+		_, _, err = CreateJSON(target, mopts)
+		if err != nil {
+			ec.Logger().Warn("Failed creating the JSON configuration: %s", err.Error())
+		}
 		// copy pem files
 		if err := copyFiles(ec, pemFiles, outDir); err != nil {
 			return nil, err
@@ -181,6 +187,24 @@ func makeViridianOpts(clusterName, token, password, apiBaseURL string) clc.KeyVa
 		{Key: "ssl.cert-path", Value: "cert.pem"},
 		{Key: "ssl.key-path", Value: "key.pem"},
 		{Key: "ssl.key-password", Value: password},
+	}
+}
+
+func makeViridianOptsMap(clusterName, token, password, apiBaseURL string) map[string]any {
+	cm := map[string]any{
+		"name":            clusterName,
+		"discovery-token": token,
+		"api-base":        apiBaseURL,
+	}
+	ssl := map[string]any{
+		"ca-path":      "ca.pem",
+		"cert-path":    "cert.pem",
+		"key-path":     "key.pem",
+		"key-password": password,
+	}
+	return map[string]any{
+		"cluster": cm,
+		"ssl":     ssl,
 	}
 }
 
