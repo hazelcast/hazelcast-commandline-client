@@ -24,7 +24,7 @@ xref:clc-viridian.adoc[Create and manage] {hazelcast-cloud} clusters, and the cu
 
 === Create Data Pipelines
 
-xref:clc-job.adoc[Create and manage] data pipelines using the Hazelcast CLC. Check out xref:hazelcast:pipelines:overview.adoc[Platform documentation] for more information about data pipelines.
+xref:clc-job.adoc[Create and manage] data pipelines using the Hazelcast CLC. Check out the xref:hazelcast:pipelines:overview.adoc[Platform documentation] for more information about data pipelines.
 
 === Access Data for Debugging
 

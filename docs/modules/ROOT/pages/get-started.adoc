@@ -1,5 +1,5 @@
 = Get Started With the Hazelcast CLC
-:description: In this tutorial, you'll learn how to use Hazelcast CLC commands to authenticate with Hazelcast {hazelcast-cloud} and create two production clusters. You'll connect to and switch between clusters from the command line. Finally, you'll perform some basic operations on a cluster from both the command line and by running a script to automate the same actions.
+:description: In this tutorial, you'll learn how to use Hazelcast CLC commands to authenticate with Hazelcast {hazelcast-cloud} and create two production clusters. You'll connect to and switch between the clusters from the command line. Finally, you'll perform some basic operations on a cluster from both the command line and by running a script to automate the same actions.
 
 {description}
 
@@ -8,6 +8,7 @@
 You need the following:
 
 - xref:install-clc.adoc[Hazelcast CLC] installed on your local machine.
+- xref:cloud:ROOT:create-account.adoc[{hazelcast-cloud} account]
 - xref:cloud:ROOT:developer.adoc[{hazelcast-cloud} API key and secret]
 
 == Step 1. Authenticating with {hazelcast-cloud}
