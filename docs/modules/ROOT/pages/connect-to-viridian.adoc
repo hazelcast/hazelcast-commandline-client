@@ -1,4 +1,4 @@
-== Connecting to {hazelcast-cloud} with Hazelcast CLC
+== Connecting to Hazelcast {hazelcast-cloud} with Hazelcast CLC
 :description: To use the Hazelcast CLC with Hazelcast {hazelcast-cloud}, you need to authenticate with {hazelcast-cloud} using your API secret and key. You can then import the configuration of the cluster that you want to connect to. No additional configuration is required.
 
 :page-product: cloud
@@ -54,6 +54,6 @@ clc viridian import-config $CLUSTER-NAME --name dev
 clc -c dev
 ```
 
-CLC will start in the interactive mode, and you should see a command prompt. You're ready to start managing xref:clc-viridian.adoc[{hazelcast-cloud} clusters].
+The Hazelcast CLC will start in interactive mode, and you should see a command prompt. You're ready to start managing xref:clc-viridian.adoc[{hazelcast-cloud} clusters].
 
 NOTE: The Hazelcast CLC connects to the cluster on demand, that is when you issue a command that requires the connection, such as running a SQL query.

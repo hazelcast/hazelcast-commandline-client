@@ -25,7 +25,7 @@ clc multi-map [command] [flags]
 
 == clc multi-map put
 
-Put a value in the given MultiMap
+Put a value in the given MultiMap.
 
 Usage:
 
