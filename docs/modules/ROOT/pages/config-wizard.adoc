@@ -31,7 +31,7 @@ $ clc
 . Execute an operation that requires a client connection to cluster.
 +
 ```bash
-(default)> SHOW MAPPINGS;
+> SHOW MAPPINGS;
 ```
 +
 
@@ -83,7 +83,7 @@ $ clc
 . Execute an operation that requires a client connection to cluster.
 +
 ```bash
-(default)> SHOW MAPPINGS;
+> SHOW MAPPINGS;
 ```
 +
 
