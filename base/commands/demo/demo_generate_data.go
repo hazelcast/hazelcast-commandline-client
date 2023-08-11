@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"sync/atomic"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
@@ -84,10 +85,10 @@ func generatePreviewResult(ctx context.Context, ec plug.ExecContext, generator D
 	ec.PrintlnUnnecessary(fmt.Sprintf("Following mapping will be created when run without preview:\n\n%s", mq))
 	ec.PrintlnUnnecessary("Generating preview items...")
 	outCh := make(chan output.Row)
-	count := 0
+	count := int64(0)
 	go func() {
 	loop:
-		for count < int(maxCount) {
+		for count < maxCount {
 			var ev demo.StreamItem
 			select {
 			case event, ok := <-itemCh:
@@ -138,8 +139,7 @@ func generateResult(ctx context.Context, ec plug.ExecContext, generator DataStre
 	
 `, m.Name()))
 	maxCount := ec.Props().GetInt(flagMaxValues)
-	//TODO: do I need read mutex?
-	count := 0
+	count := int64(0)
 	errCh := make(chan error)
 	go func() {
 	loop:
@@ -167,8 +167,8 @@ func generateResult(ctx context.Context, ec plug.ExecContext, generator DataStre
 				ec.Logger().Warn("Could not put stream item into map %s: %s", m.Name(), err.Error())
 				continue
 			}
-			count++
-			if maxCount > 0 && count == int(maxCount) {
+			atomic.AddInt64(&count, 1)
+			if maxCount > 0 && atomic.LoadInt64(&count) == maxCount {
 				errCh <- nil
 				break
 			}
@@ -183,13 +183,13 @@ func generateResult(ctx context.Context, ec plug.ExecContext, generator DataStre
 			case err := <-errCh:
 				return nil, err
 			case <-ticker.C:
-				sp.SetText(fmt.Sprintf("Generated %d events", count))
+				sp.SetText(fmt.Sprintf("Generated %d events", atomic.LoadInt64(&count)))
 			}
 		}
 	})
 	stop()
 	stopStream()
-	ec.PrintlnUnnecessary(fmt.Sprintf("Generated %d events", count))
+	ec.PrintlnUnnecessary(fmt.Sprintf("Generated %d events", atomic.LoadInt64(&count)))
 	return err
 }
 
