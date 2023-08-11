@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"net/http"
+
+	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
 var (
@@ -22,33 +24,26 @@ func NewClient(url string) *Client {
 	}
 }
 
-func (c *Client) Subscribe(ctx context.Context) (<-chan *Event, <-chan error) {
-	errCh := make(chan error)
-	evCh := make(chan *Event)
-	go func() {
-		defer close(errCh)
-		defer close(evCh)
-		resp, err := c.sendRequest(ctx)
+func (c *Client) SubscribeWithCallback(ctx context.Context, process func(*Event) error) error {
+	resp, err := c.sendRequest(ctx)
+	if err != nil {
+		return ErrNoConnection
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return viridian.NewHTTPClientError(resp.StatusCode, nil)
+	}
+	reader := NewEventScanner(resp.Body)
+	for {
+		// can exit on context cancelation because uses response body
+		event, err := reader.ReadEvent()
 		if err != nil {
-			errCh <- ErrNoConnection
-			return
+			return err
 		}
-		defer resp.Body.Close()
-		if resp.StatusCode != 200 {
-			errCh <- ErrNoConnection
-			return
+		if err := process(event); err != nil {
+			return err
 		}
-		reader := NewEventScanner(resp.Body)
-		for {
-			event, err := reader.ReadEvent()
-			if err != nil {
-				errCh <- err
-				return
-			}
-			evCh <- event
-		}
-	}()
-	return evCh, errCh
+	}
 }
 
 func (c *Client) sendRequest(ctx context.Context) (*http.Response, error) {

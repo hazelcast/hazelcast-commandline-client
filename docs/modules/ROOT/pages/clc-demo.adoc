@@ -20,7 +20,7 @@ Generates stream events
 Generate data for given name, supported names are:
 
 - wikipedia-event-stream: Real-time Wikipedia event stream. Following key-value pairs can be set
-	- map-name=<MAP-NAME>: generated stream items are written into the map
+	- map=<MAP-NAME>: generated stream items are written into the map
 
 Usage:
 
@@ -61,5 +61,5 @@ Example:
 
 [source,bash]
 ----
-clc demo generate-data wikipedia-event-stream map-name=wiki-events --preview
+clc demo generate-data wikipedia-event-stream map=wiki-events --preview
 ----
