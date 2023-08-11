@@ -2,9 +2,9 @@
 
 == Changes
 
-* Corrected the --quite flag to --quiet.
-* Uses the experimental NY readline library on Windows by default. That fixes arrow key related issues but disables syntax highlight for SQL
-* Use stderr for unnecessary output.
+* Corrects the `--quite` flag to `--quiet`.
+* Uses the experimental NY readline library on Windows by default. This update fixes arrow key related issues but disables syntax highlighting for SQL.
+* Uses stderr for unnecessary output.
 
 == Improvements
 * More consistent success messages when a list doesn't have any items.
@@ -12,5 +12,5 @@
 
 == Fixes
 * Fixed a race in shell command.
-* Fixed a bug that would cause a panic if the SQL command is interrupted.*
-* Powershell completion is fixed
+* Fixed a bug that would cause a panic if the SQL command was interrupted.
+* Powershell completion is fixed.

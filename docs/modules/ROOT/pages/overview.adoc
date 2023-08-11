@@ -1,10 +1,10 @@
 = Hazelcast Command-Line Client (CLC)
 :url-github-clc: https://github.com/hazelcast/hazelcast-cloud-cli/blob/master/README.md 
-:description: You can use the Hazelcast Command Line Client (CLC) to connect to and interact with clusters on {hazelcast-cloud} and Hazelcast Platform direct from the command line or through scripts.
+:description: You can use the Hazelcast Command Line Client (CLC) to connect to and interact with clusters on Hazelcast {hazelcast-cloud} and Hazelcast Platform direct from the command line or through scripts.
 
 {description}
 
-The Hazelcast CLC is a single binary with no dependencies. Within minutes of installation, you can start to perform common tasks on {hazelcast-cloud} and Hazelcast clusters.
+The Hazelcast CLC is a single binary with no dependencies. Within minutes of installation, you can start to perform common tasks on clusters.
 
 == Install
 
@@ -24,7 +24,7 @@ xref:clc-viridian.adoc[Create and manage] {hazelcast-cloud} clusters, and the cu
 
 === Create Data Pipelines
 
-xref:clc-job.adoc[Create and manage] data pipelines using the Hazelcast CLC. Check out xref:hazelcast:pipelines:overview.adoc[Platform documentation] for more information about data pipelines.
+xref:clc-job.adoc[Create and manage] data pipelines using the Hazelcast CLC. Check out the xref:hazelcast:pipelines:overview.adoc[Platform documentation] for more information about data pipelines.
 
 === Access Data for Debugging
 

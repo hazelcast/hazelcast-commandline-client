@@ -20,7 +20,7 @@ clc set [command] [flags]
 
 == clc set clear
 
-Deletes all entries of a Set.
+Deletes all entries of a set.
 
 Usage:
 
@@ -56,7 +56,7 @@ clc set clear --name my-set
 
 == clc set add
 
-Adds values to the given Set.
+Adds values to the given set.
 
 Usage:
 
@@ -123,7 +123,7 @@ clc set get-all --name my-set
 
 == clc set remove
 
-Removes values from the given Set.
+Removes values from the given set.
 
 Usage:
 
@@ -159,7 +159,7 @@ clc set remove 1 2 3 4 --name my-set
 
 == clc set size
 
-Returns the size of the given Set.
+Returns the size of the given set.
 
 Usage:
 
@@ -190,7 +190,7 @@ clc set size --name my-set
 
 == clc set destroy
 
-Destroys a Set. This command will delete the Set and the data in it will not be available anymore.
+Destroys a Set. This command will delete the set and the data in it will not be available anymore.
 
 Usage:
 
