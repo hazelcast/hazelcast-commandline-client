@@ -2,7 +2,7 @@
 
 == New Features
 
-* Hazelcast CLC can now automatically reads data serialized using compact and portable serialization.
+* Hazelcast CLC can now automatically read data serialized using compact and portable serialization.
 * Added the ability to select a configuration from a list or import a {hazelcast-cloud} configuration when a configuration is not provided in the shell mode.
 * Added the `--quite` (shorthand `-q`) flag which suppresses unnecessary outputs. Hazelcast CLC outputs can be sometimes noisy, such as success message logs; you can use this flag for a more quiet output.
 * Added the `CLC_CLIENT_NAME` environment variable which allows overriding the default client name.
