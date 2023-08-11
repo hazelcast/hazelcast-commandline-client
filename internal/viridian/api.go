@@ -90,9 +90,6 @@ func (a *API) UploadCustomClasses(ctx context.Context, p func(progress float32),
 		return nil, nil
 	})
 	if err != nil {
-		return err
-	}
-	if err != nil {
 		return fmt.Errorf("uploading custom class: %w", err)
 	}
 	return nil
@@ -150,8 +147,8 @@ func (a *API) DeleteCustomClass(ctx context.Context, cluster string, artifact st
 	return nil
 }
 
-func (a *API) DownloadConfig(ctx context.Context, clusterID string) (path string, stop func(), err error) {
-	url := makeConfigURL(a.APIBaseURL, clusterID)
+func (a *API) DownloadConfig(ctx context.Context, clusterID, language string) (path string, stop func(), err error) {
+	url := makeConfigURL(a.APIBaseURL, clusterID, language)
 	r, err := RetryOnAuthFail(ctx, a, func(ctx context.Context, token string) (types.Tuple2[string, func()], error) {
 		path, stop, err = download(ctx, url, a.Token)
 		if err != nil {
@@ -159,6 +156,9 @@ func (a *API) DownloadConfig(ctx context.Context, clusterID string) (path string
 		}
 		return types.MakeTuple2(path, stop), nil
 	})
+	if err != nil {
+		return "", nil, err
+	}
 	return r.First, r.Second, nil
 }
 
@@ -425,8 +425,8 @@ func download(ctx context.Context, url, token string) (downloadPath string, stop
 	return "", nil, fmt.Errorf("%d: %s", rawRes.StatusCode, string(rb))
 }
 
-func makeConfigURL(base, clusterID string) string {
-	return fmt.Sprintf("%s/client_samples/%s/python?source_identifier=default", base, clusterID)
+func makeConfigURL(base, clusterID string, language string) string {
+	return fmt.Sprintf("%s/client_samples/%s/%s?source_identifier=default", base, clusterID, language)
 }
 
 func APIClass() string {

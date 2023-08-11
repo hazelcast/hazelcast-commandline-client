@@ -126,8 +126,9 @@ func download(ctx context.Context, ec plug.ExecContext, url string) (string, err
 }
 
 func CreateFromZip(ctx context.Context, ec plug.ExecContext, target, path string) (string, error) {
+	// TODO: refactor this function so it is not dependent on ec
 	p, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText("Extracting files from the sample")
+		sp.SetText("Extracting configuration files")
 		reader, err := zip.OpenReader(path)
 		if err != nil {
 			return nil, err
@@ -158,6 +159,12 @@ func CreateFromZip(ctx context.Context, ec plug.ExecContext, target, path string
 		if err != nil {
 			return nil, err
 		}
+		mopts := makeViridianOptsMap(clusterName, token, pw, apiBase)
+		// ignoring the JSON path for now
+		_, _, err = CreateJSON(target, mopts)
+		if err != nil {
+			ec.Logger().Warn("Failed creating the JSON configuration: %s", err.Error())
+		}
 		// copy pem files
 		if err := copyFiles(ec, pemFiles, outDir); err != nil {
 			return nil, err
@@ -180,6 +187,24 @@ func makeViridianOpts(clusterName, token, password, apiBaseURL string) clc.KeyVa
 		{Key: "ssl.cert-path", Value: "cert.pem"},
 		{Key: "ssl.key-path", Value: "key.pem"},
 		{Key: "ssl.key-password", Value: password},
+	}
+}
+
+func makeViridianOptsMap(clusterName, token, password, apiBaseURL string) map[string]any {
+	cm := map[string]any{
+		"name":            clusterName,
+		"discovery-token": token,
+		"api-base":        apiBaseURL,
+	}
+	ssl := map[string]any{
+		"ca-path":      "ca.pem",
+		"cert-path":    "cert.pem",
+		"key-path":     "key.pem",
+		"key-password": password,
+	}
+	return map[string]any{
+		"cluster": cm,
+		"ssl":     ssl,
 	}
 }
 
@@ -219,7 +244,8 @@ func extractConfigFields(reader *zip.ReadCloser, pyPaths []string) (token, clust
 func copyFiles(ec plug.ExecContext, files []*zip.File, outDir string) error {
 	for _, rf := range files {
 		_, outFn := filepath.Split(rf.Name)
-		f, err := os.Create(paths.Join(outDir, outFn))
+		path := paths.Join(outDir, outFn)
+		f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 		if err != nil {
 			return err
 		}
