@@ -112,6 +112,7 @@ func UpdateOutput(ctx context.Context, ec plug.ExecContext, res sql.Result, verb
 	go func() {
 		var row sql.Row
 		var err error
+	loop:
 		for it.HasNext() {
 			row, err = it.Next()
 			if err != nil {
@@ -131,7 +132,7 @@ func UpdateOutput(ctx context.Context, ec plug.ExecContext, res sql.Result, verb
 			select {
 			case rowCh <- orow:
 			case <-ctx.Done():
-				break
+				break loop
 			}
 		}
 		close(rowCh)
