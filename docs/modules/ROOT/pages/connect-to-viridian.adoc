@@ -1,5 +1,5 @@
 == Connecting to {hazelcast-cloud} with Hazelcast CLC
-:description: To use the Hazelcast CLC with Hazelcast {hazelcast-cloud}, you need to authenticate with {hazelcast-cloud} using your API secret and key. You can then import the configuration of the {hazelcast-cloud} cluster that you want to connect to. No additional configuration is required.
+:description: To use the Hazelcast CLC with Hazelcast {hazelcast-cloud}, you need to authenticate with {hazelcast-cloud} using your API secret and key. You can then import the configuration of the cluster that you want to connect to. No additional configuration is required.
 
 :page-product: cloud
 
@@ -18,7 +18,7 @@ You need the following:
 
 To allow the Hazelcast CLC to do cluster operations, you must generate a {hazelcast-cloud} token.
 
-. Execute the following command to retrieve the {hazelcast-cloud} token.
+. Execute the following command to retrieve the token.
 +
 ```bash
 clc viridian login

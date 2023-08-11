@@ -120,7 +120,7 @@ Parameters:
 
 == clc multi-map remove
 
-Remove values from the given multi-map.
+Remove values from the given MultiMap.
 
 Usage:
 

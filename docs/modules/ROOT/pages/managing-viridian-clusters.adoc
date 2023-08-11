@@ -1,6 +1,6 @@
-= Managing Viridian Clusters Using the Hazelcast CLC
+= Managing Clusters on Hazelcast Viridian Cloud Using the Hazelcast CLC
 
-:description: In this tutorial, you'll learn the basics of managing {hazelcast-cloud} clusters using the Hazelcast CLC. You'll see how to create, list, and delete clusters, and how to download their logs. You'll also learn how to perform pause/resume operations on {hazelcast-cloud} clusters using the Hazelcast CLC.
+:description: In this tutorial, you'll learn the basics of managing clusters on {hazelcast-cloud} using the Hazelcast CLC. You'll see how to create, list, and delete clusters, and how to download their logs. You'll also learn how to perform pause/resume operations on the clusters using the Hazelcast CLC.
 
 {description}
 
@@ -17,7 +17,7 @@ You need the following:
 
 To allow the Hazelcast CLC to perform cluster operations, you must generate a {hazelcast-cloud} token.
 
-. Execute the following command to retrieve the {hazelcast-cloud} token. 
+. Execute the following command to retrieve the token. 
 +
 [source, bash]
 ----

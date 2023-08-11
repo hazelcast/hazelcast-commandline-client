@@ -233,7 +233,7 @@ Parameters:
 
 == clc viridian delete-cluster
 
-Deletes the given {hazelcast-cloud} cluster. Note that, all data in the cluster is deleted irreversibly.
+Deletes the given {hazelcast-cloud} cluster. All data in the cluster is deleted irreversibly.
 
 Make sure you authenticate to the {hazelcast-cloud} API using `viridian login` before running this command.
 
