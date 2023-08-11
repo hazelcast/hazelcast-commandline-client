@@ -90,9 +90,6 @@ func (a *API) UploadCustomClasses(ctx context.Context, p func(progress float32),
 		return nil, nil
 	})
 	if err != nil {
-		return err
-	}
-	if err != nil {
 		return fmt.Errorf("uploading custom class: %w", err)
 	}
 	return nil
@@ -159,6 +156,9 @@ func (a *API) DownloadConfig(ctx context.Context, clusterID string) (path string
 		}
 		return types.MakeTuple2(path, stop), nil
 	})
+	if err != nil {
+		return "", nil, err
+	}
 	return r.First, r.Second, nil
 }
 

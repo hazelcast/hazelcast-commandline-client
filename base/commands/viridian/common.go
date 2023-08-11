@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/secrets"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -127,6 +129,30 @@ func waitClusterState(ctx context.Context, ec plug.ExecContext, api *viridian.AP
 			time.Sleep(2 * time.Second)
 		}
 	}
+}
+
+func tryImportConfig(ctx context.Context, ec plug.ExecContext, api *viridian.API, clusterID, cfgName string) (configPath string, err error) {
+	cpv, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		sp.SetText("Importing configuration")
+		zipPath, stop, err := api.DownloadConfig(ctx, clusterID)
+		if err != nil {
+			return nil, err
+		}
+		defer stop()
+		cfgPath, err := config.CreateFromZip(ctx, ec, cfgName, zipPath)
+		if err != nil {
+			return nil, err
+		}
+		return cfgPath, nil
+	})
+	if err != nil {
+		return "", err
+	}
+	stop()
+	cp := cpv.(string)
+	ec.Logger().Info("Imported configuration %s and saved to %s", cfgName, cp)
+	ec.PrintlnUnnecessary(fmt.Sprintf("OK Imported configuration %s", cfgName))
+	return cp, nil
 }
 
 func matchClusterState(cluster viridian.Cluster, state string) (bool, error) {

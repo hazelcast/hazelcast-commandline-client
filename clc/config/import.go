@@ -127,7 +127,7 @@ func download(ctx context.Context, ec plug.ExecContext, url string) (string, err
 
 func CreateFromZip(ctx context.Context, ec plug.ExecContext, target, path string) (string, error) {
 	p, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText("Extracting files from the sample")
+		sp.SetText("Extracting configuration files")
 		reader, err := zip.OpenReader(path)
 		if err != nil {
 			return nil, err
