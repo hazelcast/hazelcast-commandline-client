@@ -126,6 +126,7 @@ func download(ctx context.Context, ec plug.ExecContext, url string) (string, err
 }
 
 func CreateFromZip(ctx context.Context, ec plug.ExecContext, target, path string) (string, error) {
+	// TODO: refactor this function so it is not dependent on ec
 	p, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Extracting configuration files")
 		reader, err := zip.OpenReader(path)
@@ -219,7 +220,8 @@ func extractConfigFields(reader *zip.ReadCloser, pyPaths []string) (token, clust
 func copyFiles(ec plug.ExecContext, files []*zip.File, outDir string) error {
 	for _, rf := range files {
 		_, outFn := filepath.Split(rf.Name)
-		f, err := os.Create(paths.Join(outDir, outFn))
+		path := paths.Join(outDir, outFn)
+		f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 		if err != nil {
 			return err
 		}
