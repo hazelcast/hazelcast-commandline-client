@@ -1,5 +1,5 @@
 = Get Started With the Hazelcast CLC
-:description: In this tutorial, you'll learn the basics of how to configure the Hazelcast CLC, start it, and connect it to a {hazelcast-cloud} cluster. You'll also see how to switch between clusters, using the Hazelcast CLC. Finally, you'll perform some basic operations on a cluster from the command line and then by running a script to automate the same actions.
+:description: In this tutorial, you'll learn the basics of how to configure the Hazelcast CLC, start it, and connect it to a cluster on Hazelcast {hazelcast-cloud}. You'll also see how to switch between clusters, using the Hazelcast CLC. Finally, you'll perform some basic operations on a cluster from the command line and then by running a script to automate the same actions.
 
 {description}
 
@@ -8,13 +8,13 @@
 You need the following:
 
 - The xref:install-clc.adoc[Hazelcast CLC] installed on your local machine
-- Two xref:cloud:ROOT:create-serverless-cluster.adoc[Hazelcast {hazelcast-cloud} clusters]. For this tutorial, you'll use one development and one production cluster, to show how you might use the CLC for basic administration and deployment tasks.
+- Two xref:cloud:ROOT:create-serverless-cluster.adoc[{hazelcast-cloud} clusters]. For this tutorial, you'll use one development and one production cluster, to show how you might use the CLC for basic administration and deployment tasks.
 
 
 [[step-1-dev-configure]]
 == Step 1. Add Configuration for the Development Cluster
 
-Make sure that your {hazelcast-cloud} development cluster is running before you start.
+Make sure that your development cluster is running before you start.
 
 . link:https://viridian.hazelcast.com/[Sign in to {hazelcast-cloud}] and select the development cluster.
 
@@ -54,7 +54,7 @@ As this is a new cluster, no objects are returned.
 
 The configuration of the production cluster is the same as the previous step, but using the production cluster configuration.
 
-Make sure that your {hazelcast-cloud} production cluster is running before you start.
+Make sure that your production cluster is running before you start.
 
 . link:https://viridian.hazelcast.com/[Sign in to {hazelcast-cloud}] and select the production cluster.
 
@@ -250,8 +250,8 @@ To delete both test clusters from your account.
 
 In this tutorial, you learned how to do the following:
 
-* Connect to a Hazelcast {hazelcast-cloud} Serverless development cluster.
-* Connect to a Hazelcast {hazelcast-cloud} Serverless production cluster.
+* Connect to a development cluster on {hazelcast-cloud}.
+* Connect to a production cluster on {hazelcast-cloud}.
 * Switch between clusters from the command line.
 * Write data to a map and query the data using SQL.
 * Automate commands by running a sequence of actions from a shell script.

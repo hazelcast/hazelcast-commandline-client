@@ -135,9 +135,9 @@ clc config add dev cluster.name=dev cluster.address=localhost:5701
 
 Imports configuration from an arbitrary source.
 
-Currently importing only Viridian connection configuration is supported.
+Currently importing only {hazelcast-cloud} connection configuration is supported.
 
-1. On Viridian console, visit:
+1. On the {hazelcast-cloud} console, visit:
 +
 Dashboard -> Connect Client -> Quick connection guide -> Go
 
@@ -145,10 +145,6 @@ Dashboard -> Connect Client -> Quick connection guide -> Go
 Make sure the text is quoted before running:
 +
 	clc config import my-config "curl https://api.viridian.hazelcast.com ... default.zip"
-+
-Alternatively, you can use an already downloaded Go client sample:
-+
-	clc config import my-config /home/me/Downloads/hazelcast-cloud-go-sample....zip
 
 Usage:
 
@@ -172,8 +168,8 @@ Parameters:
 |Required
 |The following configuration sources are supported:
 
-* Zip file for the Viridian Go client, e.g., `hazelcast-cloud-go-sample-client-pr-3814-default.zip`. Use this if you have downloaded the sample yourself.
-* cURL command line for the Viridian Go client sample, such as: `curl https://api.viridian.hazelcast.com/client_samples/download/XXX -o hazelcast-cloud-go-sample-client-pr-3814-default.zip`. Use this command to allow the Hazelcast CLC to download the sample. Do not forget to wrap the line with quotes.
+* Zip file for the {hazelcast-cloud} Go client, e.g., `hazelcast-cloud-go-sample-client-pr-3814-default.zip`. Use this if you have downloaded the sample yourself.
+* cURL command line for the {hazelcast-cloud} Go client sample, such as: `curl https://api.viridian.hazelcast.com/client_samples/download/XXX -o hazelcast-cloud-go-sample-client-pr-3814-default.zip`. Use this command to allow the Hazelcast CLC to download the sample. Do not forget to wrap the line with quotes.
 
 |N/A
 

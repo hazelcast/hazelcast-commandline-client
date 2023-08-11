@@ -1,5 +1,5 @@
-== Connecting to {hazelcast-cloud} with Hazelcast CLC
-:description: To use the Hazelcast CLC with {hazelcast-cloud}, you can download a preconfigured client. You don’t need to do any configuration.
+== Connecting to Hazelcast {hazelcast-cloud} with Hazelcast CLC
+:description: To use the Hazelcast CLC with Hazelcast {hazelcast-cloud}, you can download a preconfigured client. You don't need to do any configuration.
 
 :page-product: cloud
 
@@ -14,7 +14,7 @@ You need the following:
 - Hazelcast CLC
 - A {hazelcast-cloud} cluster
 
-TIP: You can find all connection credentials such as the cluster name and discovery token in the {hazelcast-cloud} console. For details, see xref:cloud:ROOT:connect-to-cluster.adoc[].
+TIP: You can find all connection credentials, such as the cluster name and discovery token, in the {hazelcast-cloud} console. For details, see xref:cloud:ROOT:connect-to-cluster.adoc[].
 
 [[mutual]]
 == Connecting to Clusters
