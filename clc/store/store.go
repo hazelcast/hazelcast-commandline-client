@@ -4,12 +4,13 @@ import (
 	"errors"
 	"sync"
 
-	badger "github.com/dgraph-io/badger/v4"
+	"github.com/dgraph-io/badger/v4"
+
+	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 )
 
 var (
-	ErrKeyNotFound     = errors.New("key not found")
-	ErrDatabaseNotOpen = errors.New("database is not open")
+	ErrKeyNotFound = errors.New("key not found")
 )
 
 type StoreAccessor struct {
@@ -17,66 +18,82 @@ type StoreAccessor struct {
 	mu    sync.Mutex
 }
 
-func NewStoreAccessor(dir string) *StoreAccessor {
+func NewStoreAccessor(dir string, logger log.Logger) *StoreAccessor {
 	return &StoreAccessor{
-		store: newStore(dir),
+		store: newStore(dir, logger),
 	}
 }
 
-func (s *StoreAccessor) WithLock(fn func(s *Store) (any, error)) (any, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if err := s.store.open(); err != nil {
+func (sa *StoreAccessor) WithLock(fn func(s *Store) (any, error)) (any, error) {
+	sa.mu.Lock()
+	defer sa.mu.Unlock()
+	if err := sa.store.open(); err != nil {
 		return nil, err
 	}
-	defer s.store.close()
-	return fn(s.store)
+	defer sa.store.close()
+	return fn(sa.store)
 }
 
 type Store struct {
-	dir string
-	db  *badger.DB
+	dir    string
+	db     *badger.DB
+	logger log.Logger
 }
 
-func newStore(dir string) *Store {
+func newStore(dir string, logger log.Logger) *Store {
 	return &Store{
-		dir: dir,
+		dir:    dir,
+		logger: logger,
 	}
 }
 
-func (b *Store) open() error {
-	opts := badger.DefaultOptions(b.dir)
-	opts.Logger = noplogger{}
+func (s *Store) open() error {
+	opts := badger.DefaultOptions(s.dir)
+	opts.Logger = badgerLogger{s.logger}
 	db, err := badger.Open(opts)
 	if err != nil {
 		return err
 	}
-	b.db = db
+	s.db = db
 	return nil
 }
 
-type noplogger struct{}
-
-func (noplogger) Errorf(string, ...interface{})   {}
-func (noplogger) Warningf(string, ...interface{}) {}
-func (noplogger) Infof(string, ...interface{})    {}
-func (noplogger) Debugf(string, ...interface{})   {}
-
-func (b *Store) close() error {
-	return b.db.Close()
+type badgerLogger struct {
+	logger log.Logger
 }
 
-func (b *Store) SetEntry(key, val []byte) error {
-	err := b.db.Update(func(txn *badger.Txn) error {
+func (l badgerLogger) Errorf(log string, args ...any) {
+	log = "Store ERROR: " + log
+	l.logger.Debugf(log, args...)
+}
+func (l badgerLogger) Warningf(log string, args ...any) {
+	log = "Store WARNING: " + log
+	l.logger.Debugf(log, args...)
+}
+func (l badgerLogger) Infof(log string, args ...any) {
+	log = "Store INFO: " + log
+	l.logger.Debugf(log, args...)
+}
+func (l badgerLogger) Debugf(log string, args ...any) {
+	log = "Store DEBUG: " + log
+	l.logger.Debugf(log, args...)
+}
+
+func (s *Store) close() error {
+	return s.db.Close()
+}
+
+func (s *Store) SetEntry(key, val []byte) error {
+	err := s.db.Update(func(txn *badger.Txn) error {
 		e := badger.NewEntry(key, val)
 		return txn.SetEntry(e)
 	})
 	return err
 }
 
-func (b *Store) GetEntry(key []byte) ([]byte, error) {
+func (s *Store) GetEntry(key []byte) ([]byte, error) {
 	var item []byte
-	err := b.db.View(func(txn *badger.Txn) error {
+	err := s.db.View(func(txn *badger.Txn) error {
 		it, err := txn.Get(key)
 		if err != nil {
 			if errors.Is(err, badger.ErrKeyNotFound) {
@@ -93,17 +110,17 @@ func (b *Store) GetEntry(key []byte) ([]byte, error) {
 	return item, nil
 }
 
-func (b *Store) GetKeysWithPrefix(prefix string) ([][]byte, error) {
+func (s *Store) GetKeysWithPrefix(prefix string) ([][]byte, error) {
 	keys := [][]byte{}
 	pb := []byte(prefix)
 	opts := badger.DefaultIteratorOptions
 	opts.PrefetchValues = false
-	err := b.db.View(func(txn *badger.Txn) error {
+	err := s.db.View(func(txn *badger.Txn) error {
 		it := txn.NewIterator(opts)
 		defer it.Close()
 		for it.Seek(pb); it.ValidForPrefix(pb); it.Next() {
-			keyCopy := it.Item().KeyCopy(nil)
-			keys = append(keys, keyCopy)
+			c := it.Item().KeyCopy(nil)
+			keys = append(keys, c)
 		}
 		return nil
 	})
@@ -113,19 +130,18 @@ func (b *Store) GetKeysWithPrefix(prefix string) ([][]byte, error) {
 	return keys, nil
 }
 
-type updateFn = func(current []byte, found bool) []byte
+type UpdateFunc = func(current []byte, found bool) []byte
 
-func (b *Store) UpdateEntry(key []byte, f updateFn) error {
+func (s *Store) UpdateEntry(key []byte, f UpdateFunc) error {
 	var item []byte
-	err := b.db.Update(func(txn *badger.Txn) error {
+	err := s.db.Update(func(txn *badger.Txn) error {
 		it, err := txn.Get(key)
 		found := true
 		if err != nil {
-			if errors.Is(err, badger.ErrKeyNotFound) {
-				found = false
-			} else {
+			if !errors.Is(err, badger.ErrKeyNotFound) {
 				return err
 			}
+			found = false
 		} else {
 			item, err = it.ValueCopy(nil)
 			if err != nil {
@@ -138,33 +154,40 @@ func (b *Store) UpdateEntry(key []byte, f updateFn) error {
 	return err
 }
 
-type foreachFn = func(key, val []byte)
+type ForeachFunc = func(key, val []byte) (ok bool, err error)
 
-func (b *Store) RunForeachWithPrefix(prefix string, f foreachFn) error {
+func (s *Store) RunForeachWithPrefix(prefix string, f ForeachFunc) error {
 	p := []byte(prefix)
-	err := b.db.View(func(txn *badger.Txn) error {
+	err := s.db.View(func(txn *badger.Txn) error {
 		it := txn.NewIterator(badger.DefaultIteratorOptions)
 		defer it.Close()
 		for it.Seek(p); it.ValidForPrefix(p); it.Next() {
 			item := it.Item()
+			// Note: We always copy key and value, if there is a performance issue this might be a reason
 			k := item.KeyCopy(nil)
 			v, err := item.ValueCopy(nil)
 			if err != nil {
 				return err
 			}
-			f(k, v)
+			ok, err := f(k, v)
+			if err != nil {
+				return err
+			}
+			if !ok {
+				break
+			}
 		}
 		return nil
 	})
 	return err
 }
 
-func (b *Store) DeleteEntriesWithPrefix(prefix string) error {
-	keys, err := b.GetKeysWithPrefix(prefix)
+func (s *Store) DeleteEntriesWithPrefix(prefix string) error {
+	keys, err := s.GetKeysWithPrefix(prefix)
 	if err != nil {
 		return err
 	}
-	err = b.db.Update(func(txn *badger.Txn) error {
+	err = s.db.Update(func(txn *badger.Txn) error {
 		for _, key := range keys {
 			if err := txn.Delete(key); err != nil {
 				return err

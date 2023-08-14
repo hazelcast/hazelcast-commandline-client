@@ -11,7 +11,8 @@ import (
 )
 
 func applyTemplateAndCopyToTarget(vars map[string]string, source, dest string) error {
-	f, err := os.Create(paths.SplitExt(dest))
+	base, _ := paths.SplitExt(dest)
+	f, err := os.Create(base)
 	if err != nil {
 		return err
 	}
@@ -33,7 +34,7 @@ func copyToTarget(source, dest string, removeExt bool) error {
 	}
 	defer sf.Close()
 	if removeExt {
-		dest = paths.SplitExt(dest)
+		dest, _ = paths.SplitExt(dest)
 	}
 	df, err := os.Create(dest)
 	if err != nil {

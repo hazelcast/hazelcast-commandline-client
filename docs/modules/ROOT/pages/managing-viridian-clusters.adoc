@@ -13,9 +13,9 @@ You need the following:
 - xref:cloud:ROOT:developer.adoc[{hazelcast-cloud} API key and secret]
 
 [[step-1-authenticating-with-viridian]]
-== Step 1. Authenticating with Viridian
+== Step 1. Authenticating with {hazelcast-cloud}
 
-To allow the Hazelcast CLC to perform cluster operations, you must generate a Viridian token.
+To allow the Hazelcast CLC to perform cluster operations, you must generate a {hazelcast-cloud} token.
 
 . Execute the following command to retrieve the {hazelcast-cloud} token. 
 +
@@ -60,7 +60,7 @@ To check that the `my-cluster` is up and running, use the following command.
 ----
 clc viridian list-clusters
 ----
-The details of all clusters linked to your Hazelcast {hazelcast-cloud} account are returned, including the Cluster ID, Cluster Name, Current Status, Hazelcast Version.
+The details of all clusters linked to your {hazelcast-cloud} account are returned, including the Cluster ID, Cluster Name, Current Status, Hazelcast Version.
 
 [source, bash, subs="attributes+"]
 ----

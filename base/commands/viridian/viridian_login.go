@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/secrets"
@@ -19,6 +20,7 @@ import (
 const (
 	propAPIKey    = "api-key"
 	propAPISecret = "api-secret"
+	propAPIBase   = "api-base"
 	secretPrefix  = "viridian"
 )
 
@@ -37,21 +39,28 @@ Alternatively, you can use the following environment variables:
 	cc.SetCommandHelp(long, short)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	cc.AddStringFlag(propAPISecret, "", "", false, "Viridian API Secret")
+	cc.AddStringFlag(propAPIBase, "", "", false, "Viridian API Base")
 	cc.SetPositionalArgCount(0, 0)
 	return nil
 }
 
 func (cm LoginCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
-	key, secret, err := apiKeySecret(ec)
+	key, secret, err := getAPIKeySecret(ec)
 	if err != nil {
 		return err
 	}
-	token, err := cm.retrieveToken(ctx, ec, key, secret)
+	ab := getAPIBase(ec)
+	token, err := cm.retrieveToken(ctx, ec, key, secret, ab)
 	if err != nil {
 		return err
 	}
-
-	if err = secrets.Save(ctx, viridian.APIClass(), secretPrefix, key, secret, token); err != nil {
+	secret += "\n" + ab
+	sk := fmt.Sprintf(fmtSecretFileName, viridian.APIClass(), key)
+	if err = secrets.Save(ctx, secretPrefix, sk, secret); err != nil {
+		return err
+	}
+	tk := fmt.Sprintf(viridian.FmtTokenFileName, viridian.APIClass(), key)
+	if err = secrets.Save(ctx, secretPrefix, tk, token); err != nil {
 		return err
 	}
 	ec.PrintlnUnnecessary("")
@@ -59,10 +68,10 @@ func (cm LoginCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	return nil
 }
 
-func (cm LoginCmd) retrieveToken(ctx context.Context, ec plug.ExecContext, key, secret string) (string, error) {
+func (cm LoginCmd) retrieveToken(ctx context.Context, ec plug.ExecContext, key, secret, apiBase string) (string, error) {
 	ti, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Logging in")
-		api, err := viridian.Login(ctx, secretPrefix, key, secret)
+		api, err := viridian.Login(ctx, secretPrefix, key, secret, apiBase)
 		if err != nil {
 			return nil, err
 		}
@@ -75,7 +84,18 @@ func (cm LoginCmd) retrieveToken(ctx context.Context, ec plug.ExecContext, key, 
 	return ti.(string), nil
 }
 
-func apiKeySecret(ec plug.ExecContext) (key, secret string, err error) {
+func getAPIBase(ec plug.ExecContext) string {
+	ab := ec.Props().GetString(propAPIBase)
+	if ab == "" {
+		return viridian.APIBaseURL()
+	}
+	if strings.HasPrefix(ab, "https://") || strings.HasPrefix(ab, "http://") {
+		return ab
+	}
+	return fmt.Sprintf("https://api.%s.viridian.hazelcast.cloud", ab)
+}
+
+func getAPIKeySecret(ec plug.ExecContext) (key, secret string, err error) {
 	pr := prompt.New(ec.Stdin(), ec.Stdout())
 	key = ec.Props().GetString(propAPIKey)
 	if key == "" {

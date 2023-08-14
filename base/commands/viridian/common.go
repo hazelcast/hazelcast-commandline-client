@@ -3,9 +3,11 @@
 package viridian
 
 import (
+	"archive/zip"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -13,9 +15,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/secrets"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/types"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
@@ -35,7 +40,7 @@ func findTokenPath(apiKey string) (string, error) {
 		apiKey = os.Getenv(viridian.EnvAPIKey)
 	}
 	if apiKey != "" {
-		return fmt.Sprintf(secrets.TokenFileFormat, ac, apiKey), nil
+		return fmt.Sprintf(viridian.FmtTokenFileName, ac, apiKey), nil
 	}
 	tokenPaths, err := findAll(secretPrefix)
 	if err != nil {
@@ -60,18 +65,25 @@ func findTokenPath(apiKey string) (string, error) {
 
 func findAll(prefix string) ([]string, error) {
 	return paths.FindAll(paths.Join(paths.Secrets(), prefix), func(basePath string, entry os.DirEntry) (ok bool) {
-		return !entry.IsDir() && filepath.Ext(entry.Name()) == filepath.Ext(secrets.TokenFileFormat)
+		return !entry.IsDir() && filepath.Ext(entry.Name()) == filepath.Ext(viridian.FmtTokenFileName)
 	})
 }
 
-func findKeyAndSecret(tokenPath string) (string, string, error) {
-	apiKey := strings.TrimPrefix(strings.TrimSuffix(tokenPath, filepath.Ext(tokenPath)), fmt.Sprintf("%s-", viridian.APIClass()))
-	fn := fmt.Sprintf(secrets.SecretFileFormat, viridian.APIClass(), apiKey)
-	secret, err := secrets.Read(secretPrefix, fn)
+func findKeyAndSecret(tokenPath string) (key, secret, apiBase string, err error) {
+	key, _ = paths.SplitExt(tokenPath)
+	key = strings.TrimPrefix(key, viridian.APIClass()+"-")
+	fn := fmt.Sprintf(fmtSecretFileName, viridian.APIClass(), key)
+	b, err := secrets.Read(secretPrefix, fn)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
-	return apiKey, string(secret), nil
+	ss := string(b)
+	// secret and API base
+	ls := strings.SplitN(ss, "\n", 2)
+	if len(ls) == 1 {
+		return key, ls[0], "", nil
+	}
+	return key, ls[0], ls[1], nil
 }
 
 func getAPI(ec plug.ExecContext) (*viridian.API, error) {
@@ -85,12 +97,15 @@ func getAPI(ec plug.ExecContext) (*viridian.API, error) {
 		ec.Logger().Error(err)
 		return nil, ErrLoadingSecrets
 	}
-	key, secret, err := findKeyAndSecret(tp)
+	key, secret, base, err := findKeyAndSecret(tp)
 	if err != nil {
 		ec.Logger().Error(err)
 		return nil, ErrLoadingSecrets
 	}
-	return viridian.NewAPI(secretPrefix, key, secret, string(token)), nil
+	if base == "" {
+		base = viridian.APIBaseURL()
+	}
+	return viridian.NewAPI(secretPrefix, key, secret, string(token), base), nil
 }
 
 func waitClusterState(ctx context.Context, ec plug.ExecContext, api *viridian.API, clusterIDOrName, state string) error {
@@ -117,6 +132,86 @@ func waitClusterState(ctx context.Context, ec plug.ExecContext, api *viridian.AP
 			time.Sleep(2 * time.Second)
 		}
 	}
+}
+
+func tryImportConfig(ctx context.Context, ec plug.ExecContext, api *viridian.API, clusterID, cfgName string) (configPath string, err error) {
+	cpv, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		sp.SetText("Importing configuration")
+		zipPath, stop, err := api.DownloadConfig(ctx, clusterID, "python")
+		if err != nil {
+			return nil, err
+		}
+		defer stop()
+		cfgPath, err := config.CreateFromZip(ctx, ec, cfgName, zipPath)
+		if err != nil {
+			return nil, err
+		}
+		cfgDir, _ := filepath.Split(cfgPath)
+		// import the Java/.Net certificates
+		zipPath, stop, err = api.DownloadConfig(ctx, clusterID, "java")
+		if err != nil {
+			return nil, err
+		}
+		defer stop()
+		fns := types.NewSet("client.keystore", "client.pfx", "client.truststore")
+		imp, err := importFileFromZip(ctx, ec, fns, zipPath, cfgDir)
+		if err != nil {
+			return nil, err
+		}
+		if imp.Len() != fns.Len() {
+			ec.Logger().Warn("Could not import all artifacts")
+		}
+		return cfgPath, nil
+	})
+	if err != nil {
+		return "", err
+	}
+	stop()
+	cp := cpv.(string)
+	ec.Logger().Info("Imported configuration %s and saved to %s", cfgName, cp)
+	ec.PrintlnUnnecessary(fmt.Sprintf("OK Imported configuration %s", cfgName))
+	return cp, nil
+}
+
+// importFileFromZip extracts files matching selectPaths to targetDir
+// Note that this function assumes a Viridian sample zip file.
+func importFileFromZip(ctx context.Context, ec plug.ExecContext, selectPaths *types.Set[string], zipPath, targetDir string) (imported *types.Set[string], err error) {
+	s := types.NewSet[string]()
+	zr, err := zip.OpenReader(zipPath)
+	if err != nil {
+		return nil, err
+	}
+	defer zr.Close()
+	for _, rf := range zr.File {
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+		_, fn := filepath.Split(rf.Name)
+		if selectPaths.Has(fn) {
+			if err := copyZipFile(rf, paths.Join(targetDir, fn)); err != nil {
+				ec.Logger().Error(fmt.Errorf("extracting file: %w", err))
+				continue
+			}
+			s.Add(fn)
+		}
+	}
+	return s, nil
+}
+
+func copyZipFile(file *zip.File, path string) error {
+	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
+	if err != nil {
+		return err
+	}
+	r, err := file.Open()
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+	if _, err = io.Copy(f, r); err != nil {
+		return err
+	}
+	return nil
 }
 
 func matchClusterState(cluster viridian.Cluster, state string) (bool, error) {

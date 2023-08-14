@@ -18,8 +18,8 @@ func (a *API) DownloadClusterLogs(ctx context.Context, destDir string, idOrName 
 		return err
 	}
 	r, err := RetryOnAuthFail(ctx, a, func(ctx context.Context, token string) (types.Tuple2[string, func()], error) {
-		u := makeUrl(fmt.Sprintf("/cluster/%s/logs", c.ID))
-		path, stop, err := download(ctx, makeUrl(u), a.Token)
+		u := a.makeURL("/cluster/%s/logs", c.ID)
+		path, stop, err := download(ctx, u, a.Token)
 		if err != nil {
 			return types.Tuple2[string, func()]{}, err
 		}

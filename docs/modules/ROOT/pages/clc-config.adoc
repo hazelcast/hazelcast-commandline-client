@@ -56,37 +56,37 @@ Configuration keys:
 |cluster.discovery-token
 |Any string
 |
-|Viridian only
+|{hazelcast-cloud} only
 
 |ssl.enabled
 |true / false
 |false
-|Viridian or Hazelcast Enterprise
+|{hazelcast-cloud} or Hazelcast Enterprise
 
 |ssl.server
 |DOMAIN_NAME (must match SSL certificate)
 |
-|Viridian (automatically set) or Hazelcast Enterprise
+|{hazelcast-cloud} (automatically set) or Hazelcast Enterprise
 
 |ssl.skip-verify
 |true / false
 |false
-|Viridian or Hazelcast Enterprise. Disables SSL host name and client-side verification. Never set to true in production.
+|{hazelcast-cloud} or Hazelcast Enterprise. Disables SSL host name and client-side verification. Never set to true in production.
 
 |ssl.ca-path
 |An absolute or relative path
 |
-|Viridian or Hazelcast Enterprise. Sets the path to the CA certificate.
+|{hazelcast-cloud} or Hazelcast Enterprise. Sets the path to the CA certificate.
 
 |ssl.key-path
 |An absolute or relative path
 |
-|Viridian or Hazelcast Enterprise. Sets the path to the certificate key.
+|{hazelcast-cloud} or Hazelcast Enterprise. Sets the path to the certificate key.
 
 |ssl.key-password
-|Any sring
+|Any string
 |
-|Viridian or Hazelcast Enterprise. Sets the passwor the certificate key.
+|{hazelcast-cloud} or Hazelcast Enterprise. Sets the password for the certificate key.
 
 |log.path
 |An absolute or relative path or `stderr` to log to stderr.
