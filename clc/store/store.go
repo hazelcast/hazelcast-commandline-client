@@ -163,6 +163,7 @@ func (s *Store) RunForeachWithPrefix(prefix string, f ForeachFunc) error {
 		defer it.Close()
 		for it.Seek(p); it.ValidForPrefix(p); it.Next() {
 			item := it.Item()
+			// Note: We always copy key and value, if there is a performance issue this might be a reason
 			k := item.KeyCopy(nil)
 			v, err := item.ValueCopy(nil)
 			if err != nil {
