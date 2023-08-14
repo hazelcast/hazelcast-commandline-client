@@ -1,6 +1,8 @@
 package serialization
 
 import (
+	"fmt"
+
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -31,7 +33,7 @@ func (SnapshotFactory) Create(classID int32) serialization.IdentifiedDataSeriali
 	if classID == snapshotClassID {
 		return &Snapshot{}
 	}
-	return nil
+	panic(fmt.Errorf("classID is not correct, it must be %d", snapshotClassID))
 }
 
 func (SnapshotFactory) FactoryID() int32 {
@@ -39,7 +41,7 @@ func (SnapshotFactory) FactoryID() int32 {
 }
 
 func (s *Snapshot) WriteData(output serialization.DataOutput) {
-
+	// not used
 }
 
 func (s *Snapshot) ReadData(input serialization.DataInput) {
