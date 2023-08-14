@@ -51,18 +51,15 @@ func (p *Provider) BindFlag(name string, flag *pflag.Flag) {
 }
 
 func maybeUnwrapStdout(ec plug.ExecContext) any {
-	var out any
 	if v, ok := ec.Stdout().(clc.NopWriteCloser); ok {
-		out = v.W
-	} else {
-		out = ec.Stdout()
+		return v.W
 	}
-	return out
+	return ec.Stdout()
 }
 
 func (p *Provider) ClientConfig(ctx context.Context, ec plug.ExecContext) (hazelcast.Config, error) {
 	if terminal.IsPipe(maybeUnwrapStdout(ec)) {
-		return hazelcast.Config{}, fmt.Errorf(`pipe ("|") cannot be used without providing configuration`)
+		return hazelcast.Config{}, fmt.Errorf(`no configuration was provided and cannot display the configuration wizard; use the --config flag`)
 	}
 	cfg, err := p.fp.Load().ClientConfig(ctx, ec)
 	if err != nil {
