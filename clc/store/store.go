@@ -138,11 +138,10 @@ func (s *Store) UpdateEntry(key []byte, f UpdateFunc) error {
 		it, err := txn.Get(key)
 		found := true
 		if err != nil {
-			if errors.Is(err, badger.ErrKeyNotFound) {
-				found = false
-			} else {
+			if !errors.Is(err, badger.ErrKeyNotFound) {
 				return err
 			}
+			found = false
 		} else {
 			item, err = it.ValueCopy(nil)
 			if err != nil {

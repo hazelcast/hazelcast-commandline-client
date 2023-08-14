@@ -136,7 +136,7 @@ func insertValues(db *badger.DB, vals map[string][]byte) error {
 	return nil
 }
 
-func WithTempDir(fn func(string)) {
+func WithTempDir(fn func(dir string)) {
 	dir, err := os.MkdirTemp("", "clc-store-*")
 	if err != nil {
 		panic(fmt.Errorf("creating temp dir: %w", err))
