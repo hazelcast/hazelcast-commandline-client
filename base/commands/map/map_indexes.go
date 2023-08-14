@@ -35,6 +35,7 @@ func Indexes(ctx context.Context, ec plug.ExecContext, mapName string) error {
 		for _, mn := range mapNames {
 			sp.SetText(fmt.Sprintf("Getting indexes of map %s", mn))
 			req := codec.EncodeMCGetMapConfigRequest(mn)
+			// If member configurations are different, this may not work well, however it is nothing to do with CLC
 			resp, err := ci.InvokeOnRandomTarget(ctx, req, nil)
 			if err != nil {
 				return nil, err
