@@ -1,19 +1,14 @@
-//go:build base
+//go:build std || shell
 
 package commands
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"io"
+	"path/filepath"
 	"strings"
 	"sync"
 
-	"github.com/google/shlex"
-	_map "github.com/hazelcast/hazelcast-commandline-client/base/commands/map"
-
-	"github.com/hazelcast/hazelcast-commandline-client/base/commands/sql"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
@@ -22,6 +17,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/str"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/terminal"
 )
 
@@ -33,8 +29,6 @@ const banner = `Hazelcast CLC %s (c) 2023 Hazelcast Inc.
 %s%s
 
 `
-
-var errHelp = errors.New("interactive help")
 
 type ShellCommand struct {
 	shortcuts map[string]struct{}
@@ -49,7 +43,6 @@ func (cm *ShellCommand) Init(cc plug.InitContext) error {
 	cc.Hide()
 	cm.mu.Lock()
 	cm.shortcuts = map[string]struct{}{
-		`\di`:   {},
 		`\dm`:   {},
 		`\dm+`:  {},
 		`\exit`: {},
@@ -66,15 +59,15 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 	if len(ec.Args()) > 0 {
 		return puberrors.ErrNotAvailable
 	}
-	m, err := ec.(*cmd.ExecContext).Main().CloneForInteractiveMode()
+	m, err := ec.(*cmd.ExecContext).Main().Clone(true)
 	if err != nil {
 		return fmt.Errorf("cloning Main: %w", err)
 	}
-	var cfgText, logText string
+	var cfgText, logText, cfgPath string
 	if !terminal.IsPipe(ec.Stdin()) {
-		cfgPath := ec.Props().GetString(clc.PropertyConfig)
+		cfgPathProp := ec.Props().GetString(clc.PropertyConfig)
+		cfgPath = paths.ResolveConfigPath(cfgPathProp)
 		if cfgPath != "" {
-			cfgPath = paths.ResolveConfigPath(cfgPath)
 			cfgText = fmt.Sprintf("Configuration : %s\n", cfgPath)
 		}
 		logPath := ec.Props().GetString(clc.PropertyLogPath)
@@ -85,57 +78,13 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 		I2(fmt.Fprintf(ec.Stdout(), banner, internal.Version, cfgText, logText))
 	}
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
-	clcMultilineContinue := false
-	endLineFn := func(line string, multiline bool) (string, bool) {
-		// not caching trimmed line, since we want the backslash at the very end of the line. --YT
-		clcCmd := strings.HasPrefix(strings.TrimSpace(line), shell.CmdPrefix)
-		if clcCmd || multiline && clcMultilineContinue {
-			clcMultilineContinue = true
-			end := !strings.HasSuffix(line, "\\")
-			if !end {
-				line = line[:len(line)-1]
-			}
-			return line, end
-		}
-		clcMultilineContinue = false
-		line = strings.TrimSpace(line)
-		end := strings.HasPrefix(line, "help") || strings.HasPrefix(line, shell.CmdPrefix) || strings.HasSuffix(line, ";")
-		if !end {
-			line = fmt.Sprintf("%s\n", line)
-		}
-		return line, end
-	}
-	textFn := func(ctx context.Context, stdout io.Writer, text string) error {
-		if strings.HasPrefix(strings.TrimSpace(text), shell.CmdPrefix) {
-			parts := strings.Fields(text)
-			cm.mu.RLock()
-			_, ok := cm.shortcuts[parts[0]]
-			cm.mu.RUnlock()
-			if !ok {
-				// this is a CLC command
-				text = strings.TrimSpace(text)
-				text = strings.TrimPrefix(text, shell.CmdPrefix)
-				args, err := shlex.Split(text)
-				if err != nil {
-					return err
-				}
-				args[0] = shell.CmdPrefix + args[0]
-				return m.Execute(ctx, args...)
-			}
-		}
-		f, err := convertStatement(ctx, ec, text, verbose)
-		if err != nil {
-			if errors.Is(err, errHelp) {
-				I2(fmt.Fprintln(stdout, interactiveHelp()))
-				return nil
-			}
-			return err
-		}
-		if w, ok := ec.(plug.ResultWrapper); ok {
-			return w.WrapResult(f)
-		}
-		return f()
-	}
+	endLineFn := makeEndLineFunc()
+	textFn := makeTextFunc(m, ec, verbose, false, false, func(shortcut string) bool {
+		cm.mu.RLock()
+		_, ok := cm.shortcuts[shortcut]
+		cm.mu.RUnlock()
+		return ok
+	})
 	path := paths.Join(paths.Home(), "shell.history")
 	if terminal.IsPipe(ec.Stdin()) {
 		sio := clc.IO{
@@ -147,7 +96,8 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 		sh.SetCommentPrefix("--")
 		return sh.Run(ctx)
 	}
-	sh, err := shell.New("CLC> ", " ... ", path, ec.Stdout(), ec.Stderr(), ec.Stdin(), endLineFn, textFn)
+	p := makePrompt(cfgPath)
+	sh, err := shell.New(p, " ... ", path, ec.Stdout(), ec.Stderr(), ec.Stdin(), endLineFn, textFn)
 	if err != nil {
 		return err
 	}
@@ -156,92 +106,20 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 	return sh.Start(ctx)
 }
 
-func (ShellCommand) Unwrappable() {}
-
-func convertStatement(ctx context.Context, ec plug.ExecContext, stmt string, verbose bool) (func() error, error) {
-	var query string
-	stmt = strings.TrimSpace(stmt)
-	if strings.HasPrefix(stmt, "help") {
-		return nil, errHelp
+func makePrompt(cfgPath string) string {
+	if cfgPath == "" {
+		return "> "
 	}
-	if strings.HasPrefix(stmt, shell.CmdPrefix) {
-		// this is a shell command
-		stmt = strings.TrimPrefix(stmt, "\\")
-		parts := strings.Fields(stmt)
-		switch parts[0] {
-		case "di":
-			if len(parts) == 1 {
-				return func() error {
-					return _map.Indexes(ctx, ec, "")
-				}, nil
-			} else if len(parts) == 2 {
-				return func() error {
-					return _map.Indexes(ctx, ec, parts[1])
-				}, nil
-			} else {
-				return nil, fmt.Errorf("Usage: %sdi [mapping]", shell.CmdPrefix)
-			}
-		case "dm":
-			if len(parts) == 1 {
-				query = "show mappings;"
-			} else if len(parts) == 2 {
-				// escape single quote
-				mn := strings.Replace(parts[1], "'", "''", -1)
-				query = fmt.Sprintf(`
-					SELECT * FROM information_schema.mappings
-					WHERE table_name = '%s';
-				`, mn)
-			} else {
-				return nil, fmt.Errorf("Usage: %sdm [mapping]", shell.CmdPrefix)
-			}
-		case "dm+":
-			if len(parts) == 1 {
-				query = "show mappings;"
-			} else if len(parts) == 2 {
-				// escape single quote
-				mn := strings.Replace(parts[1], "'", "''", -1)
-				query = fmt.Sprintf(`
-					SELECT * FROM information_schema.columns
-					WHERE table_name = '%s';
-				`, mn)
-			} else {
-				return nil, fmt.Errorf("Usage: %sdm+ [mapping]", shell.CmdPrefix)
-			}
-		case "exit":
-			return nil, shell.ErrExit
-		default:
-			return nil, fmt.Errorf("Unknown shell command: %s", stmt)
-		}
-	} else {
-		query = stmt
+	// Best effort for absolute path
+	p, err := filepath.Abs(cfgPath)
+	if err == nil {
+		cfgPath = p
 	}
-	f := func() error {
-		res, stop, err := sql.ExecSQL(ctx, ec, query)
-		if err != nil {
-			return err
-		}
-		defer stop()
-		// TODO: update sql.UpdateOutput to use stdout
-		if err := sql.UpdateOutput(ctx, ec, res, verbose); err != nil {
-			return err
-		}
-		return nil
-	}
-	return f, nil
+	pd := paths.ParentDir(cfgPath)
+	return fmt.Sprintf("%s> ", str.MaybeShorten(pd, 12))
 }
 
-func interactiveHelp() string {
-	return `
-Shortcut Commands:
-	\di			  List Indexes
-	\di	 MAPPING  List Indexes for a specific mapping
-	\dm           List mappings
-	\dm  MAPPING  Display information about a mapping
-	\dm+ MAPPING  Describe a mapping
-	\exit         Exit the shell
-	\help         Display help for CLC commands
-`
-}
+func (*ShellCommand) Unwrappable() {}
 
 func init() {
 	Must(plug.Registry.RegisterCommand("shell", &ShellCommand{}))

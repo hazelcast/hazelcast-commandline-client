@@ -1,10 +1,11 @@
-//go:build base || map
+//go:build std || map
 
 package _map
 
 import (
 	"context"
 	"fmt"
+
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 

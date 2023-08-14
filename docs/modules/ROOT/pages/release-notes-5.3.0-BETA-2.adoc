@@ -2,7 +2,7 @@
 
 == New Features
 
-* Viridian support. The following commands were added:
+* {hazelcast-cloud} support. The following commands were added:
 ** `viridian login`
 ** `viridian create-cluster`
 ** `viridian delete-cluster`

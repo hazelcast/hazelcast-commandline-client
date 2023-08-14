@@ -1,6 +1,9 @@
 package str
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 // SplitByComma splits a string by commas, and optionally removes empty items.
 func SplitByComma(str string, removeEmpty bool) []string {
@@ -18,4 +21,19 @@ func SplitByComma(str string, removeEmpty bool) []string {
 	}
 	return ls[0:idx:idx]
 
+}
+
+func ParseKeyValue(kvStr string) (string, string) {
+	idx := strings.Index(kvStr, "=")
+	if idx < 0 {
+		return "", ""
+	}
+	return strings.TrimSpace(kvStr[:idx]), strings.TrimSpace(kvStr[idx+1:])
+}
+
+func MaybeShorten(s string, l int) string {
+	if len(s) < 3 || len(s) < l {
+		return s
+	}
+	return fmt.Sprintf("%s...", s[:l])
 }

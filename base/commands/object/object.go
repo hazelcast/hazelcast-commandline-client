@@ -1,4 +1,4 @@
-//go:build base || objects
+//go:build std || object
 
 package object
 
@@ -13,6 +13,7 @@ import (
 type ObjectCommand struct{}
 
 func (cm ObjectCommand) Init(cc plug.InitContext) error {
+	cc.AddCommandGroup(clc.GroupDDSID, clc.GroupDDSTitle)
 	cc.SetCommandGroup(clc.GroupDDSID)
 	cc.SetTopLevel(true)
 	help := "Generic distributed data structure operations"

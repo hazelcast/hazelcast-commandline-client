@@ -12,41 +12,38 @@
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and
 * limitations under the License.
-*/
+ */
 
 package codec
 
-import (    
-    iserialization "github.com/hazelcast/hazelcast-go-client"
-    proto "github.com/hazelcast/hazelcast-go-client"
+import (
+	iserialization "github.com/hazelcast/hazelcast-go-client"
+	proto "github.com/hazelcast/hazelcast-go-client"
 )
 
+const (
+	ListAddWithIndexCodecRequestMessageType  = int32(0x051100)
+	ListAddWithIndexCodecResponseMessageType = int32(0x051101)
 
-const(
-    ListAddWithIndexCodecRequestMessageType  = int32(0x051100)
-    ListAddWithIndexCodecResponseMessageType = int32(0x051101)
-
-    ListAddWithIndexCodecRequestIndexOffset = proto.PartitionIDOffset + proto.IntSizeInBytes
-    ListAddWithIndexCodecRequestInitialFrameSize = ListAddWithIndexCodecRequestIndexOffset + proto.IntSizeInBytes
-
+	ListAddWithIndexCodecRequestIndexOffset      = proto.PartitionIDOffset + proto.IntSizeInBytes
+	ListAddWithIndexCodecRequestInitialFrameSize = ListAddWithIndexCodecRequestIndexOffset + proto.IntSizeInBytes
 )
 
 // Inserts the specified element at the specified position in this list (optional operation). Shifts the element
 // currently at that position (if any) and any subsequent elements to the right (adds one to their indices).
 
 func EncodeListAddWithIndexRequest(name string, index int32, value iserialization.Data) *proto.ClientMessage {
-    clientMessage := proto.NewClientMessageForEncode()
-    clientMessage.SetRetryable(false)
+	clientMessage := proto.NewClientMessageForEncode()
+	clientMessage.SetRetryable(false)
 
-    initialFrame := proto.NewFrameWith(make([]byte, ListAddWithIndexCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-    EncodeInt(initialFrame.Content, ListAddWithIndexCodecRequestIndexOffset, index)
-    clientMessage.AddFrame(initialFrame)
-    clientMessage.SetMessageType(ListAddWithIndexCodecRequestMessageType)
-    clientMessage.SetPartitionId(-1)
+	initialFrame := proto.NewFrameWith(make([]byte, ListAddWithIndexCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
+	EncodeInt(initialFrame.Content, ListAddWithIndexCodecRequestIndexOffset, index)
+	clientMessage.AddFrame(initialFrame)
+	clientMessage.SetMessageType(ListAddWithIndexCodecRequestMessageType)
+	clientMessage.SetPartitionId(-1)
 
-    EncodeString(clientMessage, name)
-    EncodeData(clientMessage, value)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, value)
 
-    return clientMessage
+	return clientMessage
 }
-

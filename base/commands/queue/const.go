@@ -1,3 +1,5 @@
+//go:build std || queue
+
 package queue
 
 const (

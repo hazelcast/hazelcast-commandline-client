@@ -1,4 +1,4 @@
-//go:build base || set
+//go:build std || set
 
 package set
 
@@ -7,10 +7,11 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/hazelcast/hazelcast-go-client"
+
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-go-client"
 )
 
 type SetAddCommand struct{}
