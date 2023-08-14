@@ -1,3 +1,5 @@
+//go:build std || snapshot
+
 package snapshot
 
 const (

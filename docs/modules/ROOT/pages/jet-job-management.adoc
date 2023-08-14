@@ -14,7 +14,7 @@ You need the following:
 - Gradle 8 or above.
 
 [[step-1-authenticating-with-viridian]]
-== Step 1. Authenticating with Viridian
+== Step 1. Authenticating with {hazelcast-cloud}
 
 To allow the Hazelcast CLC to perform cluster operations, including submitting Jet jobs, you must generate a {hazelcast-cloud} token.
 

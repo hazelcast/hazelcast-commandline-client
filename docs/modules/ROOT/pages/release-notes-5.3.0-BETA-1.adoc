@@ -10,7 +10,7 @@
 ** `suspend`: Suspends a job.
 ** `resume`: Resumes a suspended job.
 ** `restart`: Restarts a job.
-** `export-snapshot`: Exports a snapshot for a job. This feature requires a Hazelcast Enterprise cluster.
+** `export-snapshot`: Exports a snapshot for a job. This feature requires a {hazelcast-cloud} or Hazelcast Enterprise cluster.
 * Added the following `snapshot` commandS:
 ** `list`: Lists the snapshots of a job.
 ** `delete`: Deletes a snapshot.

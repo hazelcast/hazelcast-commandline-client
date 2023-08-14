@@ -1,5 +1,3 @@
-//go:build base || wizard
-
 package wizard
 
 import (

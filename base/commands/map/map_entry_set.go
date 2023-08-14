@@ -1,4 +1,4 @@
-//go:build base || map
+//go:build std || map
 
 package _map
 

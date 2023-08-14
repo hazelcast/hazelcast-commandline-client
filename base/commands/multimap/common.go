@@ -1,4 +1,4 @@
-//go:build base || multimap
+//go:build std || multimap
 
 package multimap
 
@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hazelcast/hazelcast-go-client"
+
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/mk"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-go-client"
 )
 
 func addKeyTypeFlag(cc plug.InitContext) {

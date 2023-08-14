@@ -1,3 +1,5 @@
+//go:build std || viridian
+
 package viridian_test
 
 import (
@@ -8,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands"
+	_ "github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
@@ -141,7 +143,6 @@ func createCluster_NonInteractiveTest(t *testing.T) {
 		ensureNoClusterRunning(ctx, tcx)
 		clusterName := it.UniqueClusterName()
 		tcx.CLCExecute(ctx, "viridian", "create-cluster", "--verbose", "--name", clusterName)
-		//fields := tcx.AssertStdoutHasRowWithFields("ID", "Name")
 		cs := check.MustValue(tcx.Viridian.ListClusters(ctx))
 		cid := cs[0].ID
 		tcx.AssertStdoutDollar(fmt.Sprintf("$%s$%s$", cid, clusterName))
@@ -216,9 +217,9 @@ func resumeCluster_InteractiveTest(t *testing.T) {
 func getCluster_NonInteractiveTest(t *testing.T) {
 	viridianTester(t, func(ctx context.Context, tcx it.TestContext) {
 		c := createOrGetClusterWithState(ctx, tcx, "")
-		tcx.CLCExecute(ctx, "viridian", "get-cluster", c.ID, "--verbose")
+		tcx.CLCExecute(ctx, "viridian", "get-cluster", c.ID, "--verbose", "-f", "json")
 		tcx.AssertStderrContains("OK")
-		fields := tcx.AssertStdoutHasRowWithFields("ID", "Name", "State", "Version")
+		fields := tcx.AssertJSONStdoutHasRowWithFields("ID", "Name", "State", "Hazelcast Version", "Creation Time", "Start Time", "Hot Backup Enabled", "Hot Restart Enabled", "IP Whitelist Enabled", "Regions")
 		require.Equal(t, c.ID, fields["ID"])
 		require.Equal(t, c.Name, fields["Name"])
 	})

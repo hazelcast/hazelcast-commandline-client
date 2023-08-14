@@ -1,4 +1,4 @@
-//go:build base || multimap
+//go:build std || multimap
 
 package multimap
 
@@ -7,12 +7,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client"
+
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
-	"github.com/hazelcast/hazelcast-go-client"
 )
 
 type MultiMapTryLockCommand struct{}

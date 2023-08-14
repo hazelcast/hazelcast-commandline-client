@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 
@@ -37,7 +38,8 @@ func main() {
 	if err != nil {
 		bye(err)
 	}
-	m, err := cmd.NewMain("clc", cfgPath, cp, logPath, logLevel, clc.StdIO())
+	_, name := filepath.Split(os.Args[0])
+	m, err := cmd.NewMain(name, cfgPath, cp, logPath, logLevel, clc.StdIO())
 	if err != nil {
 		bye(err)
 	}

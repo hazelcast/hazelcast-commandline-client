@@ -1,4 +1,4 @@
-//go:build base || map
+//go:build std || map
 
 package _map
 
@@ -24,6 +24,7 @@ type MapCommand struct {
 }
 
 func (mc *MapCommand) Init(cc plug.InitContext) error {
+	cc.AddCommandGroup(clc.GroupDDSID, clc.GroupDDSTitle)
 	cc.SetCommandGroup(clc.GroupDDSID)
 	cc.AddStringFlag(mapFlagName, "n", defaultMapName, false, "map name")
 	cc.AddBoolFlag(mapFlagShowType, "", false, false, "add the type names to the output")

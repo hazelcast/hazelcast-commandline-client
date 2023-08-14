@@ -7,7 +7,6 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/mk"
 )
 
 type CommandContext struct {
@@ -18,7 +17,7 @@ type CommandContext struct {
 	intValues     map[string]*int64
 	isInteractive bool
 	isTopLevel    bool
-	groups        map[string]*cobra.Group
+	group         *cobra.Group
 }
 
 func NewCommandContext(cmd *cobra.Command, cfgProvider config.Provider, isInteractive bool) *CommandContext {
@@ -29,7 +28,6 @@ func NewCommandContext(cmd *cobra.Command, cfgProvider config.Provider, isIntera
 		boolValues:    map[string]*bool{},
 		intValues:     map[string]*int64{},
 		isInteractive: isInteractive,
-		groups:        map[string]*cobra.Group{},
 	}
 }
 
@@ -108,14 +106,14 @@ func (cc *CommandContext) SetCommandGroup(id string) {
 }
 
 func (cc *CommandContext) AddCommandGroup(id, title string) {
-	cc.groups[id] = &cobra.Group{
+	cc.group = &cobra.Group{
 		ID:    id,
 		Title: title,
 	}
 }
 
-func (cc *CommandContext) Groups() []*cobra.Group {
-	return mk.ValuesOf(cc.groups)
+func (cc *CommandContext) Group() *cobra.Group {
+	return cc.group
 }
 
 func (cc *CommandContext) AddStringConfig(name, value, flag string, help string) {
