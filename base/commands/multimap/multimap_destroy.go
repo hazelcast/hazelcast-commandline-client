@@ -1,4 +1,4 @@
-//go:build base || multimap
+//go:build std || multimap
 
 package multimap
 
@@ -6,12 +6,13 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hazelcast/hazelcast-go-client"
+
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/errors"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/prompt"
-	"github.com/hazelcast/hazelcast-go-client"
 )
 
 type MultiMapDestroyCommand struct{}

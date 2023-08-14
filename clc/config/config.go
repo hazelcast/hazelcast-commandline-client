@@ -2,6 +2,7 @@ package config
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -19,7 +20,6 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/str"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
 const (
@@ -28,6 +28,24 @@ const (
 )
 
 func Create(path string, opts clc.KeyValues[string, string]) (dir, cfgPath string, err error) {
+	return createFile(path, func(cfgPath string) (string, []byte, error) {
+		text := CreateYAML(opts)
+		return cfgPath, []byte(text), nil
+	})
+}
+
+func CreateJSON(path string, opts map[string]any) (dir, cfgPath string, err error) {
+	return createFile(path, func(cfgPath string) (string, []byte, error) {
+		cfgPath = paths.ReplaceExt(cfgPath, ".json")
+		b, err := json.MarshalIndent(opts, "", "  ")
+		if err != nil {
+			return "", nil, err
+		}
+		return cfgPath, b, nil
+	})
+}
+
+func createFile(path string, f func(string) (string, []byte, error)) (dir, cfgPath string, err error) {
 	dir, cfgPath, err = DirAndFile(path)
 	if err != nil {
 		return "", "", err
@@ -35,9 +53,12 @@ func Create(path string, opts clc.KeyValues[string, string]) (dir, cfgPath strin
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		return "", "", err
 	}
-	text := CreateYAML(opts)
+	cfgPath, b, err := f(cfgPath)
+	if err != nil {
+		return "", "", err
+	}
 	path = filepath.Join(dir, cfgPath)
-	if err := os.WriteFile(path, []byte(text), 0600); err != nil {
+	if err := os.WriteFile(path, b, 0600); err != nil {
 		return "", "", err
 	}
 	return dir, cfgPath, nil
@@ -113,11 +134,10 @@ func MakeHzConfig(props plug.ReadOnlyProperties, lg log.Logger) (hazelcast.Confi
 			}
 		}
 	}
-	apiBase := props.GetString(clc.PropertyExperimentalAPIBase)
+	apiBase := props.GetString(clc.PropertyClusterAPIBase)
 	if apiBase != "" {
-		if err := os.Setenv(viridian.EnvAPIBaseURL, apiBase); err != nil {
-			lg.Error(fmt.Errorf("setting environment variable: %s: %w", viridian.EnvAPIBaseURL, err))
-		}
+		lg.Debugf("Viridan API Base: %s", apiBase)
+		cfg.Cluster.Cloud.ExperimentalAPIBaseURL = apiBase
 	}
 	cfg.Serialization.SetIdentifiedDataSerializableFactories(serialization.SnapshotFactory{})
 	cfg.Labels = makeClientLabels()

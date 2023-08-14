@@ -12,23 +12,22 @@
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and
 * limitations under the License.
-*/
+ */
 
 package codec
 
-import (    
-    iserialization "github.com/hazelcast/hazelcast-go-client"
-    proto "github.com/hazelcast/hazelcast-go-client"
+import (
+	iserialization "github.com/hazelcast/hazelcast-go-client"
+	proto "github.com/hazelcast/hazelcast-go-client"
 )
 
+const (
+	ListRemoveCodecRequestMessageType  = int32(0x050500)
+	ListRemoveCodecResponseMessageType = int32(0x050501)
 
-const(
-    ListRemoveCodecRequestMessageType  = int32(0x050500)
-    ListRemoveCodecResponseMessageType = int32(0x050501)
+	ListRemoveCodecRequestInitialFrameSize = proto.PartitionIDOffset + proto.IntSizeInBytes
 
-    ListRemoveCodecRequestInitialFrameSize = proto.PartitionIDOffset + proto.IntSizeInBytes
-
-    ListRemoveResponseResponseOffset = proto.ResponseBackupAcksOffset + proto.ByteSizeInBytes
+	ListRemoveResponseResponseOffset = proto.ResponseBackupAcksOffset + proto.ByteSizeInBytes
 )
 
 // Removes the first occurrence of the specified element from this list, if it is present (optional operation).
@@ -36,23 +35,23 @@ const(
 // Returns true if this list contained the specified element (or equivalently, if this list changed as a result of the call).
 
 func EncodeListRemoveRequest(name string, value iserialization.Data) *proto.ClientMessage {
-    clientMessage := proto.NewClientMessageForEncode()
-    clientMessage.SetRetryable(false)
+	clientMessage := proto.NewClientMessageForEncode()
+	clientMessage.SetRetryable(false)
 
-    initialFrame := proto.NewFrameWith(make([]byte, ListRemoveCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-    clientMessage.AddFrame(initialFrame)
-    clientMessage.SetMessageType(ListRemoveCodecRequestMessageType)
-    clientMessage.SetPartitionId(-1)
+	initialFrame := proto.NewFrameWith(make([]byte, ListRemoveCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
+	clientMessage.AddFrame(initialFrame)
+	clientMessage.SetMessageType(ListRemoveCodecRequestMessageType)
+	clientMessage.SetPartitionId(-1)
 
-    EncodeString(clientMessage, name)
-    EncodeData(clientMessage, value)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, value)
 
-    return clientMessage
+	return clientMessage
 }
 
 func DecodeListRemoveResponse(clientMessage *proto.ClientMessage) bool {
-    frameIterator := clientMessage.FrameIterator()
-    initialFrame := frameIterator.Next()
+	frameIterator := clientMessage.FrameIterator()
+	initialFrame := frameIterator.Next()
 
-    return DecodeBoolean(initialFrame.Content, ListRemoveResponseResponseOffset)
+	return DecodeBoolean(initialFrame.Content, ListRemoveResponseResponseOffset)
 }

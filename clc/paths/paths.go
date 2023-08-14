@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 )
 
 const (
@@ -43,15 +45,30 @@ func Secrets() string {
 	return filepath.Join(Home(), "secrets")
 }
 
+func Templates() string {
+	return filepath.Join(Home(), "templates")
+}
+
+func ResolveTemplatePath(t string) string {
+	return filepath.Join(Templates(), t)
+}
+
 func DefaultConfigPath() string {
 	if p := nearbyConfigPath(); p != "" {
 		return p
 	}
-	p := filepath.Join(ResolveConfigDir("default"), DefaultConfig)
+	p := filepath.Join(ResolveConfigDir(configName()), DefaultConfig)
 	if Exists(p) {
 		return p
 	}
 	return ""
+}
+
+func configName() string {
+	if cfg := os.Getenv(clc.EnvConfig); cfg != "" {
+		return cfg
+	}
+	return "default"
 }
 
 func DefaultLogPath(now time.Time) string {
@@ -79,7 +96,7 @@ func ResolveConfigPath(path string) string {
 	if path == "" {
 		return path
 	}
-	if filepath.Ext(path) == "" {
+	if filepath.Ext(path) != ".yaml" {
 		path = filepath.Join(Configs(), path, DefaultConfig)
 	}
 	return path
@@ -164,4 +181,20 @@ func nearbyConfigPath() string {
 		}
 	}
 	return ""
+}
+
+func SplitExt(dest string) (base, ext string) {
+	ext = filepath.Ext(dest)
+	return dest[:len(dest)-len(ext)], ext
+}
+
+func ParentDir(path string) string {
+	dirs := filepath.Dir(path)
+	return filepath.Base(dirs)
+}
+
+// ReplaceExt removes path's extension and appends ext
+func ReplaceExt(path string, ext string) string {
+	p, _ := SplitExt(path)
+	return p + ext
 }

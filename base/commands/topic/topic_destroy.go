@@ -1,4 +1,4 @@
-//go:build base || topic
+//go:build std || topic
 
 package topic
 
@@ -6,11 +6,12 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hazelcast/hazelcast-go-client"
+
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/prompt"
-	"github.com/hazelcast/hazelcast-go-client"
 
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 )
