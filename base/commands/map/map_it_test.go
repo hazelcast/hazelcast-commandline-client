@@ -9,7 +9,6 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 	hz "github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 	"github.com/stretchr/testify/require"
 
@@ -41,7 +40,6 @@ func TestMap(t *testing.T) {
 		{name: "LoadAll_NonReplacing_NonInteractive", f: loadAll_NonReplacing_NonInteractiveTest},
 		{name: "LoadAll_Replacing_NonInteractive", f: loadAll_Replacing_NonInteractiveTest},
 		{name: "LoadAll_Replacing_WithKeys_NonInteractive", f: loadAll_Replacing_WithKeys_NonInteractiveTest},
-		{name: "ListIndexes_Interactive", f: listIndexes_InteractiveTest},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, tc.f)
@@ -161,39 +159,6 @@ func size_InteractiveTest(t *testing.T) {
 			})
 		})
 	})
-}
-
-func listIndexes_InteractiveTest(t *testing.T) {
-	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
-		ctx := context.Background()
-		tcx.WithShell(ctx, func(tcx it.TestContext) {
-			tcx.WithReset(func() {
-				mm, err := tcx.Client.GetMap(ctx, "default")
-				check.Must(err)
-				check.Must(addIndex(mm))
-				tcx.WriteStdin([]byte("\\di\n"))
-				tcx.AssertStderrContains("OK")
-				tcx.AssertStdoutDollarWithPath("testdata/list_indexes.txt")
-			})
-		})
-	})
-}
-
-func addIndex(m *hz.Map) error {
-	err := m.Set(context.Background(), "k1", serialization.JSON(`{"A": 10, "B": 40}`))
-	if err != nil {
-		return err
-	}
-	indexConfig := types.IndexConfig{
-		Name:               "my-index",
-		Type:               types.IndexTypeSorted,
-		Attributes:         []string{"A"},
-		BitmapIndexOptions: types.BitmapIndexOptions{UniqueKey: "B", UniqueKeyTransformation: types.UniqueKeyTransformationLong},
-	}
-	if err = m.AddIndex(context.Background(), indexConfig); err != nil {
-		return err
-	}
-	return nil
 }
 
 func keySet_NoninteractiveTest(t *testing.T) {

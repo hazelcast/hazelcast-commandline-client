@@ -10,6 +10,9 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	hz "github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/types"
 	"github.com/stretchr/testify/require"
 
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands"
@@ -165,8 +168,41 @@ $               |              | %s |             |                      |      
 $-----------------------------------------------------------------------------------------------------------------------------$`, p1, p2, p1, p2)
 				tcx.AssertStdoutDollar(target)
 			})
+			// di
+			tcx.WithReset(func() {
+				mm, err := tcx.Client.GetMap(ctx, "default")
+				check.Must(err)
+				check.Must(addIndex(mm))
+				tcx.WriteStdinf("\\di\n")
+				tcx.AssertStdoutDollarWithPath("testdata/list_indexes.txt")
+			})
+			// di NAME
+			tcx.WithReset(func() {
+				mm, err := tcx.Client.GetMap(ctx, "default")
+				check.Must(err)
+				check.Must(addIndex(mm))
+				tcx.WriteStdinf("\\di default\n")
+				tcx.AssertStdoutDollarWithPath("testdata/list_indexes.txt")
+			})
 		})
 	})
+}
+
+func addIndex(m *hz.Map) error {
+	err := m.Set(context.Background(), "k1", serialization.JSON(`{"A": 10, "B": 40}`))
+	if err != nil {
+		return err
+	}
+	indexConfig := types.IndexConfig{
+		Name:               "my-index",
+		Type:               types.IndexTypeSorted,
+		Attributes:         []string{"A"},
+		BitmapIndexOptions: types.BitmapIndexOptions{UniqueKey: "B", UniqueKeyTransformation: types.UniqueKeyTransformationLong},
+	}
+	if err = m.AddIndex(context.Background(), indexConfig); err != nil {
+		return err
+	}
+	return nil
 }
 
 func sqlSuggestion_Interactive(t *testing.T) {

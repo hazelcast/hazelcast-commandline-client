@@ -51,19 +51,21 @@ func Indexes(ctx context.Context, ec plug.ExecContext, mapName string) error {
 	var rows []output.Row
 	for mn, indexes := range resp.(map[string][]types.IndexConfig) {
 		for _, index := range indexes {
-			rows = append(rows, output.Row{output.Column{
-				Name:  "Map Name",
-				Type:  serialization.TypeString,
-				Value: mn,
-			}, output.Column{
-				Name:  "Name",
-				Type:  serialization.TypeString,
-				Value: index.Name,
-			}, output.Column{
-				Name:  "Attributes",
-				Type:  serialization.TypeStringArray,
-				Value: index.Attributes,
-			}})
+			rows = append(rows,
+				output.Row{
+					output.Column{
+						Name:  "Map Name",
+						Type:  serialization.TypeString,
+						Value: mn,
+					}, output.Column{
+						Name:  "Name",
+						Type:  serialization.TypeString,
+						Value: index.Name,
+					}, output.Column{
+						Name:  "Attributes",
+						Type:  serialization.TypeStringArray,
+						Value: index.Attributes,
+					}})
 		}
 	}
 	return ec.AddOutputRows(ctx, rows...)
