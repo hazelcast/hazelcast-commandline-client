@@ -13,6 +13,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc/store"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 )
 
 func TestProjectListCommand(t *testing.T) {
@@ -32,7 +33,7 @@ func projectList_CachedTest(t *testing.T) {
 	testDir := filepath.Join(check.MustValue(filepath.Abs("testdata")))
 	home := filepath.Join(testDir, "home")
 	sPath := filepath.Join(home, storeFolder)
-	sa := store.NewStoreAccessor(sPath)
+	sa := store.NewStoreAccessor(sPath, log.NopLogger{})
 	check.MustValue(sa.WithLock(func(s *store.Store) (any, error) {
 		err := s.SetEntry(bytes(nextFetchTimeKey),
 			bytes(strconv.FormatInt(time.Now().Add(cacheRefreshInterval).Unix(), 10)))
