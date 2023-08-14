@@ -3,10 +3,13 @@ package wizard
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"sync/atomic"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/terminal"
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/pflag"
 
@@ -47,7 +50,20 @@ func (p *Provider) BindFlag(name string, flag *pflag.Flag) {
 	p.fp.Load().BindFlag(name, flag)
 }
 
+func maybeUnwrapStdout(ec plug.ExecContext) any {
+	var out any
+	if v, ok := ec.Stdout().(clc.NopWriteCloser); ok {
+		out = v.W
+	} else {
+		out = ec.Stdout()
+	}
+	return out
+}
+
 func (p *Provider) ClientConfig(ctx context.Context, ec plug.ExecContext) (hazelcast.Config, error) {
+	if terminal.IsPipe(maybeUnwrapStdout(ec)) {
+		return hazelcast.Config{}, fmt.Errorf(`pipe ("|") cannot be used without providing configuration`)
+	}
 	cfg, err := p.fp.Load().ClientConfig(ctx, ec)
 	if err != nil {
 		// ask the config to the user
