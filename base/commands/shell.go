@@ -5,6 +5,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/str"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/terminal"
 )
 
@@ -61,11 +63,11 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 	if err != nil {
 		return fmt.Errorf("cloning Main: %w", err)
 	}
-	var cfgText, logText string
+	var cfgText, logText, cfgPath string
 	if !terminal.IsPipe(ec.Stdin()) {
-		cfgPath := ec.Props().GetString(clc.PropertyConfig)
+		cfgPathProp := ec.Props().GetString(clc.PropertyConfig)
+		cfgPath = paths.ResolveConfigPath(cfgPathProp)
 		if cfgPath != "" {
-			cfgPath = paths.ResolveConfigPath(cfgPath)
 			cfgText = fmt.Sprintf("Configuration : %s\n", cfgPath)
 		}
 		logPath := ec.Props().GetString(clc.PropertyLogPath)
@@ -94,13 +96,27 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 		sh.SetCommentPrefix("--")
 		return sh.Run(ctx)
 	}
-	sh, err := shell.New("CLC> ", " ... ", path, ec.Stdout(), ec.Stderr(), ec.Stdin(), endLineFn, textFn)
+	p := makePrompt(cfgPath)
+	sh, err := shell.New(p, " ... ", path, ec.Stdout(), ec.Stderr(), ec.Stdin(), endLineFn, textFn)
 	if err != nil {
 		return err
 	}
 	sh.SetCommentPrefix("--")
 	defer sh.Close()
 	return sh.Start(ctx)
+}
+
+func makePrompt(cfgPath string) string {
+	if cfgPath == "" {
+		return "> "
+	}
+	// Best effort for absolute path
+	p, err := filepath.Abs(cfgPath)
+	if err == nil {
+		cfgPath = p
+	}
+	pd := paths.ParentDir(cfgPath)
+	return fmt.Sprintf("%s> ", str.MaybeShorten(pd, 12))
 }
 
 func (*ShellCommand) Unwrappable() {}

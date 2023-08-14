@@ -10,24 +10,14 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 )
 
-const (
-	TokenFileFormat  = "%s-%s.access"
-	SecretFileFormat = "%s-%s.secret"
-)
-
-func Save(ctx context.Context, apiClass, secretPrefix, key, secret, token string) error {
-	tokenFile := fmt.Sprintf(TokenFileFormat, apiClass, key)
-	secretFile := fmt.Sprintf(SecretFileFormat, apiClass, key)
+func Save(ctx context.Context, secretPrefix, key, token string) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
 	if err := os.MkdirAll(paths.Secrets(), 0700); err != nil {
 		return fmt.Errorf("creating secrets directory: %w", err)
 	}
-	if err := Write(secretPrefix, tokenFile, []byte(token)); err != nil {
-		return err
-	}
-	if err := Write(secretPrefix, secretFile, []byte(secret)); err != nil {
+	if err := Write(secretPrefix, key, []byte(token)); err != nil {
 		return err
 	}
 	return nil
@@ -58,10 +48,4 @@ func Read(prefix, name string) ([]byte, error) {
 		return nil, fmt.Errorf("decoding the secret: %w", err)
 	}
 	return b[:n], nil
-}
-
-func FindAll(prefix string) ([]string, error) {
-	return paths.FindAll(paths.Join(paths.Secrets(), prefix), func(basePath string, entry os.DirEntry) (ok bool) {
-		return !entry.IsDir() && filepath.Ext(entry.Name()) == filepath.Ext(TokenFileFormat)
-	})
 }

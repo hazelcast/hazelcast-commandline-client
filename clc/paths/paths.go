@@ -183,6 +183,18 @@ func nearbyConfigPath() string {
 	return ""
 }
 
-func SplitExt(dest string) string {
-	return strings.TrimSuffix(dest, filepath.Ext(dest))
+func SplitExt(dest string) (base, ext string) {
+	ext = filepath.Ext(dest)
+	return dest[:len(dest)-len(ext)], ext
+}
+
+func ParentDir(path string) string {
+	dirs := filepath.Dir(path)
+	return filepath.Base(dirs)
+}
+
+// ReplaceExt removes path's extension and appends ext
+func ReplaceExt(path string, ext string) string {
+	p, _ := SplitExt(path)
+	return p + ext
 }

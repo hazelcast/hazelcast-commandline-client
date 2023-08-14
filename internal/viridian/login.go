@@ -2,7 +2,6 @@ package viridian
 
 import (
 	"context"
-	"errors"
 )
 
 type loginRequest struct {
@@ -14,25 +13,15 @@ type loginResponse struct {
 	Token string `json:"token"`
 }
 
-func Login(ctx context.Context, secretPrefix, key, secret string) (API, error) {
-	var api API
-	if key == "" {
-		return api, errors.New("api key cannot be blank")
+func Login(ctx context.Context, secretPrefix, key, secret, apiBase string) (API, error) {
+	a := API{
+		SecretPrefix: secretPrefix,
+		Key:          key,
+		Secret:       secret,
+		APIBaseURL:   apiBase,
 	}
-	if secret == "" {
-		return api, errors.New("api secret cannot be blank")
+	if err := a.login(ctx); err != nil {
+		return a, err
 	}
-	c := loginRequest{
-		APIKey:    key,
-		APISecret: secret,
-	}
-	resp, err := doPost[loginRequest, loginResponse](ctx, "/customers/api/login", "", c)
-	if err != nil {
-		return api, err
-	}
-	api.Key = key
-	api.Secret = secret
-	api.Token = resp.Token
-	api.SecretPrefix = secretPrefix
-	return api, nil
+	return a, nil
 }

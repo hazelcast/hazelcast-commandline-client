@@ -8,6 +8,7 @@ const (
 	PropertyClusterDiscoveryToken = "cluster.discovery-token"
 	PropertyClusterUser           = "cluster.user"
 	PropertyClusterPassword       = "cluster.password"
+	PropertyClusterAPIBase        = "cluster.api-base"
 	PropertyFormat                = "format"
 	PropertyVerbose               = "verbose"
 	PropertyQuiet                 = "quiet"
