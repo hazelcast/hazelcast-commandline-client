@@ -39,7 +39,6 @@ type ExecContext struct {
 	stdin         io.Reader
 	args          []string
 	props         *plug.Properties
-	clientFn      ClientFn
 	isInteractive bool
 	cmd           *cobra.Command
 	main          *Main
@@ -48,14 +47,13 @@ type ExecContext struct {
 	cp            config.Provider
 }
 
-func NewExecContext(lg log.Logger, sio clc.IO, props *plug.Properties, clientFn ClientFn, interactive bool) (*ExecContext, error) {
+func NewExecContext(lg log.Logger, sio clc.IO, props *plug.Properties, interactive bool) (*ExecContext, error) {
 	return &ExecContext{
 		lg:            lg,
 		stdout:        sio.Stdout,
 		stderr:        sio.Stderr,
 		stdin:         sio.Stdin,
 		props:         props,
-		clientFn:      clientFn,
 		isInteractive: interactive,
 		spinnerWait:   1 * time.Second,
 	}, nil
@@ -101,12 +99,16 @@ func (ec *ExecContext) Args() []string {
 	return ec.args
 }
 
+func (ec *ExecContext) Arg0() string {
+	return ec.main.Arg0()
+}
+
 func (ec *ExecContext) Props() plug.ReadOnlyProperties {
 	return ec.props
 }
 
 func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInternal, error) {
-	ci := getClientInternal()
+	ci := ec.main.clientInternal()
 	if ci != nil {
 		return ci, nil
 	}
@@ -116,14 +118,16 @@ func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInt
 	}
 	civ, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Connecting to the cluster")
-		return ec.clientFn(ctx, cfg)
+		if err := ec.main.ensureClient(ctx, cfg); err != nil {
+			return nil, err
+		}
+		return ec.main.clientInternal(), nil
 	})
 	if err != nil {
 		return nil, err
 	}
 	stop()
 	ci = civ.(*hazelcast.ClientInternal)
-	setClientInternal(ci)
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	if verbose || ec.Interactive() {
 		cn := ci.ClusterService().FailoverService().Current().ClusterName

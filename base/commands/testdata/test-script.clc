@@ -1,0 +1,10 @@
+-- This is a script command
+
+\map -n test-script clear --yes
+\map -n test-script set foo bar
+
+\foo unknown command
+
+\map -n test-script get foo
+
+

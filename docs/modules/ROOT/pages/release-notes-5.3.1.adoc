@@ -8,4 +8,4 @@
 
 * Added a workaround for a server side bug that causes an incorrect hash calculation error when certain type of Jet jars are submitted. See: https://github.com/hazelcast/hazelcast/pull/24674
 * Extended cluster information retrieved from 'clc viridian get-cluster' command.
-* Improved error checking so a token error is displayed when a Viridian command fails with an authentication error.
+* Improved error checking so a token error is displayed when a {hazelcast-cloud} command fails with an authentication error.

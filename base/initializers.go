@@ -1,3 +1,5 @@
+//go:build base
+
 package base
 
 import (
@@ -16,8 +18,6 @@ type GlobalInitializer struct{}
 
 func (g GlobalInitializer) Init(cc plug.InitContext) error {
 	// base group IDs
-	cc.AddCommandGroup(clc.GroupDDSID, "Distributed Data Structures")
-	cc.AddCommandGroup(clc.GroupJetID, "Jet")
 	updateFormatFlag(cc)
 	cc.AddBoolFlag(clc.PropertyVerbose, "", false, false, "enable verbose output")
 	cc.AddBoolFlag(clc.PropertyQuiet, "q", false, false, "disable unnecessary output")
