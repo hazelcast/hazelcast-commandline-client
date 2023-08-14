@@ -4,7 +4,7 @@ import (
 	"errors"
 	"sync"
 
-	badger "github.com/dgraph-io/badger/v4"
+	"github.com/dgraph-io/badger/v4"
 
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 )
@@ -63,15 +63,19 @@ type badgerLogger struct {
 }
 
 func (l badgerLogger) Errorf(log string, args ...any) {
+	log = "Store ERROR: " + log
 	l.logger.Debugf(log, args...)
 }
 func (l badgerLogger) Warningf(log string, args ...any) {
+	log = "Store WARNING: " + log
 	l.logger.Debugf(log, args...)
 }
 func (l badgerLogger) Infof(log string, args ...any) {
+	log = "Store INFO: " + log
 	l.logger.Debugf(log, args...)
 }
 func (l badgerLogger) Debugf(log string, args ...any) {
+	log = "Store DEBUG: " + log
 	l.logger.Debugf(log, args...)
 }
 
@@ -115,8 +119,8 @@ func (s *Store) GetKeysWithPrefix(prefix string) ([][]byte, error) {
 		it := txn.NewIterator(opts)
 		defer it.Close()
 		for it.Seek(pb); it.ValidForPrefix(pb); it.Next() {
-			keyCopy := it.Item().KeyCopy(nil)
-			keys = append(keys, keyCopy)
+			c := it.Item().KeyCopy(nil)
+			keys = append(keys, c)
 		}
 		return nil
 	})
@@ -126,9 +130,9 @@ func (s *Store) GetKeysWithPrefix(prefix string) ([][]byte, error) {
 	return keys, nil
 }
 
-type updateFn = func(current []byte, found bool) []byte
+type UpdateFunc = func(current []byte, found bool) []byte
 
-func (s *Store) UpdateEntry(key []byte, f updateFn) error {
+func (s *Store) UpdateEntry(key []byte, f UpdateFunc) error {
 	var item []byte
 	err := s.db.Update(func(txn *badger.Txn) error {
 		it, err := txn.Get(key)
@@ -151,9 +155,9 @@ func (s *Store) UpdateEntry(key []byte, f updateFn) error {
 	return err
 }
 
-type foreachFn = func(key, val []byte)
+type ForeachFunc = func(key, val []byte) (ok bool, err error)
 
-func (s *Store) RunForeachWithPrefix(prefix string, f foreachFn) error {
+func (s *Store) RunForeachWithPrefix(prefix string, f ForeachFunc) error {
 	p := []byte(prefix)
 	err := s.db.View(func(txn *badger.Txn) error {
 		it := txn.NewIterator(badger.DefaultIteratorOptions)
@@ -165,7 +169,13 @@ func (s *Store) RunForeachWithPrefix(prefix string, f foreachFn) error {
 			if err != nil {
 				return err
 			}
-			f(k, v)
+			ok, err := f(k, v)
+			if err != nil {
+				return err
+			}
+			if !ok {
+				break
+			}
 		}
 		return nil
 	})

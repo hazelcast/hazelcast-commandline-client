@@ -12,32 +12,28 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 )
 
-func bytes(s string) []byte {
-	return []byte(s)
-}
-
 func TestStore_GetSetEntry(t *testing.T) {
 	withStore(func(s *Store) {
 		check.Must(insertValues(s.db, map[string][]byte{
-			"key1": bytes("val"),
+			"key1": []byte("val"),
 		}))
-		valb := check.MustValue(s.GetEntry(bytes("key1")))
-		require.Equal(t, bytes("val"), valb)
-		check.Must(s.SetEntry(bytes("key1"), bytes("valnew")))
-		valnew := check.MustValue(s.GetEntry(bytes("key1")))
-		require.Equal(t, bytes("valnew"), valnew)
+		valb := check.MustValue(s.GetEntry([]byte("key1")))
+		require.Equal(t, []byte("val"), valb)
+		check.Must(s.SetEntry([]byte("key1"), []byte("valnew")))
+		valnew := check.MustValue(s.GetEntry([]byte("key1")))
+		require.Equal(t, []byte("valnew"), valnew)
 	})
 }
 
 func TestStore_GetKeysWithPrefix(t *testing.T) {
 	withStore(func(s *Store) {
 		check.Must(insertValues(s.db, map[string][]byte{
-			"prefix.key1": bytes(""),
-			"prefix.key2": bytes(""),
-			"noprefix":    bytes(""),
+			"prefix.key1": []byte(""),
+			"prefix.key2": []byte(""),
+			"noprefix":    []byte(""),
 		}))
 		vals := check.MustValue(s.GetKeysWithPrefix("prefix"))
-		expected := [][]byte{bytes("prefix.key1"), bytes("prefix.key2")}
+		expected := [][]byte{[]byte("prefix.key1"), []byte("prefix.key2")}
 		require.ElementsMatch(t, expected, vals)
 
 	})
@@ -45,22 +41,22 @@ func TestStore_GetKeysWithPrefix(t *testing.T) {
 
 func TestStore_UpdateEntry(t *testing.T) {
 	withStore(func(s *Store) {
-		check.Must(s.UpdateEntry(bytes("key"), func(current []byte, found bool) []byte {
+		check.Must(s.UpdateEntry([]byte("key"), func(current []byte, found bool) []byte {
 			if !found {
-				return bytes("notexist")
+				return []byte("notexist")
 			}
 			return nil
 		}))
-		valb := check.MustValue(s.GetEntry(bytes("key")))
-		require.Equal(t, bytes("notexist"), valb)
-		check.Must(s.UpdateEntry(bytes("key"), func(current []byte, found bool) []byte {
+		valb := check.MustValue(s.GetEntry([]byte("key")))
+		require.Equal(t, []byte("notexist"), valb)
+		check.Must(s.UpdateEntry([]byte("key"), func(current []byte, found bool) []byte {
 			if found {
-				return append(current, bytes(".nowexist")...)
+				return append(current, []byte(".nowexist")...)
 			}
 			return nil
 		}))
-		valnew := check.MustValue(s.GetEntry(bytes("key")))
-		require.Equal(t, bytes("notexist.nowexist"), valnew)
+		valnew := check.MustValue(s.GetEntry([]byte("key")))
+		require.Equal(t, []byte("notexist.nowexist"), valnew)
 	})
 }
 
@@ -68,12 +64,13 @@ func TestStore_RunForeachWithPrefix(t *testing.T) {
 	fromStore := make(map[string][]byte)
 	withStore(func(s *Store) {
 		check.Must(insertValues(s.db, map[string][]byte{
-			"prefix.key1": bytes(""),
-			"prefix.key2": bytes(""),
-			"noprefix":    bytes(""),
+			"prefix.key1": []byte(""),
+			"prefix.key2": []byte(""),
+			"noprefix":    []byte(""),
 		}))
-		check.Must(s.RunForeachWithPrefix("prefix", func(key, val []byte) {
+		check.Must(s.RunForeachWithPrefix("prefix", func(key, val []byte) (bool, error) {
 			fromStore[string(key)] = val
+			return true, nil
 		}))
 		expected := map[string][]byte{
 			"prefix.key1": nil,
@@ -86,9 +83,9 @@ func TestStore_RunForeachWithPrefix(t *testing.T) {
 func TestStore_DeleteEntriesWithPrefix(t *testing.T) {
 	withStore(func(s *Store) {
 		check.Must(insertValues(s.db, map[string][]byte{
-			"prefix.key1": bytes(""),
-			"prefix.key2": bytes(""),
-			"noprefix":    bytes(""),
+			"prefix.key1": []byte(""),
+			"prefix.key2": []byte(""),
+			"noprefix":    []byte(""),
 		}))
 		check.Must(s.DeleteEntriesWithPrefix("prefix"))
 		entries := check.MustValue(getAllEntries(s.db))
@@ -126,7 +123,7 @@ func getAllEntries(db *badger.DB) (map[string][]byte, error) {
 func insertValues(db *badger.DB, vals map[string][]byte) error {
 	err := db.Update(func(txn *badger.Txn) error {
 		for k, v := range vals {
-			err := txn.SetEntry(badger.NewEntry(bytes(k), v))
+			err := txn.SetEntry(badger.NewEntry([]byte(k), v))
 			if err != nil {
 				return err
 			}
