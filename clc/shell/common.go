@@ -55,8 +55,7 @@ func ConvertStatement(ctx context.Context, ec plug.ExecContext, stmt string, ver
 		case "dm+":
 			if len(parts) == 1 {
 				query = "show mappings;"
-			}
-			if len(parts) == 2 {
+			} else if len(parts) == 2 {
 				// escape single quote
 				mn := strings.Replace(parts[1], "'", "''", -1)
 				query = fmt.Sprintf(`
