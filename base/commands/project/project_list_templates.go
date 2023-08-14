@@ -16,6 +16,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/store"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
@@ -54,7 +55,7 @@ func (lc ListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	}
 	ts, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText(fmt.Sprintf("Listing templates"))
-		return listTemplates(isLocal, isForce)
+		return listTemplates(ec.Logger(), isLocal, isForce)
 	})
 	if err != nil {
 		return err
@@ -77,8 +78,8 @@ func (lc ListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	return ec.AddOutputRows(ctx, rows...)
 }
 
-func listTemplates(isLocal bool, isForce bool) ([]Template, error) {
-	sa := store.NewStoreAccessor(paths.Join(paths.Home(), storeFolder))
+func listTemplates(logger log.Logger, isLocal bool, isForce bool) ([]Template, error) {
+	sa := store.NewStoreAccessor(paths.Join(paths.Home(), storeFolder), logger)
 	if isLocal {
 		return listLocalTemplates()
 	}
