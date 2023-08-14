@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -54,7 +53,7 @@ func doCustomClassUpload(ctx context.Context, progressSetter func(progress float
 	}
 	w.Close()
 	pr := &UploadProgressReader{Reader: reqBody, Total: size, SetterFunc: progressSetter}
-	req, err := http.NewRequest(http.MethodPost, makeUrl(url), pr)
+	req, err := http.NewRequest(http.MethodPost, url, pr)
 	if err != nil {
 		return err
 	}

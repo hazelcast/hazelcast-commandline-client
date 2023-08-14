@@ -1,0 +1,14 @@
+= 5.3.2 Release Notes
+
+== New Features
+
+* Added the `project create` command that can create a Hazelcast project from a template. Note that this features is currently BETA.
+* Added the `script` command that runs an SQL or CLC script from a local file or HTTP resource.
+* Added the following data structure commands:  `atomic-long`, `list`, `multi-map`, `queue` and `topic`.
+* Added more `map` commands: `values`, `load-all`, `lock`, `try-lock` and `unlock`. Note that lock related commands are only available in the interactive mode.
+* Added the `CLC_CONFIG` environment variable which sets the default CLC configuration. If unset, the default is `default`.
+
+== Fixes
+
+* link:https://github.com/hazelcast/hazelcast-commandline-client/pull/290[#290] Refactored `job` commands to use coordinator for SQL jobs.
+* link:https://github.com/hazelcast/hazelcast-commandline-client/pull/288[#288] Fix streaming timeout.
