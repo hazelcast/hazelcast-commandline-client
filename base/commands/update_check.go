@@ -30,7 +30,7 @@ const updateCheckKey = "update.nextCheckTime"
 const checkInterval = time.Hour * 24 * 7
 
 func maybePrintNewerVersion(ec plug.ExecContext) error {
-	sa := store.NewStoreAccessor(paths.Store())
+	sa := store.NewStoreAccessor(paths.Store(), ec.Logger())
 	isSkip, err := isSkipNewerVersion(sa)
 	if err != nil {
 		return err
