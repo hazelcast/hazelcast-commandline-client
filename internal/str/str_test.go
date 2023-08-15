@@ -1,6 +1,7 @@
 package str_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -83,6 +84,22 @@ func TestSplitByComma(t *testing.T) {
 		t.Run(tc.s, func(t *testing.T) {
 			o := str.SplitByComma(tc.s, tc.removeEmpty)
 			assert.Equal(t, tc.target, o)
+		})
+	}
+}
+
+func TestSpacePaddedIntFormat(t *testing.T) {
+	testCases := []struct {
+		num int
+		out string
+	}{
+		{num: 0, out: "%d"},
+	}
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(fmt.Sprintf("pad %d", tc.num), func(t *testing.T) {
+			s := str.SpacePaddedIntFormat(tc.num)
+			assert.Equal(t, tc.out, s)
 		})
 	}
 }
