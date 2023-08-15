@@ -53,3 +53,16 @@ func generateData_Wikipedia_MaxValues_Test(t *testing.T) {
 		})
 	})
 }
+
+func TestMapSetMany(t *testing.T) {
+	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
+		t := tcx.T
+		ctx := context.Background()
+		count := 10
+		tcx.WithReset(func() {
+			tcx.CLCExecute(ctx, "demo", "map-setmany", "10", "--name", m.Name(), "--size", "1")
+			require.Equal(t, count, check.MustValue(m.Size(context.Background())))
+			require.Equal(t, "a", check.MustValue(m.Get(ctx, "k1")))
+		})
+	})
+}
