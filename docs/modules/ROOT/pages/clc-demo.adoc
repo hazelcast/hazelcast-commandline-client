@@ -88,13 +88,13 @@ Parameters:
 |`default`
 
 |`--size`
-|Required
+|Optional
 |Maybe an integer which is number of bytes, or one of the following:
 
 - Xkb: kilobytes
 
 - Xmb: megabytes
-|
+|`1`
 
 |===
 
