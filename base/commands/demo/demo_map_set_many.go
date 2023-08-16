@@ -29,7 +29,7 @@ func (m MapSetManyCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("map-setmany [entry-count] [flags]")
 	cc.SetPositionalArgCount(1, 1)
 	cc.AddStringFlag(flagName, "n", "default", false, "Name of the map.")
-	cc.AddStringFlag(flagSize, "", "", true, `Maybe an integer which is number of bytes, or one of the following:
+	cc.AddStringFlag(flagSize, "", "1", false, `Maybe an integer which is number of bytes, or one of the following:
 Xkb: kilobytes
 Xmb: megabytes
 `)
@@ -51,7 +51,7 @@ func (m MapSetManyCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 		return err
 	}
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Creating map %s with %d entries", mapName, c))
+		sp.SetText(fmt.Sprintf("Creating entries in map %s with %d entries", mapName, c))
 		mm, err := ci.Client().GetMap(ctx, mapName)
 		if err != nil {
 			return nil, err
