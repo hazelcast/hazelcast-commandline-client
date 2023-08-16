@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/hazelcast/hazelcast-commandline-client/base/commands/viridian"
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 	"github.com/theckman/yacspin"
@@ -113,6 +114,9 @@ func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInt
 	}
 	cfg, err := ec.cp.ClientConfig(ctx, ec)
 	if err != nil {
+		return nil, err
+	}
+	if err = viridian.MaybeOptimizeDiscovery(&cfg, ec.Logger()); err != nil {
 		return nil, err
 	}
 	civ, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
