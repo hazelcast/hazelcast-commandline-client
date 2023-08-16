@@ -58,11 +58,11 @@ func maybeUnwrapStdout(ec plug.ExecContext) any {
 }
 
 func (p *Provider) ClientConfig(ctx context.Context, ec plug.ExecContext) (hazelcast.Config, error) {
-	if terminal.IsPipe(maybeUnwrapStdout(ec)) {
-		return hazelcast.Config{}, fmt.Errorf(`no configuration was provided and cannot display the configuration wizard; use the --config flag`)
-	}
 	cfg, err := p.fp.Load().ClientConfig(ctx, ec)
 	if err != nil {
+		if terminal.IsPipe(maybeUnwrapStdout(ec)) {
+			return hazelcast.Config{}, fmt.Errorf(`no configuration was provided and cannot display the configuration wizard; use the --config flag`)
+		}
 		// ask the config to the user
 		name, err := p.runWizard(ctx, ec)
 		if err != nil {
