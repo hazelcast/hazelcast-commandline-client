@@ -46,7 +46,7 @@ func GenerateClass(cls Class, sch Schema, w io.Writer) error {
 		"toStringBodyFirst": toStringBodyFirst,
 		"fieldNames":        fieldNames,
 		"generateImports":   generateImports,
-	}).Parse(bodyTemplate)
+	}).Parse(javaBodyTemplate)
 	if err != nil {
 		return err
 	}
@@ -56,15 +56,15 @@ func GenerateClass(cls Class, sch Schema, w io.Writer) error {
 	}{
 		{
 			"compactSerDeser",
-			compactSerDeserTemplate,
+			javaCompactSerDeserTemplate,
 		},
 		{
 			"imports",
-			importsTemplate,
+			javaImportsTemplate,
 		},
 		{
 			"constructors",
-			constructorsTemplate,
+			javaConstructorsTemplate,
 		},
 	} {
 		tmpl, err := tmpl.New(t.templateName).Parse(t.template)

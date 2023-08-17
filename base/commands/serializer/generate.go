@@ -30,8 +30,8 @@ You can use this command to automatically generate compact serializers instead o
 See: https://docs.hazelcast.com/hazelcast/5.3/serialization/compact-serialization#implementing-compactserializer
 `
 	cc.SetCommandHelp(long, short)
-	cc.AddStringFlag(flagLanguage, "", "", true, "programming language that the serializer created for")
-	cc.AddStringFlag(flagOutputDir, "", ".", false, "output directory for the serialization files")
+	cc.AddStringFlag(flagLanguage, "-l", "", true, "programming language to use for the generated code")
+	cc.AddStringFlag(flagOutputDir, "", ".", false, "output directory for the generated files")
 	cc.SetPositionalArgCount(1, 1)
 	return nil
 }
@@ -41,7 +41,7 @@ func (g GenerateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	language := ec.Props().GetString(flagLanguage)
 	outputDir := ec.Props().GetString(flagOutputDir)
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Generating compact serializer from %s schema for %s", schemaPath, language))
+		sp.SetText(fmt.Sprintf("Generating compact serializer for %s", language))
 		return nil, generateCompactSerializer(schemaPath, language, outputDir)
 	})
 	if err != nil {
@@ -54,28 +54,28 @@ func (g GenerateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 func generateCompactSerializer(schemaPath, language, outputDir string) error {
 	err := validateInputs(schemaPath, language)
 	if err != nil {
-		return err
+		return fmt.Errorf("validating inputs: %w", err)
 	}
 	f, err := readSchema(schemaPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("reading the schema: %w", err)
 	}
 	sch, err := parseSchema(f)
 	if err != nil {
-		return err
+		return fmt.Errorf("parsing the schema: %w", err)
 	}
 	schemaDir := filepath.Dir(schemaPath)
 	err = processSchema(schemaDir, &sch)
 	if err != nil {
-		return err
+		return fmt.Errorf("processing the schema: %w", err)
 	}
 	ccs, err := generateCompactClasses(language, sch)
 	if err != nil {
-		return err
+		return fmt.Errorf("generating compact classes: %w", err)
 	}
 	err = saveCompactClasses(outputDir, ccs)
 	if err != nil {
-		return err
+		return fmt.Errorf("saving compact classes: %w", err)
 	}
 	printFurtherToDoInfo(language, ccs)
 	return nil
