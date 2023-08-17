@@ -204,7 +204,7 @@ Windows::
 . Right-click on it and select *Uninstall*.
 . Press kbd:[Yes] on the uninstallation dialog.
 
-Release Packagae::
+Release Package::
 +
 Delete the `hazelcast-commandline-client` directory.
 ====

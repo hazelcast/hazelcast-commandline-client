@@ -1,7 +1,7 @@
 = 5.3.0 Release Notes
 
 == New Features
-* {hazelcast-cloud} support. The following commands were added:
+* Support for Hazelcast {hazelcast-cloud}. The following commands were added:
 ** `viridian login`
 ** `viridian create-cluster`
 ** `viridian delete-cluster`
@@ -16,7 +16,7 @@
 ** `viridian download-custom-class`
 ** `viridian list-custom-classes`
 ** `viridian upload-custom-class`
-* CLC can now submit Jet jobs and manage job snapshots.
+* Hazelcast CLC can now submit Jet jobs and manage job snapshots.
 * Added the following `job` commands:
 ** `submit`: Creates a job from the given jar file.
 ** `cancel`: Cancels a job.

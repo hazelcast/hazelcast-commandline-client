@@ -2,7 +2,7 @@
 
 == New Features
 
-* CLC can now submit Jet jobs and manage job snapshots.
+* Hazelcast CLC can now submit Jet jobs and manage job snapshots.
 * Added the following `job` commands:
 ** `submit`: Creates a job from the given jar file.
 ** `cancel`: Cancels a job.
@@ -11,6 +11,6 @@
 ** `resume`: Resumes a suspended job.
 ** `restart`: Restarts a job.
 ** `export-snapshot`: Exports a snapshot for a job. This feature requires a {hazelcast-cloud} or Hazelcast Enterprise cluster.
-* Added the following `snapshot` commandS:
+* Added the following `snapshot` commands:
 ** `list`: Lists the snapshots of a job.
 ** `delete`: Deletes a snapshot.
