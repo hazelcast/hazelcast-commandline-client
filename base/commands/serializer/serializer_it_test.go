@@ -181,9 +181,13 @@ func TestGenerate(t *testing.T) {
 
 			if !isEqual {
 				for k, v := range classes {
-					f, err2 := os.Create(filepath.Join(generatedTestFilesDirectoryName, k.FileName))
-					if err2 != nil {
-						t.Fatal(err2)
+					err := os.MkdirAll(generatedTestFilesDirectoryName, 0770)
+					if err != nil {
+						return
+					}
+					f, err := os.Create(filepath.Join(generatedTestFilesDirectoryName, k.FileName))
+					if err != nil {
+						t.Fatal(err)
 					}
 					defer f.Close()
 					f.WriteString(v)
