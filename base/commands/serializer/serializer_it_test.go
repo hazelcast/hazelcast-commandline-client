@@ -183,7 +183,7 @@ func TestGenerate(t *testing.T) {
 				for k, v := range classes {
 					err := os.MkdirAll(generatedTestFilesDirectoryName, 0770)
 					if err != nil {
-						return
+						t.Fatal(err)
 					}
 					f, err := os.Create(filepath.Join(generatedTestFilesDirectoryName, k.FileName))
 					if err != nil {
