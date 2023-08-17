@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"path"
 	"strings"
 )
 
@@ -36,7 +35,7 @@ func saveCompactClasses(outputDir string, classes map[ClassInfo]string) error {
 	}
 	var errString strings.Builder
 	for k, v := range classes {
-		p := path.Join(outputDir, k.FileName)
+		p := filepath.Join(outputDir, k.FileName)
 		err := os.WriteFile(p, []byte(v), fs.ModePerm)
 		if err != nil {
 			errString.WriteString(err.Error() + "\n")

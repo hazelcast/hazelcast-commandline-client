@@ -2,7 +2,7 @@ package serializer
 
 import (
 	"os"
-	"path"
+	"path/filepath"
 	"runtime"
 	"testing"
 
@@ -37,24 +37,24 @@ var (
 
 func init() {
 	_, filename, _, _ := runtime.Caller(0)
-	generationTestFilesDir := path.Join(path.Dir(filename), "generationTestFiles")
-	generationTestFilesSchemaDir := path.Join(path.Dir(filename), "generationTestFiles", "schema")
+	generationTestFilesDir := filepath.Join(filepath.Dir(filename), "testdata", "generationTestFiles")
+	generationTestFilesSchemaDir := filepath.Join(filepath.Dir(filename), "testdata", "generationTestFiles", "schema")
 
 	// All types test files
 	allTypes = readTestFile(generationTestFilesDir, "AllTypes.java")
 	nestedCompact = readTestFile(generationTestFilesDir, "NestedCompact.java")
-	allTypesSchemaPath = path.Join(generationTestFilesSchemaDir, "allTypes.yaml")
+	allTypesSchemaPath = filepath.Join(generationTestFilesSchemaDir, "allTypes.yaml")
 	allTypesSchema = readTestFile(generationTestFilesSchemaDir, "allTypes.yaml")
 
 	// No namespace test files
 	noNamespace = readTestFile(generationTestFilesDir, "NoNamespace.java")
 	noNamespaceNested = readTestFile(generationTestFilesDir, "NoNamespaceNested.java")
-	noNamespaceSchemaPath = path.Join(generationTestFilesSchemaDir, "noNamespace.yaml")
+	noNamespaceSchemaPath = filepath.Join(generationTestFilesSchemaDir, "noNamespace.yaml")
 	noNamespaceSchema = readTestFile(generationTestFilesSchemaDir, "noNamespace.yaml")
 
 	// External test files
 	external = readTestFile(generationTestFilesDir, "External.java")
-	externalSchemaPath = path.Join(generationTestFilesSchemaDir, "external.yaml")
+	externalSchemaPath = filepath.Join(generationTestFilesSchemaDir, "external.yaml")
 	externalSchema = readTestFile(generationTestFilesSchemaDir, "external.yaml")
 
 	// Nested import test files
@@ -63,19 +63,19 @@ func init() {
 	classroom = readTestFile(generationTestFilesDir, "Classroom.java")
 
 	school = readTestFile(generationTestFilesDir, "School.java")
-	schoolSchemaPath = path.Join(generationTestFilesSchemaDir, "school.yaml")
+	schoolSchemaPath = filepath.Join(generationTestFilesSchemaDir, "school.yaml")
 	schoolSchema = readTestFile(generationTestFilesSchemaDir, "school.yaml")
 
 	// Internal class reference test files
 	example1 = readTestFile(generationTestFilesDir, "Example1.java")
 	example2 = readTestFile(generationTestFilesDir, "Example2.java")
 	example3 = readTestFile(generationTestFilesDir, "Example3.java")
-	internalClassReferenceSchemaPath = path.Join(generationTestFilesSchemaDir, "internalClassReference.yaml")
+	internalClassReferenceSchemaPath = filepath.Join(generationTestFilesSchemaDir, "internalClassReference.yaml")
 	internalClassReference = readTestFile(generationTestFilesSchemaDir, "internalClassReference.yaml")
 }
 
 func readTestFile(dir string, fName string) string {
-	f, err := os.ReadFile(path.Join(dir, fName))
+	f, err := os.ReadFile(filepath.Join(dir, fName))
 	if err != nil {
 		panic(err)
 	}
@@ -156,7 +156,7 @@ func TestGenerate(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			err = processSchema(path.Dir(tc.compactSchemaPath), &sch)
+			err = processSchema(filepath.Dir(tc.compactSchemaPath), &sch)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -181,7 +181,7 @@ func TestGenerate(t *testing.T) {
 
 			if !isEqual {
 				for k, v := range classes {
-					f, err := os.Create(path.Join(".", generatedTestFilesDirectoryName, k.FileName))
+					f, err := os.Create(filepath.Join(".", "", generatedTestFilesDirectoryName, k.FileName))
 					if err != nil {
 						t.Fatal(err)
 					}
