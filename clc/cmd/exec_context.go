@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/fatih/color"
-	"github.com/hazelcast/hazelcast-commandline-client/base/commands/viridian"
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 	"github.com/theckman/yacspin"
@@ -24,6 +23,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/terminal"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
 const (

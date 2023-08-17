@@ -14,7 +14,6 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/store"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/cluster/discovery"
@@ -123,7 +122,7 @@ func updateCache(sa *store.StoreAccessor, addresses []address, cfg *hazelcast.Co
 
 func getFromAPI(token string) ([]address, error) {
 	var addresses []address
-	r, err := http.DefaultClient.Get(fmt.Sprintf(discoveryEndpoint, viridian.APIBaseURL(), token))
+	r, err := http.DefaultClient.Get(fmt.Sprintf(discoveryEndpoint, APIBaseURL(), token))
 	if err != nil {
 		return nil, err
 	}
