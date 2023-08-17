@@ -181,7 +181,7 @@ func TestGenerate(t *testing.T) {
 
 			if !isEqual {
 				for k, v := range classes {
-					f, err := os.Create(filepath.Join(".", "", generatedTestFilesDirectoryName, k.FileName))
+					f, err := os.Create(filepath.Join(generatedTestFilesDirectoryName, k.FileName))
 					if err != nil {
 						t.Fatal(err)
 					}
