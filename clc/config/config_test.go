@@ -64,7 +64,6 @@ func TestMakeConfiguration_Viridian(t *testing.T) {
 	target.Labels = []string{"CLC", fmt.Sprintf("User:%s", userHostName())}
 	target.Cluster.Unisocket = true
 	target.Cluster.Name = "pr-3066"
-	target.Cluster.Cloud.Enabled = true
 	target.Cluster.Cloud.Token = "TOKEN"
 	target.Cluster.Cloud.ExperimentalAPIBaseURL = "https://api.dev2.viridian.cloud"
 	target.Cluster.Network.SSL.Enabled = true
