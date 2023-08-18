@@ -103,11 +103,11 @@ func parseYAML(prefix string, yamlFile []byte, result map[string]string) error {
 		case string:
 			(result)[fullKey] = val
 		default:
-			if _, isMap := val.(map[any]any); !isMap {
+			if _, isMap := val.(map[string]any); !isMap {
 				(result)[fullKey] = fmt.Sprintf("%v", val)
 			}
 		}
-		if subMap, isMap := v.(map[any]any); isMap {
+		if subMap, isMap := v.(map[string]any); isMap {
 			err = parseYAML(fullKey, marshalYAML(subMap), result)
 			if err != nil {
 				return err
@@ -124,7 +124,7 @@ func joinKeys(prefix, key string) string {
 	return prefix + "." + key
 }
 
-func marshalYAML(m map[any]any) []byte {
+func marshalYAML(m map[string]any) []byte {
 	d, _ := yaml.Marshal(m)
 	return d
 }
