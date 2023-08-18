@@ -72,8 +72,8 @@ type temp struct {
 }
 
 type classSchema struct {
-	class  Class
-	schema Schema
+	Cls Class
+	Sch Schema
 }
 
 func GenerateClass(cls Class, sch Schema, w io.Writer) error {
@@ -99,8 +99,8 @@ func GenerateClass(cls Class, sch Schema, w io.Writer) error {
 		tmpl = template.Must(tmpl.New(t.templateName).Parse(t.template))
 	}
 	err = tmpl.Execute(w, classSchema{
-		class:  cls,
-		schema: sch,
+		Cls: cls,
+		Sch: sch,
 	})
 	return err
 }
@@ -255,9 +255,9 @@ func generateGetterString(field Field) string {
 
 func generateImportsString(clsAndSchema classSchema) string {
 	var content strings.Builder
-	for _, field := range clsAndSchema.class.Fields {
+	for _, field := range clsAndSchema.Cls.Fields {
 		trimmed := trimArraySuffix(field.Type)
-		if field.External || isImportedClass(clsAndSchema.schema, trimmed) {
+		if field.External || isImportedClass(clsAndSchema.Sch, trimmed) {
 			fmt.Fprintf(&content, "import %s;", trimmed)
 		}
 	}
