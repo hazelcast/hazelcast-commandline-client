@@ -3,17 +3,18 @@ package serializer
 import (
 	"fmt"
 	"strings"
+
+	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-func printFurtherToDoInfo(lang string, classes map[ClassInfo]string) {
-	fmt.Printf("WARNING: Don't forget to register your generated serializers to Hazelcast configuration.\n\n")
-	printProgrammaticConfig(lang, classes)
-	printXMLConfig(lang, classes)
-	printYamlConfig(lang, classes)
+func printFurtherToDoInfo(ec plug.ExecContext, lang string, classes map[ClassInfo]string) {
+	printProgrammaticConfig(ec, lang, classes)
+	printXMLConfig(ec, lang, classes)
+	printYamlConfig(ec, lang, classes)
 }
 
-func printProgrammaticConfig(lang string, classes map[ClassInfo]string) {
-	printHeader("Programmatic configuration")
+func printProgrammaticConfig(ec plug.ExecContext, lang string, classes map[ClassInfo]string) {
+	printHeader(ec, "Programmatic configuration")
 	var sb strings.Builder
 	if lang == "java" {
 		sb.WriteString("compactSerializationConfig.setSerializers(\n")
@@ -28,11 +29,14 @@ func printProgrammaticConfig(lang string, classes map[ClassInfo]string) {
 			c++
 		}
 	}
-	fmt.Println(sb.String())
+	ec.PrintlnUnnecessary(sb.String())
 }
 
-func printXMLConfig(lang string, classes map[ClassInfo]string) {
-	printHeader("Declarative XML configuration")
+func printXMLConfig(ec plug.ExecContext, lang string, classes map[ClassInfo]string) {
+	if lang != langJava {
+		return
+	}
+	printHeader(ec, "Declarative XML configuration")
 	var sb strings.Builder
 	if lang == "java" {
 		sb.WriteString("<serialization>\n")
@@ -47,11 +51,11 @@ func printXMLConfig(lang string, classes map[ClassInfo]string) {
 		sb.WriteString("\t</compact-serialization>\n")
 		sb.WriteString("</serialization>\n")
 	}
-	fmt.Println(sb.String())
+	ec.PrintlnUnnecessary(sb.String())
 }
 
-func printYamlConfig(lang string, classes map[ClassInfo]string) {
-	printHeader("Declarative YAML configuration")
+func printYamlConfig(ec plug.ExecContext, lang string, classes map[ClassInfo]string) {
+	printHeader(ec, "Declarative YAML configuration")
 	var sb strings.Builder
 	if lang == "java" {
 		sb.WriteString("serialization:\n")
@@ -61,9 +65,9 @@ func printYamlConfig(lang string, classes map[ClassInfo]string) {
 			sb.WriteString(fmt.Sprintf("\t\t\t- serializer: %s\n", getClassFullName(k.ClassName, k.Namespace)))
 		}
 	}
-	fmt.Println(sb.String())
+	ec.PrintlnUnnecessary(sb.String())
 }
 
-func printHeader(header string) {
-	fmt.Printf("---------%s---------\n\n", header)
+func printHeader(ec plug.ExecContext, header string) {
+	ec.PrintlnUnnecessary(fmt.Sprintf("---------%s---------\n\n", header))
 }

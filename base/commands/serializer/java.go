@@ -7,8 +7,24 @@ import (
 	"text/template"
 )
 
-func generateJavaClasses(schema Schema, classes map[ClassInfo]string) {
-	javaClasses := generate(schema)
+const (
+	boolType    = "boolean"
+	int64Type   = "int64"
+	float32Type = "float32"
+	float64Type = "float64"
+)
+
+var indent4 = strings.Repeat(" ", 4)
+var indent8 = strings.Repeat(" ", 8)
+var indent12 = strings.Repeat(" ", 12)
+var indent16 = strings.Repeat(" ", 16)
+
+func generateJavaClasses(schema Schema) (map[ClassInfo]string, error) {
+	classes := make(map[ClassInfo]string)
+	javaClasses, err := generate(schema)
+	if err != nil {
+		return nil, err
+	}
 	for jc := range javaClasses {
 		c := ClassInfo{
 			Namespace: schema.Namespace,
@@ -17,43 +33,55 @@ func generateJavaClasses(schema Schema, classes map[ClassInfo]string) {
 		}
 		classes[c] = javaClasses[jc]
 	}
+	return classes, nil
 }
 
-func generate(schema Schema) map[string]string {
+func generate(schema Schema) (map[string]string, error) {
 	classes := make(map[string]string)
 	for _, cls := range schema.ClassNames {
 		var sb strings.Builder
 		err := GenerateClass(cls, schema, &sb)
 		if err != nil {
-			fmt.Println(err)
+			return nil, fmt.Errorf("generating class: %s: %w", cls.Name, err)
 		}
 		classes[cls.Name] = sb.String()
 	}
-	return classes
+	return classes, nil
 }
 
-func GenerateClass(cls Class, sch Schema, w io.Writer) error {
-	tmpl, err := template.New("main").Funcs(template.FuncMap{
-		"read":              read,
-		"toJavaType":        toJavaType,
+func funcMap() template.FuncMap {
+	return template.FuncMap{
+		"read":              generateReadMethodString,
+		"toJavaType":        convertFieldTypeToJavaType,
 		"methodName":        methodName,
-		"fields":            fields,
-		"fieldTypeAndNames": fieldTypeAndNames,
-		"getters":           getters,
-		"equalsBody":        equalsBody,
+		"fields":            generateFieldString,
+		"fieldTypeAndNames": generateFieldTypeAndNamesString,
+		"getters":           generateGetterString,
+		"equalsBody":        generateEqualsMethodBody,
 		"hashcodeBody":      hashcodeBody,
 		"toStringBody":      toStringBody,
 		"toStringBodyFirst": toStringBodyFirst,
-		"fieldNames":        fieldNames,
-		"generateImports":   generateImports,
-	}).Parse(javaBodyTemplate)
+		"fieldNames":        generateFieldNamesString,
+		"generateImports":   generateImportsString,
+	}
+}
+
+type temp struct {
+	templateName string
+	template     string
+}
+
+type classSchema struct {
+	class  Class
+	schema Schema
+}
+
+func GenerateClass(cls Class, sch Schema, w io.Writer) error {
+	tmpl, err := template.New("main").Funcs(funcMap()).Parse(javaBodyTemplate)
 	if err != nil {
 		return err
 	}
-	for _, t := range []struct {
-		templateName string
-		template     string
-	}{
+	temps := []temp{
 		{
 			"compactSerDeser",
 			javaCompactSerDeserTemplate,
@@ -66,16 +94,13 @@ func GenerateClass(cls Class, sch Schema, w io.Writer) error {
 			"constructors",
 			javaConstructorsTemplate,
 		},
-	} {
-		tmpl, err := tmpl.New(t.templateName).Parse(t.template)
-		tmpl = template.Must(tmpl, err)
 	}
-	err = tmpl.Execute(w, struct {
-		Cls    Class
-		Schema Schema
-	}{
-		cls,
-		sch,
+	for _, t := range temps {
+		tmpl = template.Must(tmpl.New(t.templateName).Parse(t.template))
+	}
+	err = tmpl.Execute(w, classSchema{
+		class:  cls,
+		schema: sch,
 	})
 	return err
 }
@@ -83,61 +108,63 @@ func GenerateClass(cls Class, sch Schema, w io.Writer) error {
 type TypeInfo struct {
 	Type          string
 	IsCustomClass bool
-	IsArr         bool
+	IsArray       bool
 	FullType      string
 }
 
-func arrayOf(fieldType string) string {
-	if strings.HasSuffix(fieldType, "[]") {
+func hasArraySuffix(s string) bool {
+	return strings.HasSuffix(s, "[]")
+}
+
+func trimArraySuffix(fieldType string) string {
+	if hasArraySuffix(fieldType) {
 		return fieldType[0 : len(fieldType)-2]
 	}
 	return fieldType
 }
 
 func methodName(field TypeInfo, compactType string) string {
-	var mn string
+	mn := compactType
 	if field.IsCustomClass {
 		mn = "compact"
-	} else {
-		mn = compactType
 	}
 	// capitalize fist letter
 	mn = strings.ToUpper(string(mn[0])) + mn[1:]
-	if field.IsArr {
-		return fmt.Sprintf("ArrayOf%s", arrayOf(mn))
+	if field.IsArray {
+		return fmt.Sprintf("ArrayOf%s", trimArraySuffix(mn))
 	}
 	return mn
 }
 
-func toJavaType(fieldType string) TypeInfo {
+func convertFieldTypeToJavaType(fieldType string) TypeInfo {
 	var ti TypeInfo
 	var ok bool
-	if strings.HasSuffix(fieldType, "[]") {
-		base := arrayOf(fieldType)
-		ti.IsArr = true
+	if hasArraySuffix(fieldType) {
+		base := trimArraySuffix(fieldType)
+		ti.IsArray = true
 		ti.Type, ok = javaTypes[base]
 		if ok {
 			ti.FullType = ti.Type + "[]"
-		} else {
-			ti.IsCustomClass = true
-			ti.Type = base
-			ti.FullType = fieldType
+			return ti
 		}
-	} else {
-		ti.Type, ok = javaTypes[fieldType]
-		if !ok {
-			ti.Type = fieldType
-			ti.IsCustomClass = true
-		}
-		ti.FullType = ti.Type
+		ti.IsCustomClass = true
+		ti.Type = base
+		ti.FullType = fieldType
+		return ti
 	}
+	ti.Type, ok = javaTypes[fieldType]
+	if !ok {
+		ti.Type = fieldType
+		ti.IsCustomClass = true
+	}
+	ti.FullType = ti.Type
 	return ti
 }
 
-func fieldTypeAndNames(cls Class) string {
+func generateFieldTypeAndNamesString(cls Class) string {
 	var sb strings.Builder
 	for _, f := range cls.Fields {
-		ti := toJavaType(f.Type)
+		ti := convertFieldTypeToJavaType(f.Type)
 		sb.WriteString(fmt.Sprintf("%s %s, ", ti.FullType, f.Name))
 	}
 	s := sb.String()
@@ -147,7 +174,7 @@ func fieldTypeAndNames(cls Class) string {
 	return s
 }
 
-func fieldNames(class Class) string {
+func generateFieldNamesString(class Class) string {
 	var sb strings.Builder
 	for _, f := range class.Fields {
 		sb.WriteString(fmt.Sprintf("%s, ", f.Name))
@@ -157,92 +184,87 @@ func fieldNames(class Class) string {
 }
 
 func hashcodeBody(cls Class) string {
-	const indentation = "        "
-	var content string
+	var content strings.Builder
 	var isTempDeclared bool
 	for _, field := range cls.Fields {
-		var line string
+		content.WriteString(indent8)
 		fn := field.Name
 		switch field.Type {
-		case "boolean":
-			line = fmt.Sprintf("result = 31 * result + (%s ? 1 : 0);", fn)
-		case "int64":
-			line = fmt.Sprintf("result = 31 * result + (int) (%s ^ (%s >>> 32));", fn, fn)
-		case "float32":
-			line = fmt.Sprintf("result = 31 * result + (%s != +0.0f ? Float.floatToIntBits(%s) : 0);", fn, fn)
-		case "float64":
+		case boolType:
+			fmt.Fprintf(&content, "result = 31 * result + (%s ? 1 : 0);", fn)
+		case int64Type:
+			fmt.Fprintf(&content, "result = 31 * result + (int) (%s ^ (%s >>> 32));", fn, fn)
+		case float32Type:
+			fmt.Fprintf(&content, "result = 31 * result + (%s != +0.0f ? Float.floatToIntBits(%s) : 0);", fn, fn)
+		case float64Type:
 			if !isTempDeclared {
-				line = "long temp;\n"
+				content.WriteString("long temp;\n")
 				isTempDeclared = true
 			}
-			line += fmt.Sprintf(`%stemp = Double.doubleToLongBits(%s);
-%sresult = 31 * result + (int) (temp ^ (temp >>> 32));`, indentation, fn, indentation)
+			fmt.Fprintf(&content, fmt.Sprintf(`%stemp = Double.doubleToLongBits(%s);
+%sresult = 31 * result + (int) (temp ^ (temp >>> 32));`, indent8, fn, indent8))
 		default:
-			if strings.HasSuffix(field.Type, "[]") {
-				line = fmt.Sprintf("result = 31 * result + Arrays.hashCode(%s);", field.Name)
+			if hasArraySuffix(field.Type) {
+				fmt.Fprintf(&content, fmt.Sprintf("result = 31 * result + Arrays.hashCode(%s);", field.Name))
 			} else if _, ok := fixedSizeTypes[field.Type]; ok {
-				line = fmt.Sprintf("result = 31 * result + (int) %s;", field.Name)
+				fmt.Fprintf(&content, "result = 31 * result + (int) %s;", field.Name)
 			} else {
-				line = fmt.Sprintf("result = 31 * result + Objects.hashCode(%s);", field.Name)
+				fmt.Fprintf(&content, "result = 31 * result + Objects.hashCode(%s);", field.Name)
 			}
 		}
-
-		content += "        " + line + "\n"
+		content.WriteString("\n")
 	}
-	return content
+	return content.String()
 }
 
 func toStringBody(field Field) string {
-	if strings.HasSuffix(field.Type, "[]") {
-		return fmt.Sprintf("                + \", %s=\" + Arrays.toString(%s)\n", field.Name, field.Name)
+	if hasArraySuffix(field.Type) {
+		return fmt.Sprintf("%s+ \", %s=\" + Arrays.toString(%s)\n", indent16, field.Name, field.Name)
 	}
-	return fmt.Sprintf("                + \", %s=\" + %s\n", field.Name, field.Name)
+	return fmt.Sprintf("%s+ \", %s=\" + %s\n", indent16, field.Name, field.Name)
 }
 
 func toStringBodyFirst(field Field) string {
-	if strings.HasSuffix(field.Type, "[]") {
-		return fmt.Sprintf("                + \"%s=\" + Arrays.toString(%s)\n", field.Name, field.Name)
+	if hasArraySuffix(field.Type) {
+		return fmt.Sprintf("%s+ \"%s=\" + Arrays.toString(%s)\n", indent16, field.Name, field.Name)
 	}
-	return fmt.Sprintf("                + \"%s=\" + %s\n", field.Name, field.Name)
+	return fmt.Sprintf("%s+ \"%s=\" + %s\n", indent16, field.Name, field.Name)
 }
 
-func fields(field Field) string {
-	ti := toJavaType(field.Type)
-	return fmt.Sprintf("    private %s %s;", ti.FullType, field.Name)
+func generateFieldString(field Field) string {
+	ti := convertFieldTypeToJavaType(field.Type)
+	return fmt.Sprintf("%sprivate %s %s;", indent4, ti.FullType, field.Name)
 }
 
-func read(field Field) string {
-	ti := toJavaType(field.Type)
-	if ti.IsArr && ti.IsCustomClass {
-		return fmt.Sprintf(`            %s %s = reader.readArrayOfCompact("%s", %s.class);`, ti.FullType, field.Name, field.Name, ti.Type)
+func generateReadMethodString(field Field) string {
+	ti := convertFieldTypeToJavaType(field.Type)
+	if ti.IsArray && ti.IsCustomClass {
+		return fmt.Sprintf(`%s%s %s = reader.readArrayOfCompact("%s", %s.class);`, indent12, ti.FullType, field.Name, field.Name, ti.Type)
 	}
-	return fmt.Sprintf(`            %s %s = reader.read%s("%s");`, ti.FullType, field.Name, methodName(ti, field.Type), field.Name)
+	return fmt.Sprintf(`%s%s %s = reader.read%s("%s");`, indent12, ti.FullType, field.Name, methodName(ti, field.Type), field.Name)
 }
 
-func getters(field Field) string {
-	ti := toJavaType(field.Type)
+func generateGetterString(field Field) string {
+	ti := convertFieldTypeToJavaType(field.Type)
 	upperName := strings.ToUpper(string(field.Name[0])) + field.Name[1:]
-	return fmt.Sprintf(`    public %s get%s() {
+	return fmt.Sprintf(`%spublic %s get%s() {
         return %s;
     }
-`, ti.FullType, upperName, field.Name)
+`, indent4, ti.FullType, upperName, field.Name)
 }
 
-func generateImports(clsAndSchema struct {
-	Cls    Class
-	Schema Schema
-}) string {
-	var content string
-	for _, field := range clsAndSchema.Cls.Fields {
-		trimmed := strings.TrimSuffix(field.Type, "[]")
-		if field.External || isImportedClass(clsAndSchema.Schema, trimmed) {
-			content += fmt.Sprintf("import %s;", trimmed)
+func generateImportsString(clsAndSchema classSchema) string {
+	var content strings.Builder
+	for _, field := range clsAndSchema.class.Fields {
+		trimmed := trimArraySuffix(field.Type)
+		if field.External || isImportedClass(clsAndSchema.schema, trimmed) {
+			fmt.Fprintf(&content, "import %s;", trimmed)
 		}
 	}
-	if len(content) > 0 {
-		content = "\n" + content + "\n"
+	if content.Len() > 0 {
+		fmt.Fprintf(&content, "\n%s\n", content)
 	}
-	return content
+	return content.String()
 }
 
 func isImportedClass(sch Schema, typ string) bool {
@@ -250,26 +272,27 @@ func isImportedClass(sch Schema, typ string) bool {
 		fullName := getClassFullName(cls.Name, sch.Namespace)
 		if typ == fullName {
 			return false
-		} else if !strings.Contains(typ, ".") && typ == cls.Name {
+		}
+		if !strings.Contains(typ, ".") && typ == cls.Name {
 			return false
 		}
 	}
 	return !isBuiltInType(typ)
 }
 
-func equalsBody(field Field) string {
-	ti := toJavaType(field.Type)
+func generateEqualsMethodBody(field Field) string {
+	ti := convertFieldTypeToJavaType(field.Type)
 	var s string
 	if field.Type == "float32" {
 		s = fmt.Sprintf("if (Float.compare(%s, that.%s) != 0) return false;", field.Name, field.Name)
 	} else if field.Type == "float64" {
 		s = fmt.Sprintf("if (Double.compare(%s, that.%s) != 0) return false;", field.Name, field.Name)
-	} else if ti.IsArr {
+	} else if ti.IsArray {
 		s = fmt.Sprintf("if (!Arrays.equals(%s, that.%s)) return false;", field.Name, field.Name)
 	} else if _, ok := fixedSizeTypes[field.Type]; ok {
 		s = fmt.Sprintf("if (%s != that.%s) return false;", field.Name, field.Name)
 	} else {
 		s = fmt.Sprintf("if (!Objects.equals(%s, that.%s)) return false;", field.Name, field.Name)
 	}
-	return "        " + s
+	return fmt.Sprintf("%s%s", indent8, s)
 }

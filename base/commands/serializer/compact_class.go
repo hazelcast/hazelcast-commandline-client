@@ -8,14 +8,12 @@ import (
 )
 
 func generateCompactClasses(lang string, schema Schema) (map[ClassInfo]string, error) {
-	classes := make(map[ClassInfo]string)
 	switch lang {
 	case langJava:
-		generateJavaClasses(schema, classes)
+		return generateJavaClasses(schema)
 	default:
-		return nil, fmt.Errorf("unsupported langugage")
+		return nil, fmt.Errorf("unsupported langugage: %s", lang)
 	}
-	return classes, nil
 }
 
 func saveCompactClasses(outputDir string, classes map[ClassInfo]string) error {

@@ -30,8 +30,8 @@ You can use this command to automatically generate compact serializers instead o
 See: https://docs.hazelcast.com/hazelcast/5.3/serialization/compact-serialization#implementing-compactserializer
 `
 	cc.SetCommandHelp(long, short)
-	cc.AddStringFlag(flagLanguage, "-l", "", true, "programming language to use for the generated code")
-	cc.AddStringFlag(flagOutputDir, "", ".", false, "output directory for the generated files")
+	cc.AddStringFlag(flagLanguage, "l", "", true, "programming language to use for the generated code")
+	cc.AddStringFlag(flagOutputDir, "o", ".", false, "output directory for the generated files")
 	cc.SetPositionalArgCount(1, 1)
 	return nil
 }
@@ -42,7 +42,7 @@ func (g GenerateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	outputDir := ec.Props().GetString(flagOutputDir)
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText(fmt.Sprintf("Generating compact serializer for %s", language))
-		return nil, generateCompactSerializer(schemaPath, language, outputDir)
+		return nil, generateCompactSerializer(ec, schemaPath, language, outputDir)
 	})
 	if err != nil {
 		return err
@@ -51,7 +51,7 @@ func (g GenerateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	return nil
 }
 
-func generateCompactSerializer(schemaPath, language, outputDir string) error {
+func generateCompactSerializer(ec plug.ExecContext, schemaPath, language, outputDir string) error {
 	err := validateInputs(schemaPath, language)
 	if err != nil {
 		return fmt.Errorf("validating inputs: %w", err)
@@ -77,7 +77,7 @@ func generateCompactSerializer(schemaPath, language, outputDir string) error {
 	if err != nil {
 		return fmt.Errorf("saving compact classes: %w", err)
 	}
-	printFurtherToDoInfo(language, ccs)
+	printFurtherToDoInfo(ec, language, ccs)
 	return nil
 }
 
