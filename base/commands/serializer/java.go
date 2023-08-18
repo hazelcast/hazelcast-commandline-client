@@ -263,7 +263,9 @@ func generateImportsString(clsAndSchema classSchema) string {
 		}
 	}
 	if content.Len() > 0 {
-		fmt.Fprintf(&content, "\n%s\n", content.String())
+		c := content.String()
+		content.Reset()
+		fmt.Fprintf(&content, "\n%s\n", c)
 	}
 	return content.String()
 }
