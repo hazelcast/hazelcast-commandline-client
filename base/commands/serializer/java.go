@@ -96,7 +96,8 @@ func GenerateClass(cls Class, sch Schema, w io.Writer) error {
 		},
 	}
 	for _, t := range temps {
-		tmpl = template.Must(tmpl.New(t.templateName).Parse(t.template))
+		tmpl, err := tmpl.New(t.templateName).Parse(t.template)
+		tmpl = template.Must(tmpl, err)
 	}
 	err = tmpl.Execute(w, classSchema{
 		Cls: cls,
