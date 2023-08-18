@@ -1,3 +1,5 @@
+//go:build std || serializer
+
 package serializer
 
 import (
@@ -43,38 +45,30 @@ func readSchema(path string) ([]byte, error) {
 }
 
 func parseSchema(schema []byte) (Schema, error) {
-	schemaMap, err := YAMLToMap(schema)
+	schemaMap, err := ConvertYAMLToMap(schema)
 	if err != nil {
-		return Schema{}, err
+		return Schema{}, fmt.Errorf("converting YAML to schema: %w", err)
 	}
 	isValid, schemaErrors, err := validateWithJSONSchema(schemaMap)
 	if err != nil {
-		return Schema{}, err
+		return Schema{}, fmt.Errorf("validating the schema: %w", err)
 	}
 	if !isValid {
 		return Schema{}, fmt.Errorf("schema is not valid, validation errors:\n%s", strings.Join(schemaErrors, "\n"))
 	}
-	sch, err := convertMapToSchema(schemaMap)
-	if err != nil {
-		return Schema{}, err
-	}
-	return sch, nil
+	return transcode(schemaMap)
 }
 
-func convertMapToSchema(schemaMap map[string]interface{}) (Schema, error) {
+func transcode(in any) (Schema, error) {
 	var schema Schema
-	if err := transcode(schemaMap, &schema); err != nil {
+	buf := new(bytes.Buffer)
+	if err := json.NewEncoder(buf).Encode(in); err != nil {
+		return Schema{}, err
+	}
+	if err := json.NewDecoder(buf).Decode(&schema); err != nil {
 		return Schema{}, err
 	}
 	return schema, nil
-}
-
-func transcode(in, out interface{}) error {
-	buf := new(bytes.Buffer)
-	if err := json.NewEncoder(buf).Encode(in); err != nil {
-		return err
-	}
-	return json.NewDecoder(buf).Decode(out)
 }
 
 func processSchema(schemaPath string, schema *Schema) error {
@@ -95,8 +89,8 @@ func processSchema(schemaPath string, schema *Schema) error {
 }
 
 func processImports(mainSchema Schema, schemaDir string, importPaths []string, importedPaths map[string]struct{}) error {
-	for _, importPath := range importPaths {
-		if err := processImport(mainSchema, schemaDir, importPath, importedPaths); err != nil {
+	for _, p := range importPaths {
+		if err := processImport(mainSchema, schemaDir, p, importedPaths); err != nil {
 			return err
 		}
 	}

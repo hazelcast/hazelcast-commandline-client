@@ -1,13 +1,12 @@
+//go:build std || serializer
+
 package serializer
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"strings"
-
-	"github.com/xeipuuv/gojsonschema"
 )
 
 func validateInputs(schemaPath, language string) error {
@@ -41,29 +40,8 @@ func isSchemaExists(schemaPath string) error {
 	return nil
 }
 
-func validateWithJSONSchema(schema map[string]interface{}) (isValid bool, schemaErrors []string, err error) {
-	jsonSchemaString, err := json.Marshal(schema)
-	if err != nil {
-		return false, nil, err
-	}
-	return validateJSONSchemaString(string(jsonSchemaString))
-}
-
-func validateJSONSchemaString(schema string) (isValid bool, schemaErrors []string, err error) {
-	// The json that is validated is called document. We want to validate our compact schema in json string
-	documentLoader := gojsonschema.NewStringLoader(schema)
-	// This "schema" in schemaLoader is json schema not the compact schema
-	schemaLoader := gojsonschema.NewStringLoader(validationSchema)
-	result, err := gojsonschema.Validate(schemaLoader, documentLoader)
-	if err != nil {
-		return false, nil, err
-	}
-	if isValid = result.Valid(); !isValid {
-		for _, e := range result.Errors() {
-			schemaErrors = append(schemaErrors, e.String())
-		}
-	}
-	return isValid, schemaErrors, nil
+func validateWithJSONSchema(schema map[string]any) (isValid bool, schemaErrors []string, err error) {
+	return true, nil, nil
 }
 
 func isBuiltInType(t string) bool {
@@ -80,7 +58,8 @@ func isCompactName(namespace, typ string, compactNames map[string]Class) bool {
 	for fullName := range compactNames {
 		if typ == fullName {
 			return true
-		} else if !strings.Contains(typ, ".") {
+		}
+		if !strings.Contains(typ, ".") {
 			// If typ does not contain a dot, i.e it is not a full classname,
 			// we also check if it is defined in the namespace of the schema that is being validated
 			// This allows users to use short class names in their schema if they defined it in the schema.

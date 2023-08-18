@@ -1,19 +1,20 @@
+//go:build std || serializer
+
 package serializer
 
 import (
 	"fmt"
 
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
-func YAMLToMap(yamlSchema []byte) (map[string]interface{}, error) {
-	s := make(map[interface{}]interface{})
+func ConvertYAMLToMap(yamlSchema []byte) (map[string]any, error) {
+	s := make(map[string]any)
 	if err := yaml.Unmarshal(yamlSchema, &s); err != nil {
 		return nil, err
 	}
-	// convert map[interface{}]interface{} to map[string]interface{}
 	i := ConvertMapI2MapS(s)
-	schema, ok := i.(map[string]interface{})
+	schema, ok := i.(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("malformed schema")
 	}
@@ -22,10 +23,10 @@ func YAMLToMap(yamlSchema []byte) (map[string]interface{}, error) {
 
 // ConvertMapI2MapS source: https://github.com/icza/dyno
 // fmt.Sprint() with default formatting is used to convert the key to a string key.
-func ConvertMapI2MapS(v interface{}) interface{} {
+func ConvertMapI2MapS(v any) any {
 	switch x := v.(type) {
-	case map[interface{}]interface{}:
-		m := map[string]interface{}{}
+	case map[any]any:
+		m := map[string]any{}
 		for k, v2 := range x {
 			switch k2 := k.(type) {
 			case string: // Fast check if it's already a string
@@ -35,11 +36,11 @@ func ConvertMapI2MapS(v interface{}) interface{} {
 			}
 		}
 		v = m
-	case []interface{}:
+	case []any:
 		for i, v2 := range x {
 			x[i] = ConvertMapI2MapS(v2)
 		}
-	case map[string]interface{}:
+	case map[string]any:
 		for k, v2 := range x {
 			x[k] = ConvertMapI2MapS(v2)
 		}

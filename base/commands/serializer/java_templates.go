@@ -1,6 +1,8 @@
+//go:build std || serializer
+
 package serializer
 
-const javaImportsTemplate = `{{if .Cls.Namespace }}package {{.Cls.Namespace}};
+const javaImportsTemplate = `{{if .Class.Namespace }}package {{.Class.Namespace}};
 
 {{else}}{{end}}import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
@@ -10,47 +12,47 @@ import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.Objects;`
 
-const javaCompactSerDeserTemplate = `public static final class Serializer implements CompactSerializer<{{.Cls.Name}}> {
+const javaCompactSerializerTemplate = `public static final class Serializer implements CompactSerializer<{{.Class.Name}}> {
         @Nonnull
         @Override
-        public {{ .Cls.Name }} read(@Nonnull CompactReader reader) {
-{{range $field := .Cls.Fields}}{{read $field}}
-{{end}}            return new {{ .Cls.Name }}({{ fieldNames .Cls }});
+        public {{ .Class.Name }} read(@Nonnull CompactReader reader) {
+{{range $field := .Class.Fields}}{{read $field}}
+{{end}}            return new {{ .Class.Name }}({{ fieldNames .Class }});
         }
 
         @Override
-        public void write(@Nonnull CompactWriter writer, @Nonnull {{ .Cls.Name }} object) {
-{{range $field := .Cls.Fields}}            writer.write{{methodName (toJavaType $field.Type) $field.Type }}("{{ $field.Name }}", object.{{ $field.Name }});
+        public void write(@Nonnull CompactWriter writer, @Nonnull {{ .Class.Name }} object) {
+{{range $field := .Class.Fields}}            writer.write{{methodName (toJavaType $field.Type) $field.Type }}("{{ $field.Name }}", object.{{ $field.Name }});
 {{end}}        }
     };
 
-    public static final CompactSerializer<{{ .Cls.Name }}> HZ_COMPACT_SERIALIZER = new Serializer();`
+    public static final CompactSerializer<{{ .Class.Name }}> HZ_COMPACT_SERIALIZER = new Serializer();`
 
-const javaConstructorsTemplate = `public {{ .Cls.Name }}() {
+const javaConstructorsTemplate = `public {{ .Class.Name }}() {
     }
 
-    public {{ .Cls.Name }}({{fieldTypeAndNames .Cls}}) {
-{{range $field := .Cls.Fields}}        this.{{$field.Name}} = {{$field.Name}};
+    public {{ .Class.Name }}({{fieldTypeAndNames .Class}}) {
+{{range $field := .Class.Fields}}        this.{{$field.Name}} = {{$field.Name}};
 {{end}}    }`
 
 const javaBodyTemplate = `{{ template "imports" $}}
 
-public class {{ .Cls.Name }} {
+public class {{ .Class.Name }} {
 
     {{ template "compactSerDeser" $}}
 
-{{range $field := .Cls.Fields}}{{fields $field}}
+{{range $field := .Class.Fields}}{{fields $field}}
 {{end}}
     {{ template "constructors" $ }}
 
-{{range $field := .Cls.Fields}}{{getters $field}}
+{{range $field := .Class.Fields}}{{getters $field}}
 {{end}}    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        {{ .Cls.Name }} that = ({{ .Cls.Name }}) o;
-{{range $field := .Cls.Fields}}{{ equalsBody $field }}
+        {{ .Class.Name }} that = ({{ .Class.Name }}) o;
+{{range $field := .Class.Fields}}{{ equalsBody $field }}
 {{end}}
         return true;
     }
@@ -58,14 +60,14 @@ public class {{ .Cls.Name }} {
     @Override
     public int hashCode() {
         int result = 0;
-{{hashcodeBody .Cls}}
+{{hashcodeBody .Class}}
         return result;
     }
 
     @Override
     public String toString() {
-        return "<{{ .Cls.Name }}> {"
-{{range $index, $field := .Cls.Fields}}{{ if eq $index 0}}{{ toStringBodyFirst $field }}{{else}}{{ toStringBody $field }}{{end}}{{end}}                + '}';
+        return "<{{ .Class.Name }}> {"
+{{range $index, $field := .Class.Fields}}{{ if eq $index 0}}{{ toStringBodyFirst $field }}{{else}}{{ toStringBody $field }}{{end}}{{end}}                + '}';
     }
 
 }`

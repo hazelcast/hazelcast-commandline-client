@@ -1,9 +1,11 @@
+//go:build std || serializer
+
 package serializer
 
 const validationSchema = `{
   "$schema": "http://json-schema.org/draft-07/schema#",
   "id": "https://github.com/hazelcast/hazelcast-client-protocol/blob/master/schema/protocol-schema.json",
-  "title": "Hazelcast Client Protocol Definition",
+  "title": "Hazelcast Compact Serialization Schema",
   "type": "object",
   "definitions": {},
   "additionalProperties": false,

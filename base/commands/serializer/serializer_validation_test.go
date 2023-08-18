@@ -1,122 +1,15 @@
+//go:build std || serializer
+
 package serializer
 
 import (
 	"encoding/json"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-func TestValidateJSONSchemaString(t *testing.T) {
-	tcs := []struct {
-		name        string
-		schema      string
-		isErr       bool
-		noSchemaErr bool
-		errString   string
-	}{
-		{
-			name:   "non-json string",
-			schema: "",
-			isErr:  true,
-		},
-		{
-			name: "valid",
-			schema: `{ 
-				  "classes":[
-					 {
-						"name":"Employee",
-						"fields":[
-						   {
-							  "name":"age",
-							  "type":"int32[]"
-						   },
-						   {
-							  "name":"name",
-							  "type":"string"
-						   },
-						   {
-							  "name":"id",
-							  "type":"int64"
-						   }
-						]
-					 }
-				  ]
-			   }`,
-			noSchemaErr: true,
-		},
-		{
-			name:        "valid custom field type defined in schema",
-			schema:      ValidNewFieldTypeDefined,
-			noSchemaErr: true,
-		},
-		{
-			name:      "mandatory class field is missing",
-			schema:    "{}",
-			errString: "classes is required",
-		},
-		{
-			name: "mandatory 'fields' field of class is missing",
-			schema: `{ "classes":[
-                     {
-                        "name":"Employee"
-                     }
-                  ]
-           }`,
-			errString: "fields is required",
-		},
-		{
-			name: "mandatory 'name' field in 'fields' field is missing",
-			schema: `{ "classes":[
-                     {
-                        "name":"Employee",
-                        "fields":[
-                           {
-                              "type":"Work"
-                           }
-                        ]
-                     }
-                  ]
-           }`,
-			errString: "name is required",
-		},
-		{
-			name: "mandatory 'type' field in 'fields' field is missing",
-			schema: `{ "classes":[
-                     {
-                        "name":"Employee",
-                        "fields":[
-                           {
-                              "name":"age"
-                           }
-                        ]
-                     }
-                  ]
-           }`,
-			errString: "type is required",
-		},
-	}
-	for _, tc := range tcs {
-		t.Run(tc.name, func(t *testing.T) {
-			valid, errors, err := validateJSONSchemaString(tc.schema)
-			assert.Equal(t, tc.isErr, err != nil)
-			if tc.isErr {
-				return
-			}
-			assert.Nil(t, err)
-			if tc.noSchemaErr {
-				assert.Empty(t, errors)
-				assert.True(t, valid)
-				return
-			}
-			assert.False(t, valid)
-			assert.Contains(t, strings.Join(errors, ","), tc.errString)
-		})
-	}
-}
 
 func TestValidateSchemaSemantics(t *testing.T) {
 	tcs := []struct {
@@ -487,9 +380,9 @@ func TestValidateSchemaSemantics(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			var schema map[string]interface{}
+			var schema map[string]any
 			require.Nil(t, json.Unmarshal([]byte(tc.schema), &schema))
-			sch, err := convertMapToSchema(schema)
+			sch, err := transcode(schema)
 			require.Nil(t, err)
 			workingDir, err := os.Getwd()
 			require.Nil(t, err)

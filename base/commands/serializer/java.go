@@ -1,3 +1,5 @@
+//go:build std || serializer
+
 package serializer
 
 import (
@@ -5,6 +7,8 @@ import (
 	"io"
 	"strings"
 	"text/template"
+
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 )
 
 const (
@@ -53,12 +57,12 @@ func funcMap() template.FuncMap {
 	return template.FuncMap{
 		"read":              generateReadMethodString,
 		"toJavaType":        convertFieldTypeToJavaType,
-		"methodName":        methodName,
+		"methodName":        generateMethodNameString,
 		"fields":            generateFieldString,
 		"fieldTypeAndNames": generateFieldTypeAndNamesString,
 		"getters":           generateGetterString,
 		"equalsBody":        generateEqualsMethodBody,
-		"hashcodeBody":      hashcodeBody,
+		"hashcodeBody":      generateHashCodeMethodString,
 		"toStringBody":      toStringBody,
 		"toStringBodyFirst": toStringBodyFirst,
 		"fieldNames":        generateFieldNamesString,
@@ -66,14 +70,14 @@ func funcMap() template.FuncMap {
 	}
 }
 
-type temp struct {
-	templateName string
-	template     string
+type codeTemplate struct {
+	Name string
+	Text string
 }
 
 type classSchema struct {
-	Cls Class
-	Sch Schema
+	Class  Class
+	Schema Schema
 }
 
 func GenerateClass(cls Class, sch Schema, w io.Writer) error {
@@ -81,10 +85,10 @@ func GenerateClass(cls Class, sch Schema, w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	temps := []temp{
+	temps := []codeTemplate{
 		{
 			"compactSerDeser",
-			javaCompactSerDeserTemplate,
+			javaCompactSerializerTemplate,
 		},
 		{
 			"imports",
@@ -96,12 +100,12 @@ func GenerateClass(cls Class, sch Schema, w io.Writer) error {
 		},
 	}
 	for _, t := range temps {
-		tmpl, err := tmpl.New(t.templateName).Parse(t.template)
+		tmpl, err := tmpl.New(t.Name).Parse(t.Text)
 		tmpl = template.Must(tmpl, err)
 	}
 	err = tmpl.Execute(w, classSchema{
-		Cls: cls,
-		Sch: sch,
+		Class:  cls,
+		Schema: sch,
 	})
 	return err
 }
@@ -124,7 +128,7 @@ func trimArraySuffix(fieldType string) string {
 	return fieldType
 }
 
-func methodName(field TypeInfo, compactType string) string {
+func generateMethodNameString(field TypeInfo, compactType string) string {
 	mn := compactType
 	if field.IsCustomClass {
 		mn = "compact"
@@ -184,7 +188,7 @@ func generateFieldNamesString(class Class) string {
 	return content[:len(content)-2]
 }
 
-func hashcodeBody(cls Class) string {
+func generateHashCodeMethodString(cls Class) string {
 	var content strings.Builder
 	var isTempDeclared bool
 	for _, field := range cls.Fields {
@@ -192,25 +196,25 @@ func hashcodeBody(cls Class) string {
 		fn := field.Name
 		switch field.Type {
 		case boolType:
-			fmt.Fprintf(&content, "result = 31 * result + (%s ? 1 : 0);", fn)
+			check.I2(fmt.Fprintf(&content, "result = 31 * result + (%s ? 1 : 0);", fn))
 		case int64Type:
-			fmt.Fprintf(&content, "result = 31 * result + (int) (%s ^ (%s >>> 32));", fn, fn)
+			check.I2(fmt.Fprintf(&content, "result = 31 * result + (int) (%s ^ (%s >>> 32));", fn, fn))
 		case float32Type:
-			fmt.Fprintf(&content, "result = 31 * result + (%s != +0.0f ? Float.floatToIntBits(%s) : 0);", fn, fn)
+			check.I2(fmt.Fprintf(&content, "result = 31 * result + (%s != +0.0f ? Float.floatToIntBits(%s) : 0);", fn, fn))
 		case float64Type:
 			if !isTempDeclared {
 				content.WriteString("long temp;\n")
 				isTempDeclared = true
 			}
-			fmt.Fprintf(&content, fmt.Sprintf(`%stemp = Double.doubleToLongBits(%s);
-%sresult = 31 * result + (int) (temp ^ (temp >>> 32));`, indent8, fn, indent8))
+			check.I2(fmt.Fprintf(&content, fmt.Sprintf(`%stemp = Double.doubleToLongBits(%s);
+%sresult = 31 * result + (int) (temp ^ (temp >>> 32));`, indent8, fn, indent8)))
 		default:
 			if hasArraySuffix(field.Type) {
-				fmt.Fprintf(&content, fmt.Sprintf("result = 31 * result + Arrays.hashCode(%s);", field.Name))
+				check.I2(fmt.Fprintf(&content, fmt.Sprintf("result = 31 * result + Arrays.hashCode(%s);", field.Name)))
 			} else if _, ok := fixedSizeTypes[field.Type]; ok {
-				fmt.Fprintf(&content, "result = 31 * result + (int) %s;", field.Name)
+				check.I2(fmt.Fprintf(&content, "result = 31 * result + (int) %s;", field.Name))
 			} else {
-				fmt.Fprintf(&content, "result = 31 * result + Objects.hashCode(%s);", field.Name)
+				check.I2(fmt.Fprintf(&content, "result = 31 * result + Objects.hashCode(%s);", field.Name))
 			}
 		}
 		content.WriteString("\n")
@@ -242,7 +246,7 @@ func generateReadMethodString(field Field) string {
 	if ti.IsArray && ti.IsCustomClass {
 		return fmt.Sprintf(`%s%s %s = reader.readArrayOfCompact("%s", %s.class);`, indent12, ti.FullType, field.Name, field.Name, ti.Type)
 	}
-	return fmt.Sprintf(`%s%s %s = reader.read%s("%s");`, indent12, ti.FullType, field.Name, methodName(ti, field.Type), field.Name)
+	return fmt.Sprintf(`%s%s %s = reader.read%s("%s");`, indent12, ti.FullType, field.Name, generateMethodNameString(ti, field.Type), field.Name)
 }
 
 func generateGetterString(field Field) string {
@@ -256,16 +260,16 @@ func generateGetterString(field Field) string {
 
 func generateImportsString(clsAndSchema classSchema) string {
 	var content strings.Builder
-	for _, field := range clsAndSchema.Cls.Fields {
+	for _, field := range clsAndSchema.Class.Fields {
 		trimmed := trimArraySuffix(field.Type)
-		if field.External || isImportedClass(clsAndSchema.Sch, trimmed) {
-			fmt.Fprintf(&content, "import %s;", trimmed)
+		if field.External || isImportedClass(clsAndSchema.Schema, trimmed) {
+			check.I2(fmt.Fprintf(&content, "import %s;", trimmed))
 		}
 	}
 	if content.Len() > 0 {
 		c := content.String()
 		content.Reset()
-		fmt.Fprintf(&content, "\n%s\n", c)
+		check.I2(fmt.Fprintf(&content, "\n%s\n", c))
 	}
 	return content.String()
 }

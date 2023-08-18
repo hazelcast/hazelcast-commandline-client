@@ -1,9 +1,10 @@
+//go:build std || serializer
+
 package serializer
 
 import (
 	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -36,9 +37,8 @@ var (
 )
 
 func init() {
-	_, filename, _, _ := runtime.Caller(0)
-	generationTestFilesDir := filepath.Join(filepath.Dir(filename), "testdata", "generationTestFiles")
-	generationTestFilesSchemaDir := filepath.Join(filepath.Dir(filename), "testdata", "generationTestFiles", "schema")
+	generationTestFilesDir := filepath.Join("testdata", "generationTestFiles")
+	generationTestFilesSchemaDir := filepath.Join("testdata", "generationTestFiles", "schema")
 
 	// All types test files
 	allTypes = readTestFile(generationTestFilesDir, "AllTypes.java")

@@ -1,3 +1,5 @@
+//go:build std || serializer
+
 package serializer
 
 import (
