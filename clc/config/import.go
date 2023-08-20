@@ -20,17 +20,8 @@ import (
 func ImportSource(ctx context.Context, ec plug.ExecContext, target, src string) (string, error) {
 	target = strings.TrimSpace(target)
 	src = strings.TrimSpace(src)
-	// first assume the passed string is a CURL command line, and try to import it.
-	path, ok, err := tryImportViridianCurlSource(ctx, ec, target, src)
-	if err != nil {
-		return "", err
-	}
-	// import is successful
-	if ok {
-		return path, nil
-	}
-	// import is not successful, check whether this an HTTP source
-	path, ok, err = tryImportHTTPSource(ctx, ec, target, src)
+	// check whether this an HTTP source
+	path, ok, err := tryImportHTTPSource(ctx, ec, target, src)
 	if err != nil {
 		return "", err
 	}
@@ -49,21 +40,6 @@ func ImportSource(ctx context.Context, ec plug.ExecContext, target, src string) 
 	return path, nil
 }
 
-// tryImportViridianCurlSource returns true if importing from a Viridian CURL command line is successful
-func tryImportViridianCurlSource(ctx context.Context, ec plug.ExecContext, target, src string) (string, bool, error) {
-	const reCurlSource = `curl (?P<url>[^\s]+)\s+`
-	re, err := regexp.Compile(reCurlSource)
-	if err != nil {
-		return "", false, err
-	}
-	grps := re.FindStringSubmatch(src)
-	if len(grps) < 2 {
-		return "", false, nil
-	}
-	url := grps[1]
-	return tryImportHTTPSource(ctx, ec, target, url)
-}
-
 func tryImportHTTPSource(ctx context.Context, ec plug.ExecContext, target, url string) (string, bool, error) {
 	if !strings.HasPrefix(url, "https://") && !strings.HasSuffix(url, "http://") {
 		return "", false, nil
@@ -72,40 +48,26 @@ func tryImportHTTPSource(ctx context.Context, ec plug.ExecContext, target, url s
 	if err != nil {
 		return "", false, err
 	}
-	ec.Logger().Info("Downloaded sample to: %s", path)
-	path, err = CreateFromZip(ctx, ec, target, path)
-	if err != nil {
-		return "", false, err
-	}
-	return path, true, nil
-
+	ec.Logger().Info("Downloaded the configuration at: %s", path)
+	return tryImportViridianZipSource(ctx, ec, target, path)
 }
 
 // tryImportViridianZipSource returns true if importing from a Viridian Go sample zip file is successful
 func tryImportViridianZipSource(ctx context.Context, ec plug.ExecContext, target, src string) (string, bool, error) {
-	const reSource = `hazelcast-cloud-(?P<language>[a-z]+)-sample-client-(?P<cn>[a-zA-Z0-9_-]+)-default\.zip`
-	re, err := regexp.Compile(reSource)
+	path, ok, err := CreateFromZip(ctx, ec, target, src)
+	if ok {
+		return path, true, nil
+	}
+	path, ok, err = CreateFromZipLegacy(ctx, ec, target, src)
 	if err != nil {
-		return "", false, err
+		return "", ok, err
 	}
-	grps := re.FindStringSubmatch(src)
-	if len(grps) != 3 {
-		return "", false, nil
-	}
-	language := grps[1]
-	if language != "go" {
-		return "", false, fmt.Errorf("%s is not usable as a configuration source, use Go sample", src)
-	}
-	path, err := CreateFromZip(ctx, ec, target, src)
-	if err != nil {
-		return "", false, err
-	}
-	return path, true, nil
+	return path, ok, nil
 }
 
 func download(ctx context.Context, ec plug.ExecContext, url string) (string, error) {
 	p, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText("Downloading the sample")
+		sp.SetText("Downloading the configuration")
 		f, err := os.CreateTemp("", "clc-download-*")
 		if err != nil {
 			return "", err
@@ -125,7 +87,53 @@ func download(ctx context.Context, ec plug.ExecContext, url string) (string, err
 	return p.(string), nil
 }
 
-func CreateFromZip(ctx context.Context, ec plug.ExecContext, target, path string) (string, error) {
+func CreateFromZip(ctx context.Context, ec plug.ExecContext, target, path string) (string, bool, error) {
+	// TODO: refactor this function so it is not dependent on ec
+	p, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		sp.SetText("Extracting configuration files")
+		reader, err := zip.OpenReader(path)
+		if err != nil {
+			return nil, err
+		}
+		defer reader.Close()
+		// check whether this is the new config zip
+		var newConfig bool
+		var files []*zip.File
+		for _, rf := range reader.File {
+			if strings.HasSuffix(rf.Name, "/config.json") {
+				newConfig = true
+			}
+			if !rf.FileInfo().IsDir() {
+				files = append(files, rf)
+			}
+		}
+		if !newConfig {
+			return false, nil
+		}
+		// this is the new config zip, just extract to target
+		outDir, cfgFileName, err := DirAndFile(target)
+		if err != nil {
+			return nil, err
+		}
+		if err = os.MkdirAll(outDir, 0700); err != nil {
+			return nil, err
+		}
+		if err = copyFiles(ec, files, outDir); err != nil {
+			return nil, err
+		}
+		return paths.Join(outDir, cfgFileName), nil
+	})
+	if err != nil {
+		return "", false, err
+	}
+	stop()
+	if p == false {
+		return "", false, nil
+	}
+	return p.(string), true, nil
+}
+
+func CreateFromZipLegacy(ctx context.Context, ec plug.ExecContext, target, path string) (string, bool, error) {
 	// TODO: refactor this function so it is not dependent on ec
 	p, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Extracting configuration files")
@@ -172,10 +180,10 @@ func CreateFromZip(ctx context.Context, ec plug.ExecContext, target, path string
 		return paths.Join(outDir, cfgPath), nil
 	})
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 	stop()
-	return p.(string), nil
+	return p.(string), true, nil
 }
 
 func makeViridianOpts(clusterName, token, password, apiBaseURL string) clc.KeyValues[string, string] {
