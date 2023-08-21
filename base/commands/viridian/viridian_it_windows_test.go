@@ -6,6 +6,6 @@ import (
 	"testing"
 )
 
-func streamLogs_nonInteractiveTest(t *testing.T) {
+func streamLogs_NonInteractiveTest(t *testing.T) {
 	t.Skipf("This test doesn't run on Windows")
 }
