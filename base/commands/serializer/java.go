@@ -63,8 +63,7 @@ func funcMap() template.FuncMap {
 		"getters":           generateGetterString,
 		"equalsBody":        generateEqualsMethodBody,
 		"hashcodeBody":      generateHashCodeMethodString,
-		"toStringBody":      toStringBody,
-		"toStringBodyFirst": toStringBodyFirst,
+		"toStringBody":      generateStringMethodBody,
 		"fieldNames":        generateFieldNamesString,
 		"generateImports":   generateImportsString,
 	}
@@ -222,18 +221,15 @@ func generateHashCodeMethodString(cls Class) string {
 	return content.String()
 }
 
-func toStringBody(field Field) string {
-	if hasArraySuffix(field.Type) {
-		return fmt.Sprintf("%s+ \", %s=\" + Arrays.toString(%s)\n", indent16, field.Name, field.Name)
+func generateStringMethodBody(field Field, index int) string {
+	var prefix string
+	if index != 0 {
+		prefix = ", "
 	}
-	return fmt.Sprintf("%s+ \", %s=\" + %s\n", indent16, field.Name, field.Name)
-}
-
-func toStringBodyFirst(field Field) string {
 	if hasArraySuffix(field.Type) {
-		return fmt.Sprintf("%s+ \"%s=\" + Arrays.toString(%s)\n", indent16, field.Name, field.Name)
+		return fmt.Sprintf("%s+ \"%s%s=\" + Arrays.toString(%s)\n", indent16, prefix, field.Name, field.Name)
 	}
-	return fmt.Sprintf("%s+ \"%s=\" + %s\n", indent16, field.Name, field.Name)
+	return fmt.Sprintf("%s+ \"%s%s=\" + %s\n", indent16, prefix, field.Name, field.Name)
 }
 
 func generateFieldString(field Field) string {

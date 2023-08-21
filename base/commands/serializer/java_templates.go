@@ -67,7 +67,7 @@ public class {{ .Class.Name }} {
     @Override
     public String toString() {
         return "<{{ .Class.Name }}> {"
-{{range $index, $field := .Class.Fields}}{{ if eq $index 0}}{{ toStringBodyFirst $field }}{{else}}{{ toStringBody $field }}{{end}}{{end}}                + '}';
+{{range $index, $field := .Class.Fields}}{{ toStringBody $field $index }}{{end}}                + '}';
     }
 
 }`
