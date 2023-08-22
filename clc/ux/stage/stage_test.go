@@ -2,6 +2,7 @@ package stage_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -63,4 +64,34 @@ func TestExecute(t *testing.T) {
 	assert.Equal(t, texts, ec.Spinner.Texts)
 	progresses := []float32{0.2, 0.4, 0.6, 0.8, 1}
 	assert.Equal(t, progresses, ec.Spinner.Progresses)
+	text := "OK [1/3] Success 1.\nOK [2/3] Success 2.\nOK [3/3] Success 3.\n"
+	assert.Equal(t, text, ec.StdoutText())
+}
+
+func TestExecute_WithFailure(t *testing.T) {
+	stages := []stage.Stage{
+		{
+			ProgressMsg: "Progressing 1",
+			SuccessMsg:  "Success 1",
+			FailureMsg:  "Failure 1",
+			Func: func(status stage.Statuser) error {
+				return fmt.Errorf("some error")
+			},
+		},
+		{
+			ProgressMsg: "Progressing 2",
+			SuccessMsg:  "Success 2",
+			FailureMsg:  "Failure 2",
+			Func: func(status stage.Statuser) error {
+				return nil
+			},
+		},
+	}
+	ec := it.NewExecuteContext(nil)
+	err := stage.Execute(context.TODO(), ec, stage.NewFixedProvider(stages...))
+	assert.Error(t, err)
+	texts := []string{"[1/2] Progressing 1"}
+	assert.Equal(t, texts, ec.Spinner.Texts)
+	text := "FAIL Failure 1: some error\n"
+	assert.Equal(t, text, ec.StdoutText())
 }
