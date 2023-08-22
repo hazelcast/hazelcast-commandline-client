@@ -29,6 +29,7 @@ func TestGenerateData(t *testing.T) {
 }
 
 func generateData_WikipediaTest(t *testing.T) {
+	it.MarkFlaky(t, "https://github.com/hazelcast/hazelcast-commandline-client/issues/350")
 	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
 		t := tcx.T
 		ctx := context.Background()

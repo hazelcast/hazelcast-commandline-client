@@ -14,6 +14,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"golang.org/x/exp/slices"
 
+	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
+
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
@@ -42,6 +44,37 @@ func CreateJSON(path string, opts map[string]any) (dir, cfgPath string, err erro
 		}
 		return cfgPath, b, nil
 	})
+}
+
+func ConvertKeyValuesToMap(kvs clc.KeyValues[string, string]) map[string]any {
+	m := map[string]any{}
+	for _, kv := range kvs {
+		mp := m
+		ps := strings.Split(kv.Key, ".")
+		var i int
+		var p string
+		for i, p = range ps {
+			if i >= len(ps)-1 {
+				// this is the leaf
+				break
+			}
+			v, ok := mp[p]
+			if ok {
+				// found the sub, set the map pointer
+				mp = v.(map[string]any)
+			} else {
+				// sub doesn't exist, create it
+				mm := map[string]any{}
+				mp[p] = mm
+				// set the map pointer
+				mp = mm
+			}
+		}
+		if p != "" {
+			mp[p] = kv.Value
+		}
+	}
+	return m
 }
 
 func createFile(path string, f func(string) (string, []byte, error)) (dir, cfgPath string, err error) {
@@ -138,6 +171,7 @@ func MakeHzConfig(props plug.ReadOnlyProperties, lg log.Logger) (hazelcast.Confi
 		lg.Debugf("Viridan API Base: %s", apiBase)
 		cfg.Cluster.Cloud.ExperimentalAPIBaseURL = apiBase
 	}
+	cfg.Serialization.SetIdentifiedDataSerializableFactories(serialization.SnapshotFactory{})
 	cfg.Labels = makeClientLabels()
 	cfg.ClientName = makeClientName()
 	usr := props.GetString(clc.PropertyClusterUser)

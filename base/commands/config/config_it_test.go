@@ -32,7 +32,7 @@ func TestConfig(t *testing.T) {
 
 func importTest(t *testing.T) {
 	tcx := it.TestContext{T: t}
-	const configURL = "https://rcd-download.s3.us-east-2.amazonaws.com/hazelcast-cloud-python-sample-client-pr-FOR_TESTING-default.zip"
+	const configURL = "https://rcd-download.s3.us-east-2.amazonaws.com/hazelcast-cloud-clc-sample-client-pr-FOR_TESTING-default.zip"
 	tcx.Tester(func(tcx it.TestContext) {
 		name := it.NewUniqueObjectName("cfg")
 		ctx := context.Background()
