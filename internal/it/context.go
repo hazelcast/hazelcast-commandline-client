@@ -73,28 +73,31 @@ func (c CommandContext) SetTopLevel(b bool) {
 }
 
 type ExecContext struct {
-	lg     *Logger
-	stdout *bytes.Buffer
-	stderr *bytes.Buffer
-	stdin  *bytes.Buffer
-	args   []string
-	props  *plug.Properties
-	Rows   []output.Row
+	lg      *Logger
+	stdout  *bytes.Buffer
+	stderr  *bytes.Buffer
+	stdin   *bytes.Buffer
+	args    []string
+	props   *plug.Properties
+	Rows    []output.Row
+	Spinner *Spinner
 }
 
 func NewExecuteContext(args []string) *ExecContext {
 	return &ExecContext{
-		lg:     NewLogger(),
-		stdout: &bytes.Buffer{},
-		stderr: &bytes.Buffer{},
-		stdin:  &bytes.Buffer{},
-		args:   args,
-		props:  plug.NewProperties(),
+		lg:      NewLogger(),
+		stdout:  &bytes.Buffer{},
+		stderr:  &bytes.Buffer{},
+		stdin:   &bytes.Buffer{},
+		args:    args,
+		props:   plug.NewProperties(),
+		Spinner: NewSpinner(),
 	}
 }
-func (ec *ExecContext) ExecuteBlocking(context.Context, func(context.Context, clc.Spinner) (any, error)) (any, context.CancelFunc, error) {
-	//TODO implement me
-	panic("implement me")
+func (ec *ExecContext) ExecuteBlocking(ctx context.Context, f func(context.Context, clc.Spinner) (any, error)) (any, context.CancelFunc, error) {
+	v, err := f(ctx, ec.Spinner)
+	stop := func() {}
+	return v, stop, err
 }
 
 func (ec *ExecContext) Props() plug.ReadOnlyProperties {
@@ -186,4 +189,26 @@ func (ec *ExecContext) PrintlnUnnecessary(text string) {
 
 func (ec *ExecContext) WrapResult(f func() error) error {
 	return f()
+}
+
+type Spinner struct {
+	Texts      []string
+	Progresses []float32
+}
+
+func NewSpinner() *Spinner {
+	return &Spinner{}
+}
+
+func (s *Spinner) Reset() {
+	s.Texts = nil
+	s.Progresses = nil
+}
+
+func (s *Spinner) SetText(text string) {
+	s.Texts = append(s.Texts, text)
+}
+
+func (s *Spinner) SetProgress(progress float32) {
+	s.Progresses = append(s.Progresses, progress)
 }
