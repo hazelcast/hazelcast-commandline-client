@@ -1,4 +1,4 @@
-= clc serializer generator
+= clc serializer generator (BETA)
 
 Serializer commands are a group of serializer generator operations.
 

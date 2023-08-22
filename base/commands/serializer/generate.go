@@ -22,7 +22,7 @@ const (
 func (g GenerateCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("generate [schema] [flags]")
 	short := `
-Generates compact serializer from the given schema and for the given programming language.
+Generates compact serializer from the given schema and for the given programming language. (BETA)
 `
 	long := `
 Generates compact serializer from the given schema and for the given programming language.
