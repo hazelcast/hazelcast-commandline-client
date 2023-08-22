@@ -23,10 +23,19 @@ log_debug () {
 }
 
 bye () {
-	if [ "${1:-}x" != "x" ]; then
+	if [[ "${1:-}" != "" ]]; then
 		echo "ERROR $*" 1>&2
 	fi
   exit 1
+}
+
+help () {
+	echo "$0 [--beta | --debug | --help]"
+	echo
+	echo "    --beta    Enable downloading BETA and PREVIEW releases"
+	echo "    --debug   Enable DEBUG logging"
+	echo "    --help    Show help"
+	exit 0
 }
 
 setup () {
@@ -55,9 +64,9 @@ do_wget () {
 
 detect_uncompress () {
     local ext=${state[archive_ext]}
-    if [ "$ext" == "tar.gz" ]; then
+    if [[ "$ext" == "tar.gz" ]]; then
         state[uncompress]=do_untar
-    elif [ "$ext" == "zip" ]; then
+    elif [[ "$ext" == "zip" ]]; then
         state[uncompress]=do_unzip
     else
         bye "$ext archive is not supported"
@@ -93,9 +102,9 @@ mv_path () {
 }
 
 detect_httpget () {
-    if [ "${state[curl_ok]}x" != "x" ]; then
+    if [[ "${state[curl_ok]}x" != "x" ]]; then
       state[httpget]=do_curl
-    elif [ "${state[wget_ok]}x" != "x" ]; then
+    elif [[ "${state[wget_ok]}x" != "x" ]]; then
       state[httpget]=do_wget
     else
       bye "either curl or wget is required"
@@ -127,7 +136,7 @@ print_success () {
 
 detect_last_release () {
         local v
-        v=$(httpget https://api.github.com/repos/hazelcast/hazelcast-commandline-client/releases | sed -n 's/^\s*"tag_name":\s*"\(.*\)",/\1/p' | grep -v BETA | head -1)
+        v=$(httpget https://api.github.com/repos/hazelcast/hazelcast-commandline-client/releases | sed -n 's/^\s*"tag_name":\s*"\(.*\)",/\1/p' | grep -v BETA | grep -v PREVIEW | head -1)
         state[download_version]="$v"
 }
 
@@ -193,6 +202,7 @@ process_flags () {
         case "$flag" in
           --beta*) state[beta]=yes;;
           --debug*) state[debug]=yes;;
+      	  --help*) print_banner; help;;
           *) bye "Unknown option: $flag";;
         esac
     done
