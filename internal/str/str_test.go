@@ -93,7 +93,12 @@ func TestSpacePaddedIntFormat(t *testing.T) {
 		num int
 		out string
 	}{
-		{num: 0, out: "%d"},
+		{num: 0, out: "%1d"},
+		{num: 9, out: "%1d"},
+		{num: 10, out: "%2d"},
+		{num: 99, out: "%2d"},
+		{num: 100, out: "%3d"},
+		{num: 9999, out: "%4d"},
 	}
 	for _, tc := range testCases {
 		tc := tc

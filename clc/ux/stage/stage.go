@@ -3,13 +3,12 @@ package stage
 import (
 	"context"
 	"fmt"
-	"math"
-	"strconv"
 	"time"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/str"
 )
 
 type Statuser interface {
@@ -97,7 +96,7 @@ func Execute(ctx context.Context, ec plug.ExecContext, sp Provider) error {
 		ss.text = stg.ProgressMsg
 		ss.textFmtWithRemaining = stg.ProgressMsg + " (%s left)"
 		if stageCount > 0 {
-			d := paddedIntFormat(stageCount)
+			d := str.SpacePaddedIntFormat(stageCount)
 			ss.indexText = fmt.Sprintf("["+d+"/%d]", index, stageCount)
 		} else {
 			ss.indexText = ""
@@ -115,11 +114,4 @@ func Execute(ctx context.Context, ec plug.ExecContext, sp Provider) error {
 		ec.PrintlnUnnecessary(fmt.Sprintf("OK %s %s.", ss.indexText, stg.SuccessMsg))
 	}
 	return nil
-}
-
-// paddedIntFormat returns the fmt string that can fit the given integer.
-// The padding contains spaces.
-func paddedIntFormat(maxValue int) string {
-	d := int(math.Ceil(math.Log10(float64(maxValue))))
-	return "%" + strconv.Itoa(d) + "d"
 }
