@@ -72,8 +72,12 @@ func (p *WizardProvider) ClientConfig(ctx context.Context, ec plug.ExecContext) 
 		if err != nil {
 			return cfg, err
 		}
+		config, err := fp.ClientConfig(ctx, ec)
+		if err != nil {
+			return hazelcast.Config{}, err
+		}
 		p.fp.Store(fp)
-		return fp.ClientConfig(ctx, ec)
+		return config, nil
 	}
 	return cfg, nil
 }
