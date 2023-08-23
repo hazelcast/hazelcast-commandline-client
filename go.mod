@@ -27,11 +27,6 @@ require (
 	github.com/alecthomas/colour v0.0.0-20160524082231-60882d9e2721 // indirect
 	github.com/alecthomas/repr v0.0.0-20180818092828-117648cd9897 // indirect
 	github.com/atotto/clipboard v0.1.4 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.29 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.4.23 // indirect
-	github.com/aws/aws-sdk-go-v2/service/ec2 v1.87.0 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.9.23 // indirect
-	github.com/aws/smithy-go v1.13.5 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/chzyer/logex v1.1.10 // indirect
@@ -54,7 +49,6 @@ require (
 	github.com/google/flatbuffers v1.12.1 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
-	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/klauspost/compress v1.12.3 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
@@ -92,14 +86,12 @@ require (
 
 require (
 	github.com/apache/thrift v0.14.1
-	github.com/aws/aws-sdk-go-v2 v1.17.5
 	github.com/charmbracelet/bubbles v0.15.0
 	github.com/charmbracelet/bubbletea v0.23.2
 	github.com/charmbracelet/lipgloss v0.7.1
 	github.com/dgraph-io/badger/v4 v4.1.0
 	github.com/fatih/color v1.13.0
 	github.com/go-git/go-git/v5 v5.8.1
-	github.com/hazelcast/hazelcast-go-client-discovery v1.0.0
 	github.com/mattn/go-colorable v0.1.12
 	github.com/nyaosorg/go-readline-ny v0.9.1
 	gopkg.in/yaml.v2 v2.4.0
