@@ -163,6 +163,10 @@ func (ec *ExecContext) Args() []string {
 	return ec.args
 }
 
+func (ec *ExecContext) ConfigPath() string {
+	return ""
+}
+
 func (ec *ExecContext) ShowHelpAndExit() {
 	panic("implement me")
 }

@@ -11,7 +11,7 @@ import (
 
 	clc "github.com/hazelcast/hazelcast-commandline-client/clc"
 	cmd "github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/config/wizard"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	hzerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 )
 
@@ -34,7 +34,7 @@ func main() {
 	if err != nil {
 		bye(err)
 	}
-	cp, err := wizard.NewProvider(cfgPath)
+	cp, err := config.NewWizardProvider(cfgPath)
 	if err != nil {
 		bye(err)
 	}

@@ -38,6 +38,7 @@ type ExecContext interface {
 	GetStringSliceArg(key string) []string
 	GetKeyValuesArg(key string) types.KeyValues[string, string]
 	GetInt64Arg(key string) int64
+	ConfigPath() string
 	ClientInternal(ctx context.Context) (*hazelcast.ClientInternal, error)
 	CommandName() string
 	Interactive() bool
