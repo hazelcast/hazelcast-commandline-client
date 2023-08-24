@@ -54,7 +54,7 @@ func (lc ListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	isLocal := ec.Props().GetBool(flagLocal)
 	isForce := ec.Props().GetBool(flagForce)
 	if isLocal && isForce {
-		return fmt.Errorf("%s and %s flags cannot be set at the same time", flagForce, flagLocal)
+		return fmt.Errorf("%s and %s flags are mutually exclusive", flagForce, flagLocal)
 	}
 	ts, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText(fmt.Sprintf("Listing templates"))
@@ -63,6 +63,7 @@ func (lc ListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		return err
 	}
+	stop()
 	tss := ts.([]Template)
 	if len(tss) == 0 {
 		ec.PrintlnUnnecessary("No templates found")
@@ -71,18 +72,17 @@ func (lc ListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	for i, t := range tss {
 		rows[i] = output.Row{
 			output.Column{
-				Name:  "Template Source",
+				Name:  "Source",
 				Type:  serialization.TypeString,
 				Value: t.Source,
 			},
 			output.Column{
-				Name:  "Template Name",
+				Name:  "Name",
 				Type:  serialization.TypeString,
 				Value: t.Name,
 			},
 		}
 	}
-	stop()
 	return ec.AddOutputRows(ctx, rows...)
 }
 
@@ -91,16 +91,21 @@ func listTemplates(logger log.Logger, isLocal bool, isForce bool) ([]Template, e
 	if isLocal {
 		return listLocalTemplates()
 	}
-	if fetch, err := isFetch(sa); err != nil {
-		return []Template{}, err
-	} else if fetch || isForce {
+	var fetch bool
+	var err error
+	if fetch, err = isFetch(sa); err != nil {
+		logger.Debugf("Decide to fetch templates: %w", err)
+		// there is an error with database, so fetch templates from remote
+		fetch = true
+	}
+	if fetch || isForce {
 		ts, err := fetchTemplates()
 		if err != nil {
 			return nil, err
 		}
 		err = updateCache(sa, ts)
 		if err != nil {
-			return nil, err
+			logger.Debugf("Updating templates cache: %w", err)
 		}
 	}
 	return listFromCache(sa)
@@ -122,24 +127,24 @@ func listLocalTemplates() ([]Template, error) {
 
 func fetchTemplates() ([]Template, error) {
 	var templates []Template
-	resp, err := http.Get(fetchURL())
+	resp, err := http.Get(makeRepositoriesURL())
 	if err != nil {
-		return []Template{}, err
+		return nil, err
 	}
 	respData, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return []Template{}, err
+		return nil, err
 	}
 	var data []map[string]any
 	err = json.Unmarshal(respData, &data)
 	if err != nil {
-		return []Template{}, err
+		return nil, err
 	}
 	for _, d := range data {
 		var tName string
 		var ok bool
 		if tName, ok = d["full_name"].(string); !ok {
-			return []Template{}, errors.New("error fetching repositories in the organization")
+			return nil, errors.New("error fetching repositories in the organization")
 		}
 		sName := strings.Split(tName, "/")
 		source := fmt.Sprintf("%s/%s", "github.com", sName[0])
@@ -151,13 +156,13 @@ func fetchTemplates() ([]Template, error) {
 
 func updateNextFetchTime(sa *store.StoreAccessor) error {
 	_, err := sa.WithLock(func(s *store.Store) (any, error) {
-		return nil, s.SetEntry(bytes(nextFetchTimeKey),
-			bytes(strconv.FormatInt(time.Now().Add(cacheRefreshInterval).Unix(), 10)))
+		v := []byte(strconv.FormatInt(time.Now().Add(cacheRefreshInterval).Unix(), 10))
+		return nil, s.SetEntry([]byte(nextFetchTimeKey), v)
 	})
 	return err
 }
 
-func fetchURL() string {
+func makeRepositoriesURL() string {
 	s := strings.TrimPrefix(templateOrgURL(), "https://github.com/")
 	ss := strings.ReplaceAll(s, "/", "")
 	return fmt.Sprintf("https://api.github.com/users/%s/repos", ss)
@@ -165,7 +170,7 @@ func fetchURL() string {
 
 func isFetch(s *store.StoreAccessor) (bool, error) {
 	entry, err := s.WithLock(func(s *store.Store) (any, error) {
-		return s.GetEntry(bytes(nextFetchTimeKey))
+		return s.GetEntry([]byte(nextFetchTimeKey))
 	})
 	if err != nil {
 		if errors.Is(err, store.ErrKeyNotFound) {
@@ -191,42 +196,31 @@ func updateCache(sa *store.StoreAccessor, templates []Template) error {
 		return err
 	}
 	_, err = sa.WithLock(func(s *store.Store) (any, error) {
-		err = s.DeleteEntriesWithPrefix(templatesKey)
+		err = s.SetEntry([]byte(templatesKey), b)
 		if err != nil {
 			return nil, err
 		}
-		err = s.SetEntry(bytes(templatesKey), b)
-		if err != nil {
+		if err = updateNextFetchTime(sa); err != nil {
 			return nil, err
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return err
-	}
-	if err = updateNextFetchTime(sa); err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func listFromCache(sa *store.StoreAccessor) ([]Template, error) {
 	var templates []Template
 	b, err := sa.WithLock(func(s *store.Store) (any, error) {
-		return s.GetEntry(bytes(templatesKey))
+		return s.GetEntry([]byte(templatesKey))
 	})
 	if err != nil {
-		return []Template{}, err
+		return nil, err
 	}
 	err = json.Unmarshal(b.([]byte), &templates)
 	if err != nil {
-		return []Template{}, err
+		return nil, err
 	}
 	return templates, nil
-}
-
-func bytes(s string) []byte {
-	return []byte(s)
 }
 
 func init() {

@@ -33,24 +33,24 @@ func projectList_CachedTest(t *testing.T) {
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
 		sPath := filepath.Join(tcx.HomePath(), storeFolder)
+		defer func() {
+			os.RemoveAll(sPath)
+		}()
 		sa := store.NewStoreAccessor(sPath, log.NopLogger{})
 		check.MustValue(sa.WithLock(func(s *store.Store) (any, error) {
-			err := s.SetEntry(bytes(nextFetchTimeKey),
-				bytes(strconv.FormatInt(time.Now().Add(cacheRefreshInterval).Unix(), 10)))
+			v := []byte(strconv.FormatInt(time.Now().Add(cacheRefreshInterval).Unix(), 10))
+			err := s.SetEntry([]byte(nextFetchTimeKey), v)
 			return nil, err
 		}))
 		check.MustValue(sa.WithLock(func(s *store.Store) (any, error) {
 			b, err := json.Marshal([]Template{{Name: "test_template"}})
 			check.Must(err)
-			err = s.SetEntry(bytes(templatesKey), b)
+			err = s.SetEntry([]byte(templatesKey), b)
 			return nil, err
 		}))
 		cmd := []string{"project", "list-templates"}
 		check.Must(tcx.CLC().Execute(context.Background(), cmd...))
 		tcx.AssertStdoutContains("test_template")
-		defer func() {
-			os.RemoveAll(sPath)
-		}()
 	})
 }
 
