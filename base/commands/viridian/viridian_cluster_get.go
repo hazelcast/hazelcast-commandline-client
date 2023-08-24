@@ -102,6 +102,11 @@ func (cm ClusterGetCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 				Type:  serialization.TypeStringArray,
 				Value: regionTitleSlice(c.Regions),
 			},
+			output.Column{
+				Name:  "Dev Mode",
+				Type:  serialization.TypeBool,
+				Value: c.ClusterType.DevMode,
+			},
 		)
 	}
 	return ec.AddOutputRows(ctx, row)
