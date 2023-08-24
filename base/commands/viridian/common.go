@@ -137,18 +137,20 @@ func waitClusterState(ctx context.Context, ec plug.ExecContext, api *viridian.AP
 func tryImportConfig(ctx context.Context, ec plug.ExecContext, api *viridian.API, clusterID, cfgName string) (configPath string, err error) {
 	cpv, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Importing configuration")
-		zipPath, stop, err := api.DownloadConfig(ctx, clusterID, "python")
+		cfgPath, ok, err := importCLCConfig(ctx, ec, api, clusterID, cfgName)
 		if err != nil {
-			return nil, err
+			ec.Logger().Error(err)
+		} else if ok {
+			return cfgPath, err
 		}
-		defer stop()
-		cfgPath, err := config.CreateFromZip(ctx, ec, cfgName, zipPath)
+		ec.Logger().Debugf("could not download CLC configuration, trying the Python configuration.")
+		cfgPath, ok, err = importPythonConfig(ctx, ec, api, clusterID, cfgName)
 		if err != nil {
 			return nil, err
 		}
 		cfgDir, _ := filepath.Split(cfgPath)
 		// import the Java/.Net certificates
-		zipPath, stop, err = api.DownloadConfig(ctx, clusterID, "java")
+		zipPath, stop, err := api.DownloadConfig(ctx, clusterID, "java")
 		if err != nil {
 			return nil, err
 		}
@@ -171,6 +173,28 @@ func tryImportConfig(ctx context.Context, ec plug.ExecContext, api *viridian.API
 	ec.Logger().Info("Imported configuration %s and saved to %s", cfgName, cp)
 	ec.PrintlnUnnecessary(fmt.Sprintf("OK Imported configuration %s", cfgName))
 	return cp, nil
+}
+
+func importCLCConfig(ctx context.Context, ec plug.ExecContext, api *viridian.API, clusterID, cfgName string) (configPath string, ok bool, err error) {
+	return importConfig(ctx, ec, api, clusterID, cfgName, "clc", config.CreateFromZip)
+}
+
+func importPythonConfig(ctx context.Context, ec plug.ExecContext, api *viridian.API, clusterID, cfgName string) (configPath string, ok bool, err error) {
+	return importConfig(ctx, ec, api, clusterID, cfgName, "python", config.CreateFromZipLegacy)
+}
+
+func importConfig(ctx context.Context, ec plug.ExecContext, api *viridian.API, clusterID, cfgName, language string, f func(ctx context.Context, ec plug.ExecContext, target, path string) (string, bool, error)) (configPath string, ok bool, err error) {
+	zipPath, stop, err := api.DownloadConfig(ctx, clusterID, language)
+	if err != nil {
+		return "", false, err
+	}
+	defer stop()
+	cfgPath, ok, err := f(ctx, ec, cfgName, zipPath)
+	if err != nil {
+		return "", false, err
+	}
+	return cfgPath, ok, nil
+
 }
 
 // importFileFromZip extracts files matching selectPaths to targetDir

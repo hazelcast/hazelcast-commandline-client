@@ -16,7 +16,7 @@ clc project [command] [flags]
 
 == clc project create
 
-Creates project from the given template.
+Creates a project from the given template.
 
 Usage:
 

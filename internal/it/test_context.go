@@ -30,7 +30,7 @@ import (
 	"time"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"

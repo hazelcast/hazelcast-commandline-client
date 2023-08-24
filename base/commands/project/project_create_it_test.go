@@ -17,25 +17,22 @@ import (
 )
 
 func TestCreateCommand(t *testing.T) {
-	// TODO: create a temp home and copy the template into it
-	testDir := filepath.Join(check.MustValue(filepath.Abs("testdata")))
-	home := filepath.Join(testDir, "home")
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
-		it.WithEnv(paths.EnvCLCHome, home, func() {
-			tempDir := check.MustValue(os.MkdirTemp("", "clc-"))
-			outDir := filepath.Join(tempDir, "my-project")
-			fixture := filepath.Join(testDir, "fixture", "simple")
-			defer func() {
-				// ignoring the error here
-				_ = os.RemoveAll(outDir)
-			}()
-			ctx := context.Background()
-			// logging to stderr in order to avoid creating the logs directory
-			cmd := []string{"project", "create", "simple", "-o", outDir, "--log.path", "stderr", "another_key=foo", "key1=bar"}
-			check.Must(tcx.CLC().Execute(ctx, cmd...))
-			check.Must(compareDirectories(fixture, outDir))
-		})
+		testHomeDir := "testdata/home"
+		check.Must(paths.CopyDir(testHomeDir, tcx.HomePath()))
+		tempDir := check.MustValue(os.MkdirTemp("", "clc-"))
+		outDir := filepath.Join(tempDir, "my-project")
+		fixtureDir := "testdata/fixture/simple"
+		defer func() {
+			// ignoring the error here
+			_ = os.RemoveAll(outDir)
+		}()
+		ctx := context.Background()
+		// logging to stderr in order to avoid creating the logs directory
+		cmd := []string{"project", "create", "simple", "-o", outDir, "--log.path", "stderr", "another_key=foo", "key1=bar"}
+		check.Must(tcx.CLC().Execute(ctx, cmd...))
+		check.Must(compareDirectories(fixtureDir, outDir))
 	})
 }
 
