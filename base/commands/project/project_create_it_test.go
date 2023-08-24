@@ -17,7 +17,6 @@ import (
 )
 
 func TestCreateCommand(t *testing.T) {
-	// TODO: create a temp home and copy the template into it
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
 		testHomeDir := "testdata/home"
