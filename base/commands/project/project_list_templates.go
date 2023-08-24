@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -30,11 +31,13 @@ const (
 	nextFetchTimeKey     = "project.templates.nextFetchTime"
 	templatesKey         = "project.templates"
 	cacheRefreshInterval = 10 * time.Minute
-	storeFolder          = "store"
 )
 
+var storeFolder = filepath.Join("caches", "templates")
+
 type Template struct {
-	Name string `json:"name"`
+	Name   string `json:"name"`
+	Source string
 }
 
 func (lc ListCmd) Init(cc plug.InitContext) error {
@@ -67,6 +70,11 @@ func (lc ListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	rows := make([]output.Row, len(tss))
 	for i, t := range tss {
 		rows[i] = output.Row{
+			output.Column{
+				Name:  "Template Source",
+				Type:  serialization.TypeString,
+				Value: t.Source,
+			},
 			output.Column{
 				Name:  "Template Name",
 				Type:  serialization.TypeString,
@@ -107,7 +115,7 @@ func listLocalTemplates() ([]Template, error) {
 		return nil, err
 	}
 	for _, t := range ts {
-		templates = append(templates, Template{Name: t})
+		templates = append(templates, Template{Name: t, Source: "local"})
 	}
 	return templates, nil
 }
@@ -133,7 +141,10 @@ func fetchTemplates() ([]Template, error) {
 		if tName, ok = d["full_name"].(string); !ok {
 			return []Template{}, errors.New("error fetching repositories in the organization")
 		}
-		templates = append(templates, Template{Name: tName})
+		sName := strings.Split(tName, "/")
+		source := fmt.Sprintf("%s/%s", "github.com", sName[0])
+		name := sName[1]
+		templates = append(templates, Template{Name: name, Source: source})
 	}
 	return templates, nil
 }
