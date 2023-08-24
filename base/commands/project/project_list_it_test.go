@@ -30,43 +30,38 @@ func TestProjectListCommand(t *testing.T) {
 }
 
 func projectList_CachedTest(t *testing.T) {
-	testDir := filepath.Join(check.MustValue(filepath.Abs("testdata")))
-	home := filepath.Join(testDir, "home")
-	sPath := filepath.Join(home, storeFolder)
-	sa := store.NewStoreAccessor(sPath, log.NopLogger{})
-	check.MustValue(sa.WithLock(func(s *store.Store) (any, error) {
-		err := s.SetEntry(bytes(nextFetchTimeKey),
-			bytes(strconv.FormatInt(time.Now().Add(cacheRefreshInterval).Unix(), 10)))
-		return nil, err
-	}))
-	check.MustValue(sa.WithLock(func(s *store.Store) (any, error) {
-		b, err := json.Marshal([]Template{{Name: "test_template"}})
-		check.Must(err)
-		err = s.SetEntry(bytes(templatesKey), b)
-		return nil, err
-	}))
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
-		it.WithEnv(paths.EnvCLCHome, home, func() {
-			cmd := []string{"project", "list-templates"}
-			check.Must(tcx.CLC().Execute(context.Background(), cmd...))
-			tcx.AssertStdoutContains("test_template")
-			defer func() {
-				os.RemoveAll(sPath)
-			}()
-		})
+		sPath := filepath.Join(tcx.HomePath(), storeFolder)
+		sa := store.NewStoreAccessor(sPath, log.NopLogger{})
+		check.MustValue(sa.WithLock(func(s *store.Store) (any, error) {
+			err := s.SetEntry(bytes(nextFetchTimeKey),
+				bytes(strconv.FormatInt(time.Now().Add(cacheRefreshInterval).Unix(), 10)))
+			return nil, err
+		}))
+		check.MustValue(sa.WithLock(func(s *store.Store) (any, error) {
+			b, err := json.Marshal([]Template{{Name: "test_template"}})
+			check.Must(err)
+			err = s.SetEntry(bytes(templatesKey), b)
+			return nil, err
+		}))
+		cmd := []string{"project", "list-templates"}
+		check.Must(tcx.CLC().Execute(context.Background(), cmd...))
+		tcx.AssertStdoutContains("test_template")
+		defer func() {
+			os.RemoveAll(sPath)
+		}()
 	})
 }
 
 func projectList_LocalTest(t *testing.T) {
-	testDir := filepath.Join(check.MustValue(filepath.Abs("testdata")))
-	home := filepath.Join(testDir, "home")
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
-		it.WithEnv(paths.EnvCLCHome, home, func() {
-			cmd := []string{"project", "list-templates", "--local"}
-			check.Must(tcx.CLC().Execute(context.Background(), cmd...))
-			tcx.AssertStdoutContains("simple")
-		})
+		testHomeDir := "testdata/home"
+		check.Must(paths.CopyDir(testHomeDir, tcx.HomePath()))
+		cmd := []string{"project", "list-templates", "--local"}
+		check.Must(tcx.CLC().Execute(context.Background(), cmd...))
+		tcx.AssertStdoutContains("simple")
+		tcx.AssertStdoutContains("local")
 	})
 }
