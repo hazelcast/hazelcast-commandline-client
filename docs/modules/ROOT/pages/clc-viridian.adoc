@@ -100,7 +100,7 @@ Parameters:
 
 |`--prerelease`
 |Optional
-|Creates the cluster with a prereleased image.
+|Creates the cluster with a prerelease image.
 |
 
 |===
