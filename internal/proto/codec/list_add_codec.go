@@ -12,23 +12,22 @@
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and
 * limitations under the License.
-*/
+ */
 
 package codec
 
-import (    
-    iserialization "github.com/hazelcast/hazelcast-go-client"
-    proto "github.com/hazelcast/hazelcast-go-client"
+import (
+	iserialization "github.com/hazelcast/hazelcast-go-client"
+	proto "github.com/hazelcast/hazelcast-go-client"
 )
 
+const (
+	ListAddCodecRequestMessageType  = int32(0x050400)
+	ListAddCodecResponseMessageType = int32(0x050401)
 
-const(
-    ListAddCodecRequestMessageType  = int32(0x050400)
-    ListAddCodecResponseMessageType = int32(0x050401)
+	ListAddCodecRequestInitialFrameSize = proto.PartitionIDOffset + proto.IntSizeInBytes
 
-    ListAddCodecRequestInitialFrameSize = proto.PartitionIDOffset + proto.IntSizeInBytes
-
-    ListAddResponseResponseOffset = proto.ResponseBackupAcksOffset + proto.ByteSizeInBytes
+	ListAddResponseResponseOffset = proto.ResponseBackupAcksOffset + proto.ByteSizeInBytes
 )
 
 // Appends the specified element to the end of this list (optional operation). Lists that support this operation may
@@ -37,23 +36,23 @@ const(
 // clearly specify in their documentation any restrictions on what elements may be added.
 
 func EncodeListAddRequest(name string, value iserialization.Data) *proto.ClientMessage {
-    clientMessage := proto.NewClientMessageForEncode()
-    clientMessage.SetRetryable(false)
+	clientMessage := proto.NewClientMessageForEncode()
+	clientMessage.SetRetryable(false)
 
-    initialFrame := proto.NewFrameWith(make([]byte, ListAddCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-    clientMessage.AddFrame(initialFrame)
-    clientMessage.SetMessageType(ListAddCodecRequestMessageType)
-    clientMessage.SetPartitionId(-1)
+	initialFrame := proto.NewFrameWith(make([]byte, ListAddCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
+	clientMessage.AddFrame(initialFrame)
+	clientMessage.SetMessageType(ListAddCodecRequestMessageType)
+	clientMessage.SetPartitionId(-1)
 
-    EncodeString(clientMessage, name)
-    EncodeData(clientMessage, value)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, value)
 
-    return clientMessage
+	return clientMessage
 }
 
 func DecodeListAddResponse(clientMessage *proto.ClientMessage) bool {
-    frameIterator := clientMessage.FrameIterator()
-    initialFrame := frameIterator.Next()
+	frameIterator := clientMessage.FrameIterator()
+	initialFrame := frameIterator.Next()
 
-    return DecodeBoolean(initialFrame.Content, ListAddResponseResponseOffset)
+	return DecodeBoolean(initialFrame.Content, ListAddResponseResponseOffset)
 }

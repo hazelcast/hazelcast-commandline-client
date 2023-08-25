@@ -1,4 +1,4 @@
-//go:build base || topic
+//go:build std || topic
 
 package topic
 
@@ -24,6 +24,7 @@ type TopicCommand struct {
 }
 
 func (mc *TopicCommand) Init(cc plug.InitContext) error {
+	cc.AddCommandGroup(clc.GroupDDSID, clc.GroupDDSTitle)
 	cc.SetCommandGroup(clc.GroupDDSID)
 	cc.AddStringFlag(topicFlagName, "n", defaultTopicName, false, "topic name")
 	cc.AddBoolFlag(topicFlagShowType, "", false, false, "add the type names to the output")

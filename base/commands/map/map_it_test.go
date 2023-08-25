@@ -1,3 +1,5 @@
+//go:build std || map
+
 package _map_test
 
 import (
@@ -5,6 +7,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hazelcast/hazelcast-go-client"
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/types"
 	"github.com/stretchr/testify/require"
@@ -31,6 +34,9 @@ func TestMap(t *testing.T) {
 		{name: "Destroy_Interactive", f: destroy_InteractiveTest},
 		{name: "KeySet_Noninteractive", f: keySet_NoninteractiveTest},
 		{name: "KeySet_Interactive", f: keySet_InteractiveTest},
+		{name: "Values_NoninteractiveTest", f: values_NoninteractiveTest},
+		{name: "Lock_InteractiveTest", f: lock_InteractiveTest},
+		{name: "TryLock_InteractiveTest", f: tryLock_InteractiveTest},
 		{name: "LoadAll_NonReplacing_NonInteractive", f: loadAll_NonReplacing_NonInteractiveTest},
 		{name: "LoadAll_Replacing_NonInteractive", f: loadAll_Replacing_NonInteractiveTest},
 		{name: "LoadAll_Replacing_WithKeys_NonInteractive", f: loadAll_Replacing_WithKeys_NonInteractiveTest},
@@ -201,6 +207,76 @@ func keySet_InteractiveTest(t *testing.T) {
 				tcx.AssertStdoutDollarWithPath("testdata/map_key_set_show_type.txt")
 			})
 		})
+	})
+}
+
+func values_NoninteractiveTest(t *testing.T) {
+	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
+		ctx := context.Background()
+		// no entry
+		tcx.WithReset(func() {
+			check.Must(tcx.CLC().Execute(ctx, "map", "-n", m.Name(), "values", "-q"))
+			tcx.AssertStdoutEquals("")
+		})
+		// set an entry
+		tcx.WithReset(func() {
+			check.Must(m.Set(context.Background(), "foo", "bar"))
+			check.Must(tcx.CLC().Execute(ctx, "map", "-n", m.Name(), "values", "-q"))
+			tcx.AssertStdoutContains("bar\n")
+		})
+		// show type
+		tcx.WithReset(func() {
+			check.Must(tcx.CLC().Execute(ctx, "map", "-n", m.Name(), "values", "--show-type", "-q"))
+			tcx.AssertStdoutContains("bar\tSTRING\n")
+		})
+	})
+}
+
+func tryLock_InteractiveTest(t *testing.T) {
+	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
+		const key = "foo"
+		fence := make(chan bool)
+		go func() {
+			lockCtx := m.NewLockContext(context.Background())
+			cl := check.MustValue(hazelcast.StartNewClientWithConfig(lockCtx, *tcx.ClientConfig))
+			mp := check.MustValue(cl.GetMap(lockCtx, m.Name()))
+			check.Must(mp.Lock(lockCtx, key))
+			fence <- true
+		}()
+		tcx.WithShell(context.TODO(), func(tcx it.TestContext) {
+			<-fence
+			tcx.WriteStdinf(fmt.Sprintf("\\map -n %s try-lock %s\n", m.Name(), key))
+			tcx.AssertStdoutContains("false")
+		})
+	})
+}
+
+func lock_InteractiveTest(t *testing.T) {
+	const key = "foo"
+	contLock := make(chan bool)
+	contUnlock := make(chan bool)
+	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
+		go tcx.WithShell(context.TODO(), func(tcx it.TestContext) {
+			tcx.WithReset(func() {
+				tcx.WriteStdinf(fmt.Sprintf("\\map -n %s lock %s\n", m.Name(), key))
+				tcx.AssertStderrContains("OK")
+				contUnlock <- true
+			})
+			tcx.WithReset(func() {
+				<-contLock
+				tcx.WriteStdinf(fmt.Sprintf("\\map -n %s unlock %s\n", m.Name(), key))
+				tcx.AssertStderrContains("OK")
+				contUnlock <- true
+			})
+		})
+		tryCtx := m.NewLockContext(context.Background())
+		<-contUnlock
+		b := check.MustValue(m.TryPut(tryCtx, key, "tryBar"))
+		require.False(t, b)
+		contLock <- true
+		<-contUnlock
+		b = check.MustValue(m.TryPut(tryCtx, key, "tryBar"))
+		require.True(t, b)
 	})
 }
 

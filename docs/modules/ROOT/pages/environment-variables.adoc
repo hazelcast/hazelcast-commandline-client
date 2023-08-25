@@ -8,7 +8,7 @@
 |Environment Variable|Description|Default
 
 |CLC_CLIENT_LABELS
-|Sets the client labels. The labels must be separated by commas. This value is used in {hazelcast-cloud} and Management Center. See xref:{page-latest-supported-mc}@management-center:clusters:clients.adoc[the Management Center documentation] for more information.
+|Sets the client labels. The labels must be separated by commas. This value is used in {hazelcast-cloud} and Management Center. See xref:{page-latest-supported-mc}@management-center:clusters:clients.adoc[Management Center documentation] for more information.
 |`CLC,USER@HOST-TIMESTAMP`
 
 |CLC_CLIENT_NAME
@@ -35,6 +35,10 @@
 |Sets the {hazelcast-cloud} API secret.
 |
 
+|CLC_CONFIG
+|Sets the configuration CLC will use if `--config` flag is not specified.
+|
+
 |===
 
 The following environment variables are experimental and may be removed in a future version.
@@ -45,6 +49,7 @@ The following environment variables are experimental and may be removed in a fut
 
 |CLC_EXPERIMENTAL_FORMATTER
 |Sets a formatter for the highlighting of SQL syntax, either: `terminal`, `terminal8`, `terminal16`, `terminal256`, or `terminal16m`. Only with the `gohxs` readline implementation.
+|
 
 |CLC_EXPERIMENTAL_READLINE
 |Sets the readline implementation, either `gohxs` or `ny`.

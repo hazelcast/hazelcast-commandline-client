@@ -27,7 +27,7 @@ asciidoc:
     idseparator: '-'
     # Variables used in the docs
     page-survey: https://www.surveymonkey.co.uk/r/NYGJNF9
-    hazelcast-cloud: Viridian
+    hazelcast-cloud: Viridian Cloud
   extensions:
     - ./tabs-block.js
     - asciidoctor-kroki

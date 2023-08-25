@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 	"sync/atomic"
 
 	"github.com/hazelcast/hazelcast-go-client"
@@ -26,44 +27,40 @@ import (
 )
 
 var (
-	// client is currently global in order to have a single client.
-	// This is bad.
-	// TODO: make the client unique without making it global.
-	clientInternal atomic.Pointer[hazelcast.ClientInternal]
+	MainCommandShortHelp = "Hazelcast CLC"
 )
 
-func getClientInternal() *hazelcast.ClientInternal {
-	return clientInternal.Load()
-}
+type Mode int
 
-func setClientInternal(ci *hazelcast.ClientInternal) {
-	clientInternal.Store(ci)
-}
-
-func ServerVersionOf(ci *hazelcast.ClientInternal) string {
-	return ci.ConnectionManager().RandomConnection().ServerVersion()
-}
+const (
+	ModeNonInteractive Mode = iota
+	ModeInteractive
+	ModeScripting
+)
 
 type Main struct {
-	root          *cobra.Command
-	cmds          map[string]*cobra.Command
-	lg            *logger.Logger
-	stderr        io.WriteCloser
-	stdout        io.WriteCloser
-	stdin         io.Reader
-	isInteractive bool
-	outputFormat  string
-	configLoaded  bool
-	props         *plug.Properties
-	cc            *CommandContext
-	cp            config.Provider
+	root         *cobra.Command
+	cmds         map[string]*cobra.Command
+	lg           *logger.Logger
+	stderr       io.WriteCloser
+	stdout       io.WriteCloser
+	stdin        io.Reader
+	mode         Mode
+	outputFormat string
+	configLoaded bool
+	props        *plug.Properties
+	cc           *CommandContext
+	cp           config.Provider
+	arg0         string
+	ciMu         *sync.Mutex
+	ci           *atomic.Pointer[hazelcast.ClientInternal]
 }
 
 func NewMain(arg0, cfgPath string, cfgProvider config.Provider, logPath, logLevel string, sio clc.IO) (*Main, error) {
 	rc := &cobra.Command{
 		Use:               arg0,
-		Short:             "Hazelcast CLC",
-		Long:              "Hazelcast CLC",
+		Short:             MainCommandShortHelp,
+		Long:              MainCommandShortHelp,
 		Args:              cobra.NoArgs,
 		CompletionOptions: cobra.CompletionOptions{DisableDescriptions: true},
 		SilenceErrors:     true,
@@ -78,6 +75,9 @@ func NewMain(arg0, cfgPath string, cfgProvider config.Provider, logPath, logLeve
 		stdin:  sio.Stdin,
 		props:  plug.NewProperties(),
 		cp:     cfgProvider,
+		arg0:   arg0,
+		ciMu:   &sync.Mutex{},
+		ci:     &atomic.Pointer[hazelcast.ClientInternal]{},
 	}
 	if logPath == "" {
 		logPath = cfgProvider.GetString(clc.PropertyLogPath)
@@ -99,7 +99,7 @@ func NewMain(arg0, cfgPath string, cfgProvider config.Provider, logPath, logLeve
 	m.props.Set(clc.PropertyConfig, cfgPath)
 	m.props.Set(clc.PropertyLogPath, logPath)
 	m.props.Set(clc.PropertyLogLevel, logLevel)
-	m.cc = NewCommandContext(rc, cfgProvider, m.isInteractive)
+	m.cc = NewCommandContext(rc, cfgProvider, m.mode)
 	if err := m.runInitializers(m.cc); err != nil {
 		return nil, err
 	}
@@ -109,9 +109,9 @@ func NewMain(arg0, cfgPath string, cfgProvider config.Provider, logPath, logLeve
 	return m, nil
 }
 
-func (m *Main) CloneForInteractiveMode() (*Main, error) {
+func (m *Main) Clone(mode Mode) (*Main, error) {
 	mc := *m
-	mc.isInteractive = true
+	mc.mode = mode
 	rc := &cobra.Command{
 		SilenceErrors: true,
 	}
@@ -128,7 +128,7 @@ func (m *Main) CloneForInteractiveMode() (*Main, error) {
 		},
 	})
 	mc.cmds = map[string]*cobra.Command{}
-	mc.cc = NewCommandContext(rc, mc.cp, mc.isInteractive)
+	mc.cc = NewCommandContext(rc, mc.cp, mode)
 	if err := mc.runInitializers(mc.cc); err != nil {
 		return nil, err
 	}
@@ -146,12 +146,12 @@ func (m *Main) Execute(ctx context.Context, args ...string) error {
 	var cm *cobra.Command
 	var cmdArgs []string
 	var err error
-	if !m.isInteractive {
+	if m.mode == ModeNonInteractive {
 		cm, cmdArgs, err = m.root.Find(args)
 		if err != nil {
 			return err
 		}
-		if cm.Use == "clc" {
+		if cm.Use == m.arg0 {
 			// check whether help or completion is requested
 			useShell := true
 			for i, arg := range cmdArgs {
@@ -202,6 +202,10 @@ func (m *Main) Exit() error {
 	return nil
 }
 
+func (m *Main) Arg0() string {
+	return m.arg0
+}
+
 func (m *Main) createLogger(path, level string) error {
 	weight, err := logger.WeightForLevel(level)
 	if err != nil {
@@ -217,7 +221,11 @@ func (m *Main) createLogger(path, level string) error {
 			f = os.Stderr
 		}
 	}
-	m.lg, err = logger.New(f, weight)
+	lg, err := logger.New(f, weight)
+	if err != nil {
+		return err
+	}
+	m.lg = lg
 	return nil
 }
 
@@ -247,15 +255,19 @@ func (m *Main) runInitializers(cc *CommandContext) error {
 			return err
 		}
 	}
-	m.root.AddGroup(cc.Groups()...)
+	addUniqueCommandGroup(cc, m.root)
 	return nil
 }
 
 func (m *Main) createCommands() error {
 	for _, c := range plug.Registry.Commands() {
 		c := c
+		// check if current command available in current mode
+		if !plug.Registry.IsAvailable(m.mode != ModeNonInteractive, c.Name) {
+			continue
+		}
 		// skip interactive commands in interactive mode
-		if m.isInteractive {
+		if m.mode == ModeInteractive {
 			if _, ok := c.Item.(plug.InteractiveCommander); ok {
 				continue
 			}
@@ -286,7 +298,7 @@ func (m *Main) createCommands() error {
 			SilenceUsage: true,
 		}
 		cmd.SetUsageTemplate(usageTemplate)
-		cc := NewCommandContext(cmd, m.cp, m.isInteractive)
+		cc := NewCommandContext(cmd, m.cp, m.mode)
 		if ci, ok := c.Item.(plug.Initializer); ok {
 			if err := ci.Init(cc); err != nil {
 				if errors.Is(err, puberrors.ErrNotAvailable) {
@@ -296,10 +308,10 @@ func (m *Main) createCommands() error {
 			}
 		}
 		// add the backslash prefix for top-level commands in the interactive mode
-		if m.isInteractive && parent == m.root {
+		if m.mode != ModeNonInteractive && parent == m.root {
 			cmd.Use = fmt.Sprintf("\\%s", cmd.Use)
 		}
-		parent.AddGroup(cc.Groups()...)
+		addUniqueCommandGroup(cc, parent)
 		if !cc.TopLevel() {
 			cmd.RunE = func(cmd *cobra.Command, args []string) error {
 				cfs := cmd.Flags()
@@ -316,12 +328,7 @@ func (m *Main) createCommands() error {
 					Stderr: m.stderr,
 					Stdout: m.stdout,
 				}
-				ec, err := NewExecContext(m.lg, sio, m.props, func(ctx context.Context, cfg hazelcast.Config) (*hazelcast.ClientInternal, error) {
-					if err := m.ensureClient(ctx, cfg); err != nil {
-						return nil, err
-					}
-					return clientInternal.Load(), nil
-				}, m.isInteractive)
+				ec, err := NewExecContext(m.lg, sio, m.props, m.mode)
 				if err != nil {
 					return err
 				}
@@ -355,7 +362,7 @@ func (m *Main) createCommands() error {
 					return err
 				}
 				if ic, ok := c.Item.(plug.InteractiveCommander); ok {
-					ec.SetInteractive(true)
+					ec.SetMode(ModeInteractive)
 					if _, ok := c.Item.(plug.UnwrappableCommander); ok {
 						err = ic.ExecInteractive(ctx, ec)
 					} else {
@@ -378,13 +385,19 @@ func (m *Main) createCommands() error {
 }
 
 func (m *Main) ensureClient(ctx context.Context, cfg hazelcast.Config) error {
-	if getClientInternal() == nil {
-		client, err := hazelcast.StartNewClientWithConfig(ctx, cfg)
-		if err != nil {
-			return err
-		}
-		setClientInternal(hazelcast.NewClientInternal(client))
+	if m.ci.Load() != nil {
+		return nil
 	}
+	m.ciMu.Lock()
+	defer m.ciMu.Unlock()
+	if m.ci.Load() != nil {
+		return nil
+	}
+	c, err := hazelcast.StartNewClientWithConfig(ctx, cfg)
+	if err != nil {
+		return err
+	}
+	m.ci.Store(hazelcast.NewClientInternal(c))
 	return nil
 }
 
@@ -397,6 +410,10 @@ func (m *Main) setConfigProps(props *plug.Properties, key string, value any) {
 	default:
 		props.Set(key, value)
 	}
+}
+
+func (m *Main) clientInternal() *hazelcast.ClientInternal {
+	return m.ci.Load()
 }
 
 func convertFlagValue(fs *pflag.FlagSet, name string, v pflag.Value) any {
@@ -419,6 +436,20 @@ func convertUnknownCommandError(err error) error {
 		return err
 	}
 	return fmt.Errorf("unknown command \\%s", ss[1])
+}
+
+func addUniqueCommandGroup(cc *CommandContext, parent *cobra.Command) {
+	g := cc.Group()
+	if g == nil {
+		return
+	}
+	// the group should be added only once
+	for _, pg := range parent.Groups() {
+		if g.ID == pg.ID {
+			return
+		}
+	}
+	parent.AddGroup(g)
 }
 
 func init() {

@@ -1,4 +1,4 @@
-//go:build base || list
+//go:build std || list
 
 package list
 

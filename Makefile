@@ -2,8 +2,9 @@
 
 GIT_COMMIT = $(shell git rev-parse HEAD 2> /dev/null || echo unknown)
 CLC_VERSION ?= v0.0.0-CUSTOMBUILD
-LDFLAGS = "-s -w -X 'github.com/hazelcast/hazelcast-commandline-client/internal.GitCommit=$(GIT_COMMIT)' -X 'github.com/hazelcast/hazelcast-commandline-client/internal.Version=$(CLC_VERSION)' -X 'github.com/hazelcast/hazelcast-go-client/internal.ClientType=CLC' -X 'github.com/hazelcast/hazelcast-go-client/internal.ClientVersion=$(CLC_VERSION)'"
-TEST_FLAGS ?= -v -count 1 -timeout 50m
+MAIN_CMD_HELP ?= Hazelcast CLC
+LDFLAGS = -s -w -X 'github.com/hazelcast/hazelcast-commandline-client/clc/cmd.MainCommandShortHelp=$(MAIN_CMD_HELP)' -X 'github.com/hazelcast/hazelcast-commandline-client/internal.GitCommit=$(GIT_COMMIT)' -X 'github.com/hazelcast/hazelcast-commandline-client/internal.Version=$(CLC_VERSION)' -X 'github.com/hazelcast/hazelcast-go-client/internal.ClientType=CLC' -X 'github.com/hazelcast/hazelcast-go-client/internal.ClientVersion=$(CLC_VERSION)'
+TEST_FLAGS ?= -count 1 -timeout 30m -race
 COVERAGE_OUT = coverage.out
 PACKAGES = $(shell go list ./... | grep -v internal/it | tr '\n' ',')
 BINARY_NAME ?= clc
@@ -14,13 +15,13 @@ RELEASE_FILE ?= release.txt
 TARGZ ?= true
 
 build:
-	CGO_ENABLED=0 go build -tags base,hazelcastinternal,hazelcastinternaltest -ldflags $(LDFLAGS)  -o build/$(BINARY_NAME) ./cmd/clc
+	CGO_ENABLED=0 go build -tags base,std,hazelcastinternal,hazelcastinternaltest -ldflags "$(LDFLAGS)"  -o build/$(BINARY_NAME) ./cmd/clc
 
 test:
-	go test -tags base,hazelcastinternal,hazelcastinternaltest -p 1 $(TEST_FLAGS) ./...
+	go test -tags base,std,hazelcastinternal,hazelcastinternaltest -p 1 $(TEST_FLAGS) ./...
 
 test-cover:
-	go test -tags base,hazelcastinternal,hazelcastinternaltest -p 1 $(TEST_FLAGS) -coverprofile=coverage.out -coverpkg $(PACKAGES) -coverprofile=$(COVERAGE_OUT) ./...
+	go test -tags base,std,hazelcastinternal,hazelcastinternaltest -p 1 $(TEST_FLAGS) -coverprofile=coverage.out -coverpkg $(PACKAGES) -coverprofile=$(COVERAGE_OUT) ./...
 
 view-cover:
 	go tool cover -func $(COVERAGE_OUT) | grep total:

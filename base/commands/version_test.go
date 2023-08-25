@@ -1,4 +1,4 @@
-//go:build base
+//go:build std || version
 
 package commands_test
 

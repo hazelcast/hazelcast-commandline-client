@@ -19,7 +19,7 @@ clc queue [command] [flags]
 
 == clc queue clear
 
-Delete all entries of a Queue.
+Delete all entries of a queue.
 
 Usage:
 
@@ -49,7 +49,7 @@ clc queue clear --name my-queue
 
 == clc queue offer
 
-Add a value to the given Queue.
+Add a value to the given queue.
 
 Usage:
 
@@ -88,7 +88,7 @@ clc queue offer --value-type f32 19.94 19.92 --name my-queue
 
 == clc queue poll
 
-Remove the given number of elements from the given Queue.
+Remove the given number of elements from the given queue.
 
 Usage:
 
@@ -134,7 +134,7 @@ clc queue poll --count 2 --name my-queue 5
 
 == clc queue size
 
-Return the size of the given Queue.
+Return the size of the given queue.
 
 Usage:
 

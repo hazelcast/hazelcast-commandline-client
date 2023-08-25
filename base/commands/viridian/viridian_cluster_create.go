@@ -1,3 +1,5 @@
+//go:build std || viridian
+
 package viridian
 
 import (
@@ -6,7 +8,6 @@ import (
 	"fmt"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -56,7 +57,19 @@ func (cm ClusterCreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 	}
 	stop()
 	c := csi.(viridian.Cluster)
-	tryImportConfig(ctx, ec, api, c)
+	ec.PrintlnUnnecessary(fmt.Sprintf("Cluster %s was created.", c.Name))
+	_, stop, err = ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		sp.SetText("Waiting for the cluster to get ready")
+		if err := waitClusterState(ctx, ec, api, c.ID, stateRunning); err != nil {
+			// do not import the config and exit early
+			return nil, err
+		}
+		return nil, nil
+	})
+	if _, err = tryImportConfig(ctx, ec, api, c.ID, c.Name); err != nil {
+		err = handleErrorResponse(ec, err)
+		ec.PrintlnUnnecessary(fmt.Sprintf("FAIL Could not import cluster configuration: %s", err.Error()))
+	}
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	if verbose {
 		row := output.Row{
@@ -85,36 +98,6 @@ func getFirstAvailableK8sCluster(ctx context.Context, api *viridian.API) (viridi
 		return viridian.K8sCluster{}, errors.New("cluster creation is not available, try again later")
 	}
 	return clusters[0], nil
-}
-
-func tryImportConfig(ctx context.Context, ec plug.ExecContext, api *viridian.API, cluster viridian.Cluster) {
-	cfgName := cluster.Name
-	cp, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText("Waiting for the cluster to get ready")
-		if err := waitClusterState(ctx, ec, api, cluster.ID, stateRunning); err != nil {
-			// do not import the config and exit early
-			return nil, err
-		}
-		sp.SetText("Importing configuration")
-		zipPath, stop, err := api.DownloadConfig(ctx, cluster.ID)
-		if err != nil {
-			return nil, err
-		}
-		defer stop()
-		cfgPath, err := config.CreateFromZip(ctx, ec, cfgName, zipPath)
-		if err != nil {
-			return nil, err
-		}
-		return cfgPath, nil
-	})
-	if err != nil {
-		ec.Logger().Error(err)
-		return
-	}
-	stop()
-	ec.PrintlnUnnecessary(fmt.Sprintf("Cluster %s was created.", cluster.Name))
-	ec.Logger().Info("Imported configuration %s and saved to: %s", cfgName, cp)
-	ec.PrintlnUnnecessary(fmt.Sprintf("Imported configuration: %s", cfgName))
 }
 
 func init() {

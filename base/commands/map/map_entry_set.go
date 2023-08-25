@@ -1,4 +1,4 @@
-//go:build base || map
+//go:build std || map
 
 package _map
 
@@ -47,9 +47,7 @@ func (mc *MapEntrySetCommand) Exec(ctx context.Context, ec plug.ExecContext) err
 	if len(rows) > 0 {
 		return ec.AddOutputRows(ctx, rows...)
 	}
-
 	ec.PrintlnUnnecessary("No entries found.")
-
 	return nil
 }
 

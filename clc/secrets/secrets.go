@@ -1,14 +1,27 @@
 package secrets
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 )
+
+func Save(ctx context.Context, secretPrefix, key, token string) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	if err := os.MkdirAll(paths.Secrets(), 0700); err != nil {
+		return fmt.Errorf("creating secrets directory: %w", err)
+	}
+	if err := Write(secretPrefix, key, []byte(token)); err != nil {
+		return err
+	}
+	return nil
+}
 
 func Write(prefix, name string, token []byte) (err error) {
 	path := paths.ResolveSecretPath(prefix, name)
@@ -16,42 +29,23 @@ func Write(prefix, name string, token []byte) (err error) {
 	if err = os.MkdirAll(dir, 0700); err != nil {
 		return fmt.Errorf("creating secrets directory: %w", err)
 	}
-	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0600)
-	if err != nil {
-		return fmt.Errorf("opening secrets file: %w", err)
-	}
-	defer func() {
-		err2 := f.Close()
-		if err == nil {
-			err = err2
-		}
-	}()
-	b64 := base64.NewEncoder(base64.StdEncoding, f)
-	// ignoring the error here
-	defer b64.Close()
-	if _, err = b64.Write(token); err != nil {
+	b64 := make([]byte, base64.StdEncoding.EncodedLen(len(token)))
+	base64.StdEncoding.Encode(b64, token)
+	if err := os.WriteFile(path, b64, 0600); err != nil {
 		return fmt.Errorf("writing the secret: %w", err)
 	}
 	return nil
 }
 
 func Read(prefix, name string) ([]byte, error) {
-	f, err := os.Open(paths.ResolveSecretPath(prefix, name))
+	b64, err := os.ReadFile(paths.ResolveSecretPath(prefix, name))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("reading the secret: %w", err)
 	}
-	// ignoring the error here
-	defer f.Close()
-	b64 := base64.NewDecoder(base64.StdEncoding, f)
-	b, err := io.ReadAll(b64)
+	b := make([]byte, base64.StdEncoding.DecodedLen(len(b64)))
+	n, err := base64.StdEncoding.Decode(b, b64)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("decoding the secret: %w", err)
 	}
-	return b, nil
-}
-
-func FindAll(prefix string) ([]string, error) {
-	return paths.FindAll(paths.Join(paths.Secrets(), prefix), func(basePath string, entry os.DirEntry) (ok bool) {
-		return !entry.IsDir()
-	})
+	return b[:n], nil
 }

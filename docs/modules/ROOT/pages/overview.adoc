@@ -1,10 +1,10 @@
 = Hazelcast Command-Line Client (CLC)
 :url-github-clc: https://github.com/hazelcast/hazelcast-cloud-cli/blob/master/README.md 
-:description: You can use the Hazelcast Command Line Client (CLC) to connect to and interact with clusters on Hazelcast Platform and {hazelcast-cloud}, direct from the command line or through scripts.
+:description: You can use the Hazelcast Command Line Client (CLC) to connect to and interact with clusters on Hazelcast {hazelcast-cloud} and Hazelcast Platform direct from the command line or through scripts.
 
 {description}
 
-The Hazelcast CLC is a single binary with no dependencies. Within minutes of installation, you can start to perform common tasks on {hazelcast-cloud} and Hazelcast clusters.
+The Hazelcast CLC is a single binary with no dependencies. Within minutes of installation, you can start to perform common tasks on clusters.
 
 == Install
 
@@ -18,13 +18,13 @@ Example use cases for the Hazelcast CLC.
 
 Run xref:clc-sql.adoc[SQL] queries against your cluster and display the output as a table or in a variety of text formats, such as JSON and CSV.
 
-=== Manage Viridian Clusters
+=== Manage {hazelcast-cloud} Clusters
 
 xref:clc-viridian.adoc[Create and manage] {hazelcast-cloud} clusters, and the custom classes on those clusters.
 
 === Create Data Pipelines
 
-xref:clc-job.adoc[Create and manage] data pipelines using the Hazelcast CLC. Check out xref:hazelcast:pipelines:overview.adoc[Platform documentation] for more information about data pipelines.
+xref:clc-job.adoc[Create and manage] data pipelines using the Hazelcast CLC. Check out the xref:hazelcast:pipelines:overview.adoc[Platform documentation] for more information about data pipelines.
 
 === Access Data for Debugging
 
@@ -68,7 +68,7 @@ clc
 In the interactive mode, you can run SQL queries directly. Make sure to add a semicolumn (`;`) to the end of the query, otherwise it is assumed that you want to enter a multiline query.
 
 ----
-CLC> select * from cities;
+> select * from cities;
 ---------------------------------------------------------------------------------
       __key | country                   | city                      | population
 ---------------------------------------------------------------------------------
@@ -80,7 +80,7 @@ CLC> select * from cities;
 
 In order to run CLC commands, prefix them with a backslash `\`:
 ----
-CLC> \object list
+> \object list
 ------------------------------------
  Service Name | Object Name
 ------------------------------------

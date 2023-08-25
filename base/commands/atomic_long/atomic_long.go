@@ -1,4 +1,4 @@
-//go:build base || atomicLong
+//go:build std || atomiclong
 
 package atomiclong
 
@@ -22,6 +22,7 @@ type AtomicLongCommand struct {
 }
 
 func (mc *AtomicLongCommand) Init(cc plug.InitContext) error {
+	cc.AddCommandGroup(clc.GroupDDSID, clc.GroupDDSTitle)
 	cc.SetCommandGroup(clc.GroupDDSID)
 	cc.AddStringFlag(atomicLongFlagName, "n", defaultAtomicLongName, false, "atomic long name")
 	cc.SetTopLevel(true)

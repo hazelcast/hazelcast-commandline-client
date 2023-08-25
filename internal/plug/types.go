@@ -13,6 +13,7 @@ type ReadOnlyProperties interface {
 	GetString(name string) string
 	GetBool(name string) bool
 	GetInt(name string) int64
+	All() map[string]any
 }
 
 type Properties struct {
@@ -32,6 +33,16 @@ func NewProperties() *Properties {
 		ps:  pss[len(pss)-1],
 		psb: map[string]BlockingValue{},
 	}
+}
+
+func (p *Properties) All() map[string]any {
+	m := make(map[string]any)
+	for _, ps := range p.pss {
+		for k, v := range ps {
+			m[k] = v
+		}
+	}
+	return m
 }
 
 func (p *Properties) Push() {
