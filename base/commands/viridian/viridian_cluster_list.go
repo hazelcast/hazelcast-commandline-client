@@ -77,9 +77,9 @@ func (cm ClusterListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 		if verbose {
 			rows[i] = append(rows[i],
 				output.Column{
-					Name:  "Dev Mode",
-					Type:  serialization.TypeBool,
-					Value: c.ClusterType.DevMode,
+					Name:  "Cluster Type",
+					Type:  serialization.TypeString,
+					Value: ClusterType(c.ClusterType.DevMode),
 				},
 			)
 		}

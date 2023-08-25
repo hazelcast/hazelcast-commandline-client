@@ -103,9 +103,9 @@ func (cm ClusterGetCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 				Value: regionTitleSlice(c.Regions),
 			},
 			output.Column{
-				Name:  "Dev Mode",
-				Type:  serialization.TypeBool,
-				Value: c.ClusterType.DevMode,
+				Name:  "Cluster Type",
+				Type:  serialization.TypeString,
+				Value: ClusterType(c.ClusterType.DevMode),
 			},
 		)
 	}

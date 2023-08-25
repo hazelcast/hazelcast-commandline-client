@@ -268,3 +268,10 @@ func fixClusterState(state string) string {
 	state = strings.Replace(state, "STOP", "PAUSE", 1)
 	return state
 }
+
+func ClusterType(isDev bool) string {
+	if isDev {
+		return "Development"
+	}
+	return "Production"
+}
