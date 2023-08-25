@@ -392,7 +392,6 @@ func (m *Main) ensureClientWithTimeout(ctx context.Context, cfg hazelcast.Config
 }
 
 func (m *Main) ensureClient(ctx context.Context, cfg hazelcast.Config) error {
-	time.Sleep(6 * time.Second)
 	if m.ci.Load() != nil {
 		return nil
 	}

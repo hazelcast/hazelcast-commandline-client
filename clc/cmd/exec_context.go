@@ -27,7 +27,8 @@ import (
 )
 
 const (
-	cancelMsg = " (Ctrl+C to cancel) "
+	cancelMsg     = " (Ctrl+C to cancel) "
+	ensureTimeout = 5 * time.Second
 )
 
 type ClientFn func(ctx context.Context, cfg hazelcast.Config) (*hazelcast.ClientInternal, error)
@@ -118,26 +119,28 @@ func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInt
 	}
 	civ, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Connecting to the cluster")
-		var ensured bool
-		if cfg.Cluster.Cloud.Token != "" { // if it is Viridian Cluster
-			appliedFromCache := viridian.ApplyViridianDiscoveryConfig(&cfg, ec.Logger())
-			if err = ec.main.ensureClientWithTimeout(ctx, cfg, 5*time.Second); err != nil {
-				if appliedFromCache && errors.Is(err, context.DeadlineExceeded) {
-					if err = viridian.DeleteCache(ec.Logger(), cfg); err != nil {
-						return nil, err
-					}
-					viridian.ApplyViridianDiscoveryConfig(&cfg, ec.Logger())
-				} else {
-					return nil, err
-				}
-			} else {
-				ensured = true
-			}
-		}
-		if !ensured {
+		isViridian := cfg.Cluster.Cloud.Token != ""
+		if !isViridian {
 			if err = ec.main.ensureClient(ctx, cfg); err != nil {
 				return nil, err
 			}
+		}
+		appliedFromCache := viridian.ApplyViridianDiscoveryConfig(&cfg, ec.Logger())
+		start := time.Now()
+		if err = ec.main.ensureClientWithTimeout(ctx, cfg, ensureTimeout); err != nil {
+			timePassed := time.Since(start)
+			if appliedFromCache && errors.Is(err, context.DeadlineExceeded) && timePassed >= ensureTimeout {
+				if err = viridian.DeleteCache(ec.Logger(), cfg); err != nil {
+					return nil, err
+				}
+				viridian.ApplyViridianDiscoveryConfig(&cfg, ec.Logger())
+				if err = ec.main.ensureClient(ctx, cfg); err != nil {
+					return nil, err
+				}
+				return ec.main.clientInternal(), nil
+			}
+
+			return nil, err
 		}
 		return ec.main.clientInternal(), nil
 	})
