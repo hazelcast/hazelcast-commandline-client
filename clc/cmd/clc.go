@@ -267,7 +267,7 @@ func (m *Main) createCommands() error {
 			continue
 		}
 		// skip interactive commands in interactive mode
-		if m.mode == ModeNonInteractive {
+		if m.mode == ModeInteractive {
 			if _, ok := c.Item.(plug.InteractiveCommander); ok {
 				continue
 			}
