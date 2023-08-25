@@ -10,24 +10,24 @@ import (
 )
 
 type CommandContext struct {
-	Cmd           *cobra.Command
-	CP            config.Provider
-	stringValues  map[string]*string
-	boolValues    map[string]*bool
-	intValues     map[string]*int64
-	isInteractive bool
-	isTopLevel    bool
-	group         *cobra.Group
+	Cmd          *cobra.Command
+	CP           config.Provider
+	stringValues map[string]*string
+	boolValues   map[string]*bool
+	intValues    map[string]*int64
+	mode         Mode
+	isTopLevel   bool
+	group        *cobra.Group
 }
 
-func NewCommandContext(cmd *cobra.Command, cfgProvider config.Provider, isInteractive bool) *CommandContext {
+func NewCommandContext(cmd *cobra.Command, cfgProvider config.Provider, mode Mode) *CommandContext {
 	return &CommandContext{
-		Cmd:           cmd,
-		CP:            cfgProvider,
-		stringValues:  map[string]*string{},
-		boolValues:    map[string]*bool{},
-		intValues:     map[string]*int64{},
-		isInteractive: isInteractive,
+		Cmd:          cmd,
+		CP:           cfgProvider,
+		stringValues: map[string]*string{},
+		boolValues:   map[string]*bool{},
+		intValues:    map[string]*int64{},
+		mode:         mode,
 	}
 }
 
@@ -85,7 +85,7 @@ func (cc *CommandContext) Hide() {
 }
 
 func (cc *CommandContext) Interactive() bool {
-	return cc.isInteractive
+	return cc.mode == ModeInteractive
 }
 
 func (cc *CommandContext) SetCommandHelp(long, short string) {
@@ -118,7 +118,7 @@ func (cc *CommandContext) Group() *cobra.Group {
 
 func (cc *CommandContext) AddStringConfig(name, value, flag string, help string) {
 	cc.CP.Set(name, value)
-	if flag != "" && !cc.isInteractive {
+	if flag != "" && !cc.Interactive() {
 		f := cc.Cmd.Flag(flag)
 		if f != nil {
 			cc.CP.BindFlag(name, f)

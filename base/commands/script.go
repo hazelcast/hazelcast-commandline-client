@@ -65,7 +65,7 @@ func (cm ScriptCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		Stderr: ec.Stderr(),
 		Stdout: ec.Stdout(),
 	}
-	m, err := ec.(*cmd.ExecContext).Main().Clone(false)
+	m, err := ec.(*cmd.ExecContext).Main().Clone(cmd.ModeScripting)
 	if err != nil {
 		return fmt.Errorf("cloning Main: %w", err)
 	}
