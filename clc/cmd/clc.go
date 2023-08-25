@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
@@ -376,7 +377,22 @@ func (m *Main) createCommands() error {
 	return nil
 }
 
+func (m *Main) ensureClientWithTimeout(ctx context.Context, cfg hazelcast.Config, t time.Duration) error {
+	ctx, cancel := context.WithTimeout(ctx, t)
+	defer cancel()
+	err := m.ensureClient(ctx, cfg)
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+			return err
+		}
+	}
+}
+
 func (m *Main) ensureClient(ctx context.Context, cfg hazelcast.Config) error {
+	time.Sleep(6 * time.Second)
 	if m.ci.Load() != nil {
 		return nil
 	}

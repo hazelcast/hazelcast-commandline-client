@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	storePath            = "store"
+	storePath            = "caches/coordinator"
 	addressesKeyFormat   = "viridian.addresses.%s"
 	invalidKeyFormat     = "viridian.invalid.%s"
 	discoveryEndpoint    = "%s/cluster/discovery?token=%s"
@@ -32,27 +32,30 @@ type address struct {
 	PublicAddress  string `json:"public-address"`
 }
 
-func MaybeOptimizeDiscovery(cfg *hazelcast.Config, log log.Logger) error {
-	if cfg.Cluster.Cloud.Token == "" { // not a viridian cluster
-		return nil
-	}
+func ApplyViridianDiscoveryConfig(cfg *hazelcast.Config, log log.Logger) bool {
+	var appliedFromCache bool
 	var addresses []address
 	sa := store.NewStoreAccessor(filepath.Join(paths.Home(), storePath), log)
 	addresses, err := getFromCache(sa, cfg)
 	if err != nil {
-		return err
+		log.Debugf("Error: reading addresses from cache: %w")
+		return appliedFromCache
 	}
-	if len(addresses) == 0 {
+	if len(addresses) > 0 {
+		appliedFromCache = true
+	} else {
 		addresses, err = getFromAPI(cfg.Cluster.Cloud.Token)
 		if err != nil {
-			return err
+			log.Debugf("Error: fetching addresses from API: %w")
+			return appliedFromCache
 		}
 		if err = updateCache(sa, addresses, cfg); err != nil {
-			return err
+			log.Debugf("Error: saving addresses to cache: %w")
+			return appliedFromCache
 		}
 	}
 	modifyStrategy(cfg, addresses)
-	return nil
+	return appliedFromCache
 }
 
 func getFromCache(sa *store.StoreAccessor, cfg *hazelcast.Config) ([]address, error) {
@@ -116,6 +119,14 @@ func updateCache(sa *store.StoreAccessor, addresses []address, cfg *hazelcast.Co
 			return nil, err
 		}
 		return nil, nil
+	})
+	return err
+}
+
+func DeleteCache(l log.Logger, cfg hazelcast.Config) error {
+	sa := store.NewStoreAccessor(filepath.Join(paths.Home(), storePath), l)
+	_, err := sa.WithLock(func(s *store.Store) (any, error) {
+		return nil, s.DeleteEntriesWithPrefix(fmt.Sprintf(addressesKeyFormat, cfg.Cluster.Name))
 	})
 	return err
 }

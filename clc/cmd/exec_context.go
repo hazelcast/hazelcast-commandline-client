@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 	"github.com/theckman/yacspin"
@@ -23,7 +24,6 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/terminal"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
 const (
@@ -116,13 +116,28 @@ func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInt
 	if err != nil {
 		return nil, err
 	}
-	if err = viridian.MaybeOptimizeDiscovery(&cfg, ec.Logger()); err != nil {
-		return nil, err
-	}
 	civ, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Connecting to the cluster")
-		if err := ec.main.ensureClient(ctx, cfg); err != nil {
-			return nil, err
+		var ensured bool
+		if cfg.Cluster.Cloud.Token != "" { // if it is Viridian Cluster
+			appliedFromCache := viridian.ApplyViridianDiscoveryConfig(&cfg, ec.Logger())
+			if err = ec.main.ensureClientWithTimeout(ctx, cfg, 5*time.Second); err != nil {
+				if appliedFromCache && errors.Is(err, context.DeadlineExceeded) {
+					if err = viridian.DeleteCache(ec.Logger(), cfg); err != nil {
+						return nil, err
+					}
+					viridian.ApplyViridianDiscoveryConfig(&cfg, ec.Logger())
+				} else {
+					return nil, err
+				}
+			} else {
+				ensured = true
+			}
+		}
+		if !ensured {
+			if err = ec.main.ensureClient(ctx, cfg); err != nil {
+				return nil, err
+			}
 		}
 		return ec.main.clientInternal(), nil
 	})
