@@ -19,6 +19,7 @@ package it
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -29,7 +30,7 @@ import (
 	"time"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
@@ -257,18 +258,20 @@ func (tcx TestContext) AssertStdoutDollar(text string) {
 	}
 }
 
-func (tcx TestContext) AssertStdoutHasRowWithFields(fields ...string) map[string]string {
+func (tcx TestContext) AssertJSONStdoutHasRowWithFields(fields ...string) map[string]any {
 	stdout := tcx.ExpectStdout.String()
-	out := strings.Fields(stdout)
-	if len(fields) != len(out) {
-		tcx.T.Log("STDOUT:", stdout)
-		tcx.T.Fatalf("stdout does not have the same fields as %v", fields)
+	var m map[string]any
+	check.Must(json.Unmarshal([]byte(stdout), &m))
+	tcx.T.Log("STDOUT:", stdout)
+	if len(fields) != len(m) {
+		tcx.T.Fatalf("stdout does not have the same number fields as %v", fields)
 	}
-	fm := map[string]string{}
-	for i, f := range fields {
-		fm[f] = out[i]
+	for _, k := range fields {
+		if _, ok := m[k]; !ok {
+			tcx.T.Fatalf("stdout does not have the same fields as %v", fields)
+		}
 	}
-	return fm
+	return m
 }
 
 func (tcx TestContext) AssertStdoutDollarWithPath(path string) {
@@ -320,7 +323,7 @@ func (tcx TestContext) createMain() (*cmd.Main, error) {
 	if err != nil {
 		panic(err)
 	}
-	return cmd.NewMain("clc", tcx.ConfigPath, fp, tcx.LogPath, tcx.LogLevel, tcx.IO())
+	return cmd.NewMain("clctest", tcx.ConfigPath, fp, tcx.LogPath, tcx.LogLevel, tcx.IO())
 }
 
 func WithEnv(name, value string, f func()) {

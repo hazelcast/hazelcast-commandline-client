@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 	"sync/atomic"
 
 	"github.com/hazelcast/hazelcast-go-client"
@@ -26,19 +27,8 @@ import (
 )
 
 var (
-	// client is currently global in order to have a single client.
-	// This is bad.
-	// TODO: make the client unique without making it global.
-	clientInternal atomic.Pointer[hazelcast.ClientInternal]
+	MainCommandShortHelp = "Hazelcast CLC"
 )
-
-func getClientInternal() *hazelcast.ClientInternal {
-	return clientInternal.Load()
-}
-
-func setClientInternal(ci *hazelcast.ClientInternal) {
-	clientInternal.Store(ci)
-}
 
 type Mode int
 
@@ -61,13 +51,16 @@ type Main struct {
 	props        *plug.Properties
 	cc           *CommandContext
 	cp           config.Provider
+	arg0         string
+	ciMu         *sync.Mutex
+	ci           *atomic.Pointer[hazelcast.ClientInternal]
 }
 
 func NewMain(arg0, cfgPath string, cfgProvider config.Provider, logPath, logLevel string, sio clc.IO) (*Main, error) {
 	rc := &cobra.Command{
 		Use:               arg0,
-		Short:             "Hazelcast CLC",
-		Long:              "Hazelcast CLC",
+		Short:             MainCommandShortHelp,
+		Long:              MainCommandShortHelp,
 		Args:              cobra.NoArgs,
 		CompletionOptions: cobra.CompletionOptions{DisableDescriptions: true},
 		SilenceErrors:     true,
@@ -82,6 +75,9 @@ func NewMain(arg0, cfgPath string, cfgProvider config.Provider, logPath, logLeve
 		stdin:  sio.Stdin,
 		props:  plug.NewProperties(),
 		cp:     cfgProvider,
+		arg0:   arg0,
+		ciMu:   &sync.Mutex{},
+		ci:     &atomic.Pointer[hazelcast.ClientInternal]{},
 	}
 	if logPath == "" {
 		logPath = cfgProvider.GetString(clc.PropertyLogPath)
@@ -155,7 +151,7 @@ func (m *Main) Execute(ctx context.Context, args ...string) error {
 		if err != nil {
 			return err
 		}
-		if cm.Use == "clc" {
+		if cm.Use == m.arg0 {
 			// check whether help or completion is requested
 			useShell := true
 			for i, arg := range cmdArgs {
@@ -204,6 +200,10 @@ func (m *Main) Execute(ctx context.Context, args ...string) error {
 func (m *Main) Exit() error {
 	m.lg.Close()
 	return nil
+}
+
+func (m *Main) Arg0() string {
+	return m.arg0
 }
 
 func (m *Main) createLogger(path, level string) error {
@@ -255,7 +255,7 @@ func (m *Main) runInitializers(cc *CommandContext) error {
 			return err
 		}
 	}
-	m.root.AddGroup(cc.Groups()...)
+	addUniqueCommandGroup(cc, m.root)
 	return nil
 }
 
@@ -311,7 +311,7 @@ func (m *Main) createCommands() error {
 		if m.mode != ModeNonInteractive && parent == m.root {
 			cmd.Use = fmt.Sprintf("\\%s", cmd.Use)
 		}
-		parent.AddGroup(cc.Groups()...)
+		addUniqueCommandGroup(cc, parent)
 		if !cc.TopLevel() {
 			cmd.RunE = func(cmd *cobra.Command, args []string) error {
 				cfs := cmd.Flags()
@@ -328,12 +328,7 @@ func (m *Main) createCommands() error {
 					Stderr: m.stderr,
 					Stdout: m.stdout,
 				}
-				ec, err := NewExecContext(m.lg, sio, m.props, func(ctx context.Context, cfg hazelcast.Config) (*hazelcast.ClientInternal, error) {
-					if err := m.ensureClient(ctx, cfg); err != nil {
-						return nil, err
-					}
-					return clientInternal.Load(), nil
-				}, m.mode)
+				ec, err := NewExecContext(m.lg, sio, m.props, m.mode)
 				if err != nil {
 					return err
 				}
@@ -390,13 +385,19 @@ func (m *Main) createCommands() error {
 }
 
 func (m *Main) ensureClient(ctx context.Context, cfg hazelcast.Config) error {
-	if getClientInternal() == nil {
-		client, err := hazelcast.StartNewClientWithConfig(ctx, cfg)
-		if err != nil {
-			return err
-		}
-		setClientInternal(hazelcast.NewClientInternal(client))
+	if m.ci.Load() != nil {
+		return nil
 	}
+	m.ciMu.Lock()
+	defer m.ciMu.Unlock()
+	if m.ci.Load() != nil {
+		return nil
+	}
+	c, err := hazelcast.StartNewClientWithConfig(ctx, cfg)
+	if err != nil {
+		return err
+	}
+	m.ci.Store(hazelcast.NewClientInternal(c))
 	return nil
 }
 
@@ -409,6 +410,10 @@ func (m *Main) setConfigProps(props *plug.Properties, key string, value any) {
 	default:
 		props.Set(key, value)
 	}
+}
+
+func (m *Main) clientInternal() *hazelcast.ClientInternal {
+	return m.ci.Load()
 }
 
 func convertFlagValue(fs *pflag.FlagSet, name string, v pflag.Value) any {
@@ -431,6 +436,20 @@ func convertUnknownCommandError(err error) error {
 		return err
 	}
 	return fmt.Errorf("unknown command \\%s", ss[1])
+}
+
+func addUniqueCommandGroup(cc *CommandContext, parent *cobra.Command) {
+	g := cc.Group()
+	if g == nil {
+		return
+	}
+	// the group should be added only once
+	for _, pg := range parent.Groups() {
+		if g.ID == pg.ID {
+			return
+		}
+	}
+	parent.AddGroup(g)
 }
 
 func init() {

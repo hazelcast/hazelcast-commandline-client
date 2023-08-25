@@ -1,3 +1,5 @@
+//go:build std || project
+
 package project
 
 const (
@@ -8,4 +10,5 @@ const (
 	hzTemplatesOrganization = "https://github.com/hazelcast-templates"
 	defaultsFileName        = "defaults.yaml"
 	envTemplateSource       = "CLC_EXPERIMENTAL_TEMPLATE_SOURCE"
+	flagOutputDir           = "output-dir"
 )

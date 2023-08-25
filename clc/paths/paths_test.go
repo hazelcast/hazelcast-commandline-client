@@ -149,3 +149,39 @@ func TestJoin(t *testing.T) {
 		})
 	}
 }
+
+func TestReplaceExt(t *testing.T) {
+	testCases := []struct {
+		in  string
+		ext string
+		out string
+	}{
+		{
+			in:  "",
+			ext: "",
+			out: "",
+		},
+		{
+			in:  "foo.txt",
+			ext: "",
+			out: "foo",
+		},
+		{
+			in:  "foo.txt",
+			ext: ".mp3",
+			out: "foo.mp3",
+		},
+		{
+			in:  "/dev/shm/foo.txt",
+			ext: ".mp3",
+			out: "/dev/shm/foo.mp3",
+		},
+	}
+	for _, tc := range testCases {
+		tc := tc
+		name := fmt.Sprintf("%s/%s", tc.in, tc.ext)
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.out, paths.ReplaceExt(tc.in, tc.ext))
+		})
+	}
+}

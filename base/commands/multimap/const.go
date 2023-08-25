@@ -1,4 +1,4 @@
-//go:build base || multimap
+//go:build std || multimap
 
 package multimap
 

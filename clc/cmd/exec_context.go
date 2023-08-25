@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"strings"
 	"time"
 
 	"github.com/fatih/color"
@@ -38,7 +39,6 @@ type ExecContext struct {
 	stdin       io.Reader
 	args        []string
 	props       *plug.Properties
-	clientFn    ClientFn
 	mode        Mode
 	cmd         *cobra.Command
 	main        *Main
@@ -47,14 +47,13 @@ type ExecContext struct {
 	cp          config.Provider
 }
 
-func NewExecContext(lg log.Logger, sio clc.IO, props *plug.Properties, clientFn ClientFn, mode Mode) (*ExecContext, error) {
+func NewExecContext(lg log.Logger, sio clc.IO, props *plug.Properties, mode Mode) (*ExecContext, error) {
 	return &ExecContext{
 		lg:          lg,
 		stdout:      sio.Stdout,
 		stderr:      sio.Stderr,
 		stdin:       sio.Stdin,
 		props:       props,
-		clientFn:    clientFn,
 		mode:        mode,
 		spinnerWait: 1 * time.Second,
 	}, nil
@@ -100,12 +99,16 @@ func (ec *ExecContext) Args() []string {
 	return ec.args
 }
 
+func (ec *ExecContext) Arg0() string {
+	return ec.main.Arg0()
+}
+
 func (ec *ExecContext) Props() plug.ReadOnlyProperties {
 	return ec.props
 }
 
 func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInternal, error) {
-	ci := getClientInternal()
+	ci := ec.main.clientInternal()
 	if ci != nil {
 		return ci, nil
 	}
@@ -115,14 +118,16 @@ func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInt
 	}
 	civ, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Connecting to the cluster")
-		return ec.clientFn(ctx, cfg)
+		if err := ec.main.ensureClient(ctx, cfg); err != nil {
+			return nil, err
+		}
+		return ec.main.clientInternal(), nil
 	})
 	if err != nil {
 		return nil, err
 	}
 	stop()
 	ci = civ.(*hazelcast.ClientInternal)
-	setClientInternal(ci)
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	if verbose || ec.Interactive() {
 		cn := ci.ClusterService().FailoverService().Current().ClusterName
@@ -261,7 +266,7 @@ func (ec *ExecContext) WrapResult(f func() error) error {
 
 func (ec *ExecContext) PrintlnUnnecessary(text string) {
 	if !ec.Quiet() {
-		I2(fmt.Fprintln(ec.Stdout(), text))
+		I2(fmt.Fprintln(ec.Stdout(), colorizeText(text)))
 	}
 }
 
@@ -280,6 +285,16 @@ func (ec *ExecContext) ensurePrinter() error {
 	}
 	ec.printer = pr
 	return nil
+}
+
+func colorizeText(text string) string {
+	if strings.HasPrefix(text, "OK ") {
+		return fmt.Sprintf(" %s   %s", color.GreenString("OK"), text[3:])
+	}
+	if strings.HasPrefix(text, "FAIL ") {
+		return fmt.Sprintf(" %s %s", color.RedString("FAIL"), text[5:])
+	}
+	return text
 }
 
 func makeErrorStringFromHTTPResponse(text string) string {
@@ -310,13 +325,18 @@ func (s *simpleSpinner) Start() {
 	_ = s.sp.Start()
 }
 
+func (s *simpleSpinner) Stop() {
+	// ignoring the error here
+	_ = s.sp.Stop()
+}
+
 func (s *simpleSpinner) SetText(text string) {
 	s.text = text
 	if text == "" {
 		s.sp.Prefix("")
 		return
 	}
-	s.sp.Prefix(text + cancelMsg)
+	s.sp.Prefix("      " + text + cancelMsg)
 }
 
 func (s *simpleSpinner) SetProgress(progress float32) {

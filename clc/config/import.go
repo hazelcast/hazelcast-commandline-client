@@ -20,17 +20,8 @@ import (
 func ImportSource(ctx context.Context, ec plug.ExecContext, target, src string) (string, error) {
 	target = strings.TrimSpace(target)
 	src = strings.TrimSpace(src)
-	// first assume the passed string is a CURL command line, and try to import it.
-	path, ok, err := tryImportViridianCurlSource(ctx, ec, target, src)
-	if err != nil {
-		return "", err
-	}
-	// import is successful
-	if ok {
-		return path, nil
-	}
-	// import is not successful, check whether this an HTTP source
-	path, ok, err = tryImportHTTPSource(ctx, ec, target, src)
+	// check whether this an HTTP source
+	path, ok, err := tryImportHTTPSource(ctx, ec, target, src)
 	if err != nil {
 		return "", err
 	}
@@ -49,21 +40,6 @@ func ImportSource(ctx context.Context, ec plug.ExecContext, target, src string) 
 	return path, nil
 }
 
-// tryImportViridianCurlSource returns true if importing from a Viridian CURL command line is successful
-func tryImportViridianCurlSource(ctx context.Context, ec plug.ExecContext, target, src string) (string, bool, error) {
-	const reCurlSource = `curl (?P<url>[^\s]+)\s+`
-	re, err := regexp.Compile(reCurlSource)
-	if err != nil {
-		return "", false, err
-	}
-	grps := re.FindStringSubmatch(src)
-	if len(grps) < 2 {
-		return "", false, nil
-	}
-	url := grps[1]
-	return tryImportHTTPSource(ctx, ec, target, url)
-}
-
 func tryImportHTTPSource(ctx context.Context, ec plug.ExecContext, target, url string) (string, bool, error) {
 	if !strings.HasPrefix(url, "https://") && !strings.HasSuffix(url, "http://") {
 		return "", false, nil
@@ -72,40 +48,26 @@ func tryImportHTTPSource(ctx context.Context, ec plug.ExecContext, target, url s
 	if err != nil {
 		return "", false, err
 	}
-	ec.Logger().Info("Downloaded sample to: %s", path)
-	path, err = CreateFromZip(ctx, ec, target, path)
-	if err != nil {
-		return "", false, err
-	}
-	return path, true, nil
-
+	ec.Logger().Info("Downloaded the configuration at: %s", path)
+	return tryImportViridianZipSource(ctx, ec, target, path)
 }
 
 // tryImportViridianZipSource returns true if importing from a Viridian Go sample zip file is successful
 func tryImportViridianZipSource(ctx context.Context, ec plug.ExecContext, target, src string) (string, bool, error) {
-	const reSource = `hazelcast-cloud-(?P<language>[a-z]+)-sample-client-(?P<cn>[a-zA-Z0-9_-]+)-default\.zip`
-	re, err := regexp.Compile(reSource)
+	path, ok, err := CreateFromZip(ctx, ec, target, src)
+	if ok {
+		return path, true, nil
+	}
+	path, ok, err = CreateFromZipLegacy(ctx, ec, target, src)
 	if err != nil {
-		return "", false, err
+		return "", ok, err
 	}
-	grps := re.FindStringSubmatch(src)
-	if len(grps) != 3 {
-		return "", false, nil
-	}
-	language := grps[1]
-	if language != "go" {
-		return "", false, fmt.Errorf("%s is not usable as a configuration source, use Go sample", src)
-	}
-	path, err := CreateFromZip(ctx, ec, target, src)
-	if err != nil {
-		return "", false, err
-	}
-	return path, true, nil
+	return path, ok, nil
 }
 
 func download(ctx context.Context, ec plug.ExecContext, url string) (string, error) {
 	p, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText("Downloading the sample")
+		sp.SetText("Downloading the configuration")
 		f, err := os.CreateTemp("", "clc-download-*")
 		if err != nil {
 			return "", err
@@ -125,20 +87,67 @@ func download(ctx context.Context, ec plug.ExecContext, url string) (string, err
 	return p.(string), nil
 }
 
-func CreateFromZip(ctx context.Context, ec plug.ExecContext, target, path string) (string, error) {
+func CreateFromZip(ctx context.Context, ec plug.ExecContext, target, path string) (string, bool, error) {
+	// TODO: refactor this function so it is not dependent on ec
 	p, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText("Extracting files from the sample")
+		sp.SetText("Extracting configuration files")
 		reader, err := zip.OpenReader(path)
 		if err != nil {
 			return nil, err
 		}
 		defer reader.Close()
-		var goPaths []string
-		var pemFiles []*zip.File
-		// find .go and .pem paths
+		// check whether this is the new config zip
+		var newConfig bool
+		var files []*zip.File
 		for _, rf := range reader.File {
-			if strings.HasSuffix(rf.Name, ".go") {
-				goPaths = append(goPaths, rf.Name)
+			if strings.HasSuffix(rf.Name, "/config.json") {
+				newConfig = true
+			}
+			if !rf.FileInfo().IsDir() {
+				files = append(files, rf)
+			}
+		}
+		if !newConfig {
+			return false, nil
+		}
+		// this is the new config zip, just extract to target
+		outDir, cfgFileName, err := DirAndFile(target)
+		if err != nil {
+			return nil, err
+		}
+		if err = os.MkdirAll(outDir, 0700); err != nil {
+			return nil, err
+		}
+		if err = copyFiles(ec, files, outDir); err != nil {
+			return nil, err
+		}
+		return paths.Join(outDir, cfgFileName), nil
+	})
+	if err != nil {
+		return "", false, err
+	}
+	stop()
+	if p == false {
+		return "", false, nil
+	}
+	return p.(string), true, nil
+}
+
+func CreateFromZipLegacy(ctx context.Context, ec plug.ExecContext, target, path string) (string, bool, error) {
+	// TODO: refactor this function so it is not dependent on ec
+	p, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		sp.SetText("Extracting configuration files")
+		reader, err := zip.OpenReader(path)
+		if err != nil {
+			return nil, err
+		}
+		defer reader.Close()
+		var pyPaths []string
+		var pemFiles []*zip.File
+		// find .py and .pem paths
+		for _, rf := range reader.File {
+			if strings.HasSuffix(rf.Name, ".py") {
+				pyPaths = append(pyPaths, rf.Name)
 				continue
 			}
 			// copy only pem files
@@ -149,32 +158,39 @@ func CreateFromZip(ctx context.Context, ec plug.ExecContext, target, path string
 		}
 		var cfgFound bool
 		// find the configuration bits
-		token, clusterName, pw, cfgFound := extractConfigFields(reader, goPaths)
+		token, clusterName, pw, apiBase, cfgFound := extractConfigFields(reader, pyPaths)
 		if !cfgFound {
-			return nil, errors.New("go file with configuration not found")
+			return nil, errors.New("python file with configuration not found")
 		}
-		opts := makeViridianOpts(clusterName, token, pw)
+		opts := makeViridianOpts(clusterName, token, pw, apiBase)
 		outDir, cfgPath, err := Create(target, opts)
 		if err != nil {
 			return nil, err
+		}
+		mopts := makeViridianOptsMap(clusterName, token, pw, apiBase)
+		// ignoring the JSON path for now
+		_, _, err = CreateJSON(target, mopts)
+		if err != nil {
+			ec.Logger().Warn("Failed creating the JSON configuration: %s", err.Error())
 		}
 		// copy pem files
 		if err := copyFiles(ec, pemFiles, outDir); err != nil {
 			return nil, err
 		}
-		return cfgPath, nil
+		return paths.Join(outDir, cfgPath), nil
 	})
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 	stop()
-	return p.(string), nil
+	return p.(string), true, nil
 }
 
-func makeViridianOpts(clusterName, token, password string) clc.KeyValues[string, string] {
+func makeViridianOpts(clusterName, token, password, apiBaseURL string) clc.KeyValues[string, string] {
 	return clc.KeyValues[string, string]{
 		{Key: "cluster.name", Value: clusterName},
 		{Key: "cluster.discovery-token", Value: token},
+		{Key: "cluster.api-base", Value: apiBaseURL},
 		{Key: "ssl.ca-path", Value: "ca.pem"},
 		{Key: "ssl.cert-path", Value: "cert.pem"},
 		{Key: "ssl.key-path", Value: "key.pem"},
@@ -182,8 +198,26 @@ func makeViridianOpts(clusterName, token, password string) clc.KeyValues[string,
 	}
 }
 
-func extractConfigFields(reader *zip.ReadCloser, goPaths []string) (token, clusterName, pw string, cfgFound bool) {
-	for _, p := range goPaths {
+func makeViridianOptsMap(clusterName, token, password, apiBaseURL string) map[string]any {
+	cm := map[string]any{
+		"name":            clusterName,
+		"discovery-token": token,
+		"api-base":        apiBaseURL,
+	}
+	ssl := map[string]any{
+		"ca-path":      "ca.pem",
+		"cert-path":    "cert.pem",
+		"key-path":     "key.pem",
+		"key-password": password,
+	}
+	return map[string]any{
+		"cluster": cm,
+		"ssl":     ssl,
+	}
+}
+
+func extractConfigFields(reader *zip.ReadCloser, pyPaths []string) (token, clusterName, pw, apiBase string, cfgFound bool) {
+	for _, p := range pyPaths {
 		rc, err := reader.Open(p)
 		if err != nil {
 			continue
@@ -204,6 +238,11 @@ func extractConfigFields(reader *zip.ReadCloser, goPaths []string) (token, clust
 		}
 		pw = extractKeyPassword(text)
 		// it's OK if password is not found
+		apiBase = extractClusterAPIBaseURL(text)
+		if apiBase != "" {
+			apiBase = "https://" + apiBase
+		}
+		// it's OK if apiBase is not found
 		cfgFound = true
 		break
 	}
@@ -213,7 +252,8 @@ func extractConfigFields(reader *zip.ReadCloser, goPaths []string) (token, clust
 func copyFiles(ec plug.ExecContext, files []*zip.File, outDir string) error {
 	for _, rf := range files {
 		_, outFn := filepath.Split(rf.Name)
-		f, err := os.Create(paths.Join(outDir, outFn))
+		path := paths.Join(outDir, outFn)
+		f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 		if err != nil {
 			return err
 		}
@@ -232,23 +272,29 @@ func copyFiles(ec plug.ExecContext, files []*zip.File, outDir string) error {
 }
 
 func extractClusterName(text string) string {
-	// extract from config.Cluster.Name = "pr-3814"
-	const re = `config.Cluster.Name\s+=\s+"([^"]+)"`
+	// extract from cluster_name="XXXX"
+	const re = `cluster_name="([^"]+)"`
 	return extractSimpleString(re, text)
+}
 
+func extractClusterAPIBaseURL(text string) string {
+	// extract from HazelcastCloudDiscovery._CLOUD_URL_BASE = "XXXX"
+	const re = `HazelcastCloudDiscovery._CLOUD_URL_BASE\s*=\s*"([^"]+)"`
+	return extractSimpleString(re, text)
 }
 
 func extractViridianToken(text string) string {
-	// extract from: config.Cluster.Cloud.Token = "EWEKHVOOQOjMN5mXB8OngRF4YG5aOm6N2LUEOlhdC7SWpY54hm"
-	const re = `config.Cluster.Cloud.Token\s+=\s+"([^"]+)"`
+	// extract from: cloud_discovery_token="XXXX",
+	const re = `cloud_discovery_token="([^"]+)"`
 	return extractSimpleString(re, text)
 }
 
 func extractKeyPassword(text string) string {
-	// extract from: err = config.Cluster.Network.SSL.AddClientCertAndEncryptedKeyPath(certFile, keyFile, "12ee6ff601a")
-	const re = `config.Cluster.Network.SSL.AddClientCertAndEncryptedKeyPath\(certFile,\s+keyFile,\s+"([^"]+)"`
+	// extract from: ssl_password="XXXX",
+	const re = `ssl_password="([^"]+)"`
 	return extractSimpleString(re, text)
 }
+
 func extractSimpleString(pattern, text string) string {
 	re, err := regexp.Compile(pattern)
 	if err != nil {

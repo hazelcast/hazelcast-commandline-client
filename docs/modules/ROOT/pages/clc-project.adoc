@@ -15,13 +15,13 @@ clc project [command] [flags]
 
 == clc project create
 
-Creates project from the given template.
+Creates a project from the given template.
 
 Usage:
 
 [source,bash]
 ----
-clc project create [template-name] [output-dir] [placeholder-values] [flags]
+clc project create [template-name] [placeholder-values] [flags]
 ----
 
 Parameters:
@@ -30,10 +30,10 @@ Parameters:
 |===
 |Parameter|Required|Description|Default
 
-|`output-dir`
-|Required
+|`--output-dir`, `-o`
+|Optional
 |Output directory for the project to be created.
-|
+|Template name
 
 |`template-name`
 |Required
@@ -42,9 +42,8 @@ Parameters:
 
 |`placeholder-values`
 |Optional
-|Template placeholder values can be specified as key-value pairs. You can use letters and numbers in keys. Example: `key`=`value`
+|Template placeholder values can be specified as key-value pairs. You can use lowercase letters, numbers and the underscore character in keys. Example: `my_key1`=`value`
 
-WARNING: keys cannot contain punctuation
 |
 |===
 
@@ -65,23 +64,23 @@ Templates are located in https://github.com/hazelcast-templates. You can overrid
 
 1. `defaults.yaml` (keys cannot contain punctuation)
 2. `config.yaml`
-3. User passed key-values in the "KEY=VALUE" format. The keys can only contain letters and numbers.
+3. User passed key-values in the "KEY=VALUE" format. The keys can only contain lowercase letters, numbers and the underscore character.
 
 You can use the placeholders in "defaults.yaml" and the following configuration item placeholders:
 
-* ClusterName
-* ClusterAddress
-* ClusterUser
-* ClusterPassword
-* ClusterDiscoveryToken
-* SslEnabled
-* SslServer
-* SslSkipVerify
-* SslCaPath
-* SslKeyPath
-* SslKeyPassword
-* LogPath
-* LogLevel
+* cluster_name
+* cluster_address
+* cluster_user
+* cluster_password
+* cluster_discovery_token
+* ssl_enabled
+* ssl_server
+* ssl_skip_verify
+* ssl_ca_path
+* ssl_key_path
+* ssl_key_password
+* log_path
+* log_level
 
 Example (Linux and MacOS):
 
@@ -89,8 +88,8 @@ Example (Linux and MacOS):
 ----
 clc project create \
 simple-streaming-pipeline\
-my-project\
-MyKey1=MyValue1 MyKey2=MyValue2
+--output-dir my-project\
+my_key1=my_value1 my_key2=my_value2
 ----
 
 Example (Windows):
@@ -99,6 +98,6 @@ Example (Windows):
 ----
 clc project create^
 simple-streaming-pipeline^
-my-project^
-MyKey1=MyValue1 MyKey2=MyValue2
+--output-dir my-project^
+my_key1=my_value1 my_key2=my_value2
 ----
