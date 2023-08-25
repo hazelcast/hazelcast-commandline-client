@@ -11,5 +11,4 @@ const (
 	defaultsFileName        = "defaults.yaml"
 	envTemplateSource       = "CLC_EXPERIMENTAL_TEMPLATE_SOURCE"
 	flagOutputDir           = "output-dir"
-	flagRefresh             = "refresh"
 )

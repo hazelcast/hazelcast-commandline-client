@@ -51,6 +51,10 @@ func Templates() string {
 	return filepath.Join(Home(), "templates")
 }
 
+func Caches() string {
+	return filepath.Join(Home(), "caches")
+}
+
 func ResolveTemplatePath(t string) string {
 	return filepath.Join(Templates(), t)
 }

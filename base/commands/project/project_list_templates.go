@@ -26,14 +26,12 @@ import (
 type ListCmd struct{}
 
 const (
+	flagRefresh          = "refresh"
 	flagLocal            = "local"
-	flagForce            = "force"
 	nextFetchTimeKey     = "project.templates.nextFetchTime"
 	templatesKey         = "project.templates"
 	cacheRefreshInterval = 10 * time.Minute
 )
-
-var storeFolder = filepath.Join("caches", "templates")
 
 type Template struct {
 	Name   string `json:"name"`
@@ -52,13 +50,13 @@ func (lc ListCmd) Init(cc plug.InitContext) error {
 
 func (lc ListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	isLocal := ec.Props().GetBool(flagLocal)
-	isForce := ec.Props().GetBool(flagForce)
-	if isLocal && isForce {
-		return fmt.Errorf("%s and %s flags are mutually exclusive", flagForce, flagLocal)
+	isRefresh := ec.Props().GetBool(flagRefresh)
+	if isLocal && isRefresh {
+		return fmt.Errorf("%s and %s flags are mutually exclusive", flagRefresh, flagLocal)
 	}
 	ts, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText(fmt.Sprintf("Listing templates"))
-		return listTemplates(ec.Logger(), isLocal, isForce)
+		return listTemplates(ec.Logger(), isLocal, isRefresh)
 	})
 	if err != nil {
 		return err
@@ -86,26 +84,26 @@ func (lc ListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	return ec.AddOutputRows(ctx, rows...)
 }
 
-func listTemplates(logger log.Logger, isLocal bool, isForce bool) ([]Template, error) {
-	sa := store.NewStoreAccessor(paths.Join(paths.Home(), storeFolder), logger)
+func listTemplates(logger log.Logger, isLocal bool, isRefresh bool) ([]Template, error) {
+	sa := store.NewStoreAccessor(filepath.Join(paths.Caches(), "templates"), logger)
 	if isLocal {
 		return listLocalTemplates()
 	}
 	var fetch bool
 	var err error
-	if fetch, err = isFetch(sa); err != nil {
-		logger.Debugf("Decide to fetch templates: %w", err)
+	if fetch, err = shouldFetch(sa); err != nil {
+		logger.Debugf("Error: checking template list expiry: %w", err)
 		// there is an error with database, so fetch templates from remote
 		fetch = true
 	}
-	if fetch || isForce {
+	if fetch || isRefresh {
 		ts, err := fetchTemplates()
 		if err != nil {
 			return nil, err
 		}
 		err = updateCache(sa, ts)
 		if err != nil {
-			logger.Debugf("Updating templates cache: %w", err)
+			logger.Debugf("Error: Updating templates cache: %w", err)
 		}
 	}
 	return listFromCache(sa)
@@ -168,7 +166,7 @@ func makeRepositoriesURL() string {
 	return fmt.Sprintf("https://api.github.com/users/%s/repos", ss)
 }
 
-func isFetch(s *store.StoreAccessor) (bool, error) {
+func shouldFetch(s *store.StoreAccessor) (bool, error) {
 	entry, err := s.WithLock(func(s *store.Store) (any, error) {
 		return s.GetEntry([]byte(nextFetchTimeKey))
 	})

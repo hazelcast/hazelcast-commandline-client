@@ -32,7 +32,7 @@ func TestProjectListCommand(t *testing.T) {
 func projectList_CachedTest(t *testing.T) {
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
-		sPath := filepath.Join(tcx.HomePath(), storeFolder)
+		sPath := filepath.Join(paths.Caches(), "templates")
 		defer func() {
 			os.RemoveAll(sPath)
 		}()
@@ -43,9 +43,8 @@ func projectList_CachedTest(t *testing.T) {
 			return nil, err
 		}))
 		check.MustValue(sa.WithLock(func(s *store.Store) (any, error) {
-			b, err := json.Marshal([]Template{{Name: "test_template"}})
-			check.Must(err)
-			err = s.SetEntry([]byte(templatesKey), b)
+			b := check.MustValue(json.Marshal([]Template{{Name: "test_template"}}))
+			err := s.SetEntry([]byte(templatesKey), b)
 			return nil, err
 		}))
 		cmd := []string{"project", "list-templates"}
