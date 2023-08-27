@@ -28,7 +28,7 @@ import (
 
 const (
 	cancelMsg     = " (Ctrl+C to cancel) "
-	ensureTimeout = 5 * time.Second
+	ensureTimeout = 10 * time.Second
 )
 
 type ClientFn func(ctx context.Context, cfg hazelcast.Config) (*hazelcast.ClientInternal, error)
@@ -124,12 +124,12 @@ func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInt
 			if err = ec.main.ensureClient(ctx, cfg); err != nil {
 				return nil, err
 			}
+			return ec.main.clientInternal(), nil
 		}
 		appliedFromCache := viridian.ApplyViridianDiscoveryConfig(&cfg, ec.Logger())
 		start := time.Now()
 		if err = ec.main.ensureClientWithTimeout(ctx, cfg, ensureTimeout); err != nil {
-			timePassed := time.Since(start)
-			if appliedFromCache && errors.Is(err, context.DeadlineExceeded) && timePassed >= ensureTimeout {
+			if appliedFromCache && errors.Is(err, context.DeadlineExceeded) && time.Since(start) >= ensureTimeout { // retry
 				if err = viridian.DeleteCache(ec.Logger(), cfg); err != nil {
 					return nil, err
 				}
@@ -139,8 +139,7 @@ func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInt
 				}
 				return ec.main.clientInternal(), nil
 			}
-
-			return nil, err
+			return nil, err // don't need to retry
 		}
 		return ec.main.clientInternal(), nil
 	})
