@@ -9,7 +9,16 @@ check_ok () {
   local what="$1"
   local e=no
   which "$what" > /dev/null && e=yes
-  state[${what}_ok]=$e
+  case "$what" in
+    awk*) state_awk_ok=$e;;
+    curl*) state_curl_ok=$e;;
+    sudo*) state_sudo_ok=$e;;
+    tar*) state_tar_ok=$e;;
+    unzip*) state_unzip_ok=$e;;
+    wget*) state_wget_ok=$e;;
+    xattr*) state_xattr_ok=$e;;
+    *) log_debug "invalid check: $what"
+  esac
 }
 
 log_info () {
@@ -17,7 +26,7 @@ log_info () {
 }
 
 log_debug () {
-    if [ "${state[debug]}" == "yes" ]; then
+    if [ "${state_debug}" == "yes" ]; then
         echo "DEBUG $1" 1>&2
     fi
 }
@@ -29,29 +38,28 @@ bye () {
   exit 1
 }
 
-help () {
-	echo "$0 [--beta | --debug | --help]"
+print_usage () {
+  echo "This script installs Hazelcast CLC to a system or user directory."
+  echo
+	echo "Usage: $0 [--beta | --debug | --help]"
 	echo
-	echo "    --beta    Enable downloading BETA and PREVIEW releases"
-	echo "    --debug   Enable DEBUG logging"
-	echo "    --help    Show help"
+	echo "    --beta   Enable downloading BETA and PREVIEW releases"
+	echo "    --debug  Enable DEBUG logging"
+	echo "    --help   Show help"
+	echo
 	exit 0
 }
 
 setup () {
   detect_tmpdir
-  commands="wget curl sudo uname mkdir unzip tar"
-  for cmd in $commands; do
+  for cmd in $DEPENDENCIES; do
       check_ok "$cmd"
   done
   detect_httpget
-  for key in "${!state[@]}"; do
-      log_debug "$key: ${state[${key}]}"
-  done
 }
 
 detect_tmpdir () {
-	state[tmp_dir]="${TMPDIR:-/tmp}"
+	state_tmp_dir="${TMPDIR:-/tmp}"
 }
 
 do_curl () {
@@ -63,37 +71,65 @@ do_wget () {
 }
 
 detect_uncompress () {
-    local ext=${state[archive_ext]}
+    local ext=${state_archive_ext}
     if [[ "$ext" == "tar.gz" ]]; then
-        state[uncompress]=do_untar
+        state_uncompress=do_untar
     elif [[ "$ext" == "zip" ]]; then
-        state[uncompress]=do_unzip
+        state_uncompress=do_unzip
     else
         bye "$ext archive is not supported"
     fi
 }
 
 do_untar () {
-    local tmp="${state[tmp_dir]}"
+  local path="$1"
+  local base="$2"
+  tar xf "$path" -C "$base"
+}
+
+do_unzip () {
+  local path="$1"
+  local base="$2"
+  unzip -o -q "$path" -d "$base"
+}
+
+install_release () {
+    # create base
+    local tmp="${state_tmp_dir}"
     local base="$tmp/clc"
     mkdir -p "$base"
-    tar xf "$1" -C "$base"
-    base="$base/${state[clc_name]}"
-    mv_path "$base/clc" "$home/bin/clc"
+    # uncompress release package
+    local path="${state_archive_path}"
+    log_debug "UNCOMPRESS: $path => $base"
+    ${state_uncompress} "$path" "$base"
+    # move files to their place
+    base="$base/${state_clc_name}"
+    local bin="$home/bin/clc"
+    mv_path "$base/clc" "$bin"
     local files="README.txt LICENSE.txt"
     for item in $files; do
         mv_path "$base/$item" "$home/$item"
     done
+    # on MacOS remove the clc binary from quarantine
+    if [[ "$state_xattr_ok" == "yes" && "$state_os" == "darwin" ]]; then
+      set +e
+      remove_from_quarantine "$bin"
+      set -e
+    fi
 }
 
-do_unzip () {
-    unzip
-}
-
-uncompress_release () {
-    local path="${state[archive_path]}"
-    log_debug "UNCOMPRESS: $path"
-    ${state[uncompress]} "$path"
+remove_from_quarantine () {
+  local qa
+  local path
+  qa="com.apple.quarantine"
+  path="$1"
+  for a in $(xattr "$path"); do
+    if [[ "$a" == "$qa" ]]; then
+      log_debug "REMOVE FROM QUARANTINE: $path"
+      xattr -d $qa "$path"
+      break
+    fi
+  done
 }
 
 mv_path () {
@@ -102,42 +138,49 @@ mv_path () {
 }
 
 detect_httpget () {
-    if [[ "${state[curl_ok]}x" != "x" ]]; then
-      state[httpget]=do_curl
-    elif [[ "${state[wget_ok]}x" != "x" ]]; then
-      state[httpget]=do_wget
+    if [[ "${state_curl_ok}" == "yes" ]]; then
+      state_httpget=do_curl
+    elif [[ "${state_wget_ok}" == "yes" ]]; then
+      state_httpget=do_wget
     else
       bye "either curl or wget is required"
     fi
+    log_debug "state_httpget=$state_httpget"
 }
 
 httpget () {
-    log_debug "HTTP GET: $1"
-    ${state[httpget]} "$@"
+    log_debug "HTTP GET: ${state_httpget} $1"
+    ${state_httpget} "$@"
 }
 
 print_banner () {
-    echo "Hazelcast CLC Installer"
-    echo "(c) 2023 Hazelcast, Inc."
-    echo
-}
-
-print_usage () {
-    echo "This script installs CLC to a system or user directory."
-    echo
-    echo "Usage: $0 [-v version]"
-    exit 1
+  echo
+  echo "Hazelcast CLC Installer"
+  echo "(c) 2023 Hazelcast, Inc."
+  echo
 }
 
 print_success () {
-    echo
-    echo "Hazelcast CLC ${state[download_version]} is installed at $home"
+  echo
+  echo "Hazelcast CLC ${state_download_version} is installed at $home"
 }
 
 detect_last_release () {
-        local v
-        v=$(httpget https://api.github.com/repos/hazelcast/hazelcast-commandline-client/releases | sed -n 's/^\s*"tag_name":\s*"\(.*\)",/\1/p' | grep -v BETA | grep -v PREVIEW | head -1)
-        state[download_version]="$v"
+  local re
+  local text
+  local v
+  re='$1 ~ /tag_name/ { gsub(/[",]/, "", $2); print($2) }'
+  text="$(httpget https://api.github.com/repos/hazelcast/hazelcast-commandline-client/releases)"
+  if [[ "$state_beta" == "yes" ]]; then
+    v=$(echo "$text" | awk "$re" | head -1)
+  else
+    v=$(echo "$text" | awk "$re" | grep -vi preview | grep -vi beta | head -1)
+  fi
+  if [[ "$v" == "" ]]; then
+    bye "could not determine the latest version"
+  fi
+  state_download_version="$v"
+  log_debug "state_download_version=$state_download_version"
 }
 
 detect_platform () {
@@ -148,8 +191,9 @@ detect_platform () {
         Darwin*) os=darwin; ext="zip";;
         *) bye "This script supports only Linux and MacOS, not $os";;
     esac
-    state[os]=$os
-    state[archive_ext]=$ext
+    state_os=$os
+    log_debug "state_os=$state_os"
+    state_archive_ext=$ext
     arch="$(uname -m)"
     case "$arch" in
         x86_64*) arch=amd64;;
@@ -160,21 +204,22 @@ detect_platform () {
         aarch64*) arch=arm64;;
         *) bye "This script supports only 64bit Intel and 32/64bit ARM architecture, not $arch"
     esac
-    state[arch]="$arch"
+    state_arch="$arch"
+    log_debug "state_arch=$state_arch"
 }
 
 make_download_url () {
-    local v=${state[download_version]}
-    local clc_name=${state[clc_name]}
-    local ext=${state[archive_ext]}
-    state[download_url]="https://github.com/hazelcast/hazelcast-commandline-client/releases/download/$v/${clc_name}.${ext}"
+    local v=${state_download_version}
+    local clc_name=${state_clc_name}
+    local ext=${state_archive_ext}
+    state_download_url="https://github.com/hazelcast/hazelcast-commandline-client/releases/download/$v/${clc_name}.${ext}"
 }
 
 make_clc_name () {
-    local v="${state[download_version]}"
-    local os="${state[os]}"
-    local arch="${state[arch]}"
-    state[clc_name]="hazelcast-clc_${v}_${os}_${arch}"
+    local v="${state_download_version}"
+    local os="${state_os}"
+    local arch="${state_arch}"
+    state_clc_name="hazelcast-clc_${v}_${os}_${arch}"
 }
 
 create_home () {
@@ -190,28 +235,50 @@ download_release () {
     detect_last_release
     make_clc_name
     make_download_url
-    log_info "Downloading: ${state[download_url]}"
-    local tmp="${state[tmp_dir]}"
-    local ext="${state[archive_ext]}"
-    state[archive_path]="$tmp/clc.${ext}"
-    httpget "${state[download_url]}" > "${state[archive_path]}"
+    log_info "Downloading: ${state_download_url}"
+    local tmp
+    local ext
+    tmp="${state_tmp_dir}"
+    ext="${state_archive_ext}"
+    state_archive_path="$tmp/clc.${ext}"
+    httpget "${state_download_url}" > "${state_archive_path}"
 }
 
 process_flags () {
     for flag in "$@"; do
         case "$flag" in
-          --beta*) state[beta]=yes;;
-          --debug*) state[debug]=yes;;
-      	  --help*) print_banner; help;;
+          --beta*) state_beta=yes;;
+          --debug*) state_debug=yes;;
+      	  --help*) print_banner; print_usage;;
           *) bye "Unknown option: $flag";;
         esac
     done
 }
 
-# an associative array to store the existence of commands
-declare -A state=()
-state[beta]=no
-state[debug]=no
+DEPENDENCIES="awk wget curl sudo unzip tar xattr"
+
+state_beta=no
+state_debug=no
+state_tmp_dir=
+state_archive_ext=
+state_archive_path=
+state_download_url=
+state_archive_path=
+state_download_version=
+state_clc_name=
+state_archive_ext=
+state_arch=
+state_os=
+state_httpget=
+state_uncompress=
+
+state_awk_ok=no
+state_curl_ok=no
+state_sudo_ok=no
+state_tar_ok=no
+state_unzip_ok=no
+state_wget_ok=no
+state_xattr_ok=no
 
 home="${CLC_HOME:-$HOME/.hazelcast}"
 
@@ -220,5 +287,5 @@ print_banner
 setup
 create_home
 download_release
-uncompress_release
+install_release
 print_success
