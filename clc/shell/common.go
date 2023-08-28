@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	_map "github.com/hazelcast/hazelcast-commandline-client/base/commands/map"
+	"github.com/hazelcast/hazelcast-commandline-client/base/maps"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/sql"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
@@ -29,12 +29,12 @@ func ConvertStatement(ctx context.Context, ec plug.ExecContext, stmt string, ver
 		case "di":
 			if len(parts) == 1 {
 				return func() error {
-					return _map.Indexes(ctx, ec, "")
+					return maps.Indexes(ctx, ec, "")
 				}, nil
 			}
 			if len(parts) == 2 {
 				return func() error {
-					return _map.Indexes(ctx, ec, parts[1])
+					return maps.Indexes(ctx, ec, parts[1])
 				}, nil
 			} else {
 				return nil, fmt.Errorf("Usage: %sdi [mapping]", CmdPrefix)
