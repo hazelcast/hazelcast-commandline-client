@@ -202,14 +202,14 @@ print_banner () {
 
 print_success () {
     echo
-    echo "  OK   Hazelcast CLC ${state_download_version} is installed at $CLC_HOME"
+    echo "  OK  Hazelcast CLC ${state_download_version} is installed at $CLC_HOME"
     echo
-    echo '  1.   Open a new terminal,'
-    echo '  2.   Run `clc` to start CLC,'
-    echo '  3.   Enjoy!'
+    echo '  1.  Open a new terminal,'
+    echo '  2.  Run `clc` to start CLC,'
+    echo '  3.  Enjoy!'
     echo
-    echo 'NOTE   If the steps above do not work, try copying `clc` binary to your $PATH:'
-    echo "       $ sudo cp $state_bin_dir/clc /usr/local/bin"
+    echo 'NOTE  If the steps above do not work, try copying `clc` binary to your $PATH:'
+    echo "      $ sudo cp $state_bin_dir/clc /usr/local/bin"
     echo
 }
 
