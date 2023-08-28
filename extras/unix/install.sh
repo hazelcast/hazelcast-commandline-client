@@ -17,6 +17,7 @@ check_ok () {
     unzip*) state_unzip_ok=$e;;
     wget*) state_wget_ok=$e;;
     xattr*) state_xattr_ok=$e;;
+    zsh*) state_zsh_ok=$e;;
     *) log_debug "invalid check: $what"
   esac
 }
@@ -26,7 +27,7 @@ log_info () {
 }
 
 log_debug () {
-    if [ "${state_debug}" == "yes" ]; then
+    if [[ "${state_debug}" == "yes" ]]; then
         echo "DEBUG $1" 1>&2
     fi
 }
@@ -100,15 +101,15 @@ install_release () {
     mkdir -p "$base"
     # uncompress release package
     local path="${state_archive_path}"
-    log_debug "UNCOMPRESS: $path => $base"
+    log_debug "UNCOMPRESS $path => $base"
     ${state_uncompress} "$path" "$base"
     # move files to their place
     base="$base/${state_clc_name}"
-    local bin="$home/bin/clc"
+    local bin="$state_bin_dir/clc"
     mv_path "$base/clc" "$bin"
     local files="README.txt LICENSE.txt"
     for item in $files; do
-        mv_path "$base/$item" "$home/$item"
+        mv_path "$base/$item" "$CLC_HOME/$item"
     done
     # on MacOS remove the clc binary from quarantine
     if [[ "$state_xattr_ok" == "yes" && "$state_os" == "darwin" ]]; then
@@ -132,6 +133,41 @@ remove_from_quarantine () {
   done
 }
 
+update_config_files () {
+  update_rc "BASH" "$HOME/.bashrc"
+  if [[ "$state_zsh_ok" == "yes" ]]; then
+    update_rc "ZSH" "$HOME/.zshenv"
+  fi
+}
+
+update_rc () {
+  local prefix="$1"
+  local path="$2"
+  local installed="CLC_INSTALLED_$prefix=1"
+  if [[ -e "$path" ]]; then
+    # check if this file is a symbolic link
+    if [[ -L "$path" ]]; then
+      log_info "WARNING: $path is a symbolic link. Writing to symbolic links is not supported."
+      return
+    fi
+    local text=$(cat "$path" | grep "$installed")
+    if [[ "$text" != "" ]]; then
+      # CLC PATH is already exported in this file
+      log_debug "CLC PATH is already installed in $path"
+      return
+    fi
+  fi
+  # Add the CLC PATH to this file
+  printf '\n# Added by Hazelcast CLC installer' >> "$path"
+  printf "
+if [[ \"\$CLC_INSTALLED_$prefix\" != \"1\" ]]; then
+  export CLC_INSTALLED_$prefix=1
+  export PATH=\$PATH:${state_bin_dir}
+fi
+" >> "$path"
+  log_info "Added CLC path to $path"
+}
+
 mv_path () {
     log_debug "MOVE $1 to $2"
     mv "$1" "$2"
@@ -149,20 +185,27 @@ detect_httpget () {
 }
 
 httpget () {
-    log_debug "HTTP GET: ${state_httpget} $1"
+    log_debug "GET ${state_httpget} $1"
     ${state_httpget} "$@"
 }
 
 print_banner () {
   echo
-  echo "Hazelcast CLC Installer"
-  echo "(c) 2023 Hazelcast, Inc."
+  echo "Hazelcast CLC Installer (c) 2023 Hazelcast, Inc."
   echo
 }
 
 print_success () {
   echo
-  echo "Hazelcast CLC ${state_download_version} is installed at $home"
+  echo "  OK   Hazelcast CLC ${state_download_version} is installed at $CLC_HOME"
+  echo
+  echo '  1.   Open a new terminal,'
+  echo '  2.   Run `clc` to start CLC,'
+  echo '  3.   Enjoy!'
+  echo
+  echo 'NOTE   If the steps above don''t work, try copying `clc` binary to your $PATH:'
+  echo "       $ sudo cp $state_bin_dir/clc /usr/local/bin"
+  echo
 }
 
 detect_last_release () {
@@ -223,9 +266,9 @@ make_clc_name () {
 }
 
 create_home () {
-    log_info "Creating the Home directory: $home"
-    mkdir -p "$home/bin" "$home/etc"
-    echo "install-script" > "$home/etc/.source"
+    log_info "Creating the Home directory: $CLC_HOME"
+    mkdir -p "$state_bin_dir" "$CLC_HOME/etc"
+    echo "install-script" > "$CLC_HOME/etc/.source"
 }
 
 download_release () {
@@ -255,21 +298,23 @@ process_flags () {
     done
 }
 
-DEPENDENCIES="awk wget curl sudo unzip tar xattr"
+DEPENDENCIES="awk wget curl sudo unzip tar xattr zsh"
+CLC_HOME="${CLC_HOME:-$HOME/.hazelcast}"
 
-state_beta=no
-state_debug=no
-state_tmp_dir=
-state_archive_ext=
-state_archive_path=
-state_download_url=
-state_archive_path=
-state_download_version=
-state_clc_name=
-state_archive_ext=
 state_arch=
-state_os=
+state_archive_ext=
+state_archive_ext=
+state_archive_path=
+state_archive_path=
+state_beta=no
+state_bin_dir="$CLC_HOME/bin"
+state_clc_name=
+state_debug=no
+state_download_url=
+state_download_version=
 state_httpget=
+state_os=
+state_tmp_dir=
 state_uncompress=
 
 state_awk_ok=no
@@ -279,8 +324,7 @@ state_tar_ok=no
 state_unzip_ok=no
 state_wget_ok=no
 state_xattr_ok=no
-
-home="${CLC_HOME:-$HOME/.hazelcast}"
+state_zsh_ok=no
 
 process_flags "$@"
 print_banner
@@ -288,4 +332,5 @@ setup
 create_home
 download_release
 install_release
+update_config_files
 print_success
