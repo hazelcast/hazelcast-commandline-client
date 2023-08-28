@@ -152,11 +152,11 @@ func fetchTemplates() ([]Template, error) {
 	return templates, nil
 }
 
-func updateNextFetchTime(sa *store.StoreAccessor) error {
-	_, err := sa.WithLock(func(s *store.Store) (any, error) {
+func updateNextFetchTime(s *store.Store) error {
+	_, err := func(s *store.Store) (any, error) {
 		v := []byte(strconv.FormatInt(time.Now().Add(cacheRefreshInterval).Unix(), 10))
 		return nil, s.SetEntry([]byte(nextFetchTimeKey), v)
-	})
+	}(s)
 	return err
 }
 
@@ -194,11 +194,15 @@ func updateCache(sa *store.StoreAccessor, templates []Template) error {
 		return err
 	}
 	_, err = sa.WithLock(func(s *store.Store) (any, error) {
+		err = s.DeleteEntriesWithPrefix(templatesKey)
+		if err != nil {
+			return nil, err
+		}
 		err = s.SetEntry([]byte(templatesKey), b)
 		if err != nil {
 			return nil, err
 		}
-		if err = updateNextFetchTime(sa); err != nil {
+		if err = updateNextFetchTime(s); err != nil {
 			return nil, err
 		}
 		return nil, nil
