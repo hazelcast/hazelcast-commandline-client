@@ -6,20 +6,19 @@
 set -eu
 
 check_ok () {
-  local what="$1"
-  local e=no
-  which "$what" > /dev/null && e=yes
-  case "$what" in
-    awk*) state_awk_ok=$e;;
-    curl*) state_curl_ok=$e;;
-    sudo*) state_sudo_ok=$e;;
-    tar*) state_tar_ok=$e;;
-    unzip*) state_unzip_ok=$e;;
-    wget*) state_wget_ok=$e;;
-    xattr*) state_xattr_ok=$e;;
-    zsh*) state_zsh_ok=$e;;
-    *) log_debug "invalid check: $what"
-  esac
+    local what="$1"
+    local e=no
+    which "$what" > /dev/null && e=yes
+    case "$what" in
+        awk*) state_awk_ok=$e;;
+        curl*) state_curl_ok=$e;;
+        tar*) state_tar_ok=$e;;
+        unzip*) state_unzip_ok=$e;;
+        wget*) state_wget_ok=$e;;
+        xattr*) state_xattr_ok=$e;;
+        zsh*) state_zsh_ok=$e;;
+        *) log_debug "invalid check: $what"
+    esac
 }
 
 log_info () {
@@ -33,42 +32,42 @@ log_debug () {
 }
 
 bye () {
-	if [[ "${1:-}" != "" ]]; then
-		echo "ERROR $*" 1>&2
-	fi
-  exit 1
+    if [[ "${1:-}" != "" ]]; then
+        echo "ERROR $*" 1>&2
+    fi
+    exit 1
 }
 
 print_usage () {
-  echo "This script installs Hazelcast CLC to a system or user directory."
-  echo
-	echo "Usage: $0 [--beta | --debug | --help]"
-	echo
-	echo "    --beta   Enable downloading BETA and PREVIEW releases"
-	echo "    --debug  Enable DEBUG logging"
-	echo "    --help   Show help"
-	echo
-	exit 0
+    echo "This script installs Hazelcast CLC to a system or user directory."
+    echo
+    echo "Usage: $0 [--beta | --debug | --help]"
+    echo
+    echo "    --beta   Enable downloading BETA and PREVIEW releases"
+    echo "    --debug  Enable DEBUG logging"
+    echo "    --help   Show help"
+    echo
+    exit 0
 }
 
 setup () {
-  detect_tmpdir
-  for cmd in $DEPENDENCIES; do
-      check_ok "$cmd"
-  done
-  detect_httpget
+    detect_tmpdir
+    for cmd in $DEPENDENCIES; do
+        check_ok "$cmd"
+    done
+    detect_httpget
 }
 
 detect_tmpdir () {
-	state_tmp_dir="${TMPDIR:-/tmp}"
+    state_tmp_dir="${TMPDIR:-/tmp}"
 }
 
 do_curl () {
-	curl -Ls "$1"
+    curl -Ls "$1"
 }
 
 do_wget () {
-	wget -O- "$1"
+    wget -O- "$1"
 }
 
 detect_uncompress () {
@@ -83,15 +82,21 @@ detect_uncompress () {
 }
 
 do_untar () {
-  local path="$1"
-  local base="$2"
-  tar xf "$path" -C "$base"
+    if [[ "$state_tar_ok" != "yes" ]]; then
+        bye "tar is required for install"
+    fi
+    local path="$1"
+    local base="$2"
+    tar xf "$path" -C "$base"
 }
 
 do_unzip () {
-  local path="$1"
-  local base="$2"
-  unzip -o -q "$path" -d "$base"
+    if [[ "$state_unzip_ok" != "yes" ]]; then
+        bye "unzip is required for install"
+    fi
+    local path="$1"
+    local base="$2"
+    unzip -o -q "$path" -d "$base"
 }
 
 install_release () {
@@ -120,52 +125,52 @@ install_release () {
 }
 
 remove_from_quarantine () {
-  local qa
-  local path
-  qa="com.apple.quarantine"
-  path="$1"
-  for a in $(xattr "$path"); do
+    local qa
+    local path
+    qa="com.apple.quarantine"
+    path="$1"
+    for a in $(xattr "$path"); do
     if [[ "$a" == "$qa" ]]; then
-      log_debug "REMOVE FROM QUARANTINE: $path"
-      xattr -d $qa "$path"
-      break
+        log_debug "REMOVE FROM QUARANTINE: $path"
+        xattr -d $qa "$path"
+        break
     fi
-  done
+    done
 }
 
 update_config_files () {
-  update_rc "BASH" "$HOME/.bashrc"
-  if [[ "$state_zsh_ok" == "yes" ]]; then
-    update_rc "ZSH" "$HOME/.zshenv"
-  fi
+    update_rc "BASH" "$HOME/.bashrc"
+    if [[ "$state_zsh_ok" == "yes" ]]; then
+        update_rc "ZSH" "$HOME/.zshenv"
+    fi
 }
 
 update_rc () {
-  local prefix="$1"
-  local path="$2"
-  local installed="CLC_INSTALLED_$prefix=1"
-  if [[ -e "$path" ]]; then
-    # check if this file is a symbolic link
-    if [[ -L "$path" ]]; then
-      log_info "WARNING: $path is a symbolic link. Writing to symbolic links is not supported."
-      return
+    local prefix="$1"
+    local path="$2"
+    local installed="CLC_INSTALLED_$prefix=1"
+    if [[ -e "$path" ]]; then
+        # check if this file is a symbolic link
+        if [[ -L "$path" ]]; then
+            log_info "WARNING: $path is a symbolic link. Writing to symbolic links is not supported."
+            return
+        fi
+        local text=$(cat "$path" | grep "$installed")
+        if [[ "$text" != "" ]]; then
+            # CLC PATH is already exported in this file
+            log_debug "CLC PATH is already installed in $path"
+            return
+        fi
     fi
-    local text=$(cat "$path" | grep "$installed")
-    if [[ "$text" != "" ]]; then
-      # CLC PATH is already exported in this file
-      log_debug "CLC PATH is already installed in $path"
-      return
-    fi
-  fi
-  # Add the CLC PATH to this file
-  printf '\n# Added by Hazelcast CLC installer' >> "$path"
-  printf "
+    # Add the CLC PATH to this file
+    printf '\n# Added by Hazelcast CLC installer' >> "$path"
+    printf "
 if [[ \"\$CLC_INSTALLED_$prefix\" != \"1\" ]]; then
   export CLC_INSTALLED_$prefix=1
   export PATH=\$PATH:${state_bin_dir}
 fi
 " >> "$path"
-  log_info "Added CLC path to $path"
+    log_info "Added CLC path to $path"
 }
 
 mv_path () {
@@ -175,11 +180,11 @@ mv_path () {
 
 detect_httpget () {
     if [[ "${state_curl_ok}" == "yes" ]]; then
-      state_httpget=do_curl
+        state_httpget=do_curl
     elif [[ "${state_wget_ok}" == "yes" ]]; then
-      state_httpget=do_wget
+        state_httpget=do_wget
     else
-      bye "either curl or wget is required"
+        bye "either curl or wget is required"
     fi
     log_debug "state_httpget=$state_httpget"
 }
@@ -190,40 +195,43 @@ httpget () {
 }
 
 print_banner () {
-  echo
-  echo "Hazelcast CLC Installer (c) 2023 Hazelcast, Inc."
-  echo
+    echo
+    echo "Hazelcast CLC Installer (c) 2023 Hazelcast, Inc."
+    echo
 }
 
 print_success () {
-  echo
-  echo "  OK   Hazelcast CLC ${state_download_version} is installed at $CLC_HOME"
-  echo
-  echo '  1.   Open a new terminal,'
-  echo '  2.   Run `clc` to start CLC,'
-  echo '  3.   Enjoy!'
-  echo
-  echo 'NOTE   If the steps above don''t work, try copying `clc` binary to your $PATH:'
-  echo "       $ sudo cp $state_bin_dir/clc /usr/local/bin"
-  echo
+    echo
+    echo "  OK   Hazelcast CLC ${state_download_version} is installed at $CLC_HOME"
+    echo
+    echo '  1.   Open a new terminal,'
+    echo '  2.   Run `clc` to start CLC,'
+    echo '  3.   Enjoy!'
+    echo
+    echo 'NOTE   If the steps above don''t work, try copying `clc` binary to your $PATH:'
+    echo "       $ sudo cp $state_bin_dir/clc /usr/local/bin"
+    echo
 }
 
 detect_last_release () {
-  local re
-  local text
-  local v
-  re='$1 ~ /tag_name/ { gsub(/[",]/, "", $2); print($2) }'
-  text="$(httpget https://api.github.com/repos/hazelcast/hazelcast-commandline-client/releases)"
-  if [[ "$state_beta" == "yes" ]]; then
-    v=$(echo "$text" | awk "$re" | head -1)
-  else
-    v=$(echo "$text" | awk "$re" | grep -vi preview | grep -vi beta | head -1)
-  fi
-  if [[ "$v" == "" ]]; then
-    bye "could not determine the latest version"
-  fi
-  state_download_version="$v"
-  log_debug "state_download_version=$state_download_version"
+    if [[ "$state_awk_ok"  != "yes" ]]; then
+        bye "Awk is required for install"
+    fi
+    local re
+    local text
+    local v
+    re='$1 ~ /tag_name/ { gsub(/[",]/, "", $2); print($2) }'
+    text="$(httpget https://api.github.com/repos/hazelcast/hazelcast-commandline-client/releases)"
+    if [[ "$state_beta" == "yes" ]]; then
+        v=$(echo "$text" | awk "$re" | head -1)
+    else
+        v=$(echo "$text" | awk "$re" | grep -vi preview | grep -vi beta | head -1)
+    fi
+    if [[ "$v" == "" ]]; then
+        bye "could not determine the latest version"
+    fi
+    state_download_version="$v"
+    log_debug "state_download_version=$state_download_version"
 }
 
 detect_platform () {
@@ -298,7 +306,7 @@ process_flags () {
     done
 }
 
-DEPENDENCIES="awk wget curl sudo unzip tar xattr zsh"
+DEPENDENCIES="awk wget curl unzip tar xattr zsh"
 CLC_HOME="${CLC_HOME:-$HOME/.hazelcast}"
 
 state_arch=
@@ -319,7 +327,6 @@ state_uncompress=
 
 state_awk_ok=no
 state_curl_ok=no
-state_sudo_ok=no
 state_tar_ok=no
 state_unzip_ok=no
 state_wget_ok=no
