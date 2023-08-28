@@ -268,7 +268,7 @@ func DecodeListMultiFrameForData(frameIterator *proto.ForwardFrameIterator) []*i
 }
 
 func DecodeListMultiFrameForIndexConfig(frameIterator *proto.ForwardFrameIterator) []types.IndexConfig {
-	result := make([]types.IndexConfig, 0)
+	var result []types.IndexConfig
 	if frameIterator.HasNext() {
 		frameIterator.Next()
 

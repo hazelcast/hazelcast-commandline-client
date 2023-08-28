@@ -47,7 +47,7 @@ func makeEndLineFunc() shell.EndLineFn {
 	}
 }
 
-func makeTextFunc(m *cmd.Main, ec plug.ExecContext, verbose bool, sf shortcutFunc) shell.TextFn {
+func makeTextFunc(m *cmd.Main, ec plug.ExecContext, verbose, ignoreErrors, echo bool, sf shortcutFunc) shell.TextFn {
 	return func(ctx context.Context, stdout io.Writer, text string) error {
 		if strings.HasPrefix(strings.TrimSpace(text), shell.CmdPrefix) {
 			parts := strings.Fields(text)

@@ -80,7 +80,7 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 	}
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	endLineFn := makeEndLineFunc()
-	textFn := makeTextFunc(m, ec, verbose, func(shortcut string) bool {
+	textFn := makeTextFunc(m, ec, verbose, false, false, func(shortcut string) bool {
 		cm.mu.RLock()
 		_, ok := cm.shortcuts[shortcut]
 		cm.mu.RUnlock()

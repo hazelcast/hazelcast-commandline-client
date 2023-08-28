@@ -72,7 +72,7 @@ func (cm ScriptCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	ie := ec.Props().GetBool(flagIgnoreErrors)
 	echo := ec.Props().GetBool(flagEcho)
-	textFn := makeTextFunc(m, ec, verbose, func(shortcut string) bool {
+	textFn := makeTextFunc(m, ec, verbose, false, false, func(shortcut string) bool {
 		// shortcuts are not supported in the script mode
 		return false
 	})
