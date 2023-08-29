@@ -13,7 +13,6 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/shell"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/sql"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
@@ -65,25 +64,13 @@ func makeTextFunc(m *cmd.Main, ec plug.ExecContext, verbose, ignoreErrors, echo 
 				return m.Execute(ctx, args...)
 			}
 		}
-		text, err := shell.ConvertStatement(text)
+		f, err := shell.ConvertStatement(ctx, ec, text, verbose)
 		if err != nil {
 			if errors.Is(err, shell.ErrHelp) {
 				check.I2(fmt.Fprintln(stdout, shell.InteractiveHelp()))
 				return nil
 			}
 			return err
-		}
-		f := func() error {
-			res, stop, err := sql.ExecSQL(ctx, ec, text)
-			if err != nil {
-				return err
-			}
-			defer stop()
-			// TODO: update sql.UpdateOutput to use stdout
-			if err := sql.UpdateOutput(ctx, ec, res, verbose); err != nil {
-				return err
-			}
-			return nil
 		}
 		if w, ok := ec.(plug.ResultWrapper); ok {
 			return w.WrapResult(f)

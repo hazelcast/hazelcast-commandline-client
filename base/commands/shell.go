@@ -43,6 +43,7 @@ func (cm *ShellCommand) Init(cc plug.InitContext) error {
 	cc.Hide()
 	cm.mu.Lock()
 	cm.shortcuts = map[string]struct{}{
+		`\di`:   {},
 		`\dm`:   {},
 		`\dm+`:  {},
 		`\exit`: {},
