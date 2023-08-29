@@ -68,6 +68,7 @@ func sql_NonInteractiveTest(t *testing.T) {
 }
 
 func sql_NonInteractiveStreamingTest(t *testing.T) {
+	it.MarkFlaky(t, "https://github.com/hazelcast/hazelcast-commandline-client/issues/357")
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
