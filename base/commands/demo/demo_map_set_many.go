@@ -29,10 +29,7 @@ func (m MapSetManyCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("map-setmany [entry-count] [flags]")
 	cc.SetPositionalArgCount(1, 1)
 	cc.AddStringFlag(flagName, "n", "default", false, "Name of the map.")
-	cc.AddStringFlag(flagSize, "", "1", false, `Maybe an integer which is number of bytes, or one of the following:
-Xkb: kilobytes
-Xmb: megabytes
-`)
+	cc.AddStringFlag(flagSize, "", "", true, `Size of the map value in bytes, the following suffixes can also be used: kb, mb, e.g., 42kb)`)
 	help := "Generates multiple map entries."
 	cc.SetCommandHelp(help, help)
 	return nil
@@ -66,7 +63,7 @@ func (m MapSetManyCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 }
 
 func createEntries(ctx context.Context, entryCount int, size string, m *hazelcast.Map) error {
-	v, err := createVal(size)
+	v, err := makeValue(size)
 	if err != nil {
 		return err
 	}
@@ -80,16 +77,15 @@ func createEntries(ctx context.Context, entryCount int, size string, m *hazelcas
 	return nil
 }
 
-func createVal(size string) (string, error) {
-	b, err := byteSize(size)
+func makeValue(size string) (string, error) {
+	b, err := getValueSize(size)
 	if err != nil {
 		return "", err
 	}
 	return strings.Repeat("a", int(b)), nil
 }
 
-func byteSize(sizeStr string) (int64, error) {
-	sizeStr = strings.TrimSpace(sizeStr)
+func getValueSize(sizeStr string) (int64, error) {
 	sizeStr = strings.ToUpper(sizeStr)
 	if strings.HasSuffix(sizeStr, kb) {
 		sizeStr = strings.TrimSuffix(sizeStr, kb)

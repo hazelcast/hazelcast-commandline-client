@@ -89,11 +89,7 @@ Parameters:
 
 |`--size`
 |Optional
-|Maybe an integer which is number of bytes, or one of the following:
-
-- Xkb: kilobytes
-
-- Xmb: megabytes
+|Size of the map value in bytes, the following suffixes can also be used: kb, mb, e.g., 42kb
 |`1`
 
 |===
