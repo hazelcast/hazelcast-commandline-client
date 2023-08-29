@@ -92,28 +92,44 @@ func (st *Stages) startStage(ctx context.Context) func(stage.Statuser) error {
 		if err := st.startQueue.Put(ctx, serialization.JSON(b)); err != nil {
 			return err
 		}
+		if err = st.waitStatusResult(ctx, 10, 1*time.Second); err != nil {
+			return err
+		}
 		return nil
 	}
 }
 
 func (st *Stages) migrateStage(ctx context.Context) func(statuser stage.Statuser) error {
 	return func(status stage.Statuser) error {
-		for {
-			s, err := st.readStatus(ctx)
-			if err != nil {
-				return fmt.Errorf("reading status: %w", err)
-			}
-			switch s {
-			case statusComplete:
-				return nil
-			case statusCanceled:
-				return clcerrors.ErrUserCancelled
-			case statusFailed:
-				return errors.New("migration failed")
-			}
-			time.Sleep(5 * time.Second)
-		}
+		return st.waitStatusResult(ctx, -1, 5*time.Second)
 	}
+}
+
+func (st *Stages) waitStatusResult(ctx context.Context, maxRetries int, period time.Duration) error {
+	tryInfinitely := maxRetries < 0
+	tryCount := 0
+	for {
+		if !tryInfinitely {
+			if maxRetries == tryCount {
+				break
+			}
+			tryCount += 1
+		}
+		s, err := st.readStatus(ctx)
+		if err != nil {
+			return fmt.Errorf("reading status: %w", err)
+		}
+		switch s {
+		case statusInProgress, statusComplete:
+			return nil
+		case statusCanceled:
+			return clcerrors.ErrUserCancelled
+		case statusFailed:
+			return errors.New("migration failed")
+		}
+		time.Sleep(period)
+	}
+	return fmt.Errorf("reached timeout while reading status")
 }
 
 func (st *Stages) readStatus(ctx context.Context) (status, error) {
@@ -146,10 +162,11 @@ func makeStatusMapName(migrationID string) string {
 type status string
 
 const (
-	statusNone     status = ""
-	statusComplete status = "COMPLETED"
-	statusCanceled status = "CANCELED"
-	statusFailed   status = "FAILED"
+	statusNone       status = ""
+	statusComplete   status = "COMPLETED"
+	statusCanceled   status = "CANCELED"
+	statusFailed     status = "FAILED"
+	statusInProgress status = "IN_PROGRESS"
 )
 
 type migrationStatus struct {
