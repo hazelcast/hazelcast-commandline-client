@@ -204,6 +204,7 @@ print_success () {
     echo
     echo "  OK  Hazelcast CLC ${state_download_version} is installed at $CLC_HOME"
     echo
+    echo '  Next steps:'
     echo '  1.  Open a new terminal,'
     echo '  2.  Run `clc` to start CLC,'
     echo '  3.  Enjoy!'
