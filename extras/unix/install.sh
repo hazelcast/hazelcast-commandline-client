@@ -312,8 +312,6 @@ CLC_HOME="${CLC_HOME:-$HOME/.hazelcast}"
 
 state_arch=
 state_archive_ext=
-state_archive_ext=
-state_archive_path=
 state_archive_path=
 state_beta=no
 state_bin_dir="$CLC_HOME/bin"
