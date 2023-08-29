@@ -2,6 +2,7 @@ package str
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -36,4 +37,13 @@ func MaybeShorten(s string, l int) string {
 		return s
 	}
 	return fmt.Sprintf("%s...", s[:l])
+}
+
+// SpacePaddedIntFormat returns the fmt string that can fit the given integer.
+// The padding uses spaces.
+func SpacePaddedIntFormat(maxValue int) string {
+	if maxValue < 0 {
+		panic("SpacePaddedIntFormat: cannot be negative")
+	}
+	return fmt.Sprintf("%%%dd", len(strconv.Itoa(maxValue)))
 }

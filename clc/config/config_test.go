@@ -9,11 +9,12 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client"
 	hzlogger "github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
@@ -275,6 +276,25 @@ ssl:
 			assert.Equalf(t, tc.want, s, "CreateYAML(%v)", tc.kvs)
 		})
 	}
+}
+
+func TestConvertKeyValuesToMap(t *testing.T) {
+	kvs := clc.KeyValues[string, string]{
+		{Key: "cluster.name", Value: "de-foobar"},
+		{Key: "ssl.ca-path", Value: "ca.pem"},
+		{Key: "cluster.discovery-token", Value: "tok123"},
+	}
+	m := config.ConvertKeyValuesToMap(kvs)
+	target := map[string]any{
+		"cluster": map[string]any{
+			"name":            "de-foobar",
+			"discovery-token": "tok123",
+		},
+		"ssl": map[string]any{
+			"ca-path": "ca.pem",
+		},
+	}
+	assert.Equal(t, target, m)
 }
 
 func userHostName() string {

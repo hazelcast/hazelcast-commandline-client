@@ -2,7 +2,7 @@
 
 == New Features
 
-* Added the `--timeout` flag which causes CLC to exit with status code 2 if an operation cannot be completed in the given time.
+* Added the `--timeout` flag which causes Hazelcast CLC to exit with status code 2 if an operation cannot be completed in the given time.
 
 == Improvements
 

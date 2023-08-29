@@ -66,6 +66,12 @@ func (cm AddCmd) Exec(_ context.Context, ec plug.ExecContext) error {
 	if ec.Interactive() || ec.Props().GetBool(clc.PropertyVerbose) {
 		I2(fmt.Fprintf(ec.Stdout(), "Created configuration at: %s\n", filepath.Join(dir, cfgPath)))
 	}
+	mopt := config.ConvertKeyValuesToMap(opts)
+	// ignoring the JSON path for now
+	_, _, err = config.CreateJSON(target, mopt)
+	if err != nil {
+		ec.Logger().Warn("Failed creating the JSON configuration: %s", err.Error())
+	}
 	return nil
 }
 
