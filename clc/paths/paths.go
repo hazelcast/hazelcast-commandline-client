@@ -51,10 +51,6 @@ func Templates() string {
 	return filepath.Join(Home(), "templates")
 }
 
-func Store() string {
-	return filepath.Join(Home(), "store")
-}
-
 func Caches() string {
 	return filepath.Join(Home(), "caches")
 }

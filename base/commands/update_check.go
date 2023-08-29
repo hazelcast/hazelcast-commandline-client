@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -11,7 +12,6 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/store"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
@@ -25,40 +25,50 @@ https://github.com/hazelcast/hazelcast-commandline-client/releases/%s
 
 `
 
-const updateCheckKey = "update.nextCheckTime"
-
-const checkInterval = time.Hour * 24 * 7
+const (
+	updateCheckKey   = "update.nextCheckTime"
+	updateVersionKey = "update.latestVersion"
+	checkInterval    = time.Hour * 24 * 7
+)
 
 func maybePrintNewerVersion(ec plug.ExecContext) error {
-	sa := store.NewStoreAccessor(paths.Store(), ec.Logger())
-	isSkip, err := isSkipNewerVersion(sa)
+	sa := store.NewStoreAccessor(filepath.Join(paths.Caches(), "version_update"), ec.Logger())
+	shouldSkip, err := shouldSkipNewerVersion(sa)
 	if err != nil {
 		return err
 	}
-	if isSkip {
-		return nil
+	var latest string
+	if shouldSkip {
+		v, err := sa.WithLock(func(s *store.Store) (any, error) {
+			return s.GetEntry([]byte(updateVersionKey))
+		})
+		if err != nil {
+			return err
+		}
+		latest = string(v.([]byte))
+	} else {
+		latest, err = internal.LatestReleaseVersion()
+		if err != nil {
+			return err
+		}
+		if err = updateVersionAndNextCheckTime(sa, latest); err != nil {
+			return err
+		}
 	}
-	v, err := internal.LatestReleaseVersion()
-	if err != nil {
-		return err
-	}
-	if v != "" && internal.CheckVersion(trimVersion(v), ">", trimVersion(internal.Version)) {
-		I2(fmt.Fprintf(ec.Stdout(), newVersionWarning, v))
-	}
-	if err = updateNextCheckTime(sa); err != nil {
-		return err
+	if latest != "" && internal.CheckVersion(trimVersion(latest), ">", trimVersion(internal.Version)) {
+		ec.PrintlnUnnecessary(fmt.Sprintf(newVersionWarning, latest))
 	}
 	return nil
 }
 
-func isSkipNewerVersion(sa *store.StoreAccessor) (bool, error) {
+func shouldSkipNewerVersion(sa *store.StoreAccessor) (bool, error) {
 	if internal.Version == internal.UnknownVersion {
 		return true, nil
 	}
 	if strings.Contains(internal.Version, internal.CustomBuildSuffix) {
 		return true, nil
 	}
-	if internal.IsCheckVersion == "disabled" {
+	if internal.SkipUpdateCheck == "1" {
 		return true, nil
 	}
 	if os.Getenv(skipUpdateCheck) == "1" {
@@ -89,10 +99,14 @@ func trimVersion(v string) string {
 	return strings.TrimPrefix(strings.Split(v, "-")[0], "v")
 }
 
-func updateNextCheckTime(sa *store.StoreAccessor) error {
+func updateVersionAndNextCheckTime(sa *store.StoreAccessor, v string) error {
 	_, err := sa.WithLock(func(s *store.Store) (any, error) {
-		return nil, s.SetEntry([]byte(updateCheckKey),
+		err := s.SetEntry([]byte(updateCheckKey),
 			[]byte(strconv.FormatInt(time.Now().Add(checkInterval).Unix(), 10)))
+		if err != nil {
+			return nil, err
+		}
+		return nil, s.SetEntry([]byte(updateVersionKey), []byte(v))
 	})
 	return err
 }
