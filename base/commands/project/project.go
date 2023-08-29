@@ -26,5 +26,6 @@ func (gc ProjectCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("project", &ProjectCommand{}))
+	cmd := &ProjectCommand{}
+	Must(plug.Registry.RegisterCommand("project", cmd))
 }

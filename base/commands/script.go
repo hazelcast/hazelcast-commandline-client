@@ -65,14 +65,14 @@ func (cm ScriptCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		Stderr: ec.Stderr(),
 		Stdout: ec.Stdout(),
 	}
-	m, err := ec.(*cmd.ExecContext).Main().Clone(false)
+	m, err := ec.(*cmd.ExecContext).Main().Clone(cmd.ModeScripting)
 	if err != nil {
 		return fmt.Errorf("cloning Main: %w", err)
 	}
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	ie := ec.Props().GetBool(flagIgnoreErrors)
 	echo := ec.Props().GetBool(flagEcho)
-	textFn := makeTextFunc(m, ec, verbose, ie, echo, func(shortcut string) bool {
+	textFn := makeTextFunc(m, ec, verbose, false, false, func(shortcut string) bool {
 		// shortcuts are not supported in the script mode
 		return false
 	})

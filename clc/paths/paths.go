@@ -2,6 +2,8 @@ package paths
 
 import (
 	"fmt"
+	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -51,6 +53,10 @@ func Templates() string {
 
 func Store() string {
 	return filepath.Join(Home(), "store")
+}
+
+func Caches() string {
+	return filepath.Join(Home(), "caches")
 }
 
 func ResolveTemplatePath(t string) string {
@@ -162,6 +168,43 @@ func FindAll(cd string, fn FilterFn) ([]string, error) {
 		cs = append(cs, e.Name())
 	}
 	return cs, nil
+}
+
+// CopyDir copies directory src into target directory.
+// src/dir/file is copied as target/dir/file
+func CopyDir(src, target string) error {
+	l := len(src)
+	return filepath.WalkDir(src, func(path string, d fs.DirEntry, err error) (errOut error) {
+		if err != nil {
+			return err
+		}
+		part := path[l:]
+		dest := filepath.Join(target, part)
+		if d.IsDir() {
+			if err := os.MkdirAll(dest, 0700); err != nil {
+				return err
+			}
+			return nil
+		}
+		in, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		// ignoring the error here
+		defer in.Close()
+		out, err := os.OpenFile(dest, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			errOut = err
+			return
+		}()
+		if _, err := io.Copy(out, in); err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
 func nearbyConfigPath() string {

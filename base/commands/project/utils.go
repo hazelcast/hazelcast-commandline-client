@@ -11,7 +11,7 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -103,11 +103,11 @@ func parseYAML(prefix string, yamlFile []byte, result map[string]string) error {
 		case string:
 			(result)[fullKey] = val
 		default:
-			if _, isMap := val.(map[any]any); !isMap {
+			if _, isMap := val.(map[string]any); !isMap {
 				(result)[fullKey] = fmt.Sprintf("%v", val)
 			}
 		}
-		if subMap, isMap := v.(map[any]any); isMap {
+		if subMap, isMap := v.(map[string]any); isMap {
 			err = parseYAML(fullKey, marshalYAML(subMap), result)
 			if err != nil {
 				return err
@@ -124,7 +124,7 @@ func joinKeys(prefix, key string) string {
 	return prefix + "." + key
 }
 
-func marshalYAML(m map[any]any) []byte {
+func marshalYAML(m map[string]any) []byte {
 	d, _ := yaml.Marshal(m)
 	return d
 }
@@ -145,11 +145,16 @@ func cloneTemplate(baseDir string, name string) error {
 	return nil
 }
 
-func templateRepoURL(templateName string) string {
+func templateOrgURL() string {
 	u := os.Getenv(envTemplateSource)
 	if u == "" {
 		u = hzTemplatesOrganization
 	}
+	return u
+}
+
+func templateRepoURL(templateName string) string {
+	u := templateOrgURL()
 	u = strings.TrimSuffix(u, "/")
 	return fmt.Sprintf("%s/%s", u, templateName)
 }

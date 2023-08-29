@@ -3,10 +3,13 @@ package wizard
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"sync/atomic"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/terminal"
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/pflag"
 
@@ -47,11 +50,18 @@ func (p *Provider) BindFlag(name string, flag *pflag.Flag) {
 	p.fp.Load().BindFlag(name, flag)
 }
 
+func maybeUnwrapStdout(ec plug.ExecContext) any {
+	if v, ok := ec.Stdout().(clc.NopWriteCloser); ok {
+		return v.W
+	}
+	return ec.Stdout()
+}
+
 func (p *Provider) ClientConfig(ctx context.Context, ec plug.ExecContext) (hazelcast.Config, error) {
 	cfg, err := p.fp.Load().ClientConfig(ctx, ec)
 	if err != nil {
-		if !ec.Interactive() {
-			return hazelcast.Config{}, err
+		if terminal.IsPipe(maybeUnwrapStdout(ec)) {
+			return hazelcast.Config{}, fmt.Errorf(`no configuration was provided and cannot display the configuration wizard; use the --config flag`)
 		}
 		// ask the config to the user
 		name, err := p.runWizard(ctx, ec)

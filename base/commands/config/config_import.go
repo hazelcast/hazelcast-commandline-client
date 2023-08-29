@@ -19,20 +19,16 @@ func (cm ImportCmd) Init(cc plug.InitContext) error {
 	short := "Imports configuration from an arbitrary source"
 	long := `Imports configuration from an arbitrary source
 	
-Currently importing only Viridian connection configuration is supported.
+Currently importing Viridian connection configuration is supported only.
 	
 1. On Viridian console, visit:
 	
-	Dashboard -> Connect Client -> Quick connection guide -> Python
+	Dashboard -> Connect Client -> CLI
 
-2. Copy the text in box 1 and pass it as the second parameter.
+2. Copy the URL in box 2 and pass it as the second parameter.
    Make sure the text is quoted before running:
 	
-	clc config import my-config "curl https://api.viridian.hazelcast.com ... default.zip"
-	
-Alternatively, you can use an already downloaded Python client sample:
-	
-	clc config import my-config /home/me/Downloads/hazelcast-cloud-python-sample....zip
+	clc config import my-config "https://api.viridian.hazelcast.com/client_samples/download/..."
 	
 `
 	cc.SetCommandHelp(long, short)
