@@ -246,8 +246,8 @@ maybe_print_old_clc_warning () {
     if [[ "$clc_path" != "" && "$clc_path" != "$bin_path" ]]; then
         echo
         echo_note   "A binary named 'clc' already exists at ${clc_path}."
-        echo_indent '      You may want to delete it before running the installed CLC.'
-        echo_indent "      $ sudo rm -f ${clc_path}"
+        echo_indent 'You may want to delete it before running the installed CLC.'
+        echo_indent "$ sudo rm -f ${clc_path}"
     fi
 }
 
