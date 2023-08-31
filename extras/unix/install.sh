@@ -3,7 +3,7 @@
 # Hazelcast CLC Install script
 # (c) 2023 Hazelcast, Inc.
 
-set -eu
+set -eu -o pipefail
 
 check_ok () {
     local what="$1"
@@ -21,6 +21,10 @@ check_ok () {
     esac
 }
 
+log_warn () {
+    echo "WARN  $1" 1>&2
+}
+
 log_info () {
     echo "INFO  $1" 1>&2
 }
@@ -29,6 +33,18 @@ log_debug () {
     if [[ "${state_debug}" == "yes" ]]; then
         echo "DEBUG $1" 1>&2
     fi
+}
+
+echo_indent () {
+    printf "      %s\n" "$1" 1>&2
+}
+
+echo_note () {
+    echo "NOTE  $1" 1>&2
+}
+
+echo_ok () {
+    echo "  OK  $1" 1>&2
 }
 
 bye () {
@@ -149,13 +165,22 @@ update_rc () {
     local prefix="$1"
     local path="$2"
     local installed="CLC_INSTALLED_$prefix=1"
+    local code="
+if [[ \"\$CLC_INSTALLED_$prefix\" != \"1\" ]]; then
+ export CLC_INSTALLED_$prefix=1
+ export PATH=\$PATH:${state_bin_dir}
+fi
+"
     if [[ -e "$path" ]]; then
         # check if this file is a symbolic link
         if [[ -L "$path" ]]; then
-            log_info "WARNING: $path is a symbolic link. Writing to symbolic links is not supported."
+            log_warn "$path is a symbolic link. Writing to symbolic links is not supported."
+            echo_indent "You can manually add the following in $path"
+            echo_indent "$code"
             return
         fi
-        local text=$(cat "$path" | grep "$installed")
+        local text
+        text=$(cat "$path" | grep "$installed")
         if [[ "$text" != "" ]]; then
             # CLC PATH is already exported in this file
             log_debug "CLC PATH is already installed in $path"
@@ -164,12 +189,7 @@ update_rc () {
     fi
     # Add the CLC PATH to this file
     printf '\n# Added by Hazelcast CLC installer' >> "$path"
-    printf "
-if [[ \"\$CLC_INSTALLED_$prefix\" != \"1\" ]]; then
-  export CLC_INSTALLED_$prefix=1
-  export PATH=\$PATH:${state_bin_dir}
-fi
-" >> "$path"
+    printf "$code" >> "$path"
     log_info "Added CLC path to $path"
 }
 
@@ -202,16 +222,33 @@ print_banner () {
 
 print_success () {
     echo
-    echo "  OK  Hazelcast CLC ${state_download_version} is installed at $CLC_HOME"
+    echo_ok     "Hazelcast CLC ${state_download_version} is installed at $CLC_HOME"
     echo
-    echo '  Next steps:'
-    echo '  1.  Open a new terminal,'
-    echo '  2.  Run `clc` to start CLC,'
-    echo '  3.  Enjoy!'
+    echo_indent 'Next steps:'
+    echo_indent '1.  Open a new terminal,'
+    echo_indent '2.  Run `clc version` to confirm that CLC is installed,'
+    echo_indent '3.  Enjoy!'
+    maybe_print_old_clc_warning
     echo
-    echo 'NOTE  If the steps above do not work, try copying `clc` binary to your $PATH:'
-    echo "      $ sudo cp $state_bin_dir/clc /usr/local/bin"
+    echo_note   'If the steps above do not work, try copying `clc` binary to your $PATH:'
+    echo_indent "$ sudo cp $state_bin_dir/clc /usr/local/bin"
     echo
+}
+
+maybe_print_old_clc_warning () {
+    # create and assign the variable separately
+    # so the exit status is not lost
+    local clc_path
+    set +e
+    clc_path=$(which clc)
+    set -e
+    local bin_path="$state_bin_dir/clc"
+    if [[ "$clc_path" != "" && "$clc_path" != "$bin_path" ]]; then
+        echo
+        echo_note   "A binary named 'clc' already exists at ${clc_path}."
+        echo_indent '      You may want to delete it before running the installed CLC.'
+        echo_indent "      $ sudo rm -f ${clc_path}"
+    fi
 }
 
 detect_last_release () {
