@@ -7,18 +7,13 @@ import (
 	"fmt"
 	"time"
 
+	clcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
-	clcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
-
-var statusErrMapping = map[status]error{
-	statusCanceled: clcerrors.ErrUserCancelled,
-	statusFailed:   errors.New("migration failed"),
-}
 
 type Stages struct {
 	migrationID string
@@ -99,7 +94,7 @@ func (st *Stages) startStage(ctx context.Context) func(stage.Statuser) error {
 		}
 		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
-		if err = st.waitForStatus(ctx, []status{statusInProgress, statusComplete}, time.Second); err != nil {
+		if err = st.waitForStatus(ctx, time.Second, statusInProgress, statusComplete); err != nil {
 			return err
 		}
 		return nil
@@ -108,11 +103,11 @@ func (st *Stages) startStage(ctx context.Context) func(stage.Statuser) error {
 
 func (st *Stages) migrateStage(ctx context.Context) func(statuser stage.Statuser) error {
 	return func(stage.Statuser) error {
-		return st.waitForStatus(ctx, []status{statusComplete}, 5*time.Second)
+		return st.waitForStatus(ctx, 5*time.Second, statusComplete)
 	}
 }
 
-func (st *Stages) waitForStatus(ctx context.Context, expected []status, waitInterval time.Duration) error {
+func (st *Stages) waitForStatus(ctx context.Context, waitInterval time.Duration, targetStatuses ...status) error {
 	for {
 		timeoutErr := fmt.Errorf("migration could not be completed: reached timeout while reading status: " +
 			"please ensure that you are using Hazelcast's migration cluster distribution and your DMT config points to that cluster")
@@ -126,10 +121,15 @@ func (st *Stages) waitForStatus(ctx context.Context, expected []status, waitInte
 			}
 			return fmt.Errorf("reading status: %w", err)
 		}
-		if statusErrMapping[s] != nil {
-			return statusErrMapping[s]
+		switch s {
+		case statusComplete:
+			return nil
+		case statusCanceled:
+			return clcerrors.ErrUserCancelled
+		case statusFailed:
+			return errors.New("migration failed")
 		}
-		if expectationMet(expected, s) {
+		if expectationMet(targetStatuses, s) {
 			return nil
 		}
 		time.Sleep(waitInterval)
