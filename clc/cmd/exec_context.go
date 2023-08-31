@@ -38,6 +38,7 @@ type ExecContext struct {
 	stderr      io.Writer
 	stdin       io.Reader
 	args        []string
+	kwargs      map[string]any
 	props       *plug.Properties
 	mode        Mode
 	cmd         *cobra.Command
@@ -56,6 +57,7 @@ func NewExecContext(lg log.Logger, sio clc.IO, props *plug.Properties, mode Mode
 		props:       props,
 		mode:        mode,
 		spinnerWait: 1 * time.Second,
+		kwargs:      map[string]any{},
 	}, nil
 }
 
@@ -63,8 +65,13 @@ func (ec *ExecContext) SetConfigProvider(cfgProvider config.Provider) {
 	ec.cp = cfgProvider
 }
 
-func (ec *ExecContext) SetArgs(args []string) {
+func (ec *ExecContext) SetArgs(args []string, argSpecs []ArgSpec) {
 	ec.args = args
+	kw := make(map[string]any, len(argSpecs))
+	for _, s := range argSpecs {
+
+	}
+
 }
 
 func (ec *ExecContext) SetCmd(cmd *cobra.Command) {

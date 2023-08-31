@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/spf13/cobra"
@@ -8,6 +9,20 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 )
+
+type ArgType int
+
+const (
+	ArgTypeString ArgType = iota
+)
+
+type ArgSpec struct {
+	Key   string
+	Title string
+	Type  ArgType
+	Min   int
+	Max   int
+}
 
 type CommandContext struct {
 	Cmd          *cobra.Command
@@ -18,6 +33,7 @@ type CommandContext struct {
 	mode         Mode
 	isTopLevel   bool
 	group        *cobra.Group
+	argSpecs     []ArgSpec
 }
 
 func NewCommandContext(cmd *cobra.Command, cfgProvider config.Provider, mode Mode) *CommandContext {
@@ -57,6 +73,17 @@ func (cc *CommandContext) AddBoolFlag(long, short string, value bool, required b
 		check.Must(cc.Cmd.MarkPersistentFlagRequired(long))
 	}
 	cc.boolValues[long] = &b
+}
+
+func (cc *CommandContext) AddStringArg(key, title, help string) {
+	s := ArgSpec{
+		Key:   key,
+		Title: title,
+		Type:  ArgTypeString,
+		Min:   1,
+		Max:   1,
+	}
+	cc.argSpecs = append(cc.argSpecs, s)
 }
 
 // SetPositionalArgCount sets the number minimum and maximum positional arguments.
@@ -132,4 +159,31 @@ func (cc *CommandContext) SetTopLevel(b bool) {
 
 func (cc *CommandContext) TopLevel() bool {
 	return cc.isTopLevel
+}
+
+func (cc *CommandContext) ArgsFunc() func(*cobra.Command, []string) error {
+	if len(cc.argSpecs) == 0 {
+		return cobra.NoArgs
+	}
+	// validate specs
+	for i, s := range cc.argSpecs {
+		// min and max should be 1 if this is not the last argspec
+		if i == len(cc.argSpecs)-1 {
+			if s.Min != 1 || s.Max != 1 {
+				panic("only the last argument may take a range of values")
+			}
+		}
+	}
+	fn := func(_ *cobra.Command, args []string) error {
+		var minIdx int
+		c := len(args)
+		for _, s := range cc.argSpecs {
+			if c < minIdx+s.Min {
+				return fmt.Errorf("%s is required", s.Title)
+			}
+			minIdx += s.Min
+		}
+		return nil
+	}
+	return fn
 }
