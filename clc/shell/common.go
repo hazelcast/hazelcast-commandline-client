@@ -11,7 +11,10 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-const CmdPrefix = `\`
+const (
+	CmdPrefix   = `\`
+	AliasPrefix = `@`
+)
 
 var ErrHelp = errors.New("interactive help")
 

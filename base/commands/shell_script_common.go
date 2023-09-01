@@ -1,4 +1,4 @@
-//go:build std || script || shell
+//go:build std || script || shell || alias
 
 package commands
 
@@ -7,9 +7,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/google/shlex"
+	"github.com/hazelcast/hazelcast-commandline-client/base/commands/alias"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/shell"
@@ -29,7 +33,8 @@ func makeEndLineFunc() shell.EndLineFn {
 	return func(line string, multiline bool) (string, bool) {
 		// not caching trimmed line, since we want the backslash at the very end of the line. --YT
 		clcCmd := strings.HasPrefix(strings.TrimSpace(line), shell.CmdPrefix)
-		if clcCmd || multiline && clcMultilineContinue {
+		aliasCmd := strings.HasPrefix(strings.TrimSpace(line), shell.AliasPrefix)
+		if clcCmd || aliasCmd || multiline && clcMultilineContinue {
 			clcMultilineContinue = true
 			end := !strings.HasSuffix(line, "\\")
 			if !end {
@@ -49,6 +54,13 @@ func makeEndLineFunc() shell.EndLineFn {
 
 func makeTextFunc(m *cmd.Main, ec plug.ExecContext, verbose, ignoreErrors, echo bool, sf shortcutFunc) shell.TextFn {
 	return func(ctx context.Context, stdout io.Writer, text string) error {
+		if strings.HasPrefix(strings.TrimSpace(text), shell.AliasPrefix) {
+			var err error
+			text, err = convertAliasToCmd(strings.TrimPrefix(text, shell.AliasPrefix))
+			if err != nil {
+				return err
+			}
+		}
 		if strings.HasPrefix(strings.TrimSpace(text), shell.CmdPrefix) {
 			parts := strings.Fields(text)
 			ok := sf(parts[0])
@@ -77,4 +89,25 @@ func makeTextFunc(m *cmd.Main, ec plug.ExecContext, verbose, ignoreErrors, echo 
 		}
 		return f()
 	}
+}
+
+func convertAliasToCmd(text string) (string, error) {
+	parts := strings.Split(text, " ")
+	name := parts[0]
+	suffix := strings.Join(parts[1:], " ")
+	data, err := os.ReadFile(filepath.Join(paths.Home(), alias.AliasFileName))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", fmt.Errorf("alias not found: %s", name)
+		}
+		return "", err
+	}
+	lines := strings.Split(string(data), "\n")
+	for _, line := range lines {
+		p := strings.SplitN(line, "=", 2)
+		if len(p) == 2 && p[0] == name {
+			return fmt.Sprintf("%s%s %s", shell.CmdPrefix, p[1], suffix), nil
+		}
+	}
+	return "", fmt.Errorf("alias not found: %s", name)
 }

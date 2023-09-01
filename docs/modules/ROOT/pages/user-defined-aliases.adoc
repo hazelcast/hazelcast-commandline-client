@@ -1,0 +1,107 @@
+= user defined aliases
+
+Alias command are a group of alias operations.
+
+Usage:
+
+[source,bash]
+----
+clc alias [command]
+----
+
+== Commands
+
+* <<clc-alias-add, clc alias add>>
+* <<clc-alias-remove, clc alias remove>>
+* <<clc-alias-list, clc alias list>>
+
+== clc alias add
+
+Add an alias with the given name and command.
+
+Usage:
+
+[source,bash]
+----
+clc alias add [name] [command]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`name`
+|Required
+|Name of the alias.
+|
+
+|`command`
+|Required
+|Alias command given in double quotes. Eg. `"map set key1 value1 -n myMap"`
+|
+
+|
+|===
+
+Example:
+
+[source,bash]
+----
+clc alias add myAlias "map set key1 value1 -n myMap"
+----
+
+== clc alias remove
+
+Remove an alias with the given name.
+
+Usage:
+
+[source,bash]
+----
+clc alias remove [name]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`name`
+|Required
+|Name of the alias.
+|
+
+|
+|===
+
+Example:
+
+[source,bash]
+----
+clc alias remove myAlias
+----
+
+== clc alias list
+
+List existing aliases.
+
+Usage:
+
+[source,bash]
+----
+clc alias list
+----
+
+Example:
+
+[source,bash]
+----
+clc alias list
+----
+
+=== Alias Usage
+
+Aliases can be used in interactive and scripting modes with `@` prefix. Let's assume an alias named `myAlias` already created. it can be used as `@myAlias`.
