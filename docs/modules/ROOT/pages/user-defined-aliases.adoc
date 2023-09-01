@@ -2,6 +2,8 @@
 
 Alias command are a group of alias operations.
 
+They are runtime variables. If you want to persist them you need to save them in `$CLC_HOME/shell.clc` in `<name>=<command>` format. Variables in `shell.clc` are loaded everytime CLC starts.
+
 Usage:
 
 [source,bash]

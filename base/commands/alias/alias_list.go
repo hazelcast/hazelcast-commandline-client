@@ -2,12 +2,8 @@ package alias
 
 import (
 	"context"
-	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -32,14 +28,22 @@ type alias struct {
 func (a AliasListCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	sv, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Listing aliases")
-		return listAliases()
+		var all []alias
+		Aliases.Range(func(key, value any) bool {
+			all = append(all, alias{
+				name:  key.(string),
+				value: value.(string),
+			})
+			return true
+		})
+		return all, nil
 	})
 	if err != nil {
 		return err
 	}
 	stop()
-	aliases := sv.([]alias)
-	if len(aliases) == 0 {
+	all := sv.([]alias)
+	if len(all) == 0 {
 		ec.PrintlnUnnecessary("No aliases found.")
 		return nil
 	}
@@ -61,29 +65,6 @@ func (a AliasListCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	return ec.AddOutputRows(ctx, rows...)
 }
 
-func listAliases() ([]alias, error) {
-	var aliases []alias
-	data, err := os.ReadFile(filepath.Join(paths.Home(), AliasFileName))
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	lines := strings.Split(string(data), "\n")
-	for _, l := range lines {
-		if l == "" {
-			continue
-		}
-		parts := strings.SplitN(l, "=", 2)
-		aliases = append(aliases, alias{
-			name:  parts[0],
-			value: parts[1],
-		})
-	}
-	return aliases, nil
-}
-
 func init() {
-	Must(plug.Registry.RegisterCommand("alias:list", &AliasListCommand{}))
+	Must(plug.Registry.RegisterCommand("alias:list", &AliasListCommand{}, plug.OnlyInteractive{}))
 }
