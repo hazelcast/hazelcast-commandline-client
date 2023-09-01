@@ -19,6 +19,7 @@ func TestAlias(t *testing.T) {
 		f    func(t *testing.T)
 	}{
 		{name: "Execute_Interactive", f: Execute_InteractiveTest},
+		{name: "ExecuteSQL_Interactive", f: ExecuteSQL_InteractiveTest},
 		{name: "Add_Interactive", f: Add_InteractiveTest},
 		{name: "Remove_Interactive", f: Remove_InteractiveTest},
 		{name: "List_Interactive", f: List_InteractiveTest},
@@ -38,6 +39,35 @@ func Execute_InteractiveTest(t *testing.T) {
 				tcx.WriteStdinString("@mapAlias\n")
 				tcx.WriteStdinString("\\map get 1\n")
 				tcx.AssertStdoutContains("1")
+			})
+		})
+	})
+}
+
+func ExecuteSQL_InteractiveTest(t *testing.T) {
+	tcx := it.TestContext{T: t}
+	tcx.Tester(func(tcx it.TestContext) {
+		ctx := context.Background()
+		name := it.NewUniqueObjectName("table")
+		alias.Aliases.Store("sqlAlias", fmt.Sprintf(`SELECT * FROM "%s" ORDER BY __key;`+"\n", name))
+		tcx.WithShell(ctx, func(tcx it.TestContext) {
+			tcx.WithReset(func() {
+				tcx.WriteStdinf(`
+				CREATE MAPPING "%s" (
+					__key INT,
+					this VARCHAR
+				) TYPE IMAP OPTIONS (
+					'keyFormat' = 'int',
+					'valueFormat' = 'varchar'
+				);`+"\n", name)
+				tcx.WriteStdinf(`
+				INSERT INTO "%s" (__key, this) VALUES (10, 'foo'), (20, 'bar');
+			`+"\n", name)
+				tcx.WriteStdinString("@sqlAlias\n")
+				tcx.AssertStdoutContains("10")
+				tcx.AssertStdoutContains("foo")
+				tcx.AssertStdoutContains("20")
+				tcx.AssertStdoutContains("bar")
 			})
 		})
 	})

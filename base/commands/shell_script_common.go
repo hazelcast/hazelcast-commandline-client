@@ -95,18 +95,22 @@ func convertAliasToCmd(text string) (string, error) {
 	parts := strings.Split(text, " ")
 	name := parts[0]
 	suffix := strings.Join(parts[1:], " ")
-	data, err := os.ReadFile(filepath.Join(paths.Home(), alias.AliasFileName))
-	if err != nil {
-		if os.IsNotExist(err) {
-			return "", fmt.Errorf("alias not found: %s", name)
+	if v, ok := alias.Aliases.Load(name); ok { // find from memory
+		return v.(string), nil
+	} else { // find from shell.clc
+		data, err := os.ReadFile(filepath.Join(paths.Home(), alias.AliasFileName))
+		if err != nil {
+			if os.IsNotExist(err) {
+				return "", fmt.Errorf("alias not found: %s", name)
+			}
+			return "", err
 		}
-		return "", err
-	}
-	lines := strings.Split(string(data), "\n")
-	for _, line := range lines {
-		p := strings.SplitN(line, "=", 2)
-		if len(p) == 2 && p[0] == name {
-			return fmt.Sprintf("%s%s %s", shell.CmdPrefix, p[1], suffix), nil
+		lines := strings.Split(string(data), "\n")
+		for _, line := range lines {
+			p := strings.SplitN(line, "=", 2)
+			if len(p) == 2 && p[0] == name {
+				return fmt.Sprintf("%s %s", p[1], suffix), nil
+			}
 		}
 	}
 	return "", fmt.Errorf("alias not found: %s", name)
