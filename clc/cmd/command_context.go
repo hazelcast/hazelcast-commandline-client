@@ -176,13 +176,17 @@ func (cc *CommandContext) ArgsFunc() func(*cobra.Command, []string) error {
 		}
 	}
 	fn := func(_ *cobra.Command, args []string) error {
-		var minIdx int
+		var minCnt, maxCnt int
 		c := len(args)
 		for _, s := range cc.argSpecs {
-			if c < minIdx+s.Min {
+			if c < minCnt+s.Min {
 				return fmt.Errorf("%s is required", s.Title)
 			}
-			minIdx += s.Min
+			minCnt += s.Min
+			maxCnt += s.Max
+		}
+		if len(args) > maxCnt {
+			return fmt.Errorf("expected at most %d argument(s)", maxCnt)
 		}
 		return nil
 	}

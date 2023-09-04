@@ -21,6 +21,7 @@ import (
 	cmderrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/maps"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/terminal"
@@ -109,6 +110,10 @@ func (ec *ExecContext) Args() []string {
 
 func (ec *ExecContext) Arg0() string {
 	return ec.main.Arg0()
+}
+
+func (ec *ExecContext) GetStringArg(key string) string {
+	return maps.GetString(ec.kwargs, key)
 }
 
 func (ec *ExecContext) Props() plug.ReadOnlyProperties {
@@ -325,8 +330,10 @@ func makeErrorStringFromHTTPResponse(text string) string {
 
 func makeKeywordArgs(args []string, argSpecs []ArgSpec) (map[string]any, error) {
 	kw := make(map[string]any, len(argSpecs))
+	var maxCnt int
 	for i, s := range argSpecs {
 		spec := argSpecs[i]
+		maxCnt += s.Max
 		if s.Max-s.Min > 0 {
 			if i == len(argSpecs)-1 {
 				// if this is the last spec and a range of orguments is expected
@@ -339,18 +346,28 @@ func makeKeywordArgs(args []string, argSpecs []ArgSpec) (map[string]any, error) 
 				}
 				vs, err := convertSliceArg(arg, spec.Type)
 				if err != nil {
-					return nil, fmt.Errorf("converting argument %s: %w", argSpecs[i].Title, err)
+					return nil, fmt.Errorf("converting argument %s: %w", spec.Title, err)
 				}
 				kw[s.Key] = vs
 				break
 			}
 			return nil, errors.New("invalid argument spec: only the last argument may take a range")
 		}
-		value, err := convertArg(args[i], argSpecs[i].Type)
+		// note that this code is never executed under normal circumstances
+		// since the arguments are validated before running this function
+		if i >= len(args) {
+			return nil, fmt.Errorf("%s is required", spec.Title)
+		}
+		value, err := convertArg(args[i], spec.Type)
 		if err != nil {
-			return nil, fmt.Errorf("converting argument %s: %w", argSpecs[i].Title, err)
+			return nil, fmt.Errorf("converting argument %s: %w", spec.Title, err)
 		}
 		kw[s.Key] = value
+	}
+	// note that this code is never executed under normal circumstances
+	// since the arguments are validated before running this function
+	if len(args) > maxCnt {
+		return nil, fmt.Errorf("unexpected arguments")
 	}
 	return kw, nil
 }

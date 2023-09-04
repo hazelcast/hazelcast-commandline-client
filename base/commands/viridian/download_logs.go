@@ -25,7 +25,7 @@ Make sure you login before running this command.
 	cc.SetPositionalArgCount(1, 1)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	cc.AddStringFlag(flagOutputDir, "o", "", false, "output directory for the log files, if not given current directory is used")
-	cc.AddStringArg("clusterID", "cluster name or ID", "specify the cluster name or ID")
+	cc.AddStringArg(argClusterID, "cluster name or ID", "specify the cluster name or ID")
 	return nil
 }
 
@@ -34,7 +34,7 @@ func (cm DownloadLogsCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		return err
 	}
-	clusterNameOrID := ec.Args()[0]
+	clusterNameOrID := ec.GetStringArg(argClusterID)
 	outDir := ec.Props().GetString(flagOutputDir)
 	// extract target info
 	if err := validateOutputDir(outDir); err != nil {

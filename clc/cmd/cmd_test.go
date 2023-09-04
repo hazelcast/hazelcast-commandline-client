@@ -60,6 +60,13 @@ func TestMakeKeywordArgs(t *testing.T) {
 		{
 			args: nil,
 			specs: []ArgSpec{
+				{Key: "id", Title: "ID", Min: 1, Max: 1},
+			},
+			errString: "ID is required",
+		},
+		{
+			args: nil,
+			specs: []ArgSpec{
 				{Key: "strings", Title: "String", Type: ArgTypeStringSlice, Min: 1, Max: 10},
 			},
 			errString: "expected at least 1 String arguments, but received 0",
@@ -88,10 +95,17 @@ func TestMakeKeywordArgs(t *testing.T) {
 		{
 			args: []string{"foo"},
 			specs: []ArgSpec{
-				{Key: "id", Title: "ID", Type: ArgType(5), Min: 1, Max: 10},
-				{Key: "other", Title: "Other", Type: ArgType(5), Min: 1, Max: 1},
+				{Key: "id", Title: "ID", Min: 1, Max: 10},
+				{Key: "other", Title: "Other", Min: 1, Max: 1},
 			},
 			errString: "invalid argument spec: only the last argument may take a range",
+		},
+		{
+			args: []string{"foo", "bar", "zoo"},
+			specs: []ArgSpec{
+				{Key: "id", Title: "ID", Min: 1, Max: 1},
+			},
+			errString: "unexpected arguments",
 		},
 	}
 	for _, tc := range testCases {

@@ -31,6 +31,7 @@ type ExecContext interface {
 	AddOutputRows(ctx context.Context, rows ...output.Row) error
 	AddOutputStream(ctx context.Context, ch <-chan output.Row) error
 	Args() []string
+	GetStringArg(key string) string
 	ClientInternal(ctx context.Context) (*hazelcast.ClientInternal, error)
 	CommandName() string
 	Interactive() bool
