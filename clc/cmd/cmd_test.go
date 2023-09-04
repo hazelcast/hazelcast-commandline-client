@@ -1,9 +1,12 @@
 package cmd
 
 import (
+	"fmt"
+	"math"
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -45,7 +48,7 @@ func TestMakeKeywordArgs(t *testing.T) {
 				{Key: "strings", Title: "String", Type: ArgTypeStringSlice, Max: 10},
 			},
 			target: map[string]any{
-				"strings": []any{},
+				"strings": []string{},
 			},
 		},
 		{
@@ -54,7 +57,7 @@ func TestMakeKeywordArgs(t *testing.T) {
 				{Key: "strings", Title: "String", Type: ArgTypeStringSlice, Max: 10},
 			},
 			target: map[string]any{
-				"strings": []any{"foo", "bar"},
+				"strings": []string{"foo", "bar"},
 			},
 		},
 		{
@@ -120,6 +123,28 @@ func TestMakeKeywordArgs(t *testing.T) {
 				return
 			}
 			require.Equal(t, tc.target, kw)
+		})
+	}
+}
+
+func TestAddWithOverflow(t *testing.T) {
+	testCases := []struct {
+		a      int
+		b      int
+		target int
+	}{
+		{a: 0, b: 1, target: 1},
+		{a: 10, b: 20, target: 30},
+		{a: 0, b: math.MaxInt, target: math.MaxInt},
+		{a: 10, b: math.MaxInt, target: math.MaxInt},
+		{a: math.MaxInt, b: 1, target: math.MaxInt},
+		{a: math.MaxInt, b: math.MaxInt, target: math.MaxInt},
+	}
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(fmt.Sprintf("%d + %d", tc.a, tc.b), func(t *testing.T) {
+			r := addWithOverflow(tc.a, tc.b)
+			assert.Equal(t, tc.target, r)
 		})
 	}
 }

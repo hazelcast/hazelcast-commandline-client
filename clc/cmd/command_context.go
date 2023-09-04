@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"math"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -86,6 +87,20 @@ func (cc *CommandContext) AddStringArg(key, title string) {
 		Type:  ArgTypeString,
 		Min:   1,
 		Max:   1,
+	}
+	cc.argSpecs = append(cc.argSpecs, s)
+}
+
+func (cc *CommandContext) AddStringSliceArg(key, title string, min, max int) {
+	if max < min {
+		panic("CommandContext.AddStringSliceArg: max cannot be less than min")
+	}
+	s := ArgSpec{
+		Key:   key,
+		Title: title,
+		Type:  ArgTypeStringSlice,
+		Min:   min,
+		Max:   max,
 	}
 	cc.argSpecs = append(cc.argSpecs, s)
 }
@@ -201,7 +216,7 @@ func (cc *CommandContext) ArgsFunc() func(*cobra.Command, []string) error {
 	// validate specs
 	for i, s := range cc.argSpecs {
 		// min and max should be 1 if this is not the last argspec
-		if i == len(cc.argSpecs)-1 {
+		if i < len(cc.argSpecs)-1 {
 			if s.Min != 1 || s.Max != 1 {
 				panic("only the last argument may take a range of values")
 			}
@@ -215,7 +230,7 @@ func (cc *CommandContext) ArgsFunc() func(*cobra.Command, []string) error {
 				return fmt.Errorf("%s is required", s.Title)
 			}
 			minCnt += s.Min
-			maxCnt += s.Max
+			maxCnt = addWithOverflow(maxCnt, s.Max)
 		}
 		if len(args) > maxCnt {
 			return fmt.Errorf("expected at most %d argument(s)", maxCnt)
@@ -223,4 +238,14 @@ func (cc *CommandContext) ArgsFunc() func(*cobra.Command, []string) error {
 		return nil
 	}
 	return fn
+}
+
+// addWithOverflow adds two integers and returns the result
+// If the sum is greater than math.MaxInt, it returns math.MaxInt.
+// a and b are assumed to be non-negative.
+func addWithOverflow(a, b int) int {
+	if a > math.MaxInt-b {
+		return math.MaxInt
+	}
+	return a + b
 }

@@ -117,6 +117,10 @@ func (ec *ExecContext) GetStringArg(key string) string {
 	return maps.GetString(ec.kwargs, key)
 }
 
+func (ec *ExecContext) GetStringSliceArg(key string) []string {
+	return maps.GetStringSlice(ec.kwargs, key)
+}
+
 func (ec *ExecContext) GetInt64Arg(key string) int64 {
 	return maps.GetInt64(ec.kwargs, key)
 }
@@ -338,7 +342,7 @@ func makeKeywordArgs(args []string, argSpecs []ArgSpec) (map[string]any, error) 
 	var maxCnt int
 	for i, s := range argSpecs {
 		spec := argSpecs[i]
-		maxCnt += s.Max
+		maxCnt = addWithOverflow(maxCnt, s.Max)
 		if s.Max-s.Min > 0 {
 			if i == len(argSpecs)-1 {
 				// if this is the last spec and a range of orguments is expected
@@ -392,14 +396,13 @@ func convertArg(value string, typ ArgType) (any, error) {
 }
 
 func convertSliceArg(values []string, typ ArgType) (any, error) {
-	args := make([]any, len(values))
 	switch typ {
 	case ArgTypeStringSlice:
-		for i, v := range values {
-			args[i] = v
-		}
+		args := make([]string, len(values))
+		copy(args, values)
 		return args, nil
 	case ArgTypeInt64Slice:
+		args := make([]int64, len(values))
 		for i, v := range values {
 			vi, err := strconv.ParseInt(v, 10, 64)
 			if err != nil {
