@@ -19,11 +19,12 @@ type createClusterRequest struct {
 	Name                string `json:"name"`
 	ClusterTypeID       int64  `json:"clusterTypeId"`
 	PlanName            string `json:"planName"`
+	Prerelease          bool   `json:"preRelease"`
 }
 
 type createClusterResponse Cluster
 
-func (a *API) CreateCluster(ctx context.Context, name string, clusterType string, k8sClusterID int, hzVersion string) (Cluster, error) {
+func (a *API) CreateCluster(ctx context.Context, name string, clusterType string, k8sClusterID int, prerelease bool, hzVersion string) (Cluster, error) {
 	if name == "" {
 		name = clusterName()
 	}
@@ -41,6 +42,7 @@ func (a *API) CreateCluster(ctx context.Context, name string, clusterType string
 		Name:                name,
 		ClusterTypeID:       clusterTypeID,
 		PlanName:            planName,
+		Prerelease:          prerelease,
 	}
 	cluster, err := RetryOnAuthFail(ctx, a, func(ctx context.Context, token string) (Cluster, error) {
 		u := a.makeURL("/cluster")
