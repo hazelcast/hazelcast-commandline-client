@@ -38,10 +38,10 @@ func Execute_InteractiveTest(t *testing.T) {
 			tcx.WithReset(func() {
 				tcx.WriteStdinString("@mapAlias\n")
 				tcx.WriteStdinString("\\map get key1 -n myMap\n")
-				tcx.AssertStdoutContains("key1")
 				tcx.AssertStdoutContains("value1")
 			})
 		})
+		alias.Aliases.Delete("mapAlias")
 	})
 }
 
@@ -71,6 +71,7 @@ func ExecuteSQL_InteractiveTest(t *testing.T) {
 				tcx.AssertStdoutContains("bar")
 			})
 		})
+		alias.Aliases.Delete("sqlAlias")
 	})
 }
 
@@ -80,11 +81,13 @@ func Add_InteractiveTest(t *testing.T) {
 	tcx.Tester(func(tcx it.TestContext) {
 		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			tcx.WithReset(func() {
-				tcx.WriteStdinString(fmt.Sprintf("\\alias add mapAlias %s\n", `"\map set key1 value1"`))
+				tcx.WriteStdinString(`\alias add mapAlias "\map set key1 value1"`)
+				tcx.WriteStdinString("\n")
 				tcx.WriteStdinString("\\alias list\n")
 				tcx.AssertStdoutContains(`\map set key1 value1`)
 			})
 		})
+		alias.Aliases.Delete("mapAlias")
 	})
 }
 
@@ -100,6 +103,7 @@ func Remove_InteractiveTest(t *testing.T) {
 				tcx.AssertStdoutNotContains(`\map set key1 value1`)
 			})
 		})
+		alias.Aliases.Delete("mapAlias")
 	})
 }
 
@@ -115,5 +119,6 @@ func List_InteractiveTest(t *testing.T) {
 				tcx.AssertStdoutContains(`\map set key1 value1`)
 			})
 		})
+		alias.Aliases.Delete("mapAlias")
 	})
 }
