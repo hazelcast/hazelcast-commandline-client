@@ -12,8 +12,9 @@ clc demo [command] [options]
 == Commands
 
 * <<clc-demo-generate-data, clc demo generate-data>>
+* <<clc-demo-map-setmany, clc demo map-setmany>>
 
-== clc demo submit
+== clc demo generate data
 
 Generates stream events
 	
@@ -62,4 +63,40 @@ Example:
 [source,bash]
 ----
 clc demo generate-data wikipedia-event-stream map=wiki-events --preview
+----
+
+== clc demo map setmany
+
+Generates multiple map entries.
+
+Usage:
+
+[source,bash]
+----
+clc demo map-setmany [entry-count] [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`--name`, `-n`
+|Optional
+|Name of the map.
+|`default`
+
+|`--size`
+|Optional
+|Size of the map value in bytes, the following suffixes can also be used: kb, mb, e.g., 42kb
+|`1`
+
+|===
+
+Example:
+
+[source,bash]
+----
+clc demo map-setmany 10 --name myMap --size 1kb
 ----
