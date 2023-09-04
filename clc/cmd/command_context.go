@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"math"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -35,6 +36,7 @@ type CommandContext struct {
 	isTopLevel   bool
 	group        *cobra.Group
 	argSpecs     []ArgSpec
+	usage        string
 }
 
 func NewCommandContext(cmd *cobra.Command, cfgProvider config.Provider, mode Mode) *CommandContext {
@@ -126,7 +128,20 @@ func (cc *CommandContext) SetCommandHelp(long, short string) {
 }
 
 func (cc *CommandContext) SetCommandUsage(usage string) {
-	cc.Cmd.Use = usage
+	cc.usage = usage
+}
+
+func (cc *CommandContext) GetCommandUsage() string {
+	var sb strings.Builder
+	sb.WriteString(cc.usage)
+	for _, s := range cc.argSpecs {
+		sb.WriteByte(' ')
+		sb.WriteByte('{')
+		sb.WriteString(s.Title)
+		sb.WriteByte('}')
+	}
+	sb.WriteString(" [flags]")
+	return sb.String()
 }
 
 func (cc *CommandContext) SetCommandGroup(id string) {

@@ -314,6 +314,7 @@ func (m *Main) createCommands() error {
 		addUniqueCommandGroup(cc, parent)
 		if !cc.TopLevel() {
 			cmd.Args = cc.ArgsFunc()
+			cmd.Use = cc.GetCommandUsage()
 			cmd.RunE = func(cmd *cobra.Command, args []string) error {
 				cfs := cmd.Flags()
 				props := m.props
