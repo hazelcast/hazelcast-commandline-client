@@ -27,7 +27,15 @@ func LatestReleaseVersion() (string, error) {
 	}
 	var release map[string]any
 	for _, d := range data {
-		if d["prerelease"].(bool) == false {
+		prs, ok := d["prerelease"]
+		if !ok {
+			continue
+		}
+		pr, ok := prs.(bool)
+		if !ok {
+			continue
+		}
+		if !pr {
 			release = d
 			break
 		}
