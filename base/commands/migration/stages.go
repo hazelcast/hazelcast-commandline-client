@@ -111,8 +111,12 @@ func (st *Stages) waitForStatus(ctx context.Context, waitInterval time.Duration,
 	timeoutErr := fmt.Errorf("migration could not be completed: reached timeout while reading status: " +
 		"please ensure that you are using Hazelcast's migration cluster distribution and your DMT config points to that cluster")
 	for {
-		if err := ctx.Err(); err != nil && errors.Is(err, context.DeadlineExceeded) {
-			return timeoutErr
+		if err := ctx.Err(); err != nil {
+			if errors.Is(err, context.DeadlineExceeded) {
+				return timeoutErr
+			} else {
+				return fmt.Errorf("migration failed: %w", err)
+			}
 		}
 		s, err := st.readStatus(ctx)
 		if err != nil {
