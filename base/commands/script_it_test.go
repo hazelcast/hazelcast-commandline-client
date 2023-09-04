@@ -55,7 +55,7 @@ func scriptWithAlias_InteractiveTest(t *testing.T) {
 	tcx.Tester(func(tcx it.TestContext) {
 		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			tcx.WithReset(func() {
-				tcx.WriteStdinString(fmt.Sprintf("\\alias add mapAlias %s\n", `"map set key1 value1 -n myMap"`))
+				tcx.WriteStdinString(fmt.Sprintf("\\alias add mapAlias %s\n", "\\map set key1 value1 -n myMap"))
 				tcx.WriteStdinString(fmt.Sprintf("\\script testdata/test-script-with-alias.clc\n"))
 				tcx.WriteStdinString(fmt.Sprintf("\\map get key1 -n myMap\n"))
 				tcx.AssertStdoutContains("value1")

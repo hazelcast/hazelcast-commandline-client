@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"testing"
 
-	_ "github.com/hazelcast/hazelcast-commandline-client/base"
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/base/commands/alias"
+	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/map"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
 )
 
@@ -30,15 +30,16 @@ func TestAlias(t *testing.T) {
 }
 
 func Execute_InteractiveTest(t *testing.T) {
-	ctx := context.TODO()
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
-		alias.Aliases.Store("mapAlias", "map set 1 1")
+		ctx := context.Background()
+		alias.Aliases.Store("mapAlias", fmt.Sprintf("\\map set key1 value1 -n myMap"))
 		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			tcx.WithReset(func() {
 				tcx.WriteStdinString("@mapAlias\n")
-				tcx.WriteStdinString("\\map get 1\n")
-				tcx.AssertStdoutContains("1")
+				tcx.WriteStdinString("\\map get key1 -n myMap\n")
+				tcx.AssertStdoutContains("key1")
+				tcx.AssertStdoutContains("value1")
 			})
 		})
 	})
@@ -79,9 +80,9 @@ func Add_InteractiveTest(t *testing.T) {
 	tcx.Tester(func(tcx it.TestContext) {
 		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			tcx.WithReset(func() {
-				tcx.WriteStdinString(fmt.Sprintf("\\alias add mapAlias %s\n", `map set 1 1`))
+				tcx.WriteStdinString(fmt.Sprintf("\\alias add mapAlias %s\n", `map set key1 value1`))
 				tcx.WriteStdinString("\\alias list\n")
-				tcx.AssertStdoutContains("map set 1 1")
+				tcx.AssertStdoutContains("map set key1 value1")
 			})
 		})
 	})
@@ -91,12 +92,12 @@ func Remove_InteractiveTest(t *testing.T) {
 	ctx := context.TODO()
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
-		alias.Aliases.Store("mapAlias", "map set 1 1")
+		alias.Aliases.Store("mapAlias", "map set key1 value1")
 		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			tcx.WithReset(func() {
 				tcx.WriteStdinString("\\alias remove mapAlias\n")
 				tcx.WriteStdinString("\\alias list\n")
-				tcx.AssertStdoutNotContains("map set 1 1")
+				tcx.AssertStdoutNotContains("map set key1 value1")
 			})
 		})
 	})
@@ -106,12 +107,12 @@ func List_InteractiveTest(t *testing.T) {
 	ctx := context.TODO()
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
-		alias.Aliases.Store("mapAlias", "map set 1 1")
+		alias.Aliases.Store("mapAlias", "map set key1 value1")
 		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			tcx.WithReset(func() {
 				tcx.WriteStdinString("\\alias list\n")
 				tcx.AssertStdoutContains("mapAlias")
-				tcx.AssertStdoutContains("map set 1 1")
+				tcx.AssertStdoutContains("map set key1 value1")
 			})
 		})
 	})

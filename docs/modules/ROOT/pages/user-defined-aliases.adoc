@@ -41,7 +41,7 @@ Parameters:
 
 |`command`
 |Required
-|Alias command given in double quotes. Eg. `"map set key1 value1 -n myMap"`
+|Alias command given in double quotes. Eg. `"\\map set key1 value1 -n myMap"`
 |
 
 |
@@ -51,8 +51,10 @@ Example:
 
 [source,bash]
 ----
-clc alias add myAlias "map set key1 value1 -n myMap"
+clc alias add myAlias "\\map set key1 value1 -n myMap"
 ----
+
+WARNING: Aliases must be defined in double quotes ("<alias>"). If your command starts with `\`, don't forget to use `\\` to escape the `"` character.
 
 == clc alias remove
 
