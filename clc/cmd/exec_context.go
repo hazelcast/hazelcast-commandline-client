@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"time"
 
@@ -114,6 +115,10 @@ func (ec *ExecContext) Arg0() string {
 
 func (ec *ExecContext) GetStringArg(key string) string {
 	return maps.GetString(ec.kwargs, key)
+}
+
+func (ec *ExecContext) GetInt64Arg(key string) int64 {
+	return maps.GetInt64(ec.kwargs, key)
 }
 
 func (ec *ExecContext) Props() plug.ReadOnlyProperties {
@@ -376,6 +381,12 @@ func convertArg(value string, typ ArgType) (any, error) {
 	switch typ {
 	case ArgTypeString:
 		return value, nil
+	case ArgTypeInt64:
+		v, err := strconv.ParseInt(value, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		return v, nil
 	}
 	return nil, fmt.Errorf("unknown type: %d", typ)
 }
@@ -386,6 +397,15 @@ func convertSliceArg(values []string, typ ArgType) (any, error) {
 	case ArgTypeStringSlice:
 		for i, v := range values {
 			args[i] = v
+		}
+		return args, nil
+	case ArgTypeInt64Slice:
+		for i, v := range values {
+			vi, err := strconv.ParseInt(v, 10, 64)
+			if err != nil {
+				return nil, err
+			}
+			args[i] = vi
 		}
 		return args, nil
 	}

@@ -5,7 +5,6 @@ package atomiclong
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	"github.com/hazelcast/hazelcast-go-client"
 
@@ -14,13 +13,15 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
+const argValue = "value"
+
 type AtomicLongSetCommand struct{}
 
 func (mc *AtomicLongSetCommand) Init(cc plug.InitContext) error {
-	cc.SetPositionalArgCount(1, 1)
+	cc.SetCommandUsage("set")
 	help := "Set the value of the AtomicLong"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("set [value] [flags]")
+	cc.AddInt64Arg(argValue, "value")
 	return nil
 }
 
@@ -29,10 +30,7 @@ func (mc *AtomicLongSetCommand) Exec(ctx context.Context, ec plug.ExecContext) e
 	if err != nil {
 		return err
 	}
-	value, err := strconv.Atoi(ec.Args()[0])
-	if err != nil {
-		return err
-	}
+	value := ec.GetInt64Arg(argValue)
 	ali := al.(*hazelcast.AtomicLong)
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText(fmt.Sprintf("Setting value of AtomicLong %s", ali.Name()))

@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"math"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -16,6 +15,8 @@ type ArgType int
 const (
 	ArgTypeString ArgType = iota
 	ArgTypeStringSlice
+	ArgTypeInt64
+	ArgTypeInt64Slice
 )
 
 type ArgSpec struct {
@@ -78,11 +79,22 @@ func (cc *CommandContext) AddBoolFlag(long, short string, value bool, required b
 	cc.boolValues[long] = &b
 }
 
-func (cc *CommandContext) AddStringArg(key, title, help string) {
+func (cc *CommandContext) AddStringArg(key, title string) {
 	s := ArgSpec{
 		Key:   key,
 		Title: title,
 		Type:  ArgTypeString,
+		Min:   1,
+		Max:   1,
+	}
+	cc.argSpecs = append(cc.argSpecs, s)
+}
+
+func (cc *CommandContext) AddInt64Arg(key, title string) {
+	s := ArgSpec{
+		Key:   key,
+		Title: title,
+		Type:  ArgTypeInt64,
 		Min:   1,
 		Max:   1,
 	}
@@ -94,20 +106,9 @@ func (cc *CommandContext) AddStringArg(key, title, help string) {
 // otherwise, if max == math.MaxInt, num of pos args are set as the minumum of min args.
 // otherwise, if min == 0, num of pos args are set as the maximum of max args.
 // otherwise num of pos args is the range of min, max args.
+// Deprecated
 func (cc *CommandContext) SetPositionalArgCount(min, max int) {
-	if min == max {
-		cc.Cmd.Args = cobra.ExactArgs(min)
-		return
-	}
-	if max == math.MaxInt {
-		cc.Cmd.Args = cobra.MinimumNArgs(min)
-		return
-	}
-	if min == 0 {
-		cc.Cmd.Args = cobra.MaximumNArgs(max)
-		return
-	}
-	cc.Cmd.Args = cobra.RangeArgs(min, max)
+	// nop
 }
 
 func (cc *CommandContext) Hide() {
@@ -136,9 +137,25 @@ func (cc *CommandContext) GetCommandUsage() string {
 	sb.WriteString(cc.usage)
 	for _, s := range cc.argSpecs {
 		sb.WriteByte(' ')
-		sb.WriteByte('{')
+		if s.Min == 0 {
+			sb.WriteByte('[')
+		} else {
+			sb.WriteByte('{')
+		}
 		sb.WriteString(s.Title)
-		sb.WriteByte('}')
+		if s.Max > 1 {
+			sb.WriteString(", ")
+			sb.WriteString(s.Title)
+		}
+		if s.Max > 2 {
+			sb.WriteString(", ")
+			sb.WriteString("...")
+		}
+		if s.Min == 0 {
+			sb.WriteByte(']')
+		} else {
+			sb.WriteByte('}')
+		}
 	}
 	sb.WriteString(" [flags]")
 	return sb.String()

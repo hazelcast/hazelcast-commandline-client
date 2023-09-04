@@ -17,7 +17,8 @@ type InitContext interface {
 	AddIntFlag(long, short string, value int64, required bool, help string)
 	AddStringConfig(name, value, flag string, help string)
 	AddStringFlag(long, short, value string, required bool, help string)
-	AddStringArg(key, title, help string)
+	AddStringArg(key, title string)
+	AddInt64Arg(key, title string)
 	Hide()
 	Interactive() bool
 	SetCommandGroup(id string)
@@ -32,6 +33,7 @@ type ExecContext interface {
 	AddOutputStream(ctx context.Context, ch <-chan output.Row) error
 	Args() []string
 	GetStringArg(key string) string
+	GetInt64Arg(key string) int64
 	ClientInternal(ctx context.Context) (*hazelcast.ClientInternal, error)
 	CommandName() string
 	Interactive() bool

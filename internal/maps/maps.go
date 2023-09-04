@@ -12,3 +12,17 @@ func GetString[K constraints.Ordered, V any](m map[K]V, key K) string {
 	}
 	return ""
 }
+
+func GetInt64[K constraints.Ordered, V any](m map[K]V, key K) int64 {
+	if v, ok := m[key]; ok {
+		switch vv := any(v).(type) {
+		case int:
+			return int64(vv)
+		case int32:
+			return int64(vv)
+		case int64:
+			return vv
+		}
+	}
+	return 0
+}
