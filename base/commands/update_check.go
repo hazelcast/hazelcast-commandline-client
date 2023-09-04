@@ -29,7 +29,7 @@ const (
 	checkInterval    = time.Hour * 24 * 7
 )
 
-func maybePrintNewerVersion(ctx context.Context, ec plug.ExecContext) error {
+func maybePrintNewVersionNotification(ctx context.Context, ec plug.ExecContext) error {
 	sa := store.NewStoreAccessor(filepath.Join(paths.Caches(), "update"), ec.Logger())
 	shouldSkip, err := shouldSkipNewerVersion(sa)
 	if err != nil {
