@@ -81,7 +81,7 @@ func Add_InteractiveTest(t *testing.T) {
 	tcx.Tester(func(tcx it.TestContext) {
 		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			tcx.WithReset(func() {
-				tcx.WriteStdinString(`\alias add mapAlias "\map set key1 value1"`)
+				tcx.WriteStdinString(`\alias add mapAlias "\\map set key1 value1"`)
 				tcx.WriteStdinString("\n")
 				tcx.WriteStdinString("\\alias list\n")
 				tcx.AssertStdoutContains(`\map set key1 value1`)
