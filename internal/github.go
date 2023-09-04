@@ -14,11 +14,8 @@ const latestReleaseURL = "https://api.github.com/repos/hazelcast/hazelcast-comma
 
 // LatestReleaseVersion returns the latest release version, except beta ones
 func LatestReleaseVersion(ctx context.Context) (string, error) {
-	if _, ok := ctx.Deadline(); !ok {
-		var c context.CancelFunc
-		ctx, c = context.WithTimeout(ctx, 3*time.Second)
-		defer c()
-	}
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
 	req, err := http.NewRequest(http.MethodGet, latestReleaseURL, nil)
 	if err != nil {
 		return "", err
