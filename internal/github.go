@@ -1,18 +1,30 @@
 package internal
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 )
 
 const latestReleaseURL = "https://api.github.com/repos/hazelcast/hazelcast-commandline-client/releases"
 
 // LatestReleaseVersion returns the latest release version, except beta ones
-func LatestReleaseVersion() (string, error) {
-	resp, err := http.Get(latestReleaseURL)
+func LatestReleaseVersion(ctx context.Context) (string, error) {
+	if _, ok := ctx.Deadline(); !ok {
+		var c context.CancelFunc
+		ctx, c = context.WithTimeout(ctx, 3*time.Second)
+		defer c()
+	}
+	req, err := http.NewRequest(http.MethodGet, latestReleaseURL, nil)
+	if err != nil {
+		return "", err
+	}
+	req = req.WithContext(ctx)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return "", err
 	}

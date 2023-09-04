@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -28,7 +29,7 @@ const (
 	checkInterval    = time.Hour * 24 * 7
 )
 
-func maybePrintNewerVersion(ec plug.ExecContext) error {
+func maybePrintNewerVersion(ctx context.Context, ec plug.ExecContext) error {
 	sa := store.NewStoreAccessor(filepath.Join(paths.Caches(), "update"), ec.Logger())
 	shouldSkip, err := shouldSkipNewerVersion(sa)
 	if err != nil {
@@ -44,7 +45,7 @@ func maybePrintNewerVersion(ec plug.ExecContext) error {
 		}
 		latest = string(v.([]byte))
 	} else {
-		latest, err = internal.LatestReleaseVersion()
+		latest, err = internal.LatestReleaseVersion(ctx)
 		if err != nil {
 			return err
 		}
