@@ -131,9 +131,9 @@ For other clusters use the following command:
 1. Enter the desired name in the "Configuration Name" field. 
 2. On Viridian console, visit:
 	
-	Dashboard -> Connect Client -> Quick connection guide -> Go
+	Dashboard -> Connect Client -> CLI
 
-3. Copy the text in box 1 and paste it in the "Source" field.
+3. Copy the URL in second box and pass it to "Source" field.
 4. Navigate to the [Submit] button and press enter.
 	
 Alternatively, you can use the following command:
