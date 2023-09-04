@@ -29,7 +29,7 @@ const (
 	checkInterval    = time.Hour * 24 * 7
 )
 
-func maybePrintNewVersionNotification(ctx context.Context, ec plug.ExecContext) error {
+func MaybePrintNewVersionNotification(ctx context.Context, ec plug.ExecContext) error {
 	sa := store.NewStoreAccessor(filepath.Join(paths.Caches(), "update"), ec.Logger())
 	shouldSkip, err := shouldSkipNewerVersion(sa)
 	if err != nil {
@@ -49,7 +49,7 @@ func maybePrintNewVersionNotification(ctx context.Context, ec plug.ExecContext) 
 		if err != nil {
 			return err
 		}
-		if err = updateVersionAndNextCheckTime(sa, latest); err != nil {
+		if err = UpdateVersionAndNextCheckTime(sa, latest); err != nil {
 			return err
 		}
 	}
@@ -97,7 +97,7 @@ func trimVersion(v string) string {
 	return strings.TrimPrefix(strings.Split(v, "-")[0], "v")
 }
 
-func updateVersionAndNextCheckTime(sa *store.StoreAccessor, v string) error {
+func UpdateVersionAndNextCheckTime(sa *store.StoreAccessor, v string) error {
 	_, err := sa.WithLock(func(s *store.Store) (any, error) {
 		err := s.SetEntry([]byte(updateCheckKey),
 			[]byte(strconv.FormatInt(time.Now().Add(checkInterval).Unix(), 10)))

@@ -77,7 +77,7 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 			logText = fmt.Sprintf("Log %9s : %s", logLevel, logPath)
 		}
 		I2(fmt.Fprintf(ec.Stdout(), banner, internal.Version, cfgText, logText))
-		if err = maybePrintNewVersionNotification(ctx, ec); err != nil {
+		if err = MaybePrintNewVersionNotification(ctx, ec); err != nil {
 			ec.Logger().Error(err)
 		}
 	}
