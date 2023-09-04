@@ -17,12 +17,9 @@ import (
 
 const skipUpdateCheck = "CLC_SKIP_UPDATE_CHECK"
 
-const newVersionWarning = `
-A newer version of CLC is available.
-
+const newVersionWarning = `A newer version of CLC is available.
 Visit the following link for release notes and to download:
 https://github.com/hazelcast/hazelcast-commandline-client/releases/%s
-
 `
 
 const (
@@ -32,7 +29,7 @@ const (
 )
 
 func maybePrintNewerVersion(ec plug.ExecContext) error {
-	sa := store.NewStoreAccessor(filepath.Join(paths.Caches(), "version_update"), ec.Logger())
+	sa := store.NewStoreAccessor(filepath.Join(paths.Caches(), "update"), ec.Logger())
 	shouldSkip, err := shouldSkipNewerVersion(sa)
 	if err != nil {
 		return err
