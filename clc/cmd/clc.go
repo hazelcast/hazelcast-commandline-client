@@ -335,7 +335,7 @@ func (m *Main) createCommands() error {
 				}
 				ec.SetConfigProvider(m.cp)
 				ec.SetMain(m)
-				ec.SetArgs(args)
+				ec.SetArgs(args, cc.argSpecs)
 				ec.SetCmd(cmd)
 				ctx := context.Background()
 				t, err := parseDuration(ec.Props().GetString(clc.PropertyTimeout))

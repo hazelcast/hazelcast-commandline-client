@@ -14,6 +14,7 @@ type ArgType int
 
 const (
 	ArgTypeString ArgType = iota
+	ArgTypeStringSlice
 )
 
 type ArgSpec struct {

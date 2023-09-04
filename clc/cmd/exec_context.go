@@ -65,13 +65,14 @@ func (ec *ExecContext) SetConfigProvider(cfgProvider config.Provider) {
 	ec.cp = cfgProvider
 }
 
-func (ec *ExecContext) SetArgs(args []string, argSpecs []ArgSpec) {
+func (ec *ExecContext) SetArgs(args []string, argSpecs []ArgSpec) error {
 	ec.args = args
-	kw := make(map[string]any, len(argSpecs))
-	for _, s := range argSpecs {
-
+	kw, err := makeKeywordArgs(args, argSpecs)
+	if err != nil {
+		return err
 	}
-
+	ec.kwargs = kw
+	return nil
 }
 
 func (ec *ExecContext) SetCmd(cmd *cobra.Command) {
@@ -320,6 +321,58 @@ func makeErrorStringFromHTTPResponse(text string) string {
 		}
 	}
 	return text
+}
+
+func makeKeywordArgs(args []string, argSpecs []ArgSpec) (map[string]any, error) {
+	kw := make(map[string]any, len(argSpecs))
+	for i, s := range argSpecs {
+		spec := argSpecs[i]
+		if s.Max-s.Min > 0 {
+			if i == len(argSpecs)-1 {
+				// if this is the last spec and a range of orguments is expected
+				arg := args[i:]
+				if len(arg) < spec.Min {
+					return nil, fmt.Errorf("expected at least %d %s arguments, but received %d", spec.Min, spec.Title, len(arg))
+				}
+				if len(arg) > spec.Max {
+					return nil, fmt.Errorf("expected at most %d %s arguments, but received %d", spec.Max, spec.Title, len(arg))
+				}
+				vs, err := convertSliceArg(arg, spec.Type)
+				if err != nil {
+					return nil, fmt.Errorf("converting argument %s: %w", argSpecs[i].Title, err)
+				}
+				kw[s.Key] = vs
+				break
+			}
+			return nil, errors.New("invalid argument spec: only the last argument may take a range")
+		}
+		value, err := convertArg(args[i], argSpecs[i].Type)
+		if err != nil {
+			return nil, fmt.Errorf("converting argument %s: %w", argSpecs[i].Title, err)
+		}
+		kw[s.Key] = value
+	}
+	return kw, nil
+}
+
+func convertArg(value string, typ ArgType) (any, error) {
+	switch typ {
+	case ArgTypeString:
+		return value, nil
+	}
+	return nil, fmt.Errorf("unknown type: %d", typ)
+}
+
+func convertSliceArg(values []string, typ ArgType) (any, error) {
+	args := make([]any, len(values))
+	switch typ {
+	case ArgTypeStringSlice:
+		for i, v := range values {
+			args[i] = v
+		}
+		return args, nil
+	}
+	return nil, fmt.Errorf("unknown type: %d", typ)
 }
 
 type simpleSpinner struct {
