@@ -3,6 +3,7 @@ package internal
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 )
@@ -30,6 +31,9 @@ func LatestReleaseVersion() (string, error) {
 			release = d
 			break
 		}
+	}
+	if release == nil {
+		return "", fmt.Errorf("no stable release")
 	}
 	t, ok := release["tag_name"].(string)
 	if !ok {
