@@ -33,7 +33,7 @@ func Execute_InteractiveTest(t *testing.T) {
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
 		ctx := context.Background()
-		alias.Aliases.Store("mapAlias", fmt.Sprintf("\\map set key1 value1 -n myMap"))
+		alias.Aliases.Store("mapAlias", fmt.Sprintf(`\map set key1 value1 -n myMap`))
 		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			tcx.WithReset(func() {
 				tcx.WriteStdinString("@mapAlias\n")
@@ -80,9 +80,9 @@ func Add_InteractiveTest(t *testing.T) {
 	tcx.Tester(func(tcx it.TestContext) {
 		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			tcx.WithReset(func() {
-				tcx.WriteStdinString(fmt.Sprintf("\\alias add mapAlias %s\n", `map set key1 value1`))
+				tcx.WriteStdinString(fmt.Sprintf("\\alias add mapAlias %s\n", `"\map set key1 value1"`))
 				tcx.WriteStdinString("\\alias list\n")
-				tcx.AssertStdoutContains("map set key1 value1")
+				tcx.AssertStdoutContains(`\map set key1 value1`)
 			})
 		})
 	})
@@ -92,12 +92,12 @@ func Remove_InteractiveTest(t *testing.T) {
 	ctx := context.TODO()
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
-		alias.Aliases.Store("mapAlias", "map set key1 value1")
+		alias.Aliases.Store("mapAlias", `\map set key1 value1`)
 		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			tcx.WithReset(func() {
 				tcx.WriteStdinString("\\alias remove mapAlias\n")
 				tcx.WriteStdinString("\\alias list\n")
-				tcx.AssertStdoutNotContains("map set key1 value1")
+				tcx.AssertStdoutNotContains(`\map set key1 value1`)
 			})
 		})
 	})
@@ -107,12 +107,12 @@ func List_InteractiveTest(t *testing.T) {
 	ctx := context.TODO()
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
-		alias.Aliases.Store("mapAlias", "map set key1 value1")
+		alias.Aliases.Store("mapAlias", `\map set key1 value1`)
 		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			tcx.WithReset(func() {
 				tcx.WriteStdinString("\\alias list\n")
 				tcx.AssertStdoutContains("mapAlias")
-				tcx.AssertStdoutContains("map set key1 value1")
+				tcx.AssertStdoutContains(`\map set key1 value1`)
 			})
 		})
 	})
