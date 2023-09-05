@@ -10,6 +10,7 @@ import (
 	clcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"golang.org/x/exp/slices"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -108,15 +109,15 @@ func (st *Stages) migrateStage(ctx context.Context) func(statuser stage.Statuser
 }
 
 func (st *Stages) waitForStatus(ctx context.Context, waitInterval time.Duration, targetStatuses ...status) error {
-	timeoutErr := fmt.Errorf("migration could not be completed: reached timeout while reading status: " +
-		"please ensure that you are using Hazelcast's migration cluster distribution and your DMT config points to that cluster")
+	timeoutErr := fmt.Errorf("migration could not be completed: reached timeout while reading status: "+
+		"please ensure that you are using Hazelcast's migration cluster distribution and your DMT config points to that cluster: %w",
+		context.DeadlineExceeded)
 	for {
 		if err := ctx.Err(); err != nil {
 			if errors.Is(err, context.DeadlineExceeded) {
 				return timeoutErr
-			} else {
-				return fmt.Errorf("migration failed: %w", err)
 			}
+			return fmt.Errorf("migration failed: %w", err)
 		}
 		s, err := st.readStatus(ctx)
 		if err != nil {
@@ -133,20 +134,11 @@ func (st *Stages) waitForStatus(ctx context.Context, waitInterval time.Duration,
 		case statusFailed:
 			return errors.New("migration failed")
 		}
-		if expectationMet(targetStatuses, s) {
+		if slices.Contains(targetStatuses, s) {
 			return nil
 		}
 		time.Sleep(waitInterval)
 	}
-}
-
-func expectationMet(expected []status, actual status) bool {
-	for _, e := range expected {
-		if e == actual {
-			return true
-		}
-	}
-	return false
 }
 
 func (st *Stages) readStatus(ctx context.Context) (status, error) {
