@@ -18,6 +18,7 @@ const (
 	ArgTypeStringSlice
 	ArgTypeInt64
 	ArgTypeInt64Slice
+	ArgTypeKeyValueSlice
 )
 
 type ArgSpec struct {
@@ -99,6 +100,20 @@ func (cc *CommandContext) AddStringSliceArg(key, title string, min, max int) {
 		Key:   key,
 		Title: title,
 		Type:  ArgTypeStringSlice,
+		Min:   min,
+		Max:   max,
+	}
+	cc.argSpecs = append(cc.argSpecs, s)
+}
+
+func (cc *CommandContext) AddKeyValueSliceArg(key, title string, min, max int) {
+	if max < min {
+		panic("CommandContext.AddKeyValueSliceArg: max cannot be less than min")
+	}
+	s := ArgSpec{
+		Key:   key,
+		Title: title,
+		Type:  ArgTypeKeyValueSlice,
 		Min:   min,
 		Max:   max,
 	}

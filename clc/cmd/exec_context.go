@@ -25,7 +25,9 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/maps"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/str"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/terminal"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/types"
 )
 
 const (
@@ -119,6 +121,10 @@ func (ec *ExecContext) GetStringArg(key string) string {
 
 func (ec *ExecContext) GetStringSliceArg(key string) []string {
 	return maps.GetStringSlice(ec.kwargs, key)
+}
+
+func (ec *ExecContext) GetKeyValuesArg(key string) types.KeyValues[string, string] {
+	return maps.GetKeyValues[string, any, string, string](ec.kwargs, key)
 }
 
 func (ec *ExecContext) GetInt64Arg(key string) int64 {
@@ -409,6 +415,16 @@ func convertSliceArg(values []string, typ ArgType) (any, error) {
 				return nil, err
 			}
 			args[i] = vi
+		}
+		return args, nil
+	case ArgTypeKeyValueSlice:
+		args := make(types.KeyValues[string, string], len(values))
+		for i, kv := range values {
+			k, v := str.ParseKeyValue(kv)
+			if k == "" {
+				continue
+			}
+			args[i] = types.KeyValue[string, string]{Key: k, Value: v}
 		}
 		return args, nil
 	}

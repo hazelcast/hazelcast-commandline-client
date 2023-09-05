@@ -1,6 +1,10 @@
 package maps
 
-import "golang.org/x/exp/constraints"
+import (
+	"golang.org/x/exp/constraints"
+
+	"github.com/hazelcast/hazelcast-commandline-client/internal/types"
+)
 
 func GetValueIfExists[MK constraints.Ordered, MV, T any](m map[MK]MV, key MK) T {
 	if v, ok := m[key]; ok {
@@ -22,6 +26,12 @@ func GetString[K constraints.Ordered, V any](m map[K]V, key K) string {
 // It returns a blank string if the value doesn't exist or it is not a string.
 func GetStringSlice[K constraints.Ordered, V any](m map[K]V, key K) []string {
 	return GetValueIfExists[K, V, []string](m, key)
+}
+
+// GetKeyValues returns the KeyValue pairs for the corresponding key.
+// It returns an empty slice if the value doesn't exist or it is not a types.KeyValues
+func GetKeyValues[MK constraints.Ordered, MV any, K constraints.Ordered, V any](m map[MK]MV, key MK) types.KeyValues[K, V] {
+	return GetValueIfExists[MK, MV, types.KeyValues[K, V]](m, key)
 }
 
 // GetInt64 returns the int64 value corresponding to the key.

@@ -9,6 +9,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/types"
 )
 
 type InitContext interface {
@@ -19,6 +20,7 @@ type InitContext interface {
 	AddStringFlag(long, short, value string, required bool, help string)
 	AddStringArg(key, title string)
 	AddStringSliceArg(key, title string, min, max int)
+	AddKeyValueSliceArg(key, title string, min, max int)
 	AddInt64Arg(key, title string)
 	Hide()
 	Interactive() bool
@@ -35,6 +37,7 @@ type ExecContext interface {
 	Args() []string
 	GetStringArg(key string) string
 	GetStringSliceArg(key string) []string
+	GetKeyValuesArg(key string) types.KeyValues[string, string]
 	GetInt64Arg(key string) int64
 	ClientInternal(ctx context.Context) (*hazelcast.ClientInternal, error)
 	CommandName() string

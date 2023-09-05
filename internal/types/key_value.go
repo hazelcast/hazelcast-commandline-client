@@ -10,3 +10,11 @@ type KeyValue[K constraints.Ordered, V any] struct {
 }
 
 type KeyValues[K constraints.Ordered, V any] []KeyValue[K, V]
+
+func (kvs KeyValues[K, V]) Map() map[K]V {
+	m := make(map[K]V, len(kvs))
+	for _, kv := range kvs {
+		m[kv.Key] = kv.Value
+	}
+	return m
+}
