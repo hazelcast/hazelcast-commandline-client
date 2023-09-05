@@ -14,7 +14,6 @@ clc viridian [command] [options]
 == Commands
 
 * <<clc-viridian-login, clc viridian login>>
-* <<clc-viridian-list-cluster-types, clc viridian list-cluster-types>>
 * <<clc-viridian-create-cluster, clc viridian create-cluster>>
 * <<clc-viridian-get-cluster, clc viridian get-cluster>>
 * <<clc-viridian-list-clusters, clc viridian list-clusters>>
@@ -65,32 +64,6 @@ Parameters:
 
 |===
 
-== clc viridian list-cluster-types
-
-Lists available cluster types that can be used while creating a {hazelcast-cloud} cluster.
-
-Make sure you authenticate with the {hazelcast-cloud} API using `viridian login` before running this command.
-
-Usage:
-
-[source,bash]
-----
-clc viridian list-cluster-types [flags]
-----
-
-Parameters:
-
-[cols="1m,1a,2a,1a"]
-|===
-|Parameter|Required|Description|Default
-
-|`--api-key`
-|Optional
-|Sets the API key. Overrides the `CLC_VIRIDIAN_API_KEY` environment variable. If not given, one of the existing API keys will be used.
-|
-
-|===
-
 == clc viridian create-cluster
 
 Creates a {hazelcast-cloud} cluster.
@@ -120,9 +93,14 @@ Parameters:
 |Sets the name of the created cluster. If not given, an auto-generated name will be used.
 |
 
-|`--cluster-type`
+|`--development`
 |Optional
-|Sets the cluster-type for the created cluster.
+|Creates a development cluster.
+|
+
+|`--prerelease`
+|Optional
+|Creates the cluster with a prerelease image.
 |
 
 |===

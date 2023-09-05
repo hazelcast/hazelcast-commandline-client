@@ -1,8 +1,10 @@
-package clc
+package types
 
 import "golang.org/x/exp/constraints"
 
-type KeyValue[K, V any] struct {
+// TODO: consolidate KeyValue with Pair2
+
+type KeyValue[K constraints.Ordered, V any] struct {
 	Key   K
 	Value V
 }
