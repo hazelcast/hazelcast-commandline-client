@@ -164,7 +164,8 @@ func (ec *ExecContext) Args() []string {
 }
 
 func (ec *ExecContext) ConfigPath() string {
-	return ""
+	//TODO implement me
+	panic("implement me")
 }
 
 func (ec *ExecContext) ShowHelpAndExit() {
