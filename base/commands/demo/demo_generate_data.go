@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math"
 	"sync/atomic"
 	"time"
 
@@ -20,6 +19,16 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/demo/wikimedia"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+)
+
+const (
+	flagPreview           = "preview"
+	flagMaxValues         = "max-values"
+	pairMapName           = "map"
+	argGeneratorName      = "name"
+	argTitleGeneratorName = "generator name"
+	argKeyValues          = "keyValue"
+	argTitleKeyValues     = "key=value"
 )
 
 type DataStreamGenerator interface {
@@ -46,7 +55,6 @@ Generate data for given name, supported names are:
 `
 	short := "Generates a stream of events"
 	cc.SetCommandHelp(long, short)
-	cc.SetPositionalArgCount(1, math.MaxInt)
 	cc.AddIntFlag(flagMaxValues, "", 0, false, "number of events to create (default: 0, no limits)")
 	cc.AddBoolFlag(flagPreview, "", false, false, "print the generated data without interacting with the cluster")
 	cc.AddStringArg(argGeneratorName, argTitleGeneratorName)
