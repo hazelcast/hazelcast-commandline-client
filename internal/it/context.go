@@ -23,24 +23,36 @@ type CommandContext struct {
 	IsInteractive bool
 }
 
+func (c CommandContext) AddStringArg(key, title string) {
+	panic("implement me")
+}
+
+func (c CommandContext) AddStringSliceArg(key, title string, min, max int) {
+	panic("implement me")
+}
+
+func (c CommandContext) AddInt64Arg(key, title string) {
+	panic("implement me")
+}
+
 func (c CommandContext) AddStringFlag(long, short, value string, required bool, help string) {
-	//TODO implement me
+	panic("implement me")
 }
 
 func (c CommandContext) AddBoolFlag(long, short string, value bool, required bool, help string) {
-	//TODO implement me
+	panic("implement me")
 }
 
 func (c CommandContext) AddIntFlag(long, short string, value int64, required bool, help string) {
-	//TODO implement me
+	panic("implement me")
 }
 
 func (c CommandContext) SetPositionalArgCount(min, max int) {
-	//TODO implement me
+	panic("implement me")
 }
 
 func (c CommandContext) Hide() {
-	//TODO implement me
+	panic("implement me")
 }
 
 func (c CommandContext) Interactive() bool {
@@ -57,19 +69,19 @@ func (c *CommandContext) SetCommandUsage(usage string) {
 }
 
 func (c CommandContext) AddCommandGroup(id, title string) {
-	//TODO implement me
+	panic("implement me")
 }
 
 func (c CommandContext) SetCommandGroup(id string) {
-	//TODO implement me
+	panic("implement me")
 }
 
 func (c CommandContext) AddStringConfig(name, value, flag string, help string) {
-	//TODO implement me
+	panic("implement me")
 }
 
 func (c CommandContext) SetTopLevel(b bool) {
-	//TODO implement me
+	panic("implement me")
 }
 
 type ExecContext struct {
@@ -94,6 +106,7 @@ func NewExecuteContext(args []string) *ExecContext {
 		Spinner: NewSpinner(),
 	}
 }
+
 func (ec *ExecContext) ExecuteBlocking(ctx context.Context, f func(context.Context, clc.Spinner) (any, error)) (any, context.CancelFunc, error) {
 	v, err := f(ctx, ec.Spinner)
 	stop := func() {}
@@ -105,7 +118,6 @@ func (ec *ExecContext) Props() plug.ReadOnlyProperties {
 }
 
 func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInternal, error) {
-	//TODO implement me
 	panic("implement me")
 }
 
@@ -114,7 +126,6 @@ func (ec *ExecContext) Interactive() bool {
 }
 
 func (ec *ExecContext) AddOutputStream(ctx context.Context, ch <-chan output.Row) error {
-	//TODO implement me
 	panic("implement me")
 }
 
@@ -144,12 +155,10 @@ func (ec *ExecContext) Args() []string {
 }
 
 func (ec *ExecContext) ShowHelpAndExit() {
-	//TODO implement me
 	panic("implement me")
 }
 
 func (ec *ExecContext) CommandName() string {
-	//TODO implement me
 	panic("implement me")
 }
 
@@ -185,6 +194,18 @@ func (ec *ExecContext) PrintlnUnnecessary(text string) {
 	if !quiet {
 		check.I2(fmt.Fprintln(ec.Stdout(), text))
 	}
+}
+
+func (ec *ExecContext) GetStringArg(key string) string {
+	panic("implement me")
+}
+
+func (ec *ExecContext) GetStringSliceArg(key string) []string {
+	panic("implement me")
+}
+
+func (ec *ExecContext) GetInt64Arg(key string) int64 {
+	panic("implement me")
 }
 
 func (ec *ExecContext) WrapResult(f func() error) error {
