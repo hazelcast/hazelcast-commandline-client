@@ -13,6 +13,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/types"
 )
 
 type AddCmd struct{}
@@ -48,13 +49,13 @@ The following keys are supported:
 
 func (cm AddCmd) Exec(_ context.Context, ec plug.ExecContext) error {
 	target := ec.Args()[0]
-	var opts clc.KeyValues[string, string]
+	var opts types.KeyValues[string, string]
 	for _, arg := range ec.Args()[1:] {
 		ps := strings.SplitN(arg, "=", 2)
 		if len(ps) != 2 {
 			return fmt.Errorf("invalid key=value pair: %s", arg)
 		}
-		opts = append(opts, clc.KeyValue[string, string]{
+		opts = append(opts, types.KeyValue[string, string]{
 			Key:   ps[0],
 			Value: ps[1],
 		})

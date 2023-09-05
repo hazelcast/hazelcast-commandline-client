@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/types"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
@@ -191,7 +192,7 @@ func TestConfigDirFile_Windows(t *testing.T) {
 }
 
 func TestCreateYAML(t *testing.T) {
-	type KV clc.KeyValue[string, string]
+	type KV types.KeyValue[string, string]
 	testCases := []struct {
 		name string
 		kvs  []KV
@@ -267,9 +268,9 @@ ssl:
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			kvs := make(clc.KeyValues[string, string], len(tc.kvs))
+			kvs := make(types.KeyValues[string, string], len(tc.kvs))
 			for i, kv := range tc.kvs {
-				kvs[i] = *(*clc.KeyValue[string, string])(&kv)
+				kvs[i] = *(*types.KeyValue[string, string])(&kv)
 			}
 			s := config.CreateYAML(kvs)
 			t.Logf(s)
@@ -279,7 +280,7 @@ ssl:
 }
 
 func TestConvertKeyValuesToMap(t *testing.T) {
-	kvs := clc.KeyValues[string, string]{
+	kvs := types.KeyValues[string, string]{
 		{Key: "cluster.name", Value: "de-foobar"},
 		{Key: "ssl.ca-path", Value: "ca.pem"},
 		{Key: "cluster.discovery-token", Value: "tok123"},

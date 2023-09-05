@@ -15,6 +15,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/types"
 )
 
 func ImportSource(ctx context.Context, ec plug.ExecContext, target, src string) (string, error) {
@@ -186,8 +187,8 @@ func CreateFromZipLegacy(ctx context.Context, ec plug.ExecContext, target, path 
 	return p.(string), true, nil
 }
 
-func makeViridianOpts(clusterName, token, password, apiBaseURL string) clc.KeyValues[string, string] {
-	return clc.KeyValues[string, string]{
+func makeViridianOpts(clusterName, token, password, apiBaseURL string) types.KeyValues[string, string] {
+	return types.KeyValues[string, string]{
 		{Key: "cluster.name", Value: clusterName},
 		{Key: "cluster.discovery-token", Value: token},
 		{Key: "cluster.api-base", Value: apiBaseURL},
