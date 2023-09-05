@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -17,10 +16,10 @@ import (
 type ListRemoveIndexCommand struct{}
 
 func (mc *ListRemoveIndexCommand) Init(cc plug.InitContext) error {
-	cc.SetPositionalArgCount(1, 1)
+	cc.SetCommandUsage("remove-index")
 	help := "Remove the value at the given index in the list"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("remove-index [index] [flags]")
+	cc.AddInt64Arg(argIndex, argTitleIndex)
 	return nil
 }
 
@@ -34,12 +33,9 @@ func (mc *ListRemoveIndexCommand) Exec(ctx context.Context, ec plug.ExecContext)
 	if _, err := ec.Props().GetBlocking(listPropertyName); err != nil {
 		return err
 	}
-	index, err := strconv.Atoi(ec.Args()[0])
-	if err != nil {
-		return err
-	}
+	index := ec.GetInt64Arg(argIndex)
 	if index < 0 {
-		return errors.New("index cannot be smaller than 0")
+		return errors.New("index must be non-negative")
 	}
 	pid, err := stringToPartitionID(ci, name)
 	if err != nil {

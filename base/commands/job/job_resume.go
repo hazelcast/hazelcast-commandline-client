@@ -16,11 +16,11 @@ import (
 type ResumeCmd struct{}
 
 func (cm ResumeCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("resume [job-ID/name]")
+	cc.SetCommandUsage("resume")
 	help := "Resumes a suspended job"
 	cc.SetCommandHelp(help, help)
-	cc.SetPositionalArgCount(1, 1)
 	cc.AddBoolFlag(flagWait, "", false, false, "wait for the job to be resumed")
+	cc.AddStringArg(argJobID, argTitleJobID)
 	return nil
 }
 
@@ -29,7 +29,7 @@ func (cm ResumeCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		return err
 	}
-	nameOrID := ec.Args()[0]
+	nameOrID := ec.GetStringArg(argJobID)
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText(fmt.Sprintf("Resuming job: %s", nameOrID))
 		j := jet.New(ci, sp, ec.Logger())

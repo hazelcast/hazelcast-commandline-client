@@ -15,11 +15,11 @@ import (
 type ListRemoveValueCommand struct{}
 
 func (mc *ListRemoveValueCommand) Init(cc plug.InitContext) error {
-	addValueTypeFlag(cc)
-	cc.SetPositionalArgCount(1, 1)
+	cc.SetCommandUsage("remove-value")
 	help := "Remove a value from the given list"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("remove-value [value] [flags]")
+	addValueTypeFlag(cc)
+	cc.AddStringArg(argValue, argTitleValue)
 	return nil
 }
 
@@ -33,7 +33,7 @@ func (mc *ListRemoveValueCommand) Exec(ctx context.Context, ec plug.ExecContext)
 	if _, err := ec.Props().GetBlocking(listPropertyName); err != nil {
 		return err
 	}
-	valueStr := ec.Args()[0]
+	valueStr := ec.GetStringArg(argValue)
 	vd, err := makeValueData(ec, ci, valueStr)
 	if err != nil {
 		return err
