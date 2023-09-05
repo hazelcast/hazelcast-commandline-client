@@ -21,10 +21,9 @@ import (
 type MapKeySetCommand struct{}
 
 func (mc *MapKeySetCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("key-set")
 	help := "Get all keys of a Map"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("key-set")
-	cc.SetPositionalArgCount(0, 0)
 	return nil
 }
 

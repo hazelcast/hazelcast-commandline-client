@@ -19,11 +19,11 @@ import (
 type MapGetCommand struct{}
 
 func (mc *MapGetCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("get")
 	addKeyTypeFlag(cc)
 	help := "Get a value from the given Map"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("get [key] [flags]")
-	cc.SetPositionalArgCount(1, 1)
+	cc.AddStringArg(argKey, argTitleKey)
 	return nil
 }
 
@@ -33,7 +33,7 @@ func (mc *MapGetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		return err
 	}
-	keyStr := ec.Args()[0]
+	keyStr := ec.GetStringArg(argKey)
 	keyData, err := makeKeyData(ec, ci, keyStr)
 	if err != nil {
 		return err

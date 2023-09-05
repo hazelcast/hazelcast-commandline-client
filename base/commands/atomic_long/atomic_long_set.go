@@ -13,7 +13,10 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-const argValue = "value"
+const (
+	argValue      = "value"
+	argTitleValue = "value"
+)
 
 type AtomicLongSetCommand struct{}
 
@@ -21,7 +24,7 @@ func (mc *AtomicLongSetCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("set")
 	help := "Set the value of the AtomicLong"
 	cc.SetCommandHelp(help, help)
-	cc.AddInt64Arg(argValue, "value")
+	cc.AddInt64Arg(argValue, argTitleValue)
 	return nil
 }
 

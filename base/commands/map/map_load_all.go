@@ -5,7 +5,6 @@ package _map
 import (
 	"context"
 	"fmt"
-	"math"
 
 	"github.com/hazelcast/hazelcast-go-client"
 
@@ -18,12 +17,15 @@ import (
 type MapLoadAllCommand struct{}
 
 func (mc *MapLoadAllCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("load-all")
+	long := `Load keys from map-store into the map
+	
+If no key is given, all keys are loaded.`
+	short := "Load keys from map-store into the map"
+	cc.SetCommandHelp(long, short)
 	addKeyTypeFlag(cc)
-	help := "Load keys from map-store into the map. If no key is given, all keys are loaded."
 	cc.AddBoolFlag(mapFlagReplace, "", false, false, "replace keys if they exist in the map")
-	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("load-all [keys] [flags]")
-	cc.SetPositionalArgCount(0, math.MaxInt)
+	cc.AddStringSliceArg(argKey, argTitleKey, 0, clc.MaxArgs)
 	return nil
 }
 
@@ -34,7 +36,7 @@ func (mc *MapLoadAllCommand) Exec(ctx context.Context, ec plug.ExecContext) erro
 		return err
 	}
 	var keys []hazelcast.Data
-	for _, keyStr := range ec.Args() {
+	for _, keyStr := range ec.GetStringSliceArg(argKey) {
 		keyData, err := makeKeyData(ec, ci, keyStr)
 		if err != nil {
 			return err

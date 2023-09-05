@@ -20,10 +20,10 @@ import (
 type MapClearCommand struct{}
 
 func (mc *MapClearCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("clear")
 	help := "Delete all entries of a Map"
 	cc.SetCommandHelp(help, help)
 	cc.AddBoolFlag(clc.FlagAutoYes, "", false, false, "skip confirming the clear operation")
-	cc.SetCommandUsage("clear")
 	return nil
 }
 
