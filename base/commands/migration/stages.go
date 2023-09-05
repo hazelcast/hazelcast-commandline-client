@@ -7,11 +7,12 @@ import (
 	"fmt"
 	"time"
 
+	clcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"golang.org/x/exp/slices"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
-	clcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
@@ -76,7 +77,7 @@ func (st *Stages) connectStage(ctx context.Context, ec plug.ExecContext) func(st
 }
 
 func (st *Stages) startStage(ctx context.Context) func(stage.Statuser) error {
-	return func(status stage.Statuser) error {
+	return func(stage.Statuser) error {
 		if err := st.statusMap.Delete(ctx, statusMapEntryName); err != nil {
 			return err
 		}
@@ -89,7 +90,12 @@ func (st *Stages) startStage(ctx context.Context) func(stage.Statuser) error {
 		if err != nil {
 			return err
 		}
-		if err := st.startQueue.Put(ctx, serialization.JSON(b)); err != nil {
+		if err = st.startQueue.Put(ctx, serialization.JSON(b)); err != nil {
+			return err
+		}
+		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		defer cancel()
+		if err = st.waitForStatus(ctx, time.Second, statusInProgress, statusComplete); err != nil {
 			return err
 		}
 		return nil
@@ -97,22 +103,41 @@ func (st *Stages) startStage(ctx context.Context) func(stage.Statuser) error {
 }
 
 func (st *Stages) migrateStage(ctx context.Context) func(statuser stage.Statuser) error {
-	return func(status stage.Statuser) error {
-		for {
-			s, err := st.readStatus(ctx)
-			if err != nil {
-				return fmt.Errorf("reading status: %w", err)
+	return func(stage.Statuser) error {
+		return st.waitForStatus(ctx, 5*time.Second, statusComplete)
+	}
+}
+
+func (st *Stages) waitForStatus(ctx context.Context, waitInterval time.Duration, targetStatuses ...status) error {
+	timeoutErr := fmt.Errorf("migration could not be completed: reached timeout while reading status: "+
+		"please ensure that you are using Hazelcast's migration cluster distribution and your DMT config points to that cluster: %w",
+		context.DeadlineExceeded)
+	for {
+		if err := ctx.Err(); err != nil {
+			if errors.Is(err, context.DeadlineExceeded) {
+				return timeoutErr
 			}
-			switch s {
-			case statusComplete:
-				return nil
-			case statusCanceled:
-				return clcerrors.ErrUserCancelled
-			case statusFailed:
-				return errors.New("migration failed")
-			}
-			time.Sleep(5 * time.Second)
+			return fmt.Errorf("migration failed: %w", err)
 		}
+		s, err := st.readStatus(ctx)
+		if err != nil {
+			if errors.Is(err, context.DeadlineExceeded) {
+				return timeoutErr
+			}
+			return fmt.Errorf("reading status: %w", err)
+		}
+		switch s {
+		case statusComplete:
+			return nil
+		case statusCanceled:
+			return clcerrors.ErrUserCancelled
+		case statusFailed:
+			return errors.New("migration failed")
+		}
+		if slices.Contains(targetStatuses, s) {
+			return nil
+		}
+		time.Sleep(waitInterval)
 	}
 }
 
@@ -146,10 +171,11 @@ func makeStatusMapName(migrationID string) string {
 type status string
 
 const (
-	statusNone     status = ""
-	statusComplete status = "COMPLETED"
-	statusCanceled status = "CANCELED"
-	statusFailed   status = "FAILED"
+	statusNone       status = ""
+	statusComplete   status = "COMPLETED"
+	statusCanceled   status = "CANCELED"
+	statusFailed     status = "FAILED"
+	statusInProgress status = "IN_PROGRESS"
 )
 
 type migrationStatus struct {
