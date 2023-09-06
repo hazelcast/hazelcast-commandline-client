@@ -21,7 +21,7 @@ type bundleFile struct {
 	Content string `json:"content"`
 }
 
-type configBundle struct {
+type ConfigBundle struct {
 	MigrationID    string       `json:"migrationId"`
 	ConfigPath     string       `json:"configPath"`
 	Source         []bundleFile `json:"source"`
@@ -30,7 +30,7 @@ type configBundle struct {
 	ReplicatedMaps []string     `json:"replicatedMaps"`
 }
 
-func (cb *configBundle) Walk(root string) error {
+func (cb *ConfigBundle) Walk(root string) error {
 	var err error
 	cb.IMaps, err = readItems(filepath.Join(root, "data", "imap_names.txt"))
 	if err != nil {

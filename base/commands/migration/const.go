@@ -1,6 +1,7 @@
 package migration
 
 const (
-	startQueueName     = "__datamigration_start_queue"
-	statusMapEntryName = "status"
+	StartQueueName     = "__datamigration_start_queue"
+	StatusMapEntryName = "status"
+	updateTopic        = "__datamigration_updates_"
 )
