@@ -18,16 +18,17 @@ const flagOutputPath = "output-path"
 type CustomClassDownloadCmd struct{}
 
 func (cmd CustomClassDownloadCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("download-custom-class [cluster-name/cluster-ID] [file-name/artifact-ID] [flags]")
+	cc.SetCommandUsage("download-custom-class")
 	long := `Downloads a custom class from the given Viridian cluster.
 
 Make sure you login before running this command.
 `
 	short := "Downloads a custom class from the given Viridian cluster."
 	cc.SetCommandHelp(long, short)
-	cc.SetPositionalArgCount(2, 2)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	cc.AddStringFlag(flagOutputPath, "o", "", false, "download path")
+	cc.AddStringArg(argClusterID, argTitleClusterID)
+	cc.AddStringArg(argArtifactID, argTitleArtifactID)
 	return nil
 }
 
@@ -37,8 +38,8 @@ func (cmd CustomClassDownloadCmd) Exec(ctx context.Context, ec plug.ExecContext)
 		return err
 	}
 	// inputs
-	clusterName := ec.Args()[0]
-	artifact := ec.Args()[1]
+	clusterName := ec.GetStringArg(argClusterID)
+	artifact := ec.GetStringArg(argArtifactID)
 	target := ec.Props().GetString(flagOutputPath)
 	// extract target info
 	t, err := viridian.CreateTargetInfo(target)

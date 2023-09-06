@@ -25,7 +25,7 @@ Make sure you login before running this command.
 	cc.SetPositionalArgCount(1, 1)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	cc.AddStringFlag(flagOutputDir, "o", "", false, "output directory for the log files, if not given current directory is used")
-	cc.AddStringArg(argClusterID, "cluster name or ID")
+	cc.AddStringArg(argClusterID, argTitleClusterID)
 	return nil
 }
 

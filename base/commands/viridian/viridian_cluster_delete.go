@@ -16,16 +16,16 @@ import (
 type ClusterDeleteCmd struct{}
 
 func (cm ClusterDeleteCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("delete-cluster [cluster-ID/name] [flags]")
+	cc.SetCommandUsage("delete-cluster")
 	long := `Deletes the given Viridian cluster.
 
 Make sure you login before running this command.
 `
 	short := "Deletes the given Viridian cluster"
 	cc.SetCommandHelp(long, short)
-	cc.SetPositionalArgCount(1, 1)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	cc.AddBoolFlag(clc.FlagAutoYes, "", false, false, "skip confirming the delete operation")
+	cc.AddStringArg(argClusterID, argTitleClusterID)
 	return nil
 }
 
@@ -46,7 +46,7 @@ func (cm ClusterDeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 			return errors.ErrUserCancelled
 		}
 	}
-	clusterNameOrID := ec.Args()[0]
+	clusterNameOrID := ec.GetStringArg(argClusterID)
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Deleting the cluster")
 		err := api.DeleteCluster(ctx, clusterNameOrID)

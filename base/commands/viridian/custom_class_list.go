@@ -16,15 +16,15 @@ import (
 type CustomClassListCmd struct{}
 
 func (cmd CustomClassListCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("list-custom-classes [cluster-name/cluster-ID] [flags]")
+	cc.SetCommandUsage("list-custom-classes")
 	long := `Lists all custom classes in the given Viridian cluster.
 
 Make sure you login before running this command.
 `
 	short := "Lists all custom classes in the given Viridian cluster"
 	cc.SetCommandHelp(long, short)
-	cc.SetPositionalArgCount(1, 1)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
+	cc.AddStringArg(argClusterID, argTitleClusterID)
 	return nil
 }
 
@@ -33,7 +33,7 @@ func (cmd CustomClassListCmd) Exec(ctx context.Context, ec plug.ExecContext) err
 	if err != nil {
 		return err
 	}
-	cn := ec.Args()[0]
+	cn := ec.GetStringArg(argClusterID)
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	csi, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Retrieving custom classes")

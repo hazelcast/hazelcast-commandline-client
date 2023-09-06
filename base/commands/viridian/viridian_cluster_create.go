@@ -18,14 +18,13 @@ import (
 type ClusterCreateCmd struct{}
 
 func (cm ClusterCreateCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("create-cluster [flags]")
+	cc.SetCommandUsage("create-cluster")
 	long := `Creates a Viridian cluster.
 
 Make sure you login before running this command.
 `
 	short := "Creates a Viridian cluster"
 	cc.SetCommandHelp(long, short)
-	cc.SetPositionalArgCount(0, 0)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	cc.AddStringFlag(flagName, "", "", false, "specify the cluster name; if not given an auto-generated name is used.")
 	cc.AddBoolFlag(flagDevelopment, "", false, false, "create a development cluster")

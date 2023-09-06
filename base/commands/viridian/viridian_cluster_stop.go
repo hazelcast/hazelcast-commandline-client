@@ -14,15 +14,15 @@ import (
 type ClusterStopCmd struct{}
 
 func (cm ClusterStopCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("stop-cluster [cluster-ID/name] [flags]")
+	cc.SetCommandUsage("stop-cluster")
 	long := `Stops the given Viridian cluster.
 
 Make sure you login before running this command.
 `
 	short := "Stops the given Viridian cluster"
 	cc.SetCommandHelp(long, short)
-	cc.SetPositionalArgCount(1, 1)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
+	cc.AddStringArg(argClusterID, argTitleClusterID)
 	return nil
 }
 
@@ -31,7 +31,7 @@ func (cm ClusterStopCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		return err
 	}
-	clusterNameOrID := ec.Args()[0]
+	clusterNameOrID := ec.GetStringArg(argClusterID)
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Pausing the cluster")
 		err := api.StopCluster(ctx, clusterNameOrID)
