@@ -10,13 +10,18 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
+const (
+	argSnapshotName      = "snapshotName"
+	argTitleSnapshotName = "snpashot name"
+)
+
 type DeleteCmd struct{}
 
 func (cm DeleteCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("delete [snapshot-name]")
+	cc.SetCommandUsage("delete")
 	help := "Delete a snapshot"
 	cc.SetCommandHelp(help, help)
-	cc.SetPositionalArgCount(1, 1)
+	cc.AddStringArg(argSnapshotName, argTitleSnapshotName)
 	return nil
 }
 
@@ -25,7 +30,7 @@ func (cm DeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		return err
 	}
-	name := ec.Args()[0]
+	name := ec.GetStringArg(argTitleSnapshotName)
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Deleting the snapshot")
 		sm, err := ci.Client().GetMap(ctx, jetExportedSnapshotsMap)

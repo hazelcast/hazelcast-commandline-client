@@ -6,13 +6,14 @@ import (
 	"context"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/types"
+
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
-	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 type ListCmd struct{}
@@ -21,7 +22,6 @@ func (cm ListCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("list")
 	help := "List snapshots"
 	cc.SetCommandHelp(help, help)
-	cc.SetPositionalArgCount(0, 0)
 	return nil
 }
 
