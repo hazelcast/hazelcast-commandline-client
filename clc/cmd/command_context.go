@@ -14,7 +14,8 @@ import (
 type ArgType int
 
 const (
-	ArgTypeString ArgType = iota
+	ArgTypeNone ArgType = iota
+	ArgTypeString
 	ArgTypeStringSlice
 	ArgTypeInt64
 	ArgTypeInt64Slice
@@ -163,32 +164,7 @@ func (cc *CommandContext) SetCommandUsage(usage string) {
 }
 
 func (cc *CommandContext) GetCommandUsage() string {
-	var sb strings.Builder
-	sb.WriteString(cc.usage)
-	for _, s := range cc.argSpecs {
-		sb.WriteByte(' ')
-		if s.Min == 0 {
-			sb.WriteByte('[')
-		} else {
-			sb.WriteByte('{')
-		}
-		sb.WriteString(s.Title)
-		if s.Max > 1 {
-			sb.WriteString(", ")
-			sb.WriteString(s.Title)
-		}
-		if s.Max > 2 {
-			sb.WriteString(", ")
-			sb.WriteString("...")
-		}
-		if s.Min == 0 {
-			sb.WriteByte(']')
-		} else {
-			sb.WriteByte('}')
-		}
-	}
-	sb.WriteString(" [flags]")
-	return sb.String()
+	return makeCommandUsageString(cc.usage, cc.argSpecs)
 }
 
 func (cc *CommandContext) SetCommandGroup(id string) {
@@ -263,4 +239,35 @@ func addWithOverflow(a, b int) int {
 		return math.MaxInt
 	}
 	return a + b
+}
+
+func makeCommandUsageString(usage string, specs []ArgSpec) string {
+	var sb strings.Builder
+	sb.WriteString(usage)
+	for _, s := range specs {
+		sb.WriteByte(' ')
+		if s.Min == 0 {
+			sb.WriteByte('[')
+		} else {
+			sb.WriteByte('{')
+		}
+		sb.WriteString(s.Title)
+		if s.Min > 1 {
+			for i := 1; i < s.Min; i++ {
+				sb.WriteString(", ")
+				sb.WriteString(s.Title)
+			}
+		}
+		if s.Max-s.Min > 1 {
+			sb.WriteString(", ")
+			sb.WriteString("...")
+		}
+		if s.Min == 0 {
+			sb.WriteByte(']')
+		} else {
+			sb.WriteByte('}')
+		}
+	}
+	sb.WriteString(" [flags]")
+	return sb.String()
 }

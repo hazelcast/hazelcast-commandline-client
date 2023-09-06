@@ -8,6 +8,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 )
 
 func TestMakeKeywordArgs(t *testing.T) {
@@ -145,6 +147,56 @@ func TestAddWithOverflow(t *testing.T) {
 		t.Run(fmt.Sprintf("%d + %d", tc.a, tc.b), func(t *testing.T) {
 			r := addWithOverflow(tc.a, tc.b)
 			assert.Equal(t, tc.target, r)
+		})
+	}
+}
+
+func TestMakeCommandUsageString(t *testing.T) {
+	testCases := []struct {
+		argSpecs []ArgSpec
+		target   string
+	}{
+		{
+			argSpecs: nil,
+			target:   "cmd [flags]",
+		},
+		{
+			argSpecs: []ArgSpec{
+				{Title: "key", Min: 1, Max: 1},
+			},
+			target: "cmd {key} [flags]",
+		},
+		{
+			argSpecs: []ArgSpec{
+				{Title: "placeholder", Min: 0, Max: clc.MaxArgs},
+			},
+			target: "cmd [placeholder, ...] [flags]",
+		},
+		{
+			argSpecs: []ArgSpec{
+				{Title: "placeholder", Min: 1, Max: clc.MaxArgs},
+			},
+			target: "cmd {placeholder, ...} [flags]",
+		},
+		{
+			argSpecs: []ArgSpec{
+				{Title: "placeholder", Min: 2, Max: clc.MaxArgs},
+			},
+			target: "cmd {placeholder, placeholder, ...} [flags]",
+		},
+		{
+			argSpecs: []ArgSpec{
+				{Title: "key", Min: 1, Max: 1},
+				{Title: "placeholder", Min: 0, Max: clc.MaxArgs},
+			},
+			target: "cmd {key} [placeholder, ...] [flags]",
+		},
+	}
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.target, func(t *testing.T) {
+			u := makeCommandUsageString("cmd", tc.argSpecs)
+			assert.Equal(t, tc.target, u)
 		})
 	}
 }

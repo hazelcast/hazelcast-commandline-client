@@ -15,7 +15,6 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/str"
 )
 
 func loadFromDefaults(templateDir string) (map[string]string, error) {
@@ -38,18 +37,11 @@ func loadFromDefaults(templateDir string) (map[string]string, error) {
 }
 
 func updatePropsWithUserValues(ec plug.ExecContext, props map[string]string) error {
-	for _, arg := range ec.Args() {
-		k, v := str.ParseKeyValue(arg)
-		if k == "" {
-			continue
+	for _, kv := range ec.GetKeyValuesArg(argPlaceholder) {
+		if !regexpValidKey.MatchString(kv.Key) {
+			return fmt.Errorf("invalid key: %s, only letters and numbers are allowed", kv.Key)
 		}
-		if !regexpValidKey.MatchString(k) {
-			return fmt.Errorf("invalid key: %s, only letters and numbers are allowed", k)
-		}
-		if k == "" {
-			return fmt.Errorf("blank keys are not allowed")
-		}
-		props[k] = v
+		props[kv.Key] = kv.Value
 	}
 	return nil
 }
