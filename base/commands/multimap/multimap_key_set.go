@@ -19,10 +19,9 @@ import (
 type MultiMapKeySetCommand struct{}
 
 func (mc *MultiMapKeySetCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("key-set")
 	help := "Get all keys of a MultiMap"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("key-set")
-	cc.SetPositionalArgCount(0, 0)
 	return nil
 }
 

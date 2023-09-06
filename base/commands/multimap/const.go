@@ -8,4 +8,6 @@ const (
 	defaultMultiMapName   = "default"
 	multiMapTTL           = "ttl"
 	ttlUnset              = -1
+	argKey                = "key"
+	argTitleKey           = "key"
 )

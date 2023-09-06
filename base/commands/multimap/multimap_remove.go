@@ -19,11 +19,11 @@ import (
 type MultiMapRemoveCommand struct{}
 
 func (mc *MultiMapRemoveCommand) Init(cc plug.InitContext) error {
-	addKeyTypeFlag(cc)
+	cc.SetCommandUsage("remove")
 	help := "Remove values from the given MultiMap"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("remove [key] [flags]")
-	cc.SetPositionalArgCount(1, 1)
+	addKeyTypeFlag(cc)
+	cc.AddStringArg(argKey, argTitleKey)
 	return nil
 }
 
@@ -33,7 +33,7 @@ func (mc *MultiMapRemoveCommand) Exec(ctx context.Context, ec plug.ExecContext) 
 	if err != nil {
 		return err
 	}
-	keyStr := ec.Args()[0]
+	keyStr := ec.GetStringArg(argKey)
 	keyData, err := makeKeyData(ec, ci, keyStr)
 	if err != nil {
 		return err

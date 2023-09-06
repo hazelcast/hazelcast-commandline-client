@@ -19,11 +19,11 @@ import (
 type MultiMapGetCommand struct{}
 
 func (mc *MultiMapGetCommand) Init(cc plug.InitContext) error {
-	addKeyTypeFlag(cc)
+	cc.SetCommandUsage("get")
 	help := "Get a value from the given MultiMap"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("get [key] [flags]")
-	cc.SetPositionalArgCount(1, 1)
+	addKeyTypeFlag(cc)
+	cc.AddStringArg(argKey, argTitleKey)
 	return nil
 }
 
@@ -33,7 +33,7 @@ func (mc *MultiMapGetCommand) Exec(ctx context.Context, ec plug.ExecContext) err
 	if err != nil {
 		return err
 	}
-	keyStr := ec.Args()[0]
+	keyStr := ec.GetStringArg(argKey)
 	keyData, err := makeKeyData(ec, ci, keyStr)
 	if err != nil {
 		return err

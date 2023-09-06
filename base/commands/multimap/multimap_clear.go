@@ -18,10 +18,10 @@ import (
 type MultiMapClearCommand struct{}
 
 func (mc *MultiMapClearCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("clear")
 	help := "Delete all entries of a MultiMap"
 	cc.SetCommandHelp(help, help)
 	cc.AddBoolFlag(clc.FlagAutoYes, "", false, false, "skip confirming the destroy operation")
-	cc.SetCommandUsage("clear")
 	return nil
 }
 
