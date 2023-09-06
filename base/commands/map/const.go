@@ -11,4 +11,6 @@ const (
 	// TODO: move
 	ttlUnset       = -1
 	defaultMapName = "default"
+	argKey         = "key"
+	argTitleKey    = "key"
 )

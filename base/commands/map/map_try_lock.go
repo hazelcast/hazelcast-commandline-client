@@ -19,15 +19,17 @@ import (
 type MapTryLock struct{}
 
 func (mc *MapTryLock) Init(cc plug.InitContext) error {
-	addKeyTypeFlag(cc)
-	long := `Try to lock a key in the given map. Directly returns the result
+	cc.SetCommandUsage("try-lock")
+	long := `Try to lock a key in the given map
+
+Returns the result without waiting for the lock to be unlocked.
 
 This command is only available in the interactive mode.`
-	short := "Try to lock a key in the given map. Directly returns the result"
+	short := "Try to lock a key in the given map"
 	cc.SetCommandHelp(long, short)
+	addKeyTypeFlag(cc)
 	cc.AddIntFlag(mapTTL, "", ttlUnset, false, "time-to-live (ms)")
-	cc.SetCommandUsage("try-lock [key] [flags]")
-	cc.SetPositionalArgCount(1, 1)
+	cc.AddStringArg(argKey, argTitleKey)
 	return nil
 }
 
@@ -42,7 +44,7 @@ func (mc *MapTryLock) Exec(ctx context.Context, ec plug.ExecContext) error {
 		return err
 	}
 	m := mv.(*hazelcast.Map)
-	keyStr := ec.Args()[0]
+	keyStr := ec.GetStringArg(argKey)
 	keyData, err := makeKeyData(ec, ci, keyStr)
 	if err != nil {
 		return err

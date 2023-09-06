@@ -5,7 +5,6 @@ package job
 import (
 	"context"
 	"fmt"
-	"math"
 	"path/filepath"
 	"strings"
 	"time"
@@ -23,12 +22,16 @@ import (
 
 const (
 	minServerVersion = "5.3.0"
+	argJarPath       = "jarPath"
+	argTitleJarPath  = "jar path"
+	argArg           = "arg"
+	argTitleArg      = "argument"
 )
 
 type SubmitCmd struct{}
 
 func (cm SubmitCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("submit [jar-file] [arg, ...]")
+	cc.SetCommandUsage("submit")
 	long := fmt.Sprintf(`Submits a jar file to create a Jet job
 	
 This command requires a Viridian or a Hazelcast cluster having version %s or newer.
@@ -40,14 +43,15 @@ This command requires a Viridian or a Hazelcast cluster having version %s or new
 	cc.AddStringFlag(flagClass, "", "", false, "the class that contains the main method that creates the Jet job")
 	cc.AddIntFlag(flagRetries, "", 0, false, "number of times to retry a failed upload attempt")
 	cc.AddBoolFlag(flagWait, "", false, false, "wait for the job to be started")
-	cc.SetPositionalArgCount(1, math.MaxInt)
+	cc.AddStringArg(argJarPath, argTitleJarPath)
+	cc.AddStringSliceArg(argArg, argTitleArg, 0, clc.MaxArgs)
 	return nil
 }
 
 func (cm SubmitCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
-	path := ec.Args()[0]
+	path := ec.GetStringArg(argJarPath)
 	if !paths.Exists(path) {
-		return fmt.Errorf("file does not exists: %s", path)
+		return fmt.Errorf("file does not exist: %s", path)
 	}
 	if !strings.HasSuffix(path, ".jar") {
 		return fmt.Errorf("submitted file is not a jar file: %s", path)
@@ -77,7 +81,7 @@ func submitJar(ctx context.Context, ci *hazelcast.ClientInternal, ec plug.ExecCo
 	tries++
 	_, fn := filepath.Split(path)
 	fn = strings.TrimSuffix(fn, ".jar")
-	args := ec.Args()[1:]
+	args := ec.GetStringSliceArg(argArg)
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		j := jet.New(ci, sp, ec.Logger())
 		err := retry(tries, ec.Logger(), func(try int) error {

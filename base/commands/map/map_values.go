@@ -19,10 +19,9 @@ import (
 type MapValuesCommand struct{}
 
 func (mc *MapValuesCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("values")
 	help := "Get all values of a Map"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("values [flags]")
-	cc.SetPositionalArgCount(0, 0)
 	return nil
 }
 

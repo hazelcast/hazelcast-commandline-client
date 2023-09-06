@@ -66,7 +66,7 @@ func idToString(id int64) string {
 }
 
 func terminateJob(ctx context.Context, ec plug.ExecContext, name string, terminateMode int32, text string, waitState int32) error {
-	nameOrID := ec.Args()[0]
+	nameOrID := ec.GetStringArg(argJobID)
 	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
 		return err
@@ -84,7 +84,7 @@ func terminateJob(ctx context.Context, ec plug.ExecContext, name string, termina
 		}
 		jid, ok := jm.GetIDForName(nameOrID)
 		if !ok {
-			return nil, jet.ErrInvalidJobID
+			return nil, fmt.Errorf("%w: %s", jet.ErrInvalidJobID, nameOrID)
 		}
 		ec.Logger().Info("%s %s (%s)", text, nameOrID, idToString(jid))
 		ji, ok := jm.GetInfoForID(jid)

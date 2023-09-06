@@ -14,16 +14,16 @@ import (
 type ImportConfigCmd struct{}
 
 func (ImportConfigCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("import-config [cluster-name/cluster-ID] [flags]")
+	cc.SetCommandUsage("import-config")
 	long := `Imports connection configuration of the given Viridian cluster.
 
 Make sure you login before running this command.
 `
 	short := "Imports connection configuration of the given Viridian cluster."
 	cc.SetCommandHelp(long, short)
-	cc.SetPositionalArgCount(1, 1)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	cc.AddStringFlag(flagName, "", "", false, "name of the connection configuration")
+	cc.AddStringArg(argClusterID, argTitleClusterID)
 	return nil
 }
 
@@ -40,7 +40,7 @@ func (ImportConfigCmd) exec(ctx context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		return err
 	}
-	clusterNameOrID := ec.Args()[0]
+	clusterNameOrID := ec.GetStringArg(argClusterID)
 	c, err := api.FindCluster(ctx, clusterNameOrID)
 	if err != nil {
 		return handleErrorResponse(ec, err)

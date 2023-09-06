@@ -18,10 +18,9 @@ import (
 type AtomicLongGetCommand struct{}
 
 func (mc *AtomicLongGetCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("get")
 	help := "Get the value of the AtomicLong"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("get")
-	cc.SetPositionalArgCount(0, 0)
 	return nil
 }
 

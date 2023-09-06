@@ -18,13 +18,13 @@ import (
 type MapDestroyCommand struct{}
 
 func (mc *MapDestroyCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("destroy")
 	long := `Destroy a Map
 
 This command will delete the Map and the data in it will not be available anymore.`
 	short := "Destroy a Map"
 	cc.SetCommandHelp(long, short)
 	cc.AddBoolFlag(clc.FlagAutoYes, "", false, false, "skip confirming the destroy operation")
-	cc.SetCommandUsage("destroy")
 	return nil
 }
 

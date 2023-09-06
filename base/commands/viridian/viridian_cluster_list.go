@@ -23,7 +23,6 @@ Make sure you login before running this command.
 `
 	short := "Lists Viridian clusters"
 	cc.SetCommandHelp(long, short)
-	cc.SetPositionalArgCount(0, 0)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	return nil
 }

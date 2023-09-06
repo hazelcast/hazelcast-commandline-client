@@ -19,15 +19,15 @@ import (
 type MultiMapTryLockCommand struct{}
 
 func (m MultiMapTryLockCommand) Init(cc plug.InitContext) error {
-	addKeyTypeFlag(cc)
-	cc.AddIntFlag(multiMapTTL, "", ttlUnset, false, "time-to-live (ms)")
+	cc.SetCommandUsage("try-lock")
 	long := `Try to lock a key in the given MultiMap. Directly returns the result
 
 This command is only available in the interactive mode.`
 	short := "Try to lock a key in the given MultiMap. Directly returns the result"
 	cc.SetCommandHelp(long, short)
-	cc.SetCommandUsage("try-lock [key] [flags]")
-	cc.SetPositionalArgCount(1, 1)
+	addKeyTypeFlag(cc)
+	cc.AddIntFlag(multiMapTTL, "", ttlUnset, false, "time-to-live (ms)")
+	cc.AddStringArg(argKey, argTitleKey)
 	return nil
 }
 
@@ -37,7 +37,7 @@ func (m MultiMapTryLockCommand) Exec(ctx context.Context, ec plug.ExecContext) e
 	if err != nil {
 		return err
 	}
-	keyStr := ec.Args()[0]
+	keyStr := ec.GetStringArg(argKey)
 	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
 		return err

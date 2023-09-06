@@ -12,11 +12,10 @@ import (
 type AtomicLongDecrementGetCommand struct{}
 
 func (mc *AtomicLongDecrementGetCommand) Init(cc plug.InitContext) error {
-	cc.SetPositionalArgCount(0, 0)
+	cc.SetCommandUsage("decrement-get")
 	help := "Decrement the AtomicLong by the given value"
-	cc.AddIntFlag(atomicLongFlagBy, "", 1, false, "value to decrement by")
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("decrement-get [flags]")
+	cc.AddIntFlag(atomicLongFlagBy, "", 1, false, "value to decrement by")
 	return nil
 }
 

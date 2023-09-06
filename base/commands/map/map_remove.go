@@ -19,11 +19,11 @@ import (
 type MapRemoveCommand struct{}
 
 func (mc *MapRemoveCommand) Init(cc plug.InitContext) error {
-	addKeyTypeFlag(cc)
+	cc.SetCommandUsage("remove")
 	help := "Remove a value from the given Map"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("remove [-n map-name] [key] [flags]")
-	cc.SetPositionalArgCount(1, 1)
+	addKeyTypeFlag(cc)
+	cc.AddStringArg(argKey, argTitleKey)
 	return nil
 }
 
@@ -33,7 +33,7 @@ func (mc *MapRemoveCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 	if err != nil {
 		return err
 	}
-	keyStr := ec.Args()[0]
+	keyStr := ec.GetStringArg(argKey)
 	keyData, err := makeKeyData(ec, ci, keyStr)
 	if err != nil {
 		return err

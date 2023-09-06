@@ -18,10 +18,9 @@ import (
 type MultiMapSizeCommand struct{}
 
 func (mc *MultiMapSizeCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("size")
 	help := "Return the size of the given MultiMap"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("size")
-	cc.SetPositionalArgCount(0, 0)
 	return nil
 }
 

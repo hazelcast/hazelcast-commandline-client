@@ -8,39 +8,38 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/hazelcast/hazelcast-go-client"
+
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-go-client"
 )
 
 type MapSetManyCmd struct{}
 
 const (
-	flagName = "name"
-	flagSize = "size"
-	kb       = "KB"
-	mb       = "MB"
-	kbs      = 1024
-	mbs      = kbs * 1024
+	flagName           = "name"
+	flagSize           = "size"
+	argEntryCount      = "entryCount"
+	argTitleEntryCount = "entry count"
+	kb                 = "KB"
+	mb                 = "MB"
+	kbs                = 1024
+	mbs                = kbs * 1024
 )
 
 func (m MapSetManyCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("map-setmany [entry-count] [flags]")
-	cc.SetPositionalArgCount(1, 1)
-	cc.AddStringFlag(flagName, "n", "default", false, "Name of the map.")
-	cc.AddStringFlag(flagSize, "", "", true, `Size of the map value in bytes, the following suffixes can also be used: kb, mb, e.g., 42kb)`)
-	help := "Generates multiple map entries."
+	cc.SetCommandUsage("map-setmany")
+	help := "Generates multiple map entries"
 	cc.SetCommandHelp(help, help)
+	cc.AddStringFlag(flagName, "n", "default", false, "Name of the map.")
+	cc.AddStringFlag(flagSize, "", "1", false, `Size of the map value in bytes, the following suffixes can also be used: kb, mb, e.g., 42kb)`)
+	cc.AddInt64Arg(argEntryCount, argTitleEntryCount)
 	return nil
 }
 
 func (m MapSetManyCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
-	entryCount := ec.Args()[0]
-	c, err := strconv.Atoi(entryCount)
-	if err != nil {
-		return err
-	}
+	c := ec.GetInt64Arg(argEntryCount)
 	mapName := ec.Props().GetString(flagName)
 	size := ec.Props().GetString(flagSize)
 	ci, err := ec.ClientInternal(ctx)
@@ -62,12 +61,12 @@ func (m MapSetManyCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	return nil
 }
 
-func createEntries(ctx context.Context, entryCount int, size string, m *hazelcast.Map) error {
+func createEntries(ctx context.Context, entryCount int64, size string, m *hazelcast.Map) error {
 	v, err := makeValue(size)
 	if err != nil {
 		return err
 	}
-	for i := 1; i <= entryCount; i++ {
+	for i := int64(1); i <= entryCount; i++ {
 		k := fmt.Sprintf("k%d", i)
 		err := m.Set(ctx, k, v)
 		if err != nil {

@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math"
 	"sync/atomic"
 	"time"
 
@@ -20,7 +19,16 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/demo/wikimedia"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/str"
+)
+
+const (
+	flagPreview           = "preview"
+	flagMaxValues         = "max-values"
+	pairMapName           = "map"
+	argGeneratorName      = "name"
+	argTitleGeneratorName = "generator name"
+	argKeyValues          = "keyValue"
+	argTitleKeyValues     = "key=value"
 )
 
 type DataStreamGenerator interface {
@@ -35,7 +43,7 @@ var supportedEventStreams = map[string]DataStreamGenerator{
 type GenerateDataCmd struct{}
 
 func (cm GenerateDataCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("generate-data [name] [key=value, ...] [--preview]")
+	cc.SetCommandUsage("generate-data")
 	long := `Generates a stream of events
 	
 Generate data for given name, supported names are:
@@ -47,26 +55,27 @@ Generate data for given name, supported names are:
 `
 	short := "Generates a stream of events"
 	cc.SetCommandHelp(long, short)
-	cc.SetPositionalArgCount(1, math.MaxInt)
 	cc.AddIntFlag(flagMaxValues, "", 0, false, "number of events to create (default: 0, no limits)")
 	cc.AddBoolFlag(flagPreview, "", false, false, "print the generated data without interacting with the cluster")
+	cc.AddStringArg(argGeneratorName, argTitleGeneratorName)
+	cc.AddKeyValueSliceArg(argKeyValues, argTitleKeyValues, 0, clc.MaxArgs)
 	return nil
 }
 
 func (cm GenerateDataCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
-	name := ec.Args()[0]
+	name := ec.GetStringArg(argGeneratorName)
 	generator, ok := supportedEventStreams[name]
 	if !ok {
 		return fmt.Errorf("stream generator '%s' is not supported, run --help to see supported ones", name)
 	}
-	keyVals := keyValMap(ec)
+	kvs := ec.GetKeyValuesArg(argKeyValues)
 	ch, stopStream := generator.Stream(ctx)
 	defer stopStream()
 	preview := ec.Props().GetBool(flagPreview)
 	if preview {
-		return generatePreviewResult(ctx, ec, generator, ch, keyVals, stopStream)
+		return generatePreviewResult(ctx, ec, generator, ch, kvs.Map(), stopStream)
 	}
-	return generateResult(ctx, ec, generator, ch, keyVals, stopStream)
+	return generateResult(ctx, ec, generator, ch, kvs.Map(), stopStream)
 }
 
 func generatePreviewResult(ctx context.Context, ec plug.ExecContext, generator DataStreamGenerator, itemCh <-chan demo.StreamItem, keyVals map[string]string, stopStream context.CancelFunc) error {
@@ -225,18 +234,6 @@ func getMap(ctx context.Context, ec plug.ExecContext, mapName string) (*hazelcas
 	}
 	stop()
 	return mv.(*hazelcast.Map), nil
-}
-
-func keyValMap(ec plug.ExecContext) map[string]string {
-	keyVals := map[string]string{}
-	for _, keyval := range ec.Args()[1:] {
-		k, v := str.ParseKeyValue(keyval)
-		if k == "" {
-			continue
-		}
-		keyVals[k] = v
-	}
-	return keyVals
 }
 
 func init() {

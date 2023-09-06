@@ -18,10 +18,10 @@ import (
 type QueueClearCommand struct{}
 
 func (qc *QueueClearCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("clear")
 	help := "Delete all entries of a Queue"
 	cc.SetCommandHelp(help, help)
 	cc.AddBoolFlag(clc.FlagAutoYes, "", false, false, "skip confirming the clear operation")
-	cc.SetCommandUsage("clear [flags]")
 	return nil
 }
 

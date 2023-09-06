@@ -22,7 +22,6 @@ func (m MultiMapValuesCommand) Init(cc plug.InitContext) error {
 	help := "Get all values of a MultiMap"
 	cc.SetCommandHelp(help, help)
 	cc.SetCommandUsage("values")
-	cc.SetPositionalArgCount(0, 0)
 	return nil
 }
 

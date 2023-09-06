@@ -14,15 +14,15 @@ import (
 type ClusterResumeCmd struct{}
 
 func (cm ClusterResumeCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("resume-cluster [cluster-ID/name] [flags]")
+	cc.SetCommandUsage("resume-cluster")
 	long := `Resumes the given Viridian cluster.
 
 Make sure you login before running this command.
 `
 	short := "Resumes the given Viridian cluster"
 	cc.SetCommandHelp(long, short)
-	cc.SetPositionalArgCount(1, 1)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
+	cc.AddStringArg(argClusterID, argTitleClusterID)
 	return nil
 }
 
@@ -31,7 +31,7 @@ func (cm ClusterResumeCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 	if err != nil {
 		return err
 	}
-	clusterNameOrID := ec.Args()[0]
+	clusterNameOrID := ec.GetStringArg(argClusterID)
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Resuming the cluster")
 		err := api.ResumeCluster(ctx, clusterNameOrID)

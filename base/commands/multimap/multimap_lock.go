@@ -17,14 +17,14 @@ import (
 type MultiMapLockCommand struct{}
 
 func (m MultiMapLockCommand) Init(cc plug.InitContext) error {
-	addKeyTypeFlag(cc)
+	cc.SetCommandUsage("lock")
 	long := `Lock a key in the given MultiMap
 
 This command is only available in the interactive mode.`
 	short := "Lock a key in the given MultiMap"
 	cc.SetCommandHelp(long, short)
-	cc.SetCommandUsage("lock [key] [flags]")
-	cc.SetPositionalArgCount(1, 1)
+	addKeyTypeFlag(cc)
+	cc.AddStringArg(argKey, argTitleKey)
 	return nil
 }
 
@@ -34,7 +34,7 @@ func (m MultiMapLockCommand) Exec(ctx context.Context, ec plug.ExecContext) erro
 	if err != nil {
 		return err
 	}
-	keyStr := ec.Args()[0]
+	keyStr := ec.GetStringArg(argKey)
 	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
 		return err

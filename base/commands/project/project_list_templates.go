@@ -39,12 +39,11 @@ type Template struct {
 }
 
 func (lc ListCmd) Init(cc plug.InitContext) error {
-	cc.SetPositionalArgCount(0, 0)
-	cc.SetCommandUsage("list-templates [flags]")
-	cc.AddBoolFlag(flagRefresh, "", false, false, "fetch most recent templates from remote")
-	cc.AddBoolFlag(flagLocal, "", false, false, "list the templates which exist on local environment")
+	cc.SetCommandUsage("list-templates")
 	help := "Lists templates that can be used while creating projects."
 	cc.SetCommandHelp(help, help)
+	cc.AddBoolFlag(flagRefresh, "", false, false, "fetch most recent templates from remote")
+	cc.AddBoolFlag(flagLocal, "", false, false, "list the templates which exist on local environment")
 	return nil
 }
 

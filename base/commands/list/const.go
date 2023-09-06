@@ -7,4 +7,8 @@ const (
 	listFlagValueType = "value-type"
 	listFlagIndex     = "index"
 	defaultListName   = "default"
+	argValue          = "value"
+	argTitleValue     = "value"
+	argIndex          = "index"
+	argTitleIndex     = "index"
 )

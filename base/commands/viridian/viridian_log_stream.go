@@ -25,7 +25,7 @@ const (
 type StreamLogCmd struct{}
 
 func (cm StreamLogCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("stream-logs [cluster-ID/name]")
+	cc.SetCommandUsage("stream-logs")
 	long := `Outputs the logs of the given Viridian cluster as a stream.
 
 Make sure you authenticate to the Viridian API using 'viridian login' before running this command.
@@ -39,10 +39,10 @@ The log format may be one of:
 `
 	short := "Streams logs of a Viridian cluster"
 	cc.SetCommandHelp(long, short)
-	cc.SetPositionalArgCount(1, 1)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	cc.AddStringFlag(propLogFormat, "", "basic", false,
 		"set the log format, either predefined or free form")
+	cc.AddStringArg(argClusterID, argTitleClusterID)
 	return nil
 }
 
@@ -56,7 +56,7 @@ func (cm StreamLogCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		return fmt.Errorf("invalid log format %s: %w", f, err)
 	}
-	clusterNameOrID := ec.Args()[0]
+	clusterNameOrID := ec.GetStringArg(argClusterID)
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		lf := newLogFixer(ec.Stdout(), t)
 		for {

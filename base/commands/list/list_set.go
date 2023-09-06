@@ -5,7 +5,6 @@ package list
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -16,11 +15,12 @@ import (
 type ListSetCommand struct{}
 
 func (mc *ListSetCommand) Init(cc plug.InitContext) error {
-	addValueTypeFlag(cc)
-	cc.SetPositionalArgCount(2, 2)
+	cc.SetCommandUsage("set")
 	help := "Set a value at the given index in the list"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("set [index] [value] [flags]")
+	addValueTypeFlag(cc)
+	cc.AddInt64Arg(argIndex, argTitleIndex)
+	cc.AddStringArg(argValue, argTitleValue)
 	return nil
 }
 
@@ -34,11 +34,8 @@ func (mc *ListSetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if _, err := ec.Props().GetBlocking(listPropertyName); err != nil {
 		return err
 	}
-	index, err := strconv.Atoi(ec.Args()[0])
-	if err != nil {
-		return err
-	}
-	valueStr := ec.Args()[1]
+	index := ec.GetInt64Arg(argIndex)
+	valueStr := ec.GetStringArg(argValue)
 	vd, err := makeValueData(ec, ci, valueStr)
 	if err != nil {
 		return err
