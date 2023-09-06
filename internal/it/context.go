@@ -14,6 +14,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/terminal"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/types"
 )
 
 type CommandContext struct {
@@ -21,6 +22,10 @@ type CommandContext struct {
 	ShortHelp     string
 	Use           string
 	IsInteractive bool
+}
+
+func (c CommandContext) AddKeyValueSliceArg(key, title string, min, max int) {
+	panic("implement me")
 }
 
 func (c CommandContext) AddStringArg(key, title string) {
@@ -105,6 +110,10 @@ func NewExecuteContext(args []string) *ExecContext {
 		props:   plug.NewProperties(),
 		Spinner: NewSpinner(),
 	}
+}
+
+func (ec *ExecContext) GetKeyValuesArg(key string) types.KeyValues[string, string] {
+	panic("implement me")
 }
 
 func (ec *ExecContext) ExecuteBlocking(ctx context.Context, f func(context.Context, clc.Spinner) (any, error)) (any, context.CancelFunc, error) {
