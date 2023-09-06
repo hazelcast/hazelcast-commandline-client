@@ -284,7 +284,7 @@ func (m *Main) createCommands() error {
 			p, ok := m.cmds[name]
 			if !ok {
 				p = &cobra.Command{
-					Use: fmt.Sprintf("%s [command] [flags]", ps[i-1]),
+					Use: fmt.Sprintf("%s {command} [flags]", ps[i-1]),
 				}
 				p.SetUsageTemplate(usageTemplate)
 				m.cmds[name] = p
@@ -294,7 +294,7 @@ func (m *Main) createCommands() error {
 		}
 		// current command
 		cmd := &cobra.Command{
-			Use:          ps[len(ps)-1],
+			Use:          fmt.Sprintf("%s {command} [flags]", ps[len(ps)-1]),
 			SilenceUsage: true,
 		}
 		cmd.SetUsageTemplate(usageTemplate)
