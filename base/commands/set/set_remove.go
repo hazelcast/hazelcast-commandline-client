@@ -5,7 +5,6 @@ package set
 import (
 	"context"
 	"fmt"
-	"math"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -18,11 +17,11 @@ import (
 type SetRemoveCommand struct{}
 
 func (sc *SetRemoveCommand) Init(cc plug.InitContext) error {
-	addValueTypeFlag(cc)
-	cc.SetPositionalArgCount(1, math.MaxInt)
+	cc.SetCommandUsage("remove")
 	help := "Remove values from the given Set"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("remove [values] [flags]")
+	addValueTypeFlag(cc)
+	cc.AddStringSliceArg(argValue, argTitleValue, 1, clc.MaxArgs)
 	return nil
 }
 
@@ -36,7 +35,7 @@ func (sc *SetRemoveCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 	rows, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText(fmt.Sprintf("Removing from set %s", name))
 		var rows []output.Row
-		for _, arg := range ec.Args() {
+		for _, arg := range ec.GetStringSliceArg(argValue) {
 			vd, err := makeValueData(ec, ci, arg)
 			if err != nil {
 				return nil, err

@@ -18,12 +18,12 @@ import (
 type SetDestroyCommand struct{}
 
 func (qc *SetDestroyCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("destroy")
 	long := `Destroy a Set
 This command will delete the Set and the data in it will not be available anymore.`
 	short := "Destroy a Set"
 	cc.SetCommandHelp(long, short)
 	cc.AddBoolFlag(clc.FlagAutoYes, "", false, false, "skip confirming the destroy operation")
-	cc.SetCommandUsage("destroy")
 	return nil
 }
 

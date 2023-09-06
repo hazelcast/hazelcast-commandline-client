@@ -19,10 +19,9 @@ import (
 type SetGetAllCommand struct{}
 
 func (sc *SetGetAllCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("get-all")
 	help := "Return the elements of the given Set"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("get-all")
-	cc.SetPositionalArgCount(0, 0)
 	return nil
 }
 

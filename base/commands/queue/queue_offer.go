@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	argValues      = "values"
-	argTitleValues = "value"
+	argValue      = "value"
+	argTitleValue = "value"
 )
 
 type QueueOfferCommand struct{}
@@ -25,7 +25,7 @@ func (qc *QueueOfferCommand) Init(cc plug.InitContext) error {
 	help := "Add values to the given Queue"
 	cc.SetCommandHelp(help, help)
 	addValueTypeFlag(cc)
-	cc.AddStringSliceArg(argValues, argTitleValues, 1, clc.MaxArgs)
+	cc.AddStringSliceArg(argValue, argTitleValue, 1, clc.MaxArgs)
 	return nil
 }
 
@@ -43,7 +43,7 @@ func (qc *QueueOfferCommand) Exec(ctx context.Context, ec plug.ExecContext) erro
 
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText(fmt.Sprintf("Adding values into queue %s", queueName))
-		for _, arg := range ec.GetStringSliceArg(argValues) {
+		for _, arg := range ec.GetStringSliceArg(argValue) {
 			vd, err := makeValueData(ec, ci, arg)
 			if err != nil {
 				return nil, err
