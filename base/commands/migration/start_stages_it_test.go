@@ -51,7 +51,7 @@ func startTest_Failure(t *testing.T) {
 			tcx.CLC().Execute(ctx, "start", "dmt-config", "--yes")
 		})
 		failureRunner(tcx, ctx)
-		for _, m := range []string{"first message", "second message", "fail status report"} {
+		for _, m := range []string{"first message", "second message", "error1", "error2", "fail status report"} {
 			tcx.AssertStdoutContains(m)
 		}
 	})
@@ -68,6 +68,7 @@ func successfulRunner(tcx it.TestContext, ctx context.Context) {
 	b := MustValue(json.Marshal(migration.MigrationStatus{
 		Status: migration.StatusComplete,
 		Report: "status report",
+		Logs:   []string{"log1", "log2"},
 	}))
 	Must(statusMap.Set(ctx, migration.StatusMapEntryName, serialization.JSON(b)))
 	Must(topic.Publish(ctx, migration.UpdateMessage{Status: migration.StatusComplete, Message: "last message"}))
@@ -83,6 +84,7 @@ func failureRunner(tcx it.TestContext, ctx context.Context) {
 	b := MustValue(json.Marshal(migration.MigrationStatus{
 		Status: migration.StatusFailed,
 		Report: "fail status report",
+		Errors: []string{"error1", "error2"},
 	}))
 	Must(statusMap.Set(ctx, migration.StatusMapEntryName, serialization.JSON(b)))
 	Must(topic.Publish(ctx, migration.UpdateMessage{Status: migration.StatusFailed, Message: "second message"}))

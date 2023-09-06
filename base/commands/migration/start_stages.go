@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	clcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
@@ -127,13 +128,16 @@ func (st *Stages) startStage(ctx context.Context, ec plug.ExecContext) func(stag
 			}
 			ec.PrintlnUnnecessary(msg.Message)
 			ec.PrintlnUnnecessary(ms.Report)
+			for _, l := range ms.Logs {
+				ec.Logger().Info(l)
+			}
 			switch ms.Status {
 			case StatusComplete:
 				return nil
 			case statusCanceled:
 				return clcerrors.ErrUserCancelled
 			case StatusFailed:
-				return errors.New("migration failed")
+				return fmt.Errorf("migration failed with following error(s): %s", strings.Join(ms.Errors, "\n"))
 			}
 		} else {
 			ec.PrintlnUnnecessary(msg.Message)
@@ -155,13 +159,16 @@ func (st *Stages) migrateStage(ctx context.Context, ec plug.ExecContext) func(st
 					}
 					ec.PrintlnUnnecessary(msg.Message)
 					ec.PrintlnUnnecessary(ms.Report)
+					for _, l := range ms.Logs {
+						ec.Logger().Info(l)
+					}
 					switch ms.Status {
 					case StatusComplete:
 						return nil
 					case statusCanceled:
 						return clcerrors.ErrUserCancelled
 					case StatusFailed:
-						return errors.New("migration failed")
+						return fmt.Errorf("migration failed with following error(s): %s", strings.Join(ms.Errors, "\n"))
 					}
 				} else {
 					ec.PrintlnUnnecessary(msg.Message)
