@@ -19,6 +19,8 @@ import (
 
 const (
 	minServerVersion = "5.0.0"
+	argQuery         = "query"
+	argTitleQuery    = "query"
 )
 
 type arg0er interface {
@@ -41,8 +43,7 @@ func (cm *SQLCommand) Init(cc plug.InitContext) error {
 	if cc.Interactive() {
 		return errors.ErrNotAvailable
 	}
-	cc.SetCommandUsage("sql [query] [flags]")
-	cc.SetPositionalArgCount(1, 1)
+	cc.SetCommandUsage("sql")
 	cc.AddCommandGroup("sql", "SQL")
 	cc.SetCommandGroup("sql")
 	long := fmt.Sprintf(`Runs the given SQL query or starts the SQL shell
@@ -54,6 +55,7 @@ having version %s or better.
 `, minServerVersion)
 	cc.SetCommandHelp(long, "Run SQL")
 	cc.AddBoolFlag(clcsql.PropertyUseMappingSuggestion, "", false, false, "execute the proposed CREATE MAPPING suggestion and retry the query")
+	cc.AddStringArg(argQuery, argTitleQuery)
 	return nil
 }
 
@@ -69,7 +71,7 @@ func (cm *SQLCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if sv, ok := cmd.CheckServerCompatible(ci, minServerVersion); !ok {
 		return fmt.Errorf("server (%s) does not support this command, at least %s is expected", sv, minServerVersion)
 	}
-	query := ec.Args()[0]
+	query := ec.GetStringArg(argQuery)
 	res, stop, err := cm.execQuery(ctx, query, ec)
 	if err != nil {
 		return err
