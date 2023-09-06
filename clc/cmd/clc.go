@@ -307,10 +307,6 @@ func (m *Main) createCommands() error {
 				return fmt.Errorf("initializing command: %w", err)
 			}
 		}
-		// add the backslash prefix for top-level commands in the interactive mode
-		if m.mode != ModeNonInteractive && parent == m.root {
-			cmd.Use = fmt.Sprintf("\\%s", cmd.Use)
-		}
 		addUniqueCommandGroup(cc, parent)
 		if !cc.TopLevel() {
 			cmd.Args = cc.ArgsFunc()
@@ -381,6 +377,10 @@ func (m *Main) createCommands() error {
 				}
 				return nil
 			}
+		}
+		// add the backslash prefix for top-level commands in the interactive mode
+		if m.mode != ModeNonInteractive && parent == m.root {
+			cmd.Use = fmt.Sprintf("\\%s", cmd.Use)
 		}
 		parent.AddCommand(cmd)
 		m.cmds[c.Name] = cmd

@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"math"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,17 +13,20 @@ import (
 
 func TestMakeKeywordArgs(t *testing.T) {
 	testCases := []struct {
+		name      string
 		args      []string
 		specs     []ArgSpec
 		target    map[string]any
 		errString string
 	}{
 		{
+			name:   "no args",
 			args:   nil,
 			specs:  nil,
 			target: map[string]any{},
 		},
 		{
+			name: "one string arg",
 			args: []string{"foo"},
 			specs: []ArgSpec{
 				{Key: "id", Title: "ID", Type: ArgTypeString, Min: 1, Max: 1},
@@ -34,6 +36,7 @@ func TestMakeKeywordArgs(t *testing.T) {
 			},
 		},
 		{
+			name: "two string args",
 			args: []string{"foo", "bar"},
 			specs: []ArgSpec{
 				{Key: "id", Title: "ID", Type: ArgTypeString, Min: 1, Max: 1},
@@ -45,6 +48,7 @@ func TestMakeKeywordArgs(t *testing.T) {
 			},
 		},
 		{
+			name: "one optional string slice arg",
 			args: nil,
 			specs: []ArgSpec{
 				{Key: "strings", Title: "String", Type: ArgTypeStringSlice, Max: 10},
@@ -54,6 +58,7 @@ func TestMakeKeywordArgs(t *testing.T) {
 			},
 		},
 		{
+			name: "two optional string slice args",
 			args: []string{"foo", "bar"},
 			specs: []ArgSpec{
 				{Key: "strings", Title: "String", Type: ArgTypeStringSlice, Max: 10},
@@ -63,6 +68,7 @@ func TestMakeKeywordArgs(t *testing.T) {
 			},
 		},
 		{
+			name: "one missing required arg",
 			args: nil,
 			specs: []ArgSpec{
 				{Key: "id", Title: "ID", Min: 1, Max: 1},
@@ -70,6 +76,7 @@ func TestMakeKeywordArgs(t *testing.T) {
 			errString: "ID is required",
 		},
 		{
+			name: "one missing string slice arg",
 			args: nil,
 			specs: []ArgSpec{
 				{Key: "strings", Title: "String", Type: ArgTypeStringSlice, Min: 1, Max: 10},
@@ -77,6 +84,7 @@ func TestMakeKeywordArgs(t *testing.T) {
 			errString: "expected at least 1 String arguments, but received 0",
 		},
 		{
+			name: "more args for string slice",
 			args: []string{"foo", "bar", "zoo"},
 			specs: []ArgSpec{
 				{Key: "strings", Title: "String", Type: ArgTypeStringSlice, Min: 1, Max: 2},
@@ -84,20 +92,23 @@ func TestMakeKeywordArgs(t *testing.T) {
 			errString: "expected at most 2 String arguments, but received 3",
 		},
 		{
+			name: "unknown type for string arg",
 			args: []string{"foo"},
 			specs: []ArgSpec{
-				{Key: "id", Title: "ID", Type: ArgType(5)},
+				{Key: "id", Title: "ID", Type: ArgTypeNone},
 			},
-			errString: "converting argument ID: unknown type: 5",
+			errString: "converting argument ID: unknown type: 0",
 		},
 		{
+			name: "unknown type for string slice arg",
 			args: []string{"foo"},
 			specs: []ArgSpec{
-				{Key: "id", Title: "ID", Type: ArgType(5), Min: 0, Max: 1},
+				{Key: "id", Title: "ID", Type: ArgTypeNone, Min: 0, Max: 1},
 			},
-			errString: "converting argument ID: unknown type: 5",
+			errString: "converting argument ID: unknown type: 0",
 		},
 		{
+			name: "string slice arg before the last arg",
 			args: []string{"foo"},
 			specs: []ArgSpec{
 				{Key: "id", Title: "ID", Min: 1, Max: 10},
@@ -106,16 +117,17 @@ func TestMakeKeywordArgs(t *testing.T) {
 			errString: "invalid argument spec: only the last argument may take a range",
 		},
 		{
+			name: "more arguments than expected",
 			args: []string{"foo", "bar", "zoo"},
 			specs: []ArgSpec{
-				{Key: "id", Title: "ID", Min: 1, Max: 1},
+				{Key: "id", Title: "ID", Min: 1, Max: 1, Type: ArgTypeString},
 			},
 			errString: "unexpected arguments",
 		},
 	}
 	for _, tc := range testCases {
 		tc := tc
-		t.Run(strings.Join(tc.args, " "), func(t *testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
 			kw, err := makeKeywordArgs(tc.args, tc.specs)
 			if tc.errString == "" {
 				require.NoError(t, err)
