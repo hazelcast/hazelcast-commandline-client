@@ -5,7 +5,6 @@ package queue
 import (
 	"context"
 	"fmt"
-	"math"
 
 	"github.com/hazelcast/hazelcast-go-client"
 
@@ -14,15 +13,19 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-type QueueOfferCommand struct {
-}
+const (
+	argValues      = "values"
+	argTitleValues = "value"
+)
+
+type QueueOfferCommand struct{}
 
 func (qc *QueueOfferCommand) Init(cc plug.InitContext) error {
-	addValueTypeFlag(cc)
-	cc.SetPositionalArgCount(1, math.MaxInt)
+	cc.SetCommandUsage("offer")
 	help := "Add values to the given Queue"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("offer [values] [flags]")
+	addValueTypeFlag(cc)
+	cc.AddStringSliceArg(argValues, argTitleValues, 1, clc.MaxArgs)
 	return nil
 }
 
@@ -40,7 +43,7 @@ func (qc *QueueOfferCommand) Exec(ctx context.Context, ec plug.ExecContext) erro
 
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText(fmt.Sprintf("Adding values into queue %s", queueName))
-		for _, arg := range ec.Args() {
+		for _, arg := range ec.GetStringSliceArg(argValues) {
 			vd, err := makeValueData(ec, ci, arg)
 			if err != nil {
 				return nil, err

@@ -18,10 +18,9 @@ import (
 type QueueSizeCommand struct{}
 
 func (qc *QueueSizeCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("size")
 	help := "Return the size of the given Queue"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("size")
-	cc.SetPositionalArgCount(0, 0)
 	return nil
 }
 

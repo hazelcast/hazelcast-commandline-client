@@ -23,12 +23,11 @@ type QueuePollCommand struct {
 }
 
 func (qc *QueuePollCommand) Init(cc plug.InitContext) error {
-	addValueTypeFlag(cc)
+	cc.SetCommandUsage("poll")
 	help := "Remove the given number of elements from the given Queue"
-	cc.AddIntFlag(flagCount, "", 1, false, "number of element to be removed from the given queue")
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("poll [flags]")
-	cc.SetPositionalArgCount(0, 0)
+	addValueTypeFlag(cc)
+	cc.AddIntFlag(flagCount, "", 1, false, "number of element to be removed from the given queue")
 	return nil
 }
 
