@@ -39,7 +39,6 @@ func (cm *ShellCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("shell")
 	help := "Start the interactive shell"
 	cc.SetCommandHelp(help, help)
-	cc.SetPositionalArgCount(0, 0)
 	cc.Hide()
 	cm.mu.Lock()
 	cm.shortcuts = map[string]struct{}{
