@@ -22,7 +22,6 @@ Make sure you login before running this command.
 `
 	short := "Downloads the logs of the given Viridian cluster"
 	cc.SetCommandHelp(long, short)
-	cc.SetPositionalArgCount(1, 1)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	cc.AddStringFlag(flagOutputDir, "o", "", false, "output directory for the log files, if not given current directory is used")
 	cc.AddStringArg(argClusterID, argTitleClusterID)

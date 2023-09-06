@@ -132,16 +132,6 @@ func (cc *CommandContext) AddInt64Arg(key, title string) {
 	cc.argSpecs = append(cc.argSpecs, s)
 }
 
-// SetPositionalArgCount sets the number minimum and maximum positional arguments.
-// if min and max are the same, the pos args are set as the exact num of args.
-// otherwise, if max == math.MaxInt, num of pos args are set as the minumum of min args.
-// otherwise, if min == 0, num of pos args are set as the maximum of max args.
-// otherwise num of pos args is the range of min, max args.
-// Deprecated
-func (cc *CommandContext) SetPositionalArgCount(min, max int) {
-	// nop
-}
-
 func (cc *CommandContext) Hide() {
 	cc.Cmd.Hidden = true
 }

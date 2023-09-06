@@ -27,7 +27,6 @@ type InitContext interface {
 	SetCommandGroup(id string)
 	SetCommandHelp(long, short string)
 	SetCommandUsage(usage string)
-	SetPositionalArgCount(min, max int)
 	SetTopLevel(b bool)
 }
 
