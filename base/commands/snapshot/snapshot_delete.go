@@ -12,7 +12,7 @@ import (
 
 const (
 	argSnapshotName      = "snapshotName"
-	argTitleSnapshotName = "snpashot name"
+	argTitleSnapshotName = "snapshot name"
 )
 
 type DeleteCmd struct{}
