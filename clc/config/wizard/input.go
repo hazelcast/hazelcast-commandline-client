@@ -25,7 +25,7 @@ type textModel struct {
 	inputs     []textinput.Model
 }
 
-func initialModel() textModel {
+func InitialModel() textModel {
 	m := textModel{
 		inputs:   make([]textinput.Model, 2),
 		quitting: false,
