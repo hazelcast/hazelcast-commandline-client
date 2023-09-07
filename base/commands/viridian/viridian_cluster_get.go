@@ -16,6 +16,8 @@ import (
 
 type ClusterGetCmd struct{}
 
+func (cm ClusterGetCmd) Unwrappable() {}
+
 func (cm ClusterGetCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("get-cluster")
 	long := `Gets the information about the given Viridian cluster.
@@ -34,10 +36,10 @@ func (cm ClusterGetCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		return err
 	}
-	clusterNameOrID := ec.GetStringArg(argClusterID)
+	nameOrID := ec.GetStringArg(argClusterID)
 	ci, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText("Retrieving the cluster")
-		c, err := api.GetCluster(ctx, clusterNameOrID)
+		sp.SetText("Retrieving cluster information")
+		c, err := api.GetCluster(ctx, nameOrID)
 		if err != nil {
 			return nil, err
 		}

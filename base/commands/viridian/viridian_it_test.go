@@ -223,8 +223,8 @@ func getCluster_NonInteractiveTest(t *testing.T) {
 	viridianTester(t, func(ctx context.Context, tcx it.TestContext) {
 		c := createOrGetClusterWithState(ctx, tcx, "")
 		tcx.CLCExecute(ctx, "viridian", "get-cluster", c.ID, "--verbose", "-f", "json")
-		tcx.AssertStderrContains("OK")
-		fields := tcx.AssertJSONStdoutHasRowWithFields("ID", "Name", "State", "Hazelcast Version", "Creation Time", "Start Time", "Hot Backup Enabled", "Hot Restart Enabled", "IP Whitelist Enabled", "Regions")
+		tcx.AssertStdoutContains("Name")
+		fields := tcx.AssertJSONStdoutHasRowWithFields("ID", "Name", "State", "Hazelcast Version", "Creation Time", "Start Time", "Hot Backup Enabled", "Hot Restart Enabled", "IP Whitelist Enabled", "Regions", "Cluster Type")
 		require.Equal(t, c.ID, fields["ID"])
 		require.Equal(t, c.Name, fields["Name"])
 	})
@@ -249,7 +249,7 @@ func deleteCluster_NonInteractiveTest(t *testing.T) {
 	viridianTester(t, func(ctx context.Context, tcx it.TestContext) {
 		c := createOrGetClusterWithState(ctx, tcx, "RUNNING")
 		tcx.CLCExecute(ctx, "viridian", "delete-cluster", c.ID, "--yes")
-		tcx.AssertStderrContains("OK")
+		tcx.AssertStdoutContains("OK   Cluster is deleted.")
 		require.Eventually(t, func() bool {
 			_, err := tcx.Viridian.GetCluster(ctx, c.ID)
 			return err != nil
