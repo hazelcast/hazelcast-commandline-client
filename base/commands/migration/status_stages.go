@@ -21,7 +21,7 @@ type StatusStages struct {
 	statusMap                *hazelcast.Map
 	updateTopic              *hazelcast.Topic
 	topicListenerID          types.UUID
-	updateMessageChan        chan UpdateMessage
+	updateMsgChan            chan UpdateMessage
 }
 
 func NewStatusStages() *StatusStages {
@@ -74,7 +74,7 @@ func (st *StatusStages) connectStage(ctx context.Context, ec plug.ExecContext) f
 		if err != nil {
 			return err
 		}
-		st.updateMessageChan = make(chan UpdateMessage)
+		st.updateMsgChan = make(chan UpdateMessage)
 		_, err = st.updateTopic.AddMessageListener(ctx, st.topicListener)
 		return err
 	}
@@ -85,13 +85,14 @@ func (st *StatusStages) fetchStage(ctx context.Context, ec plug.ExecContext) fun
 		defer st.updateTopic.RemoveListener(ctx, st.topicListenerID)
 		for {
 			select {
-			case msg := <-st.updateMessageChan:
+			case msg := <-st.updateMsgChan:
 				ms, err := readMigrationStatus(ctx, st.statusMap)
 				if err != nil {
 					return fmt.Errorf("reading status: %w", err)
 				}
+				ec.PrintlnUnnecessary(msg.Message)
 				if slices.Contains([]Status{StatusComplete, StatusFailed, StatusCanceled}, msg.Status) {
-					ec.PrintlnUnnecessary(msg.Message)
+					ec.PrintlnUnnecessary(fmt.Sprintf("Completion Percentage: %f", ms.CompletionPercentage))
 					ec.PrintlnUnnecessary(ms.Report)
 					if len(ms.Errors) > 0 {
 						ec.PrintlnUnnecessary(fmt.Sprintf("migration failed with following error(s): %s", strings.Join(ms.Errors, "\n")))
@@ -140,8 +141,6 @@ func (st *StatusStages) fetchStage(ctx context.Context, ec plug.ExecContext) fun
 						return ec.AddOutputRows(ctx, rows...)
 					}
 					return nil
-				} else {
-					ec.PrintlnUnnecessary(msg.Message)
 				}
 			}
 		}
@@ -149,5 +148,5 @@ func (st *StatusStages) fetchStage(ctx context.Context, ec plug.ExecContext) fun
 }
 
 func (st *StatusStages) topicListener(event *hazelcast.MessagePublished) {
-	st.updateMessageChan <- event.Value.(UpdateMessage)
+	st.updateMsgChan <- event.Value.(UpdateMessage)
 }

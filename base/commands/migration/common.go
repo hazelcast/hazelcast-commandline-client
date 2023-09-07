@@ -11,11 +11,12 @@ import (
 )
 
 type MigrationStatus struct {
-	Status     Status      `json:"status"`
-	Logs       []string    `json:"logs"`
-	Errors     []string    `json:"errors"`
-	Report     string      `json:"report"`
-	Migrations []Migration `json:"migrations"`
+	Status               Status      `json:"status"`
+	Logs                 []string    `json:"logs"`
+	Errors               []string    `json:"errors"`
+	Report               string      `json:"report"`
+	Migrations           []Migration `json:"migrations"`
+	CompletionPercentage float32     `json:"completionPercentage"`
 }
 
 type Migration struct {

@@ -52,6 +52,7 @@ Hazelcast Data Migration Tool v5.3.0
  OK   [1/2] Connected to the migration cluster.
 first message
 last message
+Completion Percentage: 12.123000
 status report
 imap5	IMap	FAILED	2023-01-01 00:00:00	141	1000	14.1
  OK   [2/2] Fetched migration status.
@@ -81,8 +82,9 @@ func statusRunner(migrationID string, tcx it.TestContext, ctx context.Context) {
 func setState(ctx context.Context, updateTopic *hazelcast.Topic, statusMap *hazelcast.Map, status migration.Status, msg string) {
 	startTime := MustValue(time.Parse(time.RFC3339, "2023-01-01T00:00:00Z"))
 	b := MustValue(json.Marshal(migration.MigrationStatus{
-		Status: status,
-		Report: "status report",
+		Status:               status,
+		Report:               "status report",
+		CompletionPercentage: 12.123,
 		Migrations: []migration.Migration{
 			{
 				Name:                 "imap5",
