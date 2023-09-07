@@ -140,28 +140,40 @@ func MakeHzConfig(props plug.ReadOnlyProperties, lg log.Logger) (hazelcast.Confi
 		sc.Enabled = true
 		sc.SetTLSConfig(tc)
 		if cp := props.GetString(clc.PropertySSLCAPath); cp != "" {
-			cp = paths.Join(wd, cp)
-			lg.Debugf("SSL CA path: %s", cp)
-			if err := sc.SetCAPath(cp); err != nil {
-				return cfg, err
+			cpa := strings.Split(cp, ",")
+			for _, cp := range cpa {
+				cp = paths.Join(wd, cp)
+				lg.Debugf("SSL CA path: %s", cp)
+				if err := sc.SetCAPath(cp); err != nil {
+					return cfg, err
+				}
 			}
 		}
 		cp := props.GetString(clc.PropertySSLCertPath)
 		kp := props.GetString(clc.PropertySSLKeyPath)
+		cpa := strings.Split(cp, ",")
+		kpa := strings.Split(kp, ",")
 		kps := props.GetString(clc.PropertySSLKeyPassword)
-		if cp != "" && kp != "" {
-			cp = paths.Join(wd, cp)
-			lg.Debugf("Certificate path: %s", cp)
-			kp = paths.Join(wd, kp)
-			lg.Debugf("Key path: %s", kp)
-			if kps != "" {
-				lg.Debugf("Key password: XXX")
-				if err := sc.AddClientCertAndEncryptedKeyPath(cp, kp, kps); err != nil {
-					return cfg, err
-				}
-			} else {
-				if err := sc.AddClientCertAndKeyPath(cp, kp); err != nil {
-					return cfg, err
+		if len(cpa) != len(kpa) {
+			panic("slices have different length")
+		}
+		for i := 0; i < len(cpa); i++ {
+			cp = cpa[i]
+			kp = kpa[i]
+			if cp != "" && kp != "" {
+				cp = paths.Join(wd, cp)
+				lg.Debugf("Certificate path: %s", cp)
+				kp = paths.Join(wd, kp)
+				lg.Debugf("Key path: %s", kp)
+				if kps != "" {
+					lg.Debugf("Key password: XXX")
+					if err := sc.AddClientCertAndEncryptedKeyPath(cp, kp, kps); err != nil {
+						return cfg, err
+					}
+				} else {
+					if err := sc.AddClientCertAndKeyPath(cp, kp); err != nil {
+						return cfg, err
+					}
 				}
 			}
 		}
