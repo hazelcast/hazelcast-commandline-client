@@ -249,7 +249,7 @@ func deleteCluster_NonInteractiveTest(t *testing.T) {
 	viridianTester(t, func(ctx context.Context, tcx it.TestContext) {
 		c := createOrGetClusterWithState(ctx, tcx, "RUNNING")
 		tcx.CLCExecute(ctx, "viridian", "delete-cluster", c.ID, "--yes")
-		tcx.AssertStdoutContains("OK   Cluster is deleted.")
+		tcx.AssertStdoutContains("OK    Inititated cluster deletion.")
 		require.Eventually(t, func() bool {
 			_, err := tcx.Viridian.GetCluster(ctx, c.ID)
 			return err != nil
