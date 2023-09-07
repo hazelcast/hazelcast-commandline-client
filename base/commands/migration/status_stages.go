@@ -4,14 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"golang.org/x/exp/slices"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	serialization2 "github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -86,7 +83,7 @@ func (st *StatusStages) connectStage(ctx context.Context, ec plug.ExecContext) f
 			return err
 		}
 		st.updateMsgChan = make(chan UpdateMessage)
-		_, err = st.updateTopic.AddMessageListener(ctx, st.topicListener)
+		st.topicListenerID, err = st.updateTopic.AddMessageListener(ctx, st.topicListener)
 		return err
 	}
 }
@@ -102,55 +99,9 @@ func (st *StatusStages) fetchStage(ctx context.Context, ec plug.ExecContext) fun
 					return fmt.Errorf("reading status: %w", err)
 				}
 				ec.PrintlnUnnecessary(msg.Message)
+				ec.PrintlnUnnecessary(fmt.Sprintf("Completion Percentage: %f", msg.CompletionPercentage))
 				if slices.Contains([]Status{StatusComplete, StatusFailed, StatusCanceled}, msg.Status) {
-					ec.PrintlnUnnecessary(fmt.Sprintf("Completion Percentage: %f", ms.CompletionPercentage))
 					ec.PrintlnUnnecessary(ms.Report)
-					if len(ms.Errors) > 0 {
-						ec.PrintlnUnnecessary(fmt.Sprintf("migration failed with following error(s):\n%s", strings.Join(ms.Errors, "\n")))
-					}
-					if len(ms.Migrations) > 0 {
-						var rows []output.Row
-						for _, m := range ms.Migrations {
-							rows = append(rows, output.Row{
-								output.Column{
-									Name:  "Name",
-									Type:  serialization2.TypeString,
-									Value: m.Name,
-								},
-								output.Column{
-									Name:  "Type",
-									Type:  serialization2.TypeString,
-									Value: m.Type,
-								},
-								output.Column{
-									Name:  "Status",
-									Type:  serialization2.TypeString,
-									Value: string(m.Status),
-								},
-								output.Column{
-									Name:  "Start Timestamp",
-									Type:  serialization2.TypeJavaLocalDateTime,
-									Value: types.LocalDateTime(m.StartTimestamp),
-								},
-								output.Column{
-									Name:  "Entries Migrated",
-									Type:  serialization2.TypeInt32,
-									Value: int32(m.EntriesMigrated),
-								},
-								output.Column{
-									Name:  "Total Entries",
-									Type:  serialization2.TypeInt32,
-									Value: int32(m.TotalEntries),
-								},
-								output.Column{
-									Name:  "Completion Percentage",
-									Type:  serialization2.TypeFloat32,
-									Value: float32(m.CompletionPercentage),
-								},
-							})
-						}
-						return ec.AddOutputRows(ctx, rows...)
-					}
 					return nil
 				}
 			}

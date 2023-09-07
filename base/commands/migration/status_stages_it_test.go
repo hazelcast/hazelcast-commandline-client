@@ -67,10 +67,10 @@ Hazelcast Data Migration Tool v5.3.0
 
  OK   [1/2] Connected to the migration cluster.
 first message
+Completion Percentage: 80.000000
 last message
-Completion Percentage: 12.123000
+Completion Percentage: 80.000000
 status report
-imap5	IMap	FAILED	2023-01-01 00:00:00	141	1000	14.1
  OK   [2/2] Fetched migration status.
 
 OK`)
