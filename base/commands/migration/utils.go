@@ -122,3 +122,11 @@ func readPathAsString(path string) (string, error) {
 func MakeMigrationID() string {
 	return types.NewUUID().String()
 }
+
+func MakeStatusMapName(migrationID string) string {
+	return "__datamigration_" + migrationID
+}
+
+func MakeUpdateTopicName(migrationID string) string {
+	return UpdateTopic + migrationID
+}

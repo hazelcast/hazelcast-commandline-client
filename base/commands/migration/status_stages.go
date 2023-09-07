@@ -2,7 +2,6 @@ package migration
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"slices"
 	"strings"
@@ -12,7 +11,6 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	serialization2 "github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -88,11 +86,11 @@ func (st *StatusStages) fetchStage(ctx context.Context, ec plug.ExecContext) fun
 		for {
 			select {
 			case msg := <-st.updateMessageChan:
-				ms, err := st.readMigrationStatus(ctx)
+				ms, err := readMigrationStatus(ctx, st.statusMap)
 				if err != nil {
 					return fmt.Errorf("reading status: %w", err)
 				}
-				if slices.Contains([]status{StatusComplete, StatusFailed, statusCanceled}, msg.Status) {
+				if slices.Contains([]Status{StatusComplete, StatusFailed, StatusCanceled}, msg.Status) {
 					ec.PrintlnUnnecessary(msg.Message)
 					ec.PrintlnUnnecessary(ms.Report)
 					if len(ms.Errors) > 0 {
@@ -152,27 +150,4 @@ func (st *StatusStages) fetchStage(ctx context.Context, ec plug.ExecContext) fun
 
 func (st *StatusStages) topicListener(event *hazelcast.MessagePublished) {
 	st.updateMessageChan <- event.Value.(UpdateMessage)
-}
-
-func (st *StatusStages) readMigrationStatus(ctx context.Context) (MigrationStatus, error) {
-	v, err := st.statusMap.Get(ctx, StatusMapEntryName)
-	if err != nil {
-		return migrationStatusNone, err
-	}
-	if v == nil {
-		return migrationStatusNone, nil
-	}
-	var b []byte
-	if vv, ok := v.(string); ok {
-		b = []byte(vv)
-	} else if vv, ok := v.(serialization.JSON); ok {
-		b = vv
-	} else {
-		return migrationStatusNone, fmt.Errorf("invalid status value")
-	}
-	var ms MigrationStatus
-	if err := json.Unmarshal(b, &ms); err != nil {
-		return migrationStatusNone, fmt.Errorf("unmarshaling status: %w", err)
-	}
-	return ms, nil
 }

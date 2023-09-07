@@ -14,6 +14,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/base/commands/migration"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
+	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/stretchr/testify/require"
 )
@@ -70,34 +71,23 @@ func preStatusRunner(t *testing.T, tcx it.TestContext, ctx context.Context) stri
 }
 
 func statusRunner(migrationID string, tcx it.TestContext, ctx context.Context) {
+	m := MustValue(tcx.Client.GetMap(ctx, migration.MakeStatusMapName(migrationID)))
+	t := MustValue(tcx.Client.GetTopic(ctx, migration.MakeUpdateTopicName(migrationID)))
+	setState(ctx, t, m, migration.StatusInProgress, "first message")
+	setState(ctx, t, m, migration.StatusFailed, "last message")
+
+}
+
+func setState(ctx context.Context, updateTopic *hazelcast.Topic, statusMap *hazelcast.Map, status migration.Status, msg string) {
 	startTime := MustValue(time.Parse(time.RFC3339, "2023-01-01T00:00:00Z"))
-	statusMap := MustValue(tcx.Client.GetMap(ctx, migration.MakeStatusMapName(migrationID)))
 	b := MustValue(json.Marshal(migration.MigrationStatus{
-		Status: migration.StatusInProgress,
+		Status: status,
 		Report: "status report",
 		Migrations: []migration.Migration{
 			{
 				Name:                 "imap5",
 				Type:                 "IMap",
-				Status:               migration.StatusInProgress,
-				StartTimestamp:       startTime,
-				EntriesMigrated:      121,
-				TotalEntries:         1000,
-				CompletionPercentage: 12.1,
-			},
-		},
-	}))
-	Must(statusMap.Set(ctx, migration.StatusMapEntryName, serialization.JSON(b)))
-	topic := MustValue(tcx.Client.GetTopic(ctx, migration.MakeUpdateTopicName(migrationID)))
-	Must(topic.Publish(ctx, migration.UpdateMessage{Status: migration.StatusInProgress, Message: "first message"}))
-	b = MustValue(json.Marshal(migration.MigrationStatus{
-		Status: migration.StatusFailed,
-		Report: "status report",
-		Migrations: []migration.Migration{
-			{
-				Name:                 "imap5",
-				Type:                 "IMap",
-				Status:               migration.StatusFailed,
+				Status:               status,
 				StartTimestamp:       startTime,
 				EntriesMigrated:      141,
 				TotalEntries:         1000,
@@ -105,6 +95,6 @@ func statusRunner(migrationID string, tcx it.TestContext, ctx context.Context) {
 			},
 		},
 	}))
-	Must(statusMap.Set(ctx, migration.StatusMapEntryName, serialization.JSON(b))) // update status map
-	Must(topic.Publish(ctx, migration.UpdateMessage{Status: migration.StatusFailed, Message: "last message"}))
+	Must(statusMap.Set(ctx, migration.StatusMapEntryName, serialization.JSON(b)))
+	Must(updateTopic.Publish(ctx, migration.UpdateMessage{Status: status, Message: msg}))
 }

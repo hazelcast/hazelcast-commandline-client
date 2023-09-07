@@ -97,26 +97,18 @@ func (st *StartStages) topicListener(event *hazelcast.MessagePublished) {
 
 func (st *StartStages) startStage(ctx context.Context, ec plug.ExecContext) func(stage.Statuser) error {
 	return func(stage.Statuser) error {
-		if err := st.statusMap.Delete(ctx, StatusMapEntryName); err != nil {
-			return err
-		}
-		var cb ConfigBundle
-		cb.MigrationID = st.migrationID
-		if err := cb.Walk(st.configDir); err != nil {
-			return err
-		}
-		b, err := json.Marshal(cb)
+		cb, err := makeConfigBundle(st.configDir, st.migrationID)
 		if err != nil {
 			return err
 		}
-		if err = st.startQueue.Put(ctx, serialization.JSON(b)); err != nil {
+		if err = st.startQueue.Put(ctx, cb); err != nil {
 			return err
 		}
 		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
 		msg := <-st.updateMessageChan // read the first message
-		if slices.Contains([]status{StatusComplete, StatusFailed, statusCanceled}, msg.Status) {
-			ms, err := st.readMigrationStatus(ctx)
+		if slices.Contains([]Status{StatusComplete, StatusFailed, StatusCanceled}, msg.Status) {
+			ms, err := readMigrationStatus(ctx, st.statusMap)
 			if ctx.Err() != nil {
 				if errors.Is(err, context.DeadlineExceeded) {
 					return timeoutErr
@@ -134,7 +126,7 @@ func (st *StartStages) startStage(ctx context.Context, ec plug.ExecContext) func
 			switch ms.Status {
 			case StatusComplete:
 				return nil
-			case statusCanceled:
+			case StatusCanceled:
 				return clcerrors.ErrUserCancelled
 			case StatusFailed:
 				return fmt.Errorf("migration failed with following error(s): %s", strings.Join(ms.Errors, "\n"))
@@ -146,14 +138,27 @@ func (st *StartStages) startStage(ctx context.Context, ec plug.ExecContext) func
 	}
 }
 
+func makeConfigBundle(configDir, migrationID string) (serialization.JSON, error) {
+	var cb ConfigBundle
+	cb.MigrationID = migrationID
+	if err := cb.Walk(configDir); err != nil {
+		return nil, err
+	}
+	b, err := json.Marshal(cb)
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
+}
+
 func (st *StartStages) migrateStage(ctx context.Context, ec plug.ExecContext) func(statuser stage.Statuser) error {
 	return func(stage.Statuser) error {
 		defer st.updateTopic.RemoveListener(ctx, st.topicListenerID)
 		for {
 			select {
 			case msg := <-st.updateMessageChan:
-				if slices.Contains([]status{StatusComplete, StatusFailed, statusCanceled}, msg.Status) {
-					ms, err := st.readMigrationStatus(ctx)
+				if slices.Contains([]Status{StatusComplete, StatusFailed, StatusCanceled}, msg.Status) {
+					ms, err := readMigrationStatus(ctx, st.statusMap)
 					if err != nil {
 						return fmt.Errorf("reading status: %w", err)
 					}
@@ -165,7 +170,7 @@ func (st *StartStages) migrateStage(ctx context.Context, ec plug.ExecContext) fu
 					switch ms.Status {
 					case StatusComplete:
 						return nil
-					case statusCanceled:
+					case StatusCanceled:
 						return clcerrors.ErrUserCancelled
 					case StatusFailed:
 						return fmt.Errorf("migration failed with following error(s): %s", strings.Join(ms.Errors, "\n"))
@@ -183,76 +188,4 @@ func (st *StartStages) migrateStage(ctx context.Context, ec plug.ExecContext) fu
 			}
 		}
 	}
-}
-
-func (st *StartStages) readMigrationStatus(ctx context.Context) (MigrationStatus, error) {
-	v, err := st.statusMap.Get(ctx, StatusMapEntryName)
-	if err != nil {
-		return migrationStatusNone, err
-	}
-	if v == nil {
-		return migrationStatusNone, nil
-	}
-	var b []byte
-	if vv, ok := v.(string); ok {
-		b = []byte(vv)
-	} else if vv, ok := v.(serialization.JSON); ok {
-		b = vv
-	} else {
-		return migrationStatusNone, fmt.Errorf("invalid status value")
-	}
-	var ms MigrationStatus
-	if err := json.Unmarshal(b, &ms); err != nil {
-		return migrationStatusNone, fmt.Errorf("unmarshaling status: %w", err)
-	}
-	return ms, nil
-}
-
-func MakeStatusMapName(migrationID string) string {
-	return "__datamigration_" + migrationID
-}
-
-func MakeUpdateTopicName(migrationID string) string {
-	return updateTopic + migrationID
-}
-
-type status string
-
-const (
-	statusNone       status = ""
-	StatusComplete   status = "COMPLETED"
-	statusCanceled   status = "CANCELED"
-	StatusFailed     status = "FAILED"
-	StatusInProgress status = "IN_PROGRESS"
-)
-
-type MigrationStatus struct {
-	Status     status      `json:"status"`
-	Logs       []string    `json:"logs"`
-	Errors     []string    `json:"errors"`
-	Report     string      `json:"report"`
-	Migrations []Migration `json:"migrations"`
-}
-
-type Migration struct {
-	Name                 string    `json:"name"`
-	Type                 string    `json:"type"`
-	Status               status    `json:"status"`
-	StartTimestamp       time.Time `json:"startTimestamp"`
-	EntriesMigrated      int       `json:"entriesMigrated"`
-	TotalEntries         int       `json:"totalEntries"`
-	CompletionPercentage float64   `json:"completionPercentage"`
-}
-
-var migrationStatusNone = MigrationStatus{
-	Status: statusNone,
-	Logs:   nil,
-	Errors: nil,
-	Report: "",
-}
-
-type UpdateMessage struct {
-	Status               status  `json:"status"`
-	CompletionPercentage float32 `json:"completionPercentage"`
-	Message              string  `json:"message"`
 }
