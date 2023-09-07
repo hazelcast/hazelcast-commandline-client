@@ -79,17 +79,22 @@ func (st *StatusStages) connectStage(ctx context.Context, ec plug.ExecContext) f
 			return err
 		}
 		st.updateTopic, err = st.ci.Client().GetTopic(ctx, MakeUpdateTopicName(st.migrationID))
-		if err != nil {
-			return err
-		}
-		st.updateMsgChan = make(chan UpdateMessage)
-		st.topicListenerID, err = st.updateTopic.AddMessageListener(ctx, st.topicListener)
 		return err
 	}
 }
 
 func (st *StatusStages) fetchStage(ctx context.Context, ec plug.ExecContext) func(statuser stage.Statuser) error {
 	return func(stage.Statuser) error {
+		ms, err := readMigrationStatus(ctx, st.statusMap)
+		if err != nil {
+			return fmt.Errorf("reading status: %w", err)
+		}
+		if slices.Contains([]Status{StatusComplete, StatusFailed, StatusCanceled}, ms.Status) {
+			ec.PrintlnUnnecessary(ms.Report)
+			return nil
+		}
+		st.updateMsgChan = make(chan UpdateMessage)
+		st.topicListenerID, err = st.updateTopic.AddMessageListener(ctx, st.topicListener)
 		defer st.updateTopic.RemoveListener(ctx, st.topicListenerID)
 		for {
 			select {
