@@ -207,7 +207,7 @@ The prior versions of the given targets would also work, but that's not tested.
 
 ### Requirements
 
-* Go 1.19 or better
+* Go 1.21 or better
 * Git
 * GNU Make (on Linux and MacOS)
 * Command Prompt or Powershell (on Windows) 
