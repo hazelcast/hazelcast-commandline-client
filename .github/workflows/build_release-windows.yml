@@ -23,7 +23,7 @@ jobs:
       - name: "Set up Go"
         uses: "actions/setup-go@v3"
         with:
-          go-version: "1.20"
+          go-version: "1.21"
 
       - name: "Download Inno Setup installer"
         run: "curl -L -o installer.exe http://files.jrsoftware.org/is/6/innosetup-${{ env.INNO_VERSION }}.exe"
