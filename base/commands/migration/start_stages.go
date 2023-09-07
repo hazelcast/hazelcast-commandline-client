@@ -18,7 +18,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-type Stages struct {
+type StartStages struct {
 	migrationID       string
 	configDir         string
 	ci                *hazelcast.ClientInternal
@@ -33,17 +33,17 @@ var timeoutErr = fmt.Errorf("migration could not be completed: reached timeout w
 	"please ensure that you are using Hazelcast's migration cluster distribution and your DMT config points to that cluster: %w",
 	context.DeadlineExceeded)
 
-func NewStages(migrationID, configDir string) *Stages {
+func NewStartStages(migrationID, configDir string) *StartStages {
 	if migrationID == "" {
 		panic("migrationID is required")
 	}
-	return &Stages{
+	return &StartStages{
 		migrationID: migrationID,
 		configDir:   configDir,
 	}
 }
 
-func (st *Stages) Build(ctx context.Context, ec plug.ExecContext) []stage.Stage {
+func (st *StartStages) Build(ctx context.Context, ec plug.ExecContext) []stage.Stage {
 	return []stage.Stage{
 		{
 			ProgressMsg: "Connecting to the migration cluster",
@@ -66,7 +66,7 @@ func (st *Stages) Build(ctx context.Context, ec plug.ExecContext) []stage.Stage 
 	}
 }
 
-func (st *Stages) connectStage(ctx context.Context, ec plug.ExecContext) func(stage.Statuser) error {
+func (st *StartStages) connectStage(ctx context.Context, ec plug.ExecContext) func(stage.Statuser) error {
 	return func(status stage.Statuser) error {
 		var err error
 		st.ci, err = ec.ClientInternal(ctx)
@@ -91,11 +91,11 @@ func (st *Stages) connectStage(ctx context.Context, ec plug.ExecContext) func(st
 	}
 }
 
-func (st *Stages) topicListener(event *hazelcast.MessagePublished) {
+func (st *StartStages) topicListener(event *hazelcast.MessagePublished) {
 	st.updateMessageChan <- event.Value.(UpdateMessage)
 }
 
-func (st *Stages) startStage(ctx context.Context, ec plug.ExecContext) func(stage.Statuser) error {
+func (st *StartStages) startStage(ctx context.Context, ec plug.ExecContext) func(stage.Statuser) error {
 	return func(stage.Statuser) error {
 		if err := st.statusMap.Delete(ctx, StatusMapEntryName); err != nil {
 			return err
@@ -146,7 +146,7 @@ func (st *Stages) startStage(ctx context.Context, ec plug.ExecContext) func(stag
 	}
 }
 
-func (st *Stages) migrateStage(ctx context.Context, ec plug.ExecContext) func(statuser stage.Statuser) error {
+func (st *StartStages) migrateStage(ctx context.Context, ec plug.ExecContext) func(statuser stage.Statuser) error {
 	return func(stage.Statuser) error {
 		defer st.updateTopic.RemoveListener(ctx, st.topicListenerID)
 		for {
@@ -185,7 +185,7 @@ func (st *Stages) migrateStage(ctx context.Context, ec plug.ExecContext) func(st
 	}
 }
 
-func (st *Stages) readMigrationStatus(ctx context.Context) (MigrationStatus, error) {
+func (st *StartStages) readMigrationStatus(ctx context.Context) (MigrationStatus, error) {
 	v, err := st.statusMap.Get(ctx, StatusMapEntryName)
 	if err != nil {
 		return migrationStatusNone, err
@@ -227,10 +227,21 @@ const (
 )
 
 type MigrationStatus struct {
-	Status status   `json:"status"`
-	Logs   []string `json:"logs"`
-	Errors []string `json:"errors"`
-	Report string   `json:"report"`
+	Status     status      `json:"status"`
+	Logs       []string    `json:"logs"`
+	Errors     []string    `json:"errors"`
+	Report     string      `json:"report"`
+	Migrations []Migration `json:"migrations"`
+}
+
+type Migration struct {
+	Name                 string    `json:"name"`
+	Type                 string    `json:"type"`
+	Status               status    `json:"status"`
+	StartTimestamp       time.Time `json:"startTimestamp"`
+	EntriesMigrated      int       `json:"entriesMigrated"`
+	TotalEntries         int       `json:"totalEntries"`
+	CompletionPercentage float64   `json:"completionPercentage"`
 }
 
 var migrationStatusNone = MigrationStatus{
