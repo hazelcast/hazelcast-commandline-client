@@ -42,7 +42,7 @@ func submit_NonInteractiveTest(t *testing.T) {
 			defer func() {
 				tcx.CLCExecute(ctx, "job", "cancel", name, "--wait")
 			}()
-			tcx.AssertStderrContains("OK")
+			tcx.AssertStdoutContains("OK   [3/3] Job")
 		})
 	})
 }
@@ -58,7 +58,7 @@ func submit_InteractiveTest(t *testing.T) {
 				defer func() {
 					tcx.CLCExecute(ctx, "job", "cancel", name, "--wait")
 				}()
-				tcx.AssertStderrContains("OK")
+				tcx.AssertStdoutContains("OK   [3/3] Job")
 			})
 		})
 	})
@@ -71,14 +71,14 @@ func list_NonInteractiveTest(t *testing.T) {
 		name := it.NewUniqueObjectName("job")
 		tcx.WithReset(func() {
 			tcx.CLCExecute(ctx, "job", "submit", "--name", name, jobPath, "--retries", "0", "--wait")
-			tcx.AssertStderrContains("OK")
+			tcx.AssertStdoutContains("OK   [3/3] Job")
 		})
 		tcx.WithReset(func() {
 			tcx.CLCExecute(ctx, "job", "list")
 			tcx.AssertStdoutContains(name + "\tRUNNING")
 		})
+		tcx.CLCExecute(ctx, "job", "cancel", name, "--wait")
 		tcx.WithReset(func() {
-			tcx.CLCExecute(ctx, "job", "cancel", name, "--wait")
 			tcx.CLCExecute(ctx, "job", "list")
 			tcx.AssertStdoutNotContains(name)
 		})
@@ -93,14 +93,14 @@ func list_InteractiveTest(t *testing.T) {
 		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			tcx.WithReset(func() {
 				tcx.CLCExecute(ctx, "job", "submit", "--name", name, jobPath, "--retries", "0", "--wait")
-				tcx.AssertStderrContains("OK")
+				tcx.AssertStdoutContains("OK   [3/3] Job")
 			})
 			tcx.WithReset(func() {
 				tcx.WriteStdinString("\\job list\n")
 				tcx.AssertStdoutDollar(fmt.Sprintf("%s$|$RUNNING", name))
 			})
+			tcx.CLCExecute(ctx, "job", "cancel", name, "--wait")
 			tcx.WithReset(func() {
-				tcx.CLCExecute(ctx, "job", "cancel", name, "--wait")
 				tcx.WriteStdinString("\\job list\n")
 				tcx.AssertStdoutNotContains(name)
 			})
@@ -115,14 +115,14 @@ func suspendResume_NonInteractiveTest(t *testing.T) {
 		name := it.NewUniqueObjectName("job")
 		tcx.WithReset(func() {
 			tcx.CLCExecute(ctx, "job", "submit", "--name", name, jobPath, "--wait")
-			tcx.AssertStderrContains("OK")
+			tcx.AssertStdoutContains("OK   [3/3] Job")
 		})
 		defer func() {
 			tcx.CLCExecute(ctx, "job", "cancel", name, "--wait")
 		}()
 		tcx.WithReset(func() {
 			tcx.CLCExecute(ctx, "job", "suspend", name)
-			tcx.AssertStderrContains("OK")
+			tcx.AssertStdoutContains("OK   [2/2] Started")
 		})
 		tcx.WithReset(func() {
 			tcx.CLCExecute(ctx, "job", "list")
@@ -130,7 +130,7 @@ func suspendResume_NonInteractiveTest(t *testing.T) {
 		})
 		tcx.WithReset(func() {
 			tcx.CLCExecute(ctx, "job", "resume", name)
-			tcx.AssertStderrContains("OK")
+			tcx.AssertStdoutContains("OK   [2/2] Initiated")
 		})
 		tcx.WithReset(func() {
 			tcx.CLCExecute(ctx, "job", "list")
@@ -147,14 +147,14 @@ func suspendResume_InteractiveTest(t *testing.T) {
 		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			tcx.WithReset(func() {
 				tcx.CLCExecute(ctx, "job", "submit", "--name", name, jobPath, "--wait")
-				tcx.AssertStderrContains("OK")
+				tcx.AssertStdoutContains("OK   [3/3] Job")
 			})
 			defer func() {
 				tcx.CLCExecute(ctx, "job", "cancel", name, "--wait")
 			}()
 			tcx.WithReset(func() {
 				tcx.CLCExecute(ctx, "job", "suspend", name, "--wait")
-				tcx.AssertStderrContains("OK")
+				tcx.AssertStdoutContains("OK   [3/3] Job")
 			})
 			tcx.WithReset(func() {
 				tcx.CLCExecute(ctx, "job", "list")
@@ -162,7 +162,7 @@ func suspendResume_InteractiveTest(t *testing.T) {
 			})
 			tcx.WithReset(func() {
 				tcx.CLCExecute(ctx, "job", "resume", name, "--wait")
-				tcx.AssertStderrContains("OK")
+				tcx.AssertStdoutContains("OK   [3/3] Job")
 			})
 			tcx.WithReset(func() {
 				tcx.CLCExecute(ctx, "job", "list")
@@ -179,14 +179,14 @@ func restart_NonInteractiveTest(t *testing.T) {
 		name := it.NewUniqueObjectName("job")
 		tcx.WithReset(func() {
 			tcx.CLCExecute(ctx, "job", "submit", "--name", name, jobPath, "--wait")
-			tcx.AssertStderrContains("OK")
+			tcx.AssertStdoutContains("OK   [3/3] Job")
 		})
 		defer func() {
 			tcx.CLCExecute(ctx, "job", "cancel", name, "--wait")
 		}()
 		tcx.WithReset(func() {
 			tcx.CLCExecute(ctx, "job", "restart", name, "--wait")
-			tcx.AssertStderrContains("OK")
+			tcx.AssertStdoutContains("OK   [3/3] Job")
 		})
 		tcx.WithReset(func() {
 			tcx.CLCExecute(ctx, "job", "list")
@@ -203,14 +203,14 @@ func restart_InteractiveTest(t *testing.T) {
 		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			tcx.WithReset(func() {
 				tcx.CLCExecute(ctx, "job", "submit", "--name", name, jobPath, "--wait")
-				tcx.AssertStderrContains("OK")
+				tcx.AssertStdoutContains("OK   [3/3] Job")
 			})
 			defer func() {
 				tcx.CLCExecute(ctx, "job", "cancel", name, "--wait")
 			}()
 			tcx.WithReset(func() {
 				tcx.WriteStdinf("\\job restart %s --wait\n", name)
-				tcx.AssertStderrContains("OK")
+				tcx.AssertStdoutContains("OK   [3/3] Job")
 			})
 			tcx.WithReset(func() {
 				tcx.CLCExecute(ctx, "job", "list")

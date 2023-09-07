@@ -12,44 +12,57 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
 )
 
-func TestExecute(t *testing.T) {
-	stages := []stage.Stage{
+func TestStage(t *testing.T) {
+	testCases := []struct {
+		name string
+		f    func(t *testing.T)
+	}{
+		{name: "execute", f: executeTest},
+		{name: "execute_WithFailureTest", f: execute_WithFailureTest},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, tc.f)
+	}
+}
+
+func executeTest(t *testing.T) {
+	stages := []stage.Stage[any]{
 		{
 			ProgressMsg: "Progressing 1",
 			SuccessMsg:  "Success 1",
 			FailureMsg:  "Failure 1",
-			Func: func(status stage.Statuser) error {
+			Func: func(ctx context.Context, status stage.Statuser[any]) (any, error) {
 				time.Sleep(1 * time.Millisecond)
-				return nil
+				return nil, nil
 			},
 		},
 		{
 			ProgressMsg: "Progressing 2",
 			SuccessMsg:  "Success 2",
 			FailureMsg:  "Failure 2",
-			Func: func(status stage.Statuser) error {
+			Func: func(ctx context.Context, status stage.Statuser[any]) (any, error) {
 				for i := 0; i < 5; i++ {
 					status.SetProgress(float32(i+1) / float32(5))
 				}
 				time.Sleep(1 * time.Millisecond)
-				return nil
+				return nil, nil
 			},
 		},
 		{
 			ProgressMsg: "Progressing 3",
 			SuccessMsg:  "Success 3",
 			FailureMsg:  "Failure 3",
-			Func: func(status stage.Statuser) error {
+			Func: func(ctx context.Context, status stage.Statuser[any]) (any, error) {
 				for i := 0; i < 5; i++ {
 					status.SetRemainingDuration(5*time.Second - time.Duration(i+1)*time.Second)
 				}
 				time.Sleep(1 * time.Millisecond)
-				return nil
+				return nil, nil
 			},
 		},
 	}
 	ec := it.NewExecuteContext(nil)
-	err := stage.Execute(context.TODO(), ec, stage.NewFixedProvider(stages...))
+	_, err := stage.Execute[any](context.TODO(), ec, nil, stage.NewFixedProvider(stages...))
 	assert.NoError(t, err)
 	texts := []string{
 		"[1/3] Progressing 1",
@@ -68,27 +81,27 @@ func TestExecute(t *testing.T) {
 	assert.Equal(t, text, ec.StdoutText())
 }
 
-func TestExecute_WithFailure(t *testing.T) {
-	stages := []stage.Stage{
+func execute_WithFailureTest(t *testing.T) {
+	stages := []stage.Stage[any]{
 		{
 			ProgressMsg: "Progressing 1",
 			SuccessMsg:  "Success 1",
 			FailureMsg:  "Failure 1",
-			Func: func(status stage.Statuser) error {
-				return fmt.Errorf("some error")
+			Func: func(ctx context.Context, status stage.Statuser[any]) (any, error) {
+				return nil, fmt.Errorf("some error")
 			},
 		},
 		{
 			ProgressMsg: "Progressing 2",
 			SuccessMsg:  "Success 2",
 			FailureMsg:  "Failure 2",
-			Func: func(status stage.Statuser) error {
-				return nil
+			Func: func(ctx context.Context, status stage.Statuser[any]) (any, error) {
+				return nil, nil
 			},
 		},
 	}
 	ec := it.NewExecuteContext(nil)
-	err := stage.Execute(context.TODO(), ec, stage.NewFixedProvider(stages...))
+	_, err := stage.Execute[any](context.TODO(), ec, nil, stage.NewFixedProvider(stages...))
 	assert.Error(t, err)
 	texts := []string{"[1/2] Progressing 1"}
 	assert.Equal(t, texts, ec.Spinner.Texts)
