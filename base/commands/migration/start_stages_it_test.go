@@ -5,6 +5,7 @@ package migration_test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -40,8 +41,11 @@ func startTest_Successful(t *testing.T) {
 			defer wg.Done()
 			Must(tcx.CLC().Execute(ctx, "start", "dmt-config", "--yes"))
 		})
-		successfulRunner(tcx, ctx)
-		tcx.AssertStdoutContains(`
+		c := make(chan string, 1)
+		go findMigrationID(ctx, tcx, c)
+		migrationID := <-c
+		successfulRunner(migrationID, tcx, ctx)
+		tcx.AssertStdoutContains(fmt.Sprintf(`
 Hazelcast Data Migration Tool v5.3.0
 (c) 2023 Hazelcast, Inc.
 	
@@ -54,9 +58,10 @@ first message
 second message
 last message
 status report
+migration report saved to file: migration_report_%s
  OK   [3/3] Migrated the cluster.
 
- OK   Migration completed successfully.`)
+ OK   Migration completed successfully.`, migrationID))
 	})
 }
 
@@ -83,10 +88,7 @@ fail status report`)
 	})
 }
 
-func successfulRunner(tcx it.TestContext, ctx context.Context) {
-	c := make(chan string, 1)
-	go findMigrationID(ctx, tcx, c)
-	migrationID := <-c
+func successfulRunner(migrationID string, tcx it.TestContext, ctx context.Context) {
 	topic := MustValue(tcx.Client.GetTopic(ctx, migration.MakeUpdateTopicName(migrationID)))
 	msg := MustValue(json.Marshal(migration.UpdateMessage{Status: migration.StatusInProgress, Message: "first message", CompletionPercentage: 10}))
 	Must(topic.Publish(ctx, serialization.JSON(msg)))

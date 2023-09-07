@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"time"
 
 	clcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
@@ -159,6 +160,12 @@ func (st *StartStages) handleUpdateMessage(ctx context.Context, ec plug.ExecCont
 			return true, fmt.Errorf("reading status: %w", err)
 		}
 		ec.PrintlnUnnecessary(ms.Report)
+		name := fmt.Sprintf("migration_report_%s", st.migrationID)
+		err = saveReportToFile(name, ms.Report)
+		if err != nil {
+			return true, fmt.Errorf("writing report to file: %w", err)
+		}
+		ec.PrintlnUnnecessary(fmt.Sprintf("migration report saved to file: %s", name))
 		for _, l := range ms.Logs {
 			ec.Logger().Info(l)
 		}
@@ -172,4 +179,14 @@ func (st *StartStages) handleUpdateMessage(ctx context.Context, ec plug.ExecCont
 		}
 	}
 	return false, nil
+}
+
+func saveReportToFile(fileName, report string) error {
+	f, err := os.Create(fmt.Sprintf(fileName))
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	_, err = f.WriteString(report)
+	return err
 }
