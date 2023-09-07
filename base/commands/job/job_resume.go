@@ -28,45 +28,49 @@ func (cm ResumeCmd) Init(cc plug.InitContext) error {
 
 func (cm ResumeCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	nameOrID := ec.GetStringArg(argJobID)
-	stages := []stage.Stage{
-		makeConnectStage(ctx, ec),
+	stages := []stage.Stage[any]{
+		makeConnectStage(ec),
 		{
 			ProgressMsg: fmt.Sprintf("Initiating resume of job: %s", nameOrID),
 			SuccessMsg:  fmt.Sprintf("Initiated resume of job %s", nameOrID),
 			FailureMsg:  fmt.Sprintf("Failed initiating job resume %s", nameOrID),
-			Func: func(status stage.Statuser) error {
+			Func: func(ctx context.Context, status stage.Statuser[any]) (any, error) {
 				ci, err := ec.ClientInternal(ctx)
 				if err != nil {
-					return err
+					return nil, err
 				}
 				j := jet.New(ci, status, ec.Logger())
 				jis, err := j.GetJobList(ctx)
 				if err != nil {
-					return err
+					return nil, err
 				}
 				jm, err := NewJobNameToIDMap(jis)
 				if err != nil {
-					return err
+					return nil, err
 				}
 				jid, ok := jm.GetIDForName(nameOrID)
 				if !ok {
-					return jet.ErrInvalidJobID
+					return nil, jet.ErrInvalidJobID
 				}
-				return j.ResumeJob(ctx, jid)
+				return nil, j.ResumeJob(ctx, jid)
 			},
 		},
 	}
 	if ec.Props().GetBool(flagWait) {
-		stages = append(stages, stage.Stage{
+		stages = append(stages, stage.Stage[any]{
 			ProgressMsg: fmt.Sprintf("Waiting for job %s to resume", nameOrID),
 			SuccessMsg:  fmt.Sprintf("Job %s is resumed", nameOrID),
 			FailureMsg:  fmt.Sprintf("Job %s failed to resume", nameOrID),
-			Func: func(status stage.Statuser) error {
-				return WaitJobState(ctx, ec, status, nameOrID, jet.JobStatusRunning, 2*time.Second)
+			Func: func(ctx context.Context, status stage.Statuser[any]) (any, error) {
+				return nil, WaitJobState(ctx, ec, status, nameOrID, jet.JobStatusRunning, 2*time.Second)
 			},
 		})
 	}
-	return stage.Execute(ctx, ec, stage.NewFixedProvider(stages...))
+	_, err := stage.Execute[any](ctx, ec, nil, stage.NewFixedProvider(stages...))
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func init() {

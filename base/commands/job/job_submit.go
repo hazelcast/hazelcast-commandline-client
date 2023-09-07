@@ -85,13 +85,13 @@ func submitJar(ctx context.Context, ci *hazelcast.ClientInternal, ec plug.ExecCo
 	_, fn := filepath.Split(path)
 	fn = strings.TrimSuffix(fn, ".jar")
 	args := ec.GetStringSliceArg(argArg)
-	stages := []stage.Stage{
-		makeConnectStage(ctx, ec),
+	stages := []stage.Stage[any]{
+		makeConnectStage(ec),
 		{
 			ProgressMsg: "Submitting the job",
 			SuccessMsg:  "Submitted the job",
 			FailureMsg:  "Failed submitting the job",
-			Func: func(status stage.Statuser) error {
+			Func: func(ctx context.Context, status stage.Statuser[any]) (any, error) {
 				j := jet.New(ci, status, ec.Logger())
 				err := retry(tries, ec.Logger(), func(try int) error {
 					if try == 0 {
@@ -102,21 +102,25 @@ func submitJar(ctx context.Context, ci *hazelcast.ClientInternal, ec plug.ExecCo
 					br := jet.CreateBinaryReaderForPath(path)
 					return j.SubmitJob(ctx, path, jobName, className, snapshot, args, br)
 				})
-				return err
+				return nil, err
 			},
 		},
 	}
 	if wait {
-		stages = append(stages, stage.Stage{
+		stages = append(stages, stage.Stage[any]{
 			ProgressMsg: fmt.Sprintf("Waiting for job %s to start", jobName),
 			SuccessMsg:  fmt.Sprintf("Job %s started", jobName),
 			FailureMsg:  fmt.Sprintf("Job %s failed to start", jobName),
-			Func: func(status stage.Statuser) error {
-				return WaitJobState(ctx, ec, status, jobName, jet.JobStatusRunning, 2*time.Second)
+			Func: func(ctx context.Context, status stage.Statuser[any]) (any, error) {
+				return nil, WaitJobState(ctx, ec, status, jobName, jet.JobStatusRunning, 2*time.Second)
 			},
 		})
 	}
-	return stage.Execute(ctx, ec, stage.NewFixedProvider(stages...))
+	_, err := stage.Execute[any](ctx, ec, nil, stage.NewFixedProvider(stages...))
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func retry(times int, lg log.Logger, f func(try int) error) error {

@@ -10,24 +10,65 @@ import (
 	"strings"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	ihttp "github.com/hazelcast/hazelcast-commandline-client/internal/http"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
+func MakeImportStages(ec plug.ExecContext, target string) []stage.Stage[string] {
+	stages := []stage.Stage[string]{
+		{
+			ProgressMsg: "Retrieving the configuration",
+			SuccessMsg:  "Retrieved the configuration",
+			FailureMsg:  "Failed retrieving the configuration",
+			Func: func(ctx context.Context, status stage.Statuser[string]) (string, error) {
+				source := status.Value()
+				if !strings.HasPrefix(source, "https://") || strings.HasSuffix(source, "http://") {
+					if !paths.Exists(source) {
+						return "", fmt.Errorf("%s does not exist", source)
+					}
+					return source, nil
+				}
+				path, err := download(ctx, source)
+				if err != nil {
+					return "", err
+				}
+				return path, nil
+			},
+		},
+		{
+			ProgressMsg: "Preparing the configuration",
+			SuccessMsg:  "The configuration is ready",
+			FailureMsg:  "Failed preparing the configuration",
+			Func: func(ctx context.Context, status stage.Statuser[string]) (string, error) {
+				path := status.Value()
+				path, err := CreateFromZip(ctx, target, path, ec.Logger())
+				if err != nil {
+					return "", err
+				}
+				return path, nil
+			},
+		},
+	}
+	return stages
+}
+
+/*
 func ImportSource(ctx context.Context, ec plug.ExecContext, target, src string) (string, error) {
 	target = strings.TrimSpace(target)
 	src = strings.TrimSpace(src)
-	// check whether this an HTTP source
+	// check whether this is an HTTP source
 	path, err := tryImportHTTPSource(ctx, ec, target, src)
 	if err != nil {
 		return "", err
 	}
-	// import is successful
 	if path != "" {
+		// import is successful
 		return path, nil
 	}
 	// import is not successful, so assume this is a zip file path and try to import from it.
-	path, err = tryImportViridianZipSource(ctx, ec, target, src)
+	path, err = tryImportViridianZipSource(ctx, target, src, ec.Logger())
 	if err != nil {
 		return "", err
 	}
@@ -37,29 +78,15 @@ func ImportSource(ctx context.Context, ec plug.ExecContext, target, src string) 
 	return path, nil
 }
 
-func tryImportHTTPSource(ctx context.Context, ec plug.ExecContext, target, url string) (string, error) {
-	if !strings.HasPrefix(url, "https://") && !strings.HasSuffix(url, "http://") {
-		return "", nil
-	}
+func tryImportHTTPSource(ctx context.Context, target, url string, lg log.Logger) (string, error) {
 	path, err := download(ctx, url)
 	if err != nil {
 		return "", err
 	}
-	ec.Logger().Info("Downloaded the configuration at: %s", path)
-	return tryImportViridianZipSource(ctx, ec, target, path)
+	lg.Info("Downloaded the configuration at: %s", path)
+	return tryImportViridianZipSource(ctx, target, path, lg)
 }
-
-// tryImportViridianZipSource returns true if importing from a Viridian Go sample zip file is successful
-func tryImportViridianZipSource(ctx context.Context, ec plug.ExecContext, target, src string) (string, error) {
-	path, ok, err := CreateFromZip(ctx, ec, target, src)
-	if err != nil {
-		return "", err
-	}
-	if ok {
-		return path, nil
-	}
-	return "", nil
-}
+*/
 
 func download(ctx context.Context, url string) (string, error) {
 	f, err := os.CreateTemp("", "clc-download-*")
@@ -82,17 +109,19 @@ func download(ctx context.Context, url string) (string, error) {
 	return f.Name(), nil
 }
 
-func CreateFromZip(ctx context.Context, ec plug.ExecContext, target, path string) (string, bool, error) {
-	// TODO: refactor this function so it is not dependent on ec
+func CreateFromZip(ctx context.Context, target, path string, lg log.Logger) (string, error) {
 	reader, err := zip.OpenReader(path)
 	if err != nil {
-		return "", false, err
+		return "", err
 	}
 	defer reader.Close()
 	// check whether this is the new config zip
 	var newConfig bool
 	var files []*zip.File
 	for _, rf := range reader.File {
+		if ctx.Err() != nil {
+			return "", ctx.Err()
+		}
 		if strings.HasSuffix(rf.Name, "/config.json") {
 			newConfig = true
 		}
@@ -101,24 +130,27 @@ func CreateFromZip(ctx context.Context, ec plug.ExecContext, target, path string
 		}
 	}
 	if !newConfig {
-		return "", false, nil
+		return "", nil
 	}
 	// this is the new config zip, just extract to target
 	outDir, cfgFileName, err := DirAndFile(target)
 	if err != nil {
-		return "", false, err
+		return "", err
 	}
 	if err = os.MkdirAll(outDir, 0700); err != nil {
-		return "", false, err
+		return "", err
 	}
-	if err = copyFiles(ec, files, outDir); err != nil {
-		return "", false, err
+	if err = copyFiles(ctx, files, outDir, lg); err != nil {
+		return "", err
 	}
-	return paths.Join(outDir, cfgFileName), true, nil
+	return paths.Join(outDir, cfgFileName), nil
 }
 
-func copyFiles(ec plug.ExecContext, files []*zip.File, outDir string) error {
+func copyFiles(ctx context.Context, files []*zip.File, outDir string, lg log.Logger) error {
 	for _, rf := range files {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
 		_, outFn := filepath.Split(rf.Name)
 		path := paths.Join(outDir, outFn)
 		f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
@@ -133,7 +165,7 @@ func copyFiles(ec plug.ExecContext, files []*zip.File, outDir string) error {
 		// ignoring the error here
 		_ = rc.Close()
 		if err != nil {
-			ec.Logger().Error(err)
+			lg.Error(err)
 		}
 	}
 	return nil

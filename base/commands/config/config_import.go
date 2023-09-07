@@ -4,11 +4,13 @@ package config
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
 type ImportCmd struct{}
@@ -41,13 +43,19 @@ Currently importing Viridian connection configuration is supported only.
 func (cm ImportCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	target := ec.GetStringArg(argConfigName)
 	src := ec.GetStringArg(argSource)
-	path, err := config.ImportSource(ctx, ec, target, src)
+	stages := config.MakeImportStages(ec, target)
+	path, err := stage.Execute(ctx, ec, src, stage.NewFixedProvider(stages...))
 	if err != nil {
 		return err
 	}
-	msg := fmt.Sprintf("OK Created the configuration at: %s", path)
-	ec.PrintlnUnnecessary(msg)
-	return nil
+	ec.PrintlnUnnecessary("")
+	return ec.AddOutputRows(ctx, output.Row{
+		output.Column{
+			Name:  "Configuration Path",
+			Type:  serialization.TypeString,
+			Value: path,
+		},
+	})
 }
 
 func init() {

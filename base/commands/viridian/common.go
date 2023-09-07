@@ -16,6 +16,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/secrets"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
@@ -131,32 +132,16 @@ func waitClusterState(ctx context.Context, ec plug.ExecContext, api *viridian.AP
 }
 
 func tryImportConfig(ctx context.Context, ec plug.ExecContext, api *viridian.API, clusterID, cfgName string) (configPath string, err error) {
-	cp, ok, err := importCLCConfig(ctx, ec, api, clusterID, cfgName)
-	if err != nil {
-		ec.Logger().Error(err)
-		return "", fmt.Errorf("importing CLC configuration: %w", err)
-	}
-	if !ok {
-		return "", fmt.Errorf("could not import CLC configuration")
-	}
-	return cp, nil
-}
-
-func importCLCConfig(ctx context.Context, ec plug.ExecContext, api *viridian.API, clusterID, cfgName string) (configPath string, ok bool, err error) {
 	return importConfig(ctx, ec, api, clusterID, cfgName, "clc", config.CreateFromZip)
 }
 
-func importConfig(ctx context.Context, ec plug.ExecContext, api *viridian.API, clusterID, cfgName, language string, f func(ctx context.Context, ec plug.ExecContext, target, path string) (string, bool, error)) (configPath string, ok bool, err error) {
+func importConfig(ctx context.Context, ec plug.ExecContext, api *viridian.API, clusterID, cfgName, language string, f func(context.Context, string, string, log.Logger) (string, error)) (configPath string, err error) {
 	zipPath, stop, err := api.DownloadConfig(ctx, clusterID, language)
 	if err != nil {
-		return "", false, err
+		return "", err
 	}
 	defer stop()
-	cfgPath, ok, err := f(ctx, ec, cfgName, zipPath)
-	if err != nil {
-		return "", false, err
-	}
-	return cfgPath, ok, nil
+	return f(ctx, cfgName, zipPath, ec.Logger())
 }
 
 func matchClusterState(cluster viridian.Cluster, state string) (bool, error) {

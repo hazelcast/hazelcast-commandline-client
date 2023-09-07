@@ -113,10 +113,10 @@ func (a *API) ResumeCluster(ctx context.Context, idOrName string) error {
 	return nil
 }
 
-func (a *API) DeleteCluster(ctx context.Context, idOrName string) error {
+func (a *API) DeleteCluster(ctx context.Context, idOrName string) (Cluster, error) {
 	c, err := a.FindCluster(ctx, idOrName)
 	if err != nil {
-		return err
+		return c, err
 	}
 	_, err = RetryOnAuthFail(ctx, a, func(ctx context.Context, token string) (any, error) {
 		u := a.makeURL("/cluster/%s", c.ID)
@@ -127,9 +127,9 @@ func (a *API) DeleteCluster(ctx context.Context, idOrName string) error {
 		return nil, nil
 	})
 	if err != nil {
-		return fmt.Errorf("deleting cluster: %w", err)
+		return c, fmt.Errorf("deleting cluster: %w", err)
 	}
-	return nil
+	return c, nil
 }
 
 func (a *API) GetCluster(ctx context.Context, idOrName string) (Cluster, error) {

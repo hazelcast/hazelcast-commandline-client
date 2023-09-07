@@ -11,23 +11,25 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/str"
 )
 
-type Statuser interface {
+type Statuser[T any] interface {
 	SetProgress(progress float32)
 	SetRemainingDuration(dur time.Duration)
+	Value() T
 }
 
-type basicStatuser struct {
+type basicStatuser[T any] struct {
 	text                 string
 	textFmtWithRemaining string
 	indexText            string
 	sp                   clc.Spinner
+	value                T
 }
 
-func (s *basicStatuser) SetProgress(progress float32) {
+func (s basicStatuser[T]) SetProgress(progress float32) {
 	s.sp.SetProgress(progress)
 }
 
-func (s *basicStatuser) SetRemainingDuration(dur time.Duration) {
+func (s basicStatuser[T]) SetRemainingDuration(dur time.Duration) {
 	text := s.text
 	if dur > 0 {
 		text = fmt.Sprintf(s.textFmtWithRemaining, dur)
@@ -35,31 +37,35 @@ func (s *basicStatuser) SetRemainingDuration(dur time.Duration) {
 	s.sp.SetText(s.indexText + " " + text)
 }
 
-type Stage struct {
+func (s basicStatuser[T]) Value() T {
+	return s.value
+}
+
+type Stage[T any] struct {
 	ProgressMsg string
 	SuccessMsg  string
 	FailureMsg  string
-	Func        func(status Statuser) error
+	Func        func(ctx context.Context, status Statuser[T]) (T, error)
 }
 
-type Provider internal.Iterator[Stage]
+type Provider[T any] internal.Iterator[Stage[T]]
 
 type Counter interface {
 	StageCount() int
 }
 
-type FixedProvider struct {
-	stages  []Stage
+type FixedProvider[T any] struct {
+	stages  []Stage[T]
 	offset  int
-	current Stage
+	current Stage[T]
 	err     error
 }
 
-func NewFixedProvider(stages ...Stage) *FixedProvider {
-	return &FixedProvider{stages: stages}
+func NewFixedProvider[T any](stages ...Stage[T]) *FixedProvider[T] {
+	return &FixedProvider[T]{stages: stages}
 }
 
-func (sp *FixedProvider) Next() bool {
+func (sp *FixedProvider[T]) Next() bool {
 	if sp.offset >= len(sp.stages) {
 		return false
 	}
@@ -68,20 +74,19 @@ func (sp *FixedProvider) Next() bool {
 	return true
 }
 
-func (sp *FixedProvider) Value() Stage {
+func (sp *FixedProvider[T]) Value() Stage[T] {
 	return sp.current
 }
 
-func (sp *FixedProvider) Err() error {
+func (sp *FixedProvider[T]) Err() error {
 	return sp.err
 }
 
-func (sp *FixedProvider) StageCount() int {
+func (sp *FixedProvider[T]) StageCount() int {
 	return len(sp.stages)
 }
 
-func Execute(ctx context.Context, ec plug.ExecContext, sp Provider) error {
-	ss := &basicStatuser{}
+func Execute[T any](ctx context.Context, ec plug.ExecContext, value T, sp Provider[T]) (T, error) {
 	var index int
 	var stageCount int
 	if sc, ok := sp.(Counter); ok {
@@ -89,29 +94,39 @@ func Execute(ctx context.Context, ec plug.ExecContext, sp Provider) error {
 	}
 	for sp.Next() {
 		if sp.Err() != nil {
-			return sp.Err()
+			return value, sp.Err()
 		}
 		stg := sp.Value()
 		index++
+		ss := basicStatuser[T]{value: value}
 		ss.text = stg.ProgressMsg
 		ss.textFmtWithRemaining = stg.ProgressMsg + " (%s left)"
-		if stageCount > 0 {
+		ss.indexText = ""
+		if stageCount > 1 {
 			d := str.SpacePaddedIntFormat(stageCount)
 			ss.indexText = fmt.Sprintf("["+d+"/%d]", index, stageCount)
-		} else {
-			ss.indexText = ""
 		}
-		_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, spinner clc.Spinner) (any, error) {
+		v, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, spinner clc.Spinner) (any, error) {
 			ss.sp = spinner
 			ss.SetRemainingDuration(0)
-			return nil, stg.Func(ss)
+			v, err := stg.Func(ctx, ss)
+			if err != nil {
+				return nil, err
+			}
+			return any(v), nil
 		})
 		if err != nil {
 			ec.PrintlnUnnecessary(fmt.Sprintf("FAIL %s: %s", stg.FailureMsg, err.Error()))
-			return err
+			return value, err
 		}
 		stop()
 		ec.PrintlnUnnecessary(fmt.Sprintf("OK %s %s.", ss.indexText, stg.SuccessMsg))
+		if v == nil {
+			var vv T
+			value = vv
+		} else {
+			value = v.(T)
+		}
 	}
-	return nil
+	return value, nil
 }
