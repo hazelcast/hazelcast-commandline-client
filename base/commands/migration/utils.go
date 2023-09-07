@@ -124,9 +124,9 @@ func MakeMigrationID() string {
 }
 
 func MakeStatusMapName(migrationID string) string {
-	return "__datamigration_" + migrationID
+	return StatusMapPrefix + migrationID
 }
 
 func MakeUpdateTopicName(migrationID string) string {
-	return UpdateTopic + migrationID
+	return UpdateTopicPrefix + migrationID
 }

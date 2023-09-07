@@ -79,10 +79,7 @@ Selected data structures in the source cluster will be migrated to the target cl
 first message
  OK   [2/3] Started the migration.
 second message
-fail status report
- FAIL Could not migrate the cluster: migration failed with following error(s):
-error1
-error2`)
+fail status report`)
 	})
 }
 
@@ -91,8 +88,10 @@ func successfulRunner(tcx it.TestContext, ctx context.Context) {
 	go findMigrationID(ctx, tcx, c)
 	migrationID := <-c
 	topic := MustValue(tcx.Client.GetTopic(ctx, migration.MakeUpdateTopicName(migrationID)))
-	Must(topic.Publish(ctx, migration.UpdateMessage{Status: migration.StatusInProgress, Message: "first message"}))
-	Must(topic.Publish(ctx, migration.UpdateMessage{Status: migration.StatusInProgress, Message: "second message"}))
+	msg := MustValue(json.Marshal(migration.UpdateMessage{Status: migration.StatusInProgress, Message: "first message", CompletionPercentage: 10}))
+	Must(topic.Publish(ctx, serialization.JSON(msg)))
+	msg = MustValue(json.Marshal(migration.UpdateMessage{Status: migration.StatusInProgress, Message: "second message", CompletionPercentage: 20}))
+	Must(topic.Publish(ctx, serialization.JSON(msg)))
 	statusMap := MustValue(tcx.Client.GetMap(ctx, migration.MakeStatusMapName(migrationID)))
 	b := MustValue(json.Marshal(migration.MigrationStatus{
 		Status: migration.StatusComplete,
@@ -100,7 +99,8 @@ func successfulRunner(tcx it.TestContext, ctx context.Context) {
 		Logs:   []string{"log1", "log2"},
 	}))
 	Must(statusMap.Set(ctx, migration.StatusMapEntryName, serialization.JSON(b)))
-	Must(topic.Publish(ctx, migration.UpdateMessage{Status: migration.StatusComplete, Message: "last message"}))
+	msg = MustValue(json.Marshal(migration.UpdateMessage{Status: migration.StatusComplete, Message: "last message", CompletionPercentage: 100}))
+	Must(topic.Publish(ctx, serialization.JSON(msg)))
 }
 
 func failureRunner(tcx it.TestContext, ctx context.Context) {
@@ -108,7 +108,8 @@ func failureRunner(tcx it.TestContext, ctx context.Context) {
 	go findMigrationID(ctx, tcx, c)
 	migrationID := <-c
 	topic := MustValue(tcx.Client.GetTopic(ctx, migration.MakeUpdateTopicName(migrationID)))
-	Must(topic.Publish(ctx, migration.UpdateMessage{Status: migration.StatusInProgress, Message: "first message"}))
+	msg := MustValue(json.Marshal(migration.UpdateMessage{Status: migration.StatusInProgress, Message: "first message", CompletionPercentage: 20}))
+	Must(topic.Publish(ctx, serialization.JSON(msg)))
 	statusMap := MustValue(tcx.Client.GetMap(ctx, migration.MakeStatusMapName(migrationID)))
 	b := MustValue(json.Marshal(migration.MigrationStatus{
 		Status: migration.StatusFailed,
@@ -116,7 +117,8 @@ func failureRunner(tcx it.TestContext, ctx context.Context) {
 		Errors: []string{"error1", "error2"},
 	}))
 	Must(statusMap.Set(ctx, migration.StatusMapEntryName, serialization.JSON(b)))
-	Must(topic.Publish(ctx, migration.UpdateMessage{Status: migration.StatusFailed, Message: "second message"}))
+	msg = MustValue(json.Marshal(migration.UpdateMessage{Status: migration.StatusFailed, Message: "second message", CompletionPercentage: 60}))
+	Must(topic.Publish(ctx, serialization.JSON(msg)))
 }
 
 func findMigrationID(ctx context.Context, tcx it.TestContext, c chan string) {

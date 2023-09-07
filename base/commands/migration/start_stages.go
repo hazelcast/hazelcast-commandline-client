@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	clcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
@@ -19,14 +18,14 @@ import (
 )
 
 type StartStages struct {
-	migrationID       string
-	configDir         string
-	ci                *hazelcast.ClientInternal
-	startQueue        *hazelcast.Queue
-	statusMap         *hazelcast.Map
-	updateTopic       *hazelcast.Topic
-	topicListenerID   types.UUID
-	updateMessageChan chan UpdateMessage
+	migrationID     string
+	configDir       string
+	ci              *hazelcast.ClientInternal
+	startQueue      *hazelcast.Queue
+	statusMap       *hazelcast.Map
+	updateTopic     *hazelcast.Topic
+	topicListenerID types.UUID
+	updateMsgChan   chan UpdateMessage
 }
 
 var timeoutErr = fmt.Errorf("migration could not be completed: reached timeout while reading status: "+
@@ -85,14 +84,19 @@ func (st *StartStages) connectStage(ctx context.Context, ec plug.ExecContext) fu
 		if err != nil {
 			return err
 		}
-		st.updateMessageChan = make(chan UpdateMessage)
-		_, err = st.updateTopic.AddMessageListener(ctx, st.topicListener)
+		st.updateMsgChan = make(chan UpdateMessage)
+		st.topicListenerID, err = st.updateTopic.AddMessageListener(ctx, st.topicListener)
 		return err
 	}
 }
 
 func (st *StartStages) topicListener(event *hazelcast.MessagePublished) {
-	st.updateMessageChan <- event.Value.(UpdateMessage)
+	var u UpdateMessage
+	err := json.Unmarshal(event.Value.(serialization.JSON), &u)
+	if err != nil {
+		panic(fmt.Errorf("receiving update from migration cluster: %w", err))
+	}
+	st.updateMsgChan <- u
 }
 
 func (st *StartStages) startStage(ctx context.Context, ec plug.ExecContext) func(stage.Statuser) error {
@@ -106,7 +110,7 @@ func (st *StartStages) startStage(ctx context.Context, ec plug.ExecContext) func
 		}
 		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
-		if isTerminal, err := st.handleUpdateMessage(ctx, ec, <-st.updateMessageChan); isTerminal {
+		if isTerminal, err := st.handleUpdateMessage(ctx, ec, <-st.updateMsgChan); isTerminal {
 			return err
 		}
 		return nil
@@ -131,7 +135,7 @@ func (st *StartStages) migrateStage(ctx context.Context, ec plug.ExecContext) fu
 		defer st.updateTopic.RemoveListener(ctx, st.topicListenerID)
 		for {
 			select {
-			case msg := <-st.updateMessageChan:
+			case msg := <-st.updateMsgChan:
 				if isTerminal, err := st.handleUpdateMessage(ctx, ec, msg); isTerminal {
 					return err
 				}
@@ -164,7 +168,7 @@ func (st *StartStages) handleUpdateMessage(ctx context.Context, ec plug.ExecCont
 		case StatusCanceled:
 			return true, clcerrors.ErrUserCancelled
 		case StatusFailed:
-			return true, fmt.Errorf("migration failed with following error(s):\n%s", strings.Join(ms.Errors, "\n"))
+			return true, fmt.Errorf("migration failed")
 		}
 	}
 	return false, nil

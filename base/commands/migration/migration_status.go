@@ -13,9 +13,9 @@ type StatusCmd struct{}
 func (s StatusCmd) Unwrappable() {}
 
 func (s StatusCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("status [flags]")
+	cc.SetCommandUsage("status")
 	cc.SetCommandGroup("migration")
-	help := "Get status of the data migration"
+	help := "Get status of the data migration in progress"
 	cc.SetCommandHelp(help, help)
 	cc.SetPositionalArgCount(0, 0)
 	return nil

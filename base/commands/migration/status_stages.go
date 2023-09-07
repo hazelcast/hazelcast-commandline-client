@@ -2,6 +2,7 @@ package migration
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"slices"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	serialization2 "github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -64,8 +66,16 @@ func (st *StatusStages) connectStage(ctx context.Context, ec plug.ExecContext) f
 		if err != nil {
 			return err
 		}
-		m := all[0].(MigrationInProgress)
-		st.migrationID = m.MigrationID
+		if len(all) == 0 {
+			return fmt.Errorf("there are no migrations are in progress on migration cluster")
+		}
+		var mip MigrationInProgress
+		m := all[0].(serialization.JSON)
+		err = json.Unmarshal(m, &mip)
+		if err != nil {
+			return fmt.Errorf("parsing migration in progress: %w", err)
+		}
+		st.migrationID = mip.MigrationID
 		st.statusMap, err = st.ci.Client().GetMap(ctx, MakeStatusMapName(st.migrationID))
 		if err != nil {
 			return err
@@ -148,5 +158,10 @@ func (st *StatusStages) fetchStage(ctx context.Context, ec plug.ExecContext) fun
 }
 
 func (st *StatusStages) topicListener(event *hazelcast.MessagePublished) {
-	st.updateMsgChan <- event.Value.(UpdateMessage)
+	var u UpdateMessage
+	err := json.Unmarshal(event.Value.(serialization.JSON), &u)
+	if err != nil {
+		panic(fmt.Errorf("receiving update from migration cluster: %w", err))
+	}
+	st.updateMsgChan <- u
 }

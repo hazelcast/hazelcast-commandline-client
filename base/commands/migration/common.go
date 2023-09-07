@@ -29,26 +29,19 @@ type Migration struct {
 	CompletionPercentage float64   `json:"completionPercentage"`
 }
 
-var migrationStatusNone = MigrationStatus{
-	Status: StatusNone,
-	Logs:   nil,
-	Errors: nil,
-	Report: "",
-}
-
 type UpdateMessage struct {
 	Status               Status  `json:"status"`
 	CompletionPercentage float32 `json:"completionPercentage"`
 	Message              string  `json:"message"`
 }
 
-func readMigrationStatus(ctx context.Context, statusMap *hazelcast.Map) (MigrationStatus, error) {
+func readMigrationStatus(ctx context.Context, statusMap *hazelcast.Map) (*MigrationStatus, error) {
 	v, err := statusMap.Get(ctx, StatusMapEntryName)
 	if err != nil {
-		return migrationStatusNone, err
+		return nil, err
 	}
 	if v == nil {
-		return migrationStatusNone, nil
+		return nil, nil
 	}
 	var b []byte
 	if vv, ok := v.(string); ok {
@@ -56,11 +49,11 @@ func readMigrationStatus(ctx context.Context, statusMap *hazelcast.Map) (Migrati
 	} else if vv, ok := v.(serialization.JSON); ok {
 		b = vv
 	} else {
-		return migrationStatusNone, fmt.Errorf("invalid status value")
+		return nil, fmt.Errorf("invalid status value")
 	}
 	var ms MigrationStatus
 	if err := json.Unmarshal(b, &ms); err != nil {
-		return migrationStatusNone, fmt.Errorf("unmarshaling status: %w", err)
+		return nil, fmt.Errorf("unmarshaling status: %w", err)
 	}
-	return ms, nil
+	return &ms, nil
 }

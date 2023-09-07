@@ -25,10 +25,26 @@ func TestStatus(t *testing.T) {
 		f    func(t *testing.T)
 	}{
 		{name: "status", f: statusTest},
+		{name: "noMigrationsStatus", f: noMigrationsStatusTest},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, tc.f)
 	}
+}
+
+func noMigrationsStatusTest(t *testing.T) {
+	tcx := it.TestContext{T: t}
+	ctx := context.Background()
+	tcx.Tester(func(tcx it.TestContext) {
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go tcx.WithReset(func() {
+			defer wg.Done()
+			tcx.CLC().Execute(ctx, "status")
+		})
+		wg.Wait()
+		tcx.AssertStdoutContains("there are no migrations are in progress on migration cluster")
+	})
 }
 
 func statusTest(t *testing.T) {
@@ -43,7 +59,7 @@ func statusTest(t *testing.T) {
 			Must(tcx.CLC().Execute(ctx, "status"))
 		})
 		time.Sleep(1 * time.Second) // give time to status command to register its topic listener
-		statusRunner(mID, tcx, ctx)
+		statusRunner(t, mID, tcx, ctx)
 		wg.Wait()
 		tcx.AssertStdoutContains(`
 Hazelcast Data Migration Tool v5.3.0
@@ -64,24 +80,30 @@ OK`)
 func preStatusRunner(t *testing.T, tcx it.TestContext, ctx context.Context) string {
 	mID := migration.MakeMigrationID()
 	l := MustValue(tcx.Client.GetList(ctx, migration.MigrationsInProgressList))
-	ok := MustValue(l.Add(ctx, migration.MigrationInProgress{
+	m := MustValue(json.Marshal(migration.MigrationInProgress{
 		MigrationID: mID,
 	}))
+	ok := MustValue(l.Add(ctx, serialization.JSON(m)))
 	require.Equal(t, true, ok)
 	return mID
 }
 
-func statusRunner(migrationID string, tcx it.TestContext, ctx context.Context) {
-	m := MustValue(tcx.Client.GetMap(ctx, migration.MakeStatusMapName(migrationID)))
-	t := MustValue(tcx.Client.GetTopic(ctx, migration.MakeUpdateTopicName(migrationID)))
-	setState(ctx, t, m, migration.StatusInProgress, "first message")
-	setState(ctx, t, m, migration.StatusFailed, "last message")
-
+func statusRunner(t *testing.T, migrationID string, tcx it.TestContext, ctx context.Context) {
+	statusMap := MustValue(tcx.Client.GetMap(ctx, migration.MakeStatusMapName(migrationID)))
+	topic := MustValue(tcx.Client.GetTopic(ctx, migration.MakeUpdateTopicName(migrationID)))
+	setState(ctx, topic, statusMap, migration.StatusInProgress, "first message")
+	setState(ctx, topic, statusMap, migration.StatusFailed, "last message")
+	l := MustValue(tcx.Client.GetList(ctx, migration.MigrationsInProgressList))
+	m := MustValue(json.Marshal(migration.MigrationInProgress{
+		MigrationID: migrationID,
+	}))
+	ok := MustValue(l.Remove(ctx, serialization.JSON(m)))
+	require.Equal(t, true, ok)
 }
 
 func setState(ctx context.Context, updateTopic *hazelcast.Topic, statusMap *hazelcast.Map, status migration.Status, msg string) {
 	startTime := MustValue(time.Parse(time.RFC3339, "2023-01-01T00:00:00Z"))
-	b := MustValue(json.Marshal(migration.MigrationStatus{
+	st := MustValue(json.Marshal(migration.MigrationStatus{
 		Status:               status,
 		Report:               "status report",
 		CompletionPercentage: 12.123,
@@ -97,6 +119,7 @@ func setState(ctx context.Context, updateTopic *hazelcast.Topic, statusMap *haze
 			},
 		},
 	}))
-	Must(statusMap.Set(ctx, migration.StatusMapEntryName, serialization.JSON(b)))
-	Must(updateTopic.Publish(ctx, migration.UpdateMessage{Status: status, Message: msg}))
+	message := MustValue(json.Marshal(migration.UpdateMessage{Status: status, Message: msg, CompletionPercentage: 80}))
+	Must(statusMap.Set(ctx, migration.StatusMapEntryName, serialization.JSON(st)))
+	Must(updateTopic.Publish(ctx, serialization.JSON(message)))
 }

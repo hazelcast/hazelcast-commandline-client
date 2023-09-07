@@ -3,14 +3,16 @@ package migration
 const (
 	StartQueueName           = "__datamigration_start_queue"
 	StatusMapEntryName       = "status"
-	UpdateTopic              = "__datamigration_updates_"
+	StatusMapPrefix          = "__datamigration_"
+	UpdateTopicPrefix        = "__datamigration_updates_"
 	MigrationsInProgressList = "__datamigrations_in_progress"
 )
 
 type Status string
 
 const (
-	StatusNone       Status = ""
+	StatusStarted    Status = "STARTED"
+	Canceling        Status = "CANCELING"
 	StatusComplete   Status = "COMPLETED"
 	StatusCanceled   Status = "CANCELED"
 	StatusFailed     Status = "FAILED"
