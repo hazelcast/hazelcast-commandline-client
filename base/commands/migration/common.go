@@ -53,7 +53,7 @@ func readMigrationStatus(ctx context.Context, statusMap *hazelcast.Map) (*Migrat
 	}
 	var ms MigrationStatus
 	if err := json.Unmarshal(b, &ms); err != nil {
-		return nil, fmt.Errorf("unmarshaling status: %w", err)
+		return nil, fmt.Errorf("parsing migration status: %w", err)
 	}
 	return &ms, nil
 }
