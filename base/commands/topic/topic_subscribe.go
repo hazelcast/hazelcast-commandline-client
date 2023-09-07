@@ -17,10 +17,10 @@ import (
 type topicSubscribeCommand struct{}
 
 func (tsc *topicSubscribeCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("subscribe")
 	help := "Subscribe to a Topic for new messages."
 	cc.SetCommandHelp(help, help)
 	cc.AddIntFlag(topicFlagCount, "", 0, false, "number of messages to receive")
-	cc.SetCommandUsage("subscribe")
 	return nil
 }
 

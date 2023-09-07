@@ -18,17 +18,17 @@ import (
 type ClusterCreateCmd struct{}
 
 func (cm ClusterCreateCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("create-cluster [flags]")
+	cc.SetCommandUsage("create-cluster")
 	long := `Creates a Viridian cluster.
 
 Make sure you login before running this command.
 `
 	short := "Creates a Viridian cluster"
 	cc.SetCommandHelp(long, short)
-	cc.SetPositionalArgCount(0, 0)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	cc.AddStringFlag(flagName, "", "", false, "specify the cluster name; if not given an auto-generated name is used.")
-	cc.AddStringFlag(flagClusterType, "", viridian.ClusterTypeServerless, false, "type for the cluster")
+	cc.AddBoolFlag(flagDevelopment, "", false, false, "create a development cluster")
+	cc.AddBoolFlag(flagPrerelease, "", false, false, "create a prerelease cluster")
 	return nil
 }
 
@@ -38,7 +38,8 @@ func (cm ClusterCreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 		return err
 	}
 	name := ec.Props().GetString(flagName)
-	clusterType := ec.Props().GetString(flagClusterType)
+	dev := ec.Props().GetBool(flagDevelopment)
+	prerelease := ec.Props().GetBool(flagPrerelease)
 	hzVersion := ec.Props().GetString(flagHazelcastVersion)
 	csi, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Creating the cluster")
@@ -46,7 +47,7 @@ func (cm ClusterCreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 		if err != nil {
 			return nil, err
 		}
-		cs, err := api.CreateCluster(ctx, name, clusterType, k8sCluster.ID, hzVersion)
+		cs, err := api.CreateCluster(ctx, name, getClusterType(dev), k8sCluster.ID, prerelease, hzVersion)
 		if err != nil {
 			return nil, err
 		}
@@ -87,6 +88,13 @@ func (cm ClusterCreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 		return ec.AddOutputRows(ctx, row)
 	}
 	return nil
+}
+
+func getClusterType(dev bool) string {
+	if dev {
+		return viridian.ClusterTypeDevMode
+	}
+	return viridian.ClusterTypeServerless
 }
 
 func getFirstAvailableK8sCluster(ctx context.Context, api *viridian.API) (viridian.K8sCluster, error) {

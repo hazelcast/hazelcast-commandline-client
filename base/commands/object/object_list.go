@@ -54,13 +54,15 @@ var objTypes = []string{
 }
 
 const (
-	flagShowHidden = "show-hidden"
+	flagShowHidden     = "show-hidden"
+	argObjectType      = "objectType"
+	argTitleObjectType = "object type"
 )
 
 type ObjectListCommand struct{}
 
 func (cm ObjectListCommand) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("list [object-type]")
+	cc.SetCommandUsage("list")
 	long := fmt.Sprintf(`List distributed objects, optionally filter by type.
 	
 The object-type filter may be one of:
@@ -70,14 +72,15 @@ CP objects such as AtomicLong cannot be listed.
 `, objectFilterTypes())
 	cc.SetCommandHelp(long, "List distributed objects")
 	cc.AddBoolFlag(flagShowHidden, "", false, false, "show hidden and system objects")
-	cc.SetPositionalArgCount(0, 1)
+	cc.AddStringSliceArg(argObjectType, argTitleObjectType, 0, 1)
 	return nil
 }
 
 func (cm ObjectListCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	var typeFilter string
-	if len(ec.Args()) > 0 {
-		typeFilter = ec.Args()[0]
+	fs := ec.GetStringSliceArg(argObjectType)
+	if len(fs) > 0 {
+		typeFilter = fs[0]
 	}
 	showHidden := ec.Props().GetBool(flagShowHidden)
 	objs, err := objects.GetAll(ctx, ec, typeFilter, showHidden)

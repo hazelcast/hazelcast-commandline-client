@@ -15,7 +15,7 @@ import (
 type ImportCmd struct{}
 
 func (cm ImportCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("import [configuration-name] [source] [flags]")
+	cc.SetCommandUsage("import")
 	short := "Imports configuration from an arbitrary source"
 	long := `Imports configuration from an arbitrary source
 	
@@ -32,7 +32,8 @@ Currently importing Viridian connection configuration is supported only.
 	
 `
 	cc.SetCommandHelp(long, short)
-	cc.SetPositionalArgCount(2, 2)
+	cc.AddStringArg(argConfigName, argTitleConfigName)
+	cc.AddStringArg(argSource, argTitleSource)
 	return nil
 }
 

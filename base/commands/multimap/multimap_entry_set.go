@@ -21,7 +21,6 @@ func (mc *MultiMapEntrySetCommand) Init(cc plug.InitContext) error {
 	help := "Get all entries of a MultiMap"
 	cc.SetCommandHelp(help, help)
 	cc.SetCommandUsage("entry-set")
-	cc.SetPositionalArgCount(0, 0)
 	return nil
 }
 

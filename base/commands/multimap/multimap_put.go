@@ -16,16 +16,21 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
-type MultiMapPutCommand struct {
-}
+const (
+	argValue      = "value"
+	argTitleValue = "value"
+)
+
+type MultiMapPutCommand struct{}
 
 func (m MultiMapPutCommand) Init(cc plug.InitContext) error {
-	addKeyTypeFlag(cc)
-	addValueTypeFlag(cc)
-	cc.SetPositionalArgCount(2, 2)
+	cc.SetCommandUsage("put")
 	help := "Put a value in the given MultiMap"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("put [key] [value] [flags]")
+	addKeyTypeFlag(cc)
+	addValueTypeFlag(cc)
+	cc.AddStringArg(argKey, argTitleKey)
+	cc.AddStringArg(argValue, argTitleValue)
 	return nil
 }
 
@@ -38,8 +43,8 @@ func (m MultiMapPutCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 	if _, err := ec.Props().GetBlocking(multiMapPropertyName); err != nil {
 		return err
 	}
-	keyStr := ec.Args()[0]
-	valueStr := ec.Args()[1]
+	keyStr := ec.GetStringArg(argKey)
+	valueStr := ec.GetStringArg(argValue)
 	kd, vd, err := makeKeyValueData(ec, ci, keyStr, valueStr)
 	if err != nil {
 		return err

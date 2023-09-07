@@ -12,11 +12,10 @@ import (
 type AtomicLongIncrementGetCommand struct{}
 
 func (mc *AtomicLongIncrementGetCommand) Init(cc plug.InitContext) error {
-	cc.SetPositionalArgCount(0, 0)
+	cc.SetCommandUsage("increment-get")
 	help := "Increment the atomic long by the given value"
-	cc.AddIntFlag(atomicLongFlagBy, "", 1, false, "value to increment by")
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("increment-get [flags]")
+	cc.AddIntFlag(atomicLongFlagBy, "", 1, false, "value to increment by")
 	return nil
 }
 

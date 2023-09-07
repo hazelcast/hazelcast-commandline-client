@@ -5,7 +5,6 @@ package set
 import (
 	"context"
 	"fmt"
-	"math"
 
 	"github.com/hazelcast/hazelcast-go-client"
 
@@ -17,11 +16,11 @@ import (
 type SetAddCommand struct{}
 
 func (sc *SetAddCommand) Init(cc plug.InitContext) error {
-	addValueTypeFlag(cc)
-	cc.SetPositionalArgCount(1, math.MaxInt)
+	cc.SetCommandUsage("add")
 	help := "Add values to the given Set"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("add [values] [flags]")
+	addValueTypeFlag(cc)
+	cc.AddStringSliceArg(argValue, argTitleValue, 1, clc.MaxArgs)
 	return nil
 }
 
@@ -38,7 +37,7 @@ func (sc *SetAddCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	s := sv.(*hazelcast.Set)
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText(fmt.Sprintf("Adding values into set %s", name))
-		for _, arg := range ec.Args() {
+		for _, arg := range ec.GetStringSliceArg(argValue) {
 			vd, err := makeValueData(ec, ci, arg)
 			if err != nil {
 				return nil, err

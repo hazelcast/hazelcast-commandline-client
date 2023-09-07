@@ -17,15 +17,15 @@ import (
 type ClusterGetCmd struct{}
 
 func (cm ClusterGetCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("get-cluster [cluster-ID/name] [flags]")
+	cc.SetCommandUsage("get-cluster")
 	long := `Gets the information about the given Viridian cluster.
 
 Make sure you login before running this command.
 `
 	short := "Gets the information about the given Viridian cluster"
 	cc.SetCommandHelp(long, short)
-	cc.SetPositionalArgCount(1, 1)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
+	cc.AddStringArg(argClusterID, argTitleClusterID)
 	return nil
 }
 
@@ -34,7 +34,7 @@ func (cm ClusterGetCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		return err
 	}
-	clusterNameOrID := ec.Args()[0]
+	clusterNameOrID := ec.GetStringArg(argClusterID)
 	ci, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Retrieving the cluster")
 		c, err := api.GetCluster(ctx, clusterNameOrID)
@@ -101,6 +101,11 @@ func (cm ClusterGetCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 				Name:  "Regions",
 				Type:  serialization.TypeStringArray,
 				Value: regionTitleSlice(c.Regions),
+			},
+			output.Column{
+				Name:  "Cluster Type",
+				Type:  serialization.TypeString,
+				Value: ClusterType(c.ClusterType.DevMode),
 			},
 		)
 	}

@@ -16,14 +16,14 @@ import (
 type MapUnlock struct{}
 
 func (mc *MapUnlock) Init(cc plug.InitContext) error {
-	addKeyTypeFlag(cc)
+	cc.SetCommandUsage("unlock")
 	long := `Unlock a key in the given Map
 
 This command is only available in the interactive mode.`
 	short := "Unlock a key in the given Map"
 	cc.SetCommandHelp(long, short)
-	cc.SetCommandUsage("unlock [key] [flags]")
-	cc.SetPositionalArgCount(1, 1)
+	addKeyTypeFlag(cc)
+	cc.AddStringArg(argKey, argTitleKey)
 	return nil
 }
 
@@ -38,7 +38,7 @@ func (mc *MapUnlock) Exec(ctx context.Context, ec plug.ExecContext) error {
 		return err
 	}
 	m := mv.(*hazelcast.Map)
-	keyStr := ec.Args()[0]
+	keyStr := ec.GetStringArg(argKey)
 	keyData, err := makeKeyData(ec, ci, keyStr)
 	if err != nil {
 		return err

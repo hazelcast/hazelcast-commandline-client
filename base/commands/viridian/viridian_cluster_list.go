@@ -23,7 +23,6 @@ Make sure you login before running this command.
 `
 	short := "Lists Viridian clusters"
 	cc.SetCommandHelp(long, short)
-	cc.SetPositionalArgCount(0, 0)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	return nil
 }
@@ -50,6 +49,7 @@ func (cm ClusterListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 		ec.PrintlnUnnecessary("No clusters found")
 	}
 	rows := make([]output.Row, len(cs))
+	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	for i, c := range cs {
 		rows[i] = output.Row{
 			output.Column{
@@ -72,6 +72,15 @@ func (cm ClusterListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 				Type:  serialization.TypeString,
 				Value: c.HazelcastVersion,
 			},
+		}
+		if verbose {
+			rows[i] = append(rows[i],
+				output.Column{
+					Name:  "Cluster Type",
+					Type:  serialization.TypeString,
+					Value: ClusterType(c.ClusterType.DevMode),
+				},
+			)
 		}
 	}
 	return ec.AddOutputRows(ctx, rows...)

@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
-	"math"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -19,74 +18,30 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
+const (
+	argTemplateName      = "templateName"
+	argTitleTemplateName = "template name"
+	argPlaceholder       = "placeholder"
+	argTitlePlaceholder  = "placeholder"
+)
+
 var regexpValidKey = regexp.MustCompile(`^[a-z0-9_]+$`)
 
 type CreateCmd struct{}
 
 func (pc CreateCmd) Init(cc plug.InitContext) error {
-	cc.SetPositionalArgCount(1, math.MaxInt)
-	cc.SetCommandUsage("create [template-name] [placeholder-values] [flags]")
-	cc.AddStringFlag(flagOutputDir, "o", "", false, "the directory to create the project at")
+	cc.SetCommandUsage("create")
 	short := "Create project from the given template (BETA)"
-	long := fmt.Sprintf(`Create project from the given template.
-	
-This command is in BETA, it may change in future versions.
-	
-Templates are located in %s.
-You can override it by using CLC_EXPERIMENTAL_TEMPLATE_SOURCE environment variable.
-
-Rules while creating your own templates:
-
-	* Templates are in Go template format.
-	  See: https://pkg.go.dev/text/template
-	* You can create a "defaults.yaml" file for default values in template's root directory.
-	* Template files must have the ".template" extension.
-	* Files with "." and "_" prefixes are ignored unless they have the ".keep" extension.
-	* All files with ".keep" extension are copied by stripping the ".keep" extension.
-	* Other files are copied verbatim.
-
-Properties are read from the following resources in order:
-
-	1. defaults.yaml (keys should be in lowercase letters, digits or underscore)
-	2. config.yaml
-	3. User passed key-values in the "KEY=VALUE" format. The keys can only contain lowercase letters, digits or underscore.
-
-You can use the placeholders in "defaults.yaml" and the following configuration item placeholders:
-
-	* cluster_name
-	* cluster_address
-	* cluster_user
-	* cluster_password
-	* cluster_discovery_token
-	* ssl_enabled
-	* ssl_server
-	* ssl_skip_verify
-	* ssl_ca_path
-	* ssl_key_path
-	* ssl_key_password
-	* log_path
-	* log_level
-
-Example (Linux and MacOS):
-
-$ clc project create \
-	simple-streaming-pipeline\
-	--output-dir my-project\
-	my_key1=my_value1 my_key2=my_value2
-
-Example (Windows):
-
-> clc project create^
-	simple-streaming-pipeline^
-	--output-dir my-project^
-	my_key1=my_value1 my_key2=my_value2
-`, hzTemplatesOrganization)
+	long := longHelp()
 	cc.SetCommandHelp(long, short)
+	cc.AddStringFlag(flagOutputDir, "o", "", false, "the directory to create the project at")
+	cc.AddStringArg(argTemplateName, argTitleTemplateName)
+	cc.AddKeyValueSliceArg(argPlaceholder, argTitlePlaceholder, 0, clc.MaxArgs)
 	return nil
 }
 
 func (pc CreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
-	templateName := ec.Args()[0]
+	templateName := ec.GetStringArg(argTemplateName)
 	outputDir := ec.Props().GetString(flagOutputDir)
 	if outputDir == "" {
 		outputDir = templateName

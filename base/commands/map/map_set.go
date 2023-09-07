@@ -6,24 +6,31 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hazelcast/hazelcast-go-client"
+
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
-	"github.com/hazelcast/hazelcast-go-client"
+)
+
+const (
+	argValue      = "value"
+	argTitleValue = "value"
 )
 
 type MapSetCommand struct{}
 
 func (mc *MapSetCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("set")
+	help := "Set a value in the given Map"
+	cc.SetCommandHelp(help, help)
 	addKeyTypeFlag(cc)
 	addValueTypeFlag(cc)
 	cc.AddIntFlag(mapTTL, "", ttlUnset, false, "time-to-live (ms)")
 	cc.AddIntFlag(mapMaxIdle, "", ttlUnset, false, "max idle (ms)")
-	cc.SetPositionalArgCount(2, 2)
-	help := "Set a value in the given Map"
-	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("set [key] [value] [flags]")
+	cc.AddStringArg(argKey, argTitleKey)
+	cc.AddStringArg(argValue, argTitleValue)
 	return nil
 }
 
@@ -37,8 +44,8 @@ func (mc *MapSetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if _, err := ec.Props().GetBlocking(mapPropertyName); err != nil {
 		return err
 	}
-	keyStr := ec.Args()[0]
-	valueStr := ec.Args()[1]
+	keyStr := ec.GetStringArg(argKey)
+	valueStr := ec.GetStringArg(argValue)
 	kd, vd, err := makeKeyValueData(ec, ci, keyStr, valueStr)
 	if err != nil {
 		return err

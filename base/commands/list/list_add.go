@@ -17,12 +17,12 @@ import (
 type ListAddCommand struct{}
 
 func (mc *ListAddCommand) Init(cc plug.InitContext) error {
-	addValueTypeFlag(cc)
-	cc.SetPositionalArgCount(1, 1)
+	cc.SetCommandUsage("add")
 	help := "Add a value in the given list"
-	cc.AddIntFlag(listFlagIndex, "", -1, false, "index for the value")
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("add [value] [flags]")
+	addValueTypeFlag(cc)
+	cc.AddIntFlag(listFlagIndex, "", -1, false, "index for the value")
+	cc.AddStringArg(argValue, argTitleValue)
 	return nil
 }
 
@@ -36,7 +36,7 @@ func (mc *ListAddCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if _, err := ec.Props().GetBlocking(listPropertyName); err != nil {
 		return err
 	}
-	valueStr := ec.Args()[0]
+	valueStr := ec.GetStringArg(argValue)
 	vd, err := makeValueData(ec, ci, valueStr)
 	if err != nil {
 		return err

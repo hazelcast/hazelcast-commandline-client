@@ -7,20 +7,21 @@ import (
 	"fmt"
 	"math"
 	"path/filepath"
-	"strings"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/str"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/types"
 )
 
 type AddCmd struct{}
 
 func (cm AddCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("add [configuration-name] [flags]")
+	cc.SetCommandUsage("add")
 	short := "Adds a configuration"
-	long := `Adds a configuration with the given name/path and KEY=VALUE pairs
+	long := `Adds a configuration with the given KEY=VALUE pairs and saves it with configuration name.
 	
 Overrides the previous configuration if it exists.
 	
@@ -42,21 +43,22 @@ The following keys are supported:
 	
 `
 	cc.SetCommandHelp(long, short)
-	cc.SetPositionalArgCount(1, math.MaxInt)
+	cc.AddStringArg(argConfigName, argTitleConfigName)
+	cc.AddStringSliceArg(argKeyValues, argTitleKeyValues, 0, math.MaxInt)
 	return nil
 }
 
 func (cm AddCmd) Exec(_ context.Context, ec plug.ExecContext) error {
-	target := ec.Args()[0]
-	var opts clc.KeyValues[string, string]
-	for _, arg := range ec.Args()[1:] {
-		ps := strings.SplitN(arg, "=", 2)
-		if len(ps) != 2 {
+	target := ec.GetStringArg(argConfigName)
+	var opts types.KeyValues[string, string]
+	for _, arg := range ec.GetStringSliceArg(argKeyValues) {
+		k, v := str.ParseKeyValue(arg)
+		if k == "" {
 			return fmt.Errorf("invalid key=value pair: %s", arg)
 		}
-		opts = append(opts, clc.KeyValue[string, string]{
-			Key:   ps[0],
-			Value: ps[1],
+		opts = append(opts, types.KeyValue[string, string]{
+			Key:   k,
+			Value: v,
 		})
 	}
 	dir, cfgPath, err := config.Create(target, opts)

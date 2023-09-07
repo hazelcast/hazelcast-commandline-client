@@ -25,7 +25,6 @@ Directory names which start with . or _ are ignored.
 `, paths.Configs())
 	short := "Lists known configurations"
 	cc.SetCommandHelp(long, short)
-	cc.SetPositionalArgCount(0, 0)
 	return nil
 }
 

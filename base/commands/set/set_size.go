@@ -18,10 +18,9 @@ import (
 type SetSizeCommand struct{}
 
 func (sc *SetSizeCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("size")
 	help := "Return the size of the given Set"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("size")
-	cc.SetPositionalArgCount(0, 0)
 	return nil
 }
 

@@ -40,7 +40,6 @@ Alternatively, you can use the following environment variables:
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	cc.AddStringFlag(propAPISecret, "", "", false, "Viridian API Secret")
 	cc.AddStringFlag(propAPIBase, "", "", false, "Viridian API Base")
-	cc.SetPositionalArgCount(0, 0)
 	return nil
 }
 
