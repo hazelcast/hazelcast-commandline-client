@@ -3,11 +3,9 @@
 package viridian
 
 import (
-	"archive/zip"
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -15,12 +13,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/secrets"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/types"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
@@ -135,52 +131,19 @@ func waitClusterState(ctx context.Context, ec plug.ExecContext, api *viridian.AP
 }
 
 func tryImportConfig(ctx context.Context, ec plug.ExecContext, api *viridian.API, clusterID, cfgName string) (configPath string, err error) {
-	cpv, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText("Importing configuration")
-		cfgPath, ok, err := importCLCConfig(ctx, ec, api, clusterID, cfgName)
-		if err != nil {
-			ec.Logger().Error(err)
-		} else if ok {
-			return cfgPath, err
-		}
-		ec.Logger().Debugf("could not download CLC configuration, trying the Python configuration.")
-		cfgPath, ok, err = importPythonConfig(ctx, ec, api, clusterID, cfgName)
-		if err != nil {
-			return nil, err
-		}
-		cfgDir, _ := filepath.Split(cfgPath)
-		// import the Java/.Net certificates
-		zipPath, stop, err := api.DownloadConfig(ctx, clusterID, "java")
-		if err != nil {
-			return nil, err
-		}
-		defer stop()
-		fns := types.NewSet("client.keystore", "client.pfx", "client.truststore")
-		imp, err := importFileFromZip(ctx, ec, fns, zipPath, cfgDir)
-		if err != nil {
-			return nil, err
-		}
-		if imp.Len() != fns.Len() {
-			ec.Logger().Warn("Could not import all artifacts")
-		}
-		return cfgPath, nil
-	})
+	cp, ok, err := importCLCConfig(ctx, ec, api, clusterID, cfgName)
 	if err != nil {
-		return "", err
+		ec.Logger().Error(err)
+		return "", fmt.Errorf("importing CLC configuration: %w", err)
 	}
-	stop()
-	cp := cpv.(string)
-	ec.Logger().Info("Imported configuration %s and saved to %s", cfgName, cp)
-	ec.PrintlnUnnecessary(fmt.Sprintf("OK Imported configuration %s", cfgName))
+	if !ok {
+		return "", fmt.Errorf("could not import CLC configuration")
+	}
 	return cp, nil
 }
 
 func importCLCConfig(ctx context.Context, ec plug.ExecContext, api *viridian.API, clusterID, cfgName string) (configPath string, ok bool, err error) {
 	return importConfig(ctx, ec, api, clusterID, cfgName, "clc", config.CreateFromZip)
-}
-
-func importPythonConfig(ctx context.Context, ec plug.ExecContext, api *viridian.API, clusterID, cfgName string) (configPath string, ok bool, err error) {
-	return importConfig(ctx, ec, api, clusterID, cfgName, "python", config.CreateFromZipLegacy)
 }
 
 func importConfig(ctx context.Context, ec plug.ExecContext, api *viridian.API, clusterID, cfgName, language string, f func(ctx context.Context, ec plug.ExecContext, target, path string) (string, bool, error)) (configPath string, ok bool, err error) {
@@ -194,48 +157,6 @@ func importConfig(ctx context.Context, ec plug.ExecContext, api *viridian.API, c
 		return "", false, err
 	}
 	return cfgPath, ok, nil
-
-}
-
-// importFileFromZip extracts files matching selectPaths to targetDir
-// Note that this function assumes a Viridian sample zip file.
-func importFileFromZip(ctx context.Context, ec plug.ExecContext, selectPaths *types.Set[string], zipPath, targetDir string) (imported *types.Set[string], err error) {
-	s := types.NewSet[string]()
-	zr, err := zip.OpenReader(zipPath)
-	if err != nil {
-		return nil, err
-	}
-	defer zr.Close()
-	for _, rf := range zr.File {
-		if ctx.Err() != nil {
-			return nil, ctx.Err()
-		}
-		_, fn := filepath.Split(rf.Name)
-		if selectPaths.Has(fn) {
-			if err := copyZipFile(rf, paths.Join(targetDir, fn)); err != nil {
-				ec.Logger().Error(fmt.Errorf("extracting file: %w", err))
-				continue
-			}
-			s.Add(fn)
-		}
-	}
-	return s, nil
-}
-
-func copyZipFile(file *zip.File, path string) error {
-	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
-	if err != nil {
-		return err
-	}
-	r, err := file.Open()
-	if err != nil {
-		return err
-	}
-	defer r.Close()
-	if _, err = io.Copy(f, r); err != nil {
-		return err
-	}
-	return nil
 }
 
 func matchClusterState(cluster viridian.Cluster, state string) (bool, error) {

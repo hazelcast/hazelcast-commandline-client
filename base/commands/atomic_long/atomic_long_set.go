@@ -20,6 +20,8 @@ const (
 
 type AtomicLongSetCommand struct{}
 
+func (mc *AtomicLongSetCommand) Unwrappable() {}
+
 func (mc *AtomicLongSetCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("set")
 	help := "Set the value of the AtomicLong"
@@ -37,7 +39,7 @@ func (mc *AtomicLongSetCommand) Exec(ctx context.Context, ec plug.ExecContext) e
 	ali := al.(*hazelcast.AtomicLong)
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText(fmt.Sprintf("Setting value of AtomicLong %s", ali.Name()))
-		err := ali.Set(ctx, int64(value))
+		err := ali.Set(ctx, value)
 		if err != nil {
 			return nil, err
 		}
@@ -47,6 +49,8 @@ func (mc *AtomicLongSetCommand) Exec(ctx context.Context, ec plug.ExecContext) e
 		return err
 	}
 	stop()
+	msg := fmt.Sprintf("OK Set %s to %d", ali.Name(), value)
+	ec.PrintlnUnnecessary(msg)
 	return nil
 }
 

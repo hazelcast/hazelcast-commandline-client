@@ -8,7 +8,6 @@ import (
 	"math"
 	"path/filepath"
 
-	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -17,6 +16,8 @@ import (
 )
 
 type AddCmd struct{}
+
+func (cm AddCmd) Unwrappable() {}
 
 func (cm AddCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("add")
@@ -32,6 +33,7 @@ The following keys are supported:
 	* cluster.user             STRING
 	* cluster.password         STRING
 	* cluster.discovery-token  STRING
+	* cluster.api-base         STRING
 	* ssl.enabled              BOOLEAN (true / false)
 	* ssl.server               STRING
 	* ssl.skip-verify          BOOLEAN (true / false)
@@ -65,15 +67,14 @@ func (cm AddCmd) Exec(_ context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		return err
 	}
-	if ec.Interactive() || ec.Props().GetBool(clc.PropertyVerbose) {
-		I2(fmt.Fprintf(ec.Stdout(), "Created configuration at: %s\n", filepath.Join(dir, cfgPath)))
-	}
 	mopt := config.ConvertKeyValuesToMap(opts)
 	// ignoring the JSON path for now
 	_, _, err = config.CreateJSON(target, mopt)
 	if err != nil {
 		ec.Logger().Warn("Failed creating the JSON configuration: %s", err.Error())
 	}
+	msg := fmt.Sprintf("OK Created the configuration at: %s", filepath.Join(dir, cfgPath))
+	ec.PrintlnUnnecessary(msg)
 	return nil
 }
 

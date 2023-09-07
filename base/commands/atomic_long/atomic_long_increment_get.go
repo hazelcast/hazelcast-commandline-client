@@ -11,6 +11,8 @@ import (
 
 type AtomicLongIncrementGetCommand struct{}
 
+func (mc *AtomicLongIncrementGetCommand) Unwrappable() {}
+
 func (mc *AtomicLongIncrementGetCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("increment-get")
 	help := "Increment the atomic long by the given value"

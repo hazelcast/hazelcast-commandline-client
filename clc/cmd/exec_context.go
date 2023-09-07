@@ -144,24 +144,10 @@ func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInt
 	if err != nil {
 		return nil, err
 	}
-	civ, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText("Connecting to the cluster")
-		if err := ec.main.ensureClient(ctx, cfg); err != nil {
-			return nil, err
-		}
-		return ec.main.clientInternal(), nil
-	})
-	if err != nil {
+	if err := ec.main.ensureClient(ctx, cfg); err != nil {
 		return nil, err
 	}
-	stop()
-	ci = civ.(*hazelcast.ClientInternal)
-	verbose := ec.Props().GetBool(clc.PropertyVerbose)
-	if verbose || ec.Interactive() {
-		cn := ci.ClusterService().FailoverService().Current().ClusterName
-		ec.PrintlnUnnecessary(fmt.Sprintf("Connected to cluster: %s", cn))
-	}
-	return ci, nil
+	return ec.main.clientInternal(), nil
 }
 
 func (ec *ExecContext) Interactive() bool {

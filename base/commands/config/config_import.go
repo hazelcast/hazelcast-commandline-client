@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -38,15 +37,14 @@ Currently importing Viridian connection configuration is supported only.
 }
 
 func (cm ImportCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
-	target := ec.Args()[0]
-	src := ec.Args()[1]
+	target := ec.GetStringArg(argConfigName)
+	src := ec.GetStringArg(argSource)
 	path, err := config.ImportSource(ctx, ec, target, src)
 	if err != nil {
 		return err
 	}
-	if ec.Interactive() || ec.Props().GetBool(clc.PropertyVerbose) {
-		I2(fmt.Fprintf(ec.Stdout(), "Created configuration at: %s\n", path))
-	}
+	msg := fmt.Sprintf("OK Created the configuration at: %s", path)
+	ec.PrintlnUnnecessary(msg)
 	return nil
 }
 

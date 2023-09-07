@@ -17,9 +17,13 @@ type TerminateCmd struct {
 	shortHelp          string
 	terminateMode      int32
 	terminateModeForce int32
-	msg                string
+	inProgressMsg      string
+	successMsg         string
+	failureMsg         string
 	waitState          int32
 }
+
+func (cm TerminateCmd) Unwrappable() {}
 
 func (cm TerminateCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage(cm.name)
@@ -31,15 +35,11 @@ func (cm TerminateCmd) Init(cc plug.InitContext) error {
 }
 
 func (cm TerminateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
-	// just preloading the client
-	if _, err := ec.ClientInternal(ctx); err != nil {
-		return err
-	}
 	tm := cm.terminateMode
 	if ec.Props().GetBool(flagForce) {
 		tm = cm.terminateModeForce
 	}
-	if err := terminateJob(ctx, ec, cm.name, tm, cm.msg, cm.waitState); err != nil {
+	if err := terminateJob(ctx, ec, tm, cm); err != nil {
 		return err
 	}
 	return nil
@@ -48,29 +48,35 @@ func (cm TerminateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 func init() {
 	Must(plug.Registry.RegisterCommand("job:cancel", &TerminateCmd{
 		name:               "cancel",
-		longHelp:           "Cancels the job with the given ID or name.",
+		longHelp:           "Cancels the job with the given ID or name",
 		shortHelp:          "Cancels the job with the given ID or name",
 		terminateMode:      jet.TerminateModeCancelGraceful,
 		terminateModeForce: jet.TerminateModeCancelForceful,
-		msg:                "Cancelling the job",
 		waitState:          jet.JobStatusFailed,
+		inProgressMsg:      "Starting to cancel %s",
+		successMsg:         "Started cancellation of %s",
+		failureMsg:         "Failed to start job cancellation",
 	}))
 	Must(plug.Registry.RegisterCommand("job:suspend", &TerminateCmd{
 		name:               "suspend",
-		longHelp:           "Suspends the job with the given ID or name.",
+		longHelp:           "Suspends the job with the given ID or name",
 		shortHelp:          "Suspends the job with the given ID or name",
 		terminateMode:      jet.TerminateModeSuspendGraceful,
 		terminateModeForce: jet.TerminateModeSuspendForceful,
-		msg:                "Suspending the job",
 		waitState:          jet.JobStatusSuspended,
+		inProgressMsg:      "Starting to suspend %s",
+		successMsg:         "Started suspension of %s",
+		failureMsg:         "Failed to start job suspension",
 	}))
 	Must(plug.Registry.RegisterCommand("job:restart", &TerminateCmd{
 		name:               "restart",
-		longHelp:           "Restarts the job with the given ID or name.",
+		longHelp:           "Restarts the job with the given ID or name",
 		shortHelp:          "Restarts the job with the given ID or name",
 		terminateMode:      jet.TerminateModeRestartGraceful,
 		terminateModeForce: jet.TerminateModeRestartForceful,
-		msg:                "Restarting the job",
 		waitState:          jet.JobStatusRunning,
+		inProgressMsg:      "Initiating the restart of %s",
+		successMsg:         "Initiated the restart of %s",
+		failureMsg:         "Failed to initiate job restart",
 	}))
 }

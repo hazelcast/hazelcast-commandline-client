@@ -17,6 +17,8 @@ import (
 
 type AtomicLongGetCommand struct{}
 
+func (mc *AtomicLongGetCommand) Unwrappable() {}
+
 func (mc *AtomicLongGetCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("get")
 	help := "Get the value of the AtomicLong"
