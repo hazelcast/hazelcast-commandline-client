@@ -5,6 +5,7 @@ package migration_test
 import (
 	"context"
 	"encoding/json"
+	"sync"
 	"testing"
 	"time"
 
@@ -33,13 +34,29 @@ func startTest_Successful(t *testing.T) {
 	tcx := it.TestContext{T: t}
 	ctx := context.Background()
 	tcx.Tester(func(tcx it.TestContext) {
+		var wg sync.WaitGroup
+		wg.Add(1)
 		go tcx.WithReset(func() {
+			defer wg.Done()
 			Must(tcx.CLC().Execute(ctx, "start", "dmt-config", "--yes"))
 		})
 		successfulRunner(tcx, ctx)
-		for _, m := range []string{"first message", "second message", "last message", "status report"} {
-			tcx.AssertStdoutContains(m)
-		}
+		tcx.AssertStdoutContains(`
+Hazelcast Data Migration Tool v5.3.0
+(c) 2023 Hazelcast, Inc.
+	
+Selected data structures in the source cluster will be migrated to the target cluster.	
+
+
+ OK   [1/3] Connected to the migration cluster.
+first message
+ OK   [2/3] Started the migration.
+second message
+last message
+status report
+ OK   [3/3] Migrated the cluster.
+
+ OK   Migration completed successfully.`)
 	})
 }
 
@@ -51,9 +68,21 @@ func startTest_Failure(t *testing.T) {
 			tcx.CLC().Execute(ctx, "start", "dmt-config", "--yes")
 		})
 		failureRunner(tcx, ctx)
-		for _, m := range []string{"first message", "second message", "error1", "error2", "fail status report"} {
-			tcx.AssertStdoutContains(m)
-		}
+		tcx.AssertStdoutContains(`
+Hazelcast Data Migration Tool v5.3.0
+(c) 2023 Hazelcast, Inc.
+	
+Selected data structures in the source cluster will be migrated to the target cluster.	
+
+
+ OK   [1/3] Connected to the migration cluster.
+first message
+ OK   [2/3] Started the migration.
+second message
+fail status report
+ FAIL Could not migrate the cluster: migration failed with following error(s):
+error1
+error2`)
 	})
 }
 

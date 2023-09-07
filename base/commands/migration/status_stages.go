@@ -95,7 +95,7 @@ func (st *StatusStages) fetchStage(ctx context.Context, ec plug.ExecContext) fun
 					ec.PrintlnUnnecessary(fmt.Sprintf("Completion Percentage: %f", ms.CompletionPercentage))
 					ec.PrintlnUnnecessary(ms.Report)
 					if len(ms.Errors) > 0 {
-						ec.PrintlnUnnecessary(fmt.Sprintf("migration failed with following error(s): %s", strings.Join(ms.Errors, "\n")))
+						ec.PrintlnUnnecessary(fmt.Sprintf("migration failed with following error(s):\n%s", strings.Join(ms.Errors, "\n")))
 					}
 					if len(ms.Migrations) > 0 {
 						var rows []output.Row

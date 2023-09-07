@@ -106,33 +106,8 @@ func (st *StartStages) startStage(ctx context.Context, ec plug.ExecContext) func
 		}
 		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
-		msg := <-st.updateMessageChan // read the first message
-		if slices.Contains([]Status{StatusComplete, StatusFailed, StatusCanceled}, msg.Status) {
-			ms, err := readMigrationStatus(ctx, st.statusMap)
-			if ctx.Err() != nil {
-				if errors.Is(err, context.DeadlineExceeded) {
-					return timeoutErr
-				}
-				return fmt.Errorf("migration failed: %w", err)
-			}
-			if err != nil {
-				return fmt.Errorf("reading status: %w", err)
-			}
-			ec.PrintlnUnnecessary(msg.Message)
-			ec.PrintlnUnnecessary(ms.Report)
-			for _, l := range ms.Logs {
-				ec.Logger().Info(l)
-			}
-			switch ms.Status {
-			case StatusComplete:
-				return nil
-			case StatusCanceled:
-				return clcerrors.ErrUserCancelled
-			case StatusFailed:
-				return fmt.Errorf("migration failed with following error(s): %s", strings.Join(ms.Errors, "\n"))
-			}
-		} else {
-			ec.PrintlnUnnecessary(msg.Message)
+		if isTerminal, err := st.handleUpdateMessage(ctx, ec, <-st.updateMessageChan); isTerminal {
+			return err
 		}
 		return nil
 	}
@@ -157,26 +132,8 @@ func (st *StartStages) migrateStage(ctx context.Context, ec plug.ExecContext) fu
 		for {
 			select {
 			case msg := <-st.updateMessageChan:
-				if slices.Contains([]Status{StatusComplete, StatusFailed, StatusCanceled}, msg.Status) {
-					ms, err := readMigrationStatus(ctx, st.statusMap)
-					if err != nil {
-						return fmt.Errorf("reading status: %w", err)
-					}
-					ec.PrintlnUnnecessary(msg.Message)
-					ec.PrintlnUnnecessary(ms.Report)
-					for _, l := range ms.Logs {
-						ec.Logger().Info(l)
-					}
-					switch ms.Status {
-					case StatusComplete:
-						return nil
-					case StatusCanceled:
-						return clcerrors.ErrUserCancelled
-					case StatusFailed:
-						return fmt.Errorf("migration failed with following error(s): %s", strings.Join(ms.Errors, "\n"))
-					}
-				} else {
-					ec.PrintlnUnnecessary(msg.Message)
+				if isTerminal, err := st.handleUpdateMessage(ctx, ec, msg); isTerminal {
+					return err
 				}
 			case <-ctx.Done():
 				if err := ctx.Err(); err != nil {
@@ -188,4 +145,27 @@ func (st *StartStages) migrateStage(ctx context.Context, ec plug.ExecContext) fu
 			}
 		}
 	}
+}
+
+func (st *StartStages) handleUpdateMessage(ctx context.Context, ec plug.ExecContext, msg UpdateMessage) (bool, error) {
+	ec.PrintlnUnnecessary(msg.Message)
+	if slices.Contains([]Status{StatusComplete, StatusFailed, StatusCanceled}, msg.Status) {
+		ms, err := readMigrationStatus(ctx, st.statusMap)
+		if err != nil {
+			return true, fmt.Errorf("reading status: %w", err)
+		}
+		ec.PrintlnUnnecessary(ms.Report)
+		for _, l := range ms.Logs {
+			ec.Logger().Info(l)
+		}
+		switch ms.Status {
+		case StatusComplete:
+			return true, nil
+		case StatusCanceled:
+			return true, clcerrors.ErrUserCancelled
+		case StatusFailed:
+			return true, fmt.Errorf("migration failed with following error(s):\n%s", strings.Join(ms.Errors, "\n"))
+		}
+	}
+	return false, nil
 }
