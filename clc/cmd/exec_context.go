@@ -135,6 +135,10 @@ func (ec *ExecContext) Props() plug.ReadOnlyProperties {
 	return ec.props
 }
 
+func (ec *ExecContext) ConfigPath() string {
+	return ec.cp.GetString(clc.PropertyConfig)
+}
+
 func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInternal, error) {
 	ci := ec.main.clientInternal()
 	if ci != nil {

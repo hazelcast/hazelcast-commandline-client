@@ -55,7 +55,7 @@ func (p *FileProvider) load(path string) error {
 	path = paths.ResolveConfigPath(path)
 	if !paths.Exists(path) {
 		if path == "" {
-			// the user is trying to load the default config.
+			// there is no default config, user will be prompted for config later
 			return nil
 		}
 		return fmt.Errorf("configuration does not exist %s: %w", path, os.ErrNotExist)
