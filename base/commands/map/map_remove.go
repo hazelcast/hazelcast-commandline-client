@@ -18,6 +18,8 @@ import (
 
 type MapRemoveCommand struct{}
 
+func (mc *MapRemoveCommand) Unwrappable() {}
+
 func (mc *MapRemoveCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("remove")
 	help := "Remove a value from the given Map"

@@ -15,6 +15,8 @@ import (
 
 type MapDestroyCommand struct{}
 
+func (mc *MapDestroyCommand) Unwrappable() {}
+
 func (mc *MapDestroyCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("destroy")
 	long := `Destroy a Map

@@ -20,6 +20,8 @@ import (
 
 type MapKeySetCommand struct{}
 
+func (mc *MapKeySetCommand) Unwrappable() {}
+
 func (mc *MapKeySetCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("key-set")
 	help := "Get all keys of a Map"

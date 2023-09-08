@@ -18,6 +18,8 @@ import (
 
 type MapTryLock struct{}
 
+func (mc *MapTryLock) Unwrappable() {}
+
 func (mc *MapTryLock) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("try-lock")
 	long := `Try to lock a key in the given map

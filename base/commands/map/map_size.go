@@ -16,6 +16,8 @@ import (
 
 type MapSizeCommand struct{}
 
+func (mc *MapSizeCommand) Unwrappable() {}
+
 func (mc *MapSizeCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("size")
 	help := "Return the size of the given Map"

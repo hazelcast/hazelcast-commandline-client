@@ -23,6 +23,8 @@ const (
 
 type MapSetCommand struct{}
 
+func (mc *MapSetCommand) Unwrappable() {}
+
 func (mc *MapSetCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("set")
 	help := "Set a value in the given Map"

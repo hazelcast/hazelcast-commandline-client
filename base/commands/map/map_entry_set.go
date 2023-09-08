@@ -18,6 +18,8 @@ import (
 
 type MapEntrySetCommand struct{}
 
+func (mc *MapEntrySetCommand) Unwrappable() {}
+
 func (mc *MapEntrySetCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("entry-set")
 	help := "Get all entries of a Map"

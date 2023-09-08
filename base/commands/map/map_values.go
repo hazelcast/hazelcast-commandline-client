@@ -18,6 +18,8 @@ import (
 
 type MapValuesCommand struct{}
 
+func (mc *MapValuesCommand) Unwrappable() {}
+
 func (mc *MapValuesCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("values")
 	help := "Get all values of a Map"

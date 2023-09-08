@@ -14,6 +14,8 @@ import (
 
 type MapUnlock struct{}
 
+func (mc *MapUnlock) Unwrappable() {}
+
 func (mc *MapUnlock) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("unlock")
 	long := `Unlock a key in the given Map

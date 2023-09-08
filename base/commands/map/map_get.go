@@ -18,6 +18,8 @@ import (
 
 type MapGetCommand struct{}
 
+func (mc *MapGetCommand) Unwrappable() {}
+
 func (mc *MapGetCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("get")
 	addKeyTypeFlag(cc)

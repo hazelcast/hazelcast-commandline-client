@@ -16,6 +16,8 @@ import (
 
 type MapLock struct{}
 
+func (mc *MapLock) Unwrappable() {}
+
 func (mc *MapLock) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("lock")
 	long := `Lock a key in the given Map
