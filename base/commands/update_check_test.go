@@ -11,6 +11,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,7 +19,7 @@ func Test_maybePrintNewVersionNotification(t *testing.T) {
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
 		ec := it.NewExecuteContext(nil)
-		sa := store.NewStoreAccessor(filepath.Join(paths.Caches(), "update"), ec.Logger())
+		sa := store.NewStoreAccessor(filepath.Join(paths.Caches(), "update"), log.NopLogger{})
 		check.Must(commands.UpdateVersionAndNextCheckTime(sa, "v5.3.2"))
 		internal.Version = "v5.3.0"
 		check.Must(commands.MaybePrintNewVersionNotification(context.TODO(), ec))
