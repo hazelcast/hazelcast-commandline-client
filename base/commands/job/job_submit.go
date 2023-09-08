@@ -86,7 +86,7 @@ func submitJar(ctx context.Context, ci *hazelcast.ClientInternal, ec plug.ExecCo
 	fn = strings.TrimSuffix(fn, ".jar")
 	args := ec.GetStringSliceArg(argArg)
 	stages := []stage.Stage[any]{
-		makeConnectStage(ec),
+		stage.MakeConnectStage[any](ec),
 		{
 			ProgressMsg: "Submitting the job",
 			SuccessMsg:  "Submitted the job",

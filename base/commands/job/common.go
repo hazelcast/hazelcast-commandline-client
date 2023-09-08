@@ -58,7 +58,7 @@ func idToString(id int64) string {
 func terminateJob(ctx context.Context, ec plug.ExecContext, tm int32, cm TerminateCmd) error {
 	nameOrID := ec.GetStringArg(argJobID)
 	stages := []stage.Stage[any]{
-		makeConnectStage(ec),
+		stage.MakeConnectStage[any](ec),
 		{
 			ProgressMsg: fmt.Sprintf(cm.inProgressMsg, nameOrID),
 			SuccessMsg:  fmt.Sprintf(cm.successMsg, nameOrID),
@@ -172,16 +172,4 @@ func stringToID(s string) (int64, error) {
 		}
 	}
 	return i, nil
-}
-
-func makeConnectStage(ec plug.ExecContext) stage.Stage[any] {
-	s := stage.Stage[any]{
-		ProgressMsg: "Connecting to the cluster",
-		SuccessMsg:  "Connected to the cluster",
-		FailureMsg:  "Failed connecting to the cluster",
-		Func: func(ctx context.Context, status stage.Statuser[any]) (any, error) {
-			return ec.ClientInternal(ctx)
-		},
-	}
-	return s
 }

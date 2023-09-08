@@ -29,7 +29,7 @@ func (cm ResumeCmd) Init(cc plug.InitContext) error {
 func (cm ResumeCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	nameOrID := ec.GetStringArg(argJobID)
 	stages := []stage.Stage[any]{
-		makeConnectStage(ec),
+		stage.MakeConnectStage[any](ec),
 		{
 			ProgressMsg: fmt.Sprintf("Initiating resume of job: %s", nameOrID),
 			SuccessMsg:  fmt.Sprintf("Initiated resume of job %s", nameOrID),

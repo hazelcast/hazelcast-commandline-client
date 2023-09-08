@@ -9,32 +9,32 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
 func atomicLongChangeValue(ctx context.Context, ec plug.ExecContext, verb string, change func(int64) int64) error {
-	al, err := ec.Props().GetBlocking(atomicLongPropertyName)
-	if err != nil {
-		return err
-	}
 	by := ec.Props().GetInt(atomicLongFlagBy)
-	by = change(by)
-	ali := al.(*hazelcast.AtomicLong)
-	vali, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("%sing the AtomicLong %s", verb, ali.Name()))
-		val, err := ali.AddAndGet(ctx, by)
+	val, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		ali, err := getAtomicLong(ctx, ec, sp)
 		if err != nil {
 			return nil, err
 		}
+		sp.SetText(fmt.Sprintf("%sing the AtomicLong %s", verb, ali.Name()))
+		val, err := ali.AddAndGet(ctx, change(by))
+		if err != nil {
+			return nil, err
+		}
+		msg := fmt.Sprintf("OK %sed AtomicLong %s by %d.\n", verb, ali.Name(), by)
+		ec.PrintlnUnnecessary(msg)
 		return val, nil
 	})
 	if err != nil {
 		return err
 	}
 	stop()
-	val := vali.(int64)
 	row := output.Row{
 		output.Column{
 			Name:  "Value",
@@ -43,5 +43,14 @@ func atomicLongChangeValue(ctx context.Context, ec plug.ExecContext, verb string
 		},
 	}
 	return ec.AddOutputRows(ctx, row)
+}
 
+func getAtomicLong(ctx context.Context, ec plug.ExecContext, sp clc.Spinner) (*hazelcast.AtomicLong, error) {
+	name := ec.Props().GetString(atomicLongFlagName)
+	ci, err := cmd.ClientInternal(ctx, ec, sp)
+	if err != nil {
+		return nil, err
+	}
+	sp.SetText(fmt.Sprintf("Getting atomic long %s", name))
+	return ci.Client().CPSubsystem().GetAtomicLong(ctx, name)
 }
