@@ -6,8 +6,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hazelcast/hazelcast-go-client"
-
+	"github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
@@ -17,6 +16,8 @@ import (
 
 type ListSizeCommand struct{}
 
+func (mc *ListSizeCommand) Unwrappable() {}
+
 func (mc *ListSizeCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("size")
 	help := "Return the size of the given List"
@@ -25,13 +26,12 @@ func (mc *ListSizeCommand) Init(cc plug.InitContext) error {
 }
 
 func (mc *ListSizeCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
-	name := ec.Props().GetString(listFlagName)
-	lv, err := ec.Props().GetBlocking(listPropertyName)
-	if err != nil {
-		return err
-	}
-	l := lv.(*hazelcast.List)
+	name := ec.Props().GetString(base.FlagName)
 	sv, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		l, err := getList(ctx, ec, sp)
+		if err != nil {
+			return nil, err
+		}
 		sp.SetText(fmt.Sprintf("Getting the size of list %s", name))
 		return l.Size(ctx)
 	})

@@ -6,8 +6,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hazelcast/hazelcast-go-client"
-
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/errors"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -16,6 +14,8 @@ import (
 )
 
 type ListDestroyCommand struct{}
+
+func (mc *ListDestroyCommand) Unwrappable() {}
 
 func (mc *ListDestroyCommand) Init(cc plug.InitContext) error {
 	long := `Destroy a List
@@ -29,10 +29,6 @@ This command will delete the List and the data in it will not be available anymo
 }
 
 func (mc *ListDestroyCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
-	lv, err := ec.Props().GetBlocking(listPropertyName)
-	if err != nil {
-		return err
-	}
 	autoYes := ec.Props().GetBool(clc.FlagAutoYes)
 	if !autoYes {
 		p := prompt.New(ec.Stdin(), ec.Stdout())
@@ -45,18 +41,23 @@ func (mc *ListDestroyCommand) Exec(ctx context.Context, ec plug.ExecContext) err
 			return errors.ErrUserCancelled
 		}
 	}
-	l := lv.(*hazelcast.List)
-	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+	name, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		l, err := getList(ctx, ec, sp)
+		if err != nil {
+			return nil, err
+		}
 		sp.SetText(fmt.Sprintf("Destroying list %s", l.Name()))
 		if err := l.Destroy(ctx); err != nil {
 			return nil, err
 		}
-		return nil, nil
+		return l.Name(), nil
 	})
 	if err != nil {
 		return err
 	}
 	stop()
+	msg := fmt.Sprintf("OK Destroyed list %s.", name)
+	ec.PrintlnUnnecessary(msg)
 	return nil
 }
 

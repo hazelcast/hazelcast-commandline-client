@@ -11,6 +11,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
@@ -44,11 +45,11 @@ func (m MapSetManyCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	count := ec.GetInt64Arg(argEntryCount)
 	mapName := ec.Props().GetString(flagName)
 	size := ec.Props().GetString(flagSize)
-	ci, err := ec.ClientInternal(ctx)
-	if err != nil {
-		return err
-	}
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		ci, err := cmd.ClientInternal(ctx, ec, sp)
+		if err != nil {
+			return nil, err
+		}
 		sp.SetText(fmt.Sprintf("Creating entries in map %s with %d entries", mapName, count))
 		mm, err := ci.Client().GetMap(ctx, mapName)
 		if err != nil {

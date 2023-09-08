@@ -6,9 +6,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hazelcast/hazelcast-go-client"
-
+	"github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -18,50 +18,56 @@ import (
 
 type ListContainsCommand struct{}
 
+func (mc *ListContainsCommand) Unwrappable() {}
+
 func (mc *ListContainsCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("contains")
 	help := "Check if the value is present in the list"
 	cc.SetCommandHelp(help, help)
 	addValueTypeFlag(cc)
-	cc.AddStringArg(argValue, argTitleValue)
+	cc.AddStringArg(base.ArgValue, base.ArgTitleValue)
 	return nil
 }
 
 func (mc *ListContainsCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
-	name := ec.Props().GetString(listFlagName)
-	ci, err := ec.ClientInternal(ctx)
-	if err != nil {
-		return err
-	}
-	// get the list just to ensure the corresponding proxy is created
-	if _, err := ec.Props().GetBlocking(listPropertyName); err != nil {
-		return err
-	}
-	valueStr := ec.GetStringArg(argValue)
-	vd, err := makeValueData(ec, ci, valueStr)
-	if err != nil {
-		return err
-	}
-	pid, err := stringToPartitionID(ci, name)
-	if err != nil {
-		return err
-	}
-	cmi, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+	name := ec.Props().GetString(base.FlagName)
+	ok, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		ci, err := cmd.ClientInternal(ctx, ec, sp)
+		if err != nil {
+			return nil, err
+		}
+		// get the list just to ensure the corresponding proxy is created
+		_, err = getList(ctx, ec, sp)
+		if err != nil {
+			return nil, err
+		}
+		valueStr := ec.GetStringArg(base.ArgValue)
+		vd, err := makeValueData(ec, ci, valueStr)
+		if err != nil {
+			return nil, err
+		}
+		pid, err := stringToPartitionID(ci, name)
+		if err != nil {
+			return nil, err
+		}
 		sp.SetText(fmt.Sprintf("Checking if value exists in the list %s", name))
 		req := codec.EncodeListContainsRequest(name, vd)
-		return ci.InvokeOnPartition(ctx, req, pid, nil)
+		resp, err := ci.InvokeOnPartition(ctx, req, pid, nil)
+		if err != nil {
+			return nil, err
+		}
+		contains := codec.DecodeListContainsResponse(resp)
+		return contains, nil
 	})
 	if err != nil {
 		return err
 	}
 	stop()
-	cm := cmi.(*hazelcast.ClientMessage)
-	contains := codec.DecodeListContainsResponse(cm)
 	return ec.AddOutputRows(ctx, output.Row{
 		{
 			Name:  "Contains",
 			Type:  serialization.TypeBool,
-			Value: contains,
+			Value: ok,
 		},
 	})
 }
