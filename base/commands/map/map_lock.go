@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client"
-
+	"github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
@@ -30,22 +30,21 @@ This command is only available in the interactive mode.`
 }
 
 func (mc *MapLock) Exec(ctx context.Context, ec plug.ExecContext) error {
-	mapName := ec.Props().GetString(mapFlagName)
-	ci, err := ec.ClientInternal(ctx)
-	if err != nil {
-		return err
-	}
-	mv, err := ec.Props().GetBlocking(mapPropertyName)
-	if err != nil {
-		return err
-	}
-	m := mv.(*hazelcast.Map)
-	keyStr := ec.GetStringArg(argKey)
-	keyData, err := makeKeyData(ec, ci, keyStr)
-	if err != nil {
-		return err
-	}
+	mapName := ec.Props().GetString(base.FlagName)
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		ci, err := cmd.ClientInternal(ctx, ec, sp)
+		if err != nil {
+			return nil, err
+		}
+		m, err := getMap(ctx, ec, sp)
+		if err != nil {
+			return nil, err
+		}
+		keyStr := ec.GetStringArg(argKey)
+		keyData, err := makeKeyData(ec, ci, keyStr)
+		if err != nil {
+			return nil, err
+		}
 		sp.SetText(fmt.Sprintf("Locking key in map %s", mapName))
 		if ttl := GetTTL(ec); ttl != ttlUnset {
 			return nil, m.LockWithLease(ctx, keyData, time.Duration(GetTTL(ec)))
@@ -56,6 +55,8 @@ func (mc *MapLock) Exec(ctx context.Context, ec plug.ExecContext) error {
 		return err
 	}
 	stop()
+	msg := fmt.Sprintf("OK Locked the key in map %s", mapName)
+	ec.PrintlnUnnecessary(msg)
 	return nil
 }
 

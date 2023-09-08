@@ -61,6 +61,7 @@ var defaultDedicatedTestCluster = NewSingletonTestCluster(defaultDedicatedCluste
 	port := NextPort()
 	return rc.startNewCluster(MemberCount(), XMLConfig(defaultDedicatedClusterName, port), port)
 })
+var DefaultDedicatedTestCluster = defaultDedicatedTestCluster
 var defaultViridianTestCluster = NewSingletonTestCluster("not-used", func() TestCluster {
 	return newViridianTestCluster()
 })
