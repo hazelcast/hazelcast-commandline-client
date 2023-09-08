@@ -11,8 +11,7 @@ import (
 )
 
 const (
-	atomicLongFlagName     = "name"
-	atomicLongPropertyName = "atomic-long"
+	flagName = "name"
 )
 
 type AtomicLongCommand struct{}
@@ -20,7 +19,7 @@ type AtomicLongCommand struct{}
 func (AtomicLongCommand) Init(cc plug.InitContext) error {
 	cc.AddCommandGroup(clc.GroupDDSID, clc.GroupDDSTitle)
 	cc.SetCommandGroup(clc.GroupDDSID)
-	cc.AddStringFlag(atomicLongFlagName, "n", defaultAtomicLongName, false, "atomic long name")
+	cc.AddStringFlag(flagName, "n", defaultAtomicLongName, false, "atomic long name")
 	cc.SetTopLevel(true)
 	cc.SetCommandUsage("atomic-long")
 	help := "Atomic long operations"

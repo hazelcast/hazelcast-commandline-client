@@ -46,7 +46,7 @@ func atomicLongChangeValue(ctx context.Context, ec plug.ExecContext, verb string
 }
 
 func getAtomicLong(ctx context.Context, ec plug.ExecContext, sp clc.Spinner) (*hazelcast.AtomicLong, error) {
-	name := ec.Props().GetString(atomicLongFlagName)
+	name := ec.Props().GetString(flagName)
 	ci, err := cmd.ClientInternal(ctx, ec, sp)
 	if err != nil {
 		return nil, err
