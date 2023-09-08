@@ -10,6 +10,7 @@ import (
 
 	clcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 	"golang.org/x/exp/slices"
@@ -161,9 +162,11 @@ func (st *StartStages) handleUpdateMessage(ctx context.Context, ec plug.ExecCont
 		}
 		ec.PrintlnUnnecessary(ms.Report)
 		name := fmt.Sprintf("migration_report_%s", st.migrationID)
-		err = saveReportToFile(name, ms.Report)
-		if err != nil {
+		if err = saveReportToFile(name, ms.Report); err != nil {
 			return true, fmt.Errorf("writing report to file: %w", err)
+		}
+		if err = st.saveDebugLogs(ctx, st.ci.OrderedMembers()); err != nil {
+			return true, fmt.Errorf("writing debug logs to file: %w", err)
 		}
 		ec.PrintlnUnnecessary(fmt.Sprintf("migration report saved to file: %s", name))
 		for _, l := range ms.Logs {
@@ -189,4 +192,28 @@ func saveReportToFile(fileName, report string) error {
 	defer f.Close()
 	_, err = f.WriteString(report)
 	return err
+}
+
+func (st *StartStages) saveDebugLogs(ctx context.Context, members []cluster.MemberInfo) error {
+	for _, m := range members {
+		f, err := os.Create(fmt.Sprintf("%s%s.log", DebugLogsListPrefix, m.UUID.String()))
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		l, err := st.ci.Client().GetList(ctx, DebugLogsListPrefix+m.UUID.String())
+		if err != nil {
+			return err
+		}
+		logs, err := l.GetAll(ctx)
+		if err != nil {
+			return err
+		}
+		for _, log := range logs {
+			if _, err = fmt.Fprintf(f, log.(string)); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }

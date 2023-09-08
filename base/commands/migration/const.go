@@ -5,6 +5,7 @@ const (
 	StatusMapEntryName       = "status"
 	StatusMapPrefix          = "__datamigration_"
 	UpdateTopicPrefix        = "__datamigration_updates_"
+	DebugLogsListPrefix      = "__datamigration_debug_logs_"
 	MigrationsInProgressList = "__datamigrations_in_progress"
 )
 

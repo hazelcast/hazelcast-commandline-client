@@ -120,7 +120,7 @@ func (tcx TestContext) Tester(f func(tcx TestContext)) {
 				tcx.Cluster = defaultViridianTestCluster.Launch(tcx.T)
 				tcx.Viridian = defaultViridianTestCluster.cls.(*viridianTestCluster).api
 			} else {
-				tcx.Cluster = defaultDedicatedTestCluster.Launch(tcx.T)
+				tcx.Cluster = DefaultDedicatedTestCluster.Launch(tcx.T)
 			}
 		}
 		if tcx.ClientConfig == nil {

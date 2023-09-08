@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"sync"
 	"testing"
 	"time"
@@ -15,7 +16,9 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/base/commands/migration"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
+	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMigration(t *testing.T) {
@@ -41,10 +44,12 @@ func startTest_Successful(t *testing.T) {
 			defer wg.Done()
 			Must(tcx.CLC().Execute(ctx, "start", "dmt-config", "--yes"))
 		})
+
 		c := make(chan string, 1)
 		go findMigrationID(ctx, tcx, c)
 		migrationID := <-c
-		successfulRunner(migrationID, tcx, ctx)
+		fileNames := successfulRunner(t, migrationID, tcx, ctx)
+		wg.Wait()
 		tcx.AssertStdoutContains(fmt.Sprintf(`
 Hazelcast Data Migration Tool v5.3.0
 (c) 2023 Hazelcast, Inc.
@@ -62,6 +67,11 @@ migration report saved to file: migration_report_%s
  OK   [3/3] Migrated the cluster.
 
  OK   Migration completed successfully.`, migrationID))
+		tcx.WithReset(func() {
+			for _, n := range fileNames {
+				require.Equal(t, true, fileExists(n))
+			}
+		})
 	})
 }
 
@@ -88,7 +98,25 @@ fail status report`)
 	})
 }
 
-func successfulRunner(migrationID string, tcx it.TestContext, ctx context.Context) {
+func fileExists(filename string) bool {
+	a := MustValue(os.Getwd())
+	fmt.Println(a)
+	_, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	Must(os.Remove(filename))
+	return true
+}
+
+func successfulRunner(t *testing.T, migrationID string, tcx it.TestContext, ctx context.Context) []string {
+	var fileNames []string
+	for _, m := range hz.NewClientInternal(tcx.Client).OrderedMembers() {
+		l := MustValue(tcx.Client.GetList(ctx, migration.DebugLogsListPrefix+m.UUID.String()))
+		require.Equal(t, true, MustValue(l.AddAll(ctx, "log1\n", "log2\n", "log3\n")))
+		fileNames = append(fileNames, fmt.Sprintf("%s%s.log", migration.DebugLogsListPrefix, m.UUID.String()))
+	}
+	fileNames = append(fileNames, fmt.Sprintf("migration_report_%s", migrationID))
 	topic := MustValue(tcx.Client.GetTopic(ctx, migration.MakeUpdateTopicName(migrationID)))
 	msg := MustValue(json.Marshal(migration.UpdateMessage{Status: migration.StatusInProgress, Message: "first message", CompletionPercentage: 10}))
 	Must(topic.Publish(ctx, serialization.JSON(msg)))
@@ -103,6 +131,7 @@ func successfulRunner(migrationID string, tcx it.TestContext, ctx context.Contex
 	Must(statusMap.Set(ctx, migration.StatusMapEntryName, serialization.JSON(b)))
 	msg = MustValue(json.Marshal(migration.UpdateMessage{Status: migration.StatusComplete, Message: "last message", CompletionPercentage: 100}))
 	Must(topic.Publish(ctx, serialization.JSON(msg)))
+	return fileNames
 }
 
 func failureRunner(tcx it.TestContext, ctx context.Context) {
