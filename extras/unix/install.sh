@@ -180,7 +180,9 @@ fi
             return
         fi
         local text
-        text="$(cat "$path" | grep "$installed")"
+        set +o pipefail
+        text=$(cat "$path" | grep "$installed")
+        set -o pipefail
         if [[ "$text" != "" ]]; then
             # CLC PATH is already exported in this file
             log_debug "CLC PATH is already installed in $path"
