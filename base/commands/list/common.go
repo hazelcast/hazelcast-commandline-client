@@ -94,7 +94,7 @@ func removeFromList(ctx context.Context, ec plug.ExecContext, name string, index
 			raw := codec.DecodeListRemoveWithIndexResponse(resp)
 			vt = raw.Type()
 			value, err = ci.DecodeData(raw)
-			colName = "Value"
+			colName = "Removed Value"
 			if err != nil {
 				ec.Logger().Info("The value was not decoded, due to error: %s", err.Error())
 				value = serialization.NondecodedType(serialization.TypeToLabel(vt))
@@ -130,7 +130,7 @@ func removeFromList(ctx context.Context, ec plug.ExecContext, name string, index
 	return ec.AddOutputRows(ctx, row)
 }
 
-func convertDataToRow(ci *hazelcast.ClientInternal, data hazelcast.Data, showType bool) (output.Row, error) {
+func convertDataToRow(ci *hazelcast.ClientInternal, name string, data hazelcast.Data, showType bool) (output.Row, error) {
 	vt := data.Type()
 	value, err := ci.DecodeData(data)
 	if err != nil {
@@ -138,7 +138,7 @@ func convertDataToRow(ci *hazelcast.ClientInternal, data hazelcast.Data, showTyp
 	}
 	row := output.Row{
 		output.Column{
-			Name:  "Value",
+			Name:  name,
 			Type:  vt,
 			Value: value,
 		},

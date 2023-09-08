@@ -58,7 +58,7 @@ func (mc *ListSetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 			return nil, err
 		}
 		data := codec.DecodeListSetResponse(resp)
-		return convertDataToRow(ci, data, ec.Props().GetBool(base.FlagShowType))
+		return convertDataToRow(ci, "Last Value", data, ec.Props().GetBool(base.FlagShowType))
 	})
 	if err != nil {
 		return err
