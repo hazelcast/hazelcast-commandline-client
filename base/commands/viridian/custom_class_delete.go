@@ -14,6 +14,8 @@ import (
 
 type CustomClassDeleteCmd struct{}
 
+func (cmd CustomClassDeleteCmd) Unwrappable() {}
+
 func (cmd CustomClassDeleteCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("delete-custom-class")
 	long := `Deletes a custom class from the given Viridian cluster.
@@ -61,7 +63,7 @@ func (cmd CustomClassDeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) e
 		return handleErrorResponse(ec, err)
 	}
 	stop()
-	ec.PrintlnUnnecessary("Custom class was deleted.")
+	ec.PrintlnUnnecessary("OK Custom class was deleted.")
 	return nil
 }
 

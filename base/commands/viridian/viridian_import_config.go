@@ -16,6 +16,8 @@ import (
 
 type ImportConfigCmd struct{}
 
+func (ImportConfigCmd) Unwrappable() {}
+
 func (ImportConfigCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("import-config")
 	long := `Imports connection configuration of the given Viridian cluster.
@@ -73,8 +75,6 @@ func (ImportConfigCmd) exec(ctx context.Context, ec plug.ExecContext) error {
 		},
 	})
 }
-
-func (ImportConfigCmd) Unwrappable() {}
 
 func init() {
 	Must(plug.Registry.RegisterCommand("viridian:import-config", &ImportConfigCmd{}))

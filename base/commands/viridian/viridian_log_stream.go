@@ -24,6 +24,8 @@ const (
 
 type StreamLogCmd struct{}
 
+func (cm StreamLogCmd) Unwrappable() {}
+
 func (cm StreamLogCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("stream-logs")
 	long := `Outputs the logs of the given Viridian cluster as a stream.

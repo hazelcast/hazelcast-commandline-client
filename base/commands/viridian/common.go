@@ -28,7 +28,7 @@ const (
 
 var (
 	ErrClusterFailed  = errors.New("cluster failed")
-	ErrLoadingSecrets = errors.New("could not load Viridian secrets, did you login?")
+	ErrLoadingSecrets = errors.New("could not load Viridian secrets, did you retrieve the access token using the login command?")
 )
 
 func findTokenPath(apiKey string) (string, error) {

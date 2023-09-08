@@ -15,6 +15,8 @@ import (
 
 type CustomClassListCmd struct{}
 
+func (cmd CustomClassListCmd) Unwrappable() {}
+
 func (cmd CustomClassListCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("list-custom-classes")
 	long := `Lists all custom classes in the given Viridian cluster.
@@ -48,6 +50,10 @@ func (cmd CustomClassListCmd) Exec(ctx context.Context, ec plug.ExecContext) err
 	}
 	stop()
 	cs := csi.([]viridian.CustomClass)
+	if len(cs) == 0 {
+		ec.PrintlnUnnecessary("OK There are no custom classes on this cluster.")
+		return nil
+	}
 	rows := make([]output.Row, len(cs))
 	for i, c := range cs {
 		r := output.Row{

@@ -15,6 +15,8 @@ import (
 
 type ClusterListCmd struct{}
 
+func (cm ClusterListCmd) Unwrappable() {}
+
 func (cm ClusterListCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("list-clusters")
 	long := `Lists all Viridian clusters for the logged in API key.
@@ -33,7 +35,7 @@ func (cm ClusterListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 		return err
 	}
 	csi, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText("Retrieving clusters")
+		sp.SetText("Retrieving the clusters")
 		cs, err := api.ListClusters(ctx)
 		if err != nil {
 			return nil, err
@@ -46,7 +48,8 @@ func (cm ClusterListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	stop()
 	cs := csi.([]viridian.Cluster)
 	if len(cs) == 0 {
-		ec.PrintlnUnnecessary("No clusters found")
+		ec.PrintlnUnnecessary("OK No clusters found")
+		return nil
 	}
 	rows := make([]output.Row, len(cs))
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)

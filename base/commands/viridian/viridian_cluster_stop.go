@@ -4,14 +4,18 @@ package viridian
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
 type ClusterStopCmd struct{}
+
+func (cm ClusterStopCmd) Unwrappable() {}
 
 func (cm ClusterStopCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("stop-cluster")
@@ -31,21 +35,27 @@ func (cm ClusterStopCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		return err
 	}
-	clusterNameOrID := ec.GetStringArg(argClusterID)
-	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText("Pausing the cluster")
-		err := api.StopCluster(ctx, clusterNameOrID)
-		if err != nil {
-			return nil, err
-		}
-		return nil, nil
-	})
+	nameOrID := ec.GetStringArg(argClusterID)
+	st := stage.Stage[viridian.Cluster]{
+		ProgressMsg: "Initiating cluster stop",
+		SuccessMsg:  "Initiated cluster stop",
+		FailureMsg:  "Failed to initiate cluster stop",
+		Func: func(ctx context.Context, status stage.Statuser[viridian.Cluster]) (viridian.Cluster, error) {
+			return api.StopCluster(ctx, nameOrID)
+		},
+	}
+	cluster, err := stage.Execute(ctx, ec, viridian.Cluster{}, stage.NewFixedProvider(st))
 	if err != nil {
 		return handleErrorResponse(ec, err)
 	}
-	stop()
-	ec.PrintlnUnnecessary(fmt.Sprintf("Cluster %s was stopped.", clusterNameOrID))
-	return nil
+	ec.PrintlnUnnecessary("")
+	return ec.AddOutputRows(ctx, output.Row{
+		output.Column{
+			Name:  "ID",
+			Type:  serialization.TypeString,
+			Value: cluster.ID,
+		},
+	})
 }
 
 func init() {

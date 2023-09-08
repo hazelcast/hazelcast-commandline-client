@@ -8,14 +8,18 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/errors"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/prompt"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
 const flagOutputPath = "output-path"
 
 type CustomClassDownloadCmd struct{}
+
+func (cmd CustomClassDownloadCmd) Unwrappable() {}
 
 func (cmd CustomClassDownloadCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("download-custom-class")
@@ -27,6 +31,7 @@ Make sure you login before running this command.
 	cc.SetCommandHelp(long, short)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	cc.AddStringFlag(flagOutputPath, "o", "", false, "download path")
+	cc.AddBoolFlag(clc.FlagAutoYes, "", false, false, "skip confirming overwrite")
 	cc.AddStringArg(argClusterID, argTitleClusterID)
 	cc.AddStringArg(argArtifactID, argTitleArtifactID)
 	return nil
@@ -73,8 +78,15 @@ func (cmd CustomClassDownloadCmd) Exec(ctx context.Context, ec plug.ExecContext)
 		return handleErrorResponse(ec, err)
 	}
 	stop()
-	ec.PrintlnUnnecessary("Custom class was downloaded.")
-	return nil
+	ec.PrintlnUnnecessary("OK Custom class was saved.\n")
+	return ec.AddOutputRows(ctx, output.Row{
+		output.Column{
+			Name: "Path",
+			Type: serialization.TypeString,
+			// TODO: t.Path should not have / as the suffix
+			Value: t.Path + t.FileName,
+		},
+	})
 }
 
 func init() {

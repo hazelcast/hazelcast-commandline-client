@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -19,11 +18,12 @@ const (
 	ExitCodeSuccess        = 0
 	ExitCodeGenericFailure = 1
 	ExitCodeTimeout        = 2
+	ExitCodeUserCanceled   = 3
 )
 
 func bye(err error) {
 	_, _ = fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
-	os.Exit(1)
+	os.Exit(ExitCodeGenericFailure)
 }
 
 func main() {
@@ -47,16 +47,19 @@ func main() {
 	if err != nil {
 		// print the error only if it wasn't printed before
 		if _, ok := err.(hzerrors.WrappedError); !ok {
-			fmt.Println(cmd.MakeErrStr(err))
+			if !hzerrors.IsUserCancelled(err) {
+				fmt.Println(cmd.MakeErrStr(err))
+			}
 		}
 	}
 	// ignoring the error here
 	_ = m.Exit()
 	if err != nil {
-		// keeping the hzerrors.ErrTimeout for now
-		// it may be useful to send that error in the future. --YT
-		if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, hzerrors.ErrTimeout) {
+		if hzerrors.IsTimeout(err) {
 			os.Exit(ExitCodeTimeout)
+		}
+		if hzerrors.IsUserCancelled(err) {
+			os.Exit(ExitCodeUserCanceled)
 		}
 		os.Exit(ExitCodeGenericFailure)
 	}
