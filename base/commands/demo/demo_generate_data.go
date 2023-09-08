@@ -42,6 +42,8 @@ var supportedEventStreams = map[string]DataStreamGenerator{
 
 type GenerateDataCmd struct{}
 
+func (cm GenerateDataCmd) Unwrappable() {}
+
 func (cm GenerateDataCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("generate-data")
 	long := `Generates a stream of events
@@ -92,39 +94,46 @@ func generatePreviewResult(ctx context.Context, ec plug.ExecContext, generator D
 		return err
 	}
 	ec.PrintlnUnnecessary(fmt.Sprintf("Following mapping will be created when run without preview:\n\n%s", mq))
-	ec.PrintlnUnnecessary("Generating preview items...")
-	outCh := make(chan output.Row)
-	count := int64(0)
-	go func() {
-	loop:
-		for count < maxCount {
-			var ev demo.StreamItem
-			select {
-			case event, ok := <-itemCh:
-				if !ok {
+	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		sp.SetText("")
+		outCh := make(chan output.Row)
+		count := int64(0)
+		go func() {
+		loop:
+			for count < maxCount {
+				var ev demo.StreamItem
+				select {
+				case event, ok := <-itemCh:
+					if !ok {
+						break loop
+					}
+					ev = event
+				case <-ctx.Done():
 					break loop
 				}
-				ev = event
-			case <-ctx.Done():
-				break loop
+				select {
+				case outCh <- ev.Row():
+				case <-ctx.Done():
+					break loop
+				}
+				count++
 			}
-			select {
-			case outCh <- ev.Row():
-			case <-ctx.Done():
-				break loop
-			}
-			count++
-		}
-		close(outCh)
-		stopStream()
-	}()
-	return ec.AddOutputStream(ctx, outCh)
+			close(outCh)
+			stopStream()
+		}()
+		return nil, ec.AddOutputStream(ctx, outCh)
+	})
+	if err != nil {
+		return err
+	}
+	stop()
+	return nil
 }
 
 func generateResult(ctx context.Context, ec plug.ExecContext, generator DataStreamGenerator, itemCh <-chan demo.StreamItem, keyVals map[string]string, stopStream context.CancelFunc) error {
 	mapName, ok := keyVals[pairMapName]
 	if !ok {
-		return fmt.Errorf("%s key-value pair must be given", pairMapName)
+		return fmt.Errorf("either %s key-value pair must be given or --preview must be used", pairMapName)
 	}
 	m, err := getMap(ctx, ec, mapName)
 	if err != nil {
@@ -198,7 +207,7 @@ func generateResult(ctx context.Context, ec plug.ExecContext, generator DataStre
 	})
 	stop()
 	stopStream()
-	ec.PrintlnUnnecessary(fmt.Sprintf("Generated %d events", atomic.LoadInt64(&count)))
+	ec.PrintlnUnnecessary(fmt.Sprintf("OK Generated %d events", atomic.LoadInt64(&count)))
 	return err
 }
 

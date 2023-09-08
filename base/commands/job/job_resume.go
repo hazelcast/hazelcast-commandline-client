@@ -7,13 +7,15 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/jet"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
 type ResumeCmd struct{}
+
+func (cm ResumeCmd) Unwrappable() {}
 
 func (cm ResumeCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("resume")
@@ -25,43 +27,48 @@ func (cm ResumeCmd) Init(cc plug.InitContext) error {
 }
 
 func (cm ResumeCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
-	ci, err := ec.ClientInternal(ctx)
-	if err != nil {
-		return err
-	}
 	nameOrID := ec.GetStringArg(argJobID)
-	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Resuming job: %s", nameOrID))
-		j := jet.New(ci, sp, ec.Logger())
-		jis, err := j.GetJobList(ctx)
-		if err != nil {
-			return nil, err
-		}
-		jm, err := NewJobNameToIDMap(jis)
-		if err != nil {
-			return nil, err
-		}
-		jid, ok := jm.GetIDForName(nameOrID)
-		if !ok {
-			return nil, jet.ErrInvalidJobID
-		}
-		return nil, j.ResumeJob(ctx, jid)
-	})
+	stages := []stage.Stage[any]{
+		stage.MakeConnectStage[any](ec),
+		{
+			ProgressMsg: fmt.Sprintf("Initiating resume of job: %s", nameOrID),
+			SuccessMsg:  fmt.Sprintf("Initiated resume of job %s", nameOrID),
+			FailureMsg:  fmt.Sprintf("Failed initiating job resume %s", nameOrID),
+			Func: func(ctx context.Context, status stage.Statuser[any]) (any, error) {
+				ci, err := ec.ClientInternal(ctx)
+				if err != nil {
+					return nil, err
+				}
+				j := jet.New(ci, status, ec.Logger())
+				jis, err := j.GetJobList(ctx)
+				if err != nil {
+					return nil, err
+				}
+				jm, err := NewJobNameToIDMap(jis)
+				if err != nil {
+					return nil, err
+				}
+				jid, ok := jm.GetIDForName(nameOrID)
+				if !ok {
+					return nil, jet.ErrInvalidJobID
+				}
+				return nil, j.ResumeJob(ctx, jid)
+			},
+		},
+	}
+	if ec.Props().GetBool(flagWait) {
+		stages = append(stages, stage.Stage[any]{
+			ProgressMsg: fmt.Sprintf("Waiting for job %s to resume", nameOrID),
+			SuccessMsg:  fmt.Sprintf("Job %s is resumed", nameOrID),
+			FailureMsg:  fmt.Sprintf("Job %s failed to resume", nameOrID),
+			Func: func(ctx context.Context, status stage.Statuser[any]) (any, error) {
+				return nil, WaitJobState(ctx, ec, status, nameOrID, jet.JobStatusRunning, 2*time.Second)
+			},
+		})
+	}
+	_, err := stage.Execute[any](ctx, ec, nil, stage.NewFixedProvider(stages...))
 	if err != nil {
 		return err
-	}
-	stop()
-	if ec.Props().GetBool(flagWait) {
-		msg := fmt.Sprintf("Waiting for job %s to start", nameOrID)
-		ec.Logger().Info(msg)
-		err = WaitJobState(ctx, ec, msg, nameOrID, jet.JobStatusRunning, 2*time.Second)
-		if err != nil {
-			return err
-		}
-	}
-	verbose := ec.Props().GetBool(clc.PropertyVerbose)
-	if verbose {
-		ec.PrintlnUnnecessary(fmt.Sprintf("Job resumed: %s", nameOrID))
 	}
 	return nil
 }

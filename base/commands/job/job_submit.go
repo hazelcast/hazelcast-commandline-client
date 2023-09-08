@@ -14,6 +14,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/jet"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
@@ -29,6 +30,8 @@ const (
 )
 
 type SubmitCmd struct{}
+
+func (cm SubmitCmd) Unwrappable() {}
 
 func (cm SubmitCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("submit")
@@ -82,34 +85,40 @@ func submitJar(ctx context.Context, ci *hazelcast.ClientInternal, ec plug.ExecCo
 	_, fn := filepath.Split(path)
 	fn = strings.TrimSuffix(fn, ".jar")
 	args := ec.GetStringSliceArg(argArg)
-	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		j := jet.New(ci, sp, ec.Logger())
-		err := retry(tries, ec.Logger(), func(try int) error {
-			msg := "Submitting the job"
-			if try == 0 {
-				sp.SetText(msg)
-			} else {
-				sp.SetText(fmt.Sprintf("%s: retry %d", msg, try))
-			}
-			br := jet.CreateBinaryReaderForPath(path)
-			return j.SubmitJob(ctx, path, jobName, className, snapshot, args, br)
-		})
-		if err != nil {
-			return nil, err
-		}
-		return nil, nil
-	})
-	if err != nil {
-		return fmt.Errorf("submitting the job: %w", err)
+	stages := []stage.Stage[any]{
+		stage.MakeConnectStage[any](ec),
+		{
+			ProgressMsg: "Submitting the job",
+			SuccessMsg:  "Submitted the job",
+			FailureMsg:  "Failed submitting the job",
+			Func: func(ctx context.Context, status stage.Statuser[any]) (any, error) {
+				j := jet.New(ci, status, ec.Logger())
+				err := retry(tries, ec.Logger(), func(try int) error {
+					if try == 0 {
+						ec.Logger().Info("Submitting %s", jobName)
+					} else {
+						ec.Logger().Info("Submitting %s, retry: %d", jobName, try)
+					}
+					br := jet.CreateBinaryReaderForPath(path)
+					return j.SubmitJob(ctx, path, jobName, className, snapshot, args, br)
+				})
+				return nil, err
+			},
+		},
 	}
-	stop()
 	if wait {
-		msg := fmt.Sprintf("Waiting for job %s to start", jobName)
-		ec.Logger().Info(msg)
-		err = WaitJobState(ctx, ec, msg, jobName, jet.JobStatusRunning, 2*time.Second)
-		if err != nil {
-			return err
-		}
+		stages = append(stages, stage.Stage[any]{
+			ProgressMsg: fmt.Sprintf("Waiting for job %s to start", jobName),
+			SuccessMsg:  fmt.Sprintf("Job %s started", jobName),
+			FailureMsg:  fmt.Sprintf("Job %s failed to start", jobName),
+			Func: func(ctx context.Context, status stage.Statuser[any]) (any, error) {
+				return nil, WaitJobState(ctx, ec, status, jobName, jet.JobStatusRunning, 2*time.Second)
+			},
+		})
+	}
+	_, err := stage.Execute[any](ctx, ec, nil, stage.NewFixedProvider(stages...))
+	if err != nil {
+		return err
 	}
 	return nil
 }

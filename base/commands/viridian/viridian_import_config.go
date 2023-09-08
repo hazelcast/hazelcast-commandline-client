@@ -6,12 +6,17 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	hzerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	iserialization "github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
 type ImportConfigCmd struct{}
+
+func (ImportConfigCmd) Unwrappable() {}
 
 func (ImportConfigCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("import-config")
@@ -49,13 +54,27 @@ func (ImportConfigCmd) exec(ctx context.Context, ec plug.ExecContext) error {
 	if cfgName == "" {
 		cfgName = c.Name
 	}
-	if _, err = tryImportConfig(ctx, ec, api, c.ID, cfgName); err != nil {
+	st := stage.Stage[string]{
+		ProgressMsg: "Importing the configuration",
+		SuccessMsg:  "Imported the configuration",
+		FailureMsg:  "Failed importing the configuration",
+		Func: func(ctx context.Context, status stage.Statuser[string]) (string, error) {
+			return tryImportConfig(ctx, ec, api, c.ID, cfgName)
+		},
+	}
+	path, err := stage.Execute(ctx, ec, "", stage.NewFixedProvider(st))
+	if err != nil {
 		return handleErrorResponse(ec, err)
 	}
-	return nil
+	ec.PrintlnUnnecessary("")
+	return ec.AddOutputRows(ctx, output.Row{
+		output.Column{
+			Name:  "Configuration Path",
+			Type:  iserialization.TypeString,
+			Value: path,
+		},
+	})
 }
-
-func (ImportConfigCmd) Unwrappable() {}
 
 func init() {
 	Must(plug.Registry.RegisterCommand("viridian:import-config", &ImportConfigCmd{}))

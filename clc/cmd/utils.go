@@ -15,6 +15,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	cmderrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
 func ExtractStartupArgs(args []string) (cfgPath, logFile, logLevel string, err error) {
@@ -71,6 +72,11 @@ func MakeErrStr(err error) string {
 		errStr = err.Error()
 	}
 	return fmt.Sprintf("Error: %s", errStr)
+}
+
+func ClientInternal(ctx context.Context, ec plug.ExecContext, sp clc.Spinner) (*hazelcast.ClientInternal, error) {
+	sp.SetText("Connecting to the cluster")
+	return ec.ClientInternal(ctx)
 }
 
 func parseDuration(duration string) (time.Duration, error) {

@@ -17,12 +17,14 @@
 package errors
 
 import (
+	"context"
 	"errors"
+
+	"github.com/gohxs/readline"
 )
 
 var (
 	ErrUserCancelled   = errors.New("cancelled")
-	ErrTimeout         = errors.New("timeout")
 	ErrNotDecoded      = errors.New("not decoded")
 	ErrNotAvailable    = errors.New("not available")
 	ErrNoClusterConfig = errors.New("no configuration was specified")
@@ -43,4 +45,12 @@ func (w WrappedError) Error() string {
 type HTTPError interface {
 	Text() string
 	Code() int
+}
+
+func IsUserCancelled(err error) bool {
+	return errors.Is(err, context.Canceled) || errors.Is(err, ErrUserCancelled) || errors.Is(err, readline.ErrInterrupt)
+}
+
+func IsTimeout(err error) bool {
+	return errors.Is(err, context.DeadlineExceeded)
 }

@@ -5,9 +5,9 @@ package viridian
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -16,6 +16,8 @@ import (
 )
 
 type ClusterCreateCmd struct{}
+
+func (cm ClusterCreateCmd) Unwrappable() {}
 
 func (cm ClusterCreateCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("create-cluster")
@@ -41,53 +43,79 @@ func (cm ClusterCreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 	dev := ec.Props().GetBool(flagDevelopment)
 	prerelease := ec.Props().GetBool(flagPrerelease)
 	hzVersion := ec.Props().GetString(flagHazelcastVersion)
-	csi, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText("Creating the cluster")
-		k8sCluster, err := getFirstAvailableK8sCluster(ctx, api)
-		if err != nil {
-			return nil, err
-		}
-		cs, err := api.CreateCluster(ctx, name, getClusterType(dev), k8sCluster.ID, prerelease, hzVersion)
-		if err != nil {
-			return nil, err
-		}
-		return cs, nil
-	})
+	stages := []stage.Stage[createStageState]{
+		{
+			ProgressMsg: "Initiating cluster creation",
+			SuccessMsg:  "Initiated cluster creation",
+			FailureMsg:  "Failed initiating cluster creation",
+			Func: func(ctx context.Context, status stage.Statuser[createStageState]) (createStageState, error) {
+				state := createStageState{}
+				k8sCluster, err := getFirstAvailableK8sCluster(ctx, api)
+				if err != nil {
+					return state, err
+				}
+				cs, err := api.CreateCluster(ctx, name, getClusterType(dev), k8sCluster.ID, prerelease, hzVersion)
+				if err != nil {
+					return state, err
+				}
+				state.Cluster = cs
+				return state, nil
+			},
+		},
+		{
+			ProgressMsg: "Waiting for the cluster to get ready",
+			SuccessMsg:  "Cluster is ready",
+			FailureMsg:  "Failed while waiting for cluster to get ready",
+			Func: func(ctx context.Context, status stage.Statuser[createStageState]) (createStageState, error) {
+				state := status.Value()
+				if err := waitClusterState(ctx, ec, api, state.Cluster.ID, stateRunning); err != nil {
+					return state, err
+				}
+				return state, nil
+			},
+		},
+		{
+			ProgressMsg: "Importing the configuration",
+			SuccessMsg:  "Imported the configuration",
+			FailureMsg:  "Failed importing the configuration",
+			Func: func(ctx context.Context, status stage.Statuser[createStageState]) (createStageState, error) {
+				state := status.Value()
+				path, err := tryImportConfig(ctx, ec, api, state.Cluster.ID, state.Cluster.Name)
+				if err != nil {
+					return state, nil
+				}
+				state.ConfigPath = path
+				return state, nil
+			},
+		},
+	}
+	state, err := stage.Execute(ctx, ec, createStageState{}, stage.NewFixedProvider(stages...))
 	if err != nil {
 		return handleErrorResponse(ec, err)
 	}
-	stop()
-	c := csi.(viridian.Cluster)
-	ec.PrintlnUnnecessary(fmt.Sprintf("Cluster %s was created.", c.Name))
-	_, stop, err = ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText("Waiting for the cluster to get ready")
-		if err := waitClusterState(ctx, ec, api, c.ID, stateRunning); err != nil {
-			// do not import the config and exit early
-			return nil, err
-		}
-		return nil, nil
-	})
-	if _, err = tryImportConfig(ctx, ec, api, c.ID, c.Name); err != nil {
-		err = handleErrorResponse(ec, err)
-		ec.PrintlnUnnecessary(fmt.Sprintf("FAIL Could not import cluster configuration: %s", err.Error()))
+	ec.PrintlnUnnecessary("OK Created the cluster.\n")
+	rows := output.Row{
+		output.Column{
+			Name:  "ID",
+			Type:  serialization.TypeString,
+			Value: state.Cluster.ID,
+		},
 	}
-	verbose := ec.Props().GetBool(clc.PropertyVerbose)
-	if verbose {
-		row := output.Row{
-			output.Column{
-				Name:  "ID",
-				Type:  serialization.TypeString,
-				Value: c.ID,
-			},
+	if ec.Props().GetBool(clc.PropertyVerbose) {
+		rows = append(rows,
 			output.Column{
 				Name:  "Name",
 				Type:  serialization.TypeString,
-				Value: c.Name,
+				Value: state.Cluster.Name,
 			},
-		}
-		return ec.AddOutputRows(ctx, row)
+			output.Column{
+				Name:  "Configuration Path",
+				Type:  serialization.TypeString,
+				Value: state.ConfigPath,
+			},
+		)
 	}
-	return nil
+	return ec.AddOutputRows(ctx, rows)
 }
 
 func getClusterType(dev bool) string {
@@ -106,6 +134,11 @@ func getFirstAvailableK8sCluster(ctx context.Context, api *viridian.API) (viridi
 		return viridian.K8sCluster{}, errors.New("cluster creation is not available, try again later")
 	}
 	return clusters[0], nil
+}
+
+type createStageState struct {
+	Cluster    viridian.Cluster
+	ConfigPath string
 }
 
 func init() {

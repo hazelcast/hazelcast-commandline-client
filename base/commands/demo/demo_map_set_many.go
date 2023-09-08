@@ -17,6 +17,8 @@ import (
 
 type MapSetManyCmd struct{}
 
+func (m MapSetManyCmd) Unwrappable() {}
+
 const (
 	flagName           = "name"
 	flagSize           = "size"
@@ -39,7 +41,7 @@ func (m MapSetManyCmd) Init(cc plug.InitContext) error {
 }
 
 func (m MapSetManyCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
-	c := ec.GetInt64Arg(argEntryCount)
+	count := ec.GetInt64Arg(argEntryCount)
 	mapName := ec.Props().GetString(flagName)
 	size := ec.Props().GetString(flagSize)
 	ci, err := ec.ClientInternal(ctx)
@@ -47,17 +49,19 @@ func (m MapSetManyCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 		return err
 	}
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Creating entries in map %s with %d entries", mapName, c))
+		sp.SetText(fmt.Sprintf("Creating entries in map %s with %d entries", mapName, count))
 		mm, err := ci.Client().GetMap(ctx, mapName)
 		if err != nil {
 			return nil, err
 		}
-		return nil, createEntries(ctx, c, size, mm)
+		return nil, createEntries(ctx, count, size, mm)
 	})
 	if err != nil {
 		return err
 	}
 	stop()
+	msg := fmt.Sprintf("OK Generated %d entries", count)
+	ec.PrintlnUnnecessary(msg)
 	return nil
 }
 

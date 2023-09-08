@@ -6,8 +6,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hazelcast/hazelcast-go-client"
-
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
@@ -17,6 +15,8 @@ import (
 
 type AtomicLongGetCommand struct{}
 
+func (mc *AtomicLongGetCommand) Unwrappable() {}
+
 func (mc *AtomicLongGetCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("get")
 	help := "Get the value of the AtomicLong"
@@ -25,13 +25,12 @@ func (mc *AtomicLongGetCommand) Init(cc plug.InitContext) error {
 }
 
 func (mc *AtomicLongGetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
-	al, err := ec.Props().GetBlocking(atomicLongPropertyName)
-	if err != nil {
-		return err
-	}
-	ali := al.(*hazelcast.AtomicLong)
-	vali, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Setting value into AtomicLong %s", ali.Name()))
+	val, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		ali, err := getAtomicLong(ctx, ec, sp)
+		if err != nil {
+			return nil, err
+		}
+		sp.SetText(fmt.Sprintf("Getting value of AtomicLong %s", ali.Name()))
 		val, err := ali.Get(ctx)
 		if err != nil {
 			return nil, err
@@ -42,7 +41,6 @@ func (mc *AtomicLongGetCommand) Exec(ctx context.Context, ec plug.ExecContext) e
 		return err
 	}
 	stop()
-	val := vali.(int64)
 	row := output.Row{
 		output.Column{
 			Name:  "Value",

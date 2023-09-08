@@ -8,10 +8,12 @@ import (
 	"sync/atomic"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/terminal"
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/pflag"
+
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/terminal"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config/wizard"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
@@ -102,7 +104,8 @@ func (p *WizardProvider) runWizard(ctx context.Context, ec plug.ExecContext) (st
 			return "", clcerrors.ErrNoClusterConfig
 		}
 		args := m.GetInputs()
-		_, err = ImportSource(ctx, ec, args[0], args[1])
+		stages := MakeImportStages(ec, args[0])
+		_, err = stage.Execute(ctx, ec, args[1], stage.NewFixedProvider(stages...))
 		if err != nil {
 			return "", err
 		}

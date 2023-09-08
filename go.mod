@@ -1,6 +1,6 @@
 module github.com/hazelcast/hazelcast-commandline-client
 
-go 1.19
+go 1.21
 
 require (
 	github.com/alecthomas/assert v0.0.0-20170929043011-405dbfeb8e38

@@ -38,7 +38,7 @@ func (cm ExportSnapshotCmd) Exec(ctx context.Context, ec plug.ExecContext) error
 	jobNameOrID := ec.GetStringArg(argJobID)
 	name := ec.Props().GetString(flagName)
 	cancel := ec.Props().GetBool(flagCancel)
-	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+	nameV, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		j := jet.New(ci, sp, ec.Logger())
 		jis, err := j.GetJobList(ctx)
 		if err != nil {
@@ -74,12 +74,14 @@ func (cm ExportSnapshotCmd) Exec(ctx context.Context, ec plug.ExecContext) error
 			return nil, err
 		}
 		sp.SetText(fmt.Sprintf("Exporting snapshot: %s", name))
-		return nil, j.ExportSnapshot(ctx, jid, name, cancel)
+		return name, j.ExportSnapshot(ctx, jid, name, cancel)
 	})
 	if err != nil {
 		return err
 	}
 	stop()
+	name = nameV.(string)
+	ec.PrintlnUnnecessary(fmt.Sprintf("OK Exported snapshot %s", name))
 	return nil
 }
 
