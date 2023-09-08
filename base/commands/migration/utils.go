@@ -119,6 +119,6 @@ func readPathAsString(path string) (string, error) {
 	return string(b), nil
 }
 
-func makeMigrationID() string {
+func MakeMigrationID() string {
 	return types.NewUUID().String()
 }
