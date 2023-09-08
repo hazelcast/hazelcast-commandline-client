@@ -15,9 +15,14 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
+type executeState struct {
+	Name  string
+	Value int64
+}
+
 func atomicLongChangeValue(ctx context.Context, ec plug.ExecContext, verb string, change func(int64) int64) error {
 	by := ec.Props().GetInt(atomicLongFlagBy)
-	val, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+	stateV, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		ali, err := getAtomicLong(ctx, ec, sp)
 		if err != nil {
 			return nil, err
@@ -27,19 +32,24 @@ func atomicLongChangeValue(ctx context.Context, ec plug.ExecContext, verb string
 		if err != nil {
 			return nil, err
 		}
-		msg := fmt.Sprintf("OK %sed AtomicLong %s by %d.\n", verb, ali.Name(), by)
-		ec.PrintlnUnnecessary(msg)
-		return val, nil
+		state := executeState{
+			Name:  ali.Name(),
+			Value: val,
+		}
+		return state, nil
 	})
 	if err != nil {
 		return err
 	}
 	stop()
+	s := stateV.(executeState)
+	msg := fmt.Sprintf("OK %sed AtomicLong %s by %d.\n", verb, s.Name, by)
+	ec.PrintlnUnnecessary(msg)
 	row := output.Row{
 		output.Column{
 			Name:  "Value",
 			Type:  serialization.TypeInt64,
-			Value: val,
+			Value: s.Value,
 		},
 	}
 	return ec.AddOutputRows(ctx, row)
