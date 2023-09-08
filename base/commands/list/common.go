@@ -89,10 +89,12 @@ func removeFromList(ctx context.Context, ec plug.ExecContext, name string, index
 		}
 		var vt int32
 		var value any
+		var colName string
 		if indexCall {
 			raw := codec.DecodeListRemoveWithIndexResponse(resp)
 			vt = raw.Type()
 			value, err = ci.DecodeData(raw)
+			colName = "Value"
 			if err != nil {
 				ec.Logger().Info("The value was not decoded, due to error: %s", err.Error())
 				value = serialization.NondecodedType(serialization.TypeToLabel(vt))
@@ -100,10 +102,11 @@ func removeFromList(ctx context.Context, ec plug.ExecContext, name string, index
 		} else {
 			vt = serialization.TypeBool
 			value = codec.DecodeListRemoveResponse(resp)
+			colName = "Removed"
 		}
 		row := output.Row{
 			output.Column{
-				Name:  "Value",
+				Name:  colName,
 				Type:  vt,
 				Value: value,
 			},
