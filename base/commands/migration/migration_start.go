@@ -11,6 +11,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/prompt"
+	"github.com/hazelcast/hazelcast-go-client"
 )
 
 type StartCmd struct{}
@@ -45,7 +46,13 @@ Selected data structures in the source cluster will be migrated to the target cl
 		}
 	}
 	ec.PrintlnUnnecessary("")
-	sts := NewStartStages(MakeMigrationID(), ec.Args()[0])
+	var updateTopic *hazelcast.Topic
+	sts := NewStartStages(updateTopic, MakeMigrationID(), ec.Args()[0])
+	if !sts.topicListenerID.Default() && sts.updateTopic != nil {
+		if err := sts.updateTopic.RemoveListener(ctx, sts.topicListenerID); err != nil {
+			return err
+		}
+	}
 	sp := stage.NewFixedProvider(sts.Build(ctx, ec)...)
 	if err := stage.Execute(ctx, ec, sp); err != nil {
 		return err

@@ -11,7 +11,6 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
-	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 type StatusStages struct {
@@ -20,7 +19,6 @@ type StatusStages struct {
 	migrationsInProgressList *hazelcast.List
 	statusMap                *hazelcast.Map
 	updateTopic              *hazelcast.Topic
-	topicListenerID          types.UUID
 	updateMsgChan            chan UpdateMessage
 }
 
@@ -94,8 +92,8 @@ func (st *StatusStages) fetchStage(ctx context.Context, ec plug.ExecContext) fun
 			return nil
 		}
 		st.updateMsgChan = make(chan UpdateMessage)
-		st.topicListenerID, err = st.updateTopic.AddMessageListener(ctx, st.topicListener)
-		defer st.updateTopic.RemoveListener(ctx, st.topicListenerID)
+		id, err := st.updateTopic.AddMessageListener(ctx, st.topicListener)
+		defer st.updateTopic.RemoveListener(ctx, id)
 		for {
 			select {
 			case msg := <-st.updateMsgChan:

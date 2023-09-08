@@ -33,11 +33,12 @@ var timeoutErr = fmt.Errorf("migration could not be completed: reached timeout w
 	"please ensure that you are using Hazelcast's migration cluster distribution and your DMT config points to that cluster: %w",
 	context.DeadlineExceeded)
 
-func NewStartStages(migrationID, configDir string) *StartStages {
+func NewStartStages(updateTopic *hazelcast.Topic, migrationID, configDir string) *StartStages {
 	if migrationID == "" {
 		panic("migrationID is required")
 	}
 	return &StartStages{
+		updateTopic: updateTopic,
 		migrationID: migrationID,
 		configDir:   configDir,
 	}
@@ -133,7 +134,6 @@ func makeConfigBundle(configDir, migrationID string) (serialization.JSON, error)
 
 func (st *StartStages) migrateStage(ctx context.Context, ec plug.ExecContext) func(statuser stage.Statuser) error {
 	return func(stage.Statuser) error {
-		defer st.updateTopic.RemoveListener(ctx, st.topicListenerID)
 		for {
 			select {
 			case msg := <-st.updateMsgChan:
