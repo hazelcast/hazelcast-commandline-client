@@ -6,8 +6,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hazelcast/hazelcast-go-client"
-
 	"github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/prompt"
 
@@ -19,6 +17,8 @@ import (
 
 type MapClearCommand struct{}
 
+func (mc *MapClearCommand) Unwrappable() {}
+
 func (mc *MapClearCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("clear")
 	help := "Delete all entries of a Map"
@@ -28,10 +28,6 @@ func (mc *MapClearCommand) Init(cc plug.InitContext) error {
 }
 
 func (mc *MapClearCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
-	mv, err := ec.Props().GetBlocking(mapPropertyName)
-	if err != nil {
-		return err
-	}
 	autoYes := ec.Props().GetBool(clc.FlagAutoYes)
 	if !autoYes {
 		p := prompt.New(ec.Stdin(), ec.Stdout())
@@ -44,18 +40,23 @@ func (mc *MapClearCommand) Exec(ctx context.Context, ec plug.ExecContext) error 
 			return errors.ErrUserCancelled
 		}
 	}
-	m := mv.(*hazelcast.Map)
-	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+	name, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		m, err := getMap(ctx, ec, sp)
+		if err != nil {
+			return nil, err
+		}
 		sp.SetText(fmt.Sprintf("Clearing map %s", m.Name()))
 		if err := m.Clear(ctx); err != nil {
 			return nil, err
 		}
-		return nil, nil
+		return m.Name(), nil
 	})
 	if err != nil {
 		return err
 	}
 	stop()
+	msg := fmt.Sprintf("OK Cleared map: %s.", name)
+	ec.PrintlnUnnecessary(msg)
 	return nil
 }
 
