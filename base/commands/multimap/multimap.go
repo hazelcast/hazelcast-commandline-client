@@ -8,8 +8,8 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 
+	"github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
@@ -24,17 +24,14 @@ type MultiMapCommand struct {
 }
 
 func (m MultiMapCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("multi-map")
 	cc.AddCommandGroup(clc.GroupDDSID, clc.GroupDDSTitle)
 	cc.SetCommandGroup(clc.GroupDDSID)
-	cc.AddStringFlag(multiMapFlagName, "n", defaultMultiMapName, false, "multimap name")
-	cc.AddBoolFlag(multiMapFlagShowType, "", false, false, "add the type names to the output")
-	if !cc.Interactive() {
-		cc.AddStringFlag(clc.PropertySchemaDir, "", paths.Schemas(), false, "set the schema directory")
-	}
 	cc.SetTopLevel(true)
-	cc.SetCommandUsage("multi-map [command] [flags]")
 	help := "MultiMap operations"
 	cc.SetCommandHelp(help, help)
+	cc.AddStringFlag(base.FlagName, "n", defaultMultiMapName, false, "multimap name")
+	cc.AddBoolFlag(base.FlagShowType, "", false, false, "add the type names to the output")
 	return nil
 }
 
@@ -45,7 +42,7 @@ func (m MultiMapCommand) Exec(context.Context, plug.ExecContext) error {
 func (m MultiMapCommand) Augment(ec plug.ExecContext, props *plug.Properties) error {
 	ctx := context.TODO()
 	props.SetBlocking(multiMapPropertyName, func() (any, error) {
-		mmName := ec.Props().GetString(multiMapFlagName)
+		mmName := ec.Props().GetString(base.FlagName)
 		// empty multiMap name is allowed
 		ci, err := ec.ClientInternal(ctx)
 		if err != nil {

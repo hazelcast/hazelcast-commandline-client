@@ -9,7 +9,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
@@ -24,17 +23,14 @@ type TopicCommand struct {
 }
 
 func (mc *TopicCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("topic")
 	cc.AddCommandGroup(clc.GroupDDSID, clc.GroupDDSTitle)
 	cc.SetCommandGroup(clc.GroupDDSID)
-	cc.AddStringFlag(topicFlagName, "n", defaultTopicName, false, "topic name")
-	cc.AddBoolFlag(topicFlagShowType, "", false, false, "add the type names to the output")
-	if !cc.Interactive() {
-		cc.AddStringFlag(clc.PropertySchemaDir, "", paths.Schemas(), false, "set the schema directory")
-	}
 	cc.SetTopLevel(true)
-	cc.SetCommandUsage("topic [command] [flags]")
 	help := "Topic operations"
 	cc.SetCommandHelp(help, help)
+	cc.AddStringFlag(topicFlagName, "n", defaultTopicName, false, "topic name")
+	cc.AddBoolFlag(topicFlagShowType, "", false, false, "add the type names to the output")
 	return nil
 }
 

@@ -13,11 +13,11 @@ import (
 type Cmd struct{}
 
 func (cm Cmd) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("job")
 	cc.AddCommandGroup(clc.GroupJetID, clc.GroupJetTitle)
 	cc.SetCommandGroup(clc.GroupJetID)
 	cc.SetTopLevel(true)
 	help := "Jet job operations"
-	cc.SetCommandUsage("job [command]")
 	cc.SetCommandHelp(help, help)
 	return nil
 }

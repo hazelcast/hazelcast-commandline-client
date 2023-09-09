@@ -61,6 +61,6 @@ func getAtomicLong(ctx context.Context, ec plug.ExecContext, sp clc.Spinner) (*h
 	if err != nil {
 		return nil, err
 	}
-	sp.SetText(fmt.Sprintf("Getting atomic long %s", name))
+	sp.SetText(fmt.Sprintf("Getting AtomicLong '%s'", name))
 	return ci.Client().CPSubsystem().GetAtomicLong(ctx, name)
 }

@@ -17,13 +17,13 @@ const (
 type AtomicLongCommand struct{}
 
 func (AtomicLongCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("atomic-long")
 	cc.AddCommandGroup(clc.GroupDDSID, clc.GroupDDSTitle)
 	cc.SetCommandGroup(clc.GroupDDSID)
-	cc.AddStringFlag(flagName, "n", defaultAtomicLongName, false, "atomic long name")
 	cc.SetTopLevel(true)
-	cc.SetCommandUsage("atomic-long")
 	help := "Atomic long operations"
 	cc.SetCommandHelp(help, help)
+	cc.AddStringFlag(flagName, "n", defaultAtomicLongName, false, "atomic long name")
 	return nil
 }
 

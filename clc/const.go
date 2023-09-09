@@ -18,7 +18,6 @@ const (
 	PropertyConfig              = "config"
 	PropertyLogLevel            = "log.level"
 	PropertyLogPath             = "log.path"
-	PropertySchemaDir           = "schema-dir"
 	PropertySSLEnabled          = "ssl.enabled"
 	PropertySSLServerName       = "ssl.server"
 	PropertySSLCAPath           = "ssl.ca-path"

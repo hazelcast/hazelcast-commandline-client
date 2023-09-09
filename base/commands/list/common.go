@@ -57,7 +57,7 @@ func getList(ctx context.Context, ec plug.ExecContext, sp clc.Spinner) (*hazelca
 	if err != nil {
 		return nil, err
 	}
-	sp.SetText(fmt.Sprintf("Getting list %s", name))
+	sp.SetText(fmt.Sprintf("Getting List '%s'", name))
 	return ci.Client().GetList(ctx, name)
 }
 

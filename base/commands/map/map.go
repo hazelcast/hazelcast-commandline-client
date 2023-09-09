@@ -7,7 +7,6 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
@@ -23,9 +22,6 @@ func (mc *MapCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandHelp(help, help)
 	cc.AddStringFlag(base.FlagName, "n", defaultMapName, false, "map name")
 	cc.AddBoolFlag(base.FlagShowType, "", false, false, "add the type names to the output")
-	if !cc.Interactive() {
-		cc.AddStringFlag(clc.PropertySchemaDir, "", paths.Schemas(), false, "set the schema directory")
-	}
 	return nil
 }
 

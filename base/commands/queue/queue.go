@@ -9,7 +9,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
@@ -24,17 +23,14 @@ type QueueCommand struct {
 }
 
 func (qc *QueueCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("queue")
 	cc.AddCommandGroup(clc.GroupDDSID, clc.GroupDDSTitle)
 	cc.SetCommandGroup(clc.GroupDDSID)
-	cc.AddStringFlag(queueFlagName, "n", defaultQueueName, false, "queue name")
-	cc.AddBoolFlag(queueFlagShowType, "", false, false, "add the type names to the output")
-	if !cc.Interactive() {
-		cc.AddStringFlag(clc.PropertySchemaDir, "", paths.Schemas(), false, "set the schema directory")
-	}
 	cc.SetTopLevel(true)
-	cc.SetCommandUsage("queue [command] [flags]")
 	help := "Queue operations"
 	cc.SetCommandHelp(help, help)
+	cc.AddStringFlag(queueFlagName, "n", defaultQueueName, false, "queue name")
+	cc.AddBoolFlag(queueFlagShowType, "", false, false, "add the type names to the output")
 	return nil
 }
 

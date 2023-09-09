@@ -11,7 +11,9 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 
+	"github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/mk"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
@@ -126,4 +128,14 @@ func eventRow(e topic.TopicEvent, ec plug.ExecContext) (row output.Row) {
 			})
 	}
 	return row
+}
+
+func getTopic(ctx context.Context, ec plug.ExecContext, sp clc.Spinner) (*hazelcast.Topic, error) {
+	name := ec.Props().GetString(base.FlagName)
+	ci, err := cmd.ClientInternal(ctx, ec, sp)
+	if err != nil {
+		return nil, err
+	}
+	sp.SetText(fmt.Sprintf("Getting Topic '%s'", name))
+	return ci.Client().GetTopic(ctx, name)
 }

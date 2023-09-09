@@ -1,6 +1,6 @@
-//go:build std || map
+//go:build std || atomiclong
 
-package _map
+package atomiclong
 
 import (
 	"github.com/hazelcast/hazelcast-commandline-client/base/commands"
@@ -9,6 +9,6 @@ import (
 )
 
 func init() {
-	cmd := commands.NewDestroyCommand("Map", getMap)
-	check.Must(plug.Registry.RegisterCommand("map:destroy", cmd))
+	cmd := commands.NewDestroyCommand("AtomicLong", getAtomicLong)
+	check.Must(plug.Registry.RegisterCommand("atomic-long:destroy", cmd))
 }

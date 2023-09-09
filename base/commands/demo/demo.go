@@ -12,11 +12,11 @@ import (
 type Cmd struct{}
 
 func (cm *Cmd) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("demo")
 	cc.AddCommandGroup(GroupDemoID, "Demonstrations")
 	cc.SetCommandGroup(GroupDemoID)
 	cc.SetTopLevel(true)
 	help := "Demonstration commands"
-	cc.SetCommandUsage("demo [command]")
 	cc.SetCommandHelp(help, help)
 	return nil
 }

@@ -15,14 +15,14 @@ type ListCommand struct {
 }
 
 func (mc *ListCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("list")
 	cc.AddCommandGroup(clc.GroupDDSID, clc.GroupDDSTitle)
 	cc.SetCommandGroup(clc.GroupDDSID)
-	cc.AddStringFlag(base.FlagName, "n", base.DefaultName, false, "list name")
-	cc.AddBoolFlag(base.FlagShowType, "", false, false, "add the type names to the output")
 	cc.SetTopLevel(true)
-	cc.SetCommandUsage("list")
 	help := "List operations"
 	cc.SetCommandHelp(help, help)
+	cc.AddStringFlag(base.FlagName, "n", base.DefaultName, false, "list name")
+	cc.AddBoolFlag(base.FlagShowType, "", false, false, "add the type names to the output")
 	return nil
 }
 

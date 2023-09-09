@@ -69,6 +69,6 @@ func getMap(ctx context.Context, ec plug.ExecContext, sp clc.Spinner) (*hazelcas
 	if err != nil {
 		return nil, err
 	}
-	sp.SetText(fmt.Sprintf("Getting map %s", name))
+	sp.SetText(fmt.Sprintf("Getting Map '%s'", name))
 	return ci.Client().GetMap(ctx, name)
 }
