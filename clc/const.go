@@ -35,4 +35,5 @@ const (
 	EnvSkipServerVersionCheck   = "CLC_SKIP_SERVER_VERSION_CHECK"
 	FlagAutoYes                 = "yes"
 	MaxArgs                     = 65535
+	TTLUnset                    = -1
 )

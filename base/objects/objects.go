@@ -5,9 +5,10 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/hazelcast/hazelcast-go-client/types"
+
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 func GetAll(ctx context.Context, ec plug.ExecContext, typeFilter string, showHidden bool) ([]types.DistributedObjectInfo, error) {

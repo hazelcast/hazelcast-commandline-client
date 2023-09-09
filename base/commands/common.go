@@ -3,15 +3,27 @@ package commands
 import (
 	"context"
 	"fmt"
+	"strings"
+
+	"github.com/hazelcast/hazelcast-go-client"
 
 	"github.com/hazelcast/hazelcast-commandline-client/base"
 	_ "github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/errors"
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/mk"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/prompt"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
+)
+
+const (
+	FlagKeyType   = "key-type"
+	FlagValueType = "value-type"
+	ArgKey        = "key"
+	ArgTitleKey   = "key"
 )
 
 type Destroyer interface {
@@ -189,4 +201,68 @@ func (cm SizeCommand[T]) Exec(ctx context.Context, ec plug.ExecContext) error {
 			Value: int32(sv.(int)),
 		},
 	})
+}
+
+func AddKeyTypeFlag(cc plug.InitContext) {
+	help := fmt.Sprintf("key type (one of: %s)", strings.Join(internal.SupportedTypeNames, ", "))
+	cc.AddStringFlag(base.FlagKeyType, "k", "string", false, help)
+}
+
+func AddValueTypeFlag(cc plug.InitContext) {
+	help := fmt.Sprintf("value type (one of: %s)", strings.Join(internal.SupportedTypeNames, ", "))
+	cc.AddStringFlag(FlagValueType, "v", "string", false, help)
+}
+
+func MakeKeyData(ec plug.ExecContext, ci *hazelcast.ClientInternal, keyStr string) (hazelcast.Data, error) {
+	kt := ec.Props().GetString(FlagKeyType)
+	if kt == "" {
+		kt = "string"
+	}
+	key, err := mk.ValueFromString(keyStr, kt)
+	if err != nil {
+		return nil, err
+	}
+	return ci.EncodeData(key)
+}
+
+func makeValueData(ec plug.ExecContext, ci *hazelcast.ClientInternal, valueStr string) (hazelcast.Data, error) {
+	vt := ec.Props().GetString(base.FlagValueType)
+	if vt == "" {
+		vt = "string"
+	}
+	value, err := mk.ValueFromString(valueStr, vt)
+	if err != nil {
+		return nil, err
+	}
+	return ci.EncodeData(value)
+}
+
+func MakeKeyValueData(ec plug.ExecContext, ci *hazelcast.ClientInternal, keyStr, valueStr string) (hazelcast.Data, hazelcast.Data, error) {
+	kd, err := MakeKeyData(ec, ci, keyStr)
+	if err != nil {
+		return nil, nil, err
+	}
+	vd, err := makeValueData(ec, ci, valueStr)
+	if err != nil {
+		return nil, nil, err
+	}
+	return kd, vd, nil
+}
+
+func AddDDSRows(ctx context.Context, ec plug.ExecContext, typeName, what string, rows []output.Row) error {
+	name := ec.Props().GetString(base.FlagName)
+	if len(rows) == 0 {
+		msg := fmt.Sprintf("OK No %s found in %s '%s'.", what, typeName, name)
+		ec.PrintlnUnnecessary(msg)
+		return nil
+
+	}
+	return ec.AddOutputRows(ctx, rows...)
+}
+
+func GetTTL(ec plug.ExecContext) int64 {
+	if _, ok := ec.Props().Get(FlagTTL); ok {
+		return ec.Props().GetInt(FlagTTL)
+	}
+	return clc.TTLUnset
 }

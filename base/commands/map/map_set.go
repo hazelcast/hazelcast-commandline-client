@@ -9,6 +9,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 
 	"github.com/hazelcast/hazelcast-commandline-client/base"
+	"github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -29,12 +30,12 @@ func (mc *MapSetCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("set")
 	help := "Set a value in the given Map"
 	cc.SetCommandHelp(help, help)
-	addKeyTypeFlag(cc)
-	addValueTypeFlag(cc)
-	cc.AddIntFlag(mapTTL, "", ttlUnset, false, "time-to-live (ms)")
-	cc.AddIntFlag(mapMaxIdle, "", ttlUnset, false, "max idle (ms)")
-	cc.AddStringArg(argKey, argTitleKey)
-	cc.AddStringArg(argValue, argTitleValue)
+	commands.AddKeyTypeFlag(cc)
+	commands.AddValueTypeFlag(cc)
+	cc.AddIntFlag(commands.FlagTTL, "", clc.TTLUnset, false, "time-to-live (ms)")
+	cc.AddIntFlag(mapMaxIdle, "", clc.TTLUnset, false, "max idle (ms)")
+	cc.AddStringArg(commands.ArgKey, commands.ArgTitleKey)
+	cc.AddStringArg(base.ArgValue, argTitleValue)
 	return nil
 }
 
@@ -45,27 +46,26 @@ func (mc *MapSetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		if err != nil {
 			return nil, err
 		}
-		sp.SetText(fmt.Sprintf("Setting value into map %s", mapName))
+		sp.SetText(fmt.Sprintf("Setting value into Map '%s'", mapName))
 		_, err = getMap(ctx, ec, sp)
 		if err != nil {
 			return nil, err
 		}
-		keyStr := ec.GetStringArg(argKey)
-		valueStr := ec.GetStringArg(argValue)
-		kd, vd, err := makeKeyValueData(ec, ci, keyStr, valueStr)
+		key := ec.GetStringArg(commands.ArgKey)
+		value := ec.GetStringArg(base.ArgValue)
+		kd, vd, err := commands.MakeKeyValueData(ec, ci, key, value)
 		if err != nil {
 			return nil, err
 		}
-		ttl := GetTTL(ec)
-		maxIdle := GetMaxIdle(ec)
+		ttl := commands.GetTTL(ec)
+		maxIdle := getMaxIdle(ec)
 		var req *hazelcast.ClientMessage
 		if maxIdle >= 0 {
 			req = codec.EncodeMapSetWithMaxIdleRequest(mapName, kd, vd, 0, ttl, maxIdle)
 		} else {
 			req = codec.EncodeMapSetRequest(mapName, kd, vd, 0, ttl)
 		}
-		_, err = ci.InvokeOnKey(ctx, req, kd, nil)
-		if err != nil {
+		if _, err = ci.InvokeOnKey(ctx, req, kd, nil); err != nil {
 			return nil, err
 		}
 		return nil, nil
@@ -74,7 +74,7 @@ func (mc *MapSetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		return err
 	}
 	stop()
-	msg := fmt.Sprintf("OK Set the value into the map %s", mapName)
+	msg := fmt.Sprintf("OK Set the value into the Map '%s'", mapName)
 	ec.PrintlnUnnecessary(msg)
 	return nil
 }

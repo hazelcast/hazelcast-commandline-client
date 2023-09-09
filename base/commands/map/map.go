@@ -20,7 +20,7 @@ func (mc *MapCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandGroup(clc.GroupDDSID)
 	help := "Map operations"
 	cc.SetCommandHelp(help, help)
-	cc.AddStringFlag(base.FlagName, "n", defaultMapName, false, "map name")
+	cc.AddStringFlag(base.FlagName, "n", base.DefaultName, false, "map name")
 	cc.AddBoolFlag(base.FlagShowType, "", false, false, "add the type names to the output")
 	return nil
 }

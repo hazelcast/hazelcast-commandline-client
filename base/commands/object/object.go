@@ -13,11 +13,11 @@ import (
 type ObjectCommand struct{}
 
 func (cm ObjectCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("object")
 	cc.AddCommandGroup(clc.GroupDDSID, clc.GroupDDSTitle)
 	cc.SetCommandGroup(clc.GroupDDSID)
 	cc.SetTopLevel(true)
 	help := "Generic distributed data structure operations"
-	cc.SetCommandUsage("object [command]")
 	cc.SetCommandHelp(help, help)
 	return nil
 }

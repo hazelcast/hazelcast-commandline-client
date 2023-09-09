@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/hazelcast/hazelcast-commandline-client/base/objects"
-	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -61,6 +60,8 @@ const (
 
 type ObjectListCommand struct{}
 
+func (cm ObjectListCommand) Unwrappable() {}
+
 func (cm ObjectListCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("list")
 	long := fmt.Sprintf(`List distributed objects, optionally filter by type.
@@ -107,13 +108,11 @@ func (cm ObjectListCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 			valueCol,
 		})
 	}
-	if len(rows) > 0 {
-		return ec.AddOutputRows(ctx, rows...)
+	if len(rows) == 0 {
+		ec.PrintlnUnnecessary("OK No objects found.")
+		return nil
 	}
-	if !ec.Props().GetBool(clc.PropertyQuiet) {
-		I2(fmt.Fprintln(ec.Stdout(), "No objects found"))
-	}
-	return nil
+	return ec.AddOutputRows(ctx, rows...)
 }
 
 func objectFilterTypes() string {
