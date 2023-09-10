@@ -19,7 +19,7 @@ func IsTimeout(err error) bool {
 
 func MakeString(err error) string {
 	if IsTimeout(err) {
-		return "Timeout"
+		return "TIMEOUT"
 	}
 	var httpErr HTTPError
 	var errStr string

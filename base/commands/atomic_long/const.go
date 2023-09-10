@@ -3,6 +3,5 @@
 package atomiclong
 
 const (
-	atomicLongFlagBy      = "by"
-	defaultAtomicLongName = "default"
+	flagBy = "by"
 )

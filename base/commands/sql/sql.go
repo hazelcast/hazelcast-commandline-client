@@ -73,7 +73,8 @@ func (SQLCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		if sv, ok := cmd.CheckServerCompatible(ci, minServerVersion); !ok {
 			return nil, fmt.Errorf("server (%s) does not support this command, at least %s is expected", sv, minServerVersion)
 		}
-		return clcsql.ExecSQL(ctx, ec, sp, query)
+		sp.SetText("Executing SQL")
+		return clcsql.ExecSQL(ctx, ec, query)
 	})
 	if err != nil {
 		return err

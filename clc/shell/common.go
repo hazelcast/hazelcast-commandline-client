@@ -78,7 +78,8 @@ func ConvertStatement(ctx context.Context, ec plug.ExecContext, stmt string) (fu
 	}
 	f := func() error {
 		resV, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-			res, err := clcsql.ExecSQL(ctx, ec, sp, query)
+			sp.SetText("Executing SQL")
+			res, err := clcsql.ExecSQL(ctx, ec, query)
 			if err != nil {
 				return nil, err
 			}

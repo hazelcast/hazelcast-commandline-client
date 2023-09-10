@@ -9,6 +9,6 @@ import (
 )
 
 func init() {
-	cmd := commands.NewDestroyCommand("AtomicLong", getAtomicLong)
-	check.Must(plug.Registry.RegisterCommand("atomic-long:destroy", cmd))
+	c := commands.NewDestroyCommand("AtomicLong", getAtomicLong)
+	check.Must(plug.Registry.RegisterCommand("atomic-long:destroy", c))
 }

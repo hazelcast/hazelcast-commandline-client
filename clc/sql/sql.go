@@ -12,8 +12,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/sql"
 
-	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -22,9 +20,9 @@ import (
 
 const PropertyUseMappingSuggestion = "use-mapping-suggestion"
 
-func ExecSQL(ctx context.Context, ec plug.ExecContext, sp clc.Spinner, query string) (sql.Result, error) {
+func ExecSQL(ctx context.Context, ec plug.ExecContext, query string) (sql.Result, error) {
 	as := ec.Props().GetBool(PropertyUseMappingSuggestion)
-	result, err := execSQL(ctx, ec, sp, query)
+	result, err := execSQL(ctx, ec, query)
 	if err != nil {
 		// check whether this is an SQL error with a suggestion,
 		// so we can improve the error message or apply the suggestion if there's one
@@ -46,23 +44,22 @@ func ExecSQL(ctx context.Context, ec plug.ExecContext, sp clc.Spinner, query str
 				return fmt.Sprintf("Re-trying executing SQL with suggestion: %s", serr.Suggestion)
 			})
 			// execute the suggested query
-			_, err := execSQL(ctx, ec, sp, serr.Suggestion)
+			_, err := execSQL(ctx, ec, serr.Suggestion)
 			if err != nil {
 				return nil, err
 			}
 			// execute the original query
-			return execSQL(ctx, ec, sp, query)
+			return execSQL(ctx, ec, query)
 		}
 	}
 	return result, nil
 }
 
-func execSQL(ctx context.Context, ec plug.ExecContext, sp clc.Spinner, query string) (sql.Result, error) {
-	ci, err := cmd.ClientInternal(ctx, ec, sp)
+func execSQL(ctx context.Context, ec plug.ExecContext, query string) (sql.Result, error) {
+	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
 		return nil, err
 	}
-	sp.SetText("Executing SQL")
 	for {
 		if ctx.Err() != nil {
 			return nil, ctx.Err()

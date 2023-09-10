@@ -8,6 +8,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 
+	"github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
@@ -21,42 +22,42 @@ type executeState struct {
 }
 
 func atomicLongChangeValue(ctx context.Context, ec plug.ExecContext, verb string, change func(int64) int64) error {
-	by := ec.Props().GetInt(atomicLongFlagBy)
-	stateV, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+	name := ec.Props().GetString(base.FlagName)
+	by := ec.Props().GetInt(flagBy)
+	row, stop, err := cmd.ExecuteBlocking(ctx, ec, func(ctx context.Context, sp clc.Spinner) (output.Row, error) {
 		ali, err := getAtomicLong(ctx, ec, sp)
 		if err != nil {
 			return nil, err
 		}
-		sp.SetText(fmt.Sprintf("%sing the AtomicLong %s", verb, ali.Name()))
+		sp.SetText(fmt.Sprintf("%sing the AtomicLong %s", verb, name))
 		val, err := ali.AddAndGet(ctx, change(by))
 		if err != nil {
 			return nil, err
 		}
-		state := executeState{
-			Name:  ali.Name(),
+		s := executeState{
+			Name:  name,
 			Value: val,
 		}
-		return state, nil
+		row := output.Row{
+			output.Column{
+				Name:  "Value",
+				Type:  serialization.TypeInt64,
+				Value: s.Value,
+			},
+		}
+		return row, nil
 	})
 	if err != nil {
 		return err
 	}
 	stop()
-	s := stateV.(executeState)
-	msg := fmt.Sprintf("OK %sed AtomicLong %s by %d.\n", verb, s.Name, by)
+	msg := fmt.Sprintf("OK %sed AtomicLong %s by %d.\n", verb, name, by)
 	ec.PrintlnUnnecessary(msg)
-	row := output.Row{
-		output.Column{
-			Name:  "Value",
-			Type:  serialization.TypeInt64,
-			Value: s.Value,
-		},
-	}
 	return ec.AddOutputRows(ctx, row)
 }
 
 func getAtomicLong(ctx context.Context, ec plug.ExecContext, sp clc.Spinner) (*hazelcast.AtomicLong, error) {
-	name := ec.Props().GetString(flagName)
+	name := ec.Props().GetString(base.FlagName)
 	ci, err := cmd.ClientInternal(ctx, ec, sp)
 	if err != nil {
 		return nil, err

@@ -8,16 +8,18 @@ import (
 	"math"
 	"path/filepath"
 
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/str"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/types"
 )
 
-type AddCmd struct{}
+type AddCommand struct{}
 
-func (cm AddCmd) Init(cc plug.InitContext) error {
+func (AddCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("add")
 	short := "Adds a configuration"
 	long := `Adds a configuration with the given KEY=VALUE pairs and saves it with configuration name.
@@ -32,6 +34,7 @@ The following keys are supported:
 	* cluster.password         STRING
 	* cluster.discovery-token  STRING
 	* cluster.api-base         STRING
+	* cluster.viridian-id      STRING
 	* ssl.enabled              BOOLEAN (true / false)
 	* ssl.server               STRING
 	* ssl.skip-verify          BOOLEAN (true / false)
@@ -48,7 +51,7 @@ The following keys are supported:
 	return nil
 }
 
-func (cm AddCmd) Exec(_ context.Context, ec plug.ExecContext) error {
+func (AddCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	target := ec.GetStringArg(argConfigName)
 	var opts types.KeyValues[string, string]
 	for _, arg := range ec.GetStringSliceArg(argKeyValues) {
@@ -61,21 +64,29 @@ func (cm AddCmd) Exec(_ context.Context, ec plug.ExecContext) error {
 			Value: v,
 		})
 	}
-	dir, cfgPath, err := config.Create(target, opts)
+	path, stop, err := cmd.ExecuteBlocking(ctx, ec, func(ctx context.Context, sp clc.Spinner) (string, error) {
+		sp.SetText("Creating the configuration")
+		dir, cfgPath, err := config.Create(target, opts)
+		if err != nil {
+			return "", err
+		}
+		mopt := config.ConvertKeyValuesToMap(opts)
+		// ignoring the JSON path for now
+		_, _, err = config.CreateJSON(target, mopt)
+		if err != nil {
+			ec.Logger().Warn("Failed creating the JSON configuration: %s", err.Error())
+		}
+		return filepath.Join(dir, cfgPath), nil
+	})
 	if err != nil {
 		return err
 	}
-	mopt := config.ConvertKeyValuesToMap(opts)
-	// ignoring the JSON path for now
-	_, _, err = config.CreateJSON(target, mopt)
-	if err != nil {
-		ec.Logger().Warn("Failed creating the JSON configuration: %s", err.Error())
-	}
-	msg := fmt.Sprintf("OK Created the configuration at: %s", filepath.Join(dir, cfgPath))
+	stop()
+	msg := fmt.Sprintf("OK Created the configuration at: %s.", path)
 	ec.PrintlnUnnecessary(msg)
 	return nil
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("config:add", &AddCmd{}))
+	check.Must(plug.Registry.RegisterCommand("config:add", &AddCommand{}))
 }
