@@ -18,6 +18,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	hzerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/str"
 )
 
 const (
@@ -108,7 +109,7 @@ func (sh *Shell) Start(ctx context.Context) error {
 				return nil
 			}
 			if !hzerrors.IsUserCancelled(err) {
-				I2(fmt.Fprintln(sh.stderr, color.RedString(hzerrors.MakeString(err))))
+				I2(fmt.Fprintln(sh.stderr, str.Colorize(hzerrors.MakeString(err))))
 			}
 		}
 	}

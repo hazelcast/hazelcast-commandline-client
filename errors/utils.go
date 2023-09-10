@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 
 	"github.com/gohxs/readline"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
@@ -29,7 +28,15 @@ func MakeString(err error) string {
 	} else {
 		errStr = err.Error()
 	}
-	return fmt.Sprintf("Error: %s", errStr)
+	// convert the first character of the error string to upper case
+	if len(errStr) > 0 {
+		r := []rune(errStr)
+		if r[0] >= 'a' && r[0] <= 'z' {
+			r[0] -= 'a' - 'A'
+		}
+		errStr = string(r)
+	}
+	return "ERROR " + errStr
 }
 
 func makeErrorStringFromHTTPResponse(text string) string {

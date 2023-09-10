@@ -13,6 +13,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	hzerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/str"
 )
 
 const (
@@ -50,7 +51,7 @@ func main() {
 		// print the error only if it wasn't printed before
 		if _, ok := err.(hzerrors.WrappedError); !ok {
 			if !hzerrors.IsUserCancelled(err) {
-				check.I2(fmt.Fprintln(stdio.Stderr, hzerrors.MakeString(err)))
+				check.I2(fmt.Fprintln(stdio.Stderr, str.Colorize(hzerrors.MakeString(err))))
 			}
 		}
 	}

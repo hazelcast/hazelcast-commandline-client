@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
-	hzerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -32,8 +31,7 @@ Make sure you login before running this command.
 
 func (cm ImportConfigCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err := cm.exec(ctx, ec); err != nil {
-		ec.PrintlnUnnecessary(fmt.Sprintf("FAIL Could not import cluster configuration: %s", err.Error()))
-		return hzerrors.WrappedError{Err: err}
+		return fmt.Errorf("could not import cluster configuration: %w", err)
 	}
 	return nil
 }

@@ -121,9 +121,9 @@ func Execute[T any](ctx context.Context, ec plug.ExecContext, value T, sp Provid
 			var ie ignoreError
 			if errors.As(err, &ie) {
 				// the error can be ignored
-				ec.PrintlnUnnecessary(fmt.Sprintf("FAIL %s %s: %s", ss.indexText, stg.FailureMsg, ie.Unwrap().Error()))
+				ec.PrintlnUnnecessary(fmt.Sprintf("ERROR %s %s: %s", ss.indexText, stg.FailureMsg, ie.Unwrap().Error()))
 			} else {
-				ec.PrintlnUnnecessary(fmt.Sprintf("FAIL %s: %s", stg.FailureMsg, err.Error()))
+				ec.PrintlnUnnecessary(fmt.Sprintf("ERROR %s: %s", stg.FailureMsg, err.Error()))
 				return value, hzerrors.WrappedError{Err: err}
 			}
 		}

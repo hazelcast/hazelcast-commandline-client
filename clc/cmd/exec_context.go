@@ -8,10 +8,8 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
-	"strings"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 	"github.com/theckman/yacspin"
@@ -254,7 +252,7 @@ func (ec *ExecContext) ExecuteBlocking(ctx context.Context, f func(context.Conte
 
 func (ec *ExecContext) PrintlnUnnecessary(text string) {
 	if !ec.Quiet() {
-		I2(fmt.Fprintln(ec.Stdout(), colorizeText(text)))
+		I2(fmt.Fprintln(ec.Stdout(), str.Colorize(text)))
 	}
 }
 
@@ -273,16 +271,6 @@ func (ec *ExecContext) ensurePrinter() error {
 	}
 	ec.printer = pr
 	return nil
-}
-
-func colorizeText(text string) string {
-	if strings.HasPrefix(text, "OK ") {
-		return fmt.Sprintf(" %s   %s", color.GreenString("OK"), text[3:])
-	}
-	if strings.HasPrefix(text, "FAIL ") {
-		return fmt.Sprintf(" %s %s", color.RedString("FAIL"), text[5:])
-	}
-	return text
 }
 
 func makeKeywordArgs(args []string, argSpecs []ArgSpec) (map[string]any, error) {
