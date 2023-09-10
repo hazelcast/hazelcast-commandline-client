@@ -12,6 +12,7 @@ import (
 	cmd "github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	hzerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 )
 
 const (
@@ -39,7 +40,8 @@ func main() {
 		bye(err)
 	}
 	_, name := filepath.Split(os.Args[0])
-	m, err := cmd.NewMain(name, cfgPath, cp, logPath, logLevel, clc.StdIO())
+	stdio := clc.StdIO()
+	m, err := cmd.NewMain(name, cfgPath, cp, logPath, logLevel, stdio)
 	if err != nil {
 		bye(err)
 	}
@@ -48,7 +50,7 @@ func main() {
 		// print the error only if it wasn't printed before
 		if _, ok := err.(hzerrors.WrappedError); !ok {
 			if !hzerrors.IsUserCancelled(err) {
-				fmt.Println(cmd.MakeErrStr(err))
+				check.I2(fmt.Fprintln(stdio.Stderr, hzerrors.MakeString(err)))
 			}
 		}
 	}

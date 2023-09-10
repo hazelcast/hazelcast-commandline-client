@@ -19,8 +19,6 @@ import (
 
 type ListCmd struct{}
 
-func (cm ListCmd) Unwrappable() {}
-
 func (cm ListCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("list")
 	help := "List jobs"

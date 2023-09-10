@@ -17,8 +17,6 @@ import (
 
 type AddCmd struct{}
 
-func (cm AddCmd) Unwrappable() {}
-
 func (cm AddCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("add")
 	short := "Adds a configuration"

@@ -49,8 +49,6 @@ func (cm ListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	return ec.AddOutputRows(ctx, rows...)
 }
 
-func (ListCmd) Unwrappable() {}
-
 func init() {
 	Must(plug.Registry.RegisterCommand("config:list", &ListCmd{}))
 }

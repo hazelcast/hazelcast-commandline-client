@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -10,10 +9,8 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	cmderrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
@@ -58,20 +55,6 @@ func CheckServerCompatible(ci *hazelcast.ClientInternal, targetVersion string) (
 	}
 	ok := internal.CheckVersion(sv, ">=", targetVersion)
 	return sv, ok
-}
-
-func MakeErrStr(err error) string {
-	var httpErr cmderrors.HTTPError
-	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, hzerrors.ErrTimeout) {
-		return "Timeout"
-	}
-	var errStr string
-	if errors.As(err, &httpErr) {
-		errStr = makeErrorStringFromHTTPResponse(httpErr.Text())
-	} else {
-		errStr = err.Error()
-	}
-	return fmt.Sprintf("Error: %s", errStr)
 }
 
 func ClientInternal(ctx context.Context, ec plug.ExecContext, sp clc.Spinner) (*hazelcast.ClientInternal, error) {

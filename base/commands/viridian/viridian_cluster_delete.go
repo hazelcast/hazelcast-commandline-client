@@ -18,8 +18,6 @@ import (
 
 type ClusterDeleteCmd struct{}
 
-func (cm ClusterDeleteCmd) Unwrappable() {}
-
 func (cm ClusterDeleteCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("delete-cluster")
 	long := `Deletes the given Viridian cluster.

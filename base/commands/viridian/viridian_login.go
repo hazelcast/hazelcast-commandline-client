@@ -29,8 +29,6 @@ const (
 
 type LoginCmd struct{}
 
-func (cm LoginCmd) Unwrappable() {}
-
 func (cm LoginCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("login")
 	short := "Logs in to Viridian using the given API key and API secret"

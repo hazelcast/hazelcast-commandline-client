@@ -60,8 +60,6 @@ const (
 
 type ObjectListCommand struct{}
 
-func (cm ObjectListCommand) Unwrappable() {}
-
 func (cm ObjectListCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("list")
 	long := fmt.Sprintf(`List distributed objects, optionally filter by type.

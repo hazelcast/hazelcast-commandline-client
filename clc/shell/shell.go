@@ -16,7 +16,7 @@ import (
 	ny "github.com/nyaosorg/go-readline-ny"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	cmderrors "github.com/hazelcast/hazelcast-commandline-client/errors"
+	hzerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 )
 
@@ -107,9 +107,8 @@ func (sh *Shell) Start(ctx context.Context) error {
 			if errors.Is(err, ErrExit) {
 				return nil
 			}
-			var werr cmderrors.WrappedError
-			if !errors.As(err, &werr) {
-				I2(fmt.Fprintf(sh.stderr, color.RedString("Error: %s\n", err.Error())))
+			if !hzerrors.IsUserCancelled(err) {
+				I2(fmt.Fprintln(sh.stderr, color.RedString(hzerrors.MakeString(err))))
 			}
 		}
 	}

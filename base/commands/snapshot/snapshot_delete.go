@@ -4,8 +4,10 @@ package snapshot
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
@@ -17,7 +19,7 @@ const (
 
 type DeleteCmd struct{}
 
-func (cm DeleteCmd) Init(cc plug.InitContext) error {
+func (DeleteCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("delete")
 	help := "Delete a snapshot"
 	cc.SetCommandHelp(help, help)
@@ -25,14 +27,14 @@ func (cm DeleteCmd) Init(cc plug.InitContext) error {
 	return nil
 }
 
-func (cm DeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
-	ci, err := ec.ClientInternal(ctx)
-	if err != nil {
-		return err
-	}
+func (DeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	name := ec.GetStringArg(argTitleSnapshotName)
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText("Deleting the snapshot")
+		ci, err := cmd.ClientInternal(ctx, ec, sp)
+		if err != nil {
+			return nil, err
+		}
+		sp.SetText(fmt.Sprintf("Deleting the snapshot '%s'", name))
 		sm, err := ci.Client().GetMap(ctx, jetExportedSnapshotsMap)
 		if err != nil {
 			return nil, err
@@ -50,6 +52,8 @@ func (cm DeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 		return err
 	}
 	stop()
+	msg := fmt.Sprintf("OK Destroyed snapshot '%s'.", name)
+	ec.PrintlnUnnecessary(msg)
 	return nil
 }
 

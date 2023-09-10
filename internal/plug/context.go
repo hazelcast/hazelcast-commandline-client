@@ -51,7 +51,3 @@ type ExecContext interface {
 	ExecuteBlocking(ctx context.Context, f func(ctx context.Context, sp clc.Spinner) (any, error)) (value any, stop context.CancelFunc, err error)
 	PrintlnUnnecessary(text string)
 }
-
-type ResultWrapper interface {
-	WrapResult(f func() error) error
-}

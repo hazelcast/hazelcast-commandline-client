@@ -1,5 +1,6 @@
 package commands
 
 const (
-	FlagTTL = "ttl"
+	FlagTTL       = "ttl"
+	FlagOutputDir = "output-dir"
 )

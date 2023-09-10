@@ -15,8 +15,6 @@ import (
 
 type ResumeCmd struct{}
 
-func (cm ResumeCmd) Unwrappable() {}
-
 func (cm ResumeCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("resume")
 	help := "Resumes a suspended job"

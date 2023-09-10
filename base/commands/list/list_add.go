@@ -20,8 +20,6 @@ import (
 
 type ListAddCommand struct{}
 
-func (mc *ListAddCommand) Unwrappable() {}
-
 func (mc *ListAddCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("add")
 	help := "Add a value in the given list"

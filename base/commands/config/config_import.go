@@ -15,8 +15,6 @@ import (
 
 type ImportCmd struct{}
 
-func (cm ImportCmd) Unwrappable() {}
-
 func (cm ImportCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("import")
 	short := "Imports configuration from an arbitrary source"

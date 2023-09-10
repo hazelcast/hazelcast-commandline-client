@@ -19,8 +19,6 @@ import (
 
 type MapLoadAllCommand struct{}
 
-func (mc *MapLoadAllCommand) Unwrappable() {}
-
 func (mc *MapLoadAllCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("load-all")
 	long := `Load keys from map-store into the map

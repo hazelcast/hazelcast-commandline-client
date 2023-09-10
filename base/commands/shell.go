@@ -76,9 +76,8 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 		}
 		I2(fmt.Fprintf(ec.Stdout(), banner, internal.Version, cfgText, logText))
 	}
-	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	endLineFn := makeEndLineFunc()
-	textFn := makeTextFunc(m, ec, verbose, false, false, func(shortcut string) bool {
+	textFn := makeTextFunc(m, ec, func(shortcut string) bool {
 		cm.mu.RLock()
 		_, ok := cm.shortcuts[shortcut]
 		cm.mu.RUnlock()
@@ -116,8 +115,6 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 	defer sh.Close()
 	return sh.Start(ctx)
 }
-
-func (*ShellCommand) Unwrappable() {}
 
 func init() {
 	Must(plug.Registry.RegisterCommand("shell", &ShellCommand{}))

@@ -15,8 +15,6 @@ import (
 
 type ClusterListCmd struct{}
 
-func (cm ClusterListCmd) Unwrappable() {}
-
 func (cm ClusterListCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("list-clusters")
 	long := `Lists all Viridian clusters for the logged in API key.

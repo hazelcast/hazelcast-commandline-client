@@ -71,10 +71,9 @@ func (cm ScriptCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		return fmt.Errorf("cloning Main: %w", err)
 	}
-	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	ie := ec.Props().GetBool(flagIgnoreErrors)
 	echo := ec.Props().GetBool(flagEcho)
-	textFn := makeTextFunc(m, ec, verbose, false, false, func(shortcut string) bool {
+	textFn := makeTextFunc(m, ec, func(shortcut string) bool {
 		// shortcuts are not supported in the script mode
 		return false
 	})
@@ -84,8 +83,6 @@ func (cm ScriptCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	sh.SetCommentPrefix("--")
 	return sh.Run(ctx)
 }
-
-func (cm ScriptCommand) Unwrappable() {}
 
 func openScript(location string) (io.ReadCloser, error) {
 	if filepath.Ext(location) != ".clc" && filepath.Ext(location) != ".sql" {

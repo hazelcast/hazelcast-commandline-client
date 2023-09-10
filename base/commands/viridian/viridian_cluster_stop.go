@@ -15,8 +15,6 @@ import (
 
 type ClusterStopCmd struct{}
 
-func (cm ClusterStopCmd) Unwrappable() {}
-
 func (cm ClusterStopCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("stop-cluster")
 	long := `Stops the given Viridian cluster.

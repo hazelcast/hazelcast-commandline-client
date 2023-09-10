@@ -23,8 +23,6 @@ type TerminateCmd struct {
 	waitState          int32
 }
 
-func (cm TerminateCmd) Unwrappable() {}
-
 func (cm TerminateCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage(cm.name)
 	cc.SetCommandHelp(cm.longHelp, cm.shortHelp)

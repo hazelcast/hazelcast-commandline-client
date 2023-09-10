@@ -17,8 +17,6 @@ const (
 
 type CustomClassUploadCmd struct{}
 
-func (cmd CustomClassUploadCmd) Unwrappable() {}
-
 func (cmd CustomClassUploadCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("upload-custom-class")
 	long := `Uploads a new Custom Class to the specified Viridian cluster.

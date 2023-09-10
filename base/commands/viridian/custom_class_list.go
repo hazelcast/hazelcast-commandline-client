@@ -15,8 +15,6 @@ import (
 
 type CustomClassListCmd struct{}
 
-func (cmd CustomClassListCmd) Unwrappable() {}
-
 func (cmd CustomClassListCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("list-custom-classes")
 	long := `Lists all custom classes in the given Viridian cluster.

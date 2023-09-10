@@ -44,8 +44,6 @@ func NewDestroyCommand[T Destroyer](typeName string, getFn getDestroyerFunc[T]) 
 	}
 }
 
-func (cm DestroyCommand[T]) Unwrappable() {}
-
 func (cm DestroyCommand[T]) Init(cc plug.InitContext) error {
 	long := fmt.Sprintf(`Destroy a %s
 
@@ -109,8 +107,6 @@ func NewClearCommand[T Clearer](typeName string, getFn getClearerFunc[T]) *Clear
 	}
 }
 
-func (cm ClearCommand[T]) Unwrappable() {}
-
 func (cm ClearCommand[T]) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("clear")
 	help := fmt.Sprintf("Deletes all entries of a %s", cm.typeName)
@@ -171,8 +167,6 @@ func NewSizeCommand[T Sizer](typeName string, getFn getSizerFunc[T]) *SizeComman
 	}
 }
 
-func (cm SizeCommand[T]) Unwrappable() {}
-
 func (cm SizeCommand[T]) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("size")
 	help := fmt.Sprintf("Returns the size of the given %s", cm.typeName)
@@ -225,7 +219,7 @@ func MakeKeyData(ec plug.ExecContext, ci *hazelcast.ClientInternal, keyStr strin
 	return ci.EncodeData(key)
 }
 
-func makeValueData(ec plug.ExecContext, ci *hazelcast.ClientInternal, valueStr string) (hazelcast.Data, error) {
+func MakeValueData(ec plug.ExecContext, ci *hazelcast.ClientInternal, valueStr string) (hazelcast.Data, error) {
 	vt := ec.Props().GetString(base.FlagValueType)
 	if vt == "" {
 		vt = "string"
@@ -242,7 +236,7 @@ func MakeKeyValueData(ec plug.ExecContext, ci *hazelcast.ClientInternal, keyStr,
 	if err != nil {
 		return nil, nil, err
 	}
-	vd, err := makeValueData(ec, ci, valueStr)
+	vd, err := MakeValueData(ec, ci, valueStr)
 	if err != nil {
 		return nil, nil, err
 	}

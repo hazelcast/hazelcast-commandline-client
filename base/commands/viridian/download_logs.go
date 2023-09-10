@@ -17,8 +17,6 @@ import (
 
 type DownloadLogsCmd struct{}
 
-func (cm DownloadLogsCmd) Unwrappable() {}
-
 func (cm DownloadLogsCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("download-logs")
 	long := `Downloads the logs of the given Viridian cluster for the logged in API key.

@@ -12,8 +12,6 @@ import (
 
 type ListRemoveValueCommand struct{}
 
-func (l ListRemoveValueCommand) Unwrappable() {}
-
 func (mc *ListRemoveValueCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("remove-value")
 	help := "Remove a value from the given list"

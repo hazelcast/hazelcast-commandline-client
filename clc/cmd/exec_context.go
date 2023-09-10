@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -253,35 +252,6 @@ func (ec *ExecContext) ExecuteBlocking(ctx context.Context, f func(context.Conte
 	}
 }
 
-func (ec *ExecContext) WrapResult(f func() error) error {
-	t := time.Now()
-	err := f()
-	took := time.Since(t)
-	verbose := ec.Props().GetBool(clc.PropertyVerbose)
-	if err != nil {
-		if errors.Is(err, context.Canceled) || errors.Is(err, cmderrors.ErrUserCancelled) {
-			return nil
-		}
-		msg := MakeErrStr(err)
-		if ec.Interactive() {
-			I2(fmt.Fprintln(ec.stderr, color.RedString(msg)))
-		} else {
-			I2(fmt.Fprintln(ec.stderr, msg))
-		}
-		return cmderrors.WrappedError{Err: err}
-	}
-	if ec.Quiet() {
-		return nil
-	}
-	if verbose || ec.Interactive() {
-		msg := fmt.Sprintf("OK (%d ms)", took.Milliseconds())
-		I2(fmt.Fprintln(ec.stderr, msg))
-	} else {
-		I2(fmt.Fprintln(ec.stderr, "OK"))
-	}
-	return nil
-}
-
 func (ec *ExecContext) PrintlnUnnecessary(text string) {
 	if !ec.Quiet() {
 		I2(fmt.Fprintln(ec.Stdout(), colorizeText(text)))
@@ -311,24 +281,6 @@ func colorizeText(text string) string {
 	}
 	if strings.HasPrefix(text, "FAIL ") {
 		return fmt.Sprintf(" %s %s", color.RedString("FAIL"), text[5:])
-	}
-	return text
-}
-
-func makeErrorStringFromHTTPResponse(text string) string {
-	m := map[string]any{}
-	if err := json.Unmarshal([]byte(text), &m); err != nil {
-		return text
-	}
-	if v, ok := m["errorCode"]; ok {
-		if v == "ClusterTokenNotFound" {
-			return "Discovery token is not valid for this cluster"
-		}
-	}
-	if v, ok := m["message"]; ok {
-		if vs, ok := v.(string); ok {
-			return vs
-		}
 	}
 	return text
 }

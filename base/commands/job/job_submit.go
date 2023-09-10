@@ -31,8 +31,6 @@ const (
 
 type SubmitCmd struct{}
 
-func (cm SubmitCmd) Unwrappable() {}
-
 func (cm SubmitCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("submit")
 	long := fmt.Sprintf(`Submits a jar file to create a Jet job

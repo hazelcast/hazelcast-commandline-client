@@ -16,8 +16,6 @@ import (
 
 type ClusterGetCmd struct{}
 
-func (cm ClusterGetCmd) Unwrappable() {}
-
 func (cm ClusterGetCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("get-cluster")
 	long := `Gets the information about the given Viridian cluster.

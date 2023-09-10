@@ -14,8 +14,6 @@ import (
 
 type ListRemoveIndexCommand struct{}
 
-func (mc *ListRemoveIndexCommand) Unwrappable() {}
-
 func (mc *ListRemoveIndexCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("remove-index")
 	help := "Remove the value at the given index in the list"

@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hazelcast/hazelcast-go-client/sql"
+
 	"github.com/hazelcast/hazelcast-commandline-client/base/maps"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/sql"
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	clcsql "github.com/hazelcast/hazelcast-commandline-client/clc/sql"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
@@ -15,7 +18,7 @@ const CmdPrefix = `\`
 
 var ErrHelp = errors.New("interactive help")
 
-func ConvertStatement(ctx context.Context, ec plug.ExecContext, stmt string, verbose bool) (func() error, error) {
+func ConvertStatement(ctx context.Context, ec plug.ExecContext, stmt string) (func() error, error) {
 	var query string
 	stmt = strings.TrimSpace(stmt)
 	if strings.HasPrefix(stmt, "help") {
@@ -74,13 +77,19 @@ func ConvertStatement(ctx context.Context, ec plug.ExecContext, stmt string, ver
 		query = stmt
 	}
 	f := func() error {
-		res, stop, err := sql.ExecSQL(ctx, ec, query)
+		resV, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+			res, err := clcsql.ExecSQL(ctx, ec, sp, query)
+			if err != nil {
+				return nil, err
+			}
+			return res, nil
+		})
 		if err != nil {
 			return err
 		}
 		defer stop()
-		// TODO: update sql.UpdateOutput to use stdout
-		if err := sql.UpdateOutput(ctx, ec, res, verbose); err != nil {
+		res := resV.(sql.Result)
+		if err := clcsql.UpdateOutput(ctx, ec, res); err != nil {
 			return err
 		}
 		return nil

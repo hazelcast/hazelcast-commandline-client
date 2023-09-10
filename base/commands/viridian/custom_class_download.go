@@ -19,8 +19,6 @@ const flagOutputPath = "output-path"
 
 type CustomClassDownloadCmd struct{}
 
-func (cmd CustomClassDownloadCmd) Unwrappable() {}
-
 func (cmd CustomClassDownloadCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("download-custom-class")
 	long := `Downloads a custom class from the given Viridian cluster.

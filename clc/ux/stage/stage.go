@@ -2,6 +2,7 @@ package stage
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -117,11 +118,19 @@ func Execute[T any](ctx context.Context, ec plug.ExecContext, value T, sp Provid
 			return any(v), nil
 		})
 		if err != nil {
-			ec.PrintlnUnnecessary(fmt.Sprintf("FAIL %s: %s", stg.FailureMsg, err.Error()))
-			return value, hzerrors.WrappedError{Err: err}
+			var ie ignoreError
+			if errors.As(err, &ie) {
+				// the error can be ignored
+				ec.PrintlnUnnecessary(fmt.Sprintf("FAIL %s %s: %s", ss.indexText, stg.FailureMsg, ie.Unwrap().Error()))
+			} else {
+				ec.PrintlnUnnecessary(fmt.Sprintf("FAIL %s: %s", stg.FailureMsg, err.Error()))
+				return value, hzerrors.WrappedError{Err: err}
+			}
 		}
 		stop()
-		ec.PrintlnUnnecessary(fmt.Sprintf("OK %s %s.", ss.indexText, stg.SuccessMsg))
+		if err == nil {
+			ec.PrintlnUnnecessary(fmt.Sprintf("OK %s %s.", ss.indexText, stg.SuccessMsg))
+		}
 		if v == nil {
 			var vv T
 			value = vv

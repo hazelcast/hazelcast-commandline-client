@@ -18,8 +18,6 @@ import (
 
 type ListContainsCommand struct{}
 
-func (mc *ListContainsCommand) Unwrappable() {}
-
 func (mc *ListContainsCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("contains")
 	help := "Check if the value is present in the list"

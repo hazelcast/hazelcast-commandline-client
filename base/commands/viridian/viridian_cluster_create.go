@@ -17,8 +17,6 @@ import (
 
 type ClusterCreateCmd struct{}
 
-func (cm ClusterCreateCmd) Unwrappable() {}
-
 func (cm ClusterCreateCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("create-cluster")
 	long := `Creates a Viridian cluster.

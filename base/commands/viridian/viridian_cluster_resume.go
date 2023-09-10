@@ -15,8 +15,6 @@ import (
 
 type ClusterResumeCmd struct{}
 
-func (cm ClusterResumeCmd) Unwrappable() {}
-
 func (cm ClusterResumeCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("resume-cluster")
 	long := `Resumes the given Viridian cluster.

@@ -20,8 +20,6 @@ const (
 
 type AtomicLongSetCommand struct{}
 
-func (mc *AtomicLongSetCommand) Unwrappable() {}
-
 func (mc *AtomicLongSetCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("set")
 	help := "Set the value of the AtomicLong"

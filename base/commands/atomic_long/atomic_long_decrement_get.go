@@ -11,8 +11,6 @@ import (
 
 type AtomicLongDecrementGetCommand struct{}
 
-func (mc *AtomicLongDecrementGetCommand) Unwrappable() {}
-
 func (mc *AtomicLongDecrementGetCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("decrement-get")
 	help := "Decrement the AtomicLong by the given value"

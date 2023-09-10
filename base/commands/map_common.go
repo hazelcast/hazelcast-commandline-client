@@ -32,8 +32,6 @@ func NewMapEntrySetCommand(typeName string, encoder nameRequestEncodeFunc, decod
 	}
 }
 
-func (cm MapEntrySetCommand) Unwrappable() {}
-
 func (cm MapEntrySetCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("entry-set")
 	help := fmt.Sprintf("Get all entries of a %s", cm.typeName)
@@ -82,8 +80,6 @@ func NewMapGetCommand(typeName string, encoder getRequestEncodeFunc, decoder get
 		decoder:  decoder,
 	}
 }
-
-func (cm MapGetCommand) Unwrappable() {}
 
 func (cm MapGetCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("get")
@@ -136,8 +132,6 @@ func NewMapKeySetCommand(typeName string, encoder nameRequestEncodeFunc, decoder
 		decoder:  decoder,
 	}
 }
-
-func (cm MapKeySetCommand) Unwrappable() {}
 
 func (cm MapKeySetCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("key-set")
@@ -198,8 +192,6 @@ func NewMapRemoveCommand(typeName string, encoder getRequestEncodeFunc, decoder 
 	}
 }
 
-func (cm MapRemoveCommand) Unwrappable() {}
-
 func (cm MapRemoveCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("remove")
 	AddKeyTypeFlag(cc)
@@ -256,8 +248,6 @@ func NewLockCommand[T Locker](typeName string, getFn getLockerFunc[T]) *LockComm
 		getFn:    getFn,
 	}
 }
-
-func (cm LockCommand[T]) Unwrappable() {}
 
 func (cm LockCommand[T]) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("lock")
@@ -321,8 +311,6 @@ func NewTryLockCommand[T LockTrier](typeName string, getFn getLockTrierFunc[T]) 
 		getFn:    getFn,
 	}
 }
-
-func (cm MapTryLockCommand[T]) Unwrappable() {}
 
 func (cm MapTryLockCommand[T]) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("try-lock")
@@ -403,8 +391,6 @@ func NewMapUnlockCommand[T Unlocker](typeName string, getFn getUnlockerFunc[T]) 
 	}
 }
 
-func (cm MapUnlockCommand[T]) Unwrappable() {}
-
 func (cm MapUnlockCommand[T]) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("unlock")
 	long := fmt.Sprintf(`Unlock a key in the given %s
@@ -458,8 +444,6 @@ func NewMapValuesCommand(typeName string, encoder nameRequestEncodeFunc, decoder
 		decoder:  decoder,
 	}
 }
-
-func (cm *MapValuesCommand) Unwrappable() {}
 
 func (cm MapValuesCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("values")

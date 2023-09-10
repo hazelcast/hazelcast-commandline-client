@@ -17,8 +17,6 @@ import (
 
 type ListSetCommand struct{}
 
-func (mc *ListSetCommand) Unwrappable() {}
-
 func (mc *ListSetCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("set")
 	help := "Set a value at the given index in the list"
