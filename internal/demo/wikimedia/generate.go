@@ -64,6 +64,6 @@ func handleEvents(ctx context.Context, client *sse.Client, itemCh chan demo.Stre
 	})
 }
 
-func (StreamGenerator) MappingQuery(mapName string) (string, error) {
+func (StreamGenerator) GenerateMappingQuery(mapName string) (string, error) {
 	return demo.GenerateMappingQuery(mapName, event{}.KeyValues())
 }

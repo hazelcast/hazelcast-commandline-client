@@ -8,18 +8,16 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
-type ClusterCreateCmd struct{}
+type ClusterCreateCommand struct{}
 
-func (cm ClusterCreateCmd) Unwrappable() {}
-
-func (cm ClusterCreateCmd) Init(cc plug.InitContext) error {
+func (ClusterCreateCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("create-cluster")
 	long := `Creates a Viridian cluster.
 
@@ -34,7 +32,7 @@ Make sure you login before running this command.
 	return nil
 }
 
-func (cm ClusterCreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (ClusterCreateCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	api, err := getAPI(ec)
 	if err != nil {
 		return err
@@ -142,5 +140,5 @@ type createStageState struct {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("viridian:create-cluster", &ClusterCreateCmd{}))
+	check.Must(plug.Registry.RegisterCommand("viridian:create-cluster", &ClusterCreateCommand{}))
 }

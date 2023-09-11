@@ -22,11 +22,9 @@ const (
 	propLogFormat = "log-format"
 )
 
-type StreamLogCmd struct{}
+type StreamLogCommand struct{}
 
-func (cm StreamLogCmd) Unwrappable() {}
-
-func (cm StreamLogCmd) Init(cc plug.InitContext) error {
+func (StreamLogCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("stream-logs")
 	long := `Outputs the logs of the given Viridian cluster as a stream.
 
@@ -48,7 +46,7 @@ The log format may be one of:
 	return nil
 }
 
-func (cm StreamLogCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (StreamLogCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	api, err := getAPI(ec)
 	if err != nil {
 		return err
@@ -198,5 +196,5 @@ func loggerTemplate(format string) string {
 }
 
 func init() {
-	check.Must(plug.Registry.RegisterCommand("viridian:stream-logs", &StreamLogCmd{}))
+	check.Must(plug.Registry.RegisterCommand("viridian:stream-logs", &StreamLogCommand{}))
 }

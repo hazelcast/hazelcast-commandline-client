@@ -10,22 +10,22 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-type Cmd struct{}
+type Command struct{}
 
-func (cm Cmd) Init(cc plug.InitContext) error {
+func (cm Command) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("snapshot")
 	cc.AddCommandGroup(clc.GroupJetID, clc.GroupJetTitle)
 	cc.SetCommandGroup(clc.GroupJetID)
 	cc.SetTopLevel(true)
 	help := "Jet snapshot operations"
-	cc.SetCommandUsage("snapshot [command]")
 	cc.SetCommandHelp(help, help)
 	return nil
 }
 
-func (cm Cmd) Exec(context.Context, plug.ExecContext) error {
+func (cm Command) Exec(context.Context, plug.ExecContext) error {
 	return nil
 }
 
 func init() {
-	check.Must(plug.Registry.RegisterCommand("snapshot", &Cmd{}))
+	check.Must(plug.Registry.RegisterCommand("snapshot", &Command{}))
 }

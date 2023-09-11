@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/fatih/color"
 )
 
 // SplitByComma splits a string by commas, and optionally removes empty items.
@@ -46,4 +48,14 @@ func SpacePaddedIntFormat(maxValue int) string {
 		panic("SpacePaddedIntFormat: cannot be negative")
 	}
 	return fmt.Sprintf("%%%dd", len(strconv.Itoa(maxValue)))
+}
+
+func Colorize(text string) string {
+	if strings.HasPrefix(text, "OK ") {
+		return fmt.Sprintf("    %s %s", color.GreenString("OK"), text[3:])
+	}
+	if strings.HasPrefix(text, "ERROR ") {
+		return fmt.Sprintf(" %s %s", color.RedString("ERROR"), text[6:])
+	}
+	return text
 }

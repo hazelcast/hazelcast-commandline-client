@@ -7,17 +7,15 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
-type ImportCmd struct{}
+type ImportCommand struct{}
 
-func (cm ImportCmd) Unwrappable() {}
-
-func (cm ImportCmd) Init(cc plug.InitContext) error {
+func (ImportCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("import")
 	short := "Imports configuration from an arbitrary source"
 	long := `Imports configuration from an arbitrary source
@@ -40,7 +38,7 @@ Currently importing Viridian connection configuration is supported only.
 	return nil
 }
 
-func (cm ImportCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (ImportCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	target := ec.GetStringArg(argConfigName)
 	src := ec.GetStringArg(argSource)
 	stages := config.MakeImportStages(ec, target)
@@ -59,5 +57,5 @@ func (cm ImportCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("config:import", &ImportCmd{}))
+	check.Must(plug.Registry.RegisterCommand("config:import", &ImportCommand{}))
 }

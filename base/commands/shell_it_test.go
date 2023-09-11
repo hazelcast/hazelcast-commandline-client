@@ -37,12 +37,12 @@ func shellErrorsTest(t *testing.T) {
 		{
 			name:    "invalid command",
 			command: "\\foobar",
-			errText: "unknown command \\foobar",
+			errText: "Unknown command \\foobar",
 		},
 		{
 			name:    "invalid flag",
 			command: "\\object list --foobar",
-			errText: "unknown flag: --foobar",
+			errText: "Unknown flag: --foobar",
 		},
 	}
 	for _, tc := range testCases {
@@ -54,7 +54,7 @@ func shellErrorsTest(t *testing.T) {
 				tcx.WithShell(ctx, func(tcx it.TestContext) {
 					tcx.WithReset(func() {
 						tcx.WriteStdinString(tc.command + "\n")
-						tcx.AssertStderrEquals(fmt.Sprintf("Error: %s\n", tc.errText))
+						tcx.AssertStderrContains(fmt.Sprintf("ERROR %s\n", tc.errText))
 					})
 				})
 			})

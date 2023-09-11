@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -10,10 +9,8 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	cmderrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
@@ -60,23 +57,26 @@ func CheckServerCompatible(ci *hazelcast.ClientInternal, targetVersion string) (
 	return sv, ok
 }
 
-func MakeErrStr(err error) string {
-	var httpErr cmderrors.HTTPError
-	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, hzerrors.ErrTimeout) {
-		return "Timeout"
-	}
-	var errStr string
-	if errors.As(err, &httpErr) {
-		errStr = makeErrorStringFromHTTPResponse(httpErr.Text())
-	} else {
-		errStr = err.Error()
-	}
-	return fmt.Sprintf("Error: %s", errStr)
-}
-
 func ClientInternal(ctx context.Context, ec plug.ExecContext, sp clc.Spinner) (*hazelcast.ClientInternal, error) {
 	sp.SetText("Connecting to the cluster")
 	return ec.ClientInternal(ctx)
+}
+
+// ExecuteBlocking runs the given blocking function.
+// It displays a spinner in the interactive mode after a timeout.
+// The returned stop function must be called at least once to prevent leaks if there's no error.
+// Calling returned stop more than once has no effect.
+func ExecuteBlocking[T any](ctx context.Context, ec plug.ExecContext, f func(context.Context, clc.Spinner) (T, error)) (value T, stop context.CancelFunc, err error) {
+	v, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		return f(ctx, sp)
+	})
+	if v == nil {
+		var vv T
+		value = vv
+	} else {
+		value = v.(T)
+	}
+	return value, stop, err
 }
 
 func parseDuration(duration string) (time.Duration, error) {

@@ -29,7 +29,7 @@ type arg0er interface {
 
 type SQLCommand struct{}
 
-func (cm *SQLCommand) Augment(ec plug.ExecContext, props *plug.Properties) error {
+func (SQLCommand) Augment(ec plug.ExecContext, props *plug.Properties) error {
 	// set the default format to table in the interactive mode
 	if ecc, ok := ec.(arg0er); ok {
 		if ec.CommandName() == ecc.Arg0()+" shell" && len(ec.Args()) == 0 {
@@ -39,7 +39,7 @@ func (cm *SQLCommand) Augment(ec plug.ExecContext, props *plug.Properties) error
 	return nil
 }
 
-func (cm *SQLCommand) Init(cc plug.InitContext) error {
+func (SQLCommand) Init(cc plug.InitContext) error {
 	if cc.Interactive() {
 		return errors.ErrNotAvailable
 	}
@@ -59,31 +59,30 @@ having version %s or better.
 	return nil
 }
 
-func (cm *SQLCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (SQLCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	// this method is only for the non-interactive mode
 	if len(ec.Args()) < 1 {
 		return nil
 	}
-	ci, err := ec.ClientInternal(ctx)
-	if err != nil {
-		return err
-	}
-	if sv, ok := cmd.CheckServerCompatible(ci, minServerVersion); !ok {
-		return fmt.Errorf("server (%s) does not support this command, at least %s is expected", sv, minServerVersion)
-	}
 	query := ec.GetStringArg(argQuery)
-	res, stop, err := cm.execQuery(ctx, query, ec)
+	resV, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		ci, err := cmd.ClientInternal(ctx, ec, sp)
+		if err != nil {
+			return nil, err
+		}
+		if sv, ok := cmd.CheckServerCompatible(ci, minServerVersion); !ok {
+			return nil, fmt.Errorf("server (%s) does not support this command, at least %s is expected", sv, minServerVersion)
+		}
+		sp.SetText("Executing SQL")
+		return clcsql.ExecSQL(ctx, ec, query)
+	})
 	if err != nil {
 		return err
 	}
 	// this should be deferred because UpdateOutput will iterate on the result
 	defer stop()
-	verbose := ec.Props().GetBool(clc.PropertyVerbose)
-	return clcsql.UpdateOutput(ctx, ec, res, verbose)
-}
-
-func (cm *SQLCommand) execQuery(ctx context.Context, query string, ec plug.ExecContext) (sql.Result, context.CancelFunc, error) {
-	return clcsql.ExecSQL(ctx, ec, query)
+	res := resV.(sql.Result)
+	return clcsql.UpdateOutput(ctx, ec, res)
 }
 
 func init() {

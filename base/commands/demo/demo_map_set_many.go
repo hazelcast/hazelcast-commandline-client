@@ -18,8 +18,6 @@ import (
 
 type MapSetManyCmd struct{}
 
-func (m MapSetManyCmd) Unwrappable() {}
-
 const (
 	flagName           = "name"
 	flagSize           = "size"

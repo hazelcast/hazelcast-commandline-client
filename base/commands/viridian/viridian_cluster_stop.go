@@ -6,18 +6,16 @@ import (
 	"context"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
-type ClusterStopCmd struct{}
+type ClusterStopCommand struct{}
 
-func (cm ClusterStopCmd) Unwrappable() {}
-
-func (cm ClusterStopCmd) Init(cc plug.InitContext) error {
+func (ClusterStopCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("stop-cluster")
 	long := `Stops the given Viridian cluster.
 
@@ -30,7 +28,7 @@ Make sure you login before running this command.
 	return nil
 }
 
-func (cm ClusterStopCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (ClusterStopCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	api, err := getAPI(ec)
 	if err != nil {
 		return err
@@ -59,5 +57,5 @@ func (cm ClusterStopCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("viridian:stop-cluster", &ClusterStopCmd{}))
+	check.Must(plug.Registry.RegisterCommand("viridian:stop-cluster", &ClusterStopCommand{}))
 }

@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/hazelcast/hazelcast-commandline-client/base/objects"
-	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -59,9 +58,9 @@ const (
 	argTitleObjectType = "object type"
 )
 
-type ObjectListCommand struct{}
+type ListCommand struct{}
 
-func (cm ObjectListCommand) Init(cc plug.InitContext) error {
+func (ListCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("list")
 	long := fmt.Sprintf(`List distributed objects, optionally filter by type.
 	
@@ -76,7 +75,7 @@ CP objects such as AtomicLong cannot be listed.
 	return nil
 }
 
-func (cm ObjectListCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (ListCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	var typeFilter string
 	fs := ec.GetStringSliceArg(argObjectType)
 	if len(fs) > 0 {
@@ -107,13 +106,11 @@ func (cm ObjectListCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 			valueCol,
 		})
 	}
-	if len(rows) > 0 {
-		return ec.AddOutputRows(ctx, rows...)
+	if len(rows) == 0 {
+		ec.PrintlnUnnecessary("OK No objects found.")
+		return nil
 	}
-	if !ec.Props().GetBool(clc.PropertyQuiet) {
-		I2(fmt.Fprintln(ec.Stdout(), "No objects found"))
-	}
-	return nil
+	return ec.AddOutputRows(ctx, rows...)
 }
 
 func objectFilterTypes() string {
@@ -129,5 +126,5 @@ func init() {
 	sort.Slice(objTypes, func(i, j int) bool {
 		return objTypes[i] < objTypes[j]
 	})
-	Must(plug.Registry.RegisterCommand("object:list", &ObjectListCommand{}))
+	Must(plug.Registry.RegisterCommand("object:list", &ListCommand{}))
 }

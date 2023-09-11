@@ -15,7 +15,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc/shell"
 	puberrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/str"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/terminal"
@@ -74,11 +74,10 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 			logLevel := strings.ToUpper(ec.Props().GetString(clc.PropertyLogLevel))
 			logText = fmt.Sprintf("Log %9s : %s", logLevel, logPath)
 		}
-		I2(fmt.Fprintf(ec.Stdout(), banner, internal.Version, cfgText, logText))
+		check.I2(fmt.Fprintf(ec.Stdout(), banner, internal.Version, cfgText, logText))
 	}
-	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	endLineFn := makeEndLineFunc()
-	textFn := makeTextFunc(m, ec, verbose, false, false, func(shortcut string) bool {
+	textFn := makeTextFunc(m, ec, func(shortcut string) bool {
 		cm.mu.RLock()
 		_, ok := cm.shortcuts[shortcut]
 		cm.mu.RUnlock()
@@ -117,8 +116,6 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 	return sh.Start(ctx)
 }
 
-func (*ShellCommand) Unwrappable() {}
-
 func init() {
-	Must(plug.Registry.RegisterCommand("shell", &ShellCommand{}))
+	check.Must(plug.Registry.RegisterCommand("shell", &ShellCommand{}))
 }

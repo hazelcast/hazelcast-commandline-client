@@ -11,11 +11,15 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/mk"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	iserialization "github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
 const (
@@ -27,46 +31,80 @@ const (
 
 var regexpValidKey = regexp.MustCompile(`^[a-z0-9_]+$`)
 
-type CreateCmd struct{}
+type CreateCommand struct{}
 
-func (pc CreateCmd) Init(cc plug.InitContext) error {
+func (pc CreateCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("create")
 	short := "Create project from the given template (BETA)"
 	long := longHelp()
 	cc.SetCommandHelp(long, short)
-	cc.AddStringFlag(flagOutputDir, "o", "", false, "the directory to create the project at")
+	cc.AddStringFlag(commands.FlagOutputDir, "o", "", false, "the directory to create the project at")
 	cc.AddStringArg(argTemplateName, argTitleTemplateName)
 	cc.AddKeyValueSliceArg(argPlaceholder, argTitlePlaceholder, 0, clc.MaxArgs)
 	return nil
 }
 
-func (pc CreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (pc CreateCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	templateName := ec.GetStringArg(argTemplateName)
-	outputDir := ec.Props().GetString(flagOutputDir)
+	outputDir := ec.Props().GetString(commands.FlagOutputDir)
 	if outputDir == "" {
 		outputDir = templateName
 	}
+	var stages []stage.Stage[any]
 	templatesDir := paths.Templates()
 	templateExists := paths.Exists(filepath.Join(templatesDir, templateName))
-	if !templateExists {
-		ec.Logger().Debug(func() string {
-			return fmt.Sprintf("template %s does not exist, cloning it into %s", templateName, templatesDir)
+	if templateExists {
+		stages = append(stages, stage.Stage[any]{
+			ProgressMsg: "Updating the template",
+			SuccessMsg:  fmt.Sprintf("Updated template '%s'", templateName),
+			FailureMsg:  "Failed updating the template",
+			Func: func(ctx context.Context, status stage.Statuser[any]) (any, error) {
+				err := updateTemplate(ctx, templatesDir, templateName)
+				if err != nil {
+					ec.Logger().Error(err)
+					return nil, stage.IgnoreError(err)
+				}
+				return nil, nil
+			},
 		})
-		err := cloneTemplate(templatesDir, templateName)
-		if err != nil {
-			ec.Logger().Error(err)
-			return err
-		}
+	} else {
+		stages = append(stages, stage.Stage[any]{
+			ProgressMsg: "Retrieving the template",
+			SuccessMsg:  fmt.Sprintf("Retrieved template '%s'", templateName),
+			FailureMsg:  "Failed retrieving the template",
+			Func: func(ctx context.Context, status stage.Statuser[any]) (any, error) {
+				ec.Logger().Debug(func() string {
+					return fmt.Sprintf("template %s does not exist, cloning it into %s", templateName, templatesDir)
+				})
+				err := cloneTemplate(ctx, templatesDir, templateName)
+				if err != nil {
+					ec.Logger().Error(err)
+					return nil, err
+				}
+				return nil, nil
+			},
+		})
 	}
-	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Creating project from template %s", templateName))
-		return nil, createProject(ec, outputDir, templateName)
+	stages = append(stages, stage.Stage[any]{
+		ProgressMsg: "Creating the project",
+		SuccessMsg:  "Created the project",
+		FailureMsg:  "Failed creating the project",
+		Func: func(ctx context.Context, status stage.Statuser[any]) (any, error) {
+			return nil, createProject(ec, outputDir, templateName)
+		},
 	})
-	stop()
+	_, err := stage.Execute[any](ctx, ec, nil, stage.NewFixedProvider(stages...))
 	if err != nil {
 		return err
 	}
-	return nil
+	ec.PrintlnUnnecessary("")
+	return ec.AddOutputRows(ctx, output.Row{
+		output.Column{
+			Name:  "Path",
+			Type:  iserialization.TypeString,
+			Value: outputDir,
+		},
+	})
 }
 
 func createProject(ec plug.ExecContext, outputDir, templateName string) error {
@@ -155,5 +193,5 @@ func isDefaultPropertiesFile(d fs.DirEntry) bool {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("project:create", &CreateCmd{}))
+	Must(plug.Registry.RegisterCommand("project:create", &CreateCommand{}))
 }

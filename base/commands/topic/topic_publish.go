@@ -6,62 +6,63 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hazelcast/hazelcast-go-client"
-
+	"github.com/hazelcast/hazelcast-commandline-client/base"
+	"github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/topic"
-
+	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/mk"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-const (
-	argValue      = "value"
-	argTitleValue = "value"
-)
+type PublishCommand struct{}
 
-type topicPublishCommand struct{}
-
-func (tpc *topicPublishCommand) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("publish [values] [flags]")
+func (PublishCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("publish")
 	help := "Publish new messages for a Topic."
 	cc.SetCommandHelp(help, help)
-	addValueTypeFlag(cc)
-	cc.AddStringSliceArg(argValue, argTitleValue, 1, clc.MaxArgs)
+	commands.AddValueTypeFlag(cc)
+	cc.AddStringSliceArg(base.ArgValue, base.ArgTitleValue, 1, clc.MaxArgs)
 	return nil
 }
 
-func (tpc *topicPublishCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
-	topicName := ec.Props().GetString(topicFlagName)
-	// get the topic just to ensure the corresponding proxy is created
-	_, err := ec.Props().GetBlocking(topicPropertyName)
-	if err != nil {
-		return err
-	}
-	ci, err := ec.ClientInternal(ctx)
-	if err != nil {
-		return err
-	}
-
-	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Publishing values into topic %s", topicName))
-		var vals []hazelcast.Data
-		for _, valStr := range ec.GetStringSliceArg(argValue) {
-			val, err := makeValueData(ec, ci, valStr)
+func (PublishCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+	name := ec.Props().GetString(base.FlagName)
+	vt := ec.Props().GetString(base.FlagValueType)
+	countV, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		ci, err := cmd.ClientInternal(ctx, ec, sp)
+		if err != nil {
+			return nil, err
+		}
+		// get the topic just to ensure the corresponding proxy is created
+		t, err := ci.Client().GetTopic(ctx, name)
+		if err != nil {
+			return nil, err
+		}
+		args := ec.GetStringSliceArg(base.ArgValue)
+		vs := make([]any, len(args))
+		for i, arg := range args {
+			val, err := mk.ValueFromString(arg, vt)
 			if err != nil {
 				return nil, err
 			}
-			vals = append(vals, val)
+			vs[i] = val
 		}
-		return nil, topic.PublishAll(ctx, ci, topicName, vals)
+		sp.SetText(fmt.Sprintf("Publishing %d values to Topic '%s'", len(vs), name))
+		if err := t.PublishAll(ctx, vs...); err != nil {
+			return nil, fmt.Errorf("publishing values: %w", err)
+		}
+		return len(vs), nil
 	})
 	if err != nil {
 		return err
 	}
 	stop()
+	msg := fmt.Sprintf("OK Published %d values to Topic '%s'.", countV.(int), name)
+	ec.PrintlnUnnecessary(msg)
 	return nil
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("topic:publish", &topicPublishCommand{}))
+	Must(plug.Registry.RegisterCommand("topic:publish", &PublishCommand{}))
 }

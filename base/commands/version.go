@@ -11,30 +11,28 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
-
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 )
 
-type VersionCommand struct {
-}
+type VersionCommand struct{}
 
-func (vc VersionCommand) Init(cc plug.InitContext) error {
+func (VersionCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("version")
 	help := "Print the version"
 	cc.SetCommandHelp(help, help)
 	return nil
 }
 
-func (vc VersionCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (VersionCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if ec.Props().GetBool(clc.PropertyVerbose) {
 		return ec.AddOutputRows(ctx,
-			vc.row("Hazelcast CLC", internal.Version),
-			vc.row("Latest Git Commit Hash", internal.GitCommit),
-			vc.row("Hazelcast Go Client", hazelcast.ClientVersion),
-			vc.row("Go", fmt.Sprintf("%s %s/%s", runtime.Version(), runtime.GOOS, runtime.GOARCH)),
+			makeRow("Hazelcast CLC", internal.Version),
+			makeRow("Latest Git Commit Hash", internal.GitCommit),
+			makeRow("Hazelcast Go Client", hazelcast.ClientVersion),
+			makeRow("Go", fmt.Sprintf("%s %s/%s", runtime.Version(), runtime.GOOS, runtime.GOARCH)),
 		)
 	}
 	return ec.AddOutputRows(ctx, output.Row{
@@ -46,7 +44,7 @@ func (vc VersionCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	})
 }
 
-func (vc VersionCommand) row(key, value string) output.Row {
+func makeRow(key, value string) output.Row {
 	return output.Row{
 		output.Column{
 			Name:  "Name",
@@ -61,8 +59,6 @@ func (vc VersionCommand) row(key, value string) output.Row {
 	}
 }
 
-func (VersionCommand) Unwrappable() {}
-
 func init() {
-	Must(plug.Registry.RegisterCommand("version", &VersionCommand{}))
+	check.Must(plug.Registry.RegisterCommand("version", &VersionCommand{}))
 }

@@ -1,6 +1,6 @@
-//go:build std || queue
+//go:build std || atomiclong
 
-package queue
+package atomiclong
 
 import (
 	"github.com/hazelcast/hazelcast-commandline-client/base/commands"
@@ -9,6 +9,6 @@ import (
 )
 
 func init() {
-	c := commands.NewClearCommand("Queue", getQueue)
-	check.Must(plug.Registry.RegisterCommand("queue:clear", c))
+	c := commands.NewDestroyCommand("AtomicLong", getAtomicLong)
+	check.Must(plug.Registry.RegisterCommand("atomic-long:destroy", c))
 }

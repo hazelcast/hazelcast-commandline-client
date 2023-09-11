@@ -6,17 +6,19 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
-type ListCmd struct{}
+type ListCommand struct{}
 
-func (cm ListCmd) Init(cc plug.InitContext) error {
+func (ListCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("list")
 	long := fmt.Sprintf(`Lists known configurations
 	
@@ -28,29 +30,37 @@ Directory names which start with . or _ are ignored.
 	return nil
 }
 
-func (cm ListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
-	cd := paths.Configs()
-	cs, err := config.FindAll(cd)
+func (ListCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+	rows, stop, err := cmd.ExecuteBlocking(ctx, ec, func(ctx context.Context, sp clc.Spinner) ([]output.Row, error) {
+		sp.SetText("Finding configurations")
+		cd := paths.Configs()
+		cs, err := config.FindAll(cd)
+		if err != nil {
+			ec.Logger().Warn("Cannot access configuration directory at: %s: %s", cd, err.Error())
+		}
+		var rows []output.Row
+		for _, c := range cs {
+			rows = append(rows, output.Row{output.Column{
+				Name:  "Configuration Name",
+				Type:  serialization.TypeString,
+				Value: c,
+			}})
+		}
+		return rows, nil
+	})
 	if err != nil {
-		ec.Logger().Warn("Cannot access configs directory at: %s: %s", cd, err.Error())
+		return err
 	}
-	if len(cs) == 0 {
+	stop()
+	if len(rows) == 0 {
 		ec.PrintlnUnnecessary("OK No configurations found.")
 		return nil
 	}
-	var rows []output.Row
-	for _, c := range cs {
-		rows = append(rows, output.Row{output.Column{
-			Name:  "Config Name",
-			Type:  serialization.TypeString,
-			Value: c,
-		}})
-	}
+	msg := fmt.Sprintf("OK Found %d configurations.", len(rows))
+	defer ec.PrintlnUnnecessary(msg)
 	return ec.AddOutputRows(ctx, rows...)
 }
 
-func (ListCmd) Unwrappable() {}
-
 func init() {
-	Must(plug.Registry.RegisterCommand("config:list", &ListCmd{}))
+	check.Must(plug.Registry.RegisterCommand("config:list", &ListCommand{}))
 }

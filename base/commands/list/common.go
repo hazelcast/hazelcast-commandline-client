@@ -5,51 +5,19 @@ package list
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client"
 
 	"github.com/hazelcast/hazelcast-commandline-client/base"
+	"github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/mk"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
-
-func addValueTypeFlag(cc plug.InitContext) {
-	help := fmt.Sprintf("value type (one of: %s)", strings.Join(internal.SupportedTypeNames, ", "))
-	cc.AddStringFlag(base.FlagValueType, "v", "string", false, help)
-}
-
-func makeValueData(ec plug.ExecContext, ci *hazelcast.ClientInternal, valueStr string) (hazelcast.Data, error) {
-	vt := ec.Props().GetString(base.FlagValueType)
-	if vt == "" {
-		vt = "string"
-	}
-	value, err := mk.ValueFromString(valueStr, vt)
-	if err != nil {
-		return nil, err
-	}
-	return ci.EncodeData(value)
-}
-
-func stringToPartitionID(ci *hazelcast.ClientInternal, name string) (int32, error) {
-	var partitionID int32
-	var keyData hazelcast.Data
-	var err error
-	idx := strings.Index(name, "@")
-	if keyData, err = ci.EncodeData(name[idx+1:]); err != nil {
-		return 0, err
-	}
-	if partitionID, err = ci.GetPartitionID(keyData); err != nil {
-		return 0, err
-	}
-	return partitionID, nil
-}
 
 func getList(ctx context.Context, ec plug.ExecContext, sp clc.Spinner) (*hazelcast.List, error) {
 	name := ec.Props().GetString(base.FlagName)
@@ -57,7 +25,7 @@ func getList(ctx context.Context, ec plug.ExecContext, sp clc.Spinner) (*hazelca
 	if err != nil {
 		return nil, err
 	}
-	sp.SetText(fmt.Sprintf("Getting list %s", name))
+	sp.SetText(fmt.Sprintf("Getting List '%s'", name))
 	return ci.Client().GetList(ctx, name)
 }
 
@@ -68,16 +36,16 @@ func removeFromList(ctx context.Context, ec plug.ExecContext, name string, index
 		if err != nil {
 			return nil, err
 		}
-		pid, err := stringToPartitionID(ci, name)
+		pid, err := internal.StringToPartitionID(ci, name)
 		if err != nil {
 			return nil, err
 		}
-		sp.SetText(fmt.Sprintf("Removing value from list %s", name))
+		sp.SetText(fmt.Sprintf("Removing value from List '%s'", name))
 		var req *hazelcast.ClientMessage
 		if indexCall {
 			req = codec.EncodeListRemoveWithIndexRequest(name, index)
 		} else {
-			vd, err := makeValueData(ec, ci, valueStr)
+			vd, err := commands.MakeValueData(ec, ci, valueStr)
 			if err != nil {
 				return nil, err
 			}
@@ -124,7 +92,7 @@ func removeFromList(ctx context.Context, ec plug.ExecContext, name string, index
 		return err
 	}
 	stop()
-	msg := fmt.Sprintf("OK List %s was updated.\n", name)
+	msg := fmt.Sprintf("OK List '%s' was updated.\n", name)
 	ec.PrintlnUnnecessary(msg)
 	row := rowV.(output.Row)
 	return ec.AddOutputRows(ctx, row)

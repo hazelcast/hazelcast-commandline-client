@@ -9,17 +9,15 @@ import (
 	"path/filepath"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
-type DownloadLogsCmd struct{}
+type DownloadLogsCommand struct{}
 
-func (cm DownloadLogsCmd) Unwrappable() {}
-
-func (cm DownloadLogsCmd) Init(cc plug.InitContext) error {
+func (DownloadLogsCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("download-logs")
 	long := `Downloads the logs of the given Viridian cluster for the logged in API key.
 
@@ -33,7 +31,7 @@ Make sure you login before running this command.
 	return nil
 }
 
-func (cm DownloadLogsCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (DownloadLogsCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	api, err := getAPI(ec)
 	if err != nil {
 		return err
@@ -69,10 +67,6 @@ func (cm DownloadLogsCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	})
 }
 
-func init() {
-	Must(plug.Registry.RegisterCommand("viridian:download-logs", &DownloadLogsCmd{}))
-}
-
 func validateOutputDir(dir string) error {
 	info, err := os.Stat(dir)
 	if err != nil {
@@ -85,4 +79,8 @@ func validateOutputDir(dir string) error {
 		return nil
 	}
 	return fmt.Errorf("not a directory: %s", dir)
+}
+
+func init() {
+	check.Must(plug.Registry.RegisterCommand("viridian:download-logs", &DownloadLogsCommand{}))
 }

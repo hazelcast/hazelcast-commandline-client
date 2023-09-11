@@ -12,7 +12,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/secrets"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/prompt"
@@ -27,11 +27,9 @@ const (
 	secretPrefix  = "viridian"
 )
 
-type LoginCmd struct{}
+type LoginCommand struct{}
 
-func (cm LoginCmd) Unwrappable() {}
-
-func (cm LoginCmd) Init(cc plug.InitContext) error {
+func (cm LoginCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("login")
 	short := "Logs in to Viridian using the given API key and API secret"
 	long := fmt.Sprintf(`Logs in to Viridian to get an access token using the given API key and API secret.
@@ -52,7 +50,7 @@ Alternatively, you can use the following environment variables:
 	return nil
 }
 
-func (cm LoginCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (cm LoginCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	key, secret, err := getAPIKeySecret(ec)
 	if err != nil {
 		return err
@@ -101,7 +99,7 @@ func (cm LoginCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	})
 }
 
-func (cm LoginCmd) retrieveToken(ctx context.Context, ec plug.ExecContext, key, secret, apiBase string) (string, error) {
+func (cm LoginCommand) retrieveToken(ctx context.Context, ec plug.ExecContext, key, secret, apiBase string) (string, error) {
 	ti, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Logging in")
 		api, err := viridian.Login(ctx, secretPrefix, key, secret, apiBase)
@@ -160,5 +158,5 @@ func getAPIKeySecret(ec plug.ExecContext) (key, secret string, err error) {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("viridian:login", &LoginCmd{}))
+	check.Must(plug.Registry.RegisterCommand("viridian:login", &LoginCommand{}))
 }

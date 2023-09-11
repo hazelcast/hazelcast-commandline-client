@@ -5,32 +5,29 @@ package atomiclong
 import (
 	"context"
 
+	"github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-const (
-	flagName = "name"
-)
+type Command struct{}
 
-type AtomicLongCommand struct{}
-
-func (AtomicLongCommand) Init(cc plug.InitContext) error {
+func (Command) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("atomic-long")
 	cc.AddCommandGroup(clc.GroupDDSID, clc.GroupDDSTitle)
 	cc.SetCommandGroup(clc.GroupDDSID)
-	cc.AddStringFlag(flagName, "n", defaultAtomicLongName, false, "atomic long name")
 	cc.SetTopLevel(true)
-	cc.SetCommandUsage("atomic-long")
-	help := "Atomic long operations"
+	help := "AtomicLong operations"
 	cc.SetCommandHelp(help, help)
+	cc.AddStringFlag(base.FlagName, "n", base.DefaultName, false, "AtomicLong name")
 	return nil
 }
 
-func (mc *AtomicLongCommand) Exec(context.Context, plug.ExecContext) error {
+func (Command) Exec(context.Context, plug.ExecContext) error {
 	return nil
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("atomic-long", &AtomicLongCommand{}))
+	check.Must(plug.Registry.RegisterCommand("atomic-long", &Command{}))
 }

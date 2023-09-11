@@ -7,8 +7,10 @@ import (
 	"fmt"
 
 	"github.com/hazelcast/hazelcast-commandline-client/base"
+	"github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -18,13 +20,11 @@ import (
 
 type ListContainsCommand struct{}
 
-func (mc *ListContainsCommand) Unwrappable() {}
-
 func (mc *ListContainsCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("contains")
 	help := "Check if the value is present in the list"
 	cc.SetCommandHelp(help, help)
-	addValueTypeFlag(cc)
+	commands.AddValueTypeFlag(cc)
 	cc.AddStringArg(base.ArgValue, base.ArgTitleValue)
 	return nil
 }
@@ -42,15 +42,15 @@ func (mc *ListContainsCommand) Exec(ctx context.Context, ec plug.ExecContext) er
 			return nil, err
 		}
 		valueStr := ec.GetStringArg(base.ArgValue)
-		vd, err := makeValueData(ec, ci, valueStr)
+		vd, err := commands.MakeValueData(ec, ci, valueStr)
 		if err != nil {
 			return nil, err
 		}
-		pid, err := stringToPartitionID(ci, name)
+		pid, err := internal.StringToPartitionID(ci, name)
 		if err != nil {
 			return nil, err
 		}
-		sp.SetText(fmt.Sprintf("Checking if value exists in the list %s", name))
+		sp.SetText(fmt.Sprintf("Checking if value exists in the List '%s'", name))
 		req := codec.EncodeListContainsRequest(name, vd)
 		resp, err := ci.InvokeOnPartition(ctx, req, pid, nil)
 		if err != nil {

@@ -65,14 +65,14 @@ func executeTest(t *testing.T) {
 	_, err := stage.Execute[any](context.TODO(), ec, nil, stage.NewFixedProvider(stages...))
 	assert.NoError(t, err)
 	texts := []string{
-		"[1/3] Progressing 1",
-		"[2/3] Progressing 2",
-		"[3/3] Progressing 3",
-		"[3/3] Progressing 3 (4s left)",
-		"[3/3] Progressing 3 (3s left)",
-		"[3/3] Progressing 3 (2s left)",
-		"[3/3] Progressing 3 (1s left)",
-		"[3/3] Progressing 3",
+		" [1/3] Progressing 1",
+		" [2/3] Progressing 2",
+		" [3/3] Progressing 3",
+		" [3/3] Progressing 3 (4s left)",
+		" [3/3] Progressing 3 (3s left)",
+		" [3/3] Progressing 3 (2s left)",
+		" [3/3] Progressing 3 (1s left)",
+		" [3/3] Progressing 3",
 	}
 	assert.Equal(t, texts, ec.Spinner.Texts)
 	progresses := []float32{0.2, 0.4, 0.6, 0.8, 1}
@@ -103,8 +103,8 @@ func execute_WithFailureTest(t *testing.T) {
 	ec := it.NewExecuteContext(nil)
 	_, err := stage.Execute[any](context.TODO(), ec, nil, stage.NewFixedProvider(stages...))
 	assert.Error(t, err)
-	texts := []string{"[1/2] Progressing 1"}
+	texts := []string{" [1/2] Progressing 1"}
 	assert.Equal(t, texts, ec.Spinner.Texts)
-	text := "FAIL Failure 1: some error\n"
+	text := "ERROR Failure 1: some error\n"
 	assert.Equal(t, text, ec.StdoutText())
 }

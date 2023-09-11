@@ -6,19 +6,18 @@ import (
 	"context"
 
 	"github.com/hazelcast/hazelcast-commandline-client/base"
+	"github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
 type ListRemoveValueCommand struct{}
 
-func (l ListRemoveValueCommand) Unwrappable() {}
-
 func (mc *ListRemoveValueCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("remove-value")
 	help := "Remove a value from the given list"
 	cc.SetCommandHelp(help, help)
-	addValueTypeFlag(cc)
+	commands.AddValueTypeFlag(cc)
 	cc.AddStringArg(base.ArgValue, base.ArgTitleValue)
 	return nil
 }
