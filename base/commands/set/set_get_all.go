@@ -74,6 +74,11 @@ func (GetAllCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		return err
 	}
 	stop()
+	rows := rowsV.([]output.Row)
+	if len(rows) == 0 {
+		ec.PrintlnUnnecessary("OK No items in the set.")
+		return nil
+	}
 	return ec.AddOutputRows(ctx, rowsV.([]output.Row)...)
 }
 
