@@ -29,7 +29,7 @@ const (
 
 type ScriptCommand struct{}
 
-func (cm ScriptCommand) Init(cc plug.InitContext) error {
+func (ScriptCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("script")
 	long := `Runs the script in the given local or HTTP location.
 	
@@ -51,7 +51,7 @@ See examples/sql/dessert.sql for a sample script.
 	return nil
 }
 
-func (cm ScriptCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (ScriptCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	args := ec.GetStringSliceArg(argPath)
 	in := ec.Stdin()
 	if len(args) > 0 {

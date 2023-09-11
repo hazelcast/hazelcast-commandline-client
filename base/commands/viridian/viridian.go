@@ -5,26 +5,26 @@ package viridian
 import (
 	"context"
 
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-type Cmd struct{}
+type Command struct{}
 
-func (cm Cmd) Init(cc plug.InitContext) error {
-	cc.SetTopLevel(true)
-	cc.SetCommandUsage("viridian [command]")
-	help := "Various Viridian operations"
-	cc.SetCommandHelp(help, help)
+func (Command) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("viridian")
 	cc.AddCommandGroup("viridian", "Viridian")
 	cc.SetCommandGroup("viridian")
+	cc.SetTopLevel(true)
+	help := "Various Viridian operations"
+	cc.SetCommandHelp(help, help)
 	return nil
 }
 
-func (cm Cmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (Command) Exec(ctx context.Context, ec plug.ExecContext) error {
 	return nil
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("viridian", &Cmd{}))
+	check.Must(plug.Registry.RegisterCommand("viridian", &Command{}))
 }

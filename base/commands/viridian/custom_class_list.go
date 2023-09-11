@@ -6,16 +6,16 @@ import (
 	"context"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
-type CustomClassListCmd struct{}
+type CustomClassListCommand struct{}
 
-func (cmd CustomClassListCmd) Init(cc plug.InitContext) error {
+func (CustomClassListCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("list-custom-classes")
 	long := `Lists all custom classes in the given Viridian cluster.
 
@@ -28,7 +28,7 @@ Make sure you login before running this command.
 	return nil
 }
 
-func (cmd CustomClassListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (CustomClassListCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	api, err := getAPI(ec)
 	if err != nil {
 		return err
@@ -89,5 +89,5 @@ func (cmd CustomClassListCmd) Exec(ctx context.Context, ec plug.ExecContext) err
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("viridian:list-custom-classes", &CustomClassListCmd{}))
+	check.Must(plug.Registry.RegisterCommand("viridian:list-custom-classes", &CustomClassListCommand{}))
 }

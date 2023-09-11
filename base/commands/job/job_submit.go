@@ -9,8 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client"
-
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
@@ -29,9 +27,9 @@ const (
 	argTitleArg      = "argument"
 )
 
-type SubmitCmd struct{}
+type SubmitCommand struct{}
 
-func (cm SubmitCmd) Init(cc plug.InitContext) error {
+func (SubmitCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("submit")
 	long := fmt.Sprintf(`Submits a jar file to create a Jet job
 	
@@ -49,7 +47,7 @@ This command requires a Viridian or a Hazelcast cluster having version %s or new
 	return nil
 }
 
-func (cm SubmitCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (SubmitCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	path := ec.GetStringArg(argJarPath)
 	if !paths.Exists(path) {
 		return fmt.Errorf("file does not exist: %s", path)
@@ -57,17 +55,10 @@ func (cm SubmitCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if !strings.HasSuffix(path, ".jar") {
 		return fmt.Errorf("submitted file is not a jar file: %s", path)
 	}
-	ci, err := ec.ClientInternal(ctx)
-	if err != nil {
-		return err
-	}
-	if sv, ok := cmd.CheckServerCompatible(ci, minServerVersion); !ok {
-		return fmt.Errorf("server (%s) does not support this command, at least %s is expected", sv, minServerVersion)
-	}
-	return submitJar(ctx, ci, ec, path)
+	return submitJar(ctx, ec, path)
 }
 
-func submitJar(ctx context.Context, ci *hazelcast.ClientInternal, ec plug.ExecContext, path string) error {
+func submitJar(ctx context.Context, ec plug.ExecContext, path string) error {
 	wait := ec.Props().GetBool(flagWait)
 	jobName := ec.Props().GetString(flagName)
 	snapshot := ec.Props().GetString(flagSnapshot)
@@ -90,12 +81,20 @@ func submitJar(ctx context.Context, ci *hazelcast.ClientInternal, ec plug.ExecCo
 			SuccessMsg:  "Submitted the job",
 			FailureMsg:  "Failed submitting the job",
 			Func: func(ctx context.Context, status stage.Statuser[any]) (any, error) {
+				ci, err := ec.ClientInternal(ctx)
+				if err != nil {
+					return nil, err
+				}
+				if sv, ok := cmd.CheckServerCompatible(ci, minServerVersion); !ok {
+					err := fmt.Errorf("server (%s) does not support this command, at least %s is expected", sv, minServerVersion)
+					return nil, err
+				}
 				j := jet.New(ci, status, ec.Logger())
-				err := retry(tries, ec.Logger(), func(try int) error {
+				err = retry(tries, ec.Logger(), func(try int) error {
 					if try == 0 {
 						ec.Logger().Info("Submitting %s", jobName)
 					} else {
-						ec.Logger().Info("Submitting %s, retry: %d", jobName, try)
+						ec.Logger().Info("Submitting %s, retry %d", jobName, try)
 					}
 					br := jet.CreateBinaryReaderForPath(path)
 					return j.SubmitJob(ctx, path, jobName, className, snapshot, args, br)
@@ -136,5 +135,5 @@ func retry(times int, lg log.Logger, f func(try int) error) error {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("job:submit", &SubmitCmd{}))
+	Must(plug.Registry.RegisterCommand("job:submit", &SubmitCommand{}))
 }

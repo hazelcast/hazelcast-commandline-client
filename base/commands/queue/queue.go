@@ -11,9 +11,9 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-type QueueCommand struct{}
+type Command struct{}
 
-func (QueueCommand) Init(cc plug.InitContext) error {
+func (Command) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("queue")
 	cc.AddCommandGroup(clc.GroupDDSID, clc.GroupDDSTitle)
 	cc.SetCommandGroup(clc.GroupDDSID)
@@ -25,11 +25,10 @@ func (QueueCommand) Init(cc plug.InitContext) error {
 	return nil
 }
 
-func (QueueCommand) Exec(context.Context, plug.ExecContext) error {
+func (Command) Exec(context.Context, plug.ExecContext) error {
 	return nil
 }
 
 func init() {
-	cmd := &QueueCommand{}
-	check.Must(plug.Registry.RegisterCommand("queue", cmd))
+	check.Must(plug.Registry.RegisterCommand("queue", &Command{}))
 }

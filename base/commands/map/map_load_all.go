@@ -19,7 +19,7 @@ import (
 
 type MapLoadAllCommand struct{}
 
-func (mc *MapLoadAllCommand) Init(cc plug.InitContext) error {
+func (MapLoadAllCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("load-all")
 	long := `Load keys from map-store into the map
 	
@@ -32,7 +32,7 @@ If no key is given, all keys are loaded.`
 	return nil
 }
 
-func (mc *MapLoadAllCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (MapLoadAllCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	name := ec.Props().GetString(base.FlagName)
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		ci, err := cmd.ClientInternal(ctx, ec, sp)

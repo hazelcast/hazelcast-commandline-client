@@ -7,8 +7,10 @@ import (
 	"fmt"
 
 	"github.com/hazelcast/hazelcast-commandline-client/base"
+	"github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -21,7 +23,7 @@ func (mc *ListSetCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("set")
 	help := "Set a value at the given index in the list"
 	cc.SetCommandHelp(help, help)
-	addValueTypeFlag(cc)
+	commands.AddValueTypeFlag(cc)
 	cc.AddInt64Arg(argIndex, argTitleIndex)
 	cc.AddStringArg(base.ArgValue, base.ArgTitleValue)
 	return nil
@@ -41,15 +43,15 @@ func (mc *ListSetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		if err != nil {
 			return nil, err
 		}
-		vd, err := makeValueData(ec, ci, valueStr)
+		vd, err := commands.MakeValueData(ec, ci, valueStr)
 		if err != nil {
 			return nil, err
 		}
-		pid, err := stringToPartitionID(ci, name)
+		pid, err := internal.StringToPartitionID(ci, name)
 		if err != nil {
 			return nil, err
 		}
-		sp.SetText(fmt.Sprintf("Setting the value of the list %s", name))
+		sp.SetText(fmt.Sprintf("Setting the value of the List '%s'", name))
 		req := codec.EncodeListSetRequest(name, int32(index), vd)
 		resp, err := ci.InvokeOnPartition(ctx, req, pid, nil)
 		if err != nil {
@@ -62,6 +64,7 @@ func (mc *ListSetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		return err
 	}
 	stop()
+	ec.PrintlnUnnecessary("OK Set the value in the List.\n")
 	return ec.AddOutputRows(ctx, rowV.(output.Row))
 }
 

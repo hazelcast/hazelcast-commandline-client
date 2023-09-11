@@ -17,16 +17,16 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
-type SetGetAllCommand struct{}
+type GetAllCommand struct{}
 
-func (SetGetAllCommand) Init(cc plug.InitContext) error {
+func (GetAllCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("get-all")
 	help := "Return the elements of the given Set"
 	cc.SetCommandHelp(help, help)
 	return nil
 }
 
-func (SetGetAllCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (GetAllCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	name := ec.Props().GetString(base.FlagName)
 	rowsV, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		ci, err := cmd.ClientInternal(ctx, ec, sp)
@@ -78,5 +78,5 @@ func (SetGetAllCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("set:get-all", &SetGetAllCommand{}))
+	Must(plug.Registry.RegisterCommand("set:get-all", &GetAllCommand{}))
 }

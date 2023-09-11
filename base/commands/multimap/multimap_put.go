@@ -18,7 +18,7 @@ import (
 
 type MultiMapPutCommand struct{}
 
-func (m MultiMapPutCommand) Init(cc plug.InitContext) error {
+func (MultiMapPutCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("put")
 	help := "Put a value in the given MultiMap"
 	cc.SetCommandHelp(help, help)
@@ -29,7 +29,7 @@ func (m MultiMapPutCommand) Init(cc plug.InitContext) error {
 	return nil
 }
 
-func (m MultiMapPutCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (MultiMapPutCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	name := ec.Props().GetString(base.FlagName)
 	keyStr := ec.GetStringArg(commands.ArgKey)
 	valueStr := ec.GetStringArg(base.ArgValue)

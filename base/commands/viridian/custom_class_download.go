@@ -7,7 +7,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/errors"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/prompt"
@@ -17,9 +17,9 @@ import (
 
 const flagOutputPath = "output-path"
 
-type CustomClassDownloadCmd struct{}
+type CustomClassDownloadCommand struct{}
 
-func (cmd CustomClassDownloadCmd) Init(cc plug.InitContext) error {
+func (CustomClassDownloadCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("download-custom-class")
 	long := `Downloads a custom class from the given Viridian cluster.
 
@@ -35,7 +35,7 @@ Make sure you login before running this command.
 	return nil
 }
 
-func (cmd CustomClassDownloadCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (CustomClassDownloadCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	api, err := getAPI(ec)
 	if err != nil {
 		return err
@@ -88,5 +88,5 @@ func (cmd CustomClassDownloadCmd) Exec(ctx context.Context, ec plug.ExecContext)
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("viridian:download-custom-class", &CustomClassDownloadCmd{}))
+	check.Must(plug.Registry.RegisterCommand("viridian:download-custom-class", &CustomClassDownloadCommand{}))
 }

@@ -17,9 +17,9 @@ const (
 	argTitleSnapshotName = "snapshot name"
 )
 
-type DeleteCmd struct{}
+type DeleteCommand struct{}
 
-func (DeleteCmd) Init(cc plug.InitContext) error {
+func (DeleteCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("delete")
 	help := "Delete a snapshot"
 	cc.SetCommandHelp(help, help)
@@ -27,7 +27,7 @@ func (DeleteCmd) Init(cc plug.InitContext) error {
 	return nil
 }
 
-func (DeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (DeleteCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	name := ec.GetStringArg(argTitleSnapshotName)
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		ci, err := cmd.ClientInternal(ctx, ec, sp)
@@ -58,5 +58,5 @@ func (DeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 }
 
 func init() {
-	check.Must(plug.Registry.RegisterCommand("snapshot:delete", DeleteCmd{}))
+	check.Must(plug.Registry.RegisterCommand("snapshot:delete", DeleteCommand{}))
 }

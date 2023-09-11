@@ -11,9 +11,9 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-type MultiMapCommand struct{}
+type Command struct{}
 
-func (MultiMapCommand) Init(cc plug.InitContext) error {
+func (Command) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("multi-map")
 	cc.AddCommandGroup(clc.GroupDDSID, clc.GroupDDSTitle)
 	cc.SetCommandGroup(clc.GroupDDSID)
@@ -25,10 +25,10 @@ func (MultiMapCommand) Init(cc plug.InitContext) error {
 	return nil
 }
 
-func (MultiMapCommand) Exec(context.Context, plug.ExecContext) error {
+func (Command) Exec(context.Context, plug.ExecContext) error {
 	return nil
 }
 
 func init() {
-	check.Must(plug.Registry.RegisterCommand("multi-map", &MultiMapCommand{}))
+	check.Must(plug.Registry.RegisterCommand("multi-map", &Command{}))
 }

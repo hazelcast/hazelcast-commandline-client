@@ -17,16 +17,16 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
-type ListCmd struct{}
+type ListCommand struct{}
 
-func (ListCmd) Init(cc plug.InitContext) error {
+func (ListCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("list")
 	help := "List snapshots"
 	cc.SetCommandHelp(help, help)
 	return nil
 }
 
-func (ListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (ListCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	rows, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		ci, err := cmd.ClientInternal(ctx, ec, sp)
 		if err != nil {
@@ -107,5 +107,5 @@ func listRows(ctx context.Context, m *hazelcast.Map) ([]output.Row, error) {
 }
 
 func init() {
-	check.Must(plug.Registry.RegisterCommand("snapshot:list", ListCmd{}))
+	check.Must(plug.Registry.RegisterCommand("snapshot:list", ListCommand{}))
 }

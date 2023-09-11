@@ -9,6 +9,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/types"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/jet"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
@@ -17,9 +18,9 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
-type ListCmd struct{}
+type ListCommand struct{}
 
-func (cm ListCmd) Init(cc plug.InitContext) error {
+func (ListCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("list")
 	help := "List jobs"
 	cc.SetCommandHelp(help, help)
@@ -28,24 +29,32 @@ func (cm ListCmd) Init(cc plug.InitContext) error {
 	return nil
 }
 
-func (cm ListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
-	ci, err := ec.ClientInternal(ctx)
-	if err != nil {
-		return err
-	}
-	ls, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+func (ListCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+	rows, stop, err := cmd.ExecuteBlocking(ctx, ec, func(ctx context.Context, sp clc.Spinner) ([]output.Row, error) {
+		ci, err := cmd.ClientInternal(ctx, ec, sp)
+		if err != nil {
+			return nil, err
+		}
 		sp.SetText("Getting the job list")
 		j := jet.New(ci, sp, ec.Logger())
-		return j.GetJobList(ctx)
+		jl, err := j.GetJobList(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return createJetJobRows(ec, jl), nil
 	})
 	if err != nil {
 		return err
 	}
 	stop()
-	return outputJetJobs(ctx, ec, ls)
+	if len(rows) == 0 {
+		ec.PrintlnUnnecessary("OK No jobs found.")
+		return nil
+	}
+	return ec.AddOutputRows(ctx, rows...)
 }
 
-func outputJetJobs(ctx context.Context, ec plug.ExecContext, lsi interface{}) error {
+func createJetJobRows(ec plug.ExecContext, lsi interface{}) []output.Row {
 	ls := lsi.([]control.JobAndSqlSummary)
 	rows := make([]output.Row, 0, len(ls))
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
@@ -112,10 +121,7 @@ func outputJetJobs(ctx context.Context, ec plug.ExecContext, lsi interface{}) er
 		}
 		rows = append(rows, row)
 	}
-	if len(rows) == 0 {
-		ec.PrintlnUnnecessary("OK No jobs found.")
-	}
-	return ec.AddOutputRows(ctx, rows...)
+	return rows
 }
 
 func msToOffsetDateTimeColumn(ms int64, name string) output.Column {
@@ -133,5 +139,5 @@ func msToOffsetDateTimeColumn(ms int64, name string) output.Column {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("job:list", &ListCmd{}))
+	Must(plug.Registry.RegisterCommand("job:list", &ListCommand{}))
 }

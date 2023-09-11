@@ -18,7 +18,7 @@ import (
 
 type QueueOfferCommand struct{}
 
-func (qc *QueueOfferCommand) Init(cc plug.InitContext) error {
+func (QueueOfferCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("offer")
 	help := "Add values to the given Queue"
 	cc.SetCommandHelp(help, help)
@@ -27,7 +27,7 @@ func (qc *QueueOfferCommand) Init(cc plug.InitContext) error {
 	return nil
 }
 
-func (qc *QueueOfferCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (QueueOfferCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	name := ec.Props().GetString(base.FlagName)
 	rowsV, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		ci, err := cmd.ClientInternal(ctx, ec, sp)

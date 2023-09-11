@@ -20,9 +20,9 @@ import (
 
 const flagCount = "count"
 
-type QueuePollCommand struct{}
+type PollCommand struct{}
 
-func (QueuePollCommand) Init(cc plug.InitContext) error {
+func (PollCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("poll")
 	help := "Remove the given number of elements from the given Queue"
 	cc.SetCommandHelp(help, help)
@@ -31,7 +31,7 @@ func (QueuePollCommand) Init(cc plug.InitContext) error {
 	return nil
 }
 
-func (QueuePollCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (PollCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	queueName := ec.Props().GetString(base.FlagName)
 	count := int(ec.Props().GetInt(flagCount))
 	if count < 0 {
@@ -87,5 +87,5 @@ func (QueuePollCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("queue:poll", &QueuePollCommand{}))
+	Must(plug.Registry.RegisterCommand("queue:poll", &PollCommand{}))
 }

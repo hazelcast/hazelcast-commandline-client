@@ -7,16 +7,16 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
-type ClusterGetCmd struct{}
+type ClusterGetCommand struct{}
 
-func (cm ClusterGetCmd) Init(cc plug.InitContext) error {
+func (ClusterGetCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("get-cluster")
 	long := `Gets the information about the given Viridian cluster.
 
@@ -29,7 +29,7 @@ Make sure you login before running this command.
 	return nil
 }
 
-func (cm ClusterGetCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (ClusterGetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	api, err := getAPI(ec)
 	if err != nil {
 		return err
@@ -128,5 +128,5 @@ func regionTitleSlice(regions []viridian.Region) []string {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("viridian:get-cluster", &ClusterGetCmd{}))
+	check.Must(plug.Registry.RegisterCommand("viridian:get-cluster", &ClusterGetCommand{}))
 }

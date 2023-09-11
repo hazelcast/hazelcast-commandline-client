@@ -15,9 +15,9 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-type PublishCmd struct{}
+type PublishCommand struct{}
 
-func (PublishCmd) Init(cc plug.InitContext) error {
+func (PublishCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("publish")
 	help := "Publish new messages for a Topic."
 	cc.SetCommandHelp(help, help)
@@ -26,7 +26,7 @@ func (PublishCmd) Init(cc plug.InitContext) error {
 	return nil
 }
 
-func (PublishCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (PublishCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	name := ec.Props().GetString(base.FlagName)
 	vt := ec.Props().GetString(base.FlagValueType)
 	countV, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
@@ -64,5 +64,5 @@ func (PublishCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("topic:publish", &PublishCmd{}))
+	Must(plug.Registry.RegisterCommand("topic:publish", &PublishCommand{}))
 }

@@ -23,9 +23,9 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
-type topicSubscribeCommand struct{}
+type SubscribeCommand struct{}
 
-func (tsc *topicSubscribeCommand) Init(cc plug.InitContext) error {
+func (SubscribeCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("subscribe")
 	help := "Subscribe to a Topic for new messages."
 	cc.SetCommandHelp(help, help)
@@ -33,7 +33,7 @@ func (tsc *topicSubscribeCommand) Init(cc plug.InitContext) error {
 	return nil
 }
 
-func (tsc *topicSubscribeCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (SubscribeCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	name := ec.Props().GetString(base.FlagName)
 	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
@@ -203,5 +203,5 @@ func eventRow(e TopicEvent, ec plug.ExecContext) (row output.Row) {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("topic:subscribe", &topicSubscribeCommand{}))
+	Must(plug.Registry.RegisterCommand("topic:subscribe", &SubscribeCommand{}))
 }

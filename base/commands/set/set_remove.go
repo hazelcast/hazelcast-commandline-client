@@ -18,9 +18,9 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
-type SetRemoveCommand struct{}
+type RemoveCommand struct{}
 
-func (SetRemoveCommand) Init(cc plug.InitContext) error {
+func (RemoveCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("remove")
 	help := "Remove values from the given Set"
 	cc.SetCommandHelp(help, help)
@@ -29,7 +29,7 @@ func (SetRemoveCommand) Init(cc plug.InitContext) error {
 	return nil
 }
 
-func (sc *SetRemoveCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (sc *RemoveCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	name := ec.Props().GetString(base.FlagName)
 	rows, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		ci, err := cmd.ClientInternal(ctx, ec, sp)
@@ -80,5 +80,5 @@ func (sc *SetRemoveCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("set:remove", &SetRemoveCommand{}))
+	Must(plug.Registry.RegisterCommand("set:remove", &RemoveCommand{}))
 }

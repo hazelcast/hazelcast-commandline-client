@@ -17,14 +17,9 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
 )
 
-const (
-	argValue      = "value"
-	argTitleValue = "value"
-)
-
 type MapSetCommand struct{}
 
-func (mc *MapSetCommand) Init(cc plug.InitContext) error {
+func (MapSetCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("set")
 	help := "Set a value in the given Map"
 	cc.SetCommandHelp(help, help)
@@ -33,11 +28,11 @@ func (mc *MapSetCommand) Init(cc plug.InitContext) error {
 	cc.AddIntFlag(commands.FlagTTL, "", clc.TTLUnset, false, "time-to-live (ms)")
 	cc.AddIntFlag(mapMaxIdle, "", clc.TTLUnset, false, "max idle (ms)")
 	cc.AddStringArg(commands.ArgKey, commands.ArgTitleKey)
-	cc.AddStringArg(base.ArgValue, argTitleValue)
+	cc.AddStringArg(base.ArgValue, base.ArgTitleValue)
 	return nil
 }
 
-func (mc *MapSetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (MapSetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	mapName := ec.Props().GetString(base.FlagName)
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		ci, err := cmd.ClientInternal(ctx, ec, sp)

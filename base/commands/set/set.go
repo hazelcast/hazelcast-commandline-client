@@ -11,9 +11,9 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-type SetCommand struct{}
+type Command struct{}
 
-func (sc *SetCommand) Init(cc plug.InitContext) error {
+func (Command) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("set")
 	cc.AddCommandGroup(clc.GroupDDSID, clc.GroupDDSTitle)
 	cc.SetCommandGroup(clc.GroupDDSID)
@@ -25,10 +25,10 @@ func (sc *SetCommand) Init(cc plug.InitContext) error {
 	return nil
 }
 
-func (sc *SetCommand) Exec(context.Context, plug.ExecContext) error {
+func (Command) Exec(context.Context, plug.ExecContext) error {
 	return nil
 }
 
 func init() {
-	check.Must(plug.Registry.RegisterCommand("set", &SetCommand{}))
+	check.Must(plug.Registry.RegisterCommand("set", &Command{}))
 }

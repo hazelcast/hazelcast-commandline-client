@@ -7,14 +7,14 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/errors"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/prompt"
 )
 
-type CustomClassDeleteCmd struct{}
+type CustomClassDeleteCommand struct{}
 
-func (cmd CustomClassDeleteCmd) Init(cc plug.InitContext) error {
+func (CustomClassDeleteCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("delete-custom-class")
 	long := `Deletes a custom class from the given Viridian cluster.
 
@@ -29,7 +29,7 @@ Make sure you login before running this command.
 	return nil
 }
 
-func (cmd CustomClassDeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (CustomClassDeleteCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	api, err := getAPI(ec)
 	if err != nil {
 		return err
@@ -66,5 +66,5 @@ func (cmd CustomClassDeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) e
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("viridian:delete-custom-class", &CustomClassDeleteCmd{}))
+	check.Must(plug.Registry.RegisterCommand("viridian:delete-custom-class", &CustomClassDeleteCommand{}))
 }

@@ -13,9 +13,9 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-type ResumeCmd struct{}
+type ResumeCommand struct{}
 
-func (cm ResumeCmd) Init(cc plug.InitContext) error {
+func (ResumeCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("resume")
 	help := "Resumes a suspended job"
 	cc.SetCommandHelp(help, help)
@@ -24,7 +24,7 @@ func (cm ResumeCmd) Init(cc plug.InitContext) error {
 	return nil
 }
 
-func (cm ResumeCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (ResumeCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	nameOrID := ec.GetStringArg(argJobID)
 	stages := []stage.Stage[any]{
 		stage.MakeConnectStage[any](ec),
@@ -72,5 +72,5 @@ func (cm ResumeCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("job:resume", &ResumeCmd{}))
+	Must(plug.Registry.RegisterCommand("job:resume", &ResumeCommand{}))
 }

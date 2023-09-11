@@ -31,9 +31,9 @@ const (
 
 var regexpValidKey = regexp.MustCompile(`^[a-z0-9_]+$`)
 
-type CreateCmd struct{}
+type CreateCommand struct{}
 
-func (pc CreateCmd) Init(cc plug.InitContext) error {
+func (pc CreateCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("create")
 	short := "Create project from the given template (BETA)"
 	long := longHelp()
@@ -44,7 +44,7 @@ func (pc CreateCmd) Init(cc plug.InitContext) error {
 	return nil
 }
 
-func (pc CreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (pc CreateCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	templateName := ec.GetStringArg(argTemplateName)
 	outputDir := ec.Props().GetString(commands.FlagOutputDir)
 	if outputDir == "" {
@@ -193,5 +193,5 @@ func isDefaultPropertiesFile(d fs.DirEntry) bool {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("project:create", &CreateCmd{}))
+	Must(plug.Registry.RegisterCommand("project:create", &CreateCommand{}))
 }

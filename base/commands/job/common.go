@@ -55,7 +55,7 @@ func idToString(id int64) string {
 	return string(buf[:])
 }
 
-func terminateJob(ctx context.Context, ec plug.ExecContext, tm int32, cm TerminateCmd) error {
+func terminateJob(ctx context.Context, ec plug.ExecContext, tm int32, cm TerminateCommand) error {
 	nameOrID := ec.GetStringArg(argJobID)
 	stages := []stage.Stage[any]{
 		stage.MakeConnectStage[any](ec),

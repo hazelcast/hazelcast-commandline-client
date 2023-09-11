@@ -58,9 +58,9 @@ const (
 	argTitleObjectType = "object type"
 )
 
-type ObjectListCommand struct{}
+type ListCommand struct{}
 
-func (cm ObjectListCommand) Init(cc plug.InitContext) error {
+func (ListCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("list")
 	long := fmt.Sprintf(`List distributed objects, optionally filter by type.
 	
@@ -75,7 +75,7 @@ CP objects such as AtomicLong cannot be listed.
 	return nil
 }
 
-func (cm ObjectListCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (ListCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	var typeFilter string
 	fs := ec.GetStringSliceArg(argObjectType)
 	if len(fs) > 0 {
@@ -126,5 +126,5 @@ func init() {
 	sort.Slice(objTypes, func(i, j int) bool {
 		return objTypes[i] < objTypes[j]
 	})
-	Must(plug.Registry.RegisterCommand("object:list", &ObjectListCommand{}))
+	Must(plug.Registry.RegisterCommand("object:list", &ListCommand{}))
 }

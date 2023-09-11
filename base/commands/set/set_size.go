@@ -9,6 +9,6 @@ import (
 )
 
 func init() {
-	cmd := commands.NewSizeCommand("Set", getSet)
-	check.Must(plug.Registry.RegisterCommand("set:size", cmd))
+	c := commands.NewSizeCommand("Set", getSet)
+	check.Must(plug.Registry.RegisterCommand("set:size", c))
 }
