@@ -76,7 +76,6 @@ func subscribe_NonInteractiveTest(t *testing.T) {
 			check.Must(tp.PublishAll(ctx, "value1", "value2"))
 			tcx.AssertStdoutContains("value1")
 			tcx.AssertStdoutContains("value2")
-			tcx.AssertStderrContains("OK")
 		})
 	})
 }

@@ -10,5 +10,5 @@ import (
 
 func init() {
 	cmd := commands.NewClearCommand("MultiMap", getMultiMap)
-	check.Must(plug.Registry.RegisterCommand("list:clear", cmd))
+	check.Must(plug.Registry.RegisterCommand("multi-map:clear", cmd))
 }

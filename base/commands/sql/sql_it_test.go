@@ -13,6 +13,7 @@ import (
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands"
@@ -227,10 +228,10 @@ func sqlSuggestion_NonInteractive(t *testing.T) {
 		ctx := context.Background()
 		it.WithMap(tcx, func(m *hazelcast.Map) {
 			check.Must(m.Set(ctx, "foo", "bar"))
-			// ignoring the error here
-			_ = tcx.CLC().Execute(ctx, "sql", fmt.Sprintf(`SELECT * FROM "%s";`, m.Name()))
-			tcx.AssertStderrContains("CREATE MAPPING")
-			tcx.AssertStderrContains("--use-mapping-suggestion")
+			err := tcx.CLC().Execute(ctx, "sql", fmt.Sprintf(`SELECT * FROM "%s";`, m.Name()))
+			t.Logf("ERROR %s", err.Error())
+			assert.Contains(t, err.Error(), "CREATE MAPPING")
+			assert.Contains(t, err.Error(), "--use-mapping-suggestion")
 			check.Must(tcx.CLC().Execute(ctx, "sql", fmt.Sprintf(`SELECT * FROM "%s";`, m.Name()), "--use-mapping-suggestion"))
 			tcx.AssertStdoutContains("foo\tbar")
 		})

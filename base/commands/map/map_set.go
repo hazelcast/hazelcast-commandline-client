@@ -67,7 +67,7 @@ func (MapSetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		return err
 	}
 	stop()
-	msg := fmt.Sprintf("OK Set the value into the Map '%s'", mapName)
+	msg := fmt.Sprintf("OK Set the value into the Map '%s'.", mapName)
 	ec.PrintlnUnnecessary(msg)
 	return nil
 }

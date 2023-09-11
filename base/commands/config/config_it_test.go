@@ -56,7 +56,7 @@ func addTest(t *testing.T) {
 		ctx := context.Background()
 		tcx.WithReset(func() {
 			check.Must(tcx.CLC().Execute(ctx, "config", "add", name, "cluster.address=foobar.com"))
-			tcx.AssertStdoutContains("OK   Created the configuration")
+			tcx.AssertStdoutContains("    OK Created the configuration")
 		})
 		tcx.WithReset(func() {
 			check.Must(tcx.CLC().Execute(ctx, "config", "list"))

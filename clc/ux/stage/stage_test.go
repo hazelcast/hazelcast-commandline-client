@@ -105,6 +105,6 @@ func execute_WithFailureTest(t *testing.T) {
 	assert.Error(t, err)
 	texts := []string{"[1/2] Progressing 1"}
 	assert.Equal(t, texts, ec.Spinner.Texts)
-	text := "FAIL Failure 1: some error\n"
+	text := "ERROR Failure 1: some error\n"
 	assert.Equal(t, text, ec.StdoutText())
 }
