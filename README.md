@@ -2,13 +2,6 @@
 
 ## Installation
 
-We provide binaries for the popular platforms at our [Releases](https://github.com/hazelcast/hazelcast-commandline-client/releases) page.
-In order to install CLC:
-
-* Download the release package for your platform,
-* Extract it,
-* Optionally move the `clc` binary to somewhere in your *PATH*, so it can be run in any terminal without additional settings.
-
 Currently we provide precompiled binaries of CLC for the following platforms and architectures:
 
 * Linux/amd64
@@ -16,19 +9,33 @@ Currently we provide precompiled binaries of CLC for the following platforms and
 * MacOS/amd64
 * MacOS/arm64
 
-Additionally, we provide an installer for Windows 10 and up.
-The installer can install CLC for either system-wide or just for the user.
-It adds the `clc` binary automatically to the `$PATH`, so it can be run in any terminal without additional settings.
+### Linux / MacOS
 
-On MacOS, you may need to remove the CLC binary from quarantine, if you get a security warning:
+You can run the following command to install the latest stable CLC on a computer running Linux x64 or MacOS 10.15 (Catalina) x64/ARM 64 (M1/M2):
+```
+curl -sL https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/unix/install.sh | bash
+```
+
+On MacOS, binaries downloaded outside of AppStore requires user intervention to run.
+The install script automatically handles that, but you can do that manually in case you downloaded a release package:
 ```
 $ xattr -d com.apple.quarantine CLC_FOLDER/clc
 ```
 Use the correct path instead of `CLC_FOLDER` in the command above.
 
+### Windows
+
+We provide an installer for Windows 10 and up.
+The installer can install CLC for either system-wide or just for the user.
+It adds the `clc` binary automatically to the `$PATH`, so it can be run in any terminal without additional settings.
+
+Check out our [Releases](https://github.com/hazelcast/hazelcast-commandline-client/releases/latest) page for the download.
+
+### Building from Source
+
 If your platform is not one of the above, you may want to compile CLC yourself. Our build process is very simple and doesn't have many dependencies.
-In most cases just running `make` is sufficient to build CLC if you have the latest [Go](https://go.dev/) compiler installed.
-See [Building from source](#building-from-source) section.
+In most cases just running `make` is sufficient to build CLC if you have the latest [Go](https://go.dev/) compiler and GNU make installed.
+See [Building from source](#building-from-source) section for detailed instructions.
 
 ## Usage Summary
 

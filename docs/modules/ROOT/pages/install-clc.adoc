@@ -5,8 +5,9 @@
 
 {description} You can install the Hazelcast CLC, using one of the following:
 
-* Downloading a pre-built binary
+* Using an install script on Linux or MacOS
 * Windows installer
+* Downloading a pre-built binary
 * Building from source
 
 ifdef::snapshot[]
@@ -23,7 +24,7 @@ Supported OS:
 
 Requirements:
 
-- Go 1.19 or later
+- Go 1.21 or later
 - Git
 - For Linux and MacOS, GNU Make
 - Command prompt or Windows Powershell
@@ -74,42 +75,26 @@ endif::[]
 ifndef::snapshot[]
 == Installing on macOS
 
-The Hazelcast CLC is supported on macOS 13 or newer versions.
+The Hazelcast CLC is supported on macOS 15 or newer versions.
 
 [tabs]
 ====
-ZIP (Intel)::
+Install Script (Intel)::
 +
-. Go to the https://github.com/hazelcast/hazelcast-commandline-client/releases[releases page], and locate the AMD compressed file (`hazelcast-clc_v{full-version}_darwin_amd64.zip`).
-. Download and unzip the file.
-. Remove the `clc` binary from quarantine if you get a security warning when running it:
+. Run the following command to install CLC using the install script we provide:
 +
 [source,shell,subs="attributes"]
 ----
-xattr -d com.apple.quarantine hazelcast-clc_v{full-version}_darwin_amd64/clc
-----
-. Optionally make `clc` available without using its full path. You can do that by moving `clc` to one of the directories in the  `$PATH` environment variable. `/usr/local/bin` is a safe choice.
-+
-[source,shell,subs="attributes"]
-----
-sudo mv hazelcast-clc_v{full-version}_darwin_amd64/clc /usr/local/bin
+curl -sL https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/unix/install.sh | bash
 ----
 
-ZIP (Apple Silicon)::
+Install Script (Apple Silicon)::
 +
-. Go to the https://github.com/hazelcast/hazelcast-commandline-client/releases[releases page], and locate the ARM compressed file (`hazelcast-clc_v{full-version}_darwin_arm64.zip`).
-. Download and unzip the file.
-. Remove the `clc` binary from quarantine if you get a security warning when running it:
+. Run the following command to install CLC using the install script we provide:
 +
 [source,shell,subs="attributes"]
 ----
-xattr -d com.apple.quarantine hazelcast-clc_v{full-version}_darwin_arm64/clc
-----
-. Optionally make `clc` available without using its full path. You can do that by moving `clc` to one of the directories in the  `$PATH` environment variable. `/usr/local/bin` is a safe choice.
-+
-[source,shell,subs="attributes"]
-----
-sudo mv hazelcast-clc_v{full-version}_darwin_arm64/clc /usr/local/bin
+curl -sL https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/unix/install.sh | bash
 ----
 
 Build from Source::
@@ -162,15 +147,13 @@ The Hazelcast CLC runs on any recent Linux distribution. We test it on Ubuntu 22
 
 [tabs] 
 ====
-Tarball (AMD64)::
+Install Script (AMD64)::
 +
-. Go to the https://github.com/hazelcast/hazelcast-commandline-client/releases[releases page], and locate the tarball for Linux (`hazelcast-clc_v{full-version}_linux_amd64.tar.gz`).
-. Download and unzip the file.
-. Optionally make `clc` available without using its full path. You can do that by moving `clc` to one of the directories in the  `$PATH` environment variable. `/usr/local/bin` is a safe choice.
+. Run the following command to install CLC using the install script we provide:
 +
 [source,shell,subs="attributes"]
 ----
-sudo mv hazelcast-clc_v{full-version}_linux_amd64/clc /usr/local/bin
+curl -sL https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/unix/install.sh | bash
 ----
 
 Build from Source::
@@ -235,14 +218,6 @@ Installer::
 clc.exe
 ----
 
-ZIP::
-+
-. Go to the https://github.com/hazelcast/hazelcast-commandline-client/releases[releases page], and locate the Windows ZIP file (`hazelcast-clc_v{full-version}_windows_amd64.zip`).
-. Download and unzip the file.
-. Optionally make `clc.exe` available without using its full path. You can do that by adding the full path of the extracted directory to the `PATH` environment variable.
-
-====
-
 endif::[]
 == Verifying the Hazelcast CLC Installation
 
@@ -268,9 +243,9 @@ Windows::
 . Right-click on it and select *Uninstall*.
 . Press kbd:[Yes] on the uninstallation dialog.
 
-Release Package::
+Install Script (Linux/MacOS)::
 +
-Delete the `hazelcast-commandline-client` directory.
+Delete the `$HOME/.hazelcast` directory.
 ====
 
 == Next Steps
