@@ -114,6 +114,11 @@ func (cm MapGetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		return err
 	}
 	stop()
+	rows := rowsV.([]output.Row)
+	if len(rows) == 0 {
+		ec.PrintlnUnnecessary("OK No values.")
+		return nil
+	}
 	return ec.AddOutputRows(ctx, rowsV.([]output.Row)...)
 }
 
