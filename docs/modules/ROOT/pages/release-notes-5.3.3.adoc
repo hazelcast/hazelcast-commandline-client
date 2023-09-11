@@ -13,7 +13,7 @@
 * The Viridian "CLI" bundle is used with `config import` and `viridian import-config` commands. The configuration bundle includes certificates for all supported Hazelcast client libraries.
 * CLC configuration is saved as both `config.yaml` and `config.json` when `config import`, `viridian import-config` or `config add` commands are used.
 * An installation script may be used to install CLC on Linux and macOS.
-* Configuration menu is displayed if the non-interactive mode when the `default` configuration doesn't exist.
+* Configuration menu is displayed in the non-interactive mode when the `default` configuration doesn't exist.
 * `snapshot list` command provides more information.
 * Configuration name is used in the CLC interactive prompt.
 * "Invalid number of arguments" error is improved to display which positional arguments are missing.
