@@ -5,7 +5,7 @@
 
 {description} You can install the Hazelcast CLC, using one of the following:
 
-* Using an install script on Linux or MacOS
+* Using an install script on Linux or macOS
 * Windows installer
 * Downloading a pre-built binary
 * Building from source
@@ -19,14 +19,14 @@ Pre-release versions can only be built from source.
 Supported OS:
 
 - Ubuntu 22.04 or later
-- MacOS 12 or later
+- macOS 15 or later
 - Windows 10 or later
 
 Requirements:
 
 - Go 1.21 or later
 - Git
-- For Linux and MacOS, GNU Make
+- For Linux and macOS, GNU Make
 - Command prompt or Windows Powershell
 - For Windows, https://github.com/tc-hib/go-winres[go-winres]
 
@@ -57,7 +57,7 @@ The ``clc``, or ``clc.exe``, binary is created in the ``build`` directory.
 
 . Run the project
 +
--- On Linux or MacOS:
+-- On Linux or macOS:
 +
 [source,shell]
 ----
@@ -243,7 +243,7 @@ Windows::
 . Right-click on it and select *Uninstall*.
 . Press kbd:[Yes] on the uninstallation dialog.
 
-Install Script (Linux/MacOS)::
+Install Script (Linux/macOS)::
 +
 Delete the `$HOME/.hazelcast` directory.
 ====
