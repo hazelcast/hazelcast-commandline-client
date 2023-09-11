@@ -8,40 +8,60 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 
+	"github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
+type executeState struct {
+	Name  string
+	Value int64
+}
+
 func atomicLongChangeValue(ctx context.Context, ec plug.ExecContext, verb string, change func(int64) int64) error {
-	al, err := ec.Props().GetBlocking(atomicLongPropertyName)
-	if err != nil {
-		return err
-	}
-	by := ec.Props().GetInt(atomicLongFlagBy)
-	by = change(by)
-	ali := al.(*hazelcast.AtomicLong)
-	vali, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("%sing the AtomicLong %s", verb, ali.Name()))
-		val, err := ali.AddAndGet(ctx, by)
+	name := ec.Props().GetString(base.FlagName)
+	by := ec.Props().GetInt(flagBy)
+	row, stop, err := cmd.ExecuteBlocking(ctx, ec, func(ctx context.Context, sp clc.Spinner) (output.Row, error) {
+		ali, err := getAtomicLong(ctx, ec, sp)
 		if err != nil {
 			return nil, err
 		}
-		return val, nil
+		sp.SetText(fmt.Sprintf("%sing the AtomicLong %s", verb, name))
+		val, err := ali.AddAndGet(ctx, change(by))
+		if err != nil {
+			return nil, err
+		}
+		s := executeState{
+			Name:  name,
+			Value: val,
+		}
+		row := output.Row{
+			output.Column{
+				Name:  "Value",
+				Type:  serialization.TypeInt64,
+				Value: s.Value,
+			},
+		}
+		return row, nil
 	})
 	if err != nil {
 		return err
 	}
 	stop()
-	val := vali.(int64)
-	row := output.Row{
-		output.Column{
-			Name:  "Value",
-			Type:  serialization.TypeInt64,
-			Value: val,
-		},
-	}
+	msg := fmt.Sprintf("OK %sed AtomicLong %s by %d.\n", verb, name, by)
+	ec.PrintlnUnnecessary(msg)
 	return ec.AddOutputRows(ctx, row)
+}
 
+func getAtomicLong(ctx context.Context, ec plug.ExecContext, sp clc.Spinner) (*hazelcast.AtomicLong, error) {
+	name := ec.Props().GetString(base.FlagName)
+	ci, err := cmd.ClientInternal(ctx, ec, sp)
+	if err != nil {
+		return nil, err
+	}
+	sp.SetText(fmt.Sprintf("Getting AtomicLong '%s'", name))
+	return ci.Client().CPSubsystem().GetAtomicLong(ctx, name)
 }

@@ -4,7 +4,7 @@ GIT_COMMIT = $(shell git rev-parse HEAD 2> /dev/null || echo unknown)
 CLC_VERSION ?= v0.0.0-CUSTOMBUILD
 MAIN_CMD_HELP ?= Hazelcast CLC
 LDFLAGS = -s -w -X 'github.com/hazelcast/hazelcast-commandline-client/clc/cmd.MainCommandShortHelp=$(MAIN_CMD_HELP)' -X 'github.com/hazelcast/hazelcast-commandline-client/internal.GitCommit=$(GIT_COMMIT)' -X 'github.com/hazelcast/hazelcast-commandline-client/internal.Version=$(CLC_VERSION)' -X 'github.com/hazelcast/hazelcast-go-client/internal.ClientType=CLC' -X 'github.com/hazelcast/hazelcast-go-client/internal.ClientVersion=$(CLC_VERSION)'
-TEST_FLAGS ?= -v -count 1 -timeout 50m
+TEST_FLAGS ?= -count 1 -timeout 30m -race
 COVERAGE_OUT = coverage.out
 PACKAGES = $(shell go list ./... | grep -v internal/it | tr '\n' ',')
 BINARY_NAME ?= clc

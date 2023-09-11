@@ -88,7 +88,7 @@ clc topic subscribe --name topic1
 
 == clc topic destroy
 
-This command will delete the topic and the data in it irreversibly.
+This command will delete the topic and the data in it will not be available anymore.
 
 Usage:
 

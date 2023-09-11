@@ -8,6 +8,7 @@ const (
 	PropertyClusterDiscoveryToken = "cluster.discovery-token"
 	PropertyClusterUser           = "cluster.user"
 	PropertyClusterPassword       = "cluster.password"
+	PropertyClusterAPIBase        = "cluster.api-base"
 	PropertyFormat                = "format"
 	PropertyVerbose               = "verbose"
 	PropertyQuiet                 = "quiet"
@@ -17,7 +18,6 @@ const (
 	PropertyConfig              = "config"
 	PropertyLogLevel            = "log.level"
 	PropertyLogPath             = "log.path"
-	PropertySchemaDir           = "schema-dir"
 	PropertySSLEnabled          = "ssl.enabled"
 	PropertySSLServerName       = "ssl.server"
 	PropertySSLCAPath           = "ssl.ca-path"
@@ -34,4 +34,6 @@ const (
 	EnvConfig                   = "CLC_CONFIG"
 	EnvSkipServerVersionCheck   = "CLC_SKIP_SERVER_VERSION_CHECK"
 	FlagAutoYes                 = "yes"
+	MaxArgs                     = 65535
+	TTLUnset                    = -1
 )

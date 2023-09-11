@@ -39,7 +39,7 @@ func doCustomClassDownload(ctx context.Context, progressSetter func(progress flo
 		return err
 	}
 	defer f.Close()
-	req, err := http.NewRequest(http.MethodGet, makeUrl(url), nil)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return fmt.Errorf("creating request: %w", err)
 	}

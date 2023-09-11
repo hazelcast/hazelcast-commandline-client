@@ -4,6 +4,7 @@ import (
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/atomic_long"
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/config"
+	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/demo"
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/job"
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/list"
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/map"

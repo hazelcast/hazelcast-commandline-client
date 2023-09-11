@@ -29,5 +29,5 @@ Example output:
 [source,bash]
 ----
 clc home configs pr-3814
-/home/me/.local/share/clc/configs/prod
+/home/me/.local/share/clc/configs/pr-3814
 ----

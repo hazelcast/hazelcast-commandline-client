@@ -14,7 +14,6 @@ clc viridian [command] [options]
 == Commands
 
 * <<clc-viridian-login, clc viridian login>>
-* <<clc-viridian-list-cluster-types, clc viridian list-cluster-types>>
 * <<clc-viridian-create-cluster, clc viridian create-cluster>>
 * <<clc-viridian-get-cluster, clc viridian get-cluster>>
 * <<clc-viridian-list-clusters, clc viridian list-clusters>>
@@ -31,7 +30,9 @@ clc viridian [command] [options]
 
 == clc viridian login
 
-Logs in to {hazelcast-cloud} using the given API key and API secret and retrieves a token. The token is cached to be used by other commands. If not specified, the key and the secret will be asked for in a prompt.
+Logs in to {hazelcast-cloud} using the given API key and API secret and retrieves a token.
+The token is cached to be used by other commands.
+If not specified, the key and the secret will be asked in a prompt.
 
 Alternatively, you can use the following environment variables:
 
@@ -63,37 +64,11 @@ Parameters:
 
 |===
 
-== clc viridian list-cluster-types
-
-Lists available cluster types you can use to create a {hazelcast-cloud} cluster.
-
-Make sure you authenticate with the {hazelcast-cloud} API using `viridian login` before running this command.
-
-Usage:
-
-[source,bash]
-----
-clc viridian list-cluster-types [flags]
-----
-
-Parameters:
-
-[cols="1m,1a,2a,1a"]
-|===
-|Parameter|Required|Description|Default
-
-|`--api-key`
-|Optional
-|Sets the API key. Overrides the `CLC_VIRIDIAN_API_KEY` environment variable. If not given, one of the existing API keys will be used.
-|
-
-|===
-
 == clc viridian create-cluster
 
 Creates a {hazelcast-cloud} cluster.
 
-Make sure you authenticate with the {hazelcast-cloud} API using `viridian login` before running this command.
+Make sure you authenticate to the {hazelcast-cloud} API using `viridian login` before running this command.
 
 Usage:
 
@@ -118,9 +93,14 @@ Parameters:
 |Sets the name of the created cluster. If not given, an auto-generated name will be used.
 |
 
-|`--cluster-type`
+|`--development`
 |Optional
-|Sets the cluster-type for the created cluster.
+|Creates a development cluster.
+|
+
+|`--prerelease`
+|Optional
+|Creates the cluster with a prerelease image.
 |
 
 |===
@@ -129,7 +109,7 @@ Parameters:
 
 Gets the information about the given {hazelcast-cloud} cluster.
 
-Make sure you authenticate with the {hazelcast-cloud} API using `viridian login` before running this command.
+Make sure you authenticate to the {hazelcast-cloud} API using `viridian login` before running this command.
 
 Usage:
 
@@ -155,7 +135,7 @@ Parameters:
 
 Lists all {hazelcast-cloud} clusters for the logged in API key.
 
-Make sure you authenticate with the {hazelcast-cloud} API using `viridian login` before running this command.
+Make sure you authenticate to the {hazelcast-cloud} API using `viridian login` before running this command.
 
 Usage:
 
@@ -181,7 +161,7 @@ Parameters:
 
 Stops the given {hazelcast-cloud} cluster.
 
-Make sure you authenticate with the {hazelcast-cloud} API using `viridian login` before running this command.
+Make sure you authenticate to the {hazelcast-cloud} API using `viridian login` before running this command.
 
 Usage:
 
@@ -207,7 +187,7 @@ Parameters:
 
 Resumes the given {hazelcast-cloud} cluster.
 
-Make sure you authenticate with the {hazelcast-cloud} API using `viridian login` before running this command.
+Make sure you authenticate to the {hazelcast-cloud} API using `viridian login` before running this command.
 
 Usage:
 
@@ -233,7 +213,7 @@ Parameters:
 
 Deletes the given {hazelcast-cloud} cluster. All data in the cluster is deleted irreversibly.
 
-Make sure you authenticate with the {hazelcast-cloud} API using `viridian login` before running this command.
+Make sure you authenticate to the {hazelcast-cloud} API using `viridian login` before running this command.
 
 Usage:
 
@@ -264,7 +244,7 @@ Parameters:
 
 Downloads the logs of the given {hazelcast-cloud} cluster.
 
-Make sure you authenticate with the {hazelcast-cloud} API using `viridian login` before running this command.
+Make sure you authenticate to the {hazelcast-cloud} API using `viridian login` before running this command.
 
 Usage:
 
@@ -295,7 +275,7 @@ Parameters:
 
 Outputs the logs of the given {hazelcast-cloud} cluster as a stream.
 
-Make sure you authenticate with the {hazelcast-cloud} API using `viridian login` before running this command.
+Make sure you authenticate to the {hazelcast-cloud} API using `viridian login` before running this command.
 
 The log format may be one of:
 
@@ -333,7 +313,7 @@ Parameters:
 
 Imports the connection configuration of the given {hazelcast-cloud} cluster.
 
-Make sure you authenticate with the {hazelcast-cloud} API using `viridian login` before running this command.
+Make sure you authenticate to the {hazelcast-cloud} API using `viridian login` before running this command.
 
 Usage:
 
@@ -359,7 +339,7 @@ Parameters:
 
 Lists all custom classes in the {hazelcast-cloud} cluster.
 
-Make sure you authenticate with the {hazelcast-cloud} API using `viridian login` before running this command.
+Make sure you authenticate to the {hazelcast-cloud} API using `viridian login` before running this command.
 
 Usage:
 
@@ -385,7 +365,7 @@ Parameters:
 
 Uploads a custom class to the {hazelcast-cloud} cluster.
 
-Make sure you authenticate with the {hazelcast-cloud} API using `viridian login` before running this command.
+Make sure you authenticate to the {hazelcast-cloud} API using `viridian login` before running this command.
 
 Usage:
 
@@ -398,7 +378,7 @@ clc viridian upload-custom-class [cluster-name/cluster-ID] [file-name] [flags]
 
 Downloads a custom class from the {hazelcast-cloud} cluster.
 
-Make sure you authenticate with the {hazelcast-cloud} API using `viridian login` before running this command.
+Make sure you authenticate to the {hazelcast-cloud} API using `viridian login` before running this command.
 
 Usage:
 
@@ -415,7 +395,7 @@ Parameters:
 
 |`--output-path`
 |Optional
-|Output path for the downloaded artifact. The base directory of the path is created recursively if it doesn't exist.
+|Output path for the downloaded artifact. The base directory of the path is created recursively if it doesn’t exist.
 |
 
 |===
@@ -424,7 +404,7 @@ Parameters:
 
 Deletes a custom class from the {hazelcast-cloud} cluster.
 
-Make sure you authenticate with the {hazelcast-cloud} API using `viridian login` before running this command.
+Make sure you authenticate to the {hazelcast-cloud} API using `viridian login` before running this command.
 
 Usage:
 

@@ -4,50 +4,58 @@ package viridian
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
-type ClusterResumeCmd struct{}
+type ClusterResumeCommand struct{}
 
-func (cm ClusterResumeCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("resume-cluster [cluster-ID/name] [flags]")
+func (ClusterResumeCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("resume-cluster")
 	long := `Resumes the given Viridian cluster.
 
 Make sure you login before running this command.
 `
 	short := "Resumes the given Viridian cluster"
 	cc.SetCommandHelp(long, short)
-	cc.SetPositionalArgCount(1, 1)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
+	cc.AddStringArg(argClusterID, argTitleClusterID)
 	return nil
 }
 
-func (cm ClusterResumeCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (ClusterResumeCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	api, err := getAPI(ec)
 	if err != nil {
 		return err
 	}
-	clusterNameOrID := ec.Args()[0]
-	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText("Resuming the cluster")
-		err := api.ResumeCluster(ctx, clusterNameOrID)
-		if err != nil {
-			return nil, err
-		}
-		return nil, nil
-	})
+	nameOrID := ec.GetStringArg(argClusterID)
+	st := stage.Stage[viridian.Cluster]{
+		ProgressMsg: "Starting to resume the cluster",
+		SuccessMsg:  "Started to resume the cluster",
+		FailureMsg:  "Failed to start resuming the cluster",
+		Func: func(ctx context.Context, status stage.Statuser[viridian.Cluster]) (viridian.Cluster, error) {
+			return api.ResumeCluster(ctx, nameOrID)
+		},
+	}
+	cluster, err := stage.Execute(ctx, ec, viridian.Cluster{}, stage.NewFixedProvider(st))
 	if err != nil {
 		return handleErrorResponse(ec, err)
 	}
-	stop()
-	ec.PrintlnUnnecessary(fmt.Sprintf("Cluster %s was resumed.", clusterNameOrID))
-	return nil
+	ec.PrintlnUnnecessary("")
+	return ec.AddOutputRows(ctx, output.Row{
+		output.Column{
+			Name:  "ID",
+			Type:  serialization.TypeString,
+			Value: cluster.ID,
+		},
+	})
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("viridian:resume-cluster", &ClusterResumeCmd{}))
+	check.Must(plug.Registry.RegisterCommand("viridian:resume-cluster", &ClusterResumeCommand{}))
 }

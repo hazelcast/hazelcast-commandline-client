@@ -5,9 +5,12 @@ package set
 import (
 	"context"
 	"fmt"
-	"math"
 
+	"github.com/hazelcast/hazelcast-commandline-client/base"
+	"github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -15,34 +18,34 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
-type SetRemoveCommand struct{}
+type RemoveCommand struct{}
 
-func (sc *SetRemoveCommand) Init(cc plug.InitContext) error {
-	addValueTypeFlag(cc)
-	cc.SetPositionalArgCount(1, math.MaxInt)
+func (RemoveCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("remove")
 	help := "Remove values from the given Set"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("remove [values] [flags]")
+	commands.AddValueTypeFlag(cc)
+	cc.AddStringSliceArg(base.ArgValue, base.ArgTitleValue, 1, clc.MaxArgs)
 	return nil
 }
 
-func (sc *SetRemoveCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
-	name := ec.Props().GetString(setFlagName)
-	ci, err := ec.ClientInternal(ctx)
-	if err != nil {
-		return err
-	}
-
+func (sc *RemoveCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+	name := ec.Props().GetString(base.FlagName)
 	rows, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Removing from set %s", name))
+		ci, err := cmd.ClientInternal(ctx, ec, sp)
+		if err != nil {
+			return nil, err
+		}
+		sp.SetText(fmt.Sprintf("Removing from Set '%s'", name))
+		showType := ec.Props().GetBool(base.FlagShowType)
 		var rows []output.Row
-		for _, arg := range ec.Args() {
-			vd, err := makeValueData(ec, ci, arg)
+		for _, arg := range ec.GetStringSliceArg(base.ArgValue) {
+			vd, err := commands.MakeValueData(ec, ci, arg)
 			if err != nil {
 				return nil, err
 			}
 			req := codec.EncodeSetRemoveRequest(name, vd)
-			pID, err := stringToPartitionID(ci, name)
+			pID, err := internal.StringToPartitionID(ci, name)
 			if err != nil {
 				return nil, err
 			}
@@ -58,7 +61,7 @@ func (sc *SetRemoveCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 					Value: resp,
 				},
 			}
-			if ec.Props().GetBool(setFlagShowType) {
+			if showType {
 				row = append(row, output.Column{
 					Name:  output.NameValueType,
 					Type:  serialization.TypeString,
@@ -77,5 +80,5 @@ func (sc *SetRemoveCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("set:remove", &SetRemoveCommand{}))
+	Must(plug.Registry.RegisterCommand("set:remove", &RemoveCommand{}))
 }

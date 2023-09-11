@@ -6,34 +6,34 @@ import (
 	"context"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
-type CustomClassListCmd struct{}
+type CustomClassListCommand struct{}
 
-func (cmd CustomClassListCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("list-custom-classes [cluster-name/cluster-ID] [flags]")
+func (CustomClassListCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("list-custom-classes")
 	long := `Lists all custom classes in the given Viridian cluster.
 
 Make sure you login before running this command.
 `
 	short := "Lists all custom classes in the given Viridian cluster"
 	cc.SetCommandHelp(long, short)
-	cc.SetPositionalArgCount(1, 1)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
+	cc.AddStringArg(argClusterID, argTitleClusterID)
 	return nil
 }
 
-func (cmd CustomClassListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (CustomClassListCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	api, err := getAPI(ec)
 	if err != nil {
 		return err
 	}
-	cn := ec.Args()[0]
+	cn := ec.GetStringArg(argClusterID)
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	csi, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Retrieving custom classes")
@@ -48,6 +48,10 @@ func (cmd CustomClassListCmd) Exec(ctx context.Context, ec plug.ExecContext) err
 	}
 	stop()
 	cs := csi.([]viridian.CustomClass)
+	if len(cs) == 0 {
+		ec.PrintlnUnnecessary("OK There are no custom classes on this cluster.")
+		return nil
+	}
 	rows := make([]output.Row, len(cs))
 	for i, c := range cs {
 		r := output.Row{
@@ -85,5 +89,5 @@ func (cmd CustomClassListCmd) Exec(ctx context.Context, ec plug.ExecContext) err
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("viridian:list-custom-classes", &CustomClassListCmd{}))
+	check.Must(plug.Registry.RegisterCommand("viridian:list-custom-classes", &CustomClassListCommand{}))
 }

@@ -9,7 +9,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/pflag"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
@@ -55,7 +55,7 @@ func (p *FileProvider) load(path string) error {
 	path = paths.ResolveConfigPath(path)
 	if !paths.Exists(path) {
 		if path == "" {
-			// the user is trying to load the default config.
+			// there is no default config, user will be prompted for config later
 			return nil
 		}
 		return fmt.Errorf("configuration does not exist %s: %w", path, os.ErrNotExist)
@@ -66,7 +66,7 @@ func (p *FileProvider) load(path string) error {
 	if err != nil {
 		return fmt.Errorf("reading configuration: %w", err)
 	}
-	m := map[any]any{}
+	m := map[string]any{}
 	if err := yaml.Unmarshal(b, m); err != nil {
 		return fmt.Errorf("loading configuration: %w", err)
 	}
@@ -185,20 +185,15 @@ func (p *FileProvider) clientConfig() (hazelcast.Config, bool) {
 	return hazelcast.Config{}, false
 }
 
-func (p *FileProvider) traverseMap(root string, m map[any]any) {
-	for k, v := range m {
-		// skip if the key is not a string
-		ks, ok := k.(string)
-		if !ok {
-			continue
-		}
+func (p *FileProvider) traverseMap(root string, m map[string]any) {
+	for ks, v := range m {
 		var r string
 		if root == "" {
 			r = ks
 		} else {
 			r = strings.Join([]string{root, ks}, ".")
 		}
-		if mm, ok := v.(map[any]any); ok {
+		if mm, ok := v.(map[string]any); ok {
 			p.traverseMap(r, mm)
 			continue
 		}

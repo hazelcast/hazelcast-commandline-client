@@ -190,7 +190,7 @@ clc set size --name my-set
 
 == clc set destroy
 
-Destroys a Set. This command will delete the set and the data in it will not be available anymore.
+Destroys a set. This command will delete the set and the data in it will not be available anymore.
 
 Usage:
 

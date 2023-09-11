@@ -2,6 +2,8 @@ package paths
 
 import (
 	"fmt"
+	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -47,6 +49,10 @@ func Secrets() string {
 
 func Templates() string {
 	return filepath.Join(Home(), "templates")
+}
+
+func Caches() string {
+	return filepath.Join(Home(), "caches")
 }
 
 func ResolveTemplatePath(t string) string {
@@ -160,6 +166,43 @@ func FindAll(cd string, fn FilterFn) ([]string, error) {
 	return cs, nil
 }
 
+// CopyDir copies directory src into target directory.
+// src/dir/file is copied as target/dir/file
+func CopyDir(src, target string) error {
+	l := len(src)
+	return filepath.WalkDir(src, func(path string, d fs.DirEntry, err error) (errOut error) {
+		if err != nil {
+			return err
+		}
+		part := path[l:]
+		dest := filepath.Join(target, part)
+		if d.IsDir() {
+			if err := os.MkdirAll(dest, 0700); err != nil {
+				return err
+			}
+			return nil
+		}
+		in, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		// ignoring the error here
+		defer in.Close()
+		out, err := os.OpenFile(dest, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			errOut = err
+			return
+		}()
+		if _, err := io.Copy(out, in); err != nil {
+			return err
+		}
+		return nil
+	})
+}
+
 func nearbyConfigPath() string {
 	// check whether there is config.yaml in the current directory
 	wd, err := os.Getwd()
@@ -183,6 +226,18 @@ func nearbyConfigPath() string {
 	return ""
 }
 
-func SplitExt(dest string) string {
-	return strings.TrimSuffix(dest, filepath.Ext(dest))
+func SplitExt(dest string) (base, ext string) {
+	ext = filepath.Ext(dest)
+	return dest[:len(dest)-len(ext)], ext
+}
+
+func ParentDir(path string) string {
+	dirs := filepath.Dir(path)
+	return filepath.Base(dirs)
+}
+
+// ReplaceExt removes path's extension and appends ext
+func ReplaceExt(path string, ext string) string {
+	p, _ := SplitExt(path)
+	return p + ext
 }

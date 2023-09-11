@@ -12,36 +12,36 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/types"
 )
 
-func (a *API) DownloadClusterLogs(ctx context.Context, destDir string, idOrName string) error {
+func (a *API) DownloadClusterLogs(ctx context.Context, destDir string, idOrName string) (string, error) {
 	c, err := a.FindCluster(ctx, idOrName)
 	if err != nil {
-		return err
+		return "", err
 	}
 	r, err := RetryOnAuthFail(ctx, a, func(ctx context.Context, token string) (types.Tuple2[string, func()], error) {
-		u := makeUrl(fmt.Sprintf("/cluster/%s/logs", c.ID))
-		path, stop, err := download(ctx, makeUrl(u), a.Token)
+		u := a.makeURL("/cluster/%s/logs", c.ID)
+		path, stop, err := download(ctx, u, a.Token)
 		if err != nil {
 			return types.Tuple2[string, func()]{}, err
 		}
 		return types.MakeTuple2(path, stop), nil
 	})
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer r.Second()
 	zipFile, err := os.Open(r.First)
 	if err != nil {
-		return err
+		return "", err
 	}
 	st, err := zipFile.Stat()
 	if err != nil || st.Size() == 0 {
-		return fmt.Errorf("logs are not available yet, retry later")
+		return "", fmt.Errorf("logs are not available yet, retry later")
 	}
 	err = unzip(zipFile, destDir)
 	if err != nil {
-		return err
+		return "", err
 	}
-	return nil
+	return destDir, nil
 }
 
 func unzip(zipFile *os.File, destDir string) error {

@@ -6,7 +6,7 @@
 
 {description}
 
-If you try to run an operation that requires a client connection before you have added any configurations to the Hazelcast CLC home directory, you are prompted to enter a configuration source with the target name. 
+If you try to run an operation that requires a client connection before you have added any configuration, you are prompted to enter a configuration source with the target name. 
 
 If you have already added one or more configurations to the Hazelcast CLC home directory, you are prompted to select one to create a client connection.
 
@@ -31,11 +31,12 @@ $ clc
 . Execute an operation that requires a client connection to cluster.
 +
 ```bash
-CLC> SHOW MAPPINGS;
+> SHOW MAPPINGS;
 ```
 +
 
-. CLC will scan the configurations and list them if there is any. If there is no configuration found, it will prompt an input screen for you to import a new configuration.
+. CLC will scan the configurations and list them if there is any. If there is no configuration found, it will prompt an
+input screen for you to import a new configuration.
 +
 ```bash
 There is no configuration detected. You can register a new configuration to conn
@@ -49,7 +50,8 @@ Source:
 ```
 +
 
-. Specify the name of the configuration by changing the configuration name field. The default value is `default`. If there is any default configuration, CLC will use it automatically.
+. Specify the name of the configuration by chancing the configuration name field. The default value is `default`
+If there is any default configuration, CLC will use it automatically.
 +
 ```bash
 Configuration Name: default
@@ -64,7 +66,7 @@ Configuration Name: default
 Source: curl https://api.viridian.hazelcast.com/client_samples/download/...
 ```
 +
-. Press `[ Submit ]` and it will automatically connect to your {hazelcast-cloud} cluster. Notice that if you didn't specify the configuration name or leave it as default, it will automatically connect to this client unless you specify it with `--config` flag.
+. Press `[ Submit ]` and it will automatically connect to your Viridian Cloud cluster. Notice that if you didn't specify the configuration name or leave it as default, it will automatically connect to this client unless you specify it with `--config` flag.
 
 == Multiple Configurations
 
@@ -81,7 +83,7 @@ $ clc
 . Execute an operation that requires a client connection to cluster.
 +
 ```bash
-CLC> SHOW MAPPINGS;
+> SHOW MAPPINGS;
 ```
 +
 

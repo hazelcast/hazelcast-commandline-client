@@ -1,6 +1,7 @@
 = 5.3.0-BETA-2 Release Notes
 
 == New Features
+
 * Support for Hazelcast {hazelcast-cloud}. The following commands were added:
 ** `viridian login`
 ** `viridian create-cluster`
@@ -17,7 +18,7 @@
 * Added the following new Map commands:
 ** `map key-set`
 ** `map destroy`
-* Added `--wait` flag which makes Hazelcast CLC wait for the operation to complete. That flag was added to the following `job` commands:  `submit`, `suspend`, `resume`, `cancel`, `restart`
+* Added `--wait` flag which makes CLC wait for the operation to complete. That flag was added to the following `job` commands:  `submit`, `suspend`, `resume`, `cancel`, `restart`
 
 == Bug Fixes
 
