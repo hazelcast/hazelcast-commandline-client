@@ -36,7 +36,7 @@ func (s basicStatuser[T]) SetRemainingDuration(dur time.Duration) {
 	if dur > 0 {
 		text = fmt.Sprintf(s.textFmtWithRemaining, dur)
 	}
-	s.sp.SetText(s.indexText + " " + text)
+	s.sp.SetText(" " + s.indexText + " " + text)
 }
 
 func (s basicStatuser[T]) Value() T {
