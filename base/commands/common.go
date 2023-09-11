@@ -47,7 +47,7 @@ func NewDestroyCommand[T Destroyer](typeName string, getFn getDestroyerFunc[T]) 
 func (cm DestroyCommand[T]) Init(cc plug.InitContext) error {
 	long := fmt.Sprintf(`Destroy a %s
 
-This command will delete the %s and the data in it will not be available anymore.`, cm.typeName)
+This command will delete the %s and the data in it will not be available anymore.`, cm.typeName, cm.typeName)
 	cc.SetCommandUsage("destroy")
 	short := fmt.Sprintf("Destroy a %s", cm.typeName)
 	cc.SetCommandHelp(long, short)
