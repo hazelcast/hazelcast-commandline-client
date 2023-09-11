@@ -1,0 +1,26 @@
+= 5.3.3 Release Notes
+
+== New Features
+
+* Added the `demo generate-data` command that creates data from a Wikipedia event stream.
+* Added the `demo map-setmany` command that generates multiple Map entries.
+* Added the `project list-templates` command that lists templates that can be used with the  `project create` command.
+* Added the `\di` shortcut that lists all or some indexes. This command is available only in the interactive mode.
+* Added `--prelease` and `--development` flags to `viridian create-cluster` command.
+
+== Improvements
+
+* The Viridian "CLI" bundle is used with `config import` and `viridian import-config` commands. The configuration bundle includes certificates for all supported Hazelcast client libraries.
+* CLC configuration is saved as both `config.yaml` and `config.json` when `config import`, `viridian import-config` or `config add` commands are used.
+* An installation script may be used to install CLC on Linux and macOS.
+* Configuration menu is displayed if the non-interactive mode when the `default` configuration doesn't exist.
+* `snapshot list` command provides more information.
+* Configuration name is used in the CLC interactive prompt.
+* "Invalid number of arguments" error is improved to display which positional arguments are missing.
+* `project create` command updates the corresponding template if necessary when run.
+* Updated command output.
+
+== Fixes
+
+* Full stack trace is shown on `job submit` errors.
+* link:https://github.com/hazelcast/hazelcast-commandline-client/pull/288[#288] Fix streaming timeout.
