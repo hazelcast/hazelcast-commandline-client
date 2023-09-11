@@ -44,7 +44,7 @@ You can use the placeholders in "defaults.yaml" and the following configuration 
 	* log_path
 	* log_level
 
-Example (Linux and MacOS):
+Example (Linux and macOS):
 
 $ clc project create \
 	simple-streaming-pipeline\
