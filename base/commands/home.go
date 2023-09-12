@@ -8,7 +8,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
@@ -21,7 +21,7 @@ const (
 
 type HomeCommand struct{}
 
-func (hc HomeCommand) Init(cc plug.InitContext) error {
+func (HomeCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("home")
 	short := "Print the CLC home directory"
 	long := `Print the CLC home directory
@@ -37,7 +37,7 @@ Example:
 	return nil
 }
 
-func (hc HomeCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (HomeCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	path := paths.Home()
 	args := ec.GetStringSliceArg(argSubPath)
 	if len(args) > 0 {
@@ -52,8 +52,6 @@ func (hc HomeCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	})
 }
 
-func (HomeCommand) Unwrappable() {}
-
 func init() {
-	Must(plug.Registry.RegisterCommand("home", &HomeCommand{}))
+	check.Must(plug.Registry.RegisterCommand("home", &HomeCommand{}))
 }

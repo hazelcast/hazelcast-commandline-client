@@ -260,9 +260,9 @@ func (tcx TestContext) AssertStdoutDollar(text string) {
 
 func (tcx TestContext) AssertJSONStdoutHasRowWithFields(fields ...string) map[string]any {
 	stdout := tcx.ExpectStdout.String()
+	tcx.T.Log("STDOUT:", stdout)
 	var m map[string]any
 	check.Must(json.Unmarshal([]byte(stdout), &m))
-	tcx.T.Log("STDOUT:", stdout)
 	if len(fields) != len(m) {
 		tcx.T.Fatalf("stdout does not have the same number fields as %v", fields)
 	}

@@ -349,27 +349,12 @@ func (m *Main) createCommands() error {
 				if err := m.runAugmentors(ec, props); err != nil {
 					return err
 				}
-				// to wrap or not to wrap
-				// that's the problem
-				if _, ok := c.Item.(plug.UnwrappableCommander); ok {
-					err = c.Item.Exec(ctx, ec)
-				} else {
-					err = ec.WrapResult(func() error {
-						return c.Item.Exec(ctx, ec)
-					})
-				}
-				if err != nil {
+				if err = c.Item.Exec(ctx, ec); err != nil {
 					return err
 				}
 				if ic, ok := c.Item.(plug.InteractiveCommander); ok {
 					ec.SetMode(ModeInteractive)
-					if _, ok := c.Item.(plug.UnwrappableCommander); ok {
-						err = ic.ExecInteractive(ctx, ec)
-					} else {
-						err = ec.WrapResult(func() error {
-							return ic.ExecInteractive(ctx, ec)
-						})
-					}
+					err = ic.ExecInteractive(ctx, ec)
 					if errors.Is(err, puberrors.ErrNotAvailable) {
 						return nil
 					}

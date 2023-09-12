@@ -116,10 +116,6 @@ func MakeHzConfig(props plug.ReadOnlyProperties, lg log.Logger) (hazelcast.Confi
 		lg.Debugf("Cluster name: %s", cn)
 		cfg.Cluster.Name = cn
 	}
-	sd := props.GetString(clc.PropertySchemaDir)
-	if sd == "" {
-		sd = paths.Join(paths.Home(), "schemas")
-	}
 	var viridianEnabled bool
 	if vt := props.GetString(clc.PropertyClusterDiscoveryToken); vt != "" {
 		lg.Debugf("Viridan token: XXX")

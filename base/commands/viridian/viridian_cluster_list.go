@@ -6,16 +6,16 @@ import (
 	"context"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
-type ClusterListCmd struct{}
+type ClusterListCommand struct{}
 
-func (cm ClusterListCmd) Init(cc plug.InitContext) error {
+func (ClusterListCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("list-clusters")
 	long := `Lists all Viridian clusters for the logged in API key.
 
@@ -27,13 +27,13 @@ Make sure you login before running this command.
 	return nil
 }
 
-func (cm ClusterListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (ClusterListCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	api, err := getAPI(ec)
 	if err != nil {
 		return err
 	}
 	csi, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText("Retrieving clusters")
+		sp.SetText("Retrieving the clusters")
 		cs, err := api.ListClusters(ctx)
 		if err != nil {
 			return nil, err
@@ -46,7 +46,8 @@ func (cm ClusterListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	stop()
 	cs := csi.([]viridian.Cluster)
 	if len(cs) == 0 {
-		ec.PrintlnUnnecessary("No clusters found")
+		ec.PrintlnUnnecessary("OK No clusters found.")
+		return nil
 	}
 	rows := make([]output.Row, len(cs))
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
@@ -87,5 +88,5 @@ func (cm ClusterListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("viridian:list-clusters", &ClusterListCmd{}))
+	check.Must(plug.Registry.RegisterCommand("viridian:list-clusters", &ClusterListCommand{}))
 }

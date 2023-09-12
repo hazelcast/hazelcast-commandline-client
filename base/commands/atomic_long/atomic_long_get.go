@@ -6,53 +6,50 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hazelcast/hazelcast-go-client"
-
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
-type AtomicLongGetCommand struct{}
+type GetCommand struct{}
 
-func (mc *AtomicLongGetCommand) Init(cc plug.InitContext) error {
+func (GetCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("get")
 	help := "Get the value of the AtomicLong"
 	cc.SetCommandHelp(help, help)
 	return nil
 }
 
-func (mc *AtomicLongGetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
-	al, err := ec.Props().GetBlocking(atomicLongPropertyName)
-	if err != nil {
-		return err
-	}
-	ali := al.(*hazelcast.AtomicLong)
-	vali, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Setting value into AtomicLong %s", ali.Name()))
+func (GetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+	row, stop, err := cmd.ExecuteBlocking(ctx, ec, func(ctx context.Context, sp clc.Spinner) (output.Row, error) {
+		ali, err := getAtomicLong(ctx, ec, sp)
+		if err != nil {
+			return nil, err
+		}
+		sp.SetText(fmt.Sprintf("Getting value of AtomicLong %s", ali.Name()))
 		val, err := ali.Get(ctx)
 		if err != nil {
 			return nil, err
 		}
-		return val, nil
+		row := output.Row{
+			output.Column{
+				Name:  "Value",
+				Type:  serialization.TypeInt64,
+				Value: val,
+			},
+		}
+		return row, nil
 	})
 	if err != nil {
 		return err
 	}
 	stop()
-	val := vali.(int64)
-	row := output.Row{
-		output.Column{
-			Name:  "Value",
-			Type:  serialization.TypeInt64,
-			Value: val,
-		},
-	}
 	return ec.AddOutputRows(ctx, row)
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("atomic-long:get", &AtomicLongGetCommand{}))
+	check.Must(plug.Registry.RegisterCommand("atomic-long:get", &GetCommand{}))
 }

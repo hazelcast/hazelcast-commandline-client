@@ -114,8 +114,12 @@ func loginWithEnvVariables_NonInteractiveTest(t *testing.T) {
 
 func listClusters_NonInteractiveTest(t *testing.T) {
 	viridianTester(t, func(ctx context.Context, tcx it.TestContext) {
-		tcx.CLCExecute(ctx, "viridian", "list-clusters")
-		tcx.AssertStderrContains("OK")
+		/*
+			// cannot test this at the moment, since trial cluster on dev2 cannot be deleted
+			tcx.CLCExecute(ctx, "viridian", "list-clusters")
+			tcx.AssertStdoutContains("No clusters found")
+
+		*/
 		c := createOrGetClusterWithState(ctx, tcx, "RUNNING")
 		tcx.CLCExecute(ctx, "viridian", "list-clusters")
 		tcx.AssertStderrContains("OK")
@@ -223,8 +227,8 @@ func getCluster_NonInteractiveTest(t *testing.T) {
 	viridianTester(t, func(ctx context.Context, tcx it.TestContext) {
 		c := createOrGetClusterWithState(ctx, tcx, "")
 		tcx.CLCExecute(ctx, "viridian", "get-cluster", c.ID, "--verbose", "-f", "json")
-		tcx.AssertStderrContains("OK")
-		fields := tcx.AssertJSONStdoutHasRowWithFields("ID", "Name", "State", "Hazelcast Version", "Creation Time", "Start Time", "Hot Backup Enabled", "Hot Restart Enabled", "IP Whitelist Enabled", "Regions")
+		tcx.AssertStdoutContains("Name")
+		fields := tcx.AssertJSONStdoutHasRowWithFields("ID", "Name", "State", "Hazelcast Version", "Creation Time", "Start Time", "Hot Backup Enabled", "Hot Restart Enabled", "IP Whitelist Enabled", "Regions", "Cluster Type")
 		require.Equal(t, c.ID, fields["ID"])
 		require.Equal(t, c.Name, fields["Name"])
 	})
@@ -249,7 +253,7 @@ func deleteCluster_NonInteractiveTest(t *testing.T) {
 	viridianTester(t, func(ctx context.Context, tcx it.TestContext) {
 		c := createOrGetClusterWithState(ctx, tcx, "RUNNING")
 		tcx.CLCExecute(ctx, "viridian", "delete-cluster", c.ID, "--yes")
-		tcx.AssertStderrContains("OK")
+		tcx.AssertStdoutContains("Inititated cluster deletion")
 		require.Eventually(t, func() bool {
 			_, err := tcx.Viridian.GetCluster(ctx, c.ID)
 			return err != nil
@@ -315,7 +319,7 @@ func viridianTester(t *testing.T, f func(ctx context.Context, tcx it.TestContext
 	tcx.Tester(func(tcx it.TestContext) {
 		ctx := context.Background()
 		tcx.CLCExecute(ctx, "viridian", "--api-base", "dev2", "login", "--api-key", it.ViridianAPIKey(), "--api-secret", it.ViridianAPISecret())
-		tcx.AssertStdoutContains("Viridian token was fetched and saved.")
+		tcx.AssertStdoutContains("Saved the access token")
 		tcx.WithReset(func() {
 			f(ctx, tcx)
 		})

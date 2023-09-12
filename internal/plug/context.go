@@ -38,6 +38,7 @@ type ExecContext interface {
 	GetStringSliceArg(key string) []string
 	GetKeyValuesArg(key string) types.KeyValues[string, string]
 	GetInt64Arg(key string) int64
+	ConfigPath() string
 	ClientInternal(ctx context.Context) (*hazelcast.ClientInternal, error)
 	CommandName() string
 	Interactive() bool
@@ -49,8 +50,4 @@ type ExecContext interface {
 	Stdin() io.Reader
 	ExecuteBlocking(ctx context.Context, f func(ctx context.Context, sp clc.Spinner) (any, error)) (value any, stop context.CancelFunc, err error)
 	PrintlnUnnecessary(text string)
-}
-
-type ResultWrapper interface {
-	WrapResult(f func() error) error
 }

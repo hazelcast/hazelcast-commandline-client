@@ -203,7 +203,7 @@ SELECT * FROM currencydata ORDER BY Code;
 
 [tabs] 
 ==== 
-Linux and MacOS::
+Linux and macOS::
 + 
 --
 . To run the script on your Test1 cluster, execute the following command.

@@ -142,7 +142,6 @@ func size_InteractiveTest(t *testing.T) {
 			tcx.WithReset(func() {
 				_ = check.MustValue(l.Add(ctx, "foo"))
 				tcx.WriteStdin([]byte(fmt.Sprintf("\\list -n %s size\n", l.Name())))
-				tcx.AssertStderrContains("OK")
 				tcx.AssertStdoutDollarWithPath("testdata/list_size_1.txt")
 			})
 		})

@@ -9,23 +9,23 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-type ProjectCommand struct{}
+type Command struct{}
 
-func (gc *ProjectCommand) Init(cc plug.InitContext) error {
-	cc.AddCommandGroup("project", "Project")
-	cc.SetCommandGroup("project")
+func (Command) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("project")
+	cc.AddCommandGroup(groupProject, "Project")
+	cc.SetCommandGroup(groupProject)
 	cc.SetTopLevel(true)
-	cc.SetCommandUsage("project [command] [flags]")
 	help := "Project commands"
 	cc.SetCommandHelp(help, help)
 	return nil
 }
 
-func (gc ProjectCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (gc Command) Exec(ctx context.Context, ec plug.ExecContext) error {
 	return nil
 }
 
 func init() {
-	cmd := &ProjectCommand{}
+	cmd := &Command{}
 	Must(plug.Registry.RegisterCommand("project", cmd))
 }

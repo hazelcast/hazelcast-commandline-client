@@ -6,7 +6,7 @@ import (
 	"context"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
@@ -15,9 +15,9 @@ const (
 	argTitlePath = "path"
 )
 
-type CustomClassUploadCmd struct{}
+type CustomClassUploadCommand struct{}
 
-func (cmd CustomClassUploadCmd) Init(cc plug.InitContext) error {
+func (CustomClassUploadCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("upload-custom-class")
 	long := `Uploads a new Custom Class to the specified Viridian cluster.
 
@@ -31,7 +31,7 @@ Make sure you login before running this command.
 	return nil
 }
 
-func (cmd CustomClassUploadCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (CustomClassUploadCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	api, err := getAPI(ec)
 	if err != nil {
 		return err
@@ -50,10 +50,10 @@ func (cmd CustomClassUploadCmd) Exec(ctx context.Context, ec plug.ExecContext) e
 		return handleErrorResponse(ec, err)
 	}
 	stop()
-	ec.PrintlnUnnecessary("Custom class was uploaded.")
+	ec.PrintlnUnnecessary("OK Custom class was uploaded.")
 	return nil
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("viridian:upload-custom-class", &CustomClassUploadCmd{}))
+	check.Must(plug.Registry.RegisterCommand("viridian:upload-custom-class", &CustomClassUploadCommand{}))
 }

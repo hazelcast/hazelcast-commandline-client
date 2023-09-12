@@ -6,9 +6,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hazelcast/hazelcast-go-client"
-
+	"github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -16,61 +17,71 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
-type SetGetAllCommand struct{}
+type GetAllCommand struct{}
 
-func (sc *SetGetAllCommand) Init(cc plug.InitContext) error {
+func (GetAllCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("get-all")
 	help := "Return the elements of the given Set"
 	cc.SetCommandHelp(help, help)
 	return nil
 }
 
-func (sc *SetGetAllCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
-	name := ec.Props().GetString(setFlagName)
-	ci, err := ec.ClientInternal(ctx)
-	if err != nil {
-		return err
-	}
-	req := codec.EncodeSetGetAllRequest(name)
-	pID, err := stringToPartitionID(ci, name)
-	if err != nil {
-		return err
-	}
-	sv, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Removing from set %s", name))
-		return ci.InvokeOnPartition(ctx, req, pID, nil)
+func (GetAllCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+	name := ec.Props().GetString(base.FlagName)
+	rowsV, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		ci, err := cmd.ClientInternal(ctx, ec, sp)
+		if err != nil {
+			return nil, err
+		}
+		req := codec.EncodeSetGetAllRequest(name)
+		pID, err := internal.StringToPartitionID(ci, name)
+		if err != nil {
+			return nil, err
+		}
+		sp.SetText(fmt.Sprintf("Removing from Set '%s'", name))
+		resp, err := ci.InvokeOnPartition(ctx, req, pID, nil)
+		if err != nil {
+			return nil, err
+		}
+		data := codec.DecodeSetGetAllResponse(resp)
+		showType := ec.Props().GetBool(base.FlagShowType)
+		var rows []output.Row
+		for _, r := range data {
+			val, err := ci.DecodeData(*r)
+			if err != nil {
+				ec.Logger().Info("The value was not decoded, due to error: %s", err.Error())
+				val = serialization.NondecodedType(serialization.TypeToLabel(r.Type()))
+			}
+			row := output.Row{
+				{
+					Name:  "Value",
+					Type:  r.Type(),
+					Value: val,
+				},
+			}
+			if showType {
+				row = append(row, output.Column{
+					Name:  output.NameValueType,
+					Type:  serialization.TypeString,
+					Value: serialization.TypeToLabel(r.Type()),
+				})
+			}
+			rows = append(rows, row)
+		}
+		return rows, nil
 	})
 	if err != nil {
 		return err
 	}
 	stop()
-	resp := codec.DecodeSetGetAllResponse(sv.(*hazelcast.ClientMessage))
-	var rows []output.Row
-	for _, r := range resp {
-		val, err := ci.DecodeData(*r)
-		if err != nil {
-			ec.Logger().Info("The value was not decoded, due to error: %s", err.Error())
-			val = serialization.NondecodedType(serialization.TypeToLabel(r.Type()))
-		}
-		row := output.Row{
-			{
-				Name:  "Value",
-				Type:  r.Type(),
-				Value: val,
-			},
-		}
-		if ec.Props().GetBool(setFlagShowType) {
-			row = append(row, output.Column{
-				Name:  output.NameValueType,
-				Type:  serialization.TypeString,
-				Value: serialization.TypeToLabel(r.Type()),
-			})
-		}
-		rows = append(rows, row)
+	rows := rowsV.([]output.Row)
+	if len(rows) == 0 {
+		ec.PrintlnUnnecessary("OK No items in the set.")
+		return nil
 	}
-	return ec.AddOutputRows(ctx, rows...)
+	return ec.AddOutputRows(ctx, rowsV.([]output.Row)...)
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("set:get-all", &SetGetAllCommand{}))
+	Must(plug.Registry.RegisterCommand("set:get-all", &GetAllCommand{}))
 }

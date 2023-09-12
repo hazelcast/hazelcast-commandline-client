@@ -66,22 +66,22 @@ func clusterName() string {
 	return fmt.Sprintf("%s-%s-%.4d", base, date, num)
 }
 
-func (a *API) StopCluster(ctx context.Context, idOrName string) error {
+func (a *API) StopCluster(ctx context.Context, idOrName string) (Cluster, error) {
 	c, err := a.FindCluster(ctx, idOrName)
 	if err != nil {
-		return err
+		return c, err
 	}
 	ok, err := RetryOnAuthFail(ctx, a, func(ctx context.Context, token string) (bool, error) {
 		u := a.makeURL("/cluster/%s/stop", c.ID)
 		return doPost[[]byte, bool](ctx, u, a.Token, nil)
 	})
 	if err != nil {
-		return fmt.Errorf("stopping cluster: %w", err)
+		return c, fmt.Errorf("stopping cluster: %w", err)
 	}
 	if !ok {
-		return errors.New("could not stop the cluster")
+		return c, errors.New("could not stop the cluster")
 	}
-	return nil
+	return c, nil
 }
 
 func (a *API) ListClusters(ctx context.Context) ([]Cluster, error) {
@@ -95,28 +95,28 @@ func (a *API) ListClusters(ctx context.Context) ([]Cluster, error) {
 	return csw.Content, nil
 }
 
-func (a *API) ResumeCluster(ctx context.Context, idOrName string) error {
+func (a *API) ResumeCluster(ctx context.Context, idOrName string) (Cluster, error) {
 	c, err := a.FindCluster(ctx, idOrName)
 	if err != nil {
-		return err
+		return c, err
 	}
 	ok, err := RetryOnAuthFail(ctx, a, func(ctx context.Context, token string) (bool, error) {
 		u := a.makeURL("/cluster/%s/resume", c.ID)
 		return doPost[[]byte, bool](ctx, u, a.Token, nil)
 	})
 	if err != nil {
-		return fmt.Errorf("resuming cluster: %w", err)
+		return c, fmt.Errorf("resuming cluster: %w", err)
 	}
 	if !ok {
-		return errors.New("could not resume the cluster")
+		return c, errors.New("could not resume the cluster")
 	}
-	return nil
+	return c, nil
 }
 
-func (a *API) DeleteCluster(ctx context.Context, idOrName string) error {
+func (a *API) DeleteCluster(ctx context.Context, idOrName string) (Cluster, error) {
 	c, err := a.FindCluster(ctx, idOrName)
 	if err != nil {
-		return err
+		return c, err
 	}
 	_, err = RetryOnAuthFail(ctx, a, func(ctx context.Context, token string) (any, error) {
 		u := a.makeURL("/cluster/%s", c.ID)
@@ -127,9 +127,9 @@ func (a *API) DeleteCluster(ctx context.Context, idOrName string) error {
 		return nil, nil
 	})
 	if err != nil {
-		return fmt.Errorf("deleting cluster: %w", err)
+		return c, fmt.Errorf("deleting cluster: %w", err)
 	}
-	return nil
+	return c, nil
 }
 
 func (a *API) GetCluster(ctx context.Context, idOrName string) (Cluster, error) {

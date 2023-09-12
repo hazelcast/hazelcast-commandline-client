@@ -33,6 +33,8 @@ You can use the placeholders in "defaults.yaml" and the following configuration 
 	* cluster_user
 	* cluster_password
 	* cluster_discovery_token
+	* cluster_api_base
+	* cluster_viridian_id
 	* ssl_enabled
 	* ssl_server
 	* ssl_skip_verify
@@ -42,7 +44,7 @@ You can use the placeholders in "defaults.yaml" and the following configuration 
 	* log_path
 	* log_level
 
-Example (Linux and MacOS):
+Example (Linux and macOS):
 
 $ clc project create \
 	simple-streaming-pipeline\
