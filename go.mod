@@ -93,5 +93,7 @@ require (
 	github.com/go-git/go-git/v5 v5.8.1
 	github.com/mattn/go-colorable v0.1.12
 	github.com/nyaosorg/go-readline-ny v0.9.1
+	github.com/pavlo-v-chernykh/keystore-go/v4 v4.5.0
 	gopkg.in/yaml.v3 v3.0.1
+	software.sslmate.com/src/go-pkcs12 v0.2.1
 )

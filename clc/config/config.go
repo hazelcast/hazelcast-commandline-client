@@ -1,7 +1,9 @@
 package config
 
 import (
+	"bytes"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,15 +15,17 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"golang.org/x/exp/slices"
+	"software.sslmate.com/src/go-pkcs12"
 
-	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/types"
+	pkcs8 "github.com/pavlo-v-chernykh/keystore-go/v4"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/str"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/types"
 )
 
 const (
@@ -147,6 +151,89 @@ func MakeHzConfig(props plug.ReadOnlyProperties, lg log.Logger) (hazelcast.Confi
 				lg.Debugf("SSL CA path: %s", cp)
 				if err := sc.SetCAPath(cp); err != nil {
 					return cfg, err
+				}
+			}
+		}
+		if ksp := props.GetString(clc.PropertySSLJavaKeyStorePath); ksp != "" {
+			if kspw := props.GetString(clc.PropertySSLJavaKeyStorePassword); kspw != "" {
+				if kst := props.GetString(clc.PropertySSLJavaKeyStoreType); kst != "" {
+					if tsb, err := os.ReadFile(ksp); err != nil {
+						return cfg, err
+					} else {
+						switch kst {
+						case "JKS":
+							ks := pkcs8.New()
+							if err := ks.Load(bytes.NewReader(tsb), []byte(kspw)); err != nil {
+								return cfg, err
+							}
+							for _, a := range ks.Aliases() {
+								pke, err := ks.GetPrivateKeyEntry(a, []byte(kspw))
+								if err != nil {
+									return cfg, err
+								}
+								ca, err := x509.ParseCertificate(pke.CertificateChain[0].Content)
+								if err != nil {
+									return cfg, err
+								}
+								pk, err := x509.ParsePKCS8PrivateKey(pke.PrivateKey)
+								if err != nil {
+									return cfg, err
+								}
+								for _, cert := range pke.CertificateChain {
+									if cert, err := x509.ParseCertificate(cert.Content); err != nil {
+										return cfg, err
+									} else if err := sc.AddClientCertAndEncryptedKey(cert, pk, ca); err != nil {
+										return cfg, err
+									}
+								}
+							}
+						case "PKCS12":
+							pk, ca, chain, err := pkcs12.DecodeChain(tsb, kspw)
+							if err != nil {
+								return cfg, err
+							}
+							chain = append([]*x509.Certificate{ca}, chain...)
+							for _, cert := range chain {
+								if err := sc.AddClientCertAndEncryptedKey(cert, pk, ca); err != nil {
+									return cfg, err
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		if tsp := props.GetString(clc.PropertySSLJavaTrustStorePath); tsp != "" {
+			if tspw := props.GetString(clc.PropertySSLJavaTrustStorePassword); tspw != "" {
+				if tst := props.GetString(clc.PropertySSLJavaTrustStoreType); tst != "" {
+					if tsb, err := os.ReadFile(tsp); err != nil {
+						return cfg, err
+					} else {
+						switch tst {
+						case "JKS":
+							ks := pkcs8.New()
+							if err := ks.Load(bytes.NewReader(tsb), []byte(tspw)); err != nil {
+								return cfg, err
+							}
+							for _, a := range ks.Aliases() {
+								if tce, err := ks.GetTrustedCertificateEntry(a); err != nil {
+									return cfg, err
+								} else if cert, err := x509.ParseCertificate(tce.Certificate.Content); err != nil {
+									return cfg, err
+								} else {
+									sc.AddCACert(cert)
+								}
+							}
+						case "PKCS12":
+							if tsc, err := pkcs12.DecodeTrustStore(tsb, tspw); err != nil {
+								return cfg, err
+							} else {
+								for _, cert := range tsc {
+									sc.AddCACert(cert)
+								}
+							}
+						}
+					}
 				}
 			}
 		}
