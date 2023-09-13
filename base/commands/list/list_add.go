@@ -67,9 +67,8 @@ func (AddCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		}
 		if index >= 0 {
 			return true, err
-		} else {
-			return codec.DecodeListAddResponse(resp), err
-		}
+		} 
+		return codec.DecodeListAddResponse(resp), err
 	})
 	if err != nil {
 		return err
