@@ -65,7 +65,11 @@ func (AddCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		if err != nil {
 			return nil, err
 		}
-		return codec.DecodeListAddResponse(resp), err
+		if index >= 0 {
+			return true, err
+		} else {
+			return codec.DecodeListAddResponse(resp), err
+		}
 	})
 	if err != nil {
 		return err
@@ -75,7 +79,7 @@ func (AddCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	ec.PrintlnUnnecessary(msg)
 	row := output.Row{
 		output.Column{
-			Name:  "Value",
+			Name:  "Value Changed",
 			Type:  serialization.TypeBool,
 			Value: val,
 		},
