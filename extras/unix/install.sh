@@ -11,6 +11,7 @@ check_ok () {
     which "$what" > /dev/null && e=yes
     case "$what" in
         awk*) state_awk_ok=$e;;
+        bash*) state_bash_ok=$e;;
         curl*) state_curl_ok=$e;;
         tar*) state_tar_ok=$e;;
         unzip*) state_unzip_ok=$e;;
@@ -55,7 +56,7 @@ bye () {
 }
 
 print_usage () {
-    echo "This script installs Hazelcast CLC to a system or user directory."
+    echo "This script installs Hazelcast CLC to a user directory."
     echo
     echo "Usage: $0 [--beta | --debug | --help]"
     echo
@@ -79,7 +80,7 @@ detect_tmpdir () {
 }
 
 do_curl () {
-    curl -Ls "$1"
+    curl -LSs "$1"
 }
 
 do_wget () {
@@ -155,20 +156,22 @@ remove_from_quarantine () {
 }
 
 update_config_files () {
-    update_rc "BASH" "$HOME/.bashrc"
+    if [[ "$state_bash_ok" == "yes" ]]; then
+        update_rc "$HOME/.bashrc"
+        update_rc "$HOME/.profile"
+    fi
     if [[ "$state_zsh_ok" == "yes" ]]; then
-        update_rc "ZSH" "$HOME/.zshenv"
+        update_rc "$HOME/.zshenv"
     fi
 }
 
 update_rc () {
-    local prefix="$1"
-    local path="$2"
-    local installed="CLC_INSTALLED_$prefix=1"
+    local path="$1"
+    local set_path="PATH=\$PATH:${state_bin_dir}"
     local code="
-if [[ \"\$CLC_INSTALLED_$prefix\" != \"1\" ]]; then
- export CLC_INSTALLED_$prefix=1
- export PATH=\$PATH:${state_bin_dir}
+echo \"\$PATH\" | grep \"${state_bin_dir}\" > /dev/null
+if [[ \$? == 1 ]]; then
+ export $set_path
 fi
 "
     if [[ -e "$path" ]]; then
@@ -181,7 +184,7 @@ fi
         fi
         local text
         set +e
-        text=$(cat "$path" | grep "$installed")
+        text=$(cat "$path" | grep "$set_path")
         set -e
         if [[ "$text" != "" ]]; then
             # CLC PATH is already exported in this file
@@ -346,7 +349,7 @@ process_flags () {
     done
 }
 
-DEPENDENCIES="awk wget curl unzip tar xattr zsh"
+DEPENDENCIES="awk bash curl tar unzip wget xattr zsh"
 CLC_HOME="${CLC_HOME:-$HOME/.hazelcast}"
 
 state_arch=
@@ -369,6 +372,7 @@ state_tar_ok=no
 state_unzip_ok=no
 state_wget_ok=no
 state_xattr_ok=no
+state_bash_ok=no
 state_zsh_ok=no
 
 process_flags "$@"
