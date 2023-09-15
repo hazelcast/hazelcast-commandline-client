@@ -90,7 +90,7 @@ func loginWithParams_InteractiveTest(t *testing.T) {
 		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			tcx.WithReset(func() {
 				tcx.WriteStdinf("\\viridian login --api-base dev2 --api-key %s --api-secret %s\n", it.ViridianAPIKey(), it.ViridianAPISecret())
-				tcx.AssertStdoutContains("Viridian token was fetched and saved.")
+				tcx.AssertStdoutContains("Saved the access token")
 			})
 		})
 	})
@@ -106,7 +106,7 @@ func loginWithEnvVariables_NonInteractiveTest(t *testing.T) {
 		it.WithEnv(viridian.EnvAPIKey, it.ViridianAPIKey(), func() {
 			it.WithEnv(viridian.EnvAPISecret, it.ViridianAPISecret(), func() {
 				tcx.CLCExecute(ctx, "viridian", "login")
-				tcx.AssertStdoutContains("Viridian token was fetched and saved.")
+				tcx.AssertStdoutContains("Saved the access token")
 			})
 		})
 	})
@@ -122,7 +122,6 @@ func listClusters_NonInteractiveTest(t *testing.T) {
 		*/
 		c := createOrGetClusterWithState(ctx, tcx, "RUNNING")
 		tcx.CLCExecute(ctx, "viridian", "list-clusters")
-		tcx.AssertStderrContains("OK")
 		tcx.AssertStdoutContains(c.ID)
 	})
 }
@@ -204,7 +203,7 @@ func resumeCluster_NonInteractiveTest(t *testing.T) {
 	viridianTester(t, func(ctx context.Context, tcx it.TestContext) {
 		c := createOrGetClusterWithState(ctx, tcx, "STOPPED")
 		tcx.CLCExecute(ctx, "viridian", "resume-cluster", c.ID)
-		tcx.AssertStderrContains("OK")
+		tcx.AssertStdoutContains("OK")
 		check.Must(waitState(ctx, tcx, c.ID, "RUNNING"))
 	})
 }
