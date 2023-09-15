@@ -63,6 +63,10 @@ func (SubmitCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		return err
 	}
 	ec.PrintlnUnnecessary("")
+	jobName := ec.Props().GetString(flagName)
+	if jobName == "" {
+		return nil
+	}
 	return ec.AddOutputRows(ctx, output.Row{
 		output.Column{
 			Name:  "Job ID",
