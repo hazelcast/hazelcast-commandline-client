@@ -232,19 +232,6 @@ var supportedEventStreams = map[string]dataStreamGenerator{
 	"wikipedia-event-stream": wikimedia.StreamGenerator{},
 }
 
-func getMap(ctx context.Context, ec plug.ExecContext, sp clc.Spinner, mapName string) (*hazelcast.Map, error) {
-	ci, err := cmd.ClientInternal(ctx, ec, sp)
-	if err != nil {
-		return nil, err
-	}
-	sp.SetText(fmt.Sprintf("Getting Map '%s'", mapName))
-	m, err := ci.Client().GetMap(ctx, mapName)
-	if err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
 func init() {
 	check.Must(plug.Registry.RegisterCommand("demo:generate-data", &GenerateDataCommand{}))
 }
