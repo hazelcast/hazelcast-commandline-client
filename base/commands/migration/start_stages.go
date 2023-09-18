@@ -171,7 +171,7 @@ func (st *StartStages) handleUpdateMessage(ctx context.Context, ec plug.ExecCont
 		if err = saveReportToFile(name, ms.Report); err != nil {
 			return true, fmt.Errorf("writing report to file: %w", err)
 		}
-		if err = st.saveDebugLogs(ctx, st.ci.OrderedMembers()); err != nil {
+		if err = st.saveDebugLogs(ctx, ec, st.ci.OrderedMembers()); err != nil {
 			return true, fmt.Errorf("writing debug logs to file: %w", err)
 		}
 		ec.PrintlnUnnecessary(fmt.Sprintf("migration report saved to file: %s", name))
@@ -200,13 +200,8 @@ func saveReportToFile(fileName, report string) error {
 	return err
 }
 
-func (st *StartStages) saveDebugLogs(ctx context.Context, members []cluster.MemberInfo) error {
+func (st *StartStages) saveDebugLogs(ctx context.Context, ec plug.ExecContext, members []cluster.MemberInfo) error {
 	for _, m := range members {
-		f, err := os.Create(fmt.Sprintf("%s%s.log", DebugLogsListPrefix, m.UUID.String()))
-		if err != nil {
-			return err
-		}
-		defer f.Close()
 		l, err := st.ci.Client().GetList(ctx, DebugLogsListPrefix+m.UUID.String())
 		if err != nil {
 			return err
@@ -215,10 +210,8 @@ func (st *StartStages) saveDebugLogs(ctx context.Context, members []cluster.Memb
 		if err != nil {
 			return err
 		}
-		for _, log := range logs {
-			if _, err = fmt.Fprintf(f, log.(string)); err != nil {
-				return err
-			}
+		for _, l := range logs {
+			ec.Logger().Debugf(l.(string))
 		}
 	}
 	return nil
