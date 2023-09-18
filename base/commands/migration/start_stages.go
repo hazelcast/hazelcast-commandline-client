@@ -103,7 +103,7 @@ func (st *StartStages) topicListener(event *hazelcast.MessagePublished) {
 }
 
 func (st *StartStages) startStage(ctx context.Context, ec plug.ExecContext) func(stage.Statuser) error {
-	return func(stage.Statuser) error {
+	return func(status stage.Statuser) error {
 		cb, err := makeConfigBundle(st.configDir, st.migrationID)
 		if err != nil {
 			return err
@@ -113,7 +113,7 @@ func (st *StartStages) startStage(ctx context.Context, ec plug.ExecContext) func
 		}
 		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
-		if isTerminal, err := st.handleUpdateMessage(ctx, ec, <-st.updateMsgChan); isTerminal {
+		if isTerminal, err := st.handleUpdateMessage(ctx, ec, <-st.updateMsgChan, status); isTerminal {
 			return err
 		}
 		return nil
@@ -134,11 +134,11 @@ func makeConfigBundle(configDir, migrationID string) (serialization.JSON, error)
 }
 
 func (st *StartStages) migrateStage(ctx context.Context, ec plug.ExecContext) func(statuser stage.Statuser) error {
-	return func(stage.Statuser) error {
+	return func(status stage.Statuser) error {
 		for {
 			select {
 			case msg := <-st.updateMsgChan:
-				if isTerminal, err := st.handleUpdateMessage(ctx, ec, msg); isTerminal {
+				if isTerminal, err := st.handleUpdateMessage(ctx, ec, msg, status); isTerminal {
 					return err
 				}
 			case <-ctx.Done():
@@ -153,7 +153,8 @@ func (st *StartStages) migrateStage(ctx context.Context, ec plug.ExecContext) fu
 	}
 }
 
-func (st *StartStages) handleUpdateMessage(ctx context.Context, ec plug.ExecContext, msg UpdateMessage) (bool, error) {
+func (st *StartStages) handleUpdateMessage(ctx context.Context, ec plug.ExecContext, msg UpdateMessage, status stage.Statuser) (bool, error) {
+	status.SetProgress(msg.CompletionPercentage)
 	ec.PrintlnUnnecessary(msg.Message)
 	if slices.Contains([]Status{StatusComplete, StatusFailed, StatusCanceled}, msg.Status) {
 		ms, err := readMigrationStatus(ctx, st.statusMap)
