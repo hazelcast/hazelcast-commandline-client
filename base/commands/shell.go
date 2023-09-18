@@ -57,7 +57,7 @@ func (cm *ShellCommand) Exec(context.Context, plug.ExecContext) error {
 }
 
 func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext) error {
-	ec.Metrics().Increment(metric.NewSimpleKey(), "total.script."+cmd.RunningMode(ec))
+	ec.Metrics().Increment(metric.NewSimpleKey(), "total.shell."+cmd.RunningMode(ec))
 	if len(ec.Args()) > 0 {
 		return puberrors.ErrNotAvailable
 	}
