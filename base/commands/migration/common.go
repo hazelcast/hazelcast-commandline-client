@@ -1,8 +1,11 @@
+//go:build std || migration
+
 package migration
 
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/hazelcast/hazelcast-go-client"
@@ -23,13 +26,15 @@ type UpdateMessage struct {
 	Message              string  `json:"message"`
 }
 
+var ErrInvalidStatus = errors.New("invalid status value")
+
 func readMigrationStatus(ctx context.Context, statusMap *hazelcast.Map) (*MigrationStatus, error) {
 	v, err := statusMap.Get(ctx, StatusMapEntryName)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("getting status: %w", err)
 	}
 	if v == nil {
-		return nil, nil
+		return nil, ErrInvalidStatus
 	}
 	var b []byte
 	if vv, ok := v.(string); ok {
@@ -37,7 +42,7 @@ func readMigrationStatus(ctx context.Context, statusMap *hazelcast.Map) (*Migrat
 	} else if vv, ok := v.(serialization.JSON); ok {
 		b = vv
 	} else {
-		return nil, fmt.Errorf("invalid status value")
+		return nil, ErrInvalidStatus
 	}
 	var ms MigrationStatus
 	if err := json.Unmarshal(b, &ms); err != nil {

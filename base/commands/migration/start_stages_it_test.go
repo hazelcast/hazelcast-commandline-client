@@ -1,4 +1,4 @@
-//go:build migration
+//go:build std || migration
 
 package migration_test
 

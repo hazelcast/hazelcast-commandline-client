@@ -1,3 +1,5 @@
+//go:build std || migration
+
 package migration
 
 const (
