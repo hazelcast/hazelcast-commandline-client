@@ -97,13 +97,13 @@ func (st *StatusStages) fetchStage(ctx context.Context, ec plug.ExecContext) fun
 		for {
 			select {
 			case msg := <-st.updateMsgChan:
-				ms, err := readMigrationStatus(ctx, st.statusMap)
-				if err != nil {
-					return fmt.Errorf("reading status: %w", err)
-				}
 				ec.PrintlnUnnecessary(msg.Message)
 				ec.PrintlnUnnecessary(fmt.Sprintf("Completion Percentage: %f", msg.CompletionPercentage))
 				if slices.Contains([]Status{StatusComplete, StatusFailed, StatusCanceled}, msg.Status) {
+					ms, err := readMigrationStatus(ctx, st.statusMap)
+					if err != nil {
+						return fmt.Errorf("reading status: %w", err)
+					}
 					ec.PrintlnUnnecessary(ms.Report)
 					return nil
 				}
