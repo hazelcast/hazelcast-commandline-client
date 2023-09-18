@@ -3,10 +3,10 @@ package metric
 type Query struct {
 	Date                       string `json:"date"`
 	ID                         string `json:"id"`
-	Version                    string `json:"version"`
-	AcquisitionSource          string `json:"acquisitionSource"`
 	Architecture               string `json:"architecture"`
 	OS                         string `json:"os"`
+	Version                    string `json:"version"`
+	AcquisitionSource          string `json:"acquisitionSource"`
 	ClusterUUID                string `json:"clusterUUID"`
 	ViridianClusterID          string `json:"viridianClusterID"`
 	ClusterConfigCount         int    `json:"clusterConfigCount"`
