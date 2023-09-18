@@ -16,7 +16,7 @@ import (
 )
 
 func newStorageTestKey(ms *MetricStore, m string) storageKey {
-	return newStorageKey(NewSimpleKey(), ms.sm.AcquisionSource, ms.sm.CLCVersion, m)
+	return newStorageKey(NewSimpleKey(), ms.sessAttrs.AcquisionSource, ms.sessAttrs.CLCVersion, m)
 }
 
 func newSimpleTestKey(m string, t time.Time, cid string) storageKey {
@@ -33,9 +33,9 @@ func newSimpleTestKey(m string, t time.Time, cid string) storageKey {
 func TestMetricStore_GlobalMetrics(t *testing.T) {
 	WithMetricStore(func(ms *MetricStore, _ *[]Query) {
 		gmb := WithStore(ms, func(s *store.Store) []byte {
-			return check.MustValue(s.GetEntry([]byte(GlobalMetricsKeyName)))
+			return check.MustValue(s.GetEntry([]byte(GlobalAttributesKeyName)))
 		})
-		var gm GlobalMetrics
+		var gm GlobalAttributes
 		check.Must(gm.Unmarshal(gmb))
 		require.Equal(t, runtime.GOARCH, gm.Architecture)
 		require.Equal(t, runtime.GOOS, gm.OS)
@@ -45,7 +45,7 @@ func TestMetricStore_GlobalMetrics(t *testing.T) {
 
 func TestMetricStore_SessionMetrics(t *testing.T) {
 	WithMetricStore(func(ms *MetricStore, _ *[]Query) {
-		ms.sm = SessionMetrics{
+		ms.sessAttrs = SessionAttributes{
 			CLCVersion:      "test-version",
 			AcquisionSource: "test-as",
 		}

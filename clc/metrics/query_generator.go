@@ -8,20 +8,20 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/types"
 )
 
-func GenerateFirstPingQuery(gm GlobalMetrics, sm SessionMetrics, t time.Time) Query {
+func GenerateFirstPingQuery(ga GlobalAttributes, sa SessionAttributes, t time.Time) Query {
 	return Query{
 		Date:              t.Format(DateFormat),
-		ID:                gm.ID,
-		Architecture:      gm.Architecture,
-		OS:                gm.OS,
-		Version:           sm.CLCVersion,
-		AcquisitionSource: string(sm.AcquisionSource),
+		ID:                ga.ID,
+		Architecture:      ga.Architecture,
+		OS:                ga.OS,
+		Version:           sa.CLCVersion,
+		AcquisitionSource: string(sa.AcquisionSource),
 	}
 }
 
 type MetricValues map[string]int
 
-func GenerateQueries(db *store.Store, gm GlobalMetrics, dates map[string]struct{}) []Query {
+func GenerateQueries(db *store.Store, ga GlobalAttributes, dates map[string]struct{}) []Query {
 	qs := make([]Query, 0, len(dates))
 	for date := range dates {
 		entries := make(map[types.Quadruple[string]]MetricValues)
@@ -51,9 +51,9 @@ func GenerateQueries(db *store.Store, gm GlobalMetrics, dates map[string]struct{
 			version := attribs.Fourth
 			d := Query{
 				Date:                       date,
-				ID:                         gm.ID,
-				Architecture:               gm.Architecture,
-				OS:                         gm.OS,
+				ID:                         ga.ID,
+				Architecture:               ga.Architecture,
+				OS:                         ga.OS,
 				Version:                    version,
 				AcquisitionSource:          acqSource,
 				ClusterUUID:                cid,

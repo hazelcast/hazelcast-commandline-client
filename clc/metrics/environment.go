@@ -9,41 +9,41 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
-type GlobalMetrics struct {
+type GlobalAttributes struct {
 	ID           string `json:"id"`
 	Architecture string `json:"architecture"`
 	OS           string `json:"os"`
 }
 
-func NewGlobalMetrics() GlobalMetrics {
-	return GlobalMetrics{
+func NewGlobalAttributes() GlobalAttributes {
+	return GlobalAttributes{
 		ID:           types.NewUUID().String(),
 		Architecture: runtime.GOARCH,
 		OS:           runtime.GOOS,
 	}
 }
 
-func (g *GlobalMetrics) Marshal() ([]byte, error) {
+func (g *GlobalAttributes) Marshal() ([]byte, error) {
 	return json.Marshal(g)
 }
 
-func (g *GlobalMetrics) Unmarshal(b []byte) error {
-	gm := GlobalMetrics{}
-	err := json.Unmarshal(b, &gm)
+func (g *GlobalAttributes) Unmarshal(b []byte) error {
+	ga := GlobalAttributes{}
+	err := json.Unmarshal(b, &ga)
 	if err != nil {
 		return err
 	}
-	*g = gm
+	*g = ga
 	return nil
 }
 
-type SessionMetrics struct {
+type SessionAttributes struct {
 	CLCVersion      string
 	AcquisionSource AcquisionSource
 }
 
-func NewSessionMetrics() SessionMetrics {
-	return SessionMetrics{
+func NewSessionMetrics() SessionAttributes {
+	return SessionAttributes{
 		CLCVersion:      internal.Version,
 		AcquisionSource: FindAcquisionSource(),
 	}
@@ -52,7 +52,7 @@ func NewSessionMetrics() SessionMetrics {
 type AcquisionSource string
 
 const (
-	EnvAcquisionSource                     = "CLC_ACQUISION_SOURCE"
+	EnvAcquisionSource                     = "CLC_ACQUISITION_SOURCE"
 	AcquisionSourceMC      AcquisionSource = "MC"
 	AcquisionSourceVSCode  AcquisionSource = "VSCode"
 	AcquisionSourceDocker  AcquisionSource = "Docker"
@@ -68,12 +68,12 @@ func FindAcquisionSource() AcquisionSource {
 	return AcquisionSource(src)
 }
 
-func (g *SessionMetrics) Marshal() ([]byte, error) {
+func (g *SessionAttributes) Marshal() ([]byte, error) {
 	return json.Marshal(g)
 }
 
-func (g *SessionMetrics) Unmarshal(b []byte) error {
-	gm := SessionMetrics{}
+func (g *SessionAttributes) Unmarshal(b []byte) error {
+	gm := SessionAttributes{}
 	err := json.Unmarshal(b, &gm)
 	if err != nil {
 		return err

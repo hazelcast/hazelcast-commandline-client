@@ -17,9 +17,9 @@ import (
 var Storage MetricStoreSender
 
 const (
-	GlobalMetricsKeyName = "global-metrics"
-	EnvPhoneHomeEnabled  = "HZ_PHONE_HOME_ENABLED"
-	StoreDuration        = time.Duration(30 * 24 * time.Hour)
+	GlobalAttributesKeyName = "global-attributes"
+	EnvPhoneHomeEnabled     = "HZ_PHONE_HOME_ENABLED"
+	StoreDuration           = time.Duration(30 * 24 * time.Hour)
 )
 
 type MetricStore struct {
@@ -27,8 +27,8 @@ type MetricStore struct {
 	inc       map[storageKey]int
 	ovrLock   sync.Mutex
 	override  map[storageKey]int
-	gm        GlobalMetrics
-	sm        SessionMetrics
+	globAttrs GlobalAttributes
+	sessAttrs SessionAttributes
 	sa        *store.StoreAccessor
 	serverURL string
 	// for test purposes
@@ -40,7 +40,7 @@ func NewMetricStore(ctx context.Context, dir string) (*MetricStore, error) {
 		serverURL:     "", // TODO: server side is not implemented
 		inc:           make(map[storageKey]int),
 		override:      make(map[storageKey]int),
-		sm:            NewSessionMetrics(),
+		sessAttrs:     NewSessionMetrics(),
 		sa:            store.NewStoreAccessor(dir, log.NopLogger{}),
 		sendQueriesFn: sendQueries,
 	}
@@ -51,8 +51,8 @@ func NewMetricStore(ctx context.Context, dir string) (*MetricStore, error) {
 }
 
 func (ms *MetricStore) setGlobalMetrics(ctx context.Context) error {
-	keyb := []byte(GlobalMetricsKeyName)
-	var gm GlobalMetrics
+	keyb := []byte(GlobalAttributesKeyName)
+	var gm GlobalAttributes
 	qv, err := ms.sa.WithLock(func(s *store.Store) (any, error) {
 		// check if global metrics exists if not create an entry
 		firstTime := false
@@ -69,11 +69,11 @@ func (ms *MetricStore) setGlobalMetrics(ctx context.Context) error {
 			if err != nil {
 				return nil, err
 			}
-			ms.gm = gm
+			ms.globAttrs = gm
 			return nil, nil
 		}
-		gm = NewGlobalMetrics()
-		return GenerateFirstPingQuery(gm, ms.sm, time.Now().UTC()), nil
+		gm = NewGlobalAttributes()
+		return GenerateFirstPingQuery(gm, ms.sessAttrs, time.Now().UTC()), nil
 	})
 	if err != nil {
 		return err
@@ -97,7 +97,7 @@ func (ms *MetricStore) setGlobalMetrics(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	ms.gm = gm
+	ms.globAttrs = gm
 	return nil
 }
 
@@ -105,7 +105,7 @@ func (ms *MetricStore) Store(key Key, metric string, val int) {
 	metrics := strings.Split(metric, ".")
 	ms.incLock.Lock()
 	for _, m := range metrics {
-		sk := newStorageKey(key, ms.sm.AcquisionSource, ms.sm.CLCVersion, m)
+		sk := newStorageKey(key, ms.sessAttrs.AcquisionSource, ms.sessAttrs.CLCVersion, m)
 		ms.override[sk] = val
 	}
 	ms.incLock.Unlock()
@@ -115,7 +115,7 @@ func (ms *MetricStore) Increment(key Key, metric string) {
 	metrics := strings.Split(metric, ".")
 	ms.ovrLock.Lock()
 	for _, m := range metrics {
-		sk := newStorageKey(key, ms.sm.AcquisionSource, ms.sm.CLCVersion, m)
+		sk := newStorageKey(key, ms.sessAttrs.AcquisionSource, ms.sessAttrs.CLCVersion, m)
 		ms.inc[sk]++
 	}
 	ms.ovrLock.Unlock()
@@ -140,7 +140,7 @@ func (ms *MetricStore) Send(ctx context.Context) error {
 			// no data to send
 			return nil, nil
 		}
-		q := GenerateQueries(s, ms.gm, dates)
+		q := GenerateQueries(s, ms.globAttrs, dates)
 		err = ms.sendQueriesFn(ctx, ms.serverURL, q...)
 		if err != nil {
 			return nil, err
