@@ -16,6 +16,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
+	metric "github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
 	cmderrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
@@ -41,15 +42,16 @@ type ExecContext struct {
 	args        []string
 	kwargs      map[string]any
 	props       *plug.Properties
-	mode        Mode
+	mode        plug.Mode
 	cmd         *cobra.Command
 	main        *Main
 	spinnerWait time.Duration
 	printer     plug.Printer
 	cp          config.Provider
+	ms          metric.MetricStorer
 }
 
-func NewExecContext(lg log.Logger, sio clc.IO, props *plug.Properties, mode Mode) (*ExecContext, error) {
+func NewExecContext(lg log.Logger, sio clc.IO, props *plug.Properties, mode plug.Mode, ms metric.MetricStorer) (*ExecContext, error) {
 	return &ExecContext{
 		lg:          lg,
 		stdout:      sio.Stdout,
@@ -59,6 +61,7 @@ func NewExecContext(lg log.Logger, sio clc.IO, props *plug.Properties, mode Mode
 		mode:        mode,
 		spinnerWait: 1 * time.Second,
 		kwargs:      map[string]any{},
+		ms:          ms,
 	}, nil
 }
 
@@ -151,8 +154,8 @@ func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInt
 	return ec.main.clientInternal(), nil
 }
 
-func (ec *ExecContext) Interactive() bool {
-	return ec.mode == ModeInteractive
+func (ec *ExecContext) Mode() plug.Mode {
+	return ec.mode
 }
 
 func (ec *ExecContext) AddOutputRows(ctx context.Context, rows ...output.Row) error {
@@ -172,9 +175,13 @@ func (ec *ExecContext) AddOutputStream(ctx context.Context, ch <-chan output.Row
 	return ec.printer.PrintStream(ctx, ec.stdout, output.NewChanRows(ch))
 }
 
+func (ec *ExecContext) Metrics() metric.MetricStorer {
+	return ec.ms
+}
+
 func (ec *ExecContext) ShowHelpAndExit() {
 	Must(ec.cmd.Help())
-	if !ec.Interactive() {
+	if ec.Mode() != plug.ModeInteractive {
 		os.Exit(0)
 	}
 }
@@ -183,7 +190,7 @@ func (ec *ExecContext) CommandName() string {
 	return ec.cmd.CommandPath()
 }
 
-func (ec *ExecContext) SetMode(mode Mode) {
+func (ec *ExecContext) SetMode(mode plug.Mode) {
 	ec.mode = mode
 }
 

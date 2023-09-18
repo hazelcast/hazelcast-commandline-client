@@ -5,7 +5,7 @@ package project
 import (
 	"context"
 
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
@@ -27,5 +27,5 @@ func (gc Command) Exec(ctx context.Context, ec plug.ExecContext) error {
 
 func init() {
 	cmd := &Command{}
-	Must(plug.Registry.RegisterCommand("project", cmd))
+	check.Must(plug.Registry.RegisterCommand("project", cmd))
 }

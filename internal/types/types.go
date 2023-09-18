@@ -12,6 +12,19 @@ func MakeTuple2[A, B any](first A, second B) Tuple2[A, B] {
 	}
 }
 
+type Quadruple[T any] struct {
+	First, Second, Third, Fourth T
+}
+
+func NewQuadruple[T any](first, second, third, fourth T) Quadruple[T] {
+	return Quadruple[T]{
+		First:  first,
+		Second: second,
+		Third:  third,
+		Fourth: fourth,
+	}
+}
+
 type Set[K comparable] struct {
 	m map[K]struct{}
 }

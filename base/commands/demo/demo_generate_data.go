@@ -14,6 +14,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
+	metric "github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/sql"
 	hzerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -70,6 +71,7 @@ func (GenerateDataCommand) Exec(ctx context.Context, ec plug.ExecContext) error 
 }
 
 func generatePreviewResult(ctx context.Context, ec plug.ExecContext, generator dataStreamGenerator, keyVals map[string]string) error {
+	ec.Metrics().Increment(metric.NewSimpleKey(), "total.demo."+cmd.RunningMode(ec))
 	maxCount := ec.Props().GetInt(flagMaxValues)
 	if maxCount < 1 {
 		maxCount = 10
@@ -104,15 +106,17 @@ func generateResult(ctx context.Context, ec plug.ExecContext, generator dataStre
 		return fmt.Errorf("either %s key-value pair must be given or --preview must be used", pairMapName)
 	}
 	maxCount := ec.Props().GetInt(flagMaxValues)
+	query, err := generator.GenerateMappingQuery(mapName)
+	if err != nil {
+		return err
+	}
 	query, stop, err := cmd.ExecuteBlocking(ctx, ec, func(ctx context.Context, sp clc.Spinner) (string, error) {
 		sp.SetText("Creating the mapping")
-		query, err := generator.GenerateMappingQuery(mapName)
-		if err != nil {
-			return "", err
-		}
 		if _, err := sql.ExecSQL(ctx, ec, query); err != nil {
 			return "", err
 		}
+		cid, vid := cmd.FindClusterIDs(ctx, ec)
+		ec.Metrics().Increment(metric.NewKey(cid, vid), "total.demo."+cmd.RunningMode(ec))
 		return query, nil
 	})
 	if err != nil {

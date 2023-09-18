@@ -16,9 +16,11 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
+	metric "github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/store"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -50,6 +52,7 @@ func (ListTemplatesCommand) Init(cc plug.InitContext) error {
 }
 
 func (ListTemplatesCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+	ec.Metrics().Increment(metric.NewSimpleKey(), "total.project."+cmd.RunningMode(ec))
 	isLocal := ec.Props().GetBool(flagLocal)
 	isRefresh := ec.Props().GetBool(flagRefresh)
 	if isLocal && isRefresh {
@@ -196,7 +199,7 @@ func updateCache(sa *store.StoreAccessor, templates []Template) error {
 		return err
 	}
 	_, err = sa.WithLock(func(s *store.Store) (any, error) {
-		err = s.DeleteEntriesWithPrefix(templatesKey)
+		err = s.DeleteEntriesWithPrefixes(templatesKey)
 		if err != nil {
 			return nil, err
 		}
@@ -228,5 +231,5 @@ func listFromCache(sa *store.StoreAccessor) ([]Template, error) {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("project:list-templates", &ListTemplatesCommand{}))
+	check.Must(plug.Registry.RegisterCommand("project:list-templates", &ListTemplatesCommand{}))
 }

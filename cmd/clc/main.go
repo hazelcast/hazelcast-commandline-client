@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/spf13/cobra"
 
 	clc "github.com/hazelcast/hazelcast-commandline-client/clc"
 	cmd "github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
+	metric "github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	hzerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/str"
@@ -42,7 +45,9 @@ func main() {
 	}
 	_, name := filepath.Split(os.Args[0])
 	stdio := clc.StdIO()
-	m, err := cmd.NewMain(name, cfgPath, cp, logPath, logLevel, stdio)
+	createMetricStore(paths.Metrics())
+	close := startTicker()
+	m, err := cmd.NewMain(name, cfgPath, cp, logPath, logLevel, stdio, metric.Storage)
 	if err != nil {
 		bye(err)
 	}
@@ -55,6 +60,8 @@ func main() {
 			}
 		}
 	}
+	close <- true
+	sendMetric()
 	// ignoring the error here
 	_ = m.Exit()
 	if err != nil {
@@ -67,4 +74,47 @@ func main() {
 		os.Exit(ExitCodeGenericFailure)
 	}
 	os.Exit(ExitCodeSuccess)
+}
+
+func createMetricStore(dir string) {
+	if !cmd.PhoneHomeEnabled() {
+		metric.Storage = &metric.NopMetricStore{}
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+	defer cancel()
+	store, err := metric.NewMetricStore(ctx, dir)
+	if err != nil {
+		metric.Storage = &metric.NopMetricStore{}
+		return
+	}
+	metric.Storage = store
+}
+
+func startTicker() chan bool {
+	done := make(chan bool)
+	go func() {
+		ticker := time.NewTicker(24 * time.Hour)
+		for {
+			select {
+			case <-done:
+				return
+			case <-ticker.C:
+				ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+				_ = metric.Storage.Send(ctx)
+				cancel()
+			}
+		}
+	}()
+	return done
+}
+
+func sendMetric() {
+	// store cluster config count before sending
+	cd := paths.Configs()
+	cs, err := config.FindAll(cd)
+	if err == nil {
+		metric.Storage.Store(metric.NewSimpleKey(), "cluster-config-count", len(cs))
+	}
+	_ = metric.Storage.Send(context.Background())
 }

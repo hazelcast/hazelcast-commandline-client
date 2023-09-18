@@ -19,23 +19,17 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/logger"
+	metric "github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	puberrors "github.com/hazelcast/hazelcast-commandline-client/errors"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
 var (
 	MainCommandShortHelp = "Hazelcast CLC"
-)
-
-type Mode int
-
-const (
-	ModeNonInteractive Mode = iota
-	ModeInteractive
-	ModeScripting
 )
 
 type Main struct {
@@ -45,18 +39,19 @@ type Main struct {
 	stderr       io.WriteCloser
 	stdout       io.WriteCloser
 	stdin        io.Reader
-	mode         Mode
+	mode         plug.Mode
 	outputFormat string
 	configLoaded bool
 	props        *plug.Properties
 	cc           *CommandContext
 	cp           config.Provider
+	ms           metric.MetricStorer
 	arg0         string
 	ciMu         *sync.Mutex
 	ci           *atomic.Pointer[hazelcast.ClientInternal]
 }
 
-func NewMain(arg0, cfgPath string, cfgProvider config.Provider, logPath, logLevel string, sio clc.IO) (*Main, error) {
+func NewMain(arg0, cfgPath string, cfgProvider config.Provider, logPath, logLevel string, sio clc.IO, ms metric.MetricStorer) (*Main, error) {
 	rc := &cobra.Command{
 		Use:               arg0,
 		Short:             MainCommandShortHelp,
@@ -75,6 +70,7 @@ func NewMain(arg0, cfgPath string, cfgProvider config.Provider, logPath, logLeve
 		stdin:  sio.Stdin,
 		props:  plug.NewProperties(),
 		cp:     cfgProvider,
+		ms:     ms,
 		arg0:   arg0,
 		ciMu:   &sync.Mutex{},
 		ci:     &atomic.Pointer[hazelcast.ClientInternal]{},
@@ -109,7 +105,7 @@ func NewMain(arg0, cfgPath string, cfgProvider config.Provider, logPath, logLeve
 	return m, nil
 }
 
-func (m *Main) Clone(mode Mode) (*Main, error) {
+func (m *Main) Clone(mode plug.Mode) (*Main, error) {
 	mc := *m
 	mc.mode = mode
 	rc := &cobra.Command{
@@ -146,7 +142,7 @@ func (m *Main) Execute(ctx context.Context, args ...string) error {
 	var cm *cobra.Command
 	var cmdArgs []string
 	var err error
-	if m.mode == ModeNonInteractive {
+	if m.mode == plug.ModeNonInteractive {
 		cm, cmdArgs, err = m.root.Find(args)
 		if err != nil {
 			return err
@@ -263,11 +259,11 @@ func (m *Main) createCommands() error {
 	for _, c := range plug.Registry.Commands() {
 		c := c
 		// check if current command available in current mode
-		if !plug.Registry.IsAvailable(m.mode != ModeNonInteractive, c.Name) {
+		if !plug.Registry.IsAvailable(m.mode != plug.ModeNonInteractive, c.Name) {
 			continue
 		}
 		// skip interactive commands in interactive mode
-		if m.mode == ModeInteractive {
+		if m.mode == plug.ModeInteractive {
 			if _, ok := c.Item.(plug.InteractiveCommander); ok {
 				continue
 			}
@@ -326,7 +322,7 @@ func (m *Main) createCommands() error {
 					Stderr: m.stderr,
 					Stdout: m.stdout,
 				}
-				ec, err := NewExecContext(m.lg, sio, m.props, m.mode)
+				ec, err := NewExecContext(m.lg, sio, m.props, m.mode, m.ms)
 				if err != nil {
 					return err
 				}
@@ -353,7 +349,7 @@ func (m *Main) createCommands() error {
 					return err
 				}
 				if ic, ok := c.Item.(plug.InteractiveCommander); ok {
-					ec.SetMode(ModeInteractive)
+					ec.SetMode(plug.ModeInteractive)
 					err = ic.ExecInteractive(ctx, ec)
 					if errors.Is(err, puberrors.ErrNotAvailable) {
 						return nil
@@ -364,7 +360,7 @@ func (m *Main) createCommands() error {
 			}
 		}
 		// add the backslash prefix for top-level commands in the interactive mode
-		if m.mode != ModeNonInteractive && parent == m.root {
+		if m.mode != plug.ModeNonInteractive && parent == m.root {
 			cmd.Use = fmt.Sprintf("\\%s", cmd.Use)
 		}
 		parent.AddCommand(cmd)
@@ -408,11 +404,11 @@ func (m *Main) clientInternal() *hazelcast.ClientInternal {
 func convertFlagValue(fs *pflag.FlagSet, name string, v pflag.Value) any {
 	switch v.Type() {
 	case "string":
-		return MustValue(fs.GetString(name))
+		return check.MustValue(fs.GetString(name))
 	case "bool":
-		return MustValue(fs.GetBool(name))
+		return check.MustValue(fs.GetBool(name))
 	case "int64":
-		return MustValue(fs.GetInt64(name))
+		return check.MustValue(fs.GetInt64(name))
 	}
 	panic(fmt.Errorf("cannot convert type: %s", v.Type()))
 }

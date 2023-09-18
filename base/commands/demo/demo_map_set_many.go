@@ -12,7 +12,8 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	metric "github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
@@ -48,6 +49,8 @@ func (m MapSetManyCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 		if err != nil {
 			return nil, err
 		}
+		cid, vid := cmd.FindClusterIDs(ctx, ec)
+		ec.Metrics().Increment(metric.NewKey(cid, vid), "total.job."+cmd.RunningMode(ec))
 		sp.SetText(fmt.Sprintf("Creating entries in map %s with %d entries", mapName, count))
 		mm, err := ci.Client().GetMap(ctx, mapName)
 		if err != nil {
@@ -113,5 +116,5 @@ func getValueSize(sizeStr string) (int64, error) {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("demo:map-setmany", &MapSetManyCmd{}))
+	check.Must(plug.Registry.RegisterCommand("demo:map-setmany", &MapSetManyCmd{}))
 }

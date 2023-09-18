@@ -11,6 +11,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	metric "github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
@@ -95,4 +96,48 @@ func parseDuration(duration string) (time.Duration, error) {
 		return 0, err
 	}
 	return pd, nil
+}
+
+func FindClusterIDs(ctx context.Context, ec plug.ExecContext) (clusterID string, viridianID string) {
+	if !PhoneHomeEnabled() {
+		return "", ""
+	}
+	ctx, cancel := context.WithTimeout(ctx, 1000*time.Millisecond)
+	defer cancel()
+	ci, err := ec.ClientInternal(ctx)
+	if err != nil {
+		return
+	}
+	clusterID = ci.ClusterID().String()
+	if vtoken := ec.Props().GetString(clc.PropertyClusterDiscoveryToken); vtoken != "" {
+		clusterName := ci.ClusterService().FailoverService().Current().ClusterName
+		viridianID = parseViridianClusterID(clusterName)
+	}
+	return
+}
+
+func parseViridianClusterID(cid string) string {
+	s := strings.Split(cid, "-")
+	if len(s) != 2 {
+		return ""
+	}
+	return s[1]
+}
+
+func RunningMode(ec plug.ExecContext) string {
+	switch ec.Mode() {
+	case plug.ModeNonInteractive:
+		return "noninteractive-mode"
+	case plug.ModeInteractive:
+		return "interactive-mode"
+	case plug.ModeScripting:
+		return "script-mode"
+	default:
+		return "unknown"
+	}
+}
+
+func PhoneHomeEnabled() bool {
+	val := os.Getenv(metric.EnvPhoneHomeEnabled)
+	return strings.ToLower(val) != "false"
 }

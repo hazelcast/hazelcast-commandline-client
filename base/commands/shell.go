@@ -11,6 +11,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
+	metric "github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/shell"
 	puberrors "github.com/hazelcast/hazelcast-commandline-client/errors"
@@ -56,10 +57,11 @@ func (cm *ShellCommand) Exec(context.Context, plug.ExecContext) error {
 }
 
 func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext) error {
+	ec.Metrics().Increment(metric.NewSimpleKey(), "total.script."+cmd.RunningMode(ec))
 	if len(ec.Args()) > 0 {
 		return puberrors.ErrNotAvailable
 	}
-	m, err := ec.(*cmd.ExecContext).Main().Clone(cmd.ModeInteractive)
+	m, err := ec.(*cmd.ExecContext).Main().Clone(plug.ModeInteractive)
 	if err != nil {
 		return fmt.Errorf("cloning Main: %w", err)
 	}

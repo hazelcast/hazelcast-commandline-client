@@ -35,6 +35,10 @@ func Configs() string {
 	return filepath.Join(Home(), "configs")
 }
 
+func Metrics() string {
+	return filepath.Join(Home(), "metrics")
+}
+
 func Schemas() string {
 	return filepath.Join(Home(), "schemas")
 }

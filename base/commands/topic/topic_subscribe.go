@@ -15,7 +15,9 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
+	metric "github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -35,13 +37,17 @@ func (SubscribeCommand) Init(cc plug.InitContext) error {
 
 func (SubscribeCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	name := ec.Props().GetString(base.FlagName)
-	ci, err := ec.ClientInternal(ctx)
-	if err != nil {
-		return err
-	}
 	events := make(chan TopicEvent, 1)
+	var ci *hazelcast.ClientInternal
 	// Channel is not closed intentionally
 	sid, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		var err error
+		ci, err = cmd.ClientInternal(ctx, ec, sp)
+		if err != nil {
+			return nil, err
+		}
+		cid, vid := cmd.FindClusterIDs(ctx, ec)
+		ec.Metrics().Increment(metric.NewKey(cid, vid), "total.topic."+cmd.RunningMode(ec))
 		sp.SetText(fmt.Sprintf("Listening to messages of topic %s", name))
 		sid, err := addListener(ctx, ci, name, ec.Logger(), func(event TopicEvent) {
 			select {
@@ -203,5 +209,5 @@ func eventRow(e TopicEvent, ec plug.ExecContext) (row output.Row) {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("topic:subscribe", &SubscribeCommand{}))
+	check.Must(plug.Registry.RegisterCommand("topic:subscribe", &SubscribeCommand{}))
 }

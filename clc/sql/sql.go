@@ -34,7 +34,7 @@ func ExecSQL(ctx context.Context, ec plug.ExecContext, query string) (sql.Result
 		// Once that is removed from the Go client, the code below may be removed.
 		err = adaptSQLError(err)
 		if !as {
-			if serr.Suggestion != "" && !ec.Interactive() {
+			if serr.Suggestion != "" && ec.Mode() != plug.ModeInteractive {
 				return nil, fmt.Errorf("%w\n\nUse --%s to automatically apply the suggestion", err, PropertyUseMappingSuggestion)
 			}
 			return nil, err

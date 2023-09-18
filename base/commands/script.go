@@ -14,6 +14,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
+	metric "github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/shell"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -52,6 +53,7 @@ See examples/sql/dessert.sql for a sample script.
 }
 
 func (ScriptCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+	ec.Metrics().Increment(metric.NewSimpleKey(), "total.script."+cmd.RunningMode(ec))
 	args := ec.GetStringSliceArg(argPath)
 	in := ec.Stdin()
 	if len(args) > 0 {
@@ -67,7 +69,7 @@ func (ScriptCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		Stderr: ec.Stderr(),
 		Stdout: ec.Stdout(),
 	}
-	m, err := ec.(*cmd.ExecContext).Main().Clone(cmd.ModeScripting)
+	m, err := ec.(*cmd.ExecContext).Main().Clone(plug.ModeScripting)
 	if err != nil {
 		return fmt.Errorf("cloning Main: %w", err)
 	}

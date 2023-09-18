@@ -10,7 +10,8 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	metric "github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
@@ -34,6 +35,8 @@ func (QueueOfferCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		if err != nil {
 			return nil, err
 		}
+		cid, vid := cmd.FindClusterIDs(ctx, ec)
+		ec.Metrics().Increment(metric.NewKey(cid, vid), "total.queue."+cmd.RunningMode(ec))
 		q, err := ci.Client().GetQueue(ctx, name)
 		if err != nil {
 			return nil, err
@@ -72,5 +75,5 @@ func (QueueOfferCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("queue:offer", &QueueOfferCommand{}))
+	check.Must(plug.Registry.RegisterCommand("queue:offer", &QueueOfferCommand{}))
 }

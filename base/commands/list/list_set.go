@@ -10,8 +10,9 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
+	metric "github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
@@ -38,6 +39,8 @@ func (mc *ListSetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		if err != nil {
 			return nil, err
 		}
+		cid, vid := cmd.FindClusterIDs(ctx, ec)
+		ec.Metrics().Increment(metric.NewKey(cid, vid), "total.list."+cmd.RunningMode(ec))
 		// get the list just to ensure the corresponding proxy is created
 		_, err = getList(ctx, ec, sp)
 		if err != nil {
@@ -69,5 +72,5 @@ func (mc *ListSetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("list:set", &ListSetCommand{}))
+	check.Must(plug.Registry.RegisterCommand("list:set", &ListSetCommand{}))
 }

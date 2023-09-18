@@ -11,9 +11,10 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
+	metric "github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
 	clcsql "github.com/hazelcast/hazelcast-commandline-client/clc/sql"
 	"github.com/hazelcast/hazelcast-commandline-client/errors"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
@@ -70,6 +71,8 @@ func (SQLCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		if err != nil {
 			return nil, err
 		}
+		cid, vid := cmd.FindClusterIDs(ctx, ec)
+		ec.Metrics().Increment(metric.NewKey(cid, vid), "total.sql.noninteractive-mode")
 		if sv, ok := cmd.CheckServerCompatible(ci, minServerVersion); !ok {
 			return nil, fmt.Errorf("server (%s) does not support this command, at least %s is expected", sv, minServerVersion)
 		}
@@ -87,5 +90,5 @@ func (SQLCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 
 func init() {
 	plug.Registry.RegisterAugmentor("20-sql", &SQLCommand{})
-	Must(plug.Registry.RegisterCommand("sql", &SQLCommand{}))
+	check.Must(plug.Registry.RegisterCommand("sql", &SQLCommand{}))
 }

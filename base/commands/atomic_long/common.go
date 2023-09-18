@@ -11,6 +11,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
+	metric "github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
@@ -29,6 +30,8 @@ func atomicLongChangeValue(ctx context.Context, ec plug.ExecContext, verb string
 		if err != nil {
 			return nil, err
 		}
+		cid, vid := cmd.FindClusterIDs(ctx, ec)
+		ec.Metrics().Increment(metric.NewKey(cid, vid), "total.atomiclong."+cmd.RunningMode(ec))
 		sp.SetText(fmt.Sprintf("%sing the AtomicLong %s", verb, name))
 		val, err := ali.AddAndGet(ctx, change(by))
 		if err != nil {
