@@ -101,11 +101,11 @@ func ConvertStatement(ctx context.Context, ec plug.ExecContext, stmt string) (fu
 func InteractiveHelp() string {
 	return `
 Shortcut Commands:
-	\di           List Indexes
-	\di  MAPPING  List Indexes for a specific mapping
+	\di           List indexes
+	\di   MAPPING List indexes for a specific mapping
 	\dm           List mappings
-	\dm  MAPPING  Display information about a mapping
-	\dm+ MAPPING  Describe a mapping
+	\dm   MAPPING Display information about a mapping
+	\dm+  MAPPING Describe a mapping
 	\exit         Exit the shell
 	\help         Display help for CLC commands
 `
