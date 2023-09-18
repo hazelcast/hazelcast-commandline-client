@@ -100,7 +100,7 @@ func startTicker() chan bool {
 			case <-done:
 				return
 			case <-ticker.C:
-				ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+				ctx, cancel := context.WithTimeout(context.Background(), 5000*time.Millisecond)
 				_ = metric.Storage.Send(ctx)
 				cancel()
 			}
@@ -116,5 +116,9 @@ func sendMetric() {
 	if err == nil {
 		metric.Storage.Store(metric.NewSimpleKey(), "cluster-config-count", len(cs))
 	}
-	_ = metric.Storage.Send(context.Background())
+	// try to send the data stored locally
+	// if there is no metric to send, do nothing
+	ctx, cancel := context.WithTimeout(context.Background(), 3000*time.Millisecond)
+	_ = metric.Storage.Send(ctx)
+	cancel()
 }
