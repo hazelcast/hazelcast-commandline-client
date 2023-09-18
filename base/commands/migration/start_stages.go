@@ -166,7 +166,7 @@ func (st *StartStages) handleUpdateMessage(ctx context.Context, ec plug.ExecCont
 		ec.PrintlnUnnecessary(ms.Report)
 		var name string
 		if st.reportOutputDir == "" {
-			name = fmt.Sprintf("migration_report_%s", st.migrationID)
+			name = fmt.Sprintf("migration_report_%s.txt", st.migrationID)
 		}
 		if err = saveReportToFile(name, ms.Report); err != nil {
 			return true, fmt.Errorf("writing report to file: %w", err)
