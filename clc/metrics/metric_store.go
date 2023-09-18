@@ -18,6 +18,7 @@ var Storage MetricStoreSender
 
 const (
 	GlobalAttributesKeyName = "global-attributes"
+	MetricsVersion          = "v1"
 	EnvPhoneHomeEnabled     = "HZ_PHONE_HOME_ENABLED"
 	StoreDuration           = time.Duration(30 * 24 * time.Hour)
 )
