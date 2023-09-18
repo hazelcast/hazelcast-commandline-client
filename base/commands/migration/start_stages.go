@@ -28,20 +28,22 @@ type StartStages struct {
 	updateTopic     *hazelcast.Topic
 	topicListenerID types.UUID
 	updateMsgChan   chan UpdateMessage
+	reportOutputDir string
 }
 
 var timeoutErr = fmt.Errorf("migration could not be completed: reached timeout while reading status: "+
 	"please ensure that you are using Hazelcast's migration cluster distribution and your DMT config points to that cluster: %w",
 	context.DeadlineExceeded)
 
-func NewStartStages(updateTopic *hazelcast.Topic, migrationID, configDir string) *StartStages {
+func NewStartStages(updateTopic *hazelcast.Topic, migrationID, configDir, reportOutputDir string) *StartStages {
 	if migrationID == "" {
 		panic("migrationID is required")
 	}
 	return &StartStages{
-		updateTopic: updateTopic,
-		migrationID: migrationID,
-		configDir:   configDir,
+		updateTopic:     updateTopic,
+		migrationID:     migrationID,
+		configDir:       configDir,
+		reportOutputDir: reportOutputDir,
 	}
 }
 
@@ -162,7 +164,10 @@ func (st *StartStages) handleUpdateMessage(ctx context.Context, ec plug.ExecCont
 			return true, fmt.Errorf("reading status: %w", err)
 		}
 		ec.PrintlnUnnecessary(ms.Report)
-		name := fmt.Sprintf("migration_report_%s", st.migrationID)
+		var name string
+		if st.reportOutputDir == "" {
+			name = fmt.Sprintf("migration_report_%s", st.migrationID)
+		}
 		if err = saveReportToFile(name, ms.Report); err != nil {
 			return true, fmt.Errorf("writing report to file: %w", err)
 		}

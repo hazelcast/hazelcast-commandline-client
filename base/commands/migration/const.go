@@ -19,3 +19,5 @@ const (
 	StatusFailed     Status = "FAILED"
 	StatusInProgress Status = "IN_PROGRESS"
 )
+
+const flagOutputDir = "output-dir"
