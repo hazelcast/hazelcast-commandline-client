@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/hazelcast/hazelcast-commandline-client/base/objects"
-	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -54,13 +53,15 @@ var objTypes = []string{
 }
 
 const (
-	flagShowHidden = "show-hidden"
+	flagShowHidden     = "show-hidden"
+	argObjectType      = "objectType"
+	argTitleObjectType = "object type"
 )
 
-type ObjectListCommand struct{}
+type ListCommand struct{}
 
-func (cm ObjectListCommand) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("list [object-type]")
+func (ListCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("list")
 	long := fmt.Sprintf(`List distributed objects, optionally filter by type.
 	
 The object-type filter may be one of:
@@ -70,14 +71,15 @@ CP objects such as AtomicLong cannot be listed.
 `, objectFilterTypes())
 	cc.SetCommandHelp(long, "List distributed objects")
 	cc.AddBoolFlag(flagShowHidden, "", false, false, "show hidden and system objects")
-	cc.SetPositionalArgCount(0, 1)
+	cc.AddStringSliceArg(argObjectType, argTitleObjectType, 0, 1)
 	return nil
 }
 
-func (cm ObjectListCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (ListCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	var typeFilter string
-	if len(ec.Args()) > 0 {
-		typeFilter = ec.Args()[0]
+	fs := ec.GetStringSliceArg(argObjectType)
+	if len(fs) > 0 {
+		typeFilter = fs[0]
 	}
 	showHidden := ec.Props().GetBool(flagShowHidden)
 	objs, err := objects.GetAll(ctx, ec, typeFilter, showHidden)
@@ -104,13 +106,11 @@ func (cm ObjectListCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 			valueCol,
 		})
 	}
-	if len(rows) > 0 {
-		return ec.AddOutputRows(ctx, rows...)
+	if len(rows) == 0 {
+		ec.PrintlnUnnecessary("OK No objects found.")
+		return nil
 	}
-	if !ec.Props().GetBool(clc.PropertyQuiet) {
-		I2(fmt.Fprintln(ec.Stdout(), "No objects found"))
-	}
-	return nil
+	return ec.AddOutputRows(ctx, rows...)
 }
 
 func objectFilterTypes() string {
@@ -126,5 +126,5 @@ func init() {
 	sort.Slice(objTypes, func(i, j int) bool {
 		return objTypes[i] < objTypes[j]
 	})
-	Must(plug.Registry.RegisterCommand("object:list", &ObjectListCommand{}))
+	Must(plug.Registry.RegisterCommand("object:list", &ListCommand{}))
 }

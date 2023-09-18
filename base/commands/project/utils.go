@@ -3,6 +3,7 @@
 package project
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -15,7 +16,6 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/str"
 )
 
 func loadFromDefaults(templateDir string) (map[string]string, error) {
@@ -38,18 +38,11 @@ func loadFromDefaults(templateDir string) (map[string]string, error) {
 }
 
 func updatePropsWithUserValues(ec plug.ExecContext, props map[string]string) error {
-	for _, arg := range ec.Args() {
-		k, v := str.ParseKeyValue(arg)
-		if k == "" {
-			continue
+	for _, kv := range ec.GetKeyValuesArg(argPlaceholder) {
+		if !regexpValidKey.MatchString(kv.Key) {
+			return fmt.Errorf("invalid key: %s, only letters and numbers are allowed", kv.Key)
 		}
-		if !regexpValidKey.MatchString(k) {
-			return fmt.Errorf("invalid key: %s, only letters and numbers are allowed", k)
-		}
-		if k == "" {
-			return fmt.Errorf("blank keys are not allowed")
-		}
-		props[k] = v
+		props[kv.Key] = kv.Value
 	}
 	return nil
 }
@@ -129,9 +122,10 @@ func marshalYAML(m map[string]any) []byte {
 	return d
 }
 
-func cloneTemplate(baseDir string, name string) error {
+func cloneTemplate(ctx context.Context, baseDir, name string) error {
 	u := templateRepoURL(name)
-	_, err := git.PlainClone(filepath.Join(baseDir, name), false, &git.CloneOptions{
+	path := filepath.Join(baseDir, name)
+	_, err := git.PlainCloneContext(ctx, path, false, &git.CloneOptions{
 		URL:      u,
 		Progress: nil,
 		Depth:    1,
@@ -141,6 +135,30 @@ func cloneTemplate(baseDir string, name string) error {
 			return fmt.Errorf("repository %s may not exist or requires authentication", u)
 		}
 		return err
+	}
+	return nil
+}
+
+func updateTemplate(ctx context.Context, baseDir, name string) error {
+	path := filepath.Join(baseDir, name)
+	r, err := git.PlainOpen(path)
+	if err != nil {
+		return fmt.Errorf("opening local git repository: %w", err)
+	}
+	wt, err := r.Worktree()
+	if err != nil {
+		return fmt.Errorf("opening work tree: %w", err)
+	}
+	opts := &git.PullOptions{
+		SingleBranch: true,
+		Depth:        1,
+		Progress:     nil,
+		Force:        true,
+	}
+	if err = wt.PullContext(ctx, opts); err != nil {
+		if !errors.Is(err, git.NoErrAlreadyUpToDate) {
+			return err
+		}
 	}
 	return nil
 }

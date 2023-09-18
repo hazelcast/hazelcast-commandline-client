@@ -90,7 +90,7 @@ func loginWithParams_InteractiveTest(t *testing.T) {
 		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			tcx.WithReset(func() {
 				tcx.WriteStdinf("\\viridian login --api-base dev2 --api-key %s --api-secret %s\n", it.ViridianAPIKey(), it.ViridianAPISecret())
-				tcx.AssertStdoutContains("Viridian token was fetched and saved.")
+				tcx.AssertStdoutContains("Saved the access token")
 			})
 		})
 	})
@@ -106,7 +106,7 @@ func loginWithEnvVariables_NonInteractiveTest(t *testing.T) {
 		it.WithEnv(viridian.EnvAPIKey, it.ViridianAPIKey(), func() {
 			it.WithEnv(viridian.EnvAPISecret, it.ViridianAPISecret(), func() {
 				tcx.CLCExecute(ctx, "viridian", "login")
-				tcx.AssertStdoutContains("Viridian token was fetched and saved.")
+				tcx.AssertStdoutContains("Saved the access token")
 			})
 		})
 	})
@@ -114,11 +114,14 @@ func loginWithEnvVariables_NonInteractiveTest(t *testing.T) {
 
 func listClusters_NonInteractiveTest(t *testing.T) {
 	viridianTester(t, func(ctx context.Context, tcx it.TestContext) {
-		tcx.CLCExecute(ctx, "viridian", "list-clusters")
-		tcx.AssertStderrContains("OK")
+		/*
+			// cannot test this at the moment, since trial cluster on dev2 cannot be deleted
+			tcx.CLCExecute(ctx, "viridian", "list-clusters")
+			tcx.AssertStdoutContains("No clusters found")
+
+		*/
 		c := createOrGetClusterWithState(ctx, tcx, "RUNNING")
 		tcx.CLCExecute(ctx, "viridian", "list-clusters")
-		tcx.AssertStderrContains("OK")
 		tcx.AssertStdoutContains(c.ID)
 	})
 }
@@ -160,7 +163,7 @@ func createCluster_InteractiveTest(t *testing.T) {
 			ensureNoClusterRunning(ctx, tcx)
 			tcx.WithReset(func() {
 				clusterName := it.UniqueClusterName()
-				tcx.WriteStdinf("\\viridian create-cluster --cluster-type devmode --verbose --name %s \n", clusterName)
+				tcx.WriteStdinf("\\viridian create-cluster --development --verbose --name %s \n", clusterName)
 				time.Sleep(10 * time.Second)
 				check.Must(waitState(ctx, tcx, "", "RUNNING"))
 				tcx.AssertStdoutContains(fmt.Sprintf("Imported configuration: %s", clusterName))
@@ -200,7 +203,7 @@ func resumeCluster_NonInteractiveTest(t *testing.T) {
 	viridianTester(t, func(ctx context.Context, tcx it.TestContext) {
 		c := createOrGetClusterWithState(ctx, tcx, "STOPPED")
 		tcx.CLCExecute(ctx, "viridian", "resume-cluster", c.ID)
-		tcx.AssertStderrContains("OK")
+		tcx.AssertStdoutContains("OK")
 		check.Must(waitState(ctx, tcx, c.ID, "RUNNING"))
 	})
 }
@@ -223,8 +226,8 @@ func getCluster_NonInteractiveTest(t *testing.T) {
 	viridianTester(t, func(ctx context.Context, tcx it.TestContext) {
 		c := createOrGetClusterWithState(ctx, tcx, "")
 		tcx.CLCExecute(ctx, "viridian", "get-cluster", c.ID, "--verbose", "-f", "json")
-		tcx.AssertStderrContains("OK")
-		fields := tcx.AssertJSONStdoutHasRowWithFields("ID", "Name", "State", "Hazelcast Version", "Creation Time", "Start Time", "Hot Backup Enabled", "Hot Restart Enabled", "IP Whitelist Enabled", "Regions")
+		tcx.AssertStdoutContains("Name")
+		fields := tcx.AssertJSONStdoutHasRowWithFields("ID", "Name", "State", "Hazelcast Version", "Creation Time", "Start Time", "Hot Backup Enabled", "Hot Restart Enabled", "IP Whitelist Enabled", "Regions", "Cluster Type")
 		require.Equal(t, c.ID, fields["ID"])
 		require.Equal(t, c.Name, fields["Name"])
 	})
@@ -249,7 +252,7 @@ func deleteCluster_NonInteractiveTest(t *testing.T) {
 	viridianTester(t, func(ctx context.Context, tcx it.TestContext) {
 		c := createOrGetClusterWithState(ctx, tcx, "RUNNING")
 		tcx.CLCExecute(ctx, "viridian", "delete-cluster", c.ID, "--yes")
-		tcx.AssertStderrContains("OK")
+		tcx.AssertStdoutContains("Inititated cluster deletion")
 		require.Eventually(t, func() bool {
 			_, err := tcx.Viridian.GetCluster(ctx, c.ID)
 			return err != nil
@@ -315,7 +318,7 @@ func viridianTester(t *testing.T, f func(ctx context.Context, tcx it.TestContext
 	tcx.Tester(func(tcx it.TestContext) {
 		ctx := context.Background()
 		tcx.CLCExecute(ctx, "viridian", "--api-base", "dev2", "login", "--api-key", it.ViridianAPIKey(), "--api-secret", it.ViridianAPISecret())
-		tcx.AssertStdoutContains("Viridian token was fetched and saved.")
+		tcx.AssertStdoutContains("Saved the access token")
 		tcx.WithReset(func() {
 			f(ctx, tcx)
 		})

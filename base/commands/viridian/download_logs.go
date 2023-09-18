@@ -4,58 +4,67 @@ package viridian
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"os"
+	"path/filepath"
 
-	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
-type DownloadLogsCmd struct{}
+type DownloadLogsCommand struct{}
 
-func (cm DownloadLogsCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("download-logs [cluster-ID/name] [flags]")
+func (DownloadLogsCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("download-logs")
 	long := `Downloads the logs of the given Viridian cluster for the logged in API key.
 
 Make sure you login before running this command.
 `
 	short := "Downloads the logs of the given Viridian cluster"
 	cc.SetCommandHelp(long, short)
-	cc.SetPositionalArgCount(1, 1)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
-	cc.AddStringFlag(flagOutputDir, "o", "", false, "output directory for the log files, if not given current directory is used")
+	cc.AddStringFlag(flagOutputDir, "o", ".", false, "output directory for the log files; current directory is used by default")
+	cc.AddStringArg(argClusterID, argTitleClusterID)
 	return nil
 }
 
-func (cm DownloadLogsCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (DownloadLogsCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	api, err := getAPI(ec)
 	if err != nil {
 		return err
 	}
-	clusterNameOrID := ec.Args()[0]
+	clusterNameOrID := ec.GetStringArg(argClusterID)
 	outDir := ec.Props().GetString(flagOutputDir)
-	// extract target info
+	outDir, err = filepath.Abs(outDir)
+	if err != nil {
+		return err
+	}
 	if err := validateOutputDir(outDir); err != nil {
 		return err
 	}
-	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText("Downloading cluster logs")
-		err := api.DownloadClusterLogs(ctx, outDir, clusterNameOrID)
-		if err != nil {
-			return nil, err
-		}
-		return nil, nil
-	})
+	st := stage.Stage[string]{
+		ProgressMsg: "Downloading the cluster logs",
+		SuccessMsg:  "Downloaded the cluster logs",
+		FailureMsg:  "Failed downloading the cluster logs",
+		Func: func(ctx context.Context, status stage.Statuser[string]) (string, error) {
+			return api.DownloadClusterLogs(ctx, outDir, clusterNameOrID)
+		},
+	}
+	dir, err := stage.Execute(ctx, ec, "", stage.NewFixedProvider(st))
 	if err != nil {
 		return handleErrorResponse(ec, err)
 	}
-	stop()
-	return nil
-}
-
-func init() {
-	Must(plug.Registry.RegisterCommand("viridian:download-logs", &DownloadLogsCmd{}))
+	ec.PrintlnUnnecessary("")
+	return ec.AddOutputRows(ctx, output.Row{
+		output.Column{
+			Name:  "Directory",
+			Type:  serialization.TypeString,
+			Value: dir,
+		},
+	})
 }
 
 func validateOutputDir(dir string) error {
@@ -69,5 +78,9 @@ func validateOutputDir(dir string) error {
 	if info.IsDir() {
 		return nil
 	}
-	return errors.New("output-dir is not a directory")
+	return fmt.Errorf("not a directory: %s", dir)
+}
+
+func init() {
+	check.Must(plug.Registry.RegisterCommand("viridian:download-logs", &DownloadLogsCommand{}))
 }

@@ -3,78 +3,12 @@
 package multimap
 
 import (
-	"context"
-	"fmt"
-	"time"
-
-	"github.com/hazelcast/hazelcast-go-client"
-
-	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
+	"github.com/hazelcast/hazelcast-commandline-client/base/commands"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
-type MultiMapTryLockCommand struct{}
-
-func (m MultiMapTryLockCommand) Init(cc plug.InitContext) error {
-	addKeyTypeFlag(cc)
-	cc.AddIntFlag(multiMapTTL, "", ttlUnset, false, "time-to-live (ms)")
-	long := `Try to lock a key in the given MultiMap. Directly returns the result
-
-This command is only available in the interactive mode.`
-	short := "Try to lock a key in the given MultiMap. Directly returns the result"
-	cc.SetCommandHelp(long, short)
-	cc.SetCommandUsage("try-lock [key] [flags]")
-	cc.SetPositionalArgCount(1, 1)
-	return nil
-}
-
-func (m MultiMapTryLockCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
-	mmName := ec.Props().GetString(multiMapFlagName)
-	mv, err := ec.Props().GetBlocking(multiMapPropertyName)
-	if err != nil {
-		return err
-	}
-	keyStr := ec.Args()[0]
-	ci, err := ec.ClientInternal(ctx)
-	if err != nil {
-		return err
-	}
-	keyData, err := makeKeyData(ec, ci, keyStr)
-	if err != nil {
-		return err
-	}
-	mm := mv.(*hazelcast.MultiMap)
-	lv, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Trying to lock multimap %s", mmName))
-		if ttl := GetTTL(ec); ttl != ttlUnset {
-			return mm.TryLockWithLease(ctx, keyData, time.Duration(GetTTL(ec)))
-		}
-		return mm.TryLock(ctx, keyData)
-	})
-	if err != nil {
-		return err
-	}
-	stop()
-	row := output.Row{
-		output.Column{
-			Name:  output.NameValue,
-			Type:  serialization.TypeBool,
-			Value: lv.(bool),
-		},
-	}
-	if ec.Props().GetBool(multiMapFlagShowType) {
-		row = append(row, output.Column{
-			Name:  output.NameValueType,
-			Type:  serialization.TypeString,
-			Value: serialization.TypeToLabel(serialization.TypeBool),
-		})
-	}
-	return ec.AddOutputRows(ctx, row)
-}
-
 func init() {
-	Must(plug.Registry.RegisterCommand("multi-map:try-lock", &MultiMapTryLockCommand{}, plug.OnlyInteractive{}))
+	c := commands.NewTryLockCommand("MultiMap", getMultiMap)
+	check.Must(plug.Registry.RegisterCommand("multi-map:try-lock", c, plug.OnlyInteractive{}))
 }

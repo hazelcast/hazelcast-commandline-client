@@ -5,17 +5,19 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-go-client/types"
+
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
 func GetAll(ctx context.Context, ec plug.ExecContext, typeFilter string, showHidden bool) ([]types.DistributedObjectInfo, error) {
-	ci, err := ec.ClientInternal(ctx)
-	if err != nil {
-		return nil, err
-	}
 	objs, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		ci, err := cmd.ClientInternal(ctx, ec, sp)
+		if err != nil {
+			return nil, err
+		}
 		sp.SetText("Getting distributed objects")
 		return ci.Client().GetDistributedObjectsInfo(ctx)
 	})

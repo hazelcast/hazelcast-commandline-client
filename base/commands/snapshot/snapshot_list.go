@@ -6,40 +6,41 @@ import (
 	"context"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/types"
+
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
-	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
-type ListCmd struct{}
+type ListCommand struct{}
 
-func (cm ListCmd) Init(cc plug.InitContext) error {
+func (ListCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("list")
 	help := "List snapshots"
 	cc.SetCommandHelp(help, help)
-	cc.SetPositionalArgCount(0, 0)
 	return nil
 }
 
-func (cm ListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
-	ci, err := ec.ClientInternal(ctx)
-	if err != nil {
-		return err
-	}
+func (ListCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	rows, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		ci, err := cmd.ClientInternal(ctx, ec, sp)
+		if err != nil {
+			return nil, err
+		}
 		sp.SetText("Getting the snapshot list")
 		m, err := ci.Client().GetMap(ctx, jetExportedSnapshotsMap)
 		if err != nil {
 			return nil, err
 		}
-		rows, err := listDetailRows(ctx, *m)
+		rows, err := listDetailRows(ctx, m)
 		if err != nil {
 			ec.Logger().Error(err)
-			rows, err = listRows(ctx, *m)
+			rows, err = listRows(ctx, m)
 			if err != nil {
 				return nil, err
 			}
@@ -53,11 +54,7 @@ func (cm ListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	return ec.AddOutputRows(ctx, rows.([]output.Row)...)
 }
 
-func init() {
-	check.Must(plug.Registry.RegisterCommand("snapshot:list", ListCmd{}))
-}
-
-func listDetailRows(ctx context.Context, m hazelcast.Map) ([]output.Row, error) {
+func listDetailRows(ctx context.Context, m *hazelcast.Map) ([]output.Row, error) {
 	esd, err := m.GetEntrySet(ctx)
 	if err != nil {
 		return nil, err
@@ -89,7 +86,7 @@ func listDetailRows(ctx context.Context, m hazelcast.Map) ([]output.Row, error) 
 	return rows, nil
 }
 
-func listRows(ctx context.Context, m hazelcast.Map) ([]output.Row, error) {
+func listRows(ctx context.Context, m *hazelcast.Map) ([]output.Row, error) {
 	es, err := m.GetKeySet(ctx)
 	if err != nil {
 		return nil, err
@@ -107,4 +104,8 @@ func listRows(ctx context.Context, m hazelcast.Map) ([]output.Row, error) {
 		}
 	}
 	return rows, nil
+}
+
+func init() {
+	check.Must(plug.Registry.RegisterCommand("snapshot:list", ListCommand{}))
 }

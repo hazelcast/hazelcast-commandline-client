@@ -284,7 +284,7 @@ func (m *Main) createCommands() error {
 			p, ok := m.cmds[name]
 			if !ok {
 				p = &cobra.Command{
-					Use: fmt.Sprintf("%s [command] [flags]", ps[i-1]),
+					Use: fmt.Sprintf("%s {command} [flags]", ps[i-1]),
 				}
 				p.SetUsageTemplate(usageTemplate)
 				m.cmds[name] = p
@@ -294,7 +294,7 @@ func (m *Main) createCommands() error {
 		}
 		// current command
 		cmd := &cobra.Command{
-			Use:          ps[len(ps)-1],
+			Use:          fmt.Sprintf("%s {command} [flags]", ps[len(ps)-1]),
 			SilenceUsage: true,
 		}
 		cmd.SetUsageTemplate(usageTemplate)
@@ -307,12 +307,10 @@ func (m *Main) createCommands() error {
 				return fmt.Errorf("initializing command: %w", err)
 			}
 		}
-		// add the backslash prefix for top-level commands in the interactive mode
-		if m.mode != ModeNonInteractive && parent == m.root {
-			cmd.Use = fmt.Sprintf("\\%s", cmd.Use)
-		}
 		addUniqueCommandGroup(cc, parent)
 		if !cc.TopLevel() {
+			cmd.Args = cc.ArgsFunc()
+			cmd.Use = cc.GetCommandUsage()
 			cmd.RunE = func(cmd *cobra.Command, args []string) error {
 				cfs := cmd.Flags()
 				props := m.props
@@ -334,7 +332,9 @@ func (m *Main) createCommands() error {
 				}
 				ec.SetConfigProvider(m.cp)
 				ec.SetMain(m)
-				ec.SetArgs(args)
+				if err := ec.SetArgs(args, cc.argSpecs); err != nil {
+					return err
+				}
 				ec.SetCmd(cmd)
 				ctx := context.Background()
 				t, err := parseDuration(ec.Props().GetString(clc.PropertyTimeout))
@@ -349,27 +349,12 @@ func (m *Main) createCommands() error {
 				if err := m.runAugmentors(ec, props); err != nil {
 					return err
 				}
-				// to wrap or not to wrap
-				// that's the problem
-				if _, ok := c.Item.(plug.UnwrappableCommander); ok {
-					err = c.Item.Exec(ctx, ec)
-				} else {
-					err = ec.WrapResult(func() error {
-						return c.Item.Exec(ctx, ec)
-					})
-				}
-				if err != nil {
+				if err = c.Item.Exec(ctx, ec); err != nil {
 					return err
 				}
 				if ic, ok := c.Item.(plug.InteractiveCommander); ok {
 					ec.SetMode(ModeInteractive)
-					if _, ok := c.Item.(plug.UnwrappableCommander); ok {
-						err = ic.ExecInteractive(ctx, ec)
-					} else {
-						err = ec.WrapResult(func() error {
-							return ic.ExecInteractive(ctx, ec)
-						})
-					}
+					err = ic.ExecInteractive(ctx, ec)
 					if errors.Is(err, puberrors.ErrNotAvailable) {
 						return nil
 					}
@@ -377,6 +362,10 @@ func (m *Main) createCommands() error {
 				}
 				return nil
 			}
+		}
+		// add the backslash prefix for top-level commands in the interactive mode
+		if m.mode != ModeNonInteractive && parent == m.root {
+			cmd.Use = fmt.Sprintf("\\%s", cmd.Use)
 		}
 		parent.AddCommand(cmd)
 		m.cmds[c.Name] = cmd

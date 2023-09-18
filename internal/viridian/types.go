@@ -37,8 +37,9 @@ type K8sCluster struct {
 }
 
 type ClusterType struct {
-	ID   int64  `json:"id"`
-	Name string `json:"name"`
+	ID      int64  `json:"id"`
+	Name    string `json:"name"`
+	DevMode bool   `json:"devMode"`
 }
 
 type Region struct {
@@ -48,5 +49,5 @@ type Region struct {
 type IP struct {
 	ID          int    `json:"id"`
 	IP          string `json:"ip"`
-	Description string `json:"description",omitempty`
+	Description string `json:"description,omitempty"`
 }

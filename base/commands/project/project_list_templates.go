@@ -1,3 +1,5 @@
+//go:build std || project
+
 package project
 
 import (
@@ -23,8 +25,6 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
-type ListCmd struct{}
-
 const (
 	flagRefresh          = "refresh"
 	flagLocal            = "local"
@@ -38,17 +38,18 @@ type Template struct {
 	Source string
 }
 
-func (lc ListCmd) Init(cc plug.InitContext) error {
-	cc.SetPositionalArgCount(0, 0)
-	cc.SetCommandUsage("list-templates [flags]")
-	cc.AddBoolFlag(flagRefresh, "", false, false, "fetch most recent templates from remote")
-	cc.AddBoolFlag(flagLocal, "", false, false, "list the templates which exist on local environment")
+type ListTemplatesCommand struct{}
+
+func (ListTemplatesCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("list-templates")
 	help := "Lists templates that can be used while creating projects."
 	cc.SetCommandHelp(help, help)
+	cc.AddBoolFlag(flagRefresh, "", false, false, "fetch most recent templates from remote")
+	cc.AddBoolFlag(flagLocal, "", false, false, "list the templates which exist on local environment")
 	return nil
 }
 
-func (lc ListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (ListTemplatesCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	isLocal := ec.Props().GetBool(flagLocal)
 	isRefresh := ec.Props().GetBool(flagRefresh)
 	if isLocal && isRefresh {
@@ -64,7 +65,8 @@ func (lc ListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	stop()
 	tss := ts.([]Template)
 	if len(tss) == 0 {
-		ec.PrintlnUnnecessary("No templates found")
+		ec.PrintlnUnnecessary("No templates found.")
+		return nil
 	}
 	rows := make([]output.Row, len(tss))
 	for i, t := range tss {
@@ -226,5 +228,5 @@ func listFromCache(sa *store.StoreAccessor) ([]Template, error) {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("project:list-templates", &ListCmd{}))
+	Must(plug.Registry.RegisterCommand("project:list-templates", &ListTemplatesCommand{}))
 }

@@ -1,4 +1,4 @@
-package wizard
+package config
 
 import (
 	"context"
@@ -8,45 +8,47 @@ import (
 	"sync/atomic"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/terminal"
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/pflag"
 
-	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/terminal"
+
+	"github.com/hazelcast/hazelcast-commandline-client/clc/config/wizard"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	clcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-type Provider struct {
-	fp  *atomic.Pointer[config.FileProvider]
+type WizardProvider struct {
+	fp  *atomic.Pointer[FileProvider]
 	cfg hazelcast.Config
 }
 
-func NewProvider(path string) (*Provider, error) {
-	fp, err := config.NewFileProvider(path)
+func NewWizardProvider(path string) (*WizardProvider, error) {
+	fp, err := NewFileProvider(path)
 	if err != nil {
 		return nil, err
 	}
-	var fpp atomic.Pointer[config.FileProvider]
+	var fpp atomic.Pointer[FileProvider]
 	fpp.Store(fp)
-	return &Provider{fp: &fpp}, nil
+	return &WizardProvider{fp: &fpp}, nil
 }
 
-func (p *Provider) GetString(key string) string {
+func (p *WizardProvider) GetString(key string) string {
 	return p.fp.Load().GetString(key)
 }
 
-func (p *Provider) Set(key string, value any) {
+func (p *WizardProvider) Set(key string, value any) {
 	p.fp.Load().Set(key, value)
 }
 
-func (p *Provider) All() map[string]any {
+func (p *WizardProvider) All() map[string]any {
 	return p.fp.Load().All()
 }
 
-func (p *Provider) BindFlag(name string, flag *pflag.Flag) {
+func (p *WizardProvider) BindFlag(name string, flag *pflag.Flag) {
 	p.fp.Load().BindFlag(name, flag)
 }
 
@@ -57,7 +59,7 @@ func maybeUnwrapStdout(ec plug.ExecContext) any {
 	return ec.Stdout()
 }
 
-func (p *Provider) ClientConfig(ctx context.Context, ec plug.ExecContext) (hazelcast.Config, error) {
+func (p *WizardProvider) ClientConfig(ctx context.Context, ec plug.ExecContext) (hazelcast.Config, error) {
 	cfg, err := p.fp.Load().ClientConfig(ctx, ec)
 	if err != nil {
 		if terminal.IsPipe(maybeUnwrapStdout(ec)) {
@@ -68,18 +70,22 @@ func (p *Provider) ClientConfig(ctx context.Context, ec plug.ExecContext) (hazel
 		if err != nil {
 			return hazelcast.Config{}, err
 		}
-		fp, err := config.NewFileProvider(name)
+		fp, err := NewFileProvider(name)
 		if err != nil {
 			return cfg, err
 		}
+		config, err := fp.ClientConfig(ctx, ec)
+		if err != nil {
+			return hazelcast.Config{}, err
+		}
 		p.fp.Store(fp)
-		return fp.ClientConfig(ctx, ec)
+		return config, nil
 	}
 	return cfg, nil
 }
 
-func (p *Provider) runWizard(ctx context.Context, ec plug.ExecContext) (string, error) {
-	cs, err := config.FindAll(paths.Configs())
+func (p *WizardProvider) runWizard(ctx context.Context, ec plug.ExecContext) (string, error) {
+	cs, err := FindAll(paths.Configs())
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			err = os.MkdirAll(paths.Configs(), 0700)
@@ -89,7 +95,7 @@ func (p *Provider) runWizard(ctx context.Context, ec plug.ExecContext) (string, 
 		}
 	}
 	if len(cs) == 0 {
-		m := initialModel()
+		m := wizard.InitialModel()
 		mv, err := tea.NewProgram(m).Run()
 		if err != nil {
 			return "", err
@@ -98,13 +104,14 @@ func (p *Provider) runWizard(ctx context.Context, ec plug.ExecContext) (string, 
 			return "", clcerrors.ErrNoClusterConfig
 		}
 		args := m.GetInputs()
-		_, err = config.ImportSource(ctx, ec, args[0], args[1])
+		stages := MakeImportStages(ec, args[0])
+		_, err = stage.Execute(ctx, ec, args[1], stage.NewFixedProvider(stages...))
 		if err != nil {
 			return "", err
 		}
 		return args[0], nil
 	}
-	m := initializeList(cs)
+	m := wizard.InitializeList(cs)
 	model, err := tea.NewProgram(m).Run()
 	if err != nil {
 		return "", err

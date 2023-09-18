@@ -47,7 +47,7 @@ func makeEndLineFunc() shell.EndLineFn {
 	}
 }
 
-func makeTextFunc(m *cmd.Main, ec plug.ExecContext, verbose, ignoreErrors, echo bool, sf shortcutFunc) shell.TextFn {
+func makeTextFunc(m *cmd.Main, ec plug.ExecContext, sf shortcutFunc) shell.TextFn {
 	return func(ctx context.Context, stdout io.Writer, text string) error {
 		if strings.HasPrefix(strings.TrimSpace(text), shell.CmdPrefix) {
 			parts := strings.Fields(text)
@@ -64,16 +64,13 @@ func makeTextFunc(m *cmd.Main, ec plug.ExecContext, verbose, ignoreErrors, echo 
 				return m.Execute(ctx, args...)
 			}
 		}
-		f, err := shell.ConvertStatement(ctx, ec, text, verbose)
+		f, err := shell.ConvertStatement(ctx, ec, text)
 		if err != nil {
 			if errors.Is(err, shell.ErrHelp) {
 				check.I2(fmt.Fprintln(stdout, shell.InteractiveHelp()))
 				return nil
 			}
 			return err
-		}
-		if w, ok := ec.(plug.ResultWrapper); ok {
-			return w.WrapResult(f)
 		}
 		return f()
 	}

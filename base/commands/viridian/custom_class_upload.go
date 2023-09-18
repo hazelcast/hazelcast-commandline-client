@@ -6,35 +6,41 @@ import (
 	"context"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-type CustomClassUploadCmd struct{}
+const (
+	argPath      = "path"
+	argTitlePath = "path"
+)
 
-func (cmd CustomClassUploadCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("upload-custom-class [cluster-name/cluster-ID] [file-name] [flags]")
+type CustomClassUploadCommand struct{}
+
+func (CustomClassUploadCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("upload-custom-class")
 	long := `Uploads a new Custom Class to the specified Viridian cluster.
 
 Make sure you login before running this command.
 `
 	short := "Uploads a Custom Class to the specified Viridian cluster"
 	cc.SetCommandHelp(long, short)
-	cc.SetPositionalArgCount(2, 2)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
+	cc.AddStringArg(argClusterID, argTitleClusterID)
+	cc.AddStringArg(argPath, argTitlePath)
 	return nil
 }
 
-func (cmd CustomClassUploadCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (CustomClassUploadCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	api, err := getAPI(ec)
 	if err != nil {
 		return err
 	}
-	cn := ec.Args()[0]
-	filePath := ec.Args()[1]
+	cn := ec.GetStringArg(argClusterID)
+	path := ec.GetStringArg(argPath)
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Uploading custom class")
-		err := api.UploadCustomClasses(ctx, sp.SetProgress, cn, filePath)
+		err := api.UploadCustomClasses(ctx, sp.SetProgress, cn, path)
 		if err != nil {
 			return nil, err
 		}
@@ -44,10 +50,10 @@ func (cmd CustomClassUploadCmd) Exec(ctx context.Context, ec plug.ExecContext) e
 		return handleErrorResponse(ec, err)
 	}
 	stop()
-	ec.PrintlnUnnecessary("Custom class was uploaded.")
+	ec.PrintlnUnnecessary("OK Custom class was uploaded.")
 	return nil
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("viridian:upload-custom-class", &CustomClassUploadCmd{}))
+	check.Must(plug.Registry.RegisterCommand("viridian:upload-custom-class", &CustomClassUploadCommand{}))
 }

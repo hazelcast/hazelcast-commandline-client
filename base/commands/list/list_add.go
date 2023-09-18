@@ -8,61 +8,84 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 
+	"github.com/hazelcast/hazelcast-commandline-client/base"
+	"github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
+	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
-type ListAddCommand struct{}
+type AddCommand struct{}
 
-func (mc *ListAddCommand) Init(cc plug.InitContext) error {
-	addValueTypeFlag(cc)
-	cc.SetPositionalArgCount(1, 1)
+func (AddCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("add")
 	help := "Add a value in the given list"
-	cc.AddIntFlag(listFlagIndex, "", -1, false, "index for the value")
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("add [value] [flags]")
+	commands.AddValueTypeFlag(cc)
+	cc.AddIntFlag(flagIndex, "", -1, false, "index for the value")
+	cc.AddStringArg(base.ArgValue, base.ArgTitleValue)
 	return nil
 }
 
-func (mc *ListAddCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
-	name := ec.Props().GetString(listFlagName)
-	ci, err := ec.ClientInternal(ctx)
-	if err != nil {
-		return err
-	}
-	// get the list just to ensure the corresponding proxy is created
-	if _, err := ec.Props().GetBlocking(listPropertyName); err != nil {
-		return err
-	}
-	valueStr := ec.Args()[0]
-	vd, err := makeValueData(ec, ci, valueStr)
-	if err != nil {
-		return err
-	}
-	index := ec.Props().GetInt(listFlagIndex)
-	var req *hazelcast.ClientMessage
-	if index >= 0 {
-		req = codec.EncodeListAddWithIndexRequest(name, int32(index), vd)
-	} else {
-		req = codec.EncodeListAddRequest(name, vd)
-	}
-	pid, err := stringToPartitionID(ci, name)
-	if err != nil {
-		return err
-	}
-	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Adding value at index %d into list %s", index, name))
-		return ci.InvokeOnPartition(ctx, req, pid, nil)
+func (AddCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+	name := ec.Props().GetString(base.FlagName)
+	val, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		ci, err := cmd.ClientInternal(ctx, ec, sp)
+		if err != nil {
+			return nil, err
+		}
+		// get the list just to ensure the corresponding proxy is created
+		_, err = getList(ctx, ec, sp)
+		if err != nil {
+			return nil, err
+		}
+		valueStr := ec.GetStringArg(base.ArgValue)
+		vd, err := commands.MakeValueData(ec, ci, valueStr)
+		if err != nil {
+			return nil, err
+		}
+		index := ec.Props().GetInt(flagIndex)
+		var req *hazelcast.ClientMessage
+		if index >= 0 {
+			req = codec.EncodeListAddWithIndexRequest(name, int32(index), vd)
+		} else {
+			req = codec.EncodeListAddRequest(name, vd)
+		}
+		pid, err := internal.StringToPartitionID(ci, name)
+		if err != nil {
+			return nil, err
+		}
+		sp.SetText(fmt.Sprintf("Adding value at index %d into List '%s'", index, name))
+		resp, err := ci.InvokeOnPartition(ctx, req, pid, nil)
+		if err != nil {
+			return nil, err
+		}
+		if index >= 0 {
+			return true, nil
+		} 
+		return codec.DecodeListAddResponse(resp), nil
 	})
 	if err != nil {
 		return err
 	}
 	stop()
-	return nil
+	msg := fmt.Sprintf("OK Updated List '%s'.\n", name)
+	ec.PrintlnUnnecessary(msg)
+	row := output.Row{
+		output.Column{
+			Name:  "Value Changed",
+			Type:  serialization.TypeBool,
+			Value: val,
+		},
+	}
+	return ec.AddOutputRows(ctx, row)
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("list:add", &ListAddCommand{}))
+	Must(plug.Registry.RegisterCommand("list:add", &AddCommand{}))
 }

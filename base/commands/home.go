@@ -4,18 +4,25 @@ package commands
 
 import (
 	"context"
-	"fmt"
-	"math"
 	"path/filepath"
 
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
+)
+
+const (
+	argSubPath      = "subpath"
+	argTitleSubPath = "subpath"
 )
 
 type HomeCommand struct{}
 
-func (hc HomeCommand) Init(cc plug.InitContext) error {
+func (HomeCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("home")
 	short := "Print the CLC home directory"
 	long := `Print the CLC home directory
 	
@@ -26,23 +33,25 @@ Example:
 	/home/user/.hazelcast/foo/bar
 `
 	cc.SetCommandHelp(long, short)
-	cc.SetPositionalArgCount(0, math.MaxInt)
-	cc.SetCommandUsage("home [subpath ...] [flags]")
+	cc.AddStringSliceArg(argSubPath, argTitleSubPath, 0, clc.MaxArgs)
 	return nil
 }
 
-func (hc HomeCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
-	dir := paths.Home()
-	args := ec.Args()
+func (HomeCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+	path := paths.Home()
+	args := ec.GetStringSliceArg(argSubPath)
 	if len(args) > 0 {
-		dir = filepath.Join(append([]string{dir}, args...)...)
+		path = filepath.Join(append([]string{path}, args...)...)
 	}
-	I2(fmt.Fprintln(ec.Stdout(), dir))
-	return nil
+	return ec.AddOutputRows(ctx, output.Row{
+		output.Column{
+			Name:  "Path",
+			Type:  serialization.TypeString,
+			Value: path,
+		},
+	})
 }
-
-func (HomeCommand) Unwrappable() {}
 
 func init() {
-	Must(plug.Registry.RegisterCommand("home", &HomeCommand{}))
+	check.Must(plug.Registry.RegisterCommand("home", &HomeCommand{}))
 }
