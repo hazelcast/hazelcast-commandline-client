@@ -11,66 +11,70 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-type TerminateCmd struct {
+type TerminateCommand struct {
 	name               string
 	longHelp           string
 	shortHelp          string
 	terminateMode      int32
 	terminateModeForce int32
-	msg                string
+	inProgressMsg      string
+	successMsg         string
+	failureMsg         string
 	waitState          int32
 }
 
-func (cm TerminateCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage(fmt.Sprintf("%s [job-ID/name]", cm.name))
+func (cm TerminateCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage(cm.name)
 	cc.SetCommandHelp(cm.longHelp, cm.shortHelp)
-	cc.SetPositionalArgCount(1, 1)
 	cc.AddBoolFlag(flagForce, "", false, false, fmt.Sprintf("force %s the job", cm.name))
 	cc.AddBoolFlag(flagWait, "", false, false, "wait for the operation to finish")
+	cc.AddStringArg(argJobID, argTitleJobID)
 	return nil
 }
 
-func (cm TerminateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
-	// just preloading the client
-	if _, err := ec.ClientInternal(ctx); err != nil {
-		return err
-	}
+func (cm TerminateCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	tm := cm.terminateMode
 	if ec.Props().GetBool(flagForce) {
 		tm = cm.terminateModeForce
 	}
-	if err := terminateJob(ctx, ec, cm.name, tm, cm.msg, cm.waitState); err != nil {
+	if err := terminateJob(ctx, ec, tm, cm); err != nil {
 		return err
 	}
 	return nil
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("job:cancel", &TerminateCmd{
+	Must(plug.Registry.RegisterCommand("job:cancel", &TerminateCommand{
 		name:               "cancel",
-		longHelp:           "Cancels the job with the given ID or name.",
+		longHelp:           "Cancels the job with the given ID or name",
 		shortHelp:          "Cancels the job with the given ID or name",
 		terminateMode:      jet.TerminateModeCancelGraceful,
 		terminateModeForce: jet.TerminateModeCancelForceful,
-		msg:                "Cancelling the job",
 		waitState:          jet.JobStatusFailed,
+		inProgressMsg:      "Starting to cancel '%s'",
+		successMsg:         "Started cancellation of '%s'",
+		failureMsg:         "Failed to start job cancellation",
 	}))
-	Must(plug.Registry.RegisterCommand("job:suspend", &TerminateCmd{
+	Must(plug.Registry.RegisterCommand("job:suspend", &TerminateCommand{
 		name:               "suspend",
-		longHelp:           "Suspends the job with the given ID or name.",
+		longHelp:           "Suspends the job with the given ID or name",
 		shortHelp:          "Suspends the job with the given ID or name",
 		terminateMode:      jet.TerminateModeSuspendGraceful,
 		terminateModeForce: jet.TerminateModeSuspendForceful,
-		msg:                "Suspending the job",
 		waitState:          jet.JobStatusSuspended,
+		inProgressMsg:      "Starting to suspend '%s'",
+		successMsg:         "Started suspension of '%s'",
+		failureMsg:         "Failed to start job suspension",
 	}))
-	Must(plug.Registry.RegisterCommand("job:restart", &TerminateCmd{
+	Must(plug.Registry.RegisterCommand("job:restart", &TerminateCommand{
 		name:               "restart",
-		longHelp:           "Restarts the job with the given ID or name.",
+		longHelp:           "Restarts the job with the given ID or name",
 		shortHelp:          "Restarts the job with the given ID or name",
 		terminateMode:      jet.TerminateModeRestartGraceful,
 		terminateModeForce: jet.TerminateModeRestartForceful,
-		msg:                "Restarting the job",
 		waitState:          jet.JobStatusRunning,
+		inProgressMsg:      "Initiating the restart of '%s'",
+		successMsg:         "Initiated the restart of '%s'",
+		failureMsg:         "Failed to initiate job restart",
 	}))
 }

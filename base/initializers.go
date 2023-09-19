@@ -33,7 +33,6 @@ func (g GlobalInitializer) Init(cc plug.InitContext) error {
 	cc.AddStringConfig(clc.PropertyClusterName, "dev", "", "cluster name")
 	cc.AddStringConfig(clc.PropertyLogPath, "", clc.PropertyLogPath, "log path")
 	cc.AddStringConfig(clc.PropertyLogLevel, "", clc.PropertyLogLevel, "log level")
-	cc.AddStringConfig(clc.PropertySchemaDir, "", clc.PropertySchemaDir, "schema directory")
 	cc.AddStringConfig(clc.PropertyClusterDiscoveryToken, "", "", "Viridian token")
 	return nil
 }

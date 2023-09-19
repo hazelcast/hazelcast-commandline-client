@@ -53,7 +53,7 @@ include::partial$global-parameters.adoc[]
 |Manage Jet job snapshots.
 
 |xref:clc-viridian.adoc[clc viridian]
-|Viridian related operations.
+|{hazelcast-cloud} related operations.
 
 |xref:clc-object.adoc[clc object]
 |Commands for generic distributed data structures.

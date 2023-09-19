@@ -5,56 +5,33 @@ package list
 import (
 	"context"
 	"errors"
-	"fmt"
-	"strconv"
+	"math"
 
-	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/base"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
 )
 
 type ListRemoveIndexCommand struct{}
 
 func (mc *ListRemoveIndexCommand) Init(cc plug.InitContext) error {
-	cc.SetPositionalArgCount(1, 1)
+	cc.SetCommandUsage("remove-index")
 	help := "Remove the value at the given index in the list"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("remove-index [index] [flags]")
+	cc.AddInt64Arg(argIndex, argTitleIndex)
 	return nil
 }
 
 func (mc *ListRemoveIndexCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
-	name := ec.Props().GetString(listFlagName)
-	ci, err := ec.ClientInternal(ctx)
-	if err != nil {
-		return err
-	}
-	// get the list just to ensure the corresponding proxy is created
-	if _, err := ec.Props().GetBlocking(listPropertyName); err != nil {
-		return err
-	}
-	index, err := strconv.Atoi(ec.Args()[0])
-	if err != nil {
-		return err
-	}
+	name := ec.Props().GetString(base.FlagName)
+	index := ec.GetInt64Arg(argIndex)
 	if index < 0 {
-		return errors.New("index cannot be smaller than 0")
+		return errors.New("index must be non-negative")
 	}
-	pid, err := stringToPartitionID(ci, name)
-	if err != nil {
-		return err
+	if index > math.MaxInt32 {
+		return errors.New("index must fit into a 32bit unsigned integer")
 	}
-	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Removing value from the list %s", name))
-		req := codec.EncodeListRemoveWithIndexRequest(name, int32(index))
-		return ci.InvokeOnPartition(ctx, req, pid, nil)
-	})
-	if err != nil {
-		return err
-	}
-	stop()
-	return nil
+	return removeFromList(ctx, ec, name, int32(index), "")
 }
 
 func init() {

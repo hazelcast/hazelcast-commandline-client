@@ -83,7 +83,7 @@ func (m model) View() string {
 	return m.list.View()
 }
 
-func initializeList(dirs []string) model {
+func InitializeList(dirs []string) model {
 	var items []list.Item
 	for _, k := range dirs {
 		items = append(items, item(k))

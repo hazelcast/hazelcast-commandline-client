@@ -29,7 +29,7 @@ func (pp *DownloadProgressPrinter) Print() {
 	pp.SetterFunc(p)
 }
 
-func doCustomClassDownload(ctx context.Context, progressSetter func(progress float32), t TargetInfo, url, className string, api API) error {
+func doCustomClassDownload(ctx context.Context, progressSetter func(progress float32), t TargetInfo, url, className, token string) error {
 	fn, err := t.fileToBeCreated(className)
 	if err != nil {
 		return err
@@ -39,13 +39,13 @@ func doCustomClassDownload(ctx context.Context, progressSetter func(progress flo
 		return err
 	}
 	defer f.Close()
-	req, err := http.NewRequest(http.MethodGet, makeUrl(url), nil)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return fmt.Errorf("creating request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	if api.Token != "" {
-		req.Header.Set("Authorization", "Bearer "+api.Token)
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
 	}
 	req = req.WithContext(ctx)
 	res, err := http.DefaultClient.Do(req)

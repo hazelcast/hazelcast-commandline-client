@@ -2,6 +2,7 @@ package config
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -13,12 +14,14 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"golang.org/x/exp/slices"
 
+	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/types"
+
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/str"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
 const (
@@ -26,7 +29,56 @@ const (
 	envClientLabels = "CLC_CLIENT_LABELS"
 )
 
-func Create(path string, opts clc.KeyValues[string, string]) (dir, cfgPath string, err error) {
+func Create(path string, opts types.KeyValues[string, string]) (dir, cfgPath string, err error) {
+	return createFile(path, func(cfgPath string) (string, []byte, error) {
+		text := CreateYAML(opts)
+		return cfgPath, []byte(text), nil
+	})
+}
+
+func CreateJSON(path string, opts map[string]any) (dir, cfgPath string, err error) {
+	return createFile(path, func(cfgPath string) (string, []byte, error) {
+		cfgPath = paths.ReplaceExt(cfgPath, ".json")
+		b, err := json.MarshalIndent(opts, "", "  ")
+		if err != nil {
+			return "", nil, err
+		}
+		return cfgPath, b, nil
+	})
+}
+
+func ConvertKeyValuesToMap(kvs types.KeyValues[string, string]) map[string]any {
+	m := map[string]any{}
+	for _, kv := range kvs {
+		mp := m
+		ps := strings.Split(kv.Key, ".")
+		var i int
+		var p string
+		for i, p = range ps {
+			if i >= len(ps)-1 {
+				// this is the leaf
+				break
+			}
+			v, ok := mp[p]
+			if ok {
+				// found the sub, set the map pointer
+				mp = v.(map[string]any)
+			} else {
+				// sub doesn't exist, create it
+				mm := map[string]any{}
+				mp[p] = mm
+				// set the map pointer
+				mp = mm
+			}
+		}
+		if p != "" {
+			mp[p] = kv.Value
+		}
+	}
+	return m
+}
+
+func createFile(path string, f func(string) (string, []byte, error)) (dir, cfgPath string, err error) {
 	dir, cfgPath, err = DirAndFile(path)
 	if err != nil {
 		return "", "", err
@@ -34,9 +86,12 @@ func Create(path string, opts clc.KeyValues[string, string]) (dir, cfgPath strin
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		return "", "", err
 	}
-	text := CreateYAML(opts)
+	cfgPath, b, err := f(cfgPath)
+	if err != nil {
+		return "", "", err
+	}
 	path = filepath.Join(dir, cfgPath)
-	if err := os.WriteFile(path, []byte(text), 0600); err != nil {
+	if err := os.WriteFile(path, b, 0600); err != nil {
 		return "", "", err
 	}
 	return dir, cfgPath, nil
@@ -56,10 +111,6 @@ func MakeHzConfig(props plug.ReadOnlyProperties, lg log.Logger) (hazelcast.Confi
 	if cn := props.GetString(clc.PropertyClusterName); cn != "" {
 		lg.Debugf("Cluster name: %s", cn)
 		cfg.Cluster.Name = cn
-	}
-	sd := props.GetString(clc.PropertySchemaDir)
-	if sd == "" {
-		sd = paths.Join(paths.Home(), "schemas")
 	}
 	var viridianEnabled bool
 	if vt := props.GetString(clc.PropertyClusterDiscoveryToken); vt != "" {
@@ -112,12 +163,12 @@ func MakeHzConfig(props plug.ReadOnlyProperties, lg log.Logger) (hazelcast.Confi
 			}
 		}
 	}
-	apiBase := props.GetString(clc.PropertyExperimentalAPIBase)
+	apiBase := props.GetString(clc.PropertyClusterAPIBase)
 	if apiBase != "" {
-		if err := os.Setenv(viridian.EnvAPIBaseURL, apiBase); err != nil {
-			lg.Error(fmt.Errorf("setting environment variable: %s: %w", viridian.EnvAPIBaseURL, err))
-		}
+		lg.Debugf("Viridan API Base: %s", apiBase)
+		cfg.Cluster.Cloud.ExperimentalAPIBaseURL = apiBase
 	}
+	cfg.Serialization.SetIdentifiedDataSerializableFactories(serialization.SnapshotFactory{})
 	cfg.Labels = makeClientLabels()
 	cfg.ClientName = makeClientName()
 	usr := props.GetString(clc.PropertyClusterUser)
@@ -199,23 +250,23 @@ func DirAndFile(path string) (string, string, error) {
 	return strings.TrimSuffix(d, "/"), f, nil
 }
 
-func CreateYAML(opts clc.KeyValues[string, string]) string {
+func CreateYAML(opts types.KeyValues[string, string]) string {
 	// TODO: refactor this function to be more robust, probably using Viper
 	sb := &strings.Builder{}
 	copySection("", 0, sb, opts)
 	return sb.String()
 }
 
-func copySection(name string, level int, sb *strings.Builder, opts clc.KeyValues[string, string]) {
-	slices.SortFunc(opts, func(a, b clc.KeyValue[string, string]) bool {
+func copySection(name string, level int, sb *strings.Builder, opts types.KeyValues[string, string]) {
+	slices.SortFunc(opts, func(a, b types.KeyValue[string, string]) bool {
 		return a.Key < b.Key
 	})
 	if len(opts) == 0 {
 		return
 	}
-	var leaves clc.KeyValues[string, string]
-	var sect clc.KeyValues[string, string]
-	sub := map[string]clc.KeyValues[string, string]{}
+	var leaves types.KeyValues[string, string]
+	var sect types.KeyValues[string, string]
+	sub := map[string]types.KeyValues[string, string]{}
 	for _, opt := range opts {
 		idx := strings.Index(opt.Key, ".")
 		if idx < 0 {
@@ -247,17 +298,17 @@ func copySection(name string, level int, sb *strings.Builder, opts clc.KeyValues
 	for _, opt := range sect {
 		copyOpt(level, sb, opt)
 	}
-	subSlice := make([]clc.KeyValue[string, clc.KeyValues[string, string]], 0, len(sub))
+	subSlice := make([]types.KeyValue[string, types.KeyValues[string, string]], 0, len(sub))
 	for k, v := range sub {
-		slices.SortFunc(v, func(a, b clc.KeyValue[string, string]) bool {
+		slices.SortFunc(v, func(a, b types.KeyValue[string, string]) bool {
 			return a.Key < b.Key
 		})
-		subSlice = append(subSlice, clc.KeyValue[string, clc.KeyValues[string, string]]{
+		subSlice = append(subSlice, types.KeyValue[string, types.KeyValues[string, string]]{
 			Key:   k,
 			Value: v,
 		})
 	}
-	slices.SortFunc(subSlice, func(a, b clc.KeyValue[string, clc.KeyValues[string, string]]) bool {
+	slices.SortFunc(subSlice, func(a, b types.KeyValue[string, types.KeyValues[string, string]]) bool {
 		return a.Key < b.Key
 	})
 	for _, ss := range subSlice {
@@ -265,7 +316,7 @@ func copySection(name string, level int, sb *strings.Builder, opts clc.KeyValues
 	}
 }
 
-func copyOpt(level int, sb *strings.Builder, opt clc.KeyValue[string, string]) {
+func copyOpt(level int, sb *strings.Builder, opt types.KeyValue[string, string]) {
 	sb.WriteString(strings.Repeat(" ", level*2))
 	sb.WriteString(opt.Key)
 	sb.WriteString(": ")

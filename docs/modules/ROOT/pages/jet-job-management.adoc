@@ -1,5 +1,5 @@
 = Get Started With Hazelcast Jet Job Management
-:description: In this tutorial, you'll learn the basics of how to manage stream-processing pipelines using the Hazelcast CLC with Hazelcast {hazelcast-cloud}. You'll see how to connect to a {hazelcast-cloud} cluster and submit a sample Jet job that generates a stream of numbers. You'll also learn how to use simple commands to monitor and cancel jobs.
+:description: In this tutorial, you'll learn the basics of how to manage stream processing pipelines using the Hazelcast CLC with Hazelcast {hazelcast-cloud}. You'll see how to connect to a cluster on {hazelcast-cloud}, and submit a sample Jet job that generates a stream of numbers. You'll also learn how to use simple commands to monitor and cancel jobs.
 
 {description}
 
@@ -8,17 +8,17 @@
 You need the following:
 
 - xref:install-clc.adoc[Hazelcast CLC] installed on your local machine
-- One running Hazelcast {hazelcast-cloud} cluster. You can create a xref:managing-viridian-clusters.adoc#creating-a-cluster-on-viridian[{hazelcast-cloud} development cluster] using the Hazelcast CLC.
+- One running {hazelcast-cloud} cluster. You can create a xref:managing-viridian-clusters.adoc#creating-a-cluster-on-viridian[development cluster] using the Hazelcast CLC.
 - xref:cloud:ROOT:developer.adoc[{hazelcast-cloud} API key and secret]
 - JRE 8 or above.
 - Gradle 8 or above.
 
 [[step-1-authenticating-with-viridian]]
-== Step 1. Authenticating with Viridian
+== Step 1. Authenticating with {hazelcast-cloud}
 
 To allow the Hazelcast CLC to perform cluster operations, including submitting Jet jobs, you must generate a {hazelcast-cloud} token.
 
-. Execute the following command to retrieve the {hazelcast-cloud} token.
+. Execute the following command to retrieve the token.
 +
 [source,shell]
 ----
@@ -37,7 +37,7 @@ Next, check that the Hazelcast CLC can access your cluster by running the follow
 clc viridian list-clusters
 ----
 
-The details of all clusters linked to your Hazelcast {hazelcast-cloud} account are returned, including the Cluster ID, Cluster Name, Current Status, Hazelcast Version.
+The details of all clusters linked to your {hazelcast-cloud} account are returned, including the Cluster ID, Cluster Name, Current Status, Hazelcast Version.
 
 [[step-3-dev-configure]]
 == Step 3. Connect to Your Cluster
@@ -182,7 +182,7 @@ clc -c dev job cancel simple-pipeline
 
 In this tutorial, you learned how to do the following:
 
-* Connect to a Hazelcast cluster.
+* Connect to a cluster on {hazelcast-cloud}.
 * Build and submit a Hazelcast Jet job to create a data pipeline.
 * Manage the lifecycle of a Jet job using list and cancel commands.
 

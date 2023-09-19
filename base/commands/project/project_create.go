@@ -6,116 +6,115 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
-	"math"
 	"os"
 	"path/filepath"
-	"reflect"
 	"regexp"
 	"strings"
 
+	"github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/mk"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	iserialization "github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
-var regexpValidKey = regexp.MustCompile(`^[[:alnum:]]+$`)
+const (
+	argTemplateName      = "templateName"
+	argTitleTemplateName = "template name"
+	argPlaceholder       = "placeholder"
+	argTitlePlaceholder  = "placeholder"
+)
 
-type CreateCmd struct{}
+var regexpValidKey = regexp.MustCompile(`^[a-z0-9_]+$`)
 
-func (pc CreateCmd) Init(cc plug.InitContext) error {
-	cc.SetPositionalArgCount(2, math.MaxInt)
-	cc.SetCommandUsage("create [template-name] [output-dir] [placeholder-values] [flags]")
-	short := "(Beta) Create project from the given template"
-	long := fmt.Sprintf(`(Beta) Create project from the given template.
-	
-Templates are located in %s.
-You can override it by using CLC_EXPERIMENTAL_TEMPLATE_SOURCE environment variable.
+type CreateCommand struct{}
 
-Rules while creating your own templates:
-
-	* Templates are in Go template format.
-	  See: https://pkg.go.dev/text/template
-	* You can create a "defaults.yaml" file for default values in template's root directory.
-	* Template files must have the ".template" extension.
-	* Files with "." and "_" prefixes are ignored unless they have the ".keep" extension.
-	* All files with ".keep" extension are copied by stripping the ".keep" extension.
-	* Other files are copied verbatim.
-
-Properties are read from the following resources in order:
-
-	1. defaults.yaml (keys cannot contain punctuation)
-	2. config.yaml
-	3. User passed key-values in the "KEY=VALUE" format. The keys can only contain letters and numbers.
-
-You can use the placeholders in "defaults.yaml" and the following configuration item placeholders:
-
-	* ClusterName
-	* ClusterAddress
-	* ClusterUser
-	* ClusterPassword
-	* ClusterDiscoveryToken
-	* SslEnabled
-	* SslServer
-	* SslSkipVerify
-	* SslCaPath
-	* SslKeyPath
-	* SslKeyPassword
-	* LogPath
-	* LogLevel
-
-Example (Linux and MacOS):
-
-$ clc project create \
-	simple-streaming-pipeline\
-	my-project\
-	MyKey1=MyValue1 MyKey2=MyValue2
-
-Example (Windows):
-
-> clc project create^
-	simple-streaming-pipeline^
-	my-project^
-	MyKey1=MyValue1 MyKey2=MyValue2
-`, hzTemplatesOrganization)
+func (pc CreateCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("create")
+	short := "Create project from the given template (BETA)"
+	long := longHelp()
 	cc.SetCommandHelp(long, short)
+	cc.AddStringFlag(commands.FlagOutputDir, "o", "", false, "the directory to create the project at")
+	cc.AddStringArg(argTemplateName, argTitleTemplateName)
+	cc.AddKeyValueSliceArg(argPlaceholder, argTitlePlaceholder, 0, clc.MaxArgs)
 	return nil
 }
 
-func (pc CreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
-	templateName := ec.Args()[0]
-	outputDir := ec.Args()[1]
+func (pc CreateCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+	templateName := ec.GetStringArg(argTemplateName)
+	outputDir := ec.Props().GetString(commands.FlagOutputDir)
+	if outputDir == "" {
+		outputDir = templateName
+	}
+	var stages []stage.Stage[any]
 	templatesDir := paths.Templates()
 	templateExists := paths.Exists(filepath.Join(templatesDir, templateName))
-	if !templateExists {
-		ec.Logger().Debug(func() string {
-			return fmt.Sprintf("template %s does not exist, cloning it into %s", templateName, templatesDir)
+	if templateExists {
+		stages = append(stages, stage.Stage[any]{
+			ProgressMsg: "Updating the template",
+			SuccessMsg:  fmt.Sprintf("Updated template '%s'", templateName),
+			FailureMsg:  "Failed updating the template",
+			Func: func(ctx context.Context, status stage.Statuser[any]) (any, error) {
+				err := updateTemplate(ctx, templatesDir, templateName)
+				if err != nil {
+					ec.Logger().Error(err)
+					return nil, stage.IgnoreError(err)
+				}
+				return nil, nil
+			},
 		})
-		err := cloneTemplate(templatesDir, templateName)
-		if err != nil {
-			ec.Logger().Error(err)
-			return err
-		}
+	} else {
+		stages = append(stages, stage.Stage[any]{
+			ProgressMsg: "Retrieving the template",
+			SuccessMsg:  fmt.Sprintf("Retrieved template '%s'", templateName),
+			FailureMsg:  "Failed retrieving the template",
+			Func: func(ctx context.Context, status stage.Statuser[any]) (any, error) {
+				ec.Logger().Debug(func() string {
+					return fmt.Sprintf("template %s does not exist, cloning it into %s", templateName, templatesDir)
+				})
+				err := cloneTemplate(ctx, templatesDir, templateName)
+				if err != nil {
+					ec.Logger().Error(err)
+					return nil, err
+				}
+				return nil, nil
+			},
+		})
 	}
-	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("Creating project from template %s", templateName))
-		return nil, createProject(ec, outputDir, templateName)
+	stages = append(stages, stage.Stage[any]{
+		ProgressMsg: "Creating the project",
+		SuccessMsg:  "Created the project",
+		FailureMsg:  "Failed creating the project",
+		Func: func(ctx context.Context, status stage.Statuser[any]) (any, error) {
+			return nil, createProject(ec, outputDir, templateName)
+		},
 	})
-	stop()
+	_, err := stage.Execute[any](ctx, ec, nil, stage.NewFixedProvider(stages...))
 	if err != nil {
 		return err
 	}
-	return nil
+	ec.PrintlnUnnecessary("")
+	return ec.AddOutputRows(ctx, output.Row{
+		output.Column{
+			Name:  "Path",
+			Type:  iserialization.TypeString,
+			Value: outputDir,
+		},
+	})
 }
 
 func createProject(ec plug.ExecContext, outputDir, templateName string) error {
 	sourceDir := paths.ResolveTemplatePath(templateName)
-	vars, err := loadVars(ec, sourceDir)
+	vs, err := loadValues(ec, sourceDir)
 	if err != nil {
 		return err
 	}
 	ec.Logger().Debug(func() string {
-		return fmt.Sprintf("available placeholders: %+v", reflect.ValueOf(vars).MapKeys())
+		return fmt.Sprintf("available placeholders: %+v", mk.KeysOf(vs))
 	})
 	err = filepath.WalkDir(sourceDir, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
@@ -137,7 +136,7 @@ func createProject(ec plug.ExecContext, outputDir, templateName string) error {
 				return nil
 			}
 			if hasTemplateExt(entry) {
-				err = applyTemplateAndCopyToTarget(vars, path, target)
+				err = applyTemplateAndCopyToTarget(vs, path, target)
 				if err != nil {
 					return err
 				}
@@ -158,17 +157,16 @@ func createProject(ec plug.ExecContext, outputDir, templateName string) error {
 	return nil
 }
 
-func loadVars(ec plug.ExecContext, sourceDir string) (map[string]string, error) {
-	vars, err := loadFromDefaults(sourceDir)
+func loadValues(ec plug.ExecContext, sourceDir string) (map[string]string, error) {
+	vs, err := loadFromDefaults(sourceDir)
 	if err != nil {
 		return nil, err
 	}
-	loadFromProps(ec, vars)
-	err = updatePropsWithUserInput(ec, vars)
-	if err != nil {
+	loadFromProps(ec, vs)
+	if err = updatePropsWithUserValues(ec, vs); err != nil {
 		return nil, err
 	}
-	return vars, nil
+	return vs, nil
 }
 
 func isSkip(d fs.DirEntry) bool {
@@ -195,5 +193,5 @@ func isDefaultPropertiesFile(d fs.DirEntry) bool {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("project:create", &CreateCmd{}))
+	Must(plug.Registry.RegisterCommand("project:create", &CreateCommand{}))
 }

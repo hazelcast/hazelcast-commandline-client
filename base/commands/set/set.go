@@ -4,71 +4,31 @@ package set
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/hazelcast/hazelcast-go-client"
-
+	"github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-const (
-	setFlagName     = "name"
-	setFlagShowType = "show-type"
-	setPropertyName = "set"
-)
+type Command struct{}
 
-type SetCommand struct{}
-
-func (sc *SetCommand) Init(cc plug.InitContext) error {
+func (Command) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("set")
 	cc.AddCommandGroup(clc.GroupDDSID, clc.GroupDDSTitle)
 	cc.SetCommandGroup(clc.GroupDDSID)
-	cc.AddStringFlag(setFlagName, "n", defaultSetName, false, "set name")
-	cc.AddBoolFlag(setFlagShowType, "", false, false, "add the type names to the output")
-	if !cc.Interactive() {
-		cc.AddStringFlag(clc.PropertySchemaDir, "", paths.Schemas(), false, "set the schema directory")
-	}
 	cc.SetTopLevel(true)
-	cc.SetCommandUsage("set [command] [flags]")
 	help := "Set operations"
 	cc.SetCommandHelp(help, help)
+	cc.AddStringFlag(base.FlagName, "n", base.DefaultName, false, "set name")
+	cc.AddBoolFlag(base.FlagShowType, "", false, false, "add the type names to the output")
 	return nil
 }
 
-func (sc *SetCommand) Exec(context.Context, plug.ExecContext) error {
-	return nil
-}
-
-func (sc *SetCommand) Augment(ec plug.ExecContext, props *plug.Properties) error {
-	ctx := context.TODO()
-	props.SetBlocking(setPropertyName, func() (any, error) {
-		name := ec.Props().GetString(setFlagName)
-		// empty set name is allowed
-		ci, err := ec.ClientInternal(ctx)
-		if err != nil {
-			return nil, err
-		}
-		val, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-			sp.SetText(fmt.Sprintf("Getting set %s", name))
-			q, err := ci.Client().GetSet(ctx, name)
-			if err != nil {
-				return nil, err
-			}
-			return q, nil
-		})
-		if err != nil {
-			return nil, err
-		}
-		stop()
-		return val.(*hazelcast.Set), nil
-	})
+func (Command) Exec(context.Context, plug.ExecContext) error {
 	return nil
 }
 
 func init() {
-	cmd := &SetCommand{}
-	check.Must(plug.Registry.RegisterCommand("set", cmd))
-	plug.Registry.RegisterAugmentor("20-set", cmd)
+	check.Must(plug.Registry.RegisterCommand("set", &Command{}))
 }
