@@ -11,8 +11,10 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
@@ -382,6 +384,7 @@ func (m *Main) ensureClient(ctx context.Context, cfg hazelcast.Config) error {
 	if m.ci.Load() != nil {
 		return nil
 	}
+	cfg.Cluster.InvocationTimeout = types.Duration(10 * time.Minute)
 	c, err := hazelcast.StartNewClientWithConfig(ctx, cfg)
 	if err != nil {
 		return err

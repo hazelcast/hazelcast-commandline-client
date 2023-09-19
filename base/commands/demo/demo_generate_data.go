@@ -133,7 +133,7 @@ func generateResult(ctx context.Context, ec plug.ExecContext, generator dataStre
 		errCh := make(chan error)
 		itemCh, stopStream := generator.Stream(ctx)
 		defer stopStream()
-		ci, err := ec.ClientInternal(ctx)
+		ci, err := cmd.ClientInternal(ctx, ec, sp)
 		if err != nil {
 			return 0, err
 		}
