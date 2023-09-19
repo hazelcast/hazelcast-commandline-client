@@ -52,55 +52,55 @@ func NewStartStages(logger log.Logger, updateTopic *hazelcast.Topic, migrationID
 	}
 }
 
-func (st *StartStages) Build(ctx context.Context, ec plug.ExecContext) []stage.Stage {
-	return []stage.Stage{
+func (st *StartStages) Build(ctx context.Context, ec plug.ExecContext) []stage.Stage[any] {
+	return []stage.Stage[any]{
 		{
 			ProgressMsg: "Connecting to the migration cluster",
 			SuccessMsg:  "Connected to the migration cluster",
 			FailureMsg:  "Could not connect to the migration cluster",
-			Func:        st.connectStage(ctx, ec),
+			Func:        st.connectStage(ec),
 		},
 		{
 			ProgressMsg: "Starting the migration",
 			SuccessMsg:  "Started the migration",
 			FailureMsg:  "Could not start the migration",
-			Func:        st.startStage(ctx, ec),
+			Func:        st.startStage(ec),
 		},
 		{
 			ProgressMsg: "Migrating the cluster",
 			SuccessMsg:  "Migrated the cluster",
 			FailureMsg:  "Could not migrate the cluster",
-			Func:        st.migrateStage(ctx, ec),
+			Func:        st.migrateStage(ec),
 		},
 	}
 }
 
-func (st *StartStages) connectStage(ctx context.Context, ec plug.ExecContext) func(stage.Statuser) error {
-	return func(status stage.Statuser) error {
+func (st *StartStages) connectStage(ec plug.ExecContext) func(context.Context, stage.Statuser[any]) (any, error) {
+	return func(ctx context.Context, status stage.Statuser[any]) (any, error) {
 		var err error
 		st.ci, err = ec.ClientInternal(ctx)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		st.startQueue, err = st.ci.Client().GetQueue(ctx, StartQueueName)
 		if err != nil {
-			return fmt.Errorf("retrieving the start Queue: %w", err)
+			return nil, fmt.Errorf("retrieving the start Queue: %w", err)
 		}
 		st.statusMap, err = st.ci.Client().GetMap(ctx, MakeStatusMapName(st.migrationID))
 		if err != nil {
-			return fmt.Errorf("retrieving the status Map: %w", err)
+			return nil, fmt.Errorf("retrieving the status Map: %w", err)
 		}
 		st.updateTopic, err = st.ci.Client().GetTopic(ctx, MakeUpdateTopicName(st.migrationID))
 		if err != nil {
-			return fmt.Errorf("retrieving the update Topic: %w", err)
+			return nil, fmt.Errorf("retrieving the update Topic: %w", err)
 		}
 		st.updateMsgChan = make(chan UpdateMessage)
 		st.topicListenerID, err = st.updateTopic.AddMessageListener(ctx, st.topicListener)
 		if err != nil {
-			return fmt.Errorf("adding message listener to update Topic: %w", err)
+			return nil, fmt.Errorf("adding message listener to update Topic: %w", err)
 
 		}
-		return nil
+		return nil, nil
 	}
 }
 
@@ -113,21 +113,21 @@ func (st *StartStages) topicListener(event *hazelcast.MessagePublished) {
 	st.updateMsgChan <- u
 }
 
-func (st *StartStages) startStage(ctx context.Context, ec plug.ExecContext) func(stage.Statuser) error {
-	return func(status stage.Statuser) error {
+func (st *StartStages) startStage(ec plug.ExecContext) func(context.Context, stage.Statuser[any]) (any, error) {
+	return func(ctx context.Context, status stage.Statuser[any]) (any, error) {
 		cb, err := makeConfigBundle(st.configDir, st.migrationID)
 		if err != nil {
-			return fmt.Errorf("making configuration bundle: %w", err)
+			return nil, fmt.Errorf("making configuration bundle: %w", err)
 		}
 		if err = st.startQueue.Put(ctx, cb); err != nil {
-			return fmt.Errorf("updating start Queue: %w", err)
+			return nil, fmt.Errorf("updating start Queue: %w", err)
 		}
 		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
 		if isTerminal, err := st.handleUpdateMessage(ctx, ec, <-st.updateMsgChan, status); isTerminal {
-			return err
+			return nil, err
 		}
-		return nil
+		return nil, nil
 	}
 }
 
@@ -144,27 +144,27 @@ func makeConfigBundle(configDir, migrationID string) (serialization.JSON, error)
 	return b, nil
 }
 
-func (st *StartStages) migrateStage(ctx context.Context, ec plug.ExecContext) func(statuser stage.Statuser) error {
-	return func(status stage.Statuser) error {
+func (st *StartStages) migrateStage(ec plug.ExecContext) func(context.Context, stage.Statuser[any]) (any, error) {
+	return func(ctx context.Context, status stage.Statuser[any]) (any, error) {
 		for {
 			select {
 			case msg := <-st.updateMsgChan:
 				if isTerminal, err := st.handleUpdateMessage(ctx, ec, msg, status); isTerminal {
-					return err
+					return nil, err
 				}
 			case <-ctx.Done():
 				if err := ctx.Err(); err != nil {
 					if errors.Is(err, context.DeadlineExceeded) {
-						return timeoutErr
+						return nil, timeoutErr
 					}
-					return fmt.Errorf("migration failed: %w", err)
+					return nil, fmt.Errorf("migration failed: %w", err)
 				}
 			}
 		}
 	}
 }
 
-func (st *StartStages) handleUpdateMessage(ctx context.Context, ec plug.ExecContext, msg UpdateMessage, status stage.Statuser) (bool, error) {
+func (st *StartStages) handleUpdateMessage(ctx context.Context, ec plug.ExecContext, msg UpdateMessage, status stage.Statuser[any]) (bool, error) {
 	status.SetProgress(msg.CompletionPercentage)
 	ec.PrintlnUnnecessary(msg.Message)
 	if slices.Contains([]Status{StatusComplete, StatusFailed, StatusCanceled}, msg.Status) {

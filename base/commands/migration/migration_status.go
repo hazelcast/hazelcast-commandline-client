@@ -19,7 +19,6 @@ func (s StatusCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandGroup("migration")
 	help := "Get status of the data migration in progress"
 	cc.SetCommandHelp(help, help)
-	cc.SetPositionalArgCount(0, 0)
 	return nil
 }
 
@@ -28,7 +27,7 @@ func (s StatusCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	ec.PrintlnUnnecessary(banner)
 	sts := NewStatusStages(ec.Logger())
 	sp := stage.NewFixedProvider(sts.Build(ctx, ec)...)
-	if err := stage.Execute(ctx, ec, sp); err != nil {
+	if _, err := stage.Execute(ctx, ec, any(nil), sp); err != nil {
 		return err
 	}
 	ec.PrintlnUnnecessary("")
