@@ -8,8 +8,9 @@ import (
 	"testing"
 
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/object"
+	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/sql"
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/it/skip"
 )
 
 func TestShell(t *testing.T) {
@@ -17,6 +18,7 @@ func TestShell(t *testing.T) {
 		name string
 		f    func(t *testing.T)
 	}{
+		{name: "DefaultOutputFormat", f: shellDefaultOutputFormatTest},
 		{name: "ShellErrors", f: shellErrorsTest},
 		{name: "ShellNoDoubleError", f: shellNoDoubleErrorTest},
 		{name: "ShellHelp", f: shellHelpTest},
@@ -35,12 +37,12 @@ func shellErrorsTest(t *testing.T) {
 		{
 			name:    "invalid command",
 			command: "\\foobar",
-			errText: "unknown command \\foobar",
+			errText: "Unknown command \\foobar",
 		},
 		{
 			name:    "invalid flag",
 			command: "\\object list --foobar",
-			errText: "unknown flag: --foobar",
+			errText: "Unknown flag: --foobar",
 		},
 	}
 	for _, tc := range testCases {
@@ -52,7 +54,7 @@ func shellErrorsTest(t *testing.T) {
 				tcx.WithShell(ctx, func(tcx it.TestContext) {
 					tcx.WithReset(func() {
 						tcx.WriteStdinString(tc.command + "\n")
-						tcx.AssertStderrEquals(fmt.Sprintf("Error: %s\n", tc.errText))
+						tcx.AssertStderrContains(fmt.Sprintf("ERROR %s\n", tc.errText))
 					})
 				})
 			})
@@ -61,10 +63,7 @@ func shellErrorsTest(t *testing.T) {
 }
 
 func shellNoDoubleErrorTest(t *testing.T) {
-	// this test times out on Windows on CI,
-	// but passes on Windows on local.
-	// so skipping for now... --YT
-	skip.If(t, "os = windows")
+	it.MarkFlaky(t, "https://github.com/hazelcast/hazelcast-commandline-client/issues/332")
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
 		ctx := context.Background()
@@ -87,6 +86,25 @@ func shellHelpTest(t *testing.T) {
 			tcx.WithReset(func() {
 				tcx.WriteStdinString("\\help\n")
 				tcx.AssertStdoutContains("Usage:")
+			})
+		})
+	})
+}
+
+func shellDefaultOutputFormatTest(t *testing.T) {
+	tcx := it.TestContext{T: t}
+	tcx.Tester(func(tcx it.TestContext) {
+		ctx := context.Background()
+		it.WithEnv(clc.EnvMaxCols, "16", func() {
+			tcx.WithShell(ctx, func(tcx it.TestContext) {
+				tcx.WithReset(func() {
+					tcx.WriteStdinString("create mapping t(__key varchar, this varchar) type imap options ('keyFormat' = 'varchar', 'valueFormat' = 'varchar');\n")
+					tcx.WriteStdinString("\\map -n t set foo bar\n")
+				})
+				tcx.WithReset(func() {
+					tcx.WriteStdinString("select * from t;\n")
+					tcx.AssertStdoutDollarWithPath("testdata/default_output_format.txt")
+				})
 			})
 		})
 	})

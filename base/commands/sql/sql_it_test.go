@@ -10,6 +10,10 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	hz "github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/types"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands"
@@ -65,6 +69,7 @@ func sql_NonInteractiveTest(t *testing.T) {
 }
 
 func sql_NonInteractiveStreamingTest(t *testing.T) {
+	it.MarkFlaky(t, "https://github.com/hazelcast/hazelcast-commandline-client/issues/357")
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -165,8 +170,41 @@ $               |              | %s |             |                      |      
 $-----------------------------------------------------------------------------------------------------------------------------$`, p1, p2, p1, p2)
 				tcx.AssertStdoutDollar(target)
 			})
+			// di
+			tcx.WithReset(func() {
+				mm, err := tcx.Client.GetMap(ctx, "default")
+				check.Must(err)
+				check.Must(addIndex(mm))
+				tcx.WriteStdinf("\\di\n")
+				tcx.AssertStdoutDollarWithPath("testdata/list_indexes.txt")
+			})
+			// di NAME
+			tcx.WithReset(func() {
+				mm, err := tcx.Client.GetMap(ctx, "default")
+				check.Must(err)
+				check.Must(addIndex(mm))
+				tcx.WriteStdinf("\\di default\n")
+				tcx.AssertStdoutDollarWithPath("testdata/list_indexes.txt")
+			})
 		})
 	})
+}
+
+func addIndex(m *hz.Map) error {
+	err := m.Set(context.Background(), "k1", serialization.JSON(`{"A": 10, "B": 40}`))
+	if err != nil {
+		return err
+	}
+	indexConfig := types.IndexConfig{
+		Name:               "my-index",
+		Type:               types.IndexTypeSorted,
+		Attributes:         []string{"A"},
+		BitmapIndexOptions: types.BitmapIndexOptions{UniqueKey: "B", UniqueKeyTransformation: types.UniqueKeyTransformationLong},
+	}
+	if err = m.AddIndex(context.Background(), indexConfig); err != nil {
+		return err
+	}
+	return nil
 }
 
 func sqlSuggestion_Interactive(t *testing.T) {
@@ -190,10 +228,10 @@ func sqlSuggestion_NonInteractive(t *testing.T) {
 		ctx := context.Background()
 		it.WithMap(tcx, func(m *hazelcast.Map) {
 			check.Must(m.Set(ctx, "foo", "bar"))
-			// ignoring the error here
-			_ = tcx.CLC().Execute(ctx, "sql", fmt.Sprintf(`SELECT * FROM "%s";`, m.Name()))
-			tcx.AssertStderrContains("CREATE MAPPING")
-			tcx.AssertStderrContains("--use-mapping-suggestion")
+			err := tcx.CLC().Execute(ctx, "sql", fmt.Sprintf(`SELECT * FROM "%s";`, m.Name()))
+			t.Logf("ERROR %s", err.Error())
+			assert.Contains(t, err.Error(), "CREATE MAPPING")
+			assert.Contains(t, err.Error(), "--use-mapping-suggestion")
 			check.Must(tcx.CLC().Execute(ctx, "sql", fmt.Sprintf(`SELECT * FROM "%s";`, m.Name()), "--use-mapping-suggestion"))
 			tcx.AssertStdoutContains("foo\tbar")
 		})

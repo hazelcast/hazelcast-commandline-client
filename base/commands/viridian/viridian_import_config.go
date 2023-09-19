@@ -6,64 +6,73 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	iserialization "github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
-type ImportConfigCmd struct{}
+type ImportConfigCommand struct{}
 
-func (cmd ImportConfigCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("import-config [cluster-name/cluster-ID] [flags]")
+func (cm ImportConfigCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("import-config")
 	long := `Imports connection configuration of the given Viridian cluster.
 
 Make sure you login before running this command.
 `
 	short := "Imports connection configuration of the given Viridian cluster."
 	cc.SetCommandHelp(long, short)
-	cc.SetPositionalArgCount(1, 1)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	cc.AddStringFlag(flagName, "", "", false, "name of the connection configuration")
+	cc.AddStringArg(argClusterID, argTitleClusterID)
 	return nil
 }
 
-func (cmd ImportConfigCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (cm ImportConfigCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+	if err := cm.exec(ctx, ec); err != nil {
+		err = handleErrorResponse(ec, err)
+		return fmt.Errorf("could not import cluster configuration: %w", err)
+	}
+	return nil
+}
+
+func (cm ImportConfigCommand) exec(ctx context.Context, ec plug.ExecContext) error {
 	api, err := getAPI(ec)
 	if err != nil {
 		return err
 	}
-	clusterNameOrID := ec.Args()[0]
-	cluster, err := api.FindCluster(ctx, clusterNameOrID)
+	clusterNameOrID := ec.GetStringArg(argClusterID)
+	c, err := api.FindCluster(ctx, clusterNameOrID)
 	if err != nil {
-		return handleErrorResponse(ec, err)
+		return err
 	}
 	cfgName := ec.Props().GetString(flagName)
 	if cfgName == "" {
-		cfgName = cluster.Name
+		cfgName = c.Name
 	}
-	cp, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText("Importing configuration")
-		zipPath, stop, err := api.DownloadConfig(ctx, cluster.ID)
-		if err != nil {
-			return nil, err
-		}
-		defer stop()
-		cfgPath, err := config.CreateFromZip(ctx, ec, cfgName, zipPath)
-		if err != nil {
-			return nil, err
-		}
-		return cfgPath, nil
-	})
+	st := stage.Stage[string]{
+		ProgressMsg: "Importing the configuration",
+		SuccessMsg:  "Imported the configuration",
+		FailureMsg:  "Failed importing the configuration",
+		Func: func(ctx context.Context, status stage.Statuser[string]) (string, error) {
+			return tryImportConfig(ctx, ec, api, c.ID, cfgName)
+		},
+	}
+	path, err := stage.Execute(ctx, ec, "", stage.NewFixedProvider(st))
 	if err != nil {
-		return handleErrorResponse(ec, err)
+		return err
 	}
-	stop()
-	ec.Logger().Info("Imported configuration %s and saved to: %s", cfgName, cp)
-	ec.PrintlnUnnecessary(fmt.Sprintf("Imported configuration: %s", cfgName))
-	return nil
+	ec.PrintlnUnnecessary("")
+	return ec.AddOutputRows(ctx, output.Row{
+		output.Column{
+			Name:  "Configuration Path",
+			Type:  iserialization.TypeString,
+			Value: path,
+		},
+	})
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("viridian:import-config", &ImportConfigCmd{}))
+	check.Must(plug.Registry.RegisterCommand("viridian:import-config", &ImportConfigCommand{}))
 }

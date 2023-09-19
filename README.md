@@ -2,33 +2,40 @@
 
 ## Installation
 
-We provide binaries for the popular platforms at our [Releases](https://github.com/hazelcast/hazelcast-commandline-client/releases) page.
-In order to install CLC:
-
-* Download the release package for your platform,
-* Extract it,
-* Optionally move the `clc` binary to somewhere in your *PATH*, so it can be run in any terminal without additional settings.
-
 Currently we provide precompiled binaries of CLC for the following platforms and architectures:
 
 * Linux/amd64
 * Windows/amd64
-* MacOS/amd64
-* MacOS/arm64
+* macOS/amd64
+* macOS/arm64
 
-Additionally, we provide an installer for Windows 10 and up.
-The installer can install CLC for either system-wide or just for the user.
-It adds the `clc` binary automatically to the `$PATH`, so it can be run in any terminal without additional settings.
+### Linux / macOS
 
-On MacOS, you may need to remove the CLC binary from quarantine, if you get a security warning:
+You can run the following command to install the latest stable CLC on a computer running Linux x64 or macOS 10.15 (Catalina) x64/ARM 64 (M1/M2):
+```
+curl -sL https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/unix/install.sh | bash
+```
+
+On macOS, binaries downloaded outside of AppStore require your intervention to run.
+The install script automatically handles this, but if you downloaded a release package you can do it manually:
 ```
 $ xattr -d com.apple.quarantine CLC_FOLDER/clc
 ```
 Use the correct path instead of `CLC_FOLDER` in the command above.
 
+### Windows
+
+We provide an installer for Windows 10 and up.
+The installer can install CLC either system-wide or just for the user.
+It adds the `clc` binary automatically to the `$PATH`, so it can be run in any terminal without additional settings.
+
+Check out our [Releases](https://github.com/hazelcast/hazelcast-commandline-client/releases/latest) page for the download.
+
+### Building from Source
+
 If your platform is not one of the above, you may want to compile CLC yourself. Our build process is very simple and doesn't have many dependencies.
-In most cases just running `make` is sufficient to build CLC if you have the latest [Go](https://go.dev/) compiler installed.
-See [Building from source](#building-from-source) section.
+In most cases, running `make` is sufficient to build CLC if you have the latest [Go](https://go.dev/) compiler and GNU make installed.
+See [Building from source](#building-from-source) section for detailed instructions.
 
 ## Usage Summary
 
@@ -81,7 +88,7 @@ All paths in the configuration are relative to the parent directory of the confi
 * cluster
   * name: Name of the cluster. By default `dev`.
   * address: Address of a member in the cluster. By default `localhost:5701`.
-  * discovery-token: Viridian Serverless discovery token.
+  * discovery-token: {hazelcast-cloud} Serverless discovery token.
 
 * ssl
   * ca-path: TLS CA certificate path.
@@ -93,7 +100,7 @@ All paths in the configuration are relative to the parent directory of the confi
   * path: Path to the log file, or `stderr`. By default, the logs are written to `$CLC_HOME/logs` with the current date as the name.
   * level: Log level, one of: `debug`, `info`, `warn`, `error`. The default is `info`.
 
-Here's a sample Viridian Serverless configuration:
+Here's a sample {hazelcast-cloud} Serverless configuration:
 ```
 cluster:
   name: "pr-3814"  
@@ -150,12 +157,12 @@ $ clc
 
 Run SQL commands:
 ```
-CLC> select * from cities;
+> select * from cities;
 ```
 
 Run CLC commands:
 ```
-CLC> \map set my-key my-value
+> \map set my-key my-value
 ```
  
 ### Keyboard Shortcuts
@@ -177,26 +184,6 @@ The following keyboard shortcuts are available in the interactive-mode:
 | <kbd>Ctrl + U</kbd> | Cut the line before the cursor                 |
 | <kbd>Ctrl + L</kbd> | Clear the screen                               |
 | <kbd>Ctrl + C</kbd> | Cancel running command        |
-
-## Connecting to Viridian Serverless
-
-1. If you don't have a running Viridian Serverless cluster, follow the steps in [Step 1. Start a Viridian Serverless Development Cluster](https://docs.hazelcast.com/cloud/get-started#step-1-start-a-viridian-serverless-development-cluster) to create a cluster.
-  Both development and production clusters will work very well.
-2. Download the Go client sample for your cluster from the Viridian Console. The sample is typically a Zip file with the following name format: "hazelcast-cloud-go-sample-client-CLUSTER-ID-default.zip". For instance: `hazelcast-cloud-csharp-sample-client-pr-3814-default.zip` 
-3. Import the configuration with CLC with `my-cluster` as the name:
-  ```
-  $ clc config import my-cluster ~/hazelcast-cloud-go-sample-client-pr-3814-default.zip
-  ```
-4. Check that the configuration is known to CLC:
-  ```
-  $ clc config list
-  default
-  my-cluster
-  ```
-5. In order to use this configuration, use `-c CONFIG_NAME` flag whenever you run CLC:
-  ```
-  $ clc -c my-cluster map set my-key my-value
-  ```
 
 ## Generating auto-completion
 
@@ -222,14 +209,14 @@ The following targets are tested and supported.
 The prior versions of the given targets would also work, but that's not tested. 
 
 * Ubuntu 22.04 or better.
-* MacOS 12 or better.
+* macOS 15 or better.
 * Windows 10 or better.
 
 ### Requirements
 
-* Go 1.19 or better
+* Go 1.21 or better
 * Git
-* GNU Make (on Linux and MacOS)
+* GNU Make (on Linux and macOS)
 * Command Prompt or Powershell (on Windows) 
 * go-winres: https://github.com/tc-hib/go-winres (on Windows)
  
@@ -256,7 +243,7 @@ The `clc` or `clc.exe` binary is created in the `build` directory.
 
 CLC starts the in interactive mode by default.
 
-On Linux and MacOS:
+On Linux and macOS:
 ```
 ./build/clc
 ```

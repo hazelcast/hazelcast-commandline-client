@@ -5,4 +5,6 @@ const (
 	statusMapEntryName       = "status"
 	MigrationsInProgressList = "__datamigrations_in_progress"
 	CancelQueue              = "__datamigration_cancel_queue"
+	argDMTConfig       = "dmtConfig"
+	argTitleDMTConfig  = "DMT configuration"
 )

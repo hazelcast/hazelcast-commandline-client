@@ -14,7 +14,7 @@ The shell defaults to running SQL queries, which you can execute from a command 
 
 [source,clc]
 ----
-CLC> select * from cities;
+> select * from cities;
 ---------------------------------------------------------------------------------
       __key | country                   | city                      | population
 ---------------------------------------------------------------------------------
@@ -27,7 +27,7 @@ CLC> select * from cities;
 In order to run Hazelcast CLC commands, prefix them with a backslash (`\`):
 [source,clc]
 ----
-CLC> \object list --show-hidden
+> \object list --show-hidden
 -------------------------------------------------
  Service Name     | Object Name
 -------------------------------------------------
@@ -41,7 +41,7 @@ CLC> \object list --show-hidden
 You can enter multiline commands by ending all lines except the last line with a backslash (`\`):
 [source,clc]
 ----
-CLC> \object list \
+> \object list \
  ... --show-hidden
 -------------------------------------------------
  Service Name     | Object Name
@@ -52,3 +52,76 @@ CLC> \object list \
  replicatedmap    | __sql.catalog
 -------------------------------------------------
 ----
+
+== Shortcut Commands
+
+* <<exit, exit>>
+* <<help, help>>
+* <<di, di>>
+* <<dm, dm>>
+
+== exit
+Exits the shell.
+
+Usage:
+
+[source,bash]
+----
+exit
+----
+
+== help
+Display help for CLC commands
+
+Usage:
+
+[source,bash]
+----
+help
+----
+
+== di
+Lists indexes. If you provide a mapping, it lists indexes to that specific mapping, otherwise it lists all the indexes.
+
+Usage:
+
+[source,bash]
+----
+di [MAPPING]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`MAPPING`
+|Optional
+|Name of the mapping.
+|
+
+|===
+
+== dm(+)
+If you don't provide the `MAPPING` parameter, it lists mappings. If you add `+` postfix, it describes the given mapping, otherwise it displays information about it.
+
+Usage:
+
+[source,bash]
+----
+dm(+) [MAPPING]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|`MAPPING`
+|Optional
+|Name of the mapping.
+|
+
+|====
