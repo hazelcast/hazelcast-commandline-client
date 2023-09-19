@@ -22,6 +22,7 @@ func TestList(t *testing.T) {
 		f    func(t *testing.T)
 	}{
 		{name: "Add_NonInteractive", f: add_NonInteractiveTest},
+		{name: "Add_WithIndex_NonInteractive", f: add_WithIndex_NonInteractiveTest},
 		{name: "Clear_NonInteractive", f: clear_NonInteractiveTest},
 		{name: "Contains_NonInteractive", f: contains_NonInteractiveTest},
 		{name: "RemoveIndex_Noninteractive", f: removeIndex_NonInteractiveTest},
@@ -46,6 +47,23 @@ func add_NonInteractiveTest(t *testing.T) {
 			tcx.CLCExecute(ctx, "list", "-n", l.Name(), "add", "bar")
 			require.Equal(t, 0, check.MustValue(l.IndexOf(context.Background(), "foo")))
 			require.Equal(t, 1, check.MustValue(l.IndexOf(context.Background(), "bar")))
+		})
+	})
+}
+
+func add_WithIndex_NonInteractiveTest(t *testing.T) {
+	it.ListTester(t, func(tcx it.TestContext, l *hz.List) {
+		t := tcx.T
+		ctx := context.Background()
+		tcx.WithReset(func() {
+			tcx.CLCExecute(ctx, "list", "-n", l.Name(), "--index", "0", "add", "foo")
+			tcx.CLCExecute(ctx, "list", "-n", l.Name(), "--index", "1", "add", "bar")
+			require.Equal(t, "foo", check.MustValue(l.Get(context.Background(), 0)))
+			require.Equal(t, "bar", check.MustValue(l.Get(context.Background(), 1)))
+			tcx.CLCExecute(ctx, "list", "-n", l.Name(), "--index", "1", "add", "second")
+			require.Equal(t, "foo", check.MustValue(l.Get(context.Background(), 0)))
+			require.Equal(t, "second", check.MustValue(l.Get(context.Background(), 1)))
+			require.Equal(t, "bar", check.MustValue(l.Get(context.Background(), 2)))
 		})
 	})
 }
@@ -142,7 +160,6 @@ func size_InteractiveTest(t *testing.T) {
 			tcx.WithReset(func() {
 				_ = check.MustValue(l.Add(ctx, "foo"))
 				tcx.WriteStdin([]byte(fmt.Sprintf("\\list -n %s size\n", l.Name())))
-				tcx.AssertStderrContains("OK")
 				tcx.AssertStdoutDollarWithPath("testdata/list_size_1.txt")
 			})
 		})

@@ -9,45 +9,42 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 
-	"github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
-
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 )
 
-type VersionCommand struct {
-}
+type VersionCommand struct{}
 
-func (vc VersionCommand) Init(cc plug.InitContext) error {
-	help := "Print CLC version"
+func (VersionCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("version")
+	help := "Print the version"
 	cc.SetCommandHelp(help, help)
-	cc.SetCommandUsage("version [flags]")
 	return nil
 }
 
-func (vc VersionCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (VersionCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if ec.Props().GetBool(clc.PropertyVerbose) {
 		return ec.AddOutputRows(ctx,
-			vc.row("Hazelcast CLC", internal.Version),
-			vc.row("Latest Git Commit Hash", internal.GitCommit),
-			vc.row("Hazelcast Go Client", hazelcast.ClientVersion),
-			vc.row("Go", fmt.Sprintf("%s %s/%s", runtime.Version(), runtime.GOOS, runtime.GOARCH)),
+			makeRow("Hazelcast CLC", internal.Version),
+			makeRow("Latest Git Commit Hash", internal.GitCommit),
+			makeRow("Hazelcast Go Client", hazelcast.ClientVersion),
+			makeRow("Go", fmt.Sprintf("%s %s/%s", runtime.Version(), runtime.GOOS, runtime.GOARCH)),
 		)
 	}
-	if ec.Props().GetString(clc.PropertyFormat) == base.PrinterDelimited {
-		I2(fmt.Fprintln(ec.Stdout(), internal.Version))
-	} else {
-		return ec.AddOutputRows(ctx, vc.row("Hazelcast CLC", internal.Version))
-	}
-	ec.Logger().Debugf("version command ran OK")
-	return nil
+	return ec.AddOutputRows(ctx, output.Row{
+		output.Column{
+			Name:  "Version",
+			Type:  serialization.TypeString,
+			Value: internal.Version,
+		},
+	})
 }
 
-func (vc VersionCommand) row(key, value string) output.Row {
+func makeRow(key, value string) output.Row {
 	return output.Row{
 		output.Column{
 			Name:  "Name",
@@ -62,8 +59,6 @@ func (vc VersionCommand) row(key, value string) output.Row {
 	}
 }
 
-func (VersionCommand) Unwrappable() {}
-
 func init() {
-	Must(plug.Registry.RegisterCommand("version", &VersionCommand{}))
+	check.Must(plug.Registry.RegisterCommand("version", &VersionCommand{}))
 }

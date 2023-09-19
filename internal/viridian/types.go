@@ -18,7 +18,7 @@ type Cluster struct {
 	HotRestartEnabled  bool         `json:"hotRestartEnabled"`
 	PlanName           string       `json:"planName"`
 	Regions            []Region     `json:"regions"`
-	AllowedIps         []string     `json:"allowedIps"`
+	AllowedIps         []IP         `json:"allowedIps"`
 	IPWhitelistEnabled bool         `json:"ipWhitelistEnabled"`
 	MaxAvailableMemory int          `json:"maxAvailableMemory"`
 }
@@ -37,10 +37,17 @@ type K8sCluster struct {
 }
 
 type ClusterType struct {
-	ID   int64  `json:"id"`
-	Name string `json:"name"`
+	ID      int64  `json:"id"`
+	Name    string `json:"name"`
+	DevMode bool   `json:"devMode"`
 }
 
 type Region struct {
 	Title string `json:"title"`
+}
+
+type IP struct {
+	ID          int    `json:"id"`
+	IP          string `json:"ip"`
+	Description string `json:"description,omitempty"`
 }

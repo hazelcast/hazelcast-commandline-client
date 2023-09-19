@@ -4,50 +4,58 @@ package viridian
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
-type ClusterStopCmd struct{}
+type ClusterStopCommand struct{}
 
-func (cm ClusterStopCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("stop-cluster [cluster-ID/name] [flags]")
+func (ClusterStopCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("stop-cluster")
 	long := `Stops the given Viridian cluster.
 
 Make sure you login before running this command.
 `
 	short := "Stops the given Viridian cluster"
 	cc.SetCommandHelp(long, short)
-	cc.SetPositionalArgCount(1, 1)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
+	cc.AddStringArg(argClusterID, argTitleClusterID)
 	return nil
 }
 
-func (cm ClusterStopCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (ClusterStopCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	api, err := getAPI(ec)
 	if err != nil {
 		return err
 	}
-	clusterNameOrID := ec.Args()[0]
-	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText("Pausing the cluster")
-		err := api.StopCluster(ctx, clusterNameOrID)
-		if err != nil {
-			return nil, err
-		}
-		return nil, nil
-	})
+	nameOrID := ec.GetStringArg(argClusterID)
+	st := stage.Stage[viridian.Cluster]{
+		ProgressMsg: "Initiating cluster stop",
+		SuccessMsg:  "Initiated cluster stop",
+		FailureMsg:  "Failed to initiate cluster stop",
+		Func: func(ctx context.Context, status stage.Statuser[viridian.Cluster]) (viridian.Cluster, error) {
+			return api.StopCluster(ctx, nameOrID)
+		},
+	}
+	cluster, err := stage.Execute(ctx, ec, viridian.Cluster{}, stage.NewFixedProvider(st))
 	if err != nil {
 		return handleErrorResponse(ec, err)
 	}
-	stop()
-	ec.PrintlnUnnecessary(fmt.Sprintf("Cluster %s was stopped.", clusterNameOrID))
-	return nil
+	ec.PrintlnUnnecessary("")
+	return ec.AddOutputRows(ctx, output.Row{
+		output.Column{
+			Name:  "ID",
+			Type:  serialization.TypeString,
+			Value: cluster.ID,
+		},
+	})
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("viridian:stop-cluster", &ClusterStopCmd{}))
+	check.Must(plug.Registry.RegisterCommand("viridian:stop-cluster", &ClusterStopCommand{}))
 }

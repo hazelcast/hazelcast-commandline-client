@@ -13,6 +13,8 @@ import (
 	gohxs "github.com/gohxs/readline"
 	ny "github.com/nyaosorg/go-readline-ny"
 	"github.com/nyaosorg/go-readline-ny/simplehistory"
+
+	"github.com/hazelcast/hazelcast-commandline-client/internal/terminal"
 )
 
 type LineReader interface {
@@ -100,6 +102,9 @@ func (sh *Shell) createGohxsLineReader(prompt string) error {
 		Stdout:            sh.stdout,
 		Stderr:            sh.stderr,
 		Stdin:             sh.stdin,
+		FuncGetWidth: func() int {
+			return terminal.ConsoleWidth()
+		},
 	}
 	if sh.historyPath != "" {
 		cfg.HistoryFile = sh.historyPath

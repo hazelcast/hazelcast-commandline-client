@@ -17,7 +17,7 @@ clc topic [command] [flags]
 
 == clc topic publish
 
-Publish new messages for a Topic.
+Publish new messages for a topic.
 
 Usage:
 
@@ -57,7 +57,7 @@ clc topic publish -v string string1 string2 --name topic1
 
 == clc topic subscribe
 
-Subscribe to a Topic for new messages.
+Subscribe to a topic for new messages.
 
 Usage:
 
@@ -88,9 +88,7 @@ clc topic subscribe --name topic1
 
 == clc topic destroy
 
-Destroy a Topic
-
-This command will delete the Topic and the data in it will not be available anymore.
+This command will delete the topic and the data in it will not be available anymore.
 
 Usage:
 

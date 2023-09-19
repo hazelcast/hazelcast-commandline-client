@@ -1,8 +1,8 @@
 = clc viridian
 
-This command group provides commands for doing various Viridian operations, such as creating and managing clusters.
+This command group provides commands for doing various operations on Hazelcast {hazelcast-cloud}, such as creating and managing clusters.
 
-All commands except `viridian login` requires  a token to be generated using an API key and secret which can be retrieved from Viridian Console. Running `viridian login` prompts this information, and creates and saves the token.
+All commands except `viridian login` require the generation of a token using an API key and secret, which you can retrieve from the {hazelcast-cloud} console. Running `viridian login` prompts you for this information, and creates and saves the token.
 
 Usage:
 
@@ -14,7 +14,6 @@ clc viridian [command] [options]
 == Commands
 
 * <<clc-viridian-login, clc viridian login>>
-* <<clc-viridian-list-cluster-types, clc viridian list-cluster-types>>
 * <<clc-viridian-create-cluster, clc viridian create-cluster>>
 * <<clc-viridian-get-cluster, clc viridian get-cluster>>
 * <<clc-viridian-list-clusters, clc viridian list-clusters>>
@@ -31,7 +30,7 @@ clc viridian [command] [options]
 
 == clc viridian login
 
-Logs in to Viridian using the given API key and API secret and retrieves a token.
+Logs in to {hazelcast-cloud} using the given API key and API secret and retrieves a token.
 The token is cached to be used by other commands.
 If not specified, the key and the secret will be asked in a prompt.
 
@@ -65,37 +64,11 @@ Parameters:
 
 |===
 
-== clc viridian list-cluster-types
-
-Lists available cluster types that can be used while creating a Viridian cluster.
-
-Make sure you authenticate to the Viridian API using `viridian login` before running this command.
-
-Usage:
-
-[source,bash]
-----
-clc viridian list-cluster-types [flags]
-----
-
-Parameters:
-
-[cols="1m,1a,2a,1a"]
-|===
-|Parameter|Required|Description|Default
-
-|`--api-key`
-|Optional
-|Sets the API key. Overrides the `CLC_VIRIDIAN_API_KEY` environment variable. If not given, one of the existing API keys will be used.
-|
-
-|===
-
 == clc viridian create-cluster
 
-Creates a Viridian cluster.
+Creates a {hazelcast-cloud} cluster.
 
-Make sure you authenticate to the Viridian API using `viridian login` before running this command.
+Make sure you authenticate to the {hazelcast-cloud} API using `viridian login` before running this command.
 
 Usage:
 
@@ -120,18 +93,23 @@ Parameters:
 |Sets the name of the created cluster. If not given, an auto-generated name will be used.
 |
 
-|`--cluster-type`
+|`--development`
 |Optional
-|Sets the cluster-type for the created cluster.
+|Creates a development cluster.
+|
+
+|`--prerelease`
+|Optional
+|Creates the cluster with a prerelease image.
 |
 
 |===
 
 == clc viridian get-cluster
 
-Gets the information about the given Viridian cluster.
+Gets the information about the given {hazelcast-cloud} cluster.
 
-Make sure you authenticate to the Viridian API using `viridian login` before running this command.
+Make sure you authenticate to the {hazelcast-cloud} API using `viridian login` before running this command.
 
 Usage:
 
@@ -155,9 +133,9 @@ Parameters:
 
 == clc viridian list-clusters
 
-Lists all Viridian clusters for the logged in API key.
+Lists all {hazelcast-cloud} clusters for the logged in API key.
 
-Make sure you authenticate to the Viridian API using `viridian login` before running this command.
+Make sure you authenticate to the {hazelcast-cloud} API using `viridian login` before running this command.
 
 Usage:
 
@@ -181,9 +159,9 @@ Parameters:
 
 == clc viridian stop-cluster
 
-Stops the given Viridian cluster.
+Stops the given {hazelcast-cloud} cluster.
 
-Make sure you authenticate to the Viridian API using `viridian login` before running this command.
+Make sure you authenticate to the {hazelcast-cloud} API using `viridian login` before running this command.
 
 Usage:
 
@@ -207,9 +185,9 @@ Parameters:
 
 == clc viridian resume-cluster
 
-Resumes the given Viridian cluster.
+Resumes the given {hazelcast-cloud} cluster.
 
-Make sure you authenticate to the Viridian API using `viridian login` before running this command.
+Make sure you authenticate to the {hazelcast-cloud} API using `viridian login` before running this command.
 
 Usage:
 
@@ -233,9 +211,9 @@ Parameters:
 
 == clc viridian delete-cluster
 
-Deletes the given Viridian cluster. Note that, all data in the cluster is deleted irreversibly.
+Deletes the given {hazelcast-cloud} cluster. All data in the cluster is deleted irreversibly.
 
-Make sure you authenticate to the Viridian API using `viridian login` before running this command.
+Make sure you authenticate to the {hazelcast-cloud} API using `viridian login` before running this command.
 
 Usage:
 
@@ -264,9 +242,9 @@ Parameters:
 
 == clc viridian download-logs
 
-Downloads the logs of the given Viridian cluster.
+Downloads the logs of the given {hazelcast-cloud} cluster.
 
-Make sure you authenticate to the Viridian API using `viridian login` before running this command.
+Make sure you authenticate to the {hazelcast-cloud} API using `viridian login` before running this command.
 
 Usage:
 
@@ -295,9 +273,9 @@ Parameters:
 
 == clc viridian stream-logs
 
-Outputs the logs of the given Viridian cluster as a stream.
+Outputs the logs of the given {hazelcast-cloud} cluster as a stream.
 
-Make sure you authenticate to the Viridian API using `viridian login` before running this command.
+Make sure you authenticate to the {hazelcast-cloud} API using `viridian login` before running this command.
 
 The log format may be one of:
 
@@ -333,9 +311,9 @@ Parameters:
 
 == clc viridian import-config
 
-Imports connection configuration of the given Viridian cluster.
+Imports the connection configuration of the given {hazelcast-cloud} cluster.
 
-Make sure you authenticate to the Viridian API using `viridian login` before running this command.
+Make sure you authenticate to the {hazelcast-cloud} API using `viridian login` before running this command.
 
 Usage:
 
@@ -359,9 +337,9 @@ Parameters:
 
 == clc viridian list-custom-classes
 
-Lists all custom classes in the Viridian cluster.
+Lists all custom classes in the {hazelcast-cloud} cluster.
 
-Make sure you authenticate to the Viridian API using `viridian login` before running this command.
+Make sure you authenticate to the {hazelcast-cloud} API using `viridian login` before running this command.
 
 Usage:
 
@@ -385,9 +363,9 @@ Parameters:
 
 == clc viridian upload-custom-class
 
-Uploads a custom class to the Viridian cluster.
+Uploads a custom class to the {hazelcast-cloud} cluster.
 
-Make sure you authenticate to the Viridian API using `viridian login` before running this command.
+Make sure you authenticate to the {hazelcast-cloud} API using `viridian login` before running this command.
 
 Usage:
 
@@ -398,9 +376,9 @@ clc viridian upload-custom-class [cluster-name/cluster-ID] [file-name] [flags]
 
 == clc viridian download-custom-class
 
-Downloads a custom class from the Viridian cluster.
+Downloads a custom class from the {hazelcast-cloud} cluster.
 
-Make sure you authenticate to the Viridian API using `viridian login` before running this command.
+Make sure you authenticate to the {hazelcast-cloud} API using `viridian login` before running this command.
 
 Usage:
 
@@ -424,9 +402,9 @@ Parameters:
 
 == clc viridian delete-custom-class
 
-Deletes a custom class from the Viridian cluster.
+Deletes a custom class from the {hazelcast-cloud} cluster.
 
-Make sure you authenticate to the Viridian API using `viridian login` before running this command.
+Make sure you authenticate to the {hazelcast-cloud} API using `viridian login` before running this command.
 
 Usage:
 

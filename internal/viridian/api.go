@@ -22,57 +22,38 @@ const (
 	EnvAPISecret      = "CLC_VIRIDIAN_API_SECRET"
 	EnvAPI            = "CLC_EXPERIMENTAL_VIRIDIAN_API"
 	DefaultAPIBaseURL = "https://api.viridian.hazelcast.com"
+	FmtTokenFileName  = "%s-%s.access"
 )
 
 type Wrapper[T any] struct {
 	Content T
 }
 
+//TODO: We need to separate API and secrets into two different structs
+
 type API struct {
-	Key          string
 	SecretPrefix string
 	Token        string
-	RefreshToken string
-	ExpiresIn    int
+	Key          string
+	Secret       string
+	APIBaseURL   string
 }
 
-func NewAPI(secretPrefix, key, token, refreshToken string, expiresIn int) *API {
+func NewAPI(secretPrefix, key, secret, token, apiBase string) *API {
+	apiBase = strings.TrimRight(apiBase, "/")
 	return &API{
 		SecretPrefix: secretPrefix,
 		Key:          key,
+		Secret:       secret,
 		Token:        token,
-		RefreshToken: refreshToken,
-		ExpiresIn:    expiresIn,
+		APIBaseURL:   apiBase,
 	}
 }
 
-type refreshTokenRequest struct {
-	RefreshToken string `json:"refreshToken"`
-}
-
-type RefreshTokenResponse struct {
-	AccessToken  string `json:"accessToken"`
-	RefreshToken string `json:"refreshToken"`
-}
-
-func (a *API) RefreshAccessToken(ctx context.Context) (RefreshTokenResponse, error) {
-	r := refreshTokenRequest{RefreshToken: a.RefreshToken}
-	resp, err := doPost[refreshTokenRequest, RefreshTokenResponse](ctx, "/customers/api/token/refresh", "", r)
-	if err != nil {
-		return RefreshTokenResponse{}, fmt.Errorf("refreshing token: %w", err)
-	}
-	a.Token = resp.AccessToken
-	a.RefreshToken = resp.RefreshToken
-	err = secrets.Save(a.SecretPrefix, a.Key, APIClass(), a.Token, a.RefreshToken, a.ExpiresIn)
-	if err != nil {
-		return RefreshTokenResponse{}, err
-	}
-	return resp, nil
-}
-
-func (a API) ListAvailableK8sClusters(ctx context.Context) ([]K8sCluster, error) {
-	c, err := WithRetry(ctx, a, func() ([]K8sCluster, error) {
-		return doGet[[]K8sCluster](ctx, "/kubernetes_clusters/available", a.Token)
+func (a *API) ListAvailableK8sClusters(ctx context.Context) ([]K8sCluster, error) {
+	c, err := RetryOnAuthFail(ctx, a, func(ctx context.Context, token string) ([]K8sCluster, error) {
+		u := a.makeURL("/kubernetes_clusters/available")
+		return doGet[[]K8sCluster](ctx, u, a.Token)
 	})
 	if err != nil {
 		return nil, fmt.Errorf("listing available Kubernetes clusters: %w", err)
@@ -80,13 +61,14 @@ func (a API) ListAvailableK8sClusters(ctx context.Context) ([]K8sCluster, error)
 	return c, nil
 }
 
-func (a API) ListCustomClasses(ctx context.Context, cluster string) ([]CustomClass, error) {
+func (a *API) ListCustomClasses(ctx context.Context, cluster string) ([]CustomClass, error) {
 	c, err := a.FindCluster(ctx, cluster)
 	if err != nil {
 		return nil, err
 	}
-	csw, err := WithRetry(ctx, a, func() ([]CustomClass, error) {
-		return doGet[[]CustomClass](ctx, fmt.Sprintf("/cluster/%s/custom_classes", c.ID), a.Token)
+	csw, err := RetryOnAuthFail(ctx, a, func(ctx context.Context, token string) ([]CustomClass, error) {
+		u := a.makeURL("/cluster/%s/custom_classes", c.ID)
+		return doGet[[]CustomClass](ctx, u, a.Token)
 	})
 	if err != nil {
 		return nil, fmt.Errorf("listing custom classes: %w", err)
@@ -94,28 +76,26 @@ func (a API) ListCustomClasses(ctx context.Context, cluster string) ([]CustomCla
 	return csw, nil
 }
 
-func (a API) UploadCustomClasses(ctx context.Context, p func(progress float32), cluster, filePath string) error {
+func (a *API) UploadCustomClasses(ctx context.Context, p func(progress float32), cluster, filePath string) error {
 	c, err := a.FindCluster(ctx, cluster)
 	if err != nil {
 		return err
 	}
-	_, err = WithRetry(ctx, a, func() (any, error) {
-		err = doCustomClassUpload(ctx, p, fmt.Sprintf("/cluster/%s/custom_classes", c.ID), filePath, a)
+	_, err = RetryOnAuthFail(ctx, a, func(ctx context.Context, token string) (any, error) {
+		u := a.makeURL("/cluster/%s/custom_classes", c.ID)
+		err = doCustomClassUpload(ctx, p, u, filePath, a.Token)
 		if err != nil {
 			return nil, err
 		}
 		return nil, nil
 	})
 	if err != nil {
-		return err
-	}
-	if err != nil {
 		return fmt.Errorf("uploading custom class: %w", err)
 	}
 	return nil
 }
 
-func (a API) DownloadCustomClass(ctx context.Context, p func(progress float32), targetInfo TargetInfo, cluster, artifact string) error {
+func (a *API) DownloadCustomClass(ctx context.Context, p func(progress float32), targetInfo TargetInfo, cluster, artifact string) error {
 	c, err := a.FindCluster(ctx, cluster)
 	if err != nil {
 		return err
@@ -127,9 +107,9 @@ func (a API) DownloadCustomClass(ctx context.Context, p func(progress float32), 
 	if artifactID == 0 {
 		return fmt.Errorf("no custom class artifact found with name or ID %s in cluster %s", artifact, c.ID)
 	}
-	url := fmt.Sprintf("/cluster/%s/custom_classes/%d", c.ID, artifactID)
-	_, err = WithRetry(ctx, a, func() (any, error) {
-		err = doCustomClassDownload(ctx, p, targetInfo, url, artifactName, a)
+	url := a.makeURL("/cluster/%s/custom_classes/%d", c.ID, artifactID)
+	_, err = RetryOnAuthFail(ctx, a, func(ctx context.Context, token string) (any, error) {
+		err = doCustomClassDownload(ctx, p, targetInfo, url, artifactName, a.Token)
 		if err != nil {
 			return nil, err
 		}
@@ -141,7 +121,7 @@ func (a API) DownloadCustomClass(ctx context.Context, p func(progress float32), 
 	return nil
 }
 
-func (a API) DeleteCustomClass(ctx context.Context, cluster string, artifact string) error {
+func (a *API) DeleteCustomClass(ctx context.Context, cluster string, artifact string) error {
 	c, err := a.FindCluster(ctx, cluster)
 	if err != nil {
 		return err
@@ -153,8 +133,9 @@ func (a API) DeleteCustomClass(ctx context.Context, cluster string, artifact str
 	if artifactID == 0 {
 		return fmt.Errorf("no custom class artifact found with name or ID %s in cluster %s", artifact, c.ID)
 	}
-	_, err = WithRetry(ctx, a, func() (any, error) {
-		err = doDelete(ctx, fmt.Sprintf("/cluster/%s/custom_classes/%d", c.ID, artifactID), a.Token)
+	_, err = RetryOnAuthFail(ctx, a, func(ctx context.Context, token string) (any, error) {
+		u := a.makeURL("/cluster/%s/custom_classes/%d", c.ID, artifactID)
+		err = doDelete(ctx, u, a.Token)
 		if err != nil {
 			return nil, err
 		}
@@ -166,19 +147,22 @@ func (a API) DeleteCustomClass(ctx context.Context, cluster string, artifact str
 	return nil
 }
 
-func (a API) DownloadConfig(ctx context.Context, clusterID string) (path string, stop func(), err error) {
-	url := makeConfigURL(clusterID)
-	r, err := WithRetry(ctx, a, func() (types.Tuple2[string, func()], error) {
+func (a *API) DownloadConfig(ctx context.Context, clusterID, language string) (path string, stop func(), err error) {
+	url := makeConfigURL(a.APIBaseURL, clusterID, language)
+	r, err := RetryOnAuthFail(ctx, a, func(ctx context.Context, token string) (types.Tuple2[string, func()], error) {
 		path, stop, err = download(ctx, url, a.Token)
 		if err != nil {
 			return types.Tuple2[string, func()]{}, err
 		}
-		return types.Tuple2[string, func()]{path, stop}, nil
+		return types.MakeTuple2(path, stop), nil
 	})
+	if err != nil {
+		return "", nil, err
+	}
 	return r.First, r.Second, nil
 }
 
-func (a API) FindCluster(ctx context.Context, idOrName string) (Cluster, error) {
+func (a *API) FindCluster(ctx context.Context, idOrName string) (Cluster, error) {
 	clusters, err := a.ListClusters(ctx)
 	if err != nil {
 		return Cluster{}, err
@@ -191,7 +175,7 @@ func (a API) FindCluster(ctx context.Context, idOrName string) (Cluster, error) 
 	return Cluster{}, fmt.Errorf("no such cluster found: %s", idOrName)
 }
 
-func (a API) FindClusterType(ctx context.Context, name string) (ClusterType, error) {
+func (a *API) FindClusterType(ctx context.Context, name string) (ClusterType, error) {
 	cts, err := a.ListClusterTypes(ctx)
 	if err != nil {
 		return ClusterType{}, err
@@ -204,14 +188,14 @@ func (a API) FindClusterType(ctx context.Context, name string) (ClusterType, err
 	return ClusterType{}, fmt.Errorf("no such cluster type found: %s", name)
 }
 
-func (a API) StreamLogs(ctx context.Context, idOrName string, out io.Writer) error {
+func (a *API) StreamLogs(ctx context.Context, idOrName string, out io.Writer) error {
 	c, err := a.FindCluster(ctx, idOrName)
 	if err != nil {
 		return err
 	}
-	path := fmt.Sprintf("/cluster/%s/logstream", c.ID)
-	r, err := WithRetry(ctx, a, func() (io.ReadCloser, error) {
-		return doGetRaw(ctx, path, a.Token)
+	url := a.makeURL("/cluster/%s/logstream", c.ID)
+	r, err := RetryOnAuthFail(ctx, a, func(ctx context.Context, token string) (io.ReadCloser, error) {
+		return doGetRaw(ctx, url, a.Token)
 	})
 	if err != nil {
 		return err
@@ -221,7 +205,7 @@ func (a API) StreamLogs(ctx context.Context, idOrName string, out io.Writer) err
 	return err
 }
 
-func (a API) findArtifactIDAndName(ctx context.Context, clusterName, artifact string) (int64, string, error) {
+func (a *API) findArtifactIDAndName(ctx context.Context, clusterName, artifact string) (int64, string, error) {
 	customClasses, err := a.ListCustomClasses(ctx, clusterName)
 	if err != nil {
 		return 0, "", err
@@ -238,6 +222,26 @@ func (a API) findArtifactIDAndName(ctx context.Context, clusterName, artifact st
 	return artifactID, artifactName, nil
 }
 
+func (a *API) login(ctx context.Context) error {
+	if a.Key == "" {
+		return errors.New("api key cannot be blank")
+	}
+	if a.Secret == "" {
+		return errors.New("api secret cannot be blank")
+	}
+	c := loginRequest{
+		APIKey:    a.Key,
+		APISecret: a.Secret,
+	}
+	u := a.makeURL("/customers/api/login")
+	resp, err := doPost[loginRequest, loginResponse](ctx, u, "", c)
+	if err != nil {
+		return err
+	}
+	a.Token = resp.Token
+	return nil
+}
+
 func APIBaseURL() string {
 	u := os.Getenv(EnvAPIBaseURL)
 	if u != "" {
@@ -246,21 +250,18 @@ func APIBaseURL() string {
 	return DefaultAPIBaseURL
 }
 
-func makeUrl(path string) string {
-	path = strings.TrimLeft(path, "/")
-	path = "/" + path
-	return APIBaseURL() + path
-}
-
-func WithRetry[Res any](ctx context.Context, api API, f func() (Res, error)) (Res, error) {
-	r, err := f()
+func RetryOnAuthFail[Res any](ctx context.Context, api *API, f func(ctx context.Context, token string) (Res, error)) (Res, error) {
+	r, err := f(ctx, api.Token)
 	var e HTTPClientError
 	if errors.As(err, &e) && e.Code() == http.StatusUnauthorized {
-		_, err = api.RefreshAccessToken(ctx)
-		if err != nil {
+		if err := api.login(ctx); err != nil {
 			return r, err
 		}
-		r, err = f()
+		tk := fmt.Sprintf(FmtTokenFileName, APIClass(), api.Key)
+		if err = secrets.Save(ctx, api.SecretPrefix, tk, api.Token); err != nil {
+			return r, err
+		}
+		r, err = f(ctx, api.Token)
 		if err != nil {
 			return r, err
 		}
@@ -269,8 +270,8 @@ func WithRetry[Res any](ctx context.Context, api API, f func() (Res, error)) (Re
 	return r, err
 }
 
-func doGet[Res any](ctx context.Context, path, token string) (res Res, err error) {
-	req, err := http.NewRequest(http.MethodGet, makeUrl(path), nil)
+func doGet[Res any](ctx context.Context, url, token string) (res Res, err error) {
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return res, fmt.Errorf("creating request: %w", err)
 	}
@@ -297,8 +298,8 @@ func doGet[Res any](ctx context.Context, path, token string) (res Res, err error
 	return res, NewHTTPClientError(rawRes.StatusCode, rb)
 }
 
-func doGetRaw(ctx context.Context, path, token string) (res io.ReadCloser, err error) {
-	req, err := http.NewRequest(http.MethodGet, makeUrl(path), nil)
+func doGetRaw(ctx context.Context, url, token string) (res io.ReadCloser, err error) {
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return res, fmt.Errorf("creating request: %w", err)
 	}
@@ -322,12 +323,12 @@ func doGetRaw(ctx context.Context, path, token string) (res io.ReadCloser, err e
 	return res, NewHTTPClientError(rawRes.StatusCode, rb)
 }
 
-func doPost[Req, Res any](ctx context.Context, path, token string, request Req) (res Res, err error) {
+func doPost[Req, Res any](ctx context.Context, url, token string, request Req) (res Res, err error) {
 	m, err := json.Marshal(request)
 	if err != nil {
 		return res, fmt.Errorf("creating payload: %w", err)
 	}
-	b, err := doPostBytes(ctx, makeUrl(path), token, m)
+	b, err := doPostBytes(ctx, url, token, m)
 	if err != nil {
 		return res, err
 	}
@@ -363,8 +364,8 @@ func doPostBytes(ctx context.Context, url, token string, body []byte) ([]byte, e
 	return nil, NewHTTPClientError(res.StatusCode, rb)
 }
 
-func doDelete(ctx context.Context, path, token string) error {
-	req, err := http.NewRequest(http.MethodDelete, makeUrl(path), nil)
+func doDelete(ctx context.Context, url, token string) error {
+	req, err := http.NewRequest(http.MethodDelete, url, nil)
 	if err != nil {
 		return fmt.Errorf("creating request: %w", err)
 	}
@@ -424,8 +425,8 @@ func download(ctx context.Context, url, token string) (downloadPath string, stop
 	return "", nil, fmt.Errorf("%d: %s", rawRes.StatusCode, string(rb))
 }
 
-func makeConfigURL(clusterID string) string {
-	return makeUrl(fmt.Sprintf("/client_samples/%s/go?source_identifier=default", clusterID))
+func makeConfigURL(base, clusterID string, language string) string {
+	return fmt.Sprintf("%s/client_samples/%s/%s?source_identifier=default", base, clusterID, language)
 }
 
 func APIClass() string {

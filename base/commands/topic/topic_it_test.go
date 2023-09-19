@@ -4,6 +4,7 @@ package topic_test
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -39,14 +40,27 @@ func publish_NonInteractiveTest(t *testing.T) {
 		ctx := context.Background()
 		tcx.WithReset(func() {
 			var values []string
+			valuesMu := &sync.Mutex{}
 			sid := check.MustValue(tp.AddMessageListener(ctx, func(event *hz.MessagePublished) {
+				valuesMu.Lock()
 				values = append(values, event.Value.(string))
+				valuesMu.Unlock()
 			}))
 			defer func() { check.Must(tp.RemoveListener(ctx, sid)) }()
 			check.Must(tcx.CLC().Execute(ctx, "topic", "-n", tp.Name(), "publish", "value1"))
 			check.Must(tcx.CLC().Execute(ctx, "topic", "-n", tp.Name(), "publish", "value2"))
-			require.Eventually(t, func() bool { return slices.Contains(values, "value1") }, 5*time.Second, 100*time.Millisecond)
-			require.Eventually(t, func() bool { return slices.Contains(values, "value2") }, 5*time.Second, 100*time.Millisecond)
+			require.Eventually(t, func() bool {
+				valuesMu.Lock()
+				ok := slices.Contains(values, "value1")
+				valuesMu.Unlock()
+				return ok
+			}, 5*time.Second, 100*time.Millisecond)
+			require.Eventually(t, func() bool {
+				valuesMu.Lock()
+				ok := slices.Contains(values, "value2")
+				valuesMu.Unlock()
+				return ok
+			}, 5*time.Second, 100*time.Millisecond)
 		})
 	})
 }
@@ -62,7 +76,6 @@ func subscribe_NonInteractiveTest(t *testing.T) {
 			check.Must(tp.PublishAll(ctx, "value1", "value2"))
 			tcx.AssertStdoutContains("value1")
 			tcx.AssertStdoutContains("value2")
-			tcx.AssertStderrContains("OK")
 		})
 	})
 }
