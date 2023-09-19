@@ -7,10 +7,11 @@ import (
 	"fmt"
 	"time"
 
-	clcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"golang.org/x/exp/slices"
+
+	clcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -34,77 +35,77 @@ func NewStages(migrationID, configDir string) *Stages {
 	}
 }
 
-func (st *Stages) Build(ctx context.Context, ec plug.ExecContext) []stage.Stage {
-	return []stage.Stage{
+func (st *Stages) Build(ctx context.Context, ec plug.ExecContext) []stage.Stage[any] {
+	return []stage.Stage[any]{
 		{
 			ProgressMsg: "Connecting to the migration cluster",
 			SuccessMsg:  "Connected to the migration cluster",
 			FailureMsg:  "Could not connect to the migration cluster",
-			Func:        st.connectStage(ctx, ec),
+			Func:        st.connectStage(ec),
 		},
 		{
 			ProgressMsg: "Starting the migration",
 			SuccessMsg:  "Started the migration",
 			FailureMsg:  "Could not start the migration",
-			Func:        st.startStage(ctx),
+			Func:        st.startStage(),
 		},
 		{
 			ProgressMsg: "Migrating the cluster",
 			SuccessMsg:  "Migrated the cluster",
 			FailureMsg:  "Could not migrate the cluster",
-			Func:        st.migrateStage(ctx),
+			Func:        st.migrateStage(),
 		},
 	}
 }
 
-func (st *Stages) connectStage(ctx context.Context, ec plug.ExecContext) func(stage.Statuser) error {
-	return func(status stage.Statuser) error {
+func (st *Stages) connectStage(ec plug.ExecContext) func(context.Context, stage.Statuser[any]) (any, error) {
+	return func(ctx context.Context, status stage.Statuser[any]) (any, error) {
 		var err error
 		st.ci, err = ec.ClientInternal(ctx)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		st.startQueue, err = st.ci.Client().GetQueue(ctx, startQueueName)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		st.statusMap, err = st.ci.Client().GetMap(ctx, makeStatusMapName(st.migrationID))
 		if err != nil {
-			return err
+			return nil, err
 		}
-		return nil
+		return nil, nil
 	}
 }
 
-func (st *Stages) startStage(ctx context.Context) func(stage.Statuser) error {
-	return func(stage.Statuser) error {
+func (st *Stages) startStage() func(context.Context, stage.Statuser[any]) (any, error) {
+	return func(ctx context.Context, status stage.Statuser[any]) (any, error) {
 		if err := st.statusMap.Delete(ctx, statusMapEntryName); err != nil {
-			return err
+			return nil, err
 		}
 		var cb configBundle
 		cb.MigrationID = st.migrationID
 		if err := cb.Walk(st.configDir); err != nil {
-			return err
+			return nil, err
 		}
 		b, err := json.Marshal(cb)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if err = st.startQueue.Put(ctx, serialization.JSON(b)); err != nil {
-			return err
+			return nil, err
 		}
 		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
 		if err = st.waitForStatus(ctx, time.Second, statusInProgress, statusComplete); err != nil {
-			return err
+			return nil, err
 		}
-		return nil
+		return nil, nil
 	}
 }
 
-func (st *Stages) migrateStage(ctx context.Context) func(statuser stage.Statuser) error {
-	return func(stage.Statuser) error {
-		return st.waitForStatus(ctx, 5*time.Second, statusComplete)
+func (st *Stages) migrateStage() func(context.Context, stage.Statuser[any]) (any, error) {
+	return func(ctx context.Context, status stage.Statuser[any]) (any, error) {
+		return st.waitForStatus(ctx, 5*time.Second, statusComplete), nil
 	}
 }
 
