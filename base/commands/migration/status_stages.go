@@ -42,7 +42,7 @@ func (st *StatusStages) Build(ctx context.Context, ec plug.ExecContext) []stage.
 			ProgressMsg: "Fetching migration status",
 			SuccessMsg:  "Fetched migration status",
 			FailureMsg:  "Could not fetch migration status",
-			Func:        st.fetchStage(ctx, ec),
+			Func:        st.fetchStage(ec),
 		},
 	}
 }
@@ -85,8 +85,8 @@ func (st *StatusStages) connectStage(ec plug.ExecContext) func(context.Context, 
 	}
 }
 
-func (st *StatusStages) fetchStage(ctx context.Context, ec plug.ExecContext) func(context.Context, stage.Statuser[any]) (any, error) {
-	return func(context.Context, stage.Statuser[any]) (any, error) {
+func (st *StatusStages) fetchStage(ec plug.ExecContext) func(context.Context, stage.Statuser[any]) (any, error) {
+	return func(ctx context.Context, status stage.Statuser[any]) (any, error) {
 		ms, err := readMigrationStatus(ctx, st.statusMap)
 		if err != nil {
 			return nil, fmt.Errorf("reading status: %w", err)
@@ -102,7 +102,7 @@ func (st *StatusStages) fetchStage(ctx context.Context, ec plug.ExecContext) fun
 			select {
 			case msg := <-st.updateMsgChan:
 				ec.PrintlnUnnecessary(msg.Message)
-				ec.PrintlnUnnecessary(fmt.Sprintf("Completion Percentage: %f", msg.CompletionPercentage))
+				status.SetProgress(msg.CompletionPercentage)
 				if slices.Contains([]Status{StatusComplete, StatusFailed, StatusCanceled}, msg.Status) {
 					ms, err := readMigrationStatus(ctx, st.statusMap)
 					if err != nil {
