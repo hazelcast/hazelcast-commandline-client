@@ -12,43 +12,33 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/types"
 
-	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/jet"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec/control"
 )
 
-func WaitJobState(ctx context.Context, ec plug.ExecContext, msg, jobNameOrID string, state int32, duration time.Duration) error {
+func WaitJobState(ctx context.Context, ec plug.ExecContext, sp stage.Statuser[any], jobNameOrID string, state int32, duration time.Duration) error {
 	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
 		return err
 	}
-	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		if msg != "" {
-			sp.SetText(msg)
+	j := jet.New(ci, sp, ec.Logger())
+	for {
+		jl, err := j.GetJobList(ctx)
+		if err != nil {
+			return err
 		}
-		j := jet.New(ci, sp, ec.Logger())
-		for {
-			jl, err := j.GetJobList(ctx)
-			if err != nil {
-				return nil, err
-			}
-			ok, err := jet.EnsureJobState(jl, jobNameOrID, state)
-			if err != nil {
-				return nil, err
-			}
-			if ok {
-				return nil, nil
-			}
-			ec.Logger().Debugf("Waiting %s for job %s to transition to state %s", duration.String(), jobNameOrID, jet.StatusToString(state))
-			time.Sleep(duration)
+		ok, err := jet.EnsureJobState(jl, jobNameOrID, state)
+		if err != nil {
+			return err
 		}
-	})
-	if err != nil {
-		return err
+		if ok {
+			return nil
+		}
+		ec.Logger().Debugf("Waiting %s for job %s to transition to state %s", duration.String(), jobNameOrID, jet.StatusToString(state))
+		time.Sleep(duration)
 	}
-	stop()
-	return nil
 }
 
 func idToString(id int64) string {
@@ -65,56 +55,64 @@ func idToString(id int64) string {
 	return string(buf[:])
 }
 
-func terminateJob(ctx context.Context, ec plug.ExecContext, name string, terminateMode int32, text string, waitState int32) error {
-	nameOrID := ec.Args()[0]
-	ci, err := ec.ClientInternal(ctx)
-	if err != nil {
-		return err
+func terminateJob(ctx context.Context, ec plug.ExecContext, tm int32, cm TerminateCommand) error {
+	nameOrID := ec.GetStringArg(argJobID)
+	stages := []stage.Stage[any]{
+		stage.MakeConnectStage[any](ec),
+		{
+			ProgressMsg: fmt.Sprintf(cm.inProgressMsg, nameOrID),
+			SuccessMsg:  fmt.Sprintf(cm.successMsg, nameOrID),
+			FailureMsg:  cm.failureMsg,
+			Func: func(ctx context.Context, status stage.Statuser[any]) (any, error) {
+				ci, err := ec.ClientInternal(ctx)
+				if err != nil {
+					return nil, err
+				}
+				j := jet.New(ci, status, ec.Logger())
+				jis, err := j.GetJobList(ctx)
+				if err != nil {
+					return nil, err
+				}
+				jm, err := NewJobNameToIDMap(jis)
+				if err != nil {
+					return nil, err
+				}
+				jid, ok := jm.GetIDForName(nameOrID)
+				if !ok {
+					return nil, fmt.Errorf("%w: %s", jet.ErrInvalidJobID, nameOrID)
+				}
+				ec.Logger().Info("%s %s (%s)", cm.inProgressMsg, nameOrID, idToString(jid))
+				ji, ok := jm.GetInfoForID(jid)
+				if !ok {
+					return nil, fmt.Errorf("%w: %s", jet.ErrInvalidJobID, nameOrID)
+				}
+				var coord types.UUID
+				if ji.LightJob {
+					conns := ci.ConnectionManager().ActiveConnections()
+					if len(conns) == 0 {
+						return nil, errors.New("not connected")
+					}
+					coord = conns[0].MemberUUID()
+				}
+				return nil, j.TerminateJob(ctx, jid, cm.terminateMode, coord)
+			},
+		},
 	}
-	jidv, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText(fmt.Sprintf("%s %s", text, nameOrID))
-		j := jet.New(ci, sp, ec.Logger())
-		jis, err := j.GetJobList(ctx)
-		if err != nil {
-			return nil, err
-		}
-		jm, err := NewJobNameToIDMap(jis)
-		if err != nil {
-			return nil, err
-		}
-		jid, ok := jm.GetIDForName(nameOrID)
-		if !ok {
-			return nil, jet.ErrInvalidJobID
-		}
-		ec.Logger().Info("%s %s (%s)", text, nameOrID, idToString(jid))
-		ji, ok := jm.GetInfoForID(jid)
-		if !ok {
-			return nil, jet.ErrInvalidJobID
-		}
-		var coord types.UUID
-		if ji.LightJob {
-			conns := ci.ConnectionManager().ActiveConnections()
-			if len(conns) == 0 {
-				return nil, errors.New("not connected")
-			}
-			coord = conns[0].MemberUUID()
-		}
-		return jid, j.TerminateJob(ctx, jid, terminateMode, coord)
-	})
-	if err != nil {
-		return err
+	wait := ec.Props().GetBool(flagWait)
+	if wait {
+		stages = append(stages, stage.Stage[any]{
+			ProgressMsg: fmt.Sprintf("Waiting for job to be %sed", cm.name),
+			SuccessMsg:  fmt.Sprintf("Job %s is %sed", nameOrID, cm.name),
+			FailureMsg:  fmt.Sprintf("Failed to %s %s", cm.name, nameOrID),
+			Func: func(ctx context.Context, status stage.Statuser[any]) (any, error) {
+				msg := fmt.Sprintf("Waiting for job %s to be %sed", nameOrID, cm.name)
+				ec.Logger().Info(msg)
+				return nil, WaitJobState(ctx, ec, status, nameOrID, cm.waitState, 1*time.Second)
+			},
+		})
 	}
-	stop()
-	err = nil
-	if ec.Props().GetBool(flagWait) {
-		msg := fmt.Sprintf("Waiting for the operation to finish for job %s", nameOrID)
-		ec.Logger().Info(msg)
-		err = WaitJobState(ctx, ec, msg, nameOrID, waitState, 1*time.Second)
-	}
+	_, err := stage.Execute[any](ctx, ec, nil, stage.NewFixedProvider(stages...))
 	if err != nil {
-		if ec.Props().GetBool(clc.PropertyVerbose) {
-			ec.PrintlnUnnecessary(fmt.Sprintf("Job %sed: %s", name, idToString(jidv.(int64))))
-		}
 		return err
 	}
 	return nil

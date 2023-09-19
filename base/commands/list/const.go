@@ -3,8 +3,7 @@
 package list
 
 const (
-	listFlagKeyType   = "key-type"
-	listFlagValueType = "value-type"
-	listFlagIndex     = "index"
-	defaultListName   = "default"
+	flagIndex     = "index"
+	argIndex      = "index"
+	argTitleIndex = "index"
 )

@@ -9,6 +9,10 @@ const (
 	UpdateTopicPrefix        = "__datamigration_updates_"
 	DebugLogsListPrefix      = "__datamigration_debug_logs_"
 	MigrationsInProgressList = "__datamigrations_in_progress"
+	startQueueName     = "__datamigration_start_queue"
+	statusMapEntryName = "status"
+	argDMTConfig       = "dmtConfig"
+	argTitleDMTConfig  = "DMT configuration"
 )
 
 type Status string

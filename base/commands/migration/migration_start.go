@@ -19,12 +19,12 @@ type StartCmd struct{}
 func (StartCmd) Unwrappable() {}
 
 func (StartCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("start [dmt-config] [flags]")
+	cc.SetCommandUsage("start")
 	cc.SetCommandGroup("migration")
 	help := "Start the data migration"
 	cc.SetCommandHelp(help, help)
-	cc.SetPositionalArgCount(1, 1)
 	cc.AddBoolFlag(clc.FlagAutoYes, "", false, false, "start the migration without confirmation")
+	cc.AddStringArg(argDMTConfig, argTitleDMTConfig)
 	cc.AddStringFlag(flagOutputDir, "o", "", false, "output directory for the migration report, if not given current directory is used")
 	return nil
 }
@@ -48,14 +48,14 @@ Selected data structures in the source cluster will be migrated to the target cl
 	}
 	ec.PrintlnUnnecessary("")
 	var updateTopic *hazelcast.Topic
-	sts := NewStartStages(ec.Logger(), updateTopic, MakeMigrationID(), ec.Args()[0], ec.Props().GetString(flagOutputDir))
+	sts := NewStartStages(ec.Logger(), updateTopic, MakeMigrationID(), ec.GetStringArg(argDMTConfig), ec.Props().GetString(flagOutputDir))
 	if !sts.topicListenerID.Default() && sts.updateTopic != nil {
 		if err := sts.updateTopic.RemoveListener(ctx, sts.topicListenerID); err != nil {
 			return err
 		}
 	}
 	sp := stage.NewFixedProvider(sts.Build(ctx, ec)...)
-	if err := stage.Execute(ctx, ec, sp); err != nil {
+	if _, err := stage.Execute(ctx, ec, any(nil), sp); err != nil {
 		return err
 	}
 	ec.PrintlnUnnecessary("")

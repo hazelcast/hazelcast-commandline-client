@@ -266,3 +266,23 @@ func DecodeListMultiFrameForData(frameIterator *proto.ForwardFrameIterator) []*i
 	frameIterator.Next()
 	return result
 }
+
+func DecodeListMultiFrameForIndexConfig(frameIterator *proto.ForwardFrameIterator) []types.IndexConfig {
+	var result []types.IndexConfig
+	if frameIterator.HasNext() {
+		frameIterator.Next()
+
+		for !NextFrameIsDataStructureEndFrame(frameIterator) {
+			result = append(result, DecodeIndexConfig(frameIterator))
+		}
+		frameIterator.Next()
+	}
+	return result
+}
+
+func DecodeNullableForBitmapIndexOptions(frameIterator *proto.ForwardFrameIterator) types.BitmapIndexOptions {
+	if NextFrameIsNullFrame(frameIterator) {
+		return types.BitmapIndexOptions{}
+	}
+	return DecodeBitmapIndexOptions(frameIterator)
+}

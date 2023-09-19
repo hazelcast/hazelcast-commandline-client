@@ -1,6 +1,6 @@
-= Managing Viridian Clusters Using the Hazelcast CLC
+= Managing Clusters on Hazelcast Viridian Cloud Using the Hazelcast CLC
 
-:description: In this tutorial, you'll learn the basics of managing {hazelcast-cloud} clusters using the Hazelcast CLC. You'll see how to create, list, and delete clusters, and how to download their logs. You'll also learn how to perform pause/resume operations on {hazelcast-cloud} clusters using the Hazelcast CLC.
+:description: In this tutorial, you'll learn the basics of managing clusters on Hazelcast {hazelcast-cloud} using the Hazelcast CLC. You'll see how to create, list, and delete clusters, and how to download their logs. You'll also learn how to perform pause/resume operations on the clusters using the Hazelcast CLC.
 
 {description}
 
@@ -13,11 +13,11 @@ You need the following:
 - xref:cloud:ROOT:developer.adoc[{hazelcast-cloud} API key and secret]
 
 [[step-1-authenticating-with-viridian]]
-== Step 1. Authenticating with Viridian
+== Step 1. Authenticating with {hazelcast-cloud}
 
-To allow the Hazelcast CLC to perform cluster operations, you must generate a Viridian token.
+To allow the Hazelcast CLC to perform cluster operations, you must generate a {hazelcast-cloud} token.
 
-. Execute the following command to retrieve the {hazelcast-cloud} token. 
+. Execute the following command to retrieve the token. 
 +
 [source, bash]
 ----
@@ -60,7 +60,7 @@ To check that the `my-cluster` is up and running, use the following command.
 ----
 clc viridian list-clusters
 ----
-The details of all clusters linked to your Hazelcast {hazelcast-cloud} account are returned, including the Cluster ID, Cluster Name, Current Status, Hazelcast Version.
+The details of all clusters linked to your {hazelcast-cloud} account are returned, including the Cluster ID, Cluster Name, Current Status, Hazelcast Version.
 
 [source, bash, subs="attributes+"]
 ----
