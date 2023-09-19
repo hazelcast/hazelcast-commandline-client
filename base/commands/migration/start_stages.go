@@ -11,6 +11,7 @@ import (
 	"time"
 
 	clcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -31,13 +32,14 @@ type StartStages struct {
 	topicListenerID types.UUID
 	updateMsgChan   chan UpdateMessage
 	reportOutputDir string
+	logger          log.Logger
 }
 
 var timeoutErr = fmt.Errorf("migration could not be completed: reached timeout while reading status: "+
 	"please ensure that you are using Hazelcast's migration cluster distribution and your DMT config points to that cluster: %w",
 	context.DeadlineExceeded)
 
-func NewStartStages(updateTopic *hazelcast.Topic, migrationID, configDir, reportOutputDir string) *StartStages {
+func NewStartStages(logger log.Logger, updateTopic *hazelcast.Topic, migrationID, configDir, reportOutputDir string) *StartStages {
 	if migrationID == "" {
 		panic("migrationID is required")
 	}
@@ -46,6 +48,7 @@ func NewStartStages(updateTopic *hazelcast.Topic, migrationID, configDir, report
 		migrationID:     migrationID,
 		configDir:       configDir,
 		reportOutputDir: reportOutputDir,
+		logger:          logger,
 	}
 }
 
@@ -81,19 +84,23 @@ func (st *StartStages) connectStage(ctx context.Context, ec plug.ExecContext) fu
 		}
 		st.startQueue, err = st.ci.Client().GetQueue(ctx, StartQueueName)
 		if err != nil {
-			return err
+			return fmt.Errorf("retrieving the start Queue: %w", err)
 		}
 		st.statusMap, err = st.ci.Client().GetMap(ctx, MakeStatusMapName(st.migrationID))
 		if err != nil {
-			return err
+			return fmt.Errorf("retrieving the status Map: %w", err)
 		}
 		st.updateTopic, err = st.ci.Client().GetTopic(ctx, MakeUpdateTopicName(st.migrationID))
 		if err != nil {
-			return err
+			return fmt.Errorf("retrieving the update Topic: %w", err)
 		}
 		st.updateMsgChan = make(chan UpdateMessage)
 		st.topicListenerID, err = st.updateTopic.AddMessageListener(ctx, st.topicListener)
-		return err
+		if err != nil {
+			return fmt.Errorf("adding message listener to update Topic: %w", err)
+
+		}
+		return nil
 	}
 }
 
@@ -101,7 +108,7 @@ func (st *StartStages) topicListener(event *hazelcast.MessagePublished) {
 	var u UpdateMessage
 	err := json.Unmarshal(event.Value.(serialization.JSON), &u)
 	if err != nil {
-		panic(fmt.Errorf("receiving update from migration cluster: %w", err))
+		st.logger.Warn(fmt.Sprintf("receiving update from migration cluster: %s", err.Error()))
 	}
 	st.updateMsgChan <- u
 }
@@ -110,10 +117,10 @@ func (st *StartStages) startStage(ctx context.Context, ec plug.ExecContext) func
 	return func(status stage.Statuser) error {
 		cb, err := makeConfigBundle(st.configDir, st.migrationID)
 		if err != nil {
-			return err
+			return fmt.Errorf("making configuration bundle: %w", err)
 		}
 		if err = st.startQueue.Put(ctx, cb); err != nil {
-			return err
+			return fmt.Errorf("updating start Queue: %w", err)
 		}
 		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
@@ -173,7 +180,7 @@ func (st *StartStages) handleUpdateMessage(ctx context.Context, ec plug.ExecCont
 		if err = saveReportToFile(name, ms.Report); err != nil {
 			return true, fmt.Errorf("writing report to file: %w", err)
 		}
-		if err = st.saveDebugLogs(ctx, ec, st.ci.OrderedMembers()); err != nil {
+		if err = st.saveDebugLogs(ctx, ec, st.migrationID, st.ci.OrderedMembers()); err != nil {
 			return true, fmt.Errorf("writing debug logs to file: %w", err)
 		}
 		ec.PrintlnUnnecessary(fmt.Sprintf("migration report saved to file: %s", name))
@@ -198,11 +205,10 @@ func saveReportToFile(fileName, report string) error {
 		return err
 	}
 	defer f.Close()
-	_, err = f.WriteString(report)
-	return err
+	return os.WriteFile(fileName, []byte(report), 0600)
 }
 
-func (st *StartStages) saveDebugLogs(ctx context.Context, ec plug.ExecContext, members []cluster.MemberInfo) error {
+func (st *StartStages) saveDebugLogs(ctx context.Context, ec plug.ExecContext, migrationID string, members []cluster.MemberInfo) error {
 	for _, m := range members {
 		l, err := st.ci.Client().GetList(ctx, DebugLogsListPrefix+m.UUID.String())
 		if err != nil {
@@ -212,8 +218,8 @@ func (st *StartStages) saveDebugLogs(ctx context.Context, ec plug.ExecContext, m
 		if err != nil {
 			return err
 		}
-		for _, l := range logs {
-			ec.Logger().Debugf(l.(string))
+		for _, line := range logs {
+			ec.Logger().Debugf(fmt.Sprintf("[%s_%s] %s", migrationID, m.UUID.String(), line.(string)))
 		}
 	}
 	return nil

@@ -25,10 +25,8 @@ func (s StatusCmd) Init(cc plug.InitContext) error {
 
 func (s StatusCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	ec.PrintlnUnnecessary("")
-	ec.PrintlnUnnecessary(`Hazelcast Data Migration Tool v5.3.0
-(c) 2023 Hazelcast, Inc.
-`)
-	sts := NewStatusStages()
+	ec.PrintlnUnnecessary(banner)
+	sts := NewStatusStages(ec.Logger())
 	sp := stage.NewFixedProvider(sts.Build(ctx, ec)...)
 	if err := stage.Execute(ctx, ec, sp); err != nil {
 		return err

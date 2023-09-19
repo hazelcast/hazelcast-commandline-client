@@ -48,7 +48,7 @@ Selected data structures in the source cluster will be migrated to the target cl
 	}
 	ec.PrintlnUnnecessary("")
 	var updateTopic *hazelcast.Topic
-	sts := NewStartStages(updateTopic, MakeMigrationID(), ec.Args()[0], ec.Props().GetString(flagOutputDir))
+	sts := NewStartStages(ec.Logger(), updateTopic, MakeMigrationID(), ec.Args()[0], ec.Props().GetString(flagOutputDir))
 	if !sts.topicListenerID.Default() && sts.updateTopic != nil {
 		if err := sts.updateTopic.RemoveListener(ctx, sts.topicListenerID); err != nil {
 			return err

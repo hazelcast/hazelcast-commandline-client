@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"golang.org/x/exp/slices"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
@@ -22,10 +23,11 @@ type StatusStages struct {
 	statusMap                *hazelcast.Map
 	updateTopic              *hazelcast.Topic
 	updateMsgChan            chan UpdateMessage
+	logger                   log.Logger
 }
 
-func NewStatusStages() *StatusStages {
-	return &StatusStages{}
+func NewStatusStages(logger log.Logger) *StatusStages {
+	return &StatusStages{logger: logger}
 }
 
 func (st *StatusStages) Build(ctx context.Context, ec plug.ExecContext) []stage.Stage {
@@ -116,9 +118,14 @@ func (st *StatusStages) fetchStage(ctx context.Context, ec plug.ExecContext) fun
 
 func (st *StatusStages) topicListener(event *hazelcast.MessagePublished) {
 	var u UpdateMessage
-	err := json.Unmarshal(event.Value.(serialization.JSON), &u)
+	v, ok := event.Value.(serialization.JSON)
+	if !ok {
+		st.logger.Warn(fmt.Sprintf("update message type is unexpected"))
+		return
+	}
+	err := json.Unmarshal(v, &u)
 	if err != nil {
-		panic(fmt.Errorf("receiving update from migration cluster: %w", err))
+		st.logger.Warn(fmt.Sprintf("receiving update from migration cluster: %s", err.Error()))
 	}
 	st.updateMsgChan <- u
 }

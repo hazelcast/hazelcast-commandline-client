@@ -23,3 +23,7 @@ const (
 )
 
 const flagOutputDir = "output-dir"
+
+const banner = `Hazelcast Data Migration Tool v5.3.0
+(c) 2023 Hazelcast, Inc.
+`
