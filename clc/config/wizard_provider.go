@@ -70,46 +70,53 @@ func maybeUnwrapStdout(ec plug.ExecContext) any {
 
 func (p *WizardProvider) ClientConfig(ctx context.Context, ec plug.ExecContext) (hazelcast.Config, error) {
 	cfg, err := p.fp.Load().ClientConfig(ctx, ec)
+	if err == nil {
+		// note that comparing err to nil
+		return cfg, nil
+	}
+	var configName string
+	if !errors.Is(err, clcerrors.ErrNoClusterConfig) {
+		return hazelcast.Config{}, err
+	}
+	cs, err := FindAll(paths.Configs())
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return hazelcast.Config{}, clcerrors.ErrNoClusterConfig
+		}
+	}
+	if len(cs) == 0 {
+		return hazelcast.Config{}, clcerrors.ErrNoClusterConfig
+	}
+	if len(cs) == 1 {
+		configName = cs[0]
+	}
+	if configName == "" {
 		if terminal.IsPipe(maybeUnwrapStdout(ec)) {
 			return hazelcast.Config{}, fmt.Errorf(`no configuration was provided and cannot display the configuration wizard; use the --config flag`)
 		}
 		// ask the config to the user
-		name, err := p.runWizard(ctx, ec)
+		configName, err = p.runWizard(ctx, cs)
 		if err != nil {
 			return hazelcast.Config{}, err
 		}
-		fp, err := NewFileProvider(name)
-		if err != nil {
-			return cfg, err
-		}
-		config, err := fp.ClientConfig(ctx, ec)
-		if err != nil {
-			return hazelcast.Config{}, err
-		}
-		p.fp.Store(fp)
-		return config, nil
 	}
-	return cfg, nil
+	fp, err := NewFileProvider(configName)
+	if err != nil {
+		return cfg, err
+	}
+	config, err := fp.ClientConfig(ctx, ec)
+	if err != nil {
+		return hazelcast.Config{}, err
+	}
+	p.fp.Store(fp)
+	return config, nil
 }
 
-func (p *WizardProvider) runWizard(ctx context.Context, ec plug.ExecContext) (string, error) {
-	cs, err := FindAll(paths.Configs())
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			ec.PrintlnUnnecessary(configurationHelp)
-			return "", clcerrors.ErrUserCancelled
-		}
-		return "", fmt.Errorf("finding configurations: %w", err)
-	}
-	if len(cs) == 0 {
-		ec.PrintlnUnnecessary(configurationHelp)
-		return "", clcerrors.ErrUserCancelled
-	}
-	if len(cs) == 1 {
-		return cs[0], nil
-	}
+func (p *WizardProvider) runWizard(ctx context.Context, cs []string) (string, error) {
 	cfg, canceled, err := selector.Show(ctx, "Select a configuration", cs...)
+	if err != nil {
+		return "", err
+	}
 	if canceled {
 		return "", clcerrors.ErrUserCancelled
 	}

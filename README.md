@@ -58,14 +58,6 @@ This file can exist anywhere in the file system, and can be used with the `--con
 $ clc -c test/config.yaml
 ```
 
-If there is a `config.yaml` in the same directory with the CLC binary and the configuration was not explicitly set, CLC tries to load that configuration file:
-```
-$ ls -lh
-total 17M
--rwxrwxr-x 1 yuce yuce  17M Nov 26 23:11 clc*
--rw------- 1 yuce yuce  200 Nov 26 23:12 config.yaml
-```
-
 `configs` directory in `$CLC_HOME` is special, it contains all the configurations known to CLC.
 Known configurations can be directly specified by their names, instead of the full path.
 `clc config list` command lists the configurations known to CLC:
@@ -80,6 +72,9 @@ $ clc -c pr-3066
 ```
 
 If no configuration is specified, the `default` configuration is used if it exists.
+The name of the default configuration may be overriden using the `CLC_CONFIG` environment variable.
+
+If there's only a single named configuration, then it is used if the configuration is not specified with `-c`/`--config`.
 
 #### Configuration format
 
