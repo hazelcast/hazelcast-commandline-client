@@ -2,6 +2,7 @@ package config_test
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"fmt"
 	"os"
@@ -14,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/types"
 
@@ -296,6 +298,18 @@ func TestConvertKeyValuesToMap(t *testing.T) {
 		},
 	}
 	assert.Equal(t, target, m)
+}
+
+func TestSingleConfig(t *testing.T) {
+	tcx := it.TestContext{T: t}
+	tcx.Tester(func(tcx it.TestContext) {
+		p := MustValue(config.NewWizardProvider(""))
+		ctx := context.Background()
+		ec := it.NewExecuteContext(nil)
+		cfg, err := p.ClientConfig(ctx, ec)
+		assert.NoError(t, err)
+		assert.Equal(t, []string{"localhost:10000"}, cfg.Cluster.Network.Addresses)
+	})
 }
 
 func userHostName() string {
