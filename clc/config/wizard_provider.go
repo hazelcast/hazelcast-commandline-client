@@ -7,19 +7,28 @@ import (
 	"os"
 	"sync/atomic"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/pflag"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/selector"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/terminal"
 
-	"github.com/hazelcast/hazelcast-commandline-client/clc/config/wizard"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	clcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
+
+const configurationHelp = `No configurations found.
+
+Run the following command to learn more about adding a configuration:
+
+	clc config add --help
+
+Or run the following command to import a Viridian cluster configuration:
+
+	clc config import --help
+`
 
 type WizardProvider struct {
 	fp  *atomic.Pointer[FileProvider]
@@ -88,36 +97,21 @@ func (p *WizardProvider) runWizard(ctx context.Context, ec plug.ExecContext) (st
 	cs, err := FindAll(paths.Configs())
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			err = os.MkdirAll(paths.Configs(), 0700)
+			ec.PrintlnUnnecessary(configurationHelp)
+			return "", clcerrors.ErrUserCancelled
 		}
-		if err != nil {
-			return "", err
-		}
+		return "", fmt.Errorf("finding configurations: %w", err)
 	}
 	if len(cs) == 0 {
-		m := wizard.InitialModel()
-		mv, err := tea.NewProgram(m).Run()
-		if err != nil {
-			return "", err
-		}
-		if mv.View() == "" {
-			return "", clcerrors.ErrNoClusterConfig
-		}
-		args := m.GetInputs()
-		stages := MakeImportStages(ec, args[0])
-		_, err = stage.Execute(ctx, ec, args[1], stage.NewFixedProvider(stages...))
-		if err != nil {
-			return "", err
-		}
-		return args[0], nil
+		ec.PrintlnUnnecessary(configurationHelp)
+		return "", clcerrors.ErrUserCancelled
 	}
-	m := wizard.InitializeList(cs)
-	model, err := tea.NewProgram(m).Run()
-	if err != nil {
-		return "", err
+	if len(cs) == 1 {
+		return cs[0], nil
 	}
-	if model.View() == "" {
-		return "", clcerrors.ErrNoClusterConfig
+	cfg, canceled, err := selector.Show(ctx, "Select a configuration", cs...)
+	if canceled {
+		return "", clcerrors.ErrUserCancelled
 	}
-	return model.View(), nil
+	return cfg, nil
 }
