@@ -9,7 +9,7 @@ import (
 const (
 	PhonehomeKeyPrefix = "ph"
 	DateFormat         = "2006-01-02"
-	KeyFieldSeparator  = "\\"
+	KeyFieldSeparator  = "^"
 )
 
 type Key struct {
