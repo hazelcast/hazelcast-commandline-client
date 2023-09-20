@@ -94,6 +94,9 @@ func (p *WizardProvider) runWizard(ctx context.Context, ec plug.ExecContext) (st
 			return "", err
 		}
 	}
+	if len(cs) == 1 {
+		return cs[0], nil
+	}
 	if len(cs) == 0 {
 		m := wizard.InitialModel()
 		mv, err := tea.NewProgram(m).Run()
