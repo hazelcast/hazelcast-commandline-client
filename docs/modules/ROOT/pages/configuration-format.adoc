@@ -3,9 +3,9 @@
 
 {description}
 
-The configuration is in YAML format.
-It has the `cluster` and `ssl` sections.
-A typical configuration file looks as follows:
+* The configuration is in YAML format.
+* It has the `cluster` and `ssl` sections.
+* A typical configuration file looks as follows:
 
 ```yaml
 cluster:
@@ -77,15 +77,15 @@ ssl:
 |
 
 |key-password
-|Key certificate path.
+|Key certificate password.
 |
 
 |server
-|Server name if it's different from the certificate.
+|Server name if different from the host name in the certificate.
 |
 
 |skip-verify
-|Disables certificate verification. Shouldn't be used in production.
+|Disables certificate verification. Never use in a production environment.
 |`false`
 
 |===
