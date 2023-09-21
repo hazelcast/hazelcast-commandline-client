@@ -5,8 +5,8 @@ package migration
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -34,27 +34,87 @@ type MigrationStatusRow struct {
 	Error                string  `json:"error"`
 }
 
-var ErrInvalidStatus = errors.New("invalid status value")
-
-func readMigrationStatus(ctx context.Context, statusMap *hazelcast.Map, migrationID string) (*MigrationStatusTotal, error) {
-	v, err := statusMap.Get(ctx, migrationID) //TODO: read only status with sql
+func readMigrationStatus(ctx context.Context, ci *hazelcast.ClientInternal, migrationID string) (string, error) {
+	q := fmt.Sprintf(`SELECT JSON_QUERY(this, '$.status') FROM %s WHERE __key='%s'`, StatusMapName, migrationID)
+	res, err := ci.Client().SQL().Execute(ctx, q)
 	if err != nil {
-		return nil, fmt.Errorf("getting status: %w", err)
+		return "", err
 	}
-	if v == nil {
-		return nil, ErrInvalidStatus
+	if err != nil {
+		return "", err
 	}
-	var b []byte
-	if vv, ok := v.(string); ok {
-		b = []byte(vv)
-	} else if vv, ok := v.(serialization.JSON); ok {
-		b = vv
-	} else {
-		return nil, ErrInvalidStatus
+	it, err := res.Iterator()
+	if err != nil {
+		return "", err
 	}
-	var ms MigrationStatusTotal
-	if err := json.Unmarshal(b, &ms); err != nil {
-		return nil, fmt.Errorf("parsing migration status: %w", err)
+	if it.HasNext() { // single iteration is enough that we are reading single result for a single migration
+		row, err := it.Next()
+		if err != nil {
+			return "", err
+		}
+		r, err := row.Get(0)
+		var m string
+		if err = json.Unmarshal(r.(serialization.JSON), &m); err != nil {
+			return "", err
+		}
+		return m, nil
 	}
-	return &ms, nil
+	return "", nil
+}
+
+func readMigrationReport(ctx context.Context, ci *hazelcast.ClientInternal, migrationID string) (string, error) {
+	q := fmt.Sprintf(`SELECT JSON_QUERY(this, '$.report') FROM %s WHERE __key='%s'`, StatusMapName, migrationID)
+	res, err := ci.Client().SQL().Execute(ctx, q)
+	if err != nil {
+		return "", err
+	}
+	if err != nil {
+		return "", err
+	}
+	it, err := res.Iterator()
+	if err != nil {
+		return "", err
+	}
+	if it.HasNext() { // single iteration is enough that we are reading single result for a single migration
+		row, err := it.Next()
+		if err != nil {
+			return "", err
+		}
+		r, err := row.Get(0)
+		var m string
+		if err = json.Unmarshal(r.(serialization.JSON), &m); err != nil {
+			return "", err
+		}
+		return m, nil
+	}
+	return "", nil
+}
+
+func readMigrationErrors(ctx context.Context, ci *hazelcast.ClientInternal, migrationID string) (string, error) {
+	q := fmt.Sprintf(`SELECT JSON_QUERY(this, '$.errors') FROM %s WHERE __key='%s'`, StatusMapName, migrationID)
+	res, err := ci.Client().SQL().Execute(ctx, q)
+	if err != nil {
+		return "", err
+	}
+	if err != nil {
+		return "", err
+	}
+	it, err := res.Iterator()
+	if err != nil {
+		return "", err
+	}
+	var errs []string
+	for it.HasNext() { // single iteration is enough that we are reading single result for a single migration
+		row, err := it.Next()
+		if err != nil {
+			return "", err
+		}
+		r, err := row.Get(0)
+		var m string
+		if err = json.Unmarshal(r.(serialization.JSON), &m); err != nil {
+			return "", err
+		}
+		errs = append(errs, m)
+	}
+	return strings.Join(errs, "\n"), nil
 }

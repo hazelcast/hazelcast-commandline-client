@@ -65,5 +65,6 @@
     }
   ],
   "logs": ["some user friendly log message", "another user friendly log message"],
-  "errors": []
+  "errors": [],
+  "report" : "completed migration report"
 }

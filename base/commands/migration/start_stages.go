@@ -23,10 +23,6 @@ type StartStages struct {
 	logger      log.Logger
 }
 
-var timeoutErr = fmt.Errorf("migration could not be completed: reached timeout while reading status: "+
-	"please ensure that you are using Hazelcast's migration cluster distribution and your DMT config points to that cluster: %w",
-	context.DeadlineExceeded)
-
 func NewStartStages(logger log.Logger, migrationID, configDir string) *StartStages {
 	if migrationID == "" {
 		panic("migrationID is required")

@@ -55,6 +55,7 @@ func statusTest(t *testing.T) {
 		mID := preStatusRunner(t, tcx, ctx)
 		var wg sync.WaitGroup
 		wg.Add(1)
+		time.Sleep(1 * time.Second)
 		go tcx.WithReset(func() {
 			defer wg.Done()
 			Must(tcx.CLC().Execute(ctx, "status"))
@@ -79,8 +80,7 @@ func preStatusRunner(t *testing.T, tcx it.TestContext, ctx context.Context) stri
 	m := MustValue(json.Marshal(migration.MigrationInProgress{
 		MigrationID: mID,
 	}))
-	ok := MustValue(l.Add(ctx, serialization.JSON(m)))
-	require.Equal(t, true, ok)
+	require.Equal(t, true, MustValue(l.Add(ctx, serialization.JSON(m))))
 	// create a record in the status map
 	statusMap := MustValue(tcx.Client.GetMap(ctx, migration.StatusMapName))
 	b := MustValue(os.ReadFile("testdata/start/migration_success_initial.json"))

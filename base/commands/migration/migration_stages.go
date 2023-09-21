@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	errors2 "github.com/hazelcast/hazelcast-commandline-client/errors"
@@ -18,13 +17,17 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+var timeoutErr = fmt.Errorf("migration could not be completed: reached timeout while reading status: "+
+	"please ensure that you are using Hazelcast's migration cluster distribution and your DMT config points to that cluster: %w",
+	context.DeadlineExceeded)
+
 func migrationStages(ctx context.Context, ec plug.ExecContext, migrationID, reportOutputDir string, statusMap *hazelcast.Map) ([]stage.Stage[any], error) {
 	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if err = waitForMigrationToBeCreated(ctx, ci, migrationID); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("waiting migration to be created: %w", err)
 	}
 	var stages []stage.Stage[any]
 	dss, err := dataStructuresToBeMigrated(ctx, ec, migrationID)
@@ -40,13 +43,16 @@ func migrationStages(ctx context.Context, ec plug.ExecContext, migrationID, repo
 			Func: func(ct context.Context, status stage.Statuser[any]) (any, error) {
 				for {
 					if ctx.Err() != nil {
-						return nil, err
+						if errors.Is(err, context.DeadlineExceeded) {
+							return nil, timeoutErr
+						}
+						return nil, fmt.Errorf("migration failed: %w", err)
 					}
-					generalStatus, err := readMigrationStatus(ctx, statusMap, migrationID)
+					generalStatus, err := readMigrationStatus(ctx, ci, migrationID)
 					if err != nil {
-						return nil, err
+						return nil, fmt.Errorf("reading migration status: %w", err)
 					}
-					if slices.Contains([]Status{StatusComplete, StatusFailed, StatusCanceled}, generalStatus.Status) {
+					if slices.Contains([]Status{StatusComplete, StatusFailed, StatusCanceled}, Status(generalStatus)) {
 						err = saveMemberLogs(ctx, ec, ci, migrationID)
 						if err != nil {
 							return nil, err
@@ -55,16 +61,20 @@ func migrationStages(ctx context.Context, ec plug.ExecContext, migrationID, repo
 						if reportOutputDir == "" {
 							name = fmt.Sprintf("migration_report_%s.txt", migrationID)
 						}
-						err = saveReportToFile(name, generalStatus.Report)
+						err = saveReportToFile(ctx, ci, migrationID, name)
 						if err != nil {
-							return nil, err
+							return nil, fmt.Errorf("saving report to file: %w", err)
 						}
 					}
-					switch generalStatus.Status {
+					switch Status(generalStatus) {
 					case StatusComplete:
 						return nil, nil
 					case StatusFailed:
-						return nil, errors.New(strings.Join(generalStatus.Errors, "\n"))
+						errs, err := readMigrationErrors(ctx, ci, migrationID)
+						if err != nil {
+							return nil, fmt.Errorf("saving report to file: %w", err)
+						}
+						return nil, errors.New(errs)
 					case StatusCanceled, StatusCanceling:
 						return nil, errors2.ErrUserCancelled
 					}
@@ -122,7 +132,7 @@ func dataStructuresToBeMigrated(ctx context.Context, ec plug.ExecContext, migrat
 	if err != nil {
 		return nil, err
 	}
-	if it.HasNext() {
+	if it.HasNext() { // single iteration is enough that we are reading single result for a single migration
 		row, err := it.Next()
 		if err != nil {
 			return nil, err
@@ -159,7 +169,11 @@ func saveMemberLogs(ctx context.Context, ec plug.ExecContext, ci *hazelcast.Clie
 	return nil
 }
 
-func saveReportToFile(fileName, report string) error {
+func saveReportToFile(ctx context.Context, ci *hazelcast.ClientInternal, migrationID, fileName string) error {
+	report, err := readMigrationReport(ctx, ci, migrationID)
+	if err != nil {
+		return err
+	}
 	f, err := os.Create(fmt.Sprintf(fileName))
 	if err != nil {
 		return err
