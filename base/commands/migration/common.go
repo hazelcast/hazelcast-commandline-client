@@ -12,24 +12,32 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
-type MigrationStatus struct {
-	Status               Status   `json:"status"`
-	Logs                 []string `json:"logs"`
-	Errors               []string `json:"errors"`
-	Report               string   `json:"report"`
-	CompletionPercentage float32  `json:"completionPercentage"`
+type MigrationStatusTotal struct {
+	Status               Status               `json:"status"`
+	Logs                 []string             `json:"logs"`
+	Errors               []string             `json:"errors"`
+	Report               string               `json:"report"`
+	CompletionPercentage float32              `json:"completionPercentage"`
+	Migrations           []MigrationStatusRow `json:"migrations"`
 }
 
-type UpdateMessage struct {
+type DataStructureInfo struct {
+	Name string
+	Type string
+}
+
+type MigrationStatusRow struct {
+	Name                 string  `json:"name"`
+	Type                 string  `json:"type"`
 	Status               Status  `json:"status"`
-	CompletionPercentage float32 `json:"completionPercentage"`
-	Message              string  `json:"message"`
+	CompletionPercentage float32 `json:"completion_percentage"`
+	Error                string  `json:"error"`
 }
 
 var ErrInvalidStatus = errors.New("invalid status value")
 
-func readMigrationStatus(ctx context.Context, statusMap *hazelcast.Map) (*MigrationStatus, error) {
-	v, err := statusMap.Get(ctx, StatusMapEntryName)
+func readMigrationStatus(ctx context.Context, statusMap *hazelcast.Map, migrationID string) (*MigrationStatusTotal, error) {
+	v, err := statusMap.Get(ctx, migrationID) //TODO: read only status with sql
 	if err != nil {
 		return nil, fmt.Errorf("getting status: %w", err)
 	}
@@ -44,7 +52,7 @@ func readMigrationStatus(ctx context.Context, statusMap *hazelcast.Map) (*Migrat
 	} else {
 		return nil, ErrInvalidStatus
 	}
-	var ms MigrationStatus
+	var ms MigrationStatusTotal
 	if err := json.Unmarshal(b, &ms); err != nil {
 		return nil, fmt.Errorf("parsing migration status: %w", err)
 	}

@@ -125,10 +125,6 @@ func MakeMigrationID() string {
 	return types.NewUUID().String()
 }
 
-func MakeStatusMapName(migrationID string) string {
-	return StatusMapPrefix + migrationID
-}
-
 func MakeUpdateTopicName(migrationID string) string {
 	return UpdateTopicPrefix + migrationID
 }

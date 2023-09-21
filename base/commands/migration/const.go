@@ -5,21 +5,21 @@ package migration
 const (
 	StartQueueName           = "__datamigration_start_queue"
 	StatusMapEntryName       = "status"
-	StatusMapPrefix          = "__datamigration_"
+	StatusMapName            = "__datamigration_migrations"
 	UpdateTopicPrefix        = "__datamigration_updates_"
 	DebugLogsListPrefix      = "__datamigration_debug_logs_"
 	MigrationsInProgressList = "__datamigrations_in_progress"
-	startQueueName     = "__datamigration_start_queue"
-	statusMapEntryName = "status"
-	argDMTConfig       = "dmtConfig"
-	argTitleDMTConfig  = "DMT configuration"
+	startQueueName           = "__datamigration_start_queue"
+	statusMapEntryName       = "status"
+	argDMTConfig             = "dmtConfig"
+	argTitleDMTConfig        = "DMT configuration"
 )
 
 type Status string
 
 const (
 	StatusStarted    Status = "STARTED"
-	Canceling        Status = "CANCELING"
+	StatusCanceling  Status = "CANCELING"
 	StatusComplete   Status = "COMPLETED"
 	StatusCanceled   Status = "CANCELED"
 	StatusFailed     Status = "FAILED"

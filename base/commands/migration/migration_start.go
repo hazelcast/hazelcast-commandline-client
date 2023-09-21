@@ -11,7 +11,6 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/prompt"
-	"github.com/hazelcast/hazelcast-go-client"
 )
 
 type StartCmd struct{}
@@ -47,17 +46,21 @@ Selected data structures in the source cluster will be migrated to the target cl
 		}
 	}
 	ec.PrintlnUnnecessary("")
-	var updateTopic *hazelcast.Topic
-	sts := NewStartStages(ec.Logger(), updateTopic, MakeMigrationID(), ec.GetStringArg(argDMTConfig), ec.Props().GetString(flagOutputDir))
-	if !sts.topicListenerID.Default() && sts.updateTopic != nil {
-		if err := sts.updateTopic.RemoveListener(ctx, sts.topicListenerID); err != nil {
-			return err
-		}
-	}
+	mID := MakeMigrationID()
+	sts := NewStartStages(ec.Logger(), mID, ec.GetStringArg(argDMTConfig))
 	sp := stage.NewFixedProvider(sts.Build(ctx, ec)...)
 	if _, err := stage.Execute(ctx, ec, any(nil), sp); err != nil {
 		return err
 	}
+	mStages, err := migrationStages(ctx, ec, mID, ec.Props().GetString(flagOutputDir), sts.statusMap)
+	if err != nil {
+		return err
+	}
+	mp := stage.NewFixedProvider(mStages...)
+	if _, err := stage.Execute(ctx, ec, any(nil), mp); err != nil {
+		return err
+	}
+
 	ec.PrintlnUnnecessary("")
 	ec.PrintlnUnnecessary("OK Migration completed successfully.")
 	return nil

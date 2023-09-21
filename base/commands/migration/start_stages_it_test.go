@@ -20,7 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestMigration(t *testing.T) {
+func TestMigrationStages(t *testing.T) {
 	testCases := []struct {
 		name string
 		f    func(t *testing.T)
@@ -34,6 +34,14 @@ func TestMigration(t *testing.T) {
 }
 
 func startTest_Successful(t *testing.T) {
+	startTest(t, successfulRunner, "OK Migration completed successfully.")
+}
+
+func startTest_Failure(t *testing.T) {
+	startTest(t, failureRunner, "ERROR Failed migrating IMAP: imap5 ...: some error")
+}
+
+func startTest(t *testing.T, runnerFunc func(context.Context, it.TestContext, string, *sync.WaitGroup), expectedOutput string) {
 	tcx := it.TestContext{T: t}
 	ctx := context.Background()
 	tcx.Tester(func(tcx it.TestContext) {
@@ -41,109 +49,45 @@ func startTest_Successful(t *testing.T) {
 		wg.Add(1)
 		go tcx.WithReset(func() {
 			defer wg.Done()
-			Must(tcx.CLC().Execute(ctx, "start", "dmt-config", "--yes"))
-		})
-
-		c := make(chan string, 1)
-		go findMigrationID(ctx, tcx, c)
-		migrationID := <-c
-		migrationReport := successfulRunner(migrationID, tcx, ctx)
-		wg.Wait()
-		tcx.AssertStdoutContains(fmt.Sprintf(`
-Hazelcast Data Migration Tool v5.3.0
-(c) 2023 Hazelcast, Inc.
-	
-Selected data structures in the source cluster will be migrated to the target cluster.	
-
-
- OK   [1/3] Connected to the migration cluster.
-first message
- OK   [2/3] Started the migration.
-second message
-last message
-status report
-migration report saved to file: migration_report_%s.txt
- OK   [3/3] Migrated the cluster.
-
- OK   Migration completed successfully.`, migrationID))
-		tcx.WithReset(func() {
-			require.Equal(t, true, fileExists(migrationReport))
-		})
-	})
-}
-
-func startTest_Failure(t *testing.T) {
-	tcx := it.TestContext{T: t}
-	ctx := context.Background()
-	tcx.Tester(func(tcx it.TestContext) {
-		go tcx.WithReset(func() {
 			tcx.CLC().Execute(ctx, "start", "dmt-config", "--yes")
 		})
-		migrationReport := failureRunner(tcx, ctx)
-		tcx.AssertStdoutContains(`
-Hazelcast Data Migration Tool v5.3.0
-(c) 2023 Hazelcast, Inc.
-	
-Selected data structures in the source cluster will be migrated to the target cluster.	
-
-
- OK   [1/3] Connected to the migration cluster.
-first message
- OK   [2/3] Started the migration.
-second message
-fail status report`)
+		c := make(chan string, 1)
+		wg.Add(1)
+		go findMigrationID(ctx, tcx, c)
+		mID := <-c
+		wg.Done()
+		wg.Add(1)
+		go runnerFunc(ctx, tcx, mID, &wg)
+		wg.Wait()
+		tcx.AssertStdoutContains(expectedOutput)
 		tcx.WithReset(func() {
-			require.Equal(t, true, fileExists(migrationReport))
+			f := fmt.Sprintf("migration_report_%s.txt", mID)
+			require.Equal(t, true, fileExists(f))
+			Must(os.Remove(f))
 		})
 	})
 }
 
-func fileExists(filename string) bool {
-	a := MustValue(os.Getwd())
-	fmt.Println(a)
-	_, err := os.Stat(filename)
-	if os.IsNotExist(err) {
-		return false
-	}
-	Must(os.Remove(filename))
-	return true
+func successfulRunner(ctx context.Context, tcx it.TestContext, migrationID string, wg *sync.WaitGroup) {
+	mSQL := fmt.Sprintf(`CREATE MAPPING IF NOT EXISTS %s TYPE IMap OPTIONS('keyFormat'='varchar', 'valueFormat'='json')`, migration.StatusMapName)
+	MustValue(tcx.Client.SQL().Execute(ctx, mSQL))
+	statusMap := MustValue(tcx.Client.GetMap(ctx, migration.StatusMapName))
+	b := MustValue(os.ReadFile("testdata/start/migration_success_initial.json"))
+	MustValue(statusMap.Put(ctx, migrationID, serialization.JSON(b)))
+	b = MustValue(os.ReadFile("testdata/start/migration_success_completed.json"))
+	MustValue(statusMap.Put(ctx, migrationID, serialization.JSON(b)))
+	wg.Done()
 }
 
-func successfulRunner(migrationID string, tcx it.TestContext, ctx context.Context) string {
-	topic := MustValue(tcx.Client.GetTopic(ctx, migration.MakeUpdateTopicName(migrationID)))
-	msg := MustValue(json.Marshal(migration.UpdateMessage{Status: migration.StatusInProgress, Message: "first message", CompletionPercentage: 10}))
-	Must(topic.Publish(ctx, serialization.JSON(msg)))
-	msg = MustValue(json.Marshal(migration.UpdateMessage{Status: migration.StatusInProgress, Message: "second message", CompletionPercentage: 20}))
-	Must(topic.Publish(ctx, serialization.JSON(msg)))
-	statusMap := MustValue(tcx.Client.GetMap(ctx, migration.MakeStatusMapName(migrationID)))
-	b := MustValue(json.Marshal(migration.MigrationStatus{
-		Status: migration.StatusComplete,
-		Report: "status report",
-		Logs:   []string{"log1", "log2"},
-	}))
-	Must(statusMap.Set(ctx, migration.StatusMapEntryName, serialization.JSON(b)))
-	msg = MustValue(json.Marshal(migration.UpdateMessage{Status: migration.StatusComplete, Message: "last message", CompletionPercentage: 100}))
-	Must(topic.Publish(ctx, serialization.JSON(msg)))
-	return fmt.Sprintf("migration_report_%s.txt", migrationID)
-}
-
-func failureRunner(tcx it.TestContext, ctx context.Context) string {
-	c := make(chan string, 1)
-	go findMigrationID(ctx, tcx, c)
-	migrationID := <-c
-	topic := MustValue(tcx.Client.GetTopic(ctx, migration.MakeUpdateTopicName(migrationID)))
-	msg := MustValue(json.Marshal(migration.UpdateMessage{Status: migration.StatusInProgress, Message: "first message", CompletionPercentage: 20}))
-	Must(topic.Publish(ctx, serialization.JSON(msg)))
-	statusMap := MustValue(tcx.Client.GetMap(ctx, migration.MakeStatusMapName(migrationID)))
-	b := MustValue(json.Marshal(migration.MigrationStatus{
-		Status: migration.StatusFailed,
-		Report: "fail status report",
-		Errors: []string{"error1", "error2"},
-	}))
-	Must(statusMap.Set(ctx, migration.StatusMapEntryName, serialization.JSON(b)))
-	msg = MustValue(json.Marshal(migration.UpdateMessage{Status: migration.StatusFailed, Message: "second message", CompletionPercentage: 60}))
-	Must(topic.Publish(ctx, serialization.JSON(msg)))
-	return fmt.Sprintf("migration_report_%s.txt", migrationID)
+func failureRunner(ctx context.Context, tcx it.TestContext, migrationID string, wg *sync.WaitGroup) {
+	mSQL := fmt.Sprintf(`CREATE MAPPING IF NOT EXISTS %s TYPE IMap OPTIONS('keyFormat'='varchar', 'valueFormat'='json')`, migration.StatusMapName)
+	MustValue(tcx.Client.SQL().Execute(ctx, mSQL))
+	statusMap := MustValue(tcx.Client.GetMap(ctx, migration.StatusMapName))
+	b := MustValue(os.ReadFile("testdata/start/migration_success_initial.json"))
+	MustValue(statusMap.Put(ctx, migrationID, serialization.JSON(b)))
+	b = MustValue(os.ReadFile("testdata/start/migration_success_failure.json"))
+	MustValue(statusMap.Put(ctx, migrationID, serialization.JSON(b)))
+	wg.Done()
 }
 
 func findMigrationID(ctx context.Context, tcx it.TestContext, c chan string) {
@@ -157,4 +101,13 @@ func findMigrationID(ctx context.Context, tcx it.TestContext, c chan string) {
 			break
 		}
 	}
+}
+
+func fileExists(filename string) bool {
+	MustValue(os.Getwd())
+	_, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return true
 }
