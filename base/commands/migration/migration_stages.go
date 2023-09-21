@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	errors2 "github.com/hazelcast/hazelcast-commandline-client/errors"
@@ -96,7 +97,7 @@ func migrationStages(ctx context.Context, ec plug.ExecContext, migrationID, repo
 						if err != nil {
 							return nil, err
 						}
-						var m MigrationStatusRow
+						var m DSMigrationStatus
 						if err = json.Unmarshal(rowStr.(serialization.JSON), &m); err != nil {
 							return nil, err
 						}
@@ -138,7 +139,7 @@ func dataStructuresToBeMigrated(ctx context.Context, ec plug.ExecContext, migrat
 			return nil, err
 		}
 		r, err := row.Get(0)
-		var status MigrationStatusTotal
+		var status OverallMigrationStatus
 		if err = json.Unmarshal(r.(serialization.JSON), &status); err != nil {
 			return nil, err
 		}
@@ -196,4 +197,111 @@ func waitForMigrationToBeCreated(ctx context.Context, ci *hazelcast.ClientIntern
 			return nil
 		}
 	}
+}
+
+type OverallMigrationStatus struct {
+	Status               Status              `json:"status"`
+	Logs                 []string            `json:"logs"`
+	Errors               []string            `json:"errors"`
+	Report               string              `json:"report"`
+	CompletionPercentage float32             `json:"completionPercentage"`
+	Migrations           []DSMigrationStatus `json:"migrations"`
+}
+
+type DataStructureInfo struct {
+	Name string
+	Type string
+}
+
+type DSMigrationStatus struct {
+	Name                 string  `json:"name"`
+	Type                 string  `json:"type"`
+	Status               Status  `json:"status"`
+	CompletionPercentage float32 `json:"completionPercentage"`
+	Error                string  `json:"error"`
+}
+
+func readMigrationStatus(ctx context.Context, ci *hazelcast.ClientInternal, migrationID string) (string, error) {
+	q := fmt.Sprintf(`SELECT JSON_QUERY(this, '$.status') FROM %s WHERE __key='%s'`, StatusMapName, migrationID)
+	res, err := ci.Client().SQL().Execute(ctx, q)
+	if err != nil {
+		return "", err
+	}
+	if err != nil {
+		return "", err
+	}
+	it, err := res.Iterator()
+	if err != nil {
+		return "", err
+	}
+	if it.HasNext() { // single iteration is enough that we are reading single result for a single migration
+		row, err := it.Next()
+		if err != nil {
+			return "", err
+		}
+		r, err := row.Get(0)
+		var m string
+		if err = json.Unmarshal(r.(serialization.JSON), &m); err != nil {
+			return "", err
+		}
+		return m, nil
+	}
+	return "", nil
+}
+
+func readMigrationReport(ctx context.Context, ci *hazelcast.ClientInternal, migrationID string) (string, error) {
+	q := fmt.Sprintf(`SELECT JSON_QUERY(this, '$.report') FROM %s WHERE __key='%s'`, StatusMapName, migrationID)
+	res, err := ci.Client().SQL().Execute(ctx, q)
+	if err != nil {
+		return "", err
+	}
+	if err != nil {
+		return "", err
+	}
+	it, err := res.Iterator()
+	if err != nil {
+		return "", err
+	}
+	if it.HasNext() { // single iteration is enough that we are reading single result for a single migration
+		row, err := it.Next()
+		if err != nil {
+			return "", err
+		}
+		r, err := row.Get(0)
+		var m string
+		if err = json.Unmarshal(r.(serialization.JSON), &m); err != nil {
+			return "", err
+		}
+		return m, nil
+	}
+	return "", nil
+}
+
+func readMigrationErrors(ctx context.Context, ci *hazelcast.ClientInternal, migrationID string) (string, error) {
+	q := fmt.Sprintf(`SELECT JSON_QUERY(this, '$.errors') FROM %s WHERE __key='%s'`, StatusMapName, migrationID)
+	res, err := ci.Client().SQL().Execute(ctx, q)
+	if err != nil {
+		return "", err
+	}
+	if err != nil {
+		return "", err
+	}
+	it, err := res.Iterator()
+	if err != nil {
+		return "", err
+	}
+	var errs []string
+	for it.HasNext() { // single iteration is enough that we are reading single result for a single migration
+		row, err := it.Next()
+		if err != nil {
+			return "", err
+		}
+		r, err := row.Get(0)
+		var m string
+		if err = json.Unmarshal(r.(serialization.JSON), &m); err != nil {
+			return "", err
+		}
+		errs = append(errs, m)
+	}
+	return strings.Join(errs, "\n"), nil
 }
