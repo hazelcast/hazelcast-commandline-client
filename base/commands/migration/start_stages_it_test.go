@@ -73,28 +73,32 @@ func successfulRunner(ctx context.Context, tcx it.TestContext, migrationID strin
 	MustValue(tcx.Client.SQL().Execute(ctx, mSQL))
 	statusMap := MustValue(tcx.Client.GetMap(ctx, migration.StatusMapName))
 	b := MustValue(os.ReadFile("testdata/start/migration_success_initial.json"))
-	MustValue(statusMap.Put(ctx, migrationID, serialization.JSON(b)))
+	Must(statusMap.Set(ctx, migrationID, serialization.JSON(b)))
 	b = MustValue(os.ReadFile("testdata/start/migration_success_completed.json"))
-	MustValue(statusMap.Put(ctx, migrationID, serialization.JSON(b)))
+	Must(statusMap.Set(ctx, migrationID, serialization.JSON(b)))
 	wg.Done()
 }
 
 func failureRunner(ctx context.Context, tcx it.TestContext, migrationID string, wg *sync.WaitGroup) {
-	mSQL := fmt.Sprintf(`CREATE MAPPING IF NOT EXISTS %s TYPE IMap OPTIONS('keyFormat'='varchar', 'valueFormat'='json')`, migration.StatusMapName)
-	MustValue(tcx.Client.SQL().Execute(ctx, mSQL))
+	createMapping(ctx, tcx)
 	statusMap := MustValue(tcx.Client.GetMap(ctx, migration.StatusMapName))
 	b := MustValue(os.ReadFile("testdata/start/migration_success_initial.json"))
-	MustValue(statusMap.Put(ctx, migrationID, serialization.JSON(b)))
+	Must(statusMap.Set(ctx, migrationID, serialization.JSON(b)))
 	b = MustValue(os.ReadFile("testdata/start/migration_success_failure.json"))
-	MustValue(statusMap.Put(ctx, migrationID, serialization.JSON(b)))
+	Must(statusMap.Set(ctx, migrationID, serialization.JSON(b)))
 	wg.Done()
+}
+
+func createMapping(ctx context.Context, tcx it.TestContext) {
+	mSQL := fmt.Sprintf(`CREATE MAPPING IF NOT EXISTS %s TYPE IMap OPTIONS('keyFormat'='varchar', 'valueFormat'='json')`, migration.StatusMapName)
+	MustValue(tcx.Client.SQL().Execute(ctx, mSQL))
 }
 
 func findMigrationID(ctx context.Context, tcx it.TestContext, c chan string) {
 	q := MustValue(tcx.Client.GetQueue(ctx, migration.StartQueueName))
 	var b migration.ConfigBundle
 	for {
-		v := MustValue(q.PollWithTimeout(ctx, 2*time.Second))
+		v := MustValue(q.PollWithTimeout(ctx, time.Second))
 		if v != nil {
 			Must(json.Unmarshal(v.(serialization.JSON), &b))
 			c <- b.MigrationID

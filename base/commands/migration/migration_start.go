@@ -60,7 +60,6 @@ Selected data structures in the source cluster will be migrated to the target cl
 	if _, err := stage.Execute(ctx, ec, any(nil), mp); err != nil {
 		return err
 	}
-
 	ec.PrintlnUnnecessary("")
 	ec.PrintlnUnnecessary("OK Migration completed successfully.")
 	return nil

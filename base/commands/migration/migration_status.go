@@ -18,6 +18,7 @@ func (s StatusCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("status")
 	cc.SetCommandGroup("migration")
 	help := "Get status of the data migration in progress"
+	cc.AddStringFlag(flagOutputDir, "o", "", false, "output directory for the migration report, if not given current directory is used")
 	cc.SetCommandHelp(help, help)
 	return nil
 }
@@ -25,9 +26,18 @@ func (s StatusCmd) Init(cc plug.InitContext) error {
 func (s StatusCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	ec.PrintlnUnnecessary("")
 	ec.PrintlnUnnecessary(banner)
-	sts := NewStatusStages(ec.Logger())
+	sts := NewStatusStages()
 	sp := stage.NewFixedProvider(sts.Build(ctx, ec)...)
-	if _, err := stage.Execute(ctx, ec, any(nil), sp); err != nil {
+	mID, err := stage.Execute(ctx, ec, any(nil), sp)
+	if err != nil {
+		return err
+	}
+	mStages, err := migrationStages(ctx, ec, mID.(string), ec.Props().GetString(flagOutputDir), sts.statusMap)
+	if err != nil {
+		return err
+	}
+	mp := stage.NewFixedProvider(mStages...)
+	if _, err := stage.Execute(ctx, ec, any(nil), mp); err != nil {
 		return err
 	}
 	ec.PrintlnUnnecessary("")

@@ -30,7 +30,7 @@ type MigrationStatusRow struct {
 	Name                 string  `json:"name"`
 	Type                 string  `json:"type"`
 	Status               Status  `json:"status"`
-	CompletionPercentage float32 `json:"completion_percentage"`
+	CompletionPercentage float32 `json:"completionPercentage"`
 	Error                string  `json:"error"`
 }
 

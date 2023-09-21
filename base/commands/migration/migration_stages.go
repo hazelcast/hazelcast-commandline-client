@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	errors2 "github.com/hazelcast/hazelcast-commandline-client/errors"
@@ -63,7 +64,7 @@ func migrationStages(ctx context.Context, ec plug.ExecContext, migrationID, repo
 					case StatusComplete:
 						return nil, nil
 					case StatusFailed:
-						return nil, errors.New(generalStatus.Errors[0]) //TODO
+						return nil, errors.New(strings.Join(generalStatus.Errors, "\n"))
 					case StatusCanceled, StatusCanceling:
 						return nil, errors2.ErrUserCancelled
 					}
