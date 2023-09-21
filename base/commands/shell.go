@@ -75,6 +75,9 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 			logText = fmt.Sprintf("Log %9s : %s", logLevel, logPath)
 		}
 		check.I2(fmt.Fprintf(ec.Stdout(), banner, internal.Version, cfgText, logText))
+		if err = MaybePrintNewVersionNotification(ctx, ec); err != nil {
+			ec.Logger().Error(err)
+		}
 	}
 	endLineFn := makeEndLineFunc()
 	textFn := makeTextFunc(m, ec, func(shortcut string) bool {
