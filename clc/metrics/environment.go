@@ -28,12 +28,9 @@ func (g *GlobalAttributes) Marshal() ([]byte, error) {
 }
 
 func (g *GlobalAttributes) Unmarshal(b []byte) error {
-	ga := GlobalAttributes{}
-	err := json.Unmarshal(b, &ga)
-	if err != nil {
+	if err := json.Unmarshal(b, g); err != nil {
 		return err
 	}
-	*g = ga
 	return nil
 }
 
@@ -73,11 +70,8 @@ func (g *SessionAttributes) Marshal() ([]byte, error) {
 }
 
 func (g *SessionAttributes) Unmarshal(b []byte) error {
-	gm := SessionAttributes{}
-	err := json.Unmarshal(b, &gm)
-	if err != nil {
+	if err := json.Unmarshal(b, g); err != nil {
 		return err
 	}
-	*g = gm
 	return nil
 }

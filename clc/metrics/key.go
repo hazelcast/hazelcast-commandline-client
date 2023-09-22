@@ -73,7 +73,7 @@ func (c *storageKey) Date() string {
 func (c *storageKey) Unmarshal(b []byte) error {
 	s := strings.Split(string(b), KeyFieldSeparator)
 	if len(s) != 7 {
-		return errors.New("Key is in an incorrect format")
+		return errors.New("key is in an incorrect format")
 	}
 	date, err := time.Parse(DateFormat, s[1])
 	if err != nil {

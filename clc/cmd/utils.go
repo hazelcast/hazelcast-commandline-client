@@ -110,7 +110,9 @@ func FindClusterIDs(ctx context.Context, ec plug.ExecContext) (clusterID string,
 	}
 	clusterID = ci.ClusterID().String()
 	if vtoken := ec.Props().GetString(clc.PropertyClusterDiscoveryToken); vtoken != "" {
-		clusterName := ci.ClusterService().FailoverService().Current().ClusterName
+		cluster := ci.ClusterService().FailoverService().Current()
+		if cluster != nil {
+			clusterName := ci.ClusterService().FailoverService().Current().ClusterName
 		viridianID = parseViridianClusterID(clusterName)
 	}
 	return

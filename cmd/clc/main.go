@@ -60,7 +60,7 @@ func main() {
 			}
 		}
 	}
-	close <- true
+	close(doneCh)
 	sendMetric()
 	// ignoring the error here
 	_ = m.Exit()
