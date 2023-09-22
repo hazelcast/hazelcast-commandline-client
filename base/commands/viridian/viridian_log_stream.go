@@ -49,7 +49,7 @@ The log format may be one of:
 }
 
 func (StreamLogCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
-	ec.Metrics().Increment(metrics.NewSimpleKey(), "total.viridian."+cmd.RunningMode(ec))
+	ec.Metrics().Increment(metrics.NewSimpleKey(), "total.viridian."+cmd.RunningModeString(ec))
 	api, err := getAPI(ec)
 	if err != nil {
 		return err

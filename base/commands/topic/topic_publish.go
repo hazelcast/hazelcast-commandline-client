@@ -36,7 +36,7 @@ func (PublishCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 			return nil, err
 		}
 		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.topic."+cmd.RunningMode(ec))
+		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.topic."+cmd.RunningModeString(ec))
 		// get the topic just to ensure the corresponding proxy is created
 		t, err := ci.Client().GetTopic(ctx, name)
 		if err != nil {

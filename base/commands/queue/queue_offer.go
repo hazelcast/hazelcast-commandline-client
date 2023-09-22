@@ -36,7 +36,7 @@ func (QueueOfferCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 			return nil, err
 		}
 		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.queue."+cmd.RunningMode(ec))
+		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.queue."+cmd.RunningModeString(ec))
 		q, err := ci.Client().GetQueue(ctx, name)
 		if err != nil {
 			return nil, err

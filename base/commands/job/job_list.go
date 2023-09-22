@@ -37,7 +37,7 @@ func (ListCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 			return nil, err
 		}
 		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.job."+cmd.RunningMode(ec))
+		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.job."+cmd.RunningModeString(ec))
 		sp.SetText("Getting the job list")
 		j := jet.New(ci, sp, ec.Logger())
 		jl, err := j.GetJobList(ctx)

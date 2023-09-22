@@ -50,7 +50,7 @@ func (cm MapEntrySetCommand) Exec(ctx context.Context, ec plug.ExecContext) erro
 			return nil, err
 		}
 		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), fmt.Sprintf("total.%s.%s", strings.ToLower(cm.typeName), cmd.RunningMode(ec)))
+		ec.Metrics().Increment(metrics.NewKey(cid, vid), fmt.Sprintf("total.%s.%s", strings.ToLower(cm.typeName), cmd.RunningModeString(ec)))
 		req := cm.encoder(name)
 		sp.SetText(fmt.Sprintf("Getting entries of %s", name))
 		resp, err := ci.InvokeOnRandomTarget(ctx, req, nil)
@@ -103,7 +103,7 @@ func (cm MapGetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 			return nil, err
 		}
 		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), fmt.Sprintf("total.%s.%s", strings.ToLower(cm.typeName), cmd.RunningMode(ec)))
+		ec.Metrics().Increment(metrics.NewKey(cid, vid), fmt.Sprintf("total.%s.%s", strings.ToLower(cm.typeName), cmd.RunningModeString(ec)))
 		sp.SetText(fmt.Sprintf("Getting from %s '%s'", cm.typeName, name))
 		keyData, err := MakeKeyData(ec, ci, keyStr)
 		if err != nil {
@@ -160,7 +160,7 @@ func (cm MapKeySetCommand) Exec(ctx context.Context, ec plug.ExecContext) error 
 			return nil, err
 		}
 		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), fmt.Sprintf("total.%s.%s", strings.ToLower(cm.typeName), cmd.RunningMode(ec)))
+		ec.Metrics().Increment(metrics.NewKey(cid, vid), fmt.Sprintf("total.%s.%s", strings.ToLower(cm.typeName), cmd.RunningModeString(ec)))
 		req := cm.encoder(name)
 		sp.SetText(fmt.Sprintf("Getting keys of %s '%s'", cm.typeName, name))
 		resp, err := ci.InvokeOnRandomTarget(ctx, req, nil)
@@ -223,7 +223,7 @@ func (cm MapRemoveCommand) Exec(ctx context.Context, ec plug.ExecContext) error 
 			return nil, err
 		}
 		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), fmt.Sprintf("total.%s.%s", strings.ToLower(cm.typeName), cmd.RunningMode(ec)))
+		ec.Metrics().Increment(metrics.NewKey(cid, vid), fmt.Sprintf("total.%s.%s", strings.ToLower(cm.typeName), cmd.RunningModeString(ec)))
 		sp.SetText(fmt.Sprintf("Removing from %s '%s'", cm.typeName, name))
 		keyData, err := MakeKeyData(ec, ci, keyStr)
 		if err != nil {
@@ -285,7 +285,7 @@ func (cm LockCommand[T]) Exec(ctx context.Context, ec plug.ExecContext) error {
 			return nil, err
 		}
 		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), fmt.Sprintf("total.%s.%s", strings.ToLower(cm.typeName), cmd.RunningMode(ec)))
+		ec.Metrics().Increment(metrics.NewKey(cid, vid), fmt.Sprintf("total.%s.%s", strings.ToLower(cm.typeName), cmd.RunningModeString(ec)))
 		m, err := cm.getFn(ctx, ec, sp)
 		if err != nil {
 			return nil, err
@@ -352,7 +352,7 @@ func (cm MapTryLockCommand[T]) Exec(ctx context.Context, ec plug.ExecContext) er
 			return nil, err
 		}
 		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), fmt.Sprintf("total.%s.%s", strings.ToLower(cm.typeName), cmd.RunningMode(ec)))
+		ec.Metrics().Increment(metrics.NewKey(cid, vid), fmt.Sprintf("total.%s.%s", strings.ToLower(cm.typeName), cmd.RunningModeString(ec)))
 		sp.SetText(fmt.Sprintf("Locking key in map %s", mapName))
 		m, err := cm.getFn(ctx, ec, sp)
 		if err != nil {
@@ -430,7 +430,7 @@ func (cm MapUnlockCommand[T]) Exec(ctx context.Context, ec plug.ExecContext) err
 			return nil, err
 		}
 		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), fmt.Sprintf("total.%s.%s", strings.ToLower(cm.typeName), cmd.RunningMode(ec)))
+		ec.Metrics().Increment(metrics.NewKey(cid, vid), fmt.Sprintf("total.%s.%s", strings.ToLower(cm.typeName), cmd.RunningModeString(ec)))
 		sp.SetText(fmt.Sprintf("Unlocking key in %s '%s'", cm.typeName, name))
 		m, err := cm.getFn(ctx, ec, sp)
 		if err != nil {
@@ -482,7 +482,7 @@ func (cm *MapValuesCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 			return nil, err
 		}
 		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), fmt.Sprintf("total.%s.%s", strings.ToLower(cm.typeName), cmd.RunningMode(ec)))
+		ec.Metrics().Increment(metrics.NewKey(cid, vid), fmt.Sprintf("total.%s.%s", strings.ToLower(cm.typeName), cmd.RunningModeString(ec)))
 		sp.SetText(fmt.Sprintf("Getting values of %s", name))
 		req := cm.encoder(name)
 		resp, err := ci.InvokeOnRandomTarget(ctx, req, nil)

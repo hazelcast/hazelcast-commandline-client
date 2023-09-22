@@ -38,7 +38,7 @@ func (sc *RemoveCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 			return nil, err
 		}
 		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.set."+cmd.RunningMode(ec))
+		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.set."+cmd.RunningModeString(ec))
 		sp.SetText(fmt.Sprintf("Removing from Set '%s'", name))
 		showType := ec.Props().GetBool(base.FlagShowType)
 		var rows []output.Row

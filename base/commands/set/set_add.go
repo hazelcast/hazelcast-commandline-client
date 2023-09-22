@@ -36,7 +36,7 @@ func (AddCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 			return nil, err
 		}
 		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.set."+cmd.RunningMode(ec))
+		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.set."+cmd.RunningModeString(ec))
 		s, err := ci.Client().GetSet(ctx, name)
 		if err != nil {
 			return nil, err

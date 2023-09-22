@@ -52,7 +52,7 @@ func (ListTemplatesCommand) Init(cc plug.InitContext) error {
 }
 
 func (ListTemplatesCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
-	ec.Metrics().Increment(metrics.NewSimpleKey(), "total.project."+cmd.RunningMode(ec))
+	ec.Metrics().Increment(metrics.NewSimpleKey(), "total.project."+cmd.RunningModeString(ec))
 	isLocal := ec.Props().GetBool(flagLocal)
 	isRefresh := ec.Props().GetBool(flagRefresh)
 	if isLocal && isRefresh {

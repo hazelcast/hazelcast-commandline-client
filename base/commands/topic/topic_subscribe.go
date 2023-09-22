@@ -47,7 +47,7 @@ func (SubscribeCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 			return nil, err
 		}
 		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.topic."+cmd.RunningMode(ec))
+		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.topic."+cmd.RunningModeString(ec))
 		sp.SetText(fmt.Sprintf("Listening to messages of topic %s", name))
 		sid, err := addListener(ctx, ci, name, ec.Logger(), func(event TopicEvent) {
 			select {

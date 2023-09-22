@@ -41,7 +41,7 @@ func (MapLoadAllCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 			return nil, err
 		}
 		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.map."+cmd.RunningMode(ec))
+		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.map."+cmd.RunningModeString(ec))
 		var keys []hazelcast.Data
 		for _, keyStr := range ec.GetStringSliceArg(commands.ArgKey) {
 			keyData, err := commands.MakeKeyData(ec, ci, keyStr)

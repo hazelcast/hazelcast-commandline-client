@@ -41,7 +41,7 @@ func (MapSetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 			return nil, err
 		}
 		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.map."+cmd.RunningMode(ec))
+		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.map."+cmd.RunningModeString(ec))
 		sp.SetText(fmt.Sprintf("Setting value into Map '%s'", mapName))
 		_, err = getMap(ctx, ec, sp)
 		if err != nil {

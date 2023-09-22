@@ -40,7 +40,7 @@ func (mc *ListSetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 			return nil, err
 		}
 		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.list."+cmd.RunningMode(ec))
+		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.list."+cmd.RunningModeString(ec))
 		// get the list just to ensure the corresponding proxy is created
 		_, err = getList(ctx, ec, sp)
 		if err != nil {

@@ -38,7 +38,7 @@ func removeFromList(ctx context.Context, ec plug.ExecContext, name string, index
 			return nil, err
 		}
 		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.list."+cmd.RunningMode(ec))
+		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.list."+cmd.RunningModeString(ec))
 		pid, err := internal.StringToPartitionID(ci, name)
 		if err != nil {
 			return nil, err

@@ -110,7 +110,7 @@ func (pc CreateCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 }
 
 func createProject(ec plug.ExecContext, outputDir, templateName string) error {
-	ec.Metrics().Increment(metrics.NewSimpleKey(), "total.project."+cmd.RunningMode(ec))
+	ec.Metrics().Increment(metrics.NewSimpleKey(), "total.project."+cmd.RunningModeString(ec))
 	sourceDir := paths.ResolveTemplatePath(templateName)
 	vs, err := loadValues(ec, sourceDir)
 	if err != nil {

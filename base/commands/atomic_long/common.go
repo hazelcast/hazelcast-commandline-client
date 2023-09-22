@@ -31,7 +31,7 @@ func atomicLongChangeValue(ctx context.Context, ec plug.ExecContext, verb string
 			return nil, err
 		}
 		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.atomiclong."+cmd.RunningMode(ec))
+		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.atomiclong."+cmd.RunningModeString(ec))
 		sp.SetText(fmt.Sprintf("%sing the AtomicLong %s", verb, name))
 		val, err := ali.AddAndGet(ctx, change(by))
 		if err != nil {

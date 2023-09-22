@@ -32,7 +32,7 @@ Make sure you login before running this command.
 }
 
 func (ClusterGetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
-	ec.Metrics().Increment(metrics.NewSimpleKey(), "total.viridian."+cmd.RunningMode(ec))
+	ec.Metrics().Increment(metrics.NewSimpleKey(), "total.viridian."+cmd.RunningModeString(ec))
 	api, err := getAPI(ec)
 	if err != nil {
 		return err

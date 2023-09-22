@@ -99,6 +99,7 @@ func parseDuration(duration string) (time.Duration, error) {
 }
 
 func FindClusterIDs(ctx context.Context, ec plug.ExecContext) (clusterID string, viridianID string) {
+	// Must not be called before ec.ClusterInternal function.
 	if !PhoneHomeEnabled() {
 		return "", ""
 	}
@@ -113,7 +114,8 @@ func FindClusterIDs(ctx context.Context, ec plug.ExecContext) (clusterID string,
 		cluster := ci.ClusterService().FailoverService().Current()
 		if cluster != nil {
 			clusterName := ci.ClusterService().FailoverService().Current().ClusterName
-		viridianID = parseViridianClusterID(clusterName)
+			viridianID = parseViridianClusterID(clusterName)
+		}
 	}
 	return
 }
@@ -126,7 +128,7 @@ func parseViridianClusterID(cid string) string {
 	return s[1]
 }
 
-func RunningMode(ec plug.ExecContext) string {
+func RunningModeString(ec plug.ExecContext) string {
 	switch ec.Mode() {
 	case plug.ModeNonInteractive:
 		return "noninteractive-mode"

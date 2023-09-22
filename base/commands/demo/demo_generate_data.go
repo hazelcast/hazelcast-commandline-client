@@ -71,7 +71,7 @@ func (GenerateDataCommand) Exec(ctx context.Context, ec plug.ExecContext) error 
 }
 
 func generatePreviewResult(ctx context.Context, ec plug.ExecContext, generator dataStreamGenerator, keyVals map[string]string) error {
-	ec.Metrics().Increment(metrics.NewSimpleKey(), "total.demo."+cmd.RunningMode(ec))
+	ec.Metrics().Increment(metrics.NewSimpleKey(), "total.demo."+cmd.RunningModeString(ec))
 	maxCount := ec.Props().GetInt(flagMaxValues)
 	if maxCount < 1 {
 		maxCount = 10
@@ -116,7 +116,7 @@ func generateResult(ctx context.Context, ec plug.ExecContext, generator dataStre
 			return "", err
 		}
 		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.demo."+cmd.RunningMode(ec))
+		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.demo."+cmd.RunningModeString(ec))
 		return query, nil
 	})
 	if err != nil {

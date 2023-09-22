@@ -41,7 +41,7 @@ func (MultiMapPutCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 			return nil, err
 		}
 		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.multimap."+cmd.RunningMode(ec))
+		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.multimap."+cmd.RunningModeString(ec))
 		sp.SetText(fmt.Sprintf("Putting value into MultiMap '%s'", name))
 		kd, vd, err := commands.MakeKeyValueData(ec, ci, keyStr, valueStr)
 		if err != nil {

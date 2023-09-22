@@ -106,7 +106,7 @@ func submitJar(ctx context.Context, ec plug.ExecContext, path string) (int64, er
 					return 0, err
 				}
 				cid, vid := cmd.FindClusterIDs(ctx, ec)
-				ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.job."+cmd.RunningMode(ec))
+				ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.job."+cmd.RunningModeString(ec))
 				if sv, ok := cmd.CheckServerCompatible(ci, minServerVersion); !ok {
 					err := fmt.Errorf("server (%s) does not support this command, at least %s is expected", sv, minServerVersion)
 					return 0, err

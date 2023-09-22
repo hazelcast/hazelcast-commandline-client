@@ -50,7 +50,7 @@ func (m MapSetManyCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 			return nil, err
 		}
 		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.demo."+cmd.RunningMode(ec))
+		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.demo."+cmd.RunningModeString(ec))
 		sp.SetText(fmt.Sprintf("Creating entries in map %s with %d entries", mapName, count))
 		mm, err := ci.Client().GetMap(ctx, mapName)
 		if err != nil {

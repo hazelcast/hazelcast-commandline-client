@@ -32,7 +32,7 @@ Make sure you login before running this command.
 }
 
 func (cm ImportConfigCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
-	ec.Metrics().Increment(metrics.NewSimpleKey(), "total.viridian."+cmd.RunningMode(ec))
+	ec.Metrics().Increment(metrics.NewSimpleKey(), "total.viridian."+cmd.RunningModeString(ec))
 	if err := cm.exec(ctx, ec); err != nil {
 		err = handleErrorResponse(ec, err)
 		return fmt.Errorf("could not import cluster configuration: %w", err)

@@ -35,7 +35,7 @@ func (GetAllCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 			return nil, err
 		}
 		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.set."+cmd.RunningMode(ec))
+		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.set."+cmd.RunningModeString(ec))
 		req := codec.EncodeSetGetAllRequest(name)
 		pID, err := internal.StringToPartitionID(ci, name)
 		if err != nil {

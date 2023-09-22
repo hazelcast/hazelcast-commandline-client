@@ -53,7 +53,7 @@ See examples/sql/dessert.sql for a sample script.
 }
 
 func (ScriptCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
-	ec.Metrics().Increment(metrics.NewSimpleKey(), "total.script."+cmd.RunningMode(ec))
+	ec.Metrics().Increment(metrics.NewSimpleKey(), "total.script."+cmd.RunningModeString(ec))
 	args := ec.GetStringSliceArg(argPath)
 	in := ec.Stdin()
 	if len(args) > 0 {

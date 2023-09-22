@@ -53,7 +53,7 @@ Alternatively, you can use the following environment variables:
 }
 
 func (cm LoginCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
-	ec.Metrics().Increment(metrics.NewSimpleKey(), "total.viridian."+cmd.RunningMode(ec))
+	ec.Metrics().Increment(metrics.NewSimpleKey(), "total.viridian."+cmd.RunningModeString(ec))
 	key, secret, err := getAPIKeySecret(ec)
 	if err != nil {
 		return err

@@ -44,7 +44,7 @@ func (ExportSnapshotCommand) Exec(ctx context.Context, ec plug.ExecContext) erro
 			return nil, err
 		}
 		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.job."+cmd.RunningMode(ec))
+		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.job."+cmd.RunningModeString(ec))
 		j := jet.New(ci, sp, ec.Logger())
 		jis, err := j.GetJobList(ctx)
 		if err != nil {

@@ -34,7 +34,7 @@ func (mc *SetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 			return nil, err
 		}
 		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.atomiclong."+cmd.RunningMode(ec))
+		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.atomiclong."+cmd.RunningModeString(ec))
 		sp.SetText(fmt.Sprintf("Setting value of AtomicLong %s", name))
 		v := ec.GetInt64Arg(base.ArgValue)
 		err = ali.Set(ctx, v)
