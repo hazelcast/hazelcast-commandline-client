@@ -65,7 +65,7 @@ type metricStore struct {
 
 func newMetricStore(ctx context.Context, dir string) (*metricStore, error) {
 	ms := metricStore{
-		serverURL:     "", // TODO: server side is not implemented
+		serverURL:     "http://phonehome.hazelcast.com/pingCLC",
 		inc:           make(map[storageKey]int),
 		override:      make(map[storageKey]int),
 		sessAttrs:     NewSessionMetrics(),
