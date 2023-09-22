@@ -10,7 +10,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
-	metric "github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/jet"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
@@ -44,7 +44,7 @@ func (ExportSnapshotCommand) Exec(ctx context.Context, ec plug.ExecContext) erro
 			return nil, err
 		}
 		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metric.NewKey(cid, vid), "total.job."+cmd.RunningMode(ec))
+		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.job."+cmd.RunningMode(ec))
 		j := jet.New(ci, sp, ec.Logger())
 		jis, err := j.GetJobList(ctx)
 		if err != nil {

@@ -9,7 +9,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
-	metric "github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -34,7 +34,7 @@ func (mc *SetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 			return nil, err
 		}
 		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metric.NewKey(cid, vid), "total.atomiclong."+cmd.RunningMode(ec))
+		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.atomiclong."+cmd.RunningMode(ec))
 		sp.SetText(fmt.Sprintf("Setting value of AtomicLong %s", name))
 		v := ec.GetInt64Arg(base.ArgValue)
 		err = ali.Set(ctx, v)

@@ -13,7 +13,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/types"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
-	metric "github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/jet"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -73,7 +73,7 @@ func terminateJob(ctx context.Context, ec plug.ExecContext, tm int32, cm Termina
 					return 0, err
 				}
 				cid, vid := cmd.FindClusterIDs(ctx, ec)
-				ec.Metrics().Increment(metric.NewKey(cid, vid), "total.job."+cmd.RunningMode(ec))
+				ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.job."+cmd.RunningMode(ec))
 				j := jet.New(ci, status, ec.Logger())
 				jis, err := j.GetJobList(ctx)
 				if err != nil {

@@ -9,7 +9,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
-	metric "github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
@@ -35,7 +35,7 @@ func (GetAllCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 			return nil, err
 		}
 		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metric.NewKey(cid, vid), "total.set."+cmd.RunningMode(ec))
+		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.set."+cmd.RunningMode(ec))
 		req := codec.EncodeSetGetAllRequest(name)
 		pID, err := internal.StringToPartitionID(ci, name)
 		if err != nil {

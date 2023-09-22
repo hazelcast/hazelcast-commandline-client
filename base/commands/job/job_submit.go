@@ -11,7 +11,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
-	metric "github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -106,7 +106,7 @@ func submitJar(ctx context.Context, ec plug.ExecContext, path string) (int64, er
 					return 0, err
 				}
 				cid, vid := cmd.FindClusterIDs(ctx, ec)
-				ec.Metrics().Increment(metric.NewKey(cid, vid), "total.job."+cmd.RunningMode(ec))
+				ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.job."+cmd.RunningMode(ec))
 				if sv, ok := cmd.CheckServerCompatible(ci, minServerVersion); !ok {
 					err := fmt.Errorf("server (%s) does not support this command, at least %s is expected", sv, minServerVersion)
 					return 0, err

@@ -1,4 +1,4 @@
-package metric
+package metrics
 
 type Query struct {
 	Date                       string `json:"date"`

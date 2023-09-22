@@ -1,11 +1,10 @@
-package metric
+package metrics
 
 import (
 	"encoding/json"
 	"time"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/store"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/types"
 )
 
 func GenerateFirstPingQuery(ga GlobalAttributes, sa SessionAttributes, t time.Time) Query {
@@ -24,7 +23,7 @@ type MetricValues map[string]int
 func GenerateQueries(db *store.Store, ga GlobalAttributes, dates map[string]struct{}) []Query {
 	qs := make([]Query, 0, len(dates))
 	for date := range dates {
-		entries := make(map[types.Quadruple[string]]MetricValues)
+		entries := make(map[[4]string]MetricValues)
 		prefix := datePrefix(date)
 		db.RunForeachWithPrefix(prefix, func(keyb, valb []byte) (bool, error) {
 			var k storageKey
@@ -35,9 +34,8 @@ func GenerateQueries(db *store.Store, ga GlobalAttributes, dates map[string]stru
 			if err := json.Unmarshal(valb, &v); err != nil {
 				return false, err
 			}
-
-			attributes := types.NewQuadruple(k.ClusterID, k.ViridianClusterID,
-				string(k.AcquisitionSource), k.CLCVersion)
+			attributes := [4]string{k.ClusterID, k.ViridianClusterID,
+				string(k.AcquisitionSource), k.CLCVersion}
 			if _, ok := entries[attributes]; !ok {
 				entries[attributes] = make(MetricValues)
 			}
@@ -45,10 +43,10 @@ func GenerateQueries(db *store.Store, ga GlobalAttributes, dates map[string]stru
 			return true, nil
 		})
 		for attribs, metrics := range entries {
-			cid := attribs.First
-			vid := attribs.Second
-			acqSource := attribs.Third
-			version := attribs.Fourth
+			cid := attribs[0]
+			vid := attribs[1]
+			acqSource := attribs[2]
+			version := attribs[3]
 			d := Query{
 				Date:                       date,
 				ID:                         ga.ID,

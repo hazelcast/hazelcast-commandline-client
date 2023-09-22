@@ -9,7 +9,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	metric "github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
@@ -99,7 +99,7 @@ type ExecContext struct {
 	props   *plug.Properties
 	Rows    []output.Row
 	Spinner *Spinner
-	ms      metric.MetricStorer
+	ms      metrics.MetricStorer
 }
 
 func NewExecuteContext(args []string) *ExecContext {
@@ -111,7 +111,7 @@ func NewExecuteContext(args []string) *ExecContext {
 		args:    args,
 		props:   plug.NewProperties(),
 		Spinner: NewSpinner(),
-		ms:      &metric.NopMetricStore{},
+		ms:      &metrics.NopMetricStore{},
 	}
 }
 
@@ -146,7 +146,7 @@ func (ec *ExecContext) AddOutputRows(ctx context.Context, rows ...output.Row) er
 	return nil
 }
 
-func (ec *ExecContext) Metrics() metric.MetricStorer {
+func (ec *ExecContext) Metrics() metrics.MetricStorer {
 	return ec.ms
 }
 

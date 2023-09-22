@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	metric "github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
 )
 
 const (
@@ -37,7 +37,7 @@ func Configs() string {
 }
 
 func Metrics() string {
-	return filepath.Join(Caches(), fmt.Sprintf("metrics-%s", metric.MetricsVersion))
+	return filepath.Join(Caches(), fmt.Sprintf("metrics-%s", metrics.MetricsVersion))
 }
 
 func Schemas() string {

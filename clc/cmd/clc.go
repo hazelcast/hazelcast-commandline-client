@@ -19,7 +19,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/logger"
-	metric "github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	puberrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 
@@ -45,13 +45,13 @@ type Main struct {
 	props        *plug.Properties
 	cc           *CommandContext
 	cp           config.Provider
-	ms           metric.MetricStorer
+	ms           metrics.MetricStorer
 	arg0         string
 	ciMu         *sync.Mutex
 	ci           *atomic.Pointer[hazelcast.ClientInternal]
 }
 
-func NewMain(arg0, cfgPath string, cfgProvider config.Provider, logPath, logLevel string, sio clc.IO, ms metric.MetricStorer) (*Main, error) {
+func NewMain(arg0, cfgPath string, cfgProvider config.Provider, logPath, logLevel string, sio clc.IO, ms metrics.MetricStorer) (*Main, error) {
 	rc := &cobra.Command{
 		Use:               arg0,
 		Short:             MainCommandShortHelp,

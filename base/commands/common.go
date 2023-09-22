@@ -11,7 +11,7 @@ import (
 	_ "github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
-	metric "github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
 	"github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/mk"
@@ -77,7 +77,7 @@ func (cm DestroyCommand[T]) Exec(ctx context.Context, ec plug.ExecContext) error
 			return nil, err
 		}
 		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metric.NewKey(cid, vid), fmt.Sprintf("total.%s.%s", strings.ToLower(cm.typeName), cmd.RunningMode(ec)))
+		ec.Metrics().Increment(metrics.NewKey(cid, vid), fmt.Sprintf("total.%s.%s", strings.ToLower(cm.typeName), cmd.RunningMode(ec)))
 		sp.SetText(fmt.Sprintf("Destroying %s '%s'", cm.typeName, name))
 		if err := m.Destroy(ctx); err != nil {
 			return nil, err
@@ -139,7 +139,7 @@ func (cm ClearCommand[T]) Exec(ctx context.Context, ec plug.ExecContext) error {
 			return nil, err
 		}
 		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metric.NewKey(cid, vid), fmt.Sprintf("total.%s.%s", strings.ToLower(cm.typeName), cmd.RunningMode(ec)))
+		ec.Metrics().Increment(metrics.NewKey(cid, vid), fmt.Sprintf("total.%s.%s", strings.ToLower(cm.typeName), cmd.RunningMode(ec)))
 		sp.SetText(fmt.Sprintf("Clearing %s '%s'", cm.typeName, name))
 		if err := m.Clear(ctx); err != nil {
 			return nil, err
@@ -188,7 +188,7 @@ func (cm SizeCommand[T]) Exec(ctx context.Context, ec plug.ExecContext) error {
 			return nil, err
 		}
 		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metric.NewKey(cid, vid), fmt.Sprintf("total.%s.%s", strings.ToLower(cm.typeName), cmd.RunningMode(ec)))
+		ec.Metrics().Increment(metrics.NewKey(cid, vid), fmt.Sprintf("total.%s.%s", strings.ToLower(cm.typeName), cmd.RunningMode(ec)))
 		sp.SetText(fmt.Sprintf("Getting the size of %s '%s'", cm.typeName, name))
 		return m.Size(ctx)
 	})

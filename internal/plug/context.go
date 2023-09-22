@@ -7,7 +7,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	metric "github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/types"
@@ -42,7 +42,7 @@ type InitContext interface {
 type ExecContext interface {
 	AddOutputRows(ctx context.Context, rows ...output.Row) error
 	AddOutputStream(ctx context.Context, ch <-chan output.Row) error
-	Metrics() metric.MetricStorer
+	Metrics() metrics.MetricStorer
 	Args() []string
 	GetStringArg(key string) string
 	GetStringSliceArg(key string) []string

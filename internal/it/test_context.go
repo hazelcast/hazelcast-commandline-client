@@ -35,7 +35,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
-	metric "github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/shell"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -330,7 +330,7 @@ func (tcx TestContext) createMain() (*cmd.Main, error) {
 	if err != nil {
 		panic(err)
 	}
-	return cmd.NewMain("clctest", tcx.ConfigPath, fp, tcx.LogPath, tcx.LogLevel, tcx.IO(), &metric.NopMetricStore{})
+	return cmd.NewMain("clctest", tcx.ConfigPath, fp, tcx.LogPath, tcx.LogLevel, tcx.IO(), &metrics.NopMetricStore{})
 }
 
 func WithEnv(name, value string, f func()) {

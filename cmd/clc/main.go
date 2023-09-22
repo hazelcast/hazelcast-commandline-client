@@ -12,7 +12,7 @@ import (
 	clc "github.com/hazelcast/hazelcast-commandline-client/clc"
 	cmd "github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
-	metric "github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	hzerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -46,8 +46,8 @@ func main() {
 	_, name := filepath.Split(os.Args[0])
 	stdio := clc.StdIO()
 	createMetricStore(paths.Metrics())
-	close := startTicker()
-	m, err := cmd.NewMain(name, cfgPath, cp, logPath, logLevel, stdio, metric.Storage)
+	close := startMetricsTicker()
+	m, err := cmd.NewMain(name, cfgPath, cp, logPath, logLevel, stdio, metrics.Storage)
 	if err != nil {
 		bye(err)
 	}
@@ -78,30 +78,32 @@ func main() {
 
 func createMetricStore(dir string) {
 	if !cmd.PhoneHomeEnabled() {
-		metric.Storage = &metric.NopMetricStore{}
+		metrics.Storage = &metrics.NopMetricStore{}
 		return
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
-	store, err := metric.NewMetricStore(ctx, dir)
+	store, err := metrics.NewMetricStore(ctx, dir)
 	if err != nil {
-		metric.Storage = &metric.NopMetricStore{}
+		metrics.Storage = &metrics.NopMetricStore{}
 		return
 	}
-	metric.Storage = store
+	metrics.Storage = store
 }
 
-func startTicker() chan bool {
+func startMetricsTicker() chan bool {
 	done := make(chan bool)
 	go func() {
 		ticker := time.NewTicker(24 * time.Hour)
+		defer ticker.Stop()
 		for {
 			select {
 			case <-done:
 				return
 			case <-ticker.C:
 				ctx, cancel := context.WithTimeout(context.Background(), 5000*time.Millisecond)
-				_ = metric.Storage.Send(ctx)
+				// ignore errors about metrics
+				_ = metrics.Storage.Send(ctx)
 				cancel()
 			}
 		}
@@ -114,11 +116,12 @@ func sendMetric() {
 	cd := paths.Configs()
 	cs, err := config.FindAll(cd)
 	if err == nil {
-		metric.Storage.Store(metric.NewSimpleKey(), "cluster-config-count", len(cs))
+		metrics.Storage.Store(metrics.NewSimpleKey(), "cluster-config-count", len(cs))
 	}
 	// try to send the data stored locally
 	// if there is no metric to send, do nothing
 	ctx, cancel := context.WithTimeout(context.Background(), 3000*time.Millisecond)
-	_ = metric.Storage.Send(ctx)
+	// we want to ignore errors about metrics
+	_ = metrics.Storage.Send(ctx)
 	cancel()
 }

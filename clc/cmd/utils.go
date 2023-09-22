@@ -11,7 +11,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	metric "github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
@@ -138,6 +138,6 @@ func RunningMode(ec plug.ExecContext) string {
 }
 
 func PhoneHomeEnabled() bool {
-	val := os.Getenv(metric.EnvPhoneHomeEnabled)
+	val := os.Getenv(metrics.EnvPhoneHomeEnabled)
 	return strings.ToLower(val) != "false"
 }

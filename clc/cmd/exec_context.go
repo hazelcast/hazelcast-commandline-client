@@ -16,7 +16,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
-	metric "github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
 	cmderrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
@@ -48,10 +48,10 @@ type ExecContext struct {
 	spinnerWait time.Duration
 	printer     plug.Printer
 	cp          config.Provider
-	ms          metric.MetricStorer
+	ms          metrics.MetricStorer
 }
 
-func NewExecContext(lg log.Logger, sio clc.IO, props *plug.Properties, mode plug.Mode, ms metric.MetricStorer) (*ExecContext, error) {
+func NewExecContext(lg log.Logger, sio clc.IO, props *plug.Properties, mode plug.Mode, ms metrics.MetricStorer) (*ExecContext, error) {
 	return &ExecContext{
 		lg:          lg,
 		stdout:      sio.Stdout,
@@ -175,7 +175,7 @@ func (ec *ExecContext) AddOutputStream(ctx context.Context, ch <-chan output.Row
 	return ec.printer.PrintStream(ctx, ec.stdout, output.NewChanRows(ch))
 }
 
-func (ec *ExecContext) Metrics() metric.MetricStorer {
+func (ec *ExecContext) Metrics() metrics.MetricStorer {
 	return ec.ms
 }
 
