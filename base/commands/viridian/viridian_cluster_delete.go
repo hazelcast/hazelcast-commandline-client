@@ -76,9 +76,9 @@ func (ClusterDeleteCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 	}
 	if ec.Props().GetBool(clc.PropertyVerbose) {
 		row = append(row, output.Column{
-			Name:  "ID",
+			Name:  "Name",
 			Type:  serialization.TypeString,
-			Value: cluster.ID,
+			Value: cluster.Name,
 		})
 	}
 	return ec.AddOutputRows(ctx, row)

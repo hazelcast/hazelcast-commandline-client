@@ -12,6 +12,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/types"
 
+	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/jet"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -64,7 +65,7 @@ func terminateJob(ctx context.Context, ec plug.ExecContext, tm int32, cm Termina
 			SuccessMsg:  fmt.Sprintf(cm.successMsg, nameOrID),
 			FailureMsg:  cm.failureMsg,
 			Func: func(ctx context.Context, status stage.Statuser[any]) (any, error) {
-				ci, err := ec.ClientInternal(ctx)
+				ci, err := cmd.ClientInternal(ctx, ec, status)
 				if err != nil {
 					return nil, err
 				}
