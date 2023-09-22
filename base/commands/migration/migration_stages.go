@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	errors2 "github.com/hazelcast/hazelcast-commandline-client/errors"
@@ -27,7 +28,9 @@ func migrationStages(ctx context.Context, ec plug.ExecContext, migrationID, repo
 	if err != nil {
 		return nil, err
 	}
-	if err = waitForMigrationToBeCreated(ctx, ci, migrationID); err != nil {
+	childCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+	if err = waitForMigrationToBeCreated(childCtx, ci, migrationID); err != nil {
 		return nil, fmt.Errorf("waiting migration to be created: %w", err)
 	}
 	var stages []stage.Stage[any]
@@ -49,7 +52,7 @@ func migrationStages(ctx context.Context, ec plug.ExecContext, migrationID, repo
 						}
 						return nil, fmt.Errorf("migration failed: %w", err)
 					}
-					generalStatus, err := readMigrationStatus(ctx, ci, migrationID)
+					generalStatus, err := fetchMigrationStatus(ctx, ci, migrationID)
 					if err != nil {
 						return nil, fmt.Errorf("reading migration status: %w", err)
 					}
@@ -71,9 +74,9 @@ func migrationStages(ctx context.Context, ec plug.ExecContext, migrationID, repo
 					case StatusComplete:
 						return nil, nil
 					case StatusFailed:
-						errs, err := readMigrationErrors(ctx, ci, migrationID)
+						errs, err := fetchMigrationErrors(ctx, ci, migrationID)
 						if err != nil {
-							return nil, fmt.Errorf("saving report to file: %w", err)
+							return nil, fmt.Errorf("fetching migration errors: %w", err)
 						}
 						return nil, errors.New(errs)
 					case StatusCanceled, StatusCanceling:
@@ -171,7 +174,7 @@ func saveMemberLogs(ctx context.Context, ec plug.ExecContext, ci *hazelcast.Clie
 }
 
 func saveReportToFile(ctx context.Context, ci *hazelcast.ClientInternal, migrationID, fileName string) error {
-	report, err := readMigrationReport(ctx, ci, migrationID)
+	report, err := fetchMigrationReport(ctx, ci, migrationID)
 	if err != nil {
 		return err
 	}
@@ -221,7 +224,7 @@ type DSMigrationStatus struct {
 	Error                string  `json:"error"`
 }
 
-func readMigrationStatus(ctx context.Context, ci *hazelcast.ClientInternal, migrationID string) (string, error) {
+func fetchMigrationStatus(ctx context.Context, ci *hazelcast.ClientInternal, migrationID string) (string, error) {
 	q := fmt.Sprintf(`SELECT JSON_QUERY(this, '$.status') FROM %s WHERE __key='%s'`, StatusMapName, migrationID)
 	res, err := ci.Client().SQL().Execute(ctx, q)
 	if err != nil {
@@ -249,7 +252,7 @@ func readMigrationStatus(ctx context.Context, ci *hazelcast.ClientInternal, migr
 	return "", nil
 }
 
-func readMigrationReport(ctx context.Context, ci *hazelcast.ClientInternal, migrationID string) (string, error) {
+func fetchMigrationReport(ctx context.Context, ci *hazelcast.ClientInternal, migrationID string) (string, error) {
 	q := fmt.Sprintf(`SELECT JSON_QUERY(this, '$.report') FROM %s WHERE __key='%s'`, StatusMapName, migrationID)
 	res, err := ci.Client().SQL().Execute(ctx, q)
 	if err != nil {
@@ -277,7 +280,7 @@ func readMigrationReport(ctx context.Context, ci *hazelcast.ClientInternal, migr
 	return "", nil
 }
 
-func readMigrationErrors(ctx context.Context, ci *hazelcast.ClientInternal, migrationID string) (string, error) {
+func fetchMigrationErrors(ctx context.Context, ci *hazelcast.ClientInternal, migrationID string) (string, error) {
 	q := fmt.Sprintf(`SELECT JSON_QUERY(this, '$.errors') FROM %s WHERE __key='%s'`, StatusMapName, migrationID)
 	res, err := ci.Client().SQL().Execute(ctx, q)
 	if err != nil {
