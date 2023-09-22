@@ -201,10 +201,10 @@ func (s *Store) RunForeachWithPrefix(prefix string, f ForeachFunc) error {
 }
 
 func (s *Store) DeleteEntriesWithPrefixes(prefixes ...string) error {
-	prefixesb := [][]byte{}
+	var ps [][]byte
 	for _, p := range prefixes {
-		prefixesb = append(prefixesb, []byte(p))
+		ps = append(ps, []byte(p))
 	}
-	err := s.db.DropPrefix(prefixesb...)
+	err := s.db.DropPrefix(ps...)
 	return err
 }
