@@ -169,6 +169,12 @@ func (tcx TestContext) Tester(f func(tcx TestContext)) {
 				d, _ := filepath.Split(p)
 				check.Must(os.MkdirAll(d, 0700))
 				home.WithFile(p, bytesConfig, func(_ string) {
+					if tcx.LogPath == "" {
+						tcx.LogPath = paths.ResolveLogPath("test")
+					}
+					if tcx.LogLevel == "" {
+						tcx.LogLevel = "info"
+					}
 					tcx.main = check.MustValue(tcx.createMain())
 					tcx.T.Logf("created CLC main")
 					defer func() {
