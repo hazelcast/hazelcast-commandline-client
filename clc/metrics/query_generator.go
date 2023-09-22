@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/store"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/types"
 )
 
 func GenerateFirstPingQuery(ga GlobalAttributes, sa SessionAttributes, t time.Time) Query {
@@ -20,9 +21,9 @@ func GenerateFirstPingQuery(ga GlobalAttributes, sa SessionAttributes, t time.Ti
 
 type MetricValues map[string]int
 
-func GenerateQueries(db *store.Store, ga GlobalAttributes, dates map[string]struct{}) []Query {
-	qs := make([]Query, 0, len(dates))
-	for date := range dates {
+func GenerateQueries(db *store.Store, ga GlobalAttributes, dates *types.Set[string]) []Query {
+	qs := make([]Query, 0, dates.Len())
+	for date := range dates.Map() {
 		entries := make(map[[4]string]MetricValues)
 		prefix := datePrefix(date)
 		db.RunForeachWithPrefix(prefix, func(keyb, valb []byte) (bool, error) {
@@ -57,7 +58,7 @@ func GenerateQueries(db *store.Store, ga GlobalAttributes, dates map[string]stru
 				ClusterUUID:                cid,
 				ViridianClusterID:          vid,
 				ClusterConfigCount:         metrics["cluster-config-count"],
-				SqlRunCount:                metrics["sql"],
+				SQLRunCount:                metrics["sql"],
 				MapRunCount:                metrics["map"],
 				TopicRunCount:              metrics["topic"],
 				QueueRunCount:              metrics["queue"],

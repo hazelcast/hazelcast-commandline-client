@@ -10,7 +10,7 @@ type Query struct {
 	ClusterUUID                string `json:"clusterUUID"`
 	ViridianClusterID          string `json:"viridianClusterID"`
 	ClusterConfigCount         int    `json:"clusterConfigCount"`
-	SqlRunCount                int    `json:"sqlRunCount"`
+	SQLRunCount                int    `json:"sqlRunCount"`
 	MapRunCount                int    `json:"mapRunCount"`
 	TopicRunCount              int    `json:"topicRunCount"`
 	QueueRunCount              int    `json:"queueRunCount"`

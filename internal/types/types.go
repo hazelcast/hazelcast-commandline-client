@@ -32,7 +32,14 @@ func (s *Set[K]) Add(item K) {
 	s.m[item] = struct{}{}
 }
 
-// Has returns true if the given item is in the set.
+func (s *Set[K]) Delete(item K) {
+	delete(s.m, item)
+}
+
+func (s *Set[K]) Map() map[K]struct{} {
+	return s.m
+}
+
 func (s *Set[K]) Has(item K) bool {
 	_, ok := s.m[item]
 	return ok

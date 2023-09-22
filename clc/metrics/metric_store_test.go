@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"sync"
 	"testing"
 	"time"
 
@@ -16,7 +17,7 @@ import (
 )
 
 func newStorageTestKey(ms *metricStore, m string) storageKey {
-	return newStorageKey(NewSimpleKey(), ms.sessAttrs.AcquisitionSource, ms.sessAttrs.CLCVersion, m)
+	return newStorageKey(NewSimpleKey(), ms.sessionAttrs.AcquisitionSource, ms.sessionAttrs.CLCVersion, m)
 }
 
 func newSimpleTestKey(m string, t time.Time, cid string) storageKey {
@@ -45,7 +46,7 @@ func TestMetricStore_GlobalMetrics(t *testing.T) {
 
 func TestMetricStore_SessionMetrics(t *testing.T) {
 	WithMetricStore(func(ms *metricStore, _ *[]Query) {
-		ms.sessAttrs = SessionAttributes{
+		ms.sessionAttrs = SessionAttributes{
 			CLCVersion:        "test-version",
 			AcquisitionSource: "test-as",
 		}
@@ -53,7 +54,7 @@ func TestMetricStore_SessionMetrics(t *testing.T) {
 		expected := map[storageKey]int{
 			newStorageKey(NewSimpleKey(), "test-as", "test-version", "metric1"): 2,
 		}
-		require.EqualValues(t, expected, ms.inc)
+		require.EqualValues(t, expected, ms.increments)
 	})
 }
 
@@ -65,7 +66,7 @@ func TestMetricStore_Increment(t *testing.T) {
 			newStorageTestKey(ms, "metric1"): 3,
 			newStorageTestKey(ms, "metric2"): 1,
 		}
-		require.EqualValues(t, expected, ms.inc)
+		require.EqualValues(t, expected, ms.increments)
 	})
 }
 
@@ -77,7 +78,7 @@ func TestMetricStore_Store(t *testing.T) {
 			newStorageTestKey(ms, "metric1"): 5,
 			newStorageTestKey(ms, "metric2"): 6,
 		}
-		require.EqualValues(t, expected, ms.override)
+		require.EqualValues(t, expected, ms.updates)
 	})
 }
 
@@ -93,7 +94,7 @@ func TestMetricStore_PersistMetrics(t *testing.T) {
 			newStorageTestKey(ms, "metric3"): 6,
 			newStorageTestKey(ms, "metric4"): 6,
 		}
-		_ = WithStore(ms, func(s *store.Store) bool {
+		ok := WithStore(ms, func(s *store.Store) bool {
 			ms.persistMetrics(s)
 			entries := make(map[storageKey]int)
 			check.Must(s.RunForeachWithPrefix(PhonehomeKeyPrefix, func(keyb, valb []byte) (ok bool, err error) {
@@ -107,6 +108,7 @@ func TestMetricStore_PersistMetrics(t *testing.T) {
 			require.EqualValues(t, expectedEntries, entries)
 			return true
 		})
+		require.True(t, ok)
 	})
 }
 
@@ -119,10 +121,11 @@ func TestMetricStore_Send_Today(t *testing.T) {
 		// write the entry to database
 		kb := check.MustValue(todayKey.Marshal())
 		vb := check.MustValue(json.Marshal(todayValue))
-		_ = WithStore(ms, func(s *store.Store) bool {
+		ok := WithStore(ms, func(s *store.Store) bool {
 			check.Must(s.SetEntry(kb, vb))
 			return true
 		})
+		require.True(t, ok)
 		// send the entries
 		check.Must(ms.Send(context.Background()))
 		// check that today's data is not sent and data exists in the database
@@ -145,7 +148,7 @@ func TestMetricStore_Send_Yesterday(t *testing.T) {
 			yesterdayCID: 10,
 			yesterday:    20,
 		}
-		_ = WithStore(ms, func(s *store.Store) bool {
+		ok := WithStore(ms, func(s *store.Store) bool {
 			for k, v := range entries {
 				kb := check.MustValue(k.Marshal())
 				vb := check.MustValue(json.Marshal(v))
@@ -153,6 +156,7 @@ func TestMetricStore_Send_Yesterday(t *testing.T) {
 			}
 			return true
 		})
+		require.True(t, ok)
 		check.Must(ms.Send(context.Background()))
 		// check that yesterday's data is sent and data is deleted from the database
 		queryWithCID, ok := findQuery(sentQueries, yesterday.Date(), cid)
@@ -200,12 +204,13 @@ func WithMetricStore(fn func(ms *metricStore, queries *[]Query)) {
 			return nil
 		}
 		ms := metricStore{
-			inc:           make(map[storageKey]int),
-			override:      make(map[storageKey]int),
+			increments:    make(map[storageKey]int),
+			updates:       make(map[storageKey]int),
+			mu:            &sync.Mutex{},
 			sa:            store.NewStoreAccessor(dir, log.NopLogger{}),
 			sendQueriesFn: sendQueriesFn,
 		}
-		if err := ms.setGlobalMetrics(context.Background()); err != nil {
+		if err := ms.ensureGlobalMetrics(context.Background()); err != nil {
 			panic(fmt.Errorf("setting global metrics: %w", err))
 		}
 		fn(&ms, &queries)

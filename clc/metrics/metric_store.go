@@ -5,42 +5,42 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"net/http"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/store"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/http"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/types"
 )
 
-var defaultStore MetricStorer
+var (
+	defaultStore    atomic.Value
+	defaultNopStore = &NopMetricStore{}
+)
 
 func DefaultStore() MetricStorer {
-	if defaultStore != nil {
-		return defaultStore
+	ds := defaultStore.Load()
+	if ds != nil {
+		return ds.(MetricStorer)
 	}
-	return &NopMetricStore{}
+	return defaultNopStore
 }
 
 func Send(ctx context.Context) {
-	if sender, ok := defaultStore.(metricSender); ok {
+	if sender, ok := DefaultStore().(metricSender); ok {
 		// ignore errors about metrics
 		_ = sender.Send(ctx)
 	}
 }
 
 func CreateMetricStore(ctx context.Context, dir string) {
-	if !PhoneHomeEnabled() {
-		defaultStore = &NopMetricStore{}
-		return
+	if PhoneHomeEnabled() {
+		store, _ := newMetricStore(ctx, dir)
+		defaultStore.Store(store)
 	}
-	store, err := newMetricStore(ctx, dir)
-	if err != nil {
-		defaultStore = &NopMetricStore{}
-		return
-	}
-	defaultStore = store
 }
 
 const (
@@ -51,14 +51,13 @@ const (
 )
 
 type metricStore struct {
-	incLock   sync.Mutex
-	inc       map[storageKey]int
-	ovrLock   sync.Mutex
-	override  map[storageKey]int
-	globAttrs GlobalAttributes
-	sessAttrs SessionAttributes
-	sa        *store.StoreAccessor
-	serverURL string
+	mu           *sync.Mutex
+	increments   map[storageKey]int
+	updates      map[storageKey]int
+	globalAttrs  GlobalAttributes
+	sessionAttrs SessionAttributes
+	sa           *store.StoreAccessor
+	serverURL    string
 	// for test purposes
 	sendQueriesFn func(ctx context.Context, url string, q ...Query) error
 }
@@ -66,42 +65,41 @@ type metricStore struct {
 func newMetricStore(ctx context.Context, dir string) (*metricStore, error) {
 	ms := metricStore{
 		serverURL:     "http://phonehome.hazelcast.com/pingCLC",
-		inc:           make(map[storageKey]int),
-		override:      make(map[storageKey]int),
-		sessAttrs:     NewSessionMetrics(),
+		mu:            &sync.Mutex{},
+		increments:    make(map[storageKey]int),
+		updates:       make(map[storageKey]int),
+		sessionAttrs:  NewSessionMetrics(),
 		sa:            store.NewStoreAccessor(dir, log.NopLogger{}),
 		sendQueriesFn: sendQueries,
 	}
-	if err := ms.setGlobalMetrics(ctx); err != nil {
+	if err := ms.ensureGlobalMetrics(ctx); err != nil {
 		return nil, err
 	}
 	return &ms, nil
 }
 
-func (ms *metricStore) setGlobalMetrics(ctx context.Context) error {
+func (ms *metricStore) ensureGlobalMetrics(ctx context.Context) error {
 	keyb := []byte(GlobalAttributesKeyName)
-	var gm GlobalAttributes
+	var gas GlobalAttributes
 	qv, err := ms.sa.WithLock(func(s *store.Store) (any, error) {
 		// check if global metrics exists if not create an entry
 		firstTime := false
 		val, err := s.GetEntry(keyb)
 		if err != nil {
-			if errors.Is(err, store.ErrKeyNotFound) {
-				firstTime = true
-			} else {
+			if !errors.Is(err, store.ErrKeyNotFound) {
 				return nil, err
 			}
+			firstTime = true
 		}
 		if !firstTime {
-			err = gm.Unmarshal(val)
-			if err != nil {
+			if err := gas.Unmarshal(val); err != nil {
 				return nil, err
 			}
-			ms.globAttrs = gm
+			ms.globalAttrs = gas
 			return nil, nil
 		}
-		gm = NewGlobalAttributes()
-		return GenerateFirstPingQuery(gm, ms.sessAttrs, time.Now().UTC()), nil
+		gas = NewGlobalAttributes()
+		return GenerateFirstPingQuery(gas, ms.sessionAttrs, time.Now().UTC()), nil
 	})
 	if err != nil {
 		return err
@@ -115,7 +113,7 @@ func (ms *metricStore) setGlobalMetrics(ctx context.Context) error {
 		return err
 	}
 	// sent the first ping, persist the env to database
-	gmb, err := gm.Marshal()
+	gmb, err := gas.Marshal()
 	if err != nil {
 		return err
 	}
@@ -125,34 +123,36 @@ func (ms *metricStore) setGlobalMetrics(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	ms.globAttrs = gm
+	ms.globalAttrs = gas
 	return nil
 }
 
 func (ms *metricStore) Store(key Key, metric string, val int) {
 	metrics := strings.Split(metric, ".")
-	ms.incLock.Lock()
+	ms.mu.Lock()
 	for _, m := range metrics {
-		sk := newStorageKey(key, ms.sessAttrs.AcquisitionSource, ms.sessAttrs.CLCVersion, m)
-		ms.override[sk] = val
+		sk := newStorageKey(key, ms.sessionAttrs.AcquisitionSource, ms.sessionAttrs.CLCVersion, m)
+		ms.updates[sk] = val
 	}
-	ms.incLock.Unlock()
+	ms.mu.Unlock()
 }
 
 func (ms *metricStore) Increment(key Key, metric string) {
 	metrics := strings.Split(metric, ".")
-	ms.ovrLock.Lock()
+	ms.mu.Lock()
 	for _, m := range metrics {
-		sk := newStorageKey(key, ms.sessAttrs.AcquisitionSource, ms.sessAttrs.CLCVersion, m)
-		ms.inc[sk]++
+		sk := newStorageKey(key, ms.sessionAttrs.AcquisitionSource, ms.sessionAttrs.CLCVersion, m)
+		ms.increments[sk]++
 	}
-	ms.ovrLock.Unlock()
+	ms.mu.Unlock()
 }
 
 func (ms *metricStore) Send(ctx context.Context) error {
 	_, err := ms.sa.WithLock(func(s *store.Store) (any, error) {
 		// persist the local changes to the database
-		if len(ms.inc) != 0 || len(ms.override) != 0 {
+		ms.mu.Lock()
+		defer ms.mu.Unlock()
+		if len(ms.increments) != 0 || len(ms.updates) != 0 {
 			ms.persistMetrics(s)
 		}
 		now := time.Now().UTC()
@@ -163,19 +163,19 @@ func (ms *metricStore) Send(ctx context.Context) error {
 		}
 		dates := findDatesFromKeys(keys)
 		today := now.Format(DateFormat)
-		delete(dates, today)
-		if len(dates) == 0 {
+		dates.Delete(today)
+		if dates.Len() == 0 {
 			// no data to send
 			return nil, nil
 		}
-		q := GenerateQueries(s, ms.globAttrs, dates)
+		q := GenerateQueries(s, ms.globalAttrs, dates)
 		err = ms.sendQueriesFn(ctx, ms.serverURL, q...)
 		if err != nil {
 			return nil, err
 		}
 		// // delete the entries from the database
 		datePrefixes := []string{}
-		for date := range dates {
+		for date := range dates.Map() {
 			datePrefixes = append(datePrefixes, datePrefix(date))
 		}
 		err = s.DeleteEntriesWithPrefixes(datePrefixes...)
@@ -193,9 +193,7 @@ func (ms *metricStore) persistMetrics(s *store.Store) {
 }
 
 func (ms *metricStore) persistIncrementMetrics(s *store.Store) {
-	ms.incLock.Lock()
-	defer ms.incLock.Unlock()
-	for key, val := range ms.inc {
+	for key, val := range ms.increments {
 		var newVal int
 		keyb, err := key.Marshal()
 		if err != nil {
@@ -224,13 +222,11 @@ func (ms *metricStore) persistIncrementMetrics(s *store.Store) {
 		}
 	}
 	// delete the metrics from the memory
-	ms.inc = make(map[storageKey]int)
+	ms.increments = make(map[storageKey]int)
 }
 
 func (ms *metricStore) persistOverrideMetrics(s *store.Store) {
-	ms.ovrLock.Lock()
-	defer ms.ovrLock.Unlock()
-	for key, val := range ms.override {
+	for key, val := range ms.updates {
 		// int marshalling should not return an error
 		valb, _ := json.Marshal(val)
 		keyb, err := key.Marshal()
@@ -243,35 +239,27 @@ func (ms *metricStore) persistOverrideMetrics(s *store.Store) {
 		}
 	}
 	// delete the metrics from the memory
-	ms.override = make(map[storageKey]int)
+	ms.updates = make(map[storageKey]int)
 }
 
 func sendQueries(ctx context.Context, url string, q ...Query) error {
-	jsn, err := json.Marshal(q)
+	b, err := json.Marshal(q)
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest("POST", url, bytes.NewReader(jsn))
-	if err != nil || req == nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	c := &http.Client{Timeout: 1 * time.Second}
-	_, err = c.Do(req)
-	if err != nil {
-		return err
-	}
-	return nil
+	cl := http.NewClient()
+	_, err = cl.Post(ctx, url, bytes.NewReader(b))
+	return err
 }
 
-func findDatesFromKeys(keys [][]byte) map[string]struct{} {
-	dates := map[string]struct{}{}
+func findDatesFromKeys(keys [][]byte) *types.Set[string] {
+	dates := types.NewSet[string]()
 	for _, keyb := range keys {
 		var k storageKey
 		if err := k.Unmarshal(keyb); err != nil {
 			continue
 		}
-		dates[k.Date()] = struct{}{}
+		dates.Add(k.Date())
 	}
 	return dates
 }

@@ -83,7 +83,7 @@ func startMetricsTicker() chan struct{} {
 		defer ticker.Stop()
 		for {
 			select {
-			case _, _ = <-done:
+			case <-done:
 				return
 			case <-ticker.C:
 				ctx, cancel := context.WithTimeout(context.Background(), 5000*time.Millisecond)
