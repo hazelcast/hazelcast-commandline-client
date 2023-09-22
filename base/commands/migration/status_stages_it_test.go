@@ -55,11 +55,11 @@ func statusTest(t *testing.T) {
 		mID := preStatusRunner(t, tcx, ctx)
 		var wg sync.WaitGroup
 		wg.Add(1)
-		time.Sleep(1 * time.Second)
 		go tcx.WithReset(func() {
 			defer wg.Done()
 			Must(tcx.CLC().Execute(ctx, "status"))
 		})
+		// statusRunner removes __datamigrations_in_progress list, so we should give some time to command to read it first
 		time.Sleep(1 * time.Second)
 		statusRunner(t, mID, tcx, ctx)
 		wg.Wait()
@@ -74,14 +74,12 @@ func statusTest(t *testing.T) {
 
 func preStatusRunner(t *testing.T, tcx it.TestContext, ctx context.Context) string {
 	createMapping(ctx, tcx)
-	// create a migration in the __datamigrations_in_progress list
 	mID := migration.MakeMigrationID()
 	l := MustValue(tcx.Client.GetList(ctx, migration.MigrationsInProgressList))
 	m := MustValue(json.Marshal(migration.MigrationInProgress{
 		MigrationID: mID,
 	}))
 	require.Equal(t, true, MustValue(l.Add(ctx, serialization.JSON(m))))
-	// create a record in the status map
 	statusMap := MustValue(tcx.Client.GetMap(ctx, migration.StatusMapName))
 	b := MustValue(os.ReadFile("testdata/start/migration_success_initial.json"))
 	Must(statusMap.Set(ctx, mID, serialization.JSON(b)))
@@ -89,11 +87,9 @@ func preStatusRunner(t *testing.T, tcx it.TestContext, ctx context.Context) stri
 }
 
 func statusRunner(t *testing.T, migrationID string, tcx it.TestContext, ctx context.Context) {
-	// create a terminal record in status map
 	statusMap := MustValue(tcx.Client.GetMap(ctx, migration.StatusMapName))
 	b := MustValue(os.ReadFile("testdata/start/migration_success_completed.json"))
 	Must(statusMap.Set(ctx, migrationID, serialization.JSON(b)))
-	// remove the migration from the __datamigrations_in_progress list
 	l := MustValue(tcx.Client.GetList(ctx, migration.MigrationsInProgressList))
 	m := MustValue(json.Marshal(migration.MigrationInProgress{
 		MigrationID: migrationID,
