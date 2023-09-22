@@ -4,6 +4,7 @@ package migration
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -24,6 +25,10 @@ func (s StatusCmd) Init(cc plug.InitContext) error {
 }
 
 func (s StatusCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+	ci, err := ec.ClientInternal(ctx)
+	if err != nil {
+		return err
+	}
 	ec.PrintlnUnnecessary("")
 	ec.PrintlnUnnecessary(banner)
 	sts := NewStatusStages()
@@ -32,12 +37,17 @@ func (s StatusCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		return err
 	}
-	mStages, err := migrationStages(ctx, ec, mID.(string), ec.Props().GetString(flagOutputDir), sts.statusMap)
+	mStages, err := createMigrationStages(ctx, ec, ci, mID.(string))
 	if err != nil {
 		return err
 	}
 	mp := stage.NewFixedProvider(mStages...)
-	if _, err := stage.Execute(ctx, ec, any(nil), mp); err != nil {
+	_, err = stage.Execute(ctx, ec, any(nil), mp)
+	err2 := finalizeMigration(ctx, ec, ci, mID.(string), ec.Props().GetString(flagOutputDir))
+	if err2 != nil {
+		return fmt.Errorf("finalizing migration: %w", err2)
+	}
+	if err != nil {
 		return err
 	}
 	ec.PrintlnUnnecessary("")

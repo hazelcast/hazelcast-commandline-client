@@ -14,8 +14,10 @@ import (
 	_ "github.com/hazelcast/hazelcast-commandline-client/base"
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/base/commands/migration"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
+	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/stretchr/testify/require"
 )
@@ -52,7 +54,9 @@ func statusTest(t *testing.T) {
 	tcx := it.TestContext{T: t}
 	ctx := context.Background()
 	tcx.Tester(func(tcx it.TestContext) {
-		mID := preStatusRunner(t, tcx, ctx)
+		ci := hz.NewClientInternal(tcx.Client)
+		mID := preStatusRunner(t, tcx, ctx, ci)
+		defer removeMembersLogs(ctx, ci)
 		var wg sync.WaitGroup
 		wg.Add(1)
 		go tcx.WithReset(func() {
@@ -68,12 +72,19 @@ func statusTest(t *testing.T) {
 			f := fmt.Sprintf("migration_report_%s.txt", mID)
 			require.Equal(t, true, fileExists(f))
 			Must(os.Remove(f))
+			b := MustValue(os.ReadFile(paths.DefaultLogPath(time.Now())))
+			for _, m := range ci.OrderedMembers() {
+				require.Contains(t, string(b), fmt.Sprintf("[%s_%s] log1", mID, m.UUID.String()))
+				require.Contains(t, string(b), fmt.Sprintf("[%s_%s] log2", mID, m.UUID.String()))
+				require.Contains(t, string(b), fmt.Sprintf("[%s_%s] log3", mID, m.UUID.String()))
+			}
 		})
 	})
 }
 
-func preStatusRunner(t *testing.T, tcx it.TestContext, ctx context.Context) string {
+func preStatusRunner(t *testing.T, tcx it.TestContext, ctx context.Context, ci *hz.ClientInternal) string {
 	createMapping(ctx, tcx)
+	createMemberLogs(t, ctx, ci)
 	mID := migration.MakeMigrationID()
 	l := MustValue(tcx.Client.GetList(ctx, migration.MigrationsInProgressList))
 	m := MustValue(json.Marshal(migration.MigrationInProgress{
@@ -84,6 +95,22 @@ func preStatusRunner(t *testing.T, tcx it.TestContext, ctx context.Context) stri
 	b := MustValue(os.ReadFile("testdata/start/migration_success_initial.json"))
 	Must(statusMap.Set(ctx, mID, serialization.JSON(b)))
 	return mID
+}
+
+func createMemberLogs(t *testing.T, ctx context.Context, ci *hz.ClientInternal) {
+	for _, m := range ci.OrderedMembers() {
+		l := MustValue(ci.Client().GetList(ctx, migration.DebugLogsListPrefix+m.UUID.String()))
+		require.Equal(t, true, MustValue(l.Add(ctx, "log1")))
+		require.Equal(t, true, MustValue(l.Add(ctx, "log2")))
+		require.Equal(t, true, MustValue(l.Add(ctx, "log3")))
+	}
+}
+
+func removeMembersLogs(ctx context.Context, ci *hz.ClientInternal) {
+	for _, m := range ci.OrderedMembers() {
+		l := MustValue(ci.Client().GetList(ctx, migration.DebugLogsListPrefix+m.UUID.String()))
+		Must(l.Destroy(ctx))
+	}
 }
 
 func statusRunner(t *testing.T, migrationID string, tcx it.TestContext, ctx context.Context) {

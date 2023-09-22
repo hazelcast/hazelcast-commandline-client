@@ -16,21 +16,16 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
-	"golang.org/x/exp/slices"
 )
 
 var timeoutErr = fmt.Errorf("migration could not be completed: reached timeout while reading status: "+
 	"please ensure that you are using Hazelcast's migration cluster distribution and your DMT config points to that cluster: %w",
 	context.DeadlineExceeded)
 
-func migrationStages(ctx context.Context, ec plug.ExecContext, migrationID, reportOutputDir string, statusMap *hazelcast.Map) ([]stage.Stage[any], error) {
-	ci, err := ec.ClientInternal(ctx)
-	if err != nil {
-		return nil, err
-	}
+func createMigrationStages(ctx context.Context, ec plug.ExecContext, ci *hazelcast.ClientInternal, migrationID string) ([]stage.Stage[any], error) {
 	childCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
-	if err = waitForMigrationToBeCreated(childCtx, ci, migrationID); err != nil {
+	if err := waitForMigrationToBeCreated(childCtx, ci, migrationID); err != nil {
 		return nil, fmt.Errorf("waiting migration to be created: %w", err)
 	}
 	var stages []stage.Stage[any]
@@ -55,20 +50,6 @@ func migrationStages(ctx context.Context, ec plug.ExecContext, migrationID, repo
 					generalStatus, err := fetchMigrationStatus(ctx, ci, migrationID)
 					if err != nil {
 						return nil, fmt.Errorf("reading migration status: %w", err)
-					}
-					if slices.Contains([]Status{StatusComplete, StatusFailed, StatusCanceled}, Status(generalStatus)) {
-						err = saveMemberLogs(ctx, ec, ci, migrationID)
-						if err != nil {
-							return nil, err
-						}
-						var name string
-						if reportOutputDir == "" {
-							name = fmt.Sprintf("migration_report_%s.txt", migrationID)
-						}
-						err = saveReportToFile(ctx, ci, migrationID, name)
-						if err != nil {
-							return nil, fmt.Errorf("saving report to file: %w", err)
-						}
 					}
 					switch Status(generalStatus) {
 					case StatusComplete:
@@ -167,7 +148,7 @@ func saveMemberLogs(ctx context.Context, ec plug.ExecContext, ci *hazelcast.Clie
 			return err
 		}
 		for _, line := range logs {
-			ec.Logger().Debugf(fmt.Sprintf("[%s_%s] %s", migrationID, m.UUID.String(), line.(string)))
+			ec.Logger().Info(fmt.Sprintf("[%s_%s] %s", migrationID, m.UUID.String(), line.(string)))
 		}
 	}
 	return nil
@@ -230,9 +211,6 @@ func fetchMigrationStatus(ctx context.Context, ci *hazelcast.ClientInternal, mig
 	if err != nil {
 		return "", err
 	}
-	if err != nil {
-		return "", err
-	}
 	it, err := res.Iterator()
 	if err != nil {
 		return "", err
@@ -255,9 +233,6 @@ func fetchMigrationStatus(ctx context.Context, ci *hazelcast.ClientInternal, mig
 func fetchMigrationReport(ctx context.Context, ci *hazelcast.ClientInternal, migrationID string) (string, error) {
 	q := fmt.Sprintf(`SELECT JSON_QUERY(this, '$.report') FROM %s WHERE __key='%s'`, StatusMapName, migrationID)
 	res, err := ci.Client().SQL().Execute(ctx, q)
-	if err != nil {
-		return "", err
-	}
 	if err != nil {
 		return "", err
 	}
@@ -286,9 +261,6 @@ func fetchMigrationErrors(ctx context.Context, ci *hazelcast.ClientInternal, mig
 	if err != nil {
 		return "", err
 	}
-	if err != nil {
-		return "", err
-	}
 	it, err := res.Iterator()
 	if err != nil {
 		return "", err
@@ -307,4 +279,20 @@ func fetchMigrationErrors(ctx context.Context, ci *hazelcast.ClientInternal, mig
 		errs = append(errs, m)
 	}
 	return strings.Join(errs, "\n"), nil
+}
+
+func finalizeMigration(ctx context.Context, ec plug.ExecContext, ci *hazelcast.ClientInternal, migrationID, reportOutputDir string) error {
+	err := saveMemberLogs(ctx, ec, ci, migrationID)
+	if err != nil {
+		return err
+	}
+	var name string
+	if reportOutputDir == "" {
+		name = fmt.Sprintf("migration_report_%s.txt", migrationID)
+	}
+	err = saveReportToFile(ctx, ci, migrationID, name)
+	if err != nil {
+		return fmt.Errorf("saving report to file: %w", err)
+	}
+	return nil
 }

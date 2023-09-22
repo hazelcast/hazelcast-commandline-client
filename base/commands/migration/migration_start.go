@@ -4,6 +4,7 @@ package migration
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
@@ -29,6 +30,10 @@ func (StartCmd) Init(cc plug.InitContext) error {
 }
 
 func (StartCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+	ci, err := ec.ClientInternal(ctx)
+	if err != nil {
+		return err
+	}
 	ec.PrintlnUnnecessary("")
 	ec.PrintlnUnnecessary(`Hazelcast Data Migration Tool v5.3.0
 (c) 2023 Hazelcast, Inc.
@@ -52,12 +57,17 @@ Selected data structures in the source cluster will be migrated to the target cl
 	if _, err := stage.Execute(ctx, ec, any(nil), sp); err != nil {
 		return err
 	}
-	mStages, err := migrationStages(ctx, ec, mID, ec.Props().GetString(flagOutputDir), sts.statusMap)
+	mStages, err := createMigrationStages(ctx, ec, ci, mID)
 	if err != nil {
 		return err
 	}
 	mp := stage.NewFixedProvider(mStages...)
-	if _, err := stage.Execute(ctx, ec, any(nil), mp); err != nil {
+	_, err = stage.Execute(ctx, ec, any(nil), mp)
+	err2 := finalizeMigration(ctx, ec, ci, mID, ec.Props().GetString(flagOutputDir))
+	if err2 != nil {
+		return fmt.Errorf("finalizing migration: %w", err2)
+	}
+	if err != nil {
 		return err
 	}
 	ec.PrintlnUnnecessary("")

@@ -14,8 +14,10 @@ import (
 	_ "github.com/hazelcast/hazelcast-commandline-client/base"
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/base/commands/migration"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
+	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/stretchr/testify/require"
 )
@@ -54,6 +56,9 @@ func startMigrationTest(t *testing.T, expectedOutput string, statusMapStateFiles
 	tcx := it.TestContext{T: t}
 	ctx := context.Background()
 	tcx.Tester(func(tcx it.TestContext) {
+		ci := hz.NewClientInternal(tcx.Client)
+		createMemberLogs(t, ctx, ci)
+		defer removeMembersLogs(ctx, ci)
 		var wg sync.WaitGroup
 		wg.Add(1)
 		go tcx.WithReset(func() {
@@ -73,6 +78,12 @@ func startMigrationTest(t *testing.T, expectedOutput string, statusMapStateFiles
 			f := fmt.Sprintf("migration_report_%s.txt", mID)
 			require.Equal(t, true, fileExists(f))
 			Must(os.Remove(f))
+			b := MustValue(os.ReadFile(paths.DefaultLogPath(time.Now())))
+			for _, m := range ci.OrderedMembers() {
+				require.Contains(t, string(b), fmt.Sprintf("[%s_%s] log1", mID, m.UUID.String()))
+				require.Contains(t, string(b), fmt.Sprintf("[%s_%s] log2", mID, m.UUID.String()))
+				require.Contains(t, string(b), fmt.Sprintf("[%s_%s] log3", mID, m.UUID.String()))
+			}
 		})
 	})
 }
