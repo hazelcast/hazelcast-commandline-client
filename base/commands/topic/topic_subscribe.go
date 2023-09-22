@@ -16,7 +16,6 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
@@ -46,8 +45,7 @@ func (SubscribeCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		if err != nil {
 			return nil, err
 		}
-		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.topic."+cmd.RunningModeString(ec))
+		cmd.IncrementClusterMetric(ctx, ec, "total.topic")
 		sp.SetText(fmt.Sprintf("Listening to messages of topic %s", name))
 		sid, err := addListener(ctx, ci, name, ec.Logger(), func(event TopicEvent) {
 			select {

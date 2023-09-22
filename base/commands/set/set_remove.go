@@ -10,7 +10,6 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
@@ -37,8 +36,7 @@ func (sc *RemoveCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		if err != nil {
 			return nil, err
 		}
-		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.set."+cmd.RunningModeString(ec))
+		cmd.IncrementClusterMetric(ctx, ec, "total.set")
 		sp.SetText(fmt.Sprintf("Removing from Set '%s'", name))
 		showType := ec.Props().GetBool(base.FlagShowType)
 		var rows []output.Row

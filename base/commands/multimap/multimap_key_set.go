@@ -10,6 +10,6 @@ import (
 )
 
 func init() {
-	c := commands.NewMapKeySetCommand("MultiMap", codec.EncodeMultiMapKeySetRequest, codec.DecodeMultiMapKeySetResponse)
+	c := commands.NewMapKeySetCommand("MultiMap", "multimap", codec.EncodeMultiMapKeySetRequest, codec.DecodeMultiMapKeySetResponse)
 	check.Must(plug.Registry.RegisterCommand("multi-map:key-set", c))
 }

@@ -10,7 +10,6 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/jet"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
@@ -36,8 +35,7 @@ func (ListCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		if err != nil {
 			return nil, err
 		}
-		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.job."+cmd.RunningModeString(ec))
+		cmd.IncrementClusterMetric(ctx, ec, "total.job")
 		sp.SetText("Getting the job list")
 		j := jet.New(ci, sp, ec.Logger())
 		jl, err := j.GetJobList(ctx)

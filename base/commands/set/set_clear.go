@@ -9,6 +9,6 @@ import (
 )
 
 func init() {
-	c := commands.NewClearCommand("Set", getSet)
+	c := commands.NewClearCommand("Set", "set", getSet)
 	check.Must(plug.Registry.RegisterCommand("set:clear", c))
 }

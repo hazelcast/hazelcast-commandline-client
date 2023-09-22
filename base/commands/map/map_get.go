@@ -10,6 +10,6 @@ import (
 )
 
 func init() {
-	c := commands.NewMapGetCommand("Map", codec.EncodeMapGetRequest, makeDecodeResponseRowsFunc(codec.DecodeMapGetResponse))
+	c := commands.NewMapGetCommand("Map", "map", codec.EncodeMapGetRequest, makeDecodeResponseRowsFunc(codec.DecodeMapGetResponse))
 	check.Must(plug.Registry.RegisterCommand("map:get", c))
 }

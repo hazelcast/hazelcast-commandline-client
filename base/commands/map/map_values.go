@@ -10,6 +10,6 @@ import (
 )
 
 func init() {
-	c := commands.NewMapValuesCommand("Map", codec.EncodeMapValuesRequest, codec.DecodeMapValuesResponse)
+	c := commands.NewMapValuesCommand("Map", "map", codec.EncodeMapValuesRequest, codec.DecodeMapValuesResponse)
 	check.Must(plug.Registry.RegisterCommand("map:values", c))
 }

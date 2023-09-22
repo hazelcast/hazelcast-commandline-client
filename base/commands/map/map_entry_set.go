@@ -10,6 +10,6 @@ import (
 )
 
 func init() {
-	c := commands.NewMapEntrySetCommand("Map", codec.EncodeMapEntrySetRequest, codec.DecodeMapEntrySetResponse)
+	c := commands.NewMapEntrySetCommand("Map", "map", codec.EncodeMapEntrySetRequest, codec.DecodeMapEntrySetResponse)
 	check.Must(plug.Registry.RegisterCommand("map:entry-set", c))
 }

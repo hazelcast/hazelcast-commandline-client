@@ -98,6 +98,12 @@ func parseDuration(duration string) (time.Duration, error) {
 	return pd, nil
 }
 
+func IncrementClusterMetric(ctx context.Context, ec plug.ExecContext, metric string) {
+	// Must not be called before ec.ClusterInternal function.
+	cid, vid := FindClusterIDs(ctx, ec)
+	ec.Metrics().Increment(metrics.NewKey(cid, vid), fmt.Sprintf("%s.%s", metric, RunningModeString(ec)))
+}
+
 func FindClusterIDs(ctx context.Context, ec plug.ExecContext) (clusterID string, viridianID string) {
 	// Must not be called before ec.ClusterInternal function.
 	if !metrics.PhoneHomeEnabled() {

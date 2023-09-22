@@ -11,7 +11,6 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
 	clcsql "github.com/hazelcast/hazelcast-commandline-client/clc/sql"
 	"github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -71,8 +70,7 @@ func (SQLCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		if err != nil {
 			return nil, err
 		}
-		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.sql.noninteractive-mode")
+		cmd.IncrementClusterMetric(ctx, ec, "total.sql")
 		if sv, ok := cmd.CheckServerCompatible(ci, minServerVersion); !ok {
 			return nil, fmt.Errorf("server (%s) does not support this command, at least %s is expected", sv, minServerVersion)
 		}

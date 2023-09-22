@@ -3,7 +3,6 @@ package commands
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
@@ -11,7 +10,6 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
@@ -21,16 +19,18 @@ type nameRequestEncodeFunc func(name string) *hazelcast.ClientMessage
 type pairsResponseDecodeFunc func(message *hazelcast.ClientMessage) []hazelcast.Pair
 
 type MapEntrySetCommand struct {
-	typeName string
-	encoder  nameRequestEncodeFunc
-	decoder  pairsResponseDecodeFunc
+	typeName   string
+	metricName string
+	encoder    nameRequestEncodeFunc
+	decoder    pairsResponseDecodeFunc
 }
 
-func NewMapEntrySetCommand(typeName string, encoder nameRequestEncodeFunc, decoder pairsResponseDecodeFunc) *MapEntrySetCommand {
+func NewMapEntrySetCommand(typeName, metricName string, encoder nameRequestEncodeFunc, decoder pairsResponseDecodeFunc) *MapEntrySetCommand {
 	return &MapEntrySetCommand{
-		typeName: typeName,
-		encoder:  encoder,
-		decoder:  decoder,
+		typeName:   typeName,
+		metricName: metricName,
+		encoder:    encoder,
+		decoder:    decoder,
 	}
 }
 
@@ -49,8 +49,7 @@ func (cm MapEntrySetCommand) Exec(ctx context.Context, ec plug.ExecContext) erro
 		if err != nil {
 			return nil, err
 		}
-		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), fmt.Sprintf("total.%s.%s", strings.ToLower(cm.typeName), cmd.RunningModeString(ec)))
+		cmd.IncrementClusterMetric(ctx, ec, "total."+cm.metricName)
 		req := cm.encoder(name)
 		sp.SetText(fmt.Sprintf("Getting entries of %s", name))
 		resp, err := ci.InvokeOnRandomTarget(ctx, req, nil)
@@ -72,16 +71,18 @@ type getRequestEncodeFunc func(name string, keyData hazelcast.Data, threadID int
 type getResponseDecodeFunc func(ctx context.Context, ec plug.ExecContext, res *hazelcast.ClientMessage) ([]output.Row, error)
 
 type MapGetCommand struct {
-	typeName string
-	encoder  getRequestEncodeFunc
-	decoder  getResponseDecodeFunc
+	typeName   string
+	metricName string
+	encoder    getRequestEncodeFunc
+	decoder    getResponseDecodeFunc
 }
 
-func NewMapGetCommand(typeName string, encoder getRequestEncodeFunc, decoder getResponseDecodeFunc) *MapGetCommand {
+func NewMapGetCommand(typeName, metricName string, encoder getRequestEncodeFunc, decoder getResponseDecodeFunc) *MapGetCommand {
 	return &MapGetCommand{
-		typeName: typeName,
-		encoder:  encoder,
-		decoder:  decoder,
+		typeName:   typeName,
+		metricName: metricName,
+		encoder:    encoder,
+		decoder:    decoder,
 	}
 }
 
@@ -102,8 +103,7 @@ func (cm MapGetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		if err != nil {
 			return nil, err
 		}
-		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), fmt.Sprintf("total.%s.%s", strings.ToLower(cm.typeName), cmd.RunningModeString(ec)))
+		cmd.IncrementClusterMetric(ctx, ec, "total."+cm.metricName)
 		sp.SetText(fmt.Sprintf("Getting from %s '%s'", cm.typeName, name))
 		keyData, err := MakeKeyData(ec, ci, keyStr)
 		if err != nil {
@@ -131,16 +131,18 @@ func (cm MapGetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 type dataSliceDecoderFunc func(message *hazelcast.ClientMessage) []*hazelcast.Data
 
 type MapKeySetCommand struct {
-	typeName string
-	encoder  nameRequestEncodeFunc
-	decoder  dataSliceDecoderFunc
+	typeName   string
+	metricName string
+	encoder    nameRequestEncodeFunc
+	decoder    dataSliceDecoderFunc
 }
 
-func NewMapKeySetCommand(typeName string, encoder nameRequestEncodeFunc, decoder dataSliceDecoderFunc) *MapKeySetCommand {
+func NewMapKeySetCommand(typeName, metricName string, encoder nameRequestEncodeFunc, decoder dataSliceDecoderFunc) *MapKeySetCommand {
 	return &MapKeySetCommand{
-		typeName: typeName,
-		encoder:  encoder,
-		decoder:  decoder,
+		typeName:   typeName,
+		metricName: metricName,
+		encoder:    encoder,
+		decoder:    decoder,
 	}
 }
 
@@ -159,8 +161,7 @@ func (cm MapKeySetCommand) Exec(ctx context.Context, ec plug.ExecContext) error 
 		if err != nil {
 			return nil, err
 		}
-		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), fmt.Sprintf("total.%s.%s", strings.ToLower(cm.typeName), cmd.RunningModeString(ec)))
+		cmd.IncrementClusterMetric(ctx, ec, "total."+cm.metricName)
 		req := cm.encoder(name)
 		sp.SetText(fmt.Sprintf("Getting keys of %s '%s'", cm.typeName, name))
 		resp, err := ci.InvokeOnRandomTarget(ctx, req, nil)
@@ -192,16 +193,18 @@ func (cm MapKeySetCommand) Exec(ctx context.Context, ec plug.ExecContext) error 
 }
 
 type MapRemoveCommand struct {
-	typeName string
-	encoder  getRequestEncodeFunc
-	decoder  getResponseDecodeFunc
+	typeName   string
+	metricName string
+	encoder    getRequestEncodeFunc
+	decoder    getResponseDecodeFunc
 }
 
-func NewMapRemoveCommand(typeName string, encoder getRequestEncodeFunc, decoder getResponseDecodeFunc) *MapRemoveCommand {
+func NewMapRemoveCommand(typeName, metricName string, encoder getRequestEncodeFunc, decoder getResponseDecodeFunc) *MapRemoveCommand {
 	return &MapRemoveCommand{
-		typeName: typeName,
-		encoder:  encoder,
-		decoder:  decoder,
+		typeName:   typeName,
+		metricName: metricName,
+		encoder:    encoder,
+		decoder:    decoder,
 	}
 }
 
@@ -222,8 +225,7 @@ func (cm MapRemoveCommand) Exec(ctx context.Context, ec plug.ExecContext) error 
 		if err != nil {
 			return nil, err
 		}
-		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), fmt.Sprintf("total.%s.%s", strings.ToLower(cm.typeName), cmd.RunningModeString(ec)))
+		cmd.IncrementClusterMetric(ctx, ec, "total."+cm.metricName)
 		sp.SetText(fmt.Sprintf("Removing from %s '%s'", cm.typeName, name))
 		keyData, err := MakeKeyData(ec, ci, keyStr)
 		if err != nil {
@@ -253,14 +255,16 @@ type Locker interface {
 type getLockerFunc[T Locker] func(context.Context, plug.ExecContext, clc.Spinner) (T, error)
 
 type LockCommand[T Locker] struct {
-	typeName string
-	getFn    getLockerFunc[T]
+	typeName   string
+	metricName string
+	getFn      getLockerFunc[T]
 }
 
-func NewLockCommand[T Locker](typeName string, getFn getLockerFunc[T]) *LockCommand[T] {
+func NewLockCommand[T Locker](typeName, metricName string, getFn getLockerFunc[T]) *LockCommand[T] {
 	return &LockCommand[T]{
-		typeName: typeName,
-		getFn:    getFn,
+		typeName:   typeName,
+		metricName: metricName,
+		getFn:      getFn,
 	}
 }
 
@@ -284,8 +288,7 @@ func (cm LockCommand[T]) Exec(ctx context.Context, ec plug.ExecContext) error {
 		if err != nil {
 			return nil, err
 		}
-		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), fmt.Sprintf("total.%s.%s", strings.ToLower(cm.typeName), cmd.RunningModeString(ec)))
+		cmd.IncrementClusterMetric(ctx, ec, "total."+cm.metricName)
 		m, err := cm.getFn(ctx, ec, sp)
 		if err != nil {
 			return nil, err
@@ -318,14 +321,16 @@ type LockTrier interface {
 type getLockTrierFunc[T LockTrier] func(context.Context, plug.ExecContext, clc.Spinner) (T, error)
 
 type MapTryLockCommand[T LockTrier] struct {
-	typeName string
-	getFn    getLockTrierFunc[T]
+	typeName   string
+	metricName string
+	getFn      getLockTrierFunc[T]
 }
 
-func NewTryLockCommand[T LockTrier](typeName string, getFn getLockTrierFunc[T]) *MapTryLockCommand[T] {
+func NewTryLockCommand[T LockTrier](typeName, metricName string, getFn getLockTrierFunc[T]) *MapTryLockCommand[T] {
 	return &MapTryLockCommand[T]{
-		typeName: typeName,
-		getFn:    getFn,
+		typeName:   typeName,
+		metricName: metricName,
+		getFn:      getFn,
 	}
 }
 
@@ -351,8 +356,7 @@ func (cm MapTryLockCommand[T]) Exec(ctx context.Context, ec plug.ExecContext) er
 		if err != nil {
 			return nil, err
 		}
-		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), fmt.Sprintf("total.%s.%s", strings.ToLower(cm.typeName), cmd.RunningModeString(ec)))
+		cmd.IncrementClusterMetric(ctx, ec, "total."+cm.metricName)
 		sp.SetText(fmt.Sprintf("Locking key in map %s", mapName))
 		m, err := cm.getFn(ctx, ec, sp)
 		if err != nil {
@@ -399,14 +403,16 @@ type Unlocker interface {
 type getUnlockerFunc[T Unlocker] func(context.Context, plug.ExecContext, clc.Spinner) (T, error)
 
 type MapUnlockCommand[T Unlocker] struct {
-	typeName string
-	getFn    getUnlockerFunc[T]
+	typeName   string
+	metricName string
+	getFn      getUnlockerFunc[T]
 }
 
-func NewMapUnlockCommand[T Unlocker](typeName string, getFn getUnlockerFunc[T]) *MapUnlockCommand[T] {
+func NewMapUnlockCommand[T Unlocker](typeName, metricName string, getFn getUnlockerFunc[T]) *MapUnlockCommand[T] {
 	return &MapUnlockCommand[T]{
-		typeName: typeName,
-		getFn:    getFn,
+		typeName:   typeName,
+		metricName: metricName,
+		getFn:      getFn,
 	}
 }
 
@@ -429,8 +435,7 @@ func (cm MapUnlockCommand[T]) Exec(ctx context.Context, ec plug.ExecContext) err
 		if err != nil {
 			return nil, err
 		}
-		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), fmt.Sprintf("total.%s.%s", strings.ToLower(cm.typeName), cmd.RunningModeString(ec)))
+		cmd.IncrementClusterMetric(ctx, ec, "total."+cm.metricName)
 		sp.SetText(fmt.Sprintf("Unlocking key in %s '%s'", cm.typeName, name))
 		m, err := cm.getFn(ctx, ec, sp)
 		if err != nil {
@@ -453,16 +458,18 @@ func (cm MapUnlockCommand[T]) Exec(ctx context.Context, ec plug.ExecContext) err
 }
 
 type MapValuesCommand struct {
-	typeName string
-	encoder  nameRequestEncodeFunc
-	decoder  dataSliceDecoderFunc
+	typeName   string
+	metricName string
+	encoder    nameRequestEncodeFunc
+	decoder    dataSliceDecoderFunc
 }
 
-func NewMapValuesCommand(typeName string, encoder nameRequestEncodeFunc, decoder dataSliceDecoderFunc) *MapValuesCommand {
+func NewMapValuesCommand(typeName, metricName string, encoder nameRequestEncodeFunc, decoder dataSliceDecoderFunc) *MapValuesCommand {
 	return &MapValuesCommand{
-		typeName: typeName,
-		encoder:  encoder,
-		decoder:  decoder,
+		typeName:   typeName,
+		metricName: metricName,
+		encoder:    encoder,
+		decoder:    decoder,
 	}
 }
 
@@ -481,8 +488,7 @@ func (cm *MapValuesCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 		if err != nil {
 			return nil, err
 		}
-		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), fmt.Sprintf("total.%s.%s", strings.ToLower(cm.typeName), cmd.RunningModeString(ec)))
+		cmd.IncrementClusterMetric(ctx, ec, "total."+cm.metricName)
 		sp.SetText(fmt.Sprintf("Getting values of %s", name))
 		req := cm.encoder(name)
 		resp, err := ci.InvokeOnRandomTarget(ctx, req, nil)

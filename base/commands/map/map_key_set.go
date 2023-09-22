@@ -10,6 +10,6 @@ import (
 )
 
 func init() {
-	c := commands.NewMapKeySetCommand("Map", codec.EncodeMapKeySetRequest, codec.DecodeMapKeySetResponse)
+	c := commands.NewMapKeySetCommand("Map", "map", codec.EncodeMapKeySetRequest, codec.DecodeMapKeySetResponse)
 	check.Must(plug.Registry.RegisterCommand("map:key-set", c))
 }

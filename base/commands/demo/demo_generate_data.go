@@ -115,8 +115,7 @@ func generateResult(ctx context.Context, ec plug.ExecContext, generator dataStre
 		if _, err := sql.ExecSQL(ctx, ec, query); err != nil {
 			return "", err
 		}
-		cid, vid := cmd.FindClusterIDs(ctx, ec)
-		ec.Metrics().Increment(metrics.NewKey(cid, vid), "total.demo."+cmd.RunningModeString(ec))
+		cmd.IncrementClusterMetric(ctx, ec, "total.demo")
 		return query, nil
 	})
 	if err != nil {

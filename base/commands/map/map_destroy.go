@@ -9,6 +9,6 @@ import (
 )
 
 func init() {
-	cmd := commands.NewDestroyCommand("Map", getMap)
+	cmd := commands.NewDestroyCommand("Map", "map", getMap)
 	check.Must(plug.Registry.RegisterCommand("map:destroy", cmd))
 }
