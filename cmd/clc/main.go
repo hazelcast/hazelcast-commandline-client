@@ -45,9 +45,9 @@ func main() {
 	}
 	_, name := filepath.Split(os.Args[0])
 	stdio := clc.StdIO()
-	createMetricStore(paths.Metrics())
-	close := startMetricsTicker()
-	m, err := cmd.NewMain(name, cfgPath, cp, logPath, logLevel, stdio, metrics.Storage)
+	metrics.CreateMetricStore(context.TODO(), paths.Metrics())
+	doneCh := startMetricsTicker()
+	m, err := cmd.NewMain(name, cfgPath, cp, logPath, logLevel, stdio, metrics.DefaultStore())
 	if err != nil {
 		bye(err)
 	}
@@ -61,7 +61,7 @@ func main() {
 		}
 	}
 	close(doneCh)
-	sendMetric()
+	sendMetrics(context.TODO())
 	// ignoring the error here
 	_ = m.Exit()
 	if err != nil {
@@ -76,34 +76,18 @@ func main() {
 	os.Exit(ExitCodeSuccess)
 }
 
-func createMetricStore(dir string) {
-	if !cmd.PhoneHomeEnabled() {
-		metrics.Storage = &metrics.NopMetricStore{}
-		return
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
-	defer cancel()
-	store, err := metrics.NewMetricStore(ctx, dir)
-	if err != nil {
-		metrics.Storage = &metrics.NopMetricStore{}
-		return
-	}
-	metrics.Storage = store
-}
-
-func startMetricsTicker() chan bool {
-	done := make(chan bool)
+func startMetricsTicker() chan struct{} {
+	done := make(chan struct{})
 	go func() {
 		ticker := time.NewTicker(24 * time.Hour)
 		defer ticker.Stop()
 		for {
 			select {
-			case <-done:
+			case _, _ = <-done:
 				return
 			case <-ticker.C:
 				ctx, cancel := context.WithTimeout(context.Background(), 5000*time.Millisecond)
-				// ignore errors about metrics
-				_ = metrics.Storage.Send(ctx)
+				metrics.Send(ctx)
 				cancel()
 			}
 		}
@@ -111,17 +95,14 @@ func startMetricsTicker() chan bool {
 	return done
 }
 
-func sendMetric() {
+func sendMetrics(ctx context.Context) {
 	// store cluster config count before sending
 	cd := paths.Configs()
 	cs, err := config.FindAll(cd)
 	if err == nil {
-		metrics.Storage.Store(metrics.NewSimpleKey(), "cluster-config-count", len(cs))
+		metrics.DefaultStore().Store(metrics.NewSimpleKey(), "cluster-config-count", len(cs))
 	}
 	// try to send the data stored locally
 	// if there is no metric to send, do nothing
-	ctx, cancel := context.WithTimeout(context.Background(), 3000*time.Millisecond)
-	// we want to ignore errors about metrics
-	_ = metrics.Storage.Send(ctx)
-	cancel()
+	metrics.Send(ctx)
 }

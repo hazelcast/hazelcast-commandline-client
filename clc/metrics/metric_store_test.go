@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func newStorageTestKey(ms *MetricStore, m string) storageKey {
+func newStorageTestKey(ms *metricStore, m string) storageKey {
 	return newStorageKey(NewSimpleKey(), ms.sessAttrs.AcquisitionSource, ms.sessAttrs.CLCVersion, m)
 }
 
@@ -31,7 +31,7 @@ func newSimpleTestKey(m string, t time.Time, cid string) storageKey {
 }
 
 func TestMetricStore_GlobalMetrics(t *testing.T) {
-	WithMetricStore(func(ms *MetricStore, _ *[]Query) {
+	WithMetricStore(func(ms *metricStore, _ *[]Query) {
 		gmb := WithStore(ms, func(s *store.Store) []byte {
 			return check.MustValue(s.GetEntry([]byte(GlobalAttributesKeyName)))
 		})
@@ -44,7 +44,7 @@ func TestMetricStore_GlobalMetrics(t *testing.T) {
 }
 
 func TestMetricStore_SessionMetrics(t *testing.T) {
-	WithMetricStore(func(ms *MetricStore, _ *[]Query) {
+	WithMetricStore(func(ms *metricStore, _ *[]Query) {
 		ms.sessAttrs = SessionAttributes{
 			CLCVersion:        "test-version",
 			AcquisitionSource: "test-as",
@@ -58,7 +58,7 @@ func TestMetricStore_SessionMetrics(t *testing.T) {
 }
 
 func TestMetricStore_Increment(t *testing.T) {
-	WithMetricStore(func(ms *MetricStore, _ *[]Query) {
+	WithMetricStore(func(ms *metricStore, _ *[]Query) {
 		ms.Increment(NewSimpleKey(), "metric1.metric1.metric2")
 		ms.Increment(NewSimpleKey(), "metric1")
 		expected := map[storageKey]int{
@@ -70,7 +70,7 @@ func TestMetricStore_Increment(t *testing.T) {
 }
 
 func TestMetricStore_Store(t *testing.T) {
-	WithMetricStore(func(ms *MetricStore, _ *[]Query) {
+	WithMetricStore(func(ms *metricStore, _ *[]Query) {
 		ms.Store(NewSimpleKey(), "metric1.metric2", 6)
 		ms.Store(NewSimpleKey(), "metric1", 5)
 		expected := map[storageKey]int{
@@ -82,7 +82,7 @@ func TestMetricStore_Store(t *testing.T) {
 }
 
 func TestMetricStore_PersistMetrics(t *testing.T) {
-	WithMetricStore(func(ms *MetricStore, _ *[]Query) {
+	WithMetricStore(func(ms *metricStore, _ *[]Query) {
 		ms.Increment(NewSimpleKey(), "metric1.metric1.metric2")
 		ms.Increment(NewSimpleKey(), "metric1")
 		ms.Store(NewSimpleKey(), "metric3.metric4", 6)
@@ -115,7 +115,7 @@ func TestMetricStore_Send_Today(t *testing.T) {
 	cid := "cid"
 	todayKey := newSimpleTestKey("map", now, cid)
 	todayValue := 5
-	WithMetricStore(func(ms *MetricStore, sentQueries *[]Query) {
+	WithMetricStore(func(ms *metricStore, sentQueries *[]Query) {
 		// write the entry to database
 		kb := check.MustValue(todayKey.Marshal())
 		vb := check.MustValue(json.Marshal(todayValue))
@@ -140,7 +140,7 @@ func TestMetricStore_Send_Yesterday(t *testing.T) {
 	cid := "cid"
 	yesterdayCID := newSimpleTestKey("map", now.Add(-24*time.Hour), cid)
 	yesterday := newSimpleTestKey("map", now.Add(-24*time.Hour), "")
-	WithMetricStore(func(ms *MetricStore, sentQueries *[]Query) {
+	WithMetricStore(func(ms *metricStore, sentQueries *[]Query) {
 		entries := map[storageKey]int{
 			yesterdayCID: 10,
 			yesterday:    20,
@@ -192,14 +192,14 @@ func WithTempDir(fn func(string)) {
 	fn(dir)
 }
 
-func WithMetricStore(fn func(ms *MetricStore, queries *[]Query)) {
+func WithMetricStore(fn func(ms *metricStore, queries *[]Query)) {
 	WithTempDir(func(dir string) {
 		queries := make([]Query, 0)
 		sendQueriesFn := func(ctx context.Context, url string, q ...Query) error {
 			queries = q
 			return nil
 		}
-		ms := MetricStore{
+		ms := metricStore{
 			inc:           make(map[storageKey]int),
 			override:      make(map[storageKey]int),
 			sa:            store.NewStoreAccessor(dir, log.NopLogger{}),
@@ -212,7 +212,7 @@ func WithMetricStore(fn func(ms *MetricStore, queries *[]Query)) {
 	})
 }
 
-func WithStore[T any](ms *MetricStore, fn func(s *store.Store) T) T {
+func WithStore[T any](ms *metricStore, fn func(s *store.Store) T) T {
 	val := check.MustValue(ms.sa.WithLock(func(s *store.Store) (any, error) {
 		return fn(s), nil
 	}))

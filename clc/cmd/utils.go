@@ -100,7 +100,7 @@ func parseDuration(duration string) (time.Duration, error) {
 
 func FindClusterIDs(ctx context.Context, ec plug.ExecContext) (clusterID string, viridianID string) {
 	// Must not be called before ec.ClusterInternal function.
-	if !PhoneHomeEnabled() {
+	if !metrics.PhoneHomeEnabled() {
 		return "", ""
 	}
 	ctx, cancel := context.WithTimeout(ctx, 1000*time.Millisecond)
@@ -139,9 +139,4 @@ func RunningModeString(ec plug.ExecContext) string {
 	default:
 		return "unknown"
 	}
-}
-
-func PhoneHomeEnabled() bool {
-	val := os.Getenv(metrics.EnvPhoneHomeEnabled)
-	return strings.ToLower(val) != "false"
 }

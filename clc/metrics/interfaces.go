@@ -4,11 +4,6 @@ import (
 	"context"
 )
 
-type MetricStoreSender interface {
-	MetricStorer
-	MetricSender
-}
-
 type MetricStorer interface {
 	// Store stores the value in the specified key/metric
 	// metric is in the form of "metric1.metric2.metric3".
@@ -18,6 +13,6 @@ type MetricStorer interface {
 	Increment(key Key, metric string)
 }
 
-type MetricSender interface {
+type metricSender interface {
 	Send(ctx context.Context) error
 }

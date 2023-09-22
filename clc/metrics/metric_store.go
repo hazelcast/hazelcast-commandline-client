@@ -14,7 +14,34 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 )
 
-var Storage MetricStoreSender
+var defaultStore MetricStorer
+
+func DefaultStore() MetricStorer {
+	if defaultStore != nil {
+		return defaultStore
+	}
+	return &NopMetricStore{}
+}
+
+func Send(ctx context.Context) {
+	if sender, ok := defaultStore.(metricSender); ok {
+		// ignore errors about metrics
+		_ = sender.Send(ctx)
+	}
+}
+
+func CreateMetricStore(ctx context.Context, dir string) {
+	if !PhoneHomeEnabled() {
+		defaultStore = &NopMetricStore{}
+		return
+	}
+	store, err := newMetricStore(ctx, dir)
+	if err != nil {
+		defaultStore = &NopMetricStore{}
+		return
+	}
+	defaultStore = store
+}
 
 const (
 	GlobalAttributesKeyName = "global-attributes"
@@ -23,7 +50,7 @@ const (
 	StoreDuration           = time.Duration(30 * 24 * time.Hour)
 )
 
-type MetricStore struct {
+type metricStore struct {
 	incLock   sync.Mutex
 	inc       map[storageKey]int
 	ovrLock   sync.Mutex
@@ -36,8 +63,8 @@ type MetricStore struct {
 	sendQueriesFn func(ctx context.Context, url string, q ...Query) error
 }
 
-func NewMetricStore(ctx context.Context, dir string) (*MetricStore, error) {
-	ms := MetricStore{
+func newMetricStore(ctx context.Context, dir string) (*metricStore, error) {
+	ms := metricStore{
 		serverURL:     "", // TODO: server side is not implemented
 		inc:           make(map[storageKey]int),
 		override:      make(map[storageKey]int),
@@ -51,7 +78,7 @@ func NewMetricStore(ctx context.Context, dir string) (*MetricStore, error) {
 	return &ms, nil
 }
 
-func (ms *MetricStore) setGlobalMetrics(ctx context.Context) error {
+func (ms *metricStore) setGlobalMetrics(ctx context.Context) error {
 	keyb := []byte(GlobalAttributesKeyName)
 	var gm GlobalAttributes
 	qv, err := ms.sa.WithLock(func(s *store.Store) (any, error) {
@@ -102,7 +129,7 @@ func (ms *MetricStore) setGlobalMetrics(ctx context.Context) error {
 	return nil
 }
 
-func (ms *MetricStore) Store(key Key, metric string, val int) {
+func (ms *metricStore) Store(key Key, metric string, val int) {
 	metrics := strings.Split(metric, ".")
 	ms.incLock.Lock()
 	for _, m := range metrics {
@@ -112,7 +139,7 @@ func (ms *MetricStore) Store(key Key, metric string, val int) {
 	ms.incLock.Unlock()
 }
 
-func (ms *MetricStore) Increment(key Key, metric string) {
+func (ms *metricStore) Increment(key Key, metric string) {
 	metrics := strings.Split(metric, ".")
 	ms.ovrLock.Lock()
 	for _, m := range metrics {
@@ -122,7 +149,7 @@ func (ms *MetricStore) Increment(key Key, metric string) {
 	ms.ovrLock.Unlock()
 }
 
-func (ms *MetricStore) Send(ctx context.Context) error {
+func (ms *metricStore) Send(ctx context.Context) error {
 	_, err := ms.sa.WithLock(func(s *store.Store) (any, error) {
 		// persist the local changes to the database
 		if len(ms.inc) != 0 || len(ms.override) != 0 {
@@ -160,12 +187,12 @@ func (ms *MetricStore) Send(ctx context.Context) error {
 	return err
 }
 
-func (ms *MetricStore) persistMetrics(s *store.Store) {
+func (ms *metricStore) persistMetrics(s *store.Store) {
 	ms.persistIncrementMetrics(s)
 	ms.persistOverrideMetrics(s)
 }
 
-func (ms *MetricStore) persistIncrementMetrics(s *store.Store) {
+func (ms *metricStore) persistIncrementMetrics(s *store.Store) {
 	ms.incLock.Lock()
 	defer ms.incLock.Unlock()
 	for key, val := range ms.inc {
@@ -200,7 +227,7 @@ func (ms *MetricStore) persistIncrementMetrics(s *store.Store) {
 	ms.inc = make(map[storageKey]int)
 }
 
-func (ms *MetricStore) persistOverrideMetrics(s *store.Store) {
+func (ms *metricStore) persistOverrideMetrics(s *store.Store) {
 	ms.ovrLock.Lock()
 	defer ms.ovrLock.Unlock()
 	for key, val := range ms.override {
