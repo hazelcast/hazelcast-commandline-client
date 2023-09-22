@@ -22,26 +22,35 @@ import (
 
 func TestMigrationStages(t *testing.T) {
 	testCases := []struct {
-		name string
-		f    func(t *testing.T)
+		name                string
+		statusMapStateFiles []string
+		expectedOutput      string
 	}{
-		{name: "start_Successful", f: startTest_Successful},
-		{name: "start_Failure", f: startTest_Failure},
+		{
+			name: "successful",
+			statusMapStateFiles: []string{
+				"testdata/start/migration_success_initial.json",
+				"testdata/start/migration_success_completed.json",
+			},
+			expectedOutput: "OK Migration completed successfully.",
+		},
+		{
+			name: "failure",
+			statusMapStateFiles: []string{
+				"testdata/start/migration_success_initial.json",
+				"testdata/start/migration_success_failure.json",
+			},
+			expectedOutput: "ERROR Failed migrating IMAP: imap5 ...: some error",
+		},
 	}
 	for _, tc := range testCases {
-		t.Run(tc.name, tc.f)
+		t.Run(tc.name, func(t *testing.T) {
+			startMigrationTest(t, tc.expectedOutput, tc.statusMapStateFiles)
+		})
 	}
 }
 
-func startTest_Successful(t *testing.T) {
-	startTest(t, successfulRunner, "OK Migration completed successfully.")
-}
-
-func startTest_Failure(t *testing.T) {
-	startTest(t, failureRunner, "ERROR Failed migrating IMAP: imap5 ...: some error")
-}
-
-func startTest(t *testing.T, runnerFunc func(context.Context, it.TestContext, string, *sync.WaitGroup), expectedOutput string) {
+func startMigrationTest(t *testing.T, expectedOutput string, statusMapStateFiles []string) {
 	tcx := it.TestContext{T: t}
 	ctx := context.Background()
 	tcx.Tester(func(tcx it.TestContext) {
@@ -57,7 +66,7 @@ func startTest(t *testing.T, runnerFunc func(context.Context, it.TestContext, st
 		mID := <-c
 		wg.Done()
 		wg.Add(1)
-		go runnerFunc(ctx, tcx, mID, &wg)
+		go migrationRunner(ctx, tcx, mID, &wg, statusMapStateFiles)
 		wg.Wait()
 		tcx.AssertStdoutContains(expectedOutput)
 		tcx.WithReset(func() {
@@ -68,24 +77,14 @@ func startTest(t *testing.T, runnerFunc func(context.Context, it.TestContext, st
 	})
 }
 
-func successfulRunner(ctx context.Context, tcx it.TestContext, migrationID string, wg *sync.WaitGroup) {
+func migrationRunner(ctx context.Context, tcx it.TestContext, migrationID string, wg *sync.WaitGroup, statusMapStateFiles []string) {
 	mSQL := fmt.Sprintf(`CREATE MAPPING IF NOT EXISTS %s TYPE IMap OPTIONS('keyFormat'='varchar', 'valueFormat'='json')`, migration.StatusMapName)
 	MustValue(tcx.Client.SQL().Execute(ctx, mSQL))
 	statusMap := MustValue(tcx.Client.GetMap(ctx, migration.StatusMapName))
-	b := MustValue(os.ReadFile("testdata/start/migration_success_initial.json"))
-	Must(statusMap.Set(ctx, migrationID, serialization.JSON(b)))
-	b = MustValue(os.ReadFile("testdata/start/migration_success_completed.json"))
-	Must(statusMap.Set(ctx, migrationID, serialization.JSON(b)))
-	wg.Done()
-}
-
-func failureRunner(ctx context.Context, tcx it.TestContext, migrationID string, wg *sync.WaitGroup) {
-	createMapping(ctx, tcx)
-	statusMap := MustValue(tcx.Client.GetMap(ctx, migration.StatusMapName))
-	b := MustValue(os.ReadFile("testdata/start/migration_success_initial.json"))
-	Must(statusMap.Set(ctx, migrationID, serialization.JSON(b)))
-	b = MustValue(os.ReadFile("testdata/start/migration_success_failure.json"))
-	Must(statusMap.Set(ctx, migrationID, serialization.JSON(b)))
+	for _, f := range statusMapStateFiles {
+		b := MustValue(os.ReadFile(f))
+		Must(statusMap.Set(ctx, migrationID, serialization.JSON(b)))
+	}
 	wg.Done()
 }
 
