@@ -95,6 +95,7 @@ func createMigrationStages(ctx context.Context, ec plug.ExecContext, ci *hazelca
 							return nil, errors2.ErrUserCancelled
 						}
 					}
+					time.Sleep(1 * time.Second)
 				}
 			},
 		})
@@ -123,6 +124,9 @@ func dataStructuresToBeMigrated(ctx context.Context, ec plug.ExecContext, migrat
 			return nil, err
 		}
 		r, err := row.Get(0)
+		if err != nil {
+			return nil, err
+		}
 		var status OverallMigrationStatus
 		if err = json.Unmarshal(r.(serialization.JSON), &status); err != nil {
 			return nil, err
