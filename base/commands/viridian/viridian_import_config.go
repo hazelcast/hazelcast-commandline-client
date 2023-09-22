@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
@@ -32,7 +31,7 @@ Make sure you login before running this command.
 }
 
 func (cm ImportConfigCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
-	ec.Metrics().Increment(metrics.NewSimpleKey(), "total.viridian."+cmd.RunningModeString(ec))
+	cmd.IncrementMetric(ctx, ec, "total.viridian")
 	if err := cm.exec(ctx, ec); err != nil {
 		err = handleErrorResponse(ec, err)
 		return fmt.Errorf("could not import cluster configuration: %w", err)

@@ -17,7 +17,6 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/store"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -52,7 +51,7 @@ func (ListTemplatesCommand) Init(cc plug.InitContext) error {
 }
 
 func (ListTemplatesCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
-	ec.Metrics().Increment(metrics.NewSimpleKey(), "total.project."+cmd.RunningModeString(ec))
+	cmd.IncrementMetric(ctx, ec, "total.project")
 	isLocal := ec.Props().GetBool(flagLocal)
 	isRefresh := ec.Props().GetBool(flagRefresh)
 	if isLocal && isRefresh {

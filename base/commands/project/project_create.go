@@ -14,7 +14,6 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -47,6 +46,7 @@ func (pc CreateCommand) Init(cc plug.InitContext) error {
 }
 
 func (pc CreateCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+	cmd.IncrementMetric(ctx, ec, "total.project")
 	templateName := ec.GetStringArg(argTemplateName)
 	outputDir := ec.Props().GetString(commands.FlagOutputDir)
 	if outputDir == "" {
@@ -110,7 +110,6 @@ func (pc CreateCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 }
 
 func createProject(ec plug.ExecContext, outputDir, templateName string) error {
-	ec.Metrics().Increment(metrics.NewSimpleKey(), "total.project."+cmd.RunningModeString(ec))
 	sourceDir := paths.ResolveTemplatePath(templateName)
 	vs, err := loadValues(ec, sourceDir)
 	if err != nil {
