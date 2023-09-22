@@ -210,7 +210,7 @@ func WithMetricStore(fn func(ms *metricStore, queries *[]Query)) {
 			sa:            store.NewStoreAccessor(dir, log.NopLogger{}),
 			sendQueriesFn: sendQueriesFn,
 		}
-		if err := ms.ensureGlobalMetrics(context.Background()); err != nil {
+		if err := ms.ensureGlobalMetrics(); err != nil {
 			panic(fmt.Errorf("setting global metrics: %w", err))
 		}
 		fn(&ms, &queries)

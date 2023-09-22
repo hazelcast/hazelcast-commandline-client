@@ -36,15 +36,16 @@ func Send(ctx context.Context) {
 	}
 }
 
-func CreateMetricStore(ctx context.Context, dir string) {
+func CreateMetricStore(dir string) {
 	if PhoneHomeEnabled() {
-		store, _ := newMetricStore(ctx, dir)
+		store, _ := newMetricStore(dir)
 		defaultStore.Store(store)
 	}
 }
 
 const (
-	GlobalAttributesKeyName = "global-attributes"
+	GlobalAttributesKeyName = "metrics-global-attributes"
+	NextPingTryTimeKey      = "metrics-try-next-time"
 	MetricsVersion          = "v1"
 	EnvPhoneHomeEnabled     = "HZ_PHONE_HOME_ENABLED"
 	StoreDuration           = time.Duration(30 * 24 * time.Hour)
@@ -62,7 +63,7 @@ type metricStore struct {
 	sendQueriesFn func(ctx context.Context, url string, q ...Query) error
 }
 
-func newMetricStore(ctx context.Context, dir string) (*metricStore, error) {
+func newMetricStore(dir string) (*metricStore, error) {
 	ms := metricStore{
 		serverURL:     "http://phonehome.hazelcast.com/pingCLC",
 		mu:            &sync.Mutex{},
@@ -72,19 +73,18 @@ func newMetricStore(ctx context.Context, dir string) (*metricStore, error) {
 		sa:            store.NewStoreAccessor(dir, log.NopLogger{}),
 		sendQueriesFn: sendQueries,
 	}
-	if err := ms.ensureGlobalMetrics(ctx); err != nil {
+	if err := ms.ensureGlobalMetrics(); err != nil {
 		return nil, err
 	}
 	return &ms, nil
 }
 
-func (ms *metricStore) ensureGlobalMetrics(ctx context.Context) error {
-	keyb := []byte(GlobalAttributesKeyName)
-	var gas GlobalAttributes
-	qv, err := ms.sa.WithLock(func(s *store.Store) (any, error) {
-		// check if global metrics exists if not create an entry
+func (ms *metricStore) ensureGlobalMetrics() error {
+	gasKey := []byte(GlobalAttributesKeyName)
+	_, err := ms.sa.WithLock(func(s *store.Store) (any, error) {
+		var gas GlobalAttributes
 		firstTime := false
-		val, err := s.GetEntry(keyb)
+		valb, err := s.GetEntry(gasKey)
 		if err != nil {
 			if !errors.Is(err, store.ErrKeyNotFound) {
 				return nil, err
@@ -92,39 +92,24 @@ func (ms *metricStore) ensureGlobalMetrics(ctx context.Context) error {
 			firstTime = true
 		}
 		if !firstTime {
-			if err := gas.Unmarshal(val); err != nil {
+			if err := gas.Unmarshal(valb); err != nil {
 				return nil, err
 			}
 			ms.globalAttrs = gas
 			return nil, nil
 		}
 		gas = NewGlobalAttributes()
-		return GenerateFirstPingQuery(gas, ms.sessionAttrs, time.Now().UTC()), nil
+		gasb, err := gas.Marshal()
+		if err != nil {
+			return nil, err
+		}
+		if err := s.SetEntry(gasKey, gasb); err != nil {
+			return nil, err
+		}
+		ms.globalAttrs = gas
+		return nil, nil
 	})
-	if err != nil {
-		return err
-	}
-	if qv == nil {
-		return nil
-	}
-	q := qv.(Query)
-	err = ms.sendQueriesFn(ctx, ms.serverURL, q)
-	if err != nil {
-		return err
-	}
-	// sent the first ping, persist the env to database
-	gmb, err := gas.Marshal()
-	if err != nil {
-		return err
-	}
-	_, err = ms.sa.WithLock(func(s *store.Store) (any, error) {
-		return nil, s.SetEntry(keyb, gmb)
-	})
-	if err != nil {
-		return err
-	}
-	ms.globalAttrs = gas
-	return nil
+	return err
 }
 
 func (ms *metricStore) Store(key Key, metric string, val int) {
@@ -148,51 +133,67 @@ func (ms *metricStore) Increment(key Key, metric string) {
 }
 
 func (ms *metricStore) Send(ctx context.Context) error {
+	now := time.Now().UTC()
 	_, err := ms.sa.WithLock(func(s *store.Store) (any, error) {
-		// persist the local changes to the database
-		ms.mu.Lock()
-		defer ms.mu.Unlock()
-		if len(ms.increments) != 0 || len(ms.updates) != 0 {
-			ms.persistMetrics(s)
-		}
-		now := time.Now().UTC()
-		// Find dates with keys and delete today's date
-		keys, err := s.GetKeysWithPrefix(PhonehomeKeyPrefix)
+		defer func() {
+			// set next try time irregardless of send function result
+			// this stops CLC from trying to send metrics again at every command call
+			// after failure at sending metrics
+			_ = storeNextTryTime(s, now)
+		}()
+		ms.persistMetrics(s)
+		nextTime, err := getTryNextTime(s)
+		sendFirstQuery := false
 		if err != nil {
-			return nil, err
+			if !errors.Is(err, store.ErrKeyNotFound) {
+				return nil, err
+			}
+			sendFirstQuery = true
 		}
-		dates := findDatesFromKeys(keys)
-		today := now.Format(DateFormat)
-		dates.Delete(today)
-		if dates.Len() == 0 {
-			// no data to send
+		if now.Before(nextTime) {
+			// enough time still hasn't passed
 			return nil, nil
 		}
+		dates, err := findDatesToSend(s, now)
+		if err != nil {
+			return nil, err
+		}
 		q := GenerateQueries(s, ms.globalAttrs, dates)
-		err = ms.sendQueriesFn(ctx, ms.serverURL, q...)
-		if err != nil {
+		if len(q) == 0 {
+			if !sendFirstQuery {
+				return nil, nil
+			}
+			q = []Query{GenerateFirstPingQuery(ms.globalAttrs, ms.sessionAttrs, now)}
+		}
+		if err := ms.sendQueriesFn(ctx, ms.serverURL, q...); err != nil {
 			return nil, err
 		}
-		// // delete the entries from the database
-		datePrefixes := []string{}
-		for date := range dates.Map() {
-			datePrefixes = append(datePrefixes, datePrefix(date))
-		}
-		err = s.DeleteEntriesWithPrefixes(datePrefixes...)
-		if err != nil {
-			return nil, err
-		}
-		return nil, nil
+		return nil, deleteSentDates(s, dates)
 	})
 	return err
 }
 
 func (ms *metricStore) persistMetrics(s *store.Store) {
 	ms.persistIncrementMetrics(s)
-	ms.persistOverrideMetrics(s)
+	ms.persistStoreMetrics(s)
+}
+
+func getTryNextTime(s *store.Store) (time.Time, error) {
+	tb, err := s.GetEntry([]byte(NextPingTryTimeKey))
+	if err != nil {
+		return time.Time{}, err
+	}
+	var t time.Time
+	err = json.Unmarshal(tb, &t)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return t, nil
 }
 
 func (ms *metricStore) persistIncrementMetrics(s *store.Store) {
+	ms.mu.Lock()
+	defer ms.mu.Unlock()
 	for key, val := range ms.increments {
 		var newVal int
 		keyb, err := key.Marshal()
@@ -225,7 +226,9 @@ func (ms *metricStore) persistIncrementMetrics(s *store.Store) {
 	ms.increments = make(map[storageKey]int)
 }
 
-func (ms *metricStore) persistOverrideMetrics(s *store.Store) {
+func (ms *metricStore) persistStoreMetrics(s *store.Store) {
+	ms.mu.Lock()
+	defer ms.mu.Unlock()
 	for key, val := range ms.updates {
 		// int marshalling should not return an error
 		valb, _ := json.Marshal(val)
@@ -240,6 +243,35 @@ func (ms *metricStore) persistOverrideMetrics(s *store.Store) {
 	}
 	// delete the metrics from the memory
 	ms.updates = make(map[storageKey]int)
+}
+
+func findDatesToSend(s *store.Store, now time.Time) (*types.Set[string], error) {
+	keys, err := s.GetKeysWithPrefix(PhonehomeKeyPrefix)
+	if err != nil {
+		return nil, err
+	}
+	dates := findDatesFromKeys(keys)
+	today := now.Format(DateFormat)
+	dates.Delete(today)
+	return dates, nil
+}
+
+func deleteSentDates(s *store.Store, dates *types.Set[string]) error {
+	var datePrefixes []string
+	for date := range dates.Map() {
+		datePrefixes = append(datePrefixes, datePrefix(date))
+	}
+	return s.DeleteEntriesWithPrefixes(datePrefixes...)
+
+}
+
+func storeNextTryTime(s *store.Store, now time.Time) error {
+	nt := now.Add(12 * time.Hour)
+	valb, err := json.Marshal(nt)
+	if err != nil {
+		return err
+	}
+	return s.SetEntry([]byte(NextPingTryTimeKey), valb)
 }
 
 func sendQueries(ctx context.Context, url string, q ...Query) error {

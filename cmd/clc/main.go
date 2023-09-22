@@ -45,8 +45,9 @@ func main() {
 	}
 	_, name := filepath.Split(os.Args[0])
 	stdio := clc.StdIO()
-	metrics.CreateMetricStore(context.TODO(), paths.Metrics())
-	doneCh := startMetricsTicker()
+	metrics.CreateMetricStore(paths.Metrics())
+	ctx, cancel := context.WithCancel(context.Background())
+	startMetricsTicker(ctx)
 	m, err := cmd.NewMain(name, cfgPath, cp, logPath, logLevel, stdio, metrics.DefaultStore())
 	if err != nil {
 		bye(err)
@@ -60,8 +61,8 @@ func main() {
 			}
 		}
 	}
-	close(doneCh)
-	sendMetrics(context.TODO())
+	cancel()
+	trySendingMetrics(context.Background())
 	// ignoring the error here
 	_ = m.Exit()
 	if err != nil {
@@ -76,33 +77,37 @@ func main() {
 	os.Exit(ExitCodeSuccess)
 }
 
-func startMetricsTicker() chan struct{} {
-	done := make(chan struct{})
+func startMetricsTicker(ctx context.Context) {
 	go func() {
 		ticker := time.NewTicker(24 * time.Hour)
 		defer ticker.Stop()
 		for {
 			select {
-			case <-done:
+			case <-ctx.Done():
 				return
 			case <-ticker.C:
-				ctx, cancel := context.WithTimeout(context.Background(), 5000*time.Millisecond)
+				ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 				metrics.Send(ctx)
 				cancel()
 			}
 		}
 	}()
-	return done
 }
 
-func sendMetrics(ctx context.Context) {
+func trySendingMetrics(ctx context.Context) {
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+	storeOtherMetrics()
+	// try to send the data stored locally
+	// if there is no metric to send, do nothing
+	metrics.Send(ctx)
+}
+
+func storeOtherMetrics() {
 	// store cluster config count before sending
 	cd := paths.Configs()
 	cs, err := config.FindAll(cd)
 	if err == nil {
 		metrics.DefaultStore().Store(metrics.NewSimpleKey(), "cluster-config-count", len(cs))
 	}
-	// try to send the data stored locally
-	// if there is no metric to send, do nothing
-	metrics.Send(ctx)
 }

@@ -4,15 +4,15 @@ import (
 	"encoding/json"
 	"os"
 	"runtime"
-	"strings"
 
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 func PhoneHomeEnabled() bool {
-	val := os.Getenv(EnvPhoneHomeEnabled)
-	return strings.ToLower(val) != "false"
+	return true
+	// val := os.Getenv(EnvPhoneHomeEnabled)
+	// return strings.ToLower(val) != "false"
 }
 
 type GlobalAttributes struct {

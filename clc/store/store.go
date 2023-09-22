@@ -205,6 +205,5 @@ func (s *Store) DeleteEntriesWithPrefixes(prefixes ...string) error {
 	for _, p := range prefixes {
 		ps = append(ps, []byte(p))
 	}
-	err := s.db.DropPrefix(ps...)
-	return err
+	return s.db.DropPrefix(ps...)
 }
