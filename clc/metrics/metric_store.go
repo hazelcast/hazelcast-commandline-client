@@ -218,7 +218,7 @@ func (ms *metricStore) persistIncrementMetrics(s *store.Store) {
 			// int marshalling should not return an error
 			b, _ := json.Marshal(&newVal)
 			return b
-		}, store.SetWithTTL(StoreDuration))
+		}, store.OptionWithTTL(StoreDuration))
 		if err != nil {
 			continue
 		}
@@ -237,7 +237,7 @@ func (ms *metricStore) persistOverrideMetrics(s *store.Store) {
 		if err != nil {
 			continue
 		}
-		err = s.SetEntry(keyb, valb, store.SetWithTTL(StoreDuration))
+		err = s.SetEntry(keyb, valb, store.OptionWithTTL(StoreDuration))
 		if err != nil {
 			continue
 		}

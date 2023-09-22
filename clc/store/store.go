@@ -84,17 +84,17 @@ func (l badgerLogger) Debugf(log string, args ...any) {
 	l.logger.Debugf(log, args...)
 }
 
-type SetOption interface {
+type Option interface {
 	ModifyEntry(*badger.Entry)
 }
 
-type SetWithTTL time.Duration
+type OptionWithTTL time.Duration
 
-func (s SetWithTTL) ModifyEntry(e *badger.Entry) {
+func (s OptionWithTTL) ModifyEntry(e *badger.Entry) {
 	e.WithTTL(time.Duration(s))
 }
 
-func (s *Store) SetEntry(key, val []byte, opts ...SetOption) error {
+func (s *Store) SetEntry(key, val []byte, opts ...Option) error {
 	err := s.db.Update(func(txn *badger.Txn) error {
 		e := badger.NewEntry(key, val)
 		for _, opt := range opts {
@@ -146,7 +146,7 @@ func (s *Store) GetKeysWithPrefix(prefix string) ([][]byte, error) {
 
 type UpdateFunc = func(current []byte, found bool) []byte
 
-func (s *Store) UpdateEntry(key []byte, f UpdateFunc, opts ...SetOption) error {
+func (s *Store) UpdateEntry(key []byte, f UpdateFunc, opts ...Option) error {
 	var item []byte
 	err := s.db.Update(func(txn *badger.Txn) error {
 		it, err := txn.Get(key)

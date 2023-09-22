@@ -29,8 +29,8 @@ func TestStore_GetSetEntry(t *testing.T) {
 func TestStore_SettEntryWithTTL(t *testing.T) {
 	withStore(func(s *Store) {
 		check.Must(s.SetEntry([]byte("key1"), []byte("val1")))
-		check.Must(s.SetEntry([]byte("key2"), []byte("val2"), SetWithTTL(100*time.Millisecond)))
-		check.Must(s.SetEntry([]byte("key3"), []byte("val3"), SetWithTTL(5*time.Second)))
+		check.Must(s.SetEntry([]byte("key2"), []byte("val2"), OptionWithTTL(100*time.Millisecond)))
+		check.Must(s.SetEntry([]byte("key3"), []byte("val3"), OptionWithTTL(5*time.Second)))
 		time.Sleep(200 * time.Millisecond)
 		entries := check.MustValue(getAllEntries(s.db))
 		require.Equal(t, entries["key1"], []byte("val1"))
