@@ -35,34 +35,34 @@ func (g *GlobalAttributes) Unmarshal(b []byte) error {
 }
 
 type SessionAttributes struct {
-	CLCVersion      string
-	AcquisionSource AcquisionSource
+	CLCVersion        string
+	AcquisitionSource AcquisitionSource
 }
 
 func NewSessionMetrics() SessionAttributes {
 	return SessionAttributes{
-		CLCVersion:      internal.Version,
-		AcquisionSource: FindAcquisionSource(),
+		CLCVersion:        internal.Version,
+		AcquisitionSource: FindAcquisionSource(),
 	}
 }
 
-type AcquisionSource string
+type AcquisitionSource string
 
 const (
-	EnvAcquisionSource                     = "CLC_ACQUISITION_SOURCE"
-	AcquisionSourceMC      AcquisionSource = "MC"
-	AcquisionSourceVSCode  AcquisionSource = "VSCode"
-	AcquisionSourceDocker  AcquisionSource = "Docker"
-	AcquisionSourceK8S     AcquisionSource = "Kubernetes"
-	AcquisionSourceUnknown AcquisionSource = "Unknown"
+	EnvAcquisionSource                       = "CLC_INTERNAL_ACQUISITION_SOURCE"
+	AcquisionSourceMC      AcquisitionSource = "MC"
+	AcquisionSourceVSCode  AcquisitionSource = "VSCode"
+	AcquisionSourceDocker  AcquisitionSource = "Docker"
+	AcquisionSourceK8S     AcquisitionSource = "Kubernetes"
+	AcquisionSourceUnknown AcquisitionSource = "Unknown"
 )
 
-func FindAcquisionSource() AcquisionSource {
-	src := AcquisionSource(os.Getenv(EnvAcquisionSource))
+func FindAcquisionSource() AcquisitionSource {
+	src := AcquisitionSource(os.Getenv(EnvAcquisionSource))
 	if src == "" {
 		return AcquisionSourceUnknown
 	}
-	return AcquisionSource(src)
+	return AcquisitionSource(src)
 }
 
 func (g *SessionAttributes) Marshal() ([]byte, error) {

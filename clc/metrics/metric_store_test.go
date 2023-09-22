@@ -16,7 +16,7 @@ import (
 )
 
 func newStorageTestKey(ms *MetricStore, m string) storageKey {
-	return newStorageKey(NewSimpleKey(), ms.sessAttrs.AcquisionSource, ms.sessAttrs.CLCVersion, m)
+	return newStorageKey(NewSimpleKey(), ms.sessAttrs.AcquisitionSource, ms.sessAttrs.CLCVersion, m)
 }
 
 func newSimpleTestKey(m string, t time.Time, cid string) storageKey {
@@ -46,8 +46,8 @@ func TestMetricStore_GlobalMetrics(t *testing.T) {
 func TestMetricStore_SessionMetrics(t *testing.T) {
 	WithMetricStore(func(ms *MetricStore, _ *[]Query) {
 		ms.sessAttrs = SessionAttributes{
-			CLCVersion:      "test-version",
-			AcquisionSource: "test-as",
+			CLCVersion:        "test-version",
+			AcquisitionSource: "test-as",
 		}
 		ms.Increment(NewSimpleKey(), "metric1.metric1")
 		expected := map[storageKey]int{

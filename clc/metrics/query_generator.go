@@ -14,7 +14,7 @@ func GenerateFirstPingQuery(ga GlobalAttributes, sa SessionAttributes, t time.Ti
 		Architecture:      ga.Architecture,
 		OS:                ga.OS,
 		Version:           sa.CLCVersion,
-		AcquisitionSource: string(sa.AcquisionSource),
+		AcquisitionSource: string(sa.AcquisitionSource),
 	}
 }
 

@@ -38,12 +38,12 @@ func datePrefix(date string) string {
 type storageKey struct {
 	Key
 	KeyPrefix         string
-	AcquisitionSource AcquisionSource
+	AcquisitionSource AcquisitionSource
 	CLCVersion        string
 	MetricName        string
 }
 
-func newStorageKey(k Key, as AcquisionSource, version string, metric string) storageKey {
+func newStorageKey(k Key, as AcquisitionSource, version string, metric string) storageKey {
 	return storageKey{
 		Key:               k,
 		KeyPrefix:         PhonehomeKeyPrefix,
@@ -86,7 +86,7 @@ func (c *storageKey) Unmarshal(b []byte) error {
 			ClusterID:         s[2],
 			ViridianClusterID: s[3],
 		},
-		AcquisitionSource: AcquisionSource(s[4]),
+		AcquisitionSource: AcquisitionSource(s[4]),
 		CLCVersion:        s[5],
 		MetricName:        s[6],
 	}

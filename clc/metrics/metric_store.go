@@ -106,7 +106,7 @@ func (ms *MetricStore) Store(key Key, metric string, val int) {
 	metrics := strings.Split(metric, ".")
 	ms.incLock.Lock()
 	for _, m := range metrics {
-		sk := newStorageKey(key, ms.sessAttrs.AcquisionSource, ms.sessAttrs.CLCVersion, m)
+		sk := newStorageKey(key, ms.sessAttrs.AcquisitionSource, ms.sessAttrs.CLCVersion, m)
 		ms.override[sk] = val
 	}
 	ms.incLock.Unlock()
@@ -116,7 +116,7 @@ func (ms *MetricStore) Increment(key Key, metric string) {
 	metrics := strings.Split(metric, ".")
 	ms.ovrLock.Lock()
 	for _, m := range metrics {
-		sk := newStorageKey(key, ms.sessAttrs.AcquisionSource, ms.sessAttrs.CLCVersion, m)
+		sk := newStorageKey(key, ms.sessAttrs.AcquisitionSource, ms.sessAttrs.CLCVersion, m)
 		ms.inc[sk]++
 	}
 	ms.ovrLock.Unlock()
