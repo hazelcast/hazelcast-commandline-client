@@ -3,7 +3,6 @@ package config
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"sync/atomic"
 
@@ -12,13 +11,16 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/terminal"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config/wizard"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	clcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+)
+
+var (
+	errNoConfig = errors.New("no configuration was provided and cannot display the configuration wizard; use the --config flag")
 )
 
 type WizardProvider struct {
@@ -61,57 +63,50 @@ func maybeUnwrapStdout(ec plug.ExecContext) any {
 
 func (p *WizardProvider) ClientConfig(ctx context.Context, ec plug.ExecContext) (hazelcast.Config, error) {
 	cfg, err := p.fp.Load().ClientConfig(ctx, ec)
-	if err != nil {
-		if terminal.IsPipe(maybeUnwrapStdout(ec)) {
-			return hazelcast.Config{}, fmt.Errorf(`no configuration was provided and cannot display the configuration wizard; use the --config flag`)
-		}
-		// ask the config to the user
-		name, err := p.runWizard(ctx, ec)
-		if err != nil {
-			return hazelcast.Config{}, err
-		}
-		fp, err := NewFileProvider(name)
-		if err != nil {
-			return cfg, err
-		}
-		config, err := fp.ClientConfig(ctx, ec)
-		if err != nil {
-			return hazelcast.Config{}, err
-		}
-		p.fp.Store(fp)
-		return config, nil
+	if err == nil {
+		// note that comparing err to nil
+		return cfg, nil
 	}
-	return cfg, nil
-}
-
-func (p *WizardProvider) runWizard(ctx context.Context, ec plug.ExecContext) (string, error) {
+	var configName string
+	if !errors.Is(err, clcerrors.ErrNoClusterConfig) {
+		return hazelcast.Config{}, err
+	}
 	cs, err := FindAll(paths.Configs())
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			err = os.MkdirAll(paths.Configs(), 0700)
-		}
-		if err != nil {
-			return "", err
+			return hazelcast.Config{}, clcerrors.ErrNoClusterConfig
 		}
 	}
 	if len(cs) == 0 {
-		m := wizard.InitialModel()
-		mv, err := tea.NewProgram(m).Run()
-		if err != nil {
-			return "", err
-		}
-		if mv.View() == "" {
-			return "", clcerrors.ErrNoClusterConfig
-		}
-		args := m.GetInputs()
-		stages := MakeImportStages(ec, args[0])
-		_, err = stage.Execute(ctx, ec, args[1], stage.NewFixedProvider(stages...))
-		if err != nil {
-			return "", err
-		}
-		return args[0], nil
+		return hazelcast.Config{}, clcerrors.ErrNoClusterConfig
 	}
-	m := wizard.InitializeList(cs)
+	if len(cs) == 1 {
+		configName = cs[0]
+	}
+	if configName == "" {
+		if terminal.IsPipe(maybeUnwrapStdout(ec)) {
+			return hazelcast.Config{}, errNoConfig
+		}
+		// ask the config to the user
+		configName, err = p.runWizard(cs)
+		if err != nil {
+			return hazelcast.Config{}, err
+		}
+	}
+	fp, err := NewFileProvider(configName)
+	if err != nil {
+		return cfg, err
+	}
+	config, err := fp.ClientConfig(ctx, ec)
+	if err != nil {
+		return hazelcast.Config{}, err
+	}
+	p.fp.Store(fp)
+	return config, nil
+}
+
+func (p *WizardProvider) runWizard(configNames []string) (string, error) {
+	m := wizard.InitializeList(configNames)
 	model, err := tea.NewProgram(m).Run()
 	if err != nil {
 		return "", err

@@ -56,7 +56,7 @@ func (ListCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		ec.PrintlnUnnecessary("OK No configurations found.")
 		return nil
 	}
-	msg := fmt.Sprintf("OK Found %d configurations.", len(rows))
+	msg := fmt.Sprintf("OK Found %d configuration(s).", len(rows))
 	defer ec.PrintlnUnnecessary(msg)
 	return ec.AddOutputRows(ctx, rows...)
 }

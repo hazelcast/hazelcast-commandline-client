@@ -33,6 +33,7 @@
 ** xref:clc-version.adoc[]
 ** xref:clc-viridian.adoc[]
 ** xref:clc-project.adoc[]
+* xref:configuration-format.adoc[]
 * xref:environment-variables.adoc[]
 * xref:keyboard-shortcuts.adoc[]
 

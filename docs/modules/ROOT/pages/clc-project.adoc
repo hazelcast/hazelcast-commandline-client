@@ -54,7 +54,7 @@ Templates are located in https://github.com/hazelcast-templates. You can overrid
 
 ==== Rules while creating your own templates:
 
-* Templates are in link:.https://pkg.go.dev/text/template[Go template] format.
+* Templates are in link:https://pkg.go.dev/text/template[Go template] format.
 * You can create a "defaults.yaml" file for default values in template's root directory.
 * Template files must have the ".template" extension.
 * Files with "." and "_" prefixes are ignored unless they have the ".keep" extension.
