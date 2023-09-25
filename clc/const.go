@@ -33,6 +33,7 @@ const (
 	EnvMaxCols                  = "CLC_MAX_COLS"
 	EnvConfig                   = "CLC_CONFIG"
 	EnvSkipServerVersionCheck   = "CLC_SKIP_SERVER_VERSION_CHECK"
+	EnvYes                      = "CLC_YES"
 	FlagAutoYes                 = "yes"
 	MaxArgs                     = 65535
 	TTLUnset                    = -1
