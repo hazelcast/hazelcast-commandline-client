@@ -352,7 +352,7 @@ func (cm MapTryLockCommand[T]) Exec(ctx context.Context, ec plug.ExecContext) er
 		if err != nil {
 			return nil, err
 		}
-		key, err := MakeValueFromString(ec.GetStringArg(ArgKey), ec.GetStringArg(FlagKeyType))
+		key, err := MakeValueFromString(ec.GetStringArg(ArgKey), ec.Props().GetString(FlagKeyType))
 		if err != nil {
 			return nil, err
 		}
