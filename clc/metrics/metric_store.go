@@ -38,7 +38,11 @@ func Send(ctx context.Context) {
 
 func CreateMetricStore(dir string) {
 	if PhoneHomeEnabled() {
-		store, _ := newMetricStore(dir)
+		store, err := newMetricStore(dir)
+		if err != nil {
+			defaultStore.Store(defaultNopStore)
+			return
+		}
 		defaultStore.Store(store)
 	}
 }
@@ -114,6 +118,8 @@ func (ms *metricStore) ensureGlobalMetrics() error {
 
 func (ms *metricStore) Store(key Key, metric string, val int) {
 	metrics := strings.Split(metric, ".")
+	_ = 2
+	_ = 3
 	ms.mu.Lock()
 	for _, m := range metrics {
 		sk := newStorageKey(key, ms.sessionAttrs.AcquisitionSource, ms.sessionAttrs.CLCVersion, m)
