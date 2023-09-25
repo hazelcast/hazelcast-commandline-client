@@ -3,9 +3,10 @@
 GIT_COMMIT = $(shell git rev-parse HEAD 2> /dev/null || echo unknown)
 CLC_VERSION ?= v0.0.0-CUSTOMBUILD
 CLC_SKIP_UPDATE_CHECK ?= 0
-LDFLAGS = "-s -w -X 'github.com/hazelcast/hazelcast-commandline-client/internal.GitCommit=$(GIT_COMMIT)' -X 'github.com/hazelcast/hazelcast-commandline-client/internal.Version=$(CLC_VERSION)' -X 'github.com/hazelcast/hazelcast-go-client/internal.ClientType=CLC' -X 'github.com/hazelcast/hazelcast-go-client/internal.ClientVersion=$(CLC_VERSION)' -X 'github.com/hazelcast/hazelcast-commandline-client/internal.SkipUpdateCheck=$(CLC_SKIP_UPDATE_CHECK)'"
+IS_MC_BUILD ?= 0
+MC_TAGS = shell,map,object,atomiclong,list,multimap,queue,set,topic,demo,config,base
 MAIN_CMD_HELP ?= Hazelcast CLC
-LDFLAGS = -s -w -X 'github.com/hazelcast/hazelcast-commandline-client/clc/cmd.MainCommandShortHelp=$(MAIN_CMD_HELP)' -X 'github.com/hazelcast/hazelcast-commandline-client/internal.GitCommit=$(GIT_COMMIT)' -X 'github.com/hazelcast/hazelcast-commandline-client/internal.Version=$(CLC_VERSION)' -X 'github.com/hazelcast/hazelcast-go-client/internal.ClientType=CLC' -X 'github.com/hazelcast/hazelcast-go-client/internal.ClientVersion=$(CLC_VERSION)'
+LDFLAGS = -s -w -X 'github.com/hazelcast/hazelcast-commandline-client/clc/cmd.MainCommandShortHelp=$(MAIN_CMD_HELP)' -X 'github.com/hazelcast/hazelcast-commandline-client/internal.GitCommit=$(GIT_COMMIT)' -X 'github.com/hazelcast/hazelcast-commandline-client/internal.Version=$(CLC_VERSION)' -X 'github.com/hazelcast/hazelcast-go-client/internal.ClientType=CLC' -X 'github.com/hazelcast/hazelcast-go-client/internal.ClientVersion=$(CLC_VERSION)' -X 'github.com/hazelcast/hazelcast-commandline-client/internal.SkipUpdateCheck=$(CLC_SKIP_UPDATE_CHECK)' -X 'github.com/hazelcast/hazelcast-commandline-client/internal.IsMcBuild=$(IS_MC_BUILD)'
 TEST_FLAGS ?= -count 1 -timeout 30m -race
 COVERAGE_OUT = coverage.out
 PACKAGES = $(shell go list ./... | grep -v internal/it | tr '\n' ',')
@@ -42,3 +43,11 @@ else
 	tar cfz build/$(RELEASE_BASE).tar.gz -C build $(RELEASE_BASE)
 	echo $(RELEASE_BASE).tar.gz >> build/$(RELEASE_FILE)
 endif
+
+mc-build:
+	CGO_ENABLED=0 go build -tags $(MC_TAGS),hazelcastinternal,hazelcastinternaltest -ldflags "$(LDFLAGS)" -o build/$(BINARY_NAME) ./cmd/clc
+
+mc-release: build
+	cp build/$(BINARY_NAME) build/$(RELEASE_BASE)
+	cd build && zip -r $(RELEASE_BASE).zip $(RELEASE_BASE)
+	echo $(RELEASE_BASE).zip >> build/$(RELEASE_FILE)

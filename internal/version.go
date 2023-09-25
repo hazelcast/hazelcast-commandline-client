@@ -14,6 +14,7 @@ var (
 	GitCommit       string
 	Version         = UnknownVersion
 	SkipUpdateCheck = "0"
+	IsMcBuild       string
 )
 
 // CheckVersion checks whether left OP right condition holds.

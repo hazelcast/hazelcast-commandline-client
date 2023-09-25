@@ -30,6 +30,12 @@ const banner = `Hazelcast CLC %s (c) 2023 Hazelcast Inc.
 
 `
 
+const plainBanner = `Hazelcast CLC %s (c) 2023 Hazelcast Inc.
+
+* Type 'help' for help information. Prefix non-SQL commands with \
+
+`
+
 type ShellCommand struct {
 	shortcuts map[string]struct{}
 	mu        sync.RWMutex
@@ -65,16 +71,20 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 	}
 	var cfgText, logText string
 	if !terminal.IsPipe(ec.Stdin()) {
-		cfgPath := ec.ConfigPath()
-		if cfgPath != "" {
-			cfgText = fmt.Sprintf("Configuration : %s\n", cfgPath)
+		if internal.IsMcBuild == "1" {
+			check.I2(fmt.Fprintf(ec.Stdout(), plainBanner, internal.Version))
+		} else {
+			cfgPath := ec.ConfigPath()
+			if cfgPath != "" {
+				cfgText = fmt.Sprintf("Configuration : %s\n", cfgPath)
+			}
+			logPath := ec.Props().GetString(clc.PropertyLogPath)
+			if logPath != "" {
+				logLevel := strings.ToUpper(ec.Props().GetString(clc.PropertyLogLevel))
+				logText = fmt.Sprintf("Log %9s : %s", logLevel, logPath)
+			}
+			check.I2(fmt.Fprintf(ec.Stdout(), banner, internal.Version, cfgText, logText))
 		}
-		logPath := ec.Props().GetString(clc.PropertyLogPath)
-		if logPath != "" {
-			logLevel := strings.ToUpper(ec.Props().GetString(clc.PropertyLogLevel))
-			logText = fmt.Sprintf("Log %9s : %s", logLevel, logPath)
-		}
-		check.I2(fmt.Fprintf(ec.Stdout(), banner, internal.Version, cfgText, logText))
 		if err = MaybePrintNewVersionNotification(ctx, ec); err != nil {
 			ec.Logger().Error(err)
 		}
