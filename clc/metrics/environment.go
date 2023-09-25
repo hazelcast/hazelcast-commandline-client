@@ -10,9 +10,7 @@ import (
 )
 
 func PhoneHomeEnabled() bool {
-	return true
-	// val := os.Getenv(EnvPhoneHomeEnabled)
-	// return strings.ToLower(val) != "false"
+	return os.Getenv(EnvPhoneHomeEnabled) != "false"
 }
 
 type GlobalAttributes struct {
