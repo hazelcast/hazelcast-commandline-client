@@ -251,10 +251,10 @@ func (ms *metricStore) persistStoreMetrics(s *store.Store) {
 	ms.updates = make(map[storageKey]int)
 }
 
-func findDatesToSend(s *store.Store, now time.Time) (*types.Set[string], error) {
+func findDatesToSend(s *store.Store, now time.Time) (types.Set[string], error) {
 	keys, err := s.GetKeysWithPrefix(PhonehomeKeyPrefix)
 	if err != nil {
-		return nil, err
+		return types.Set[string]{}, err
 	}
 	dates := findDatesFromKeys(keys)
 	today := now.Format(DateFormat)
@@ -262,7 +262,7 @@ func findDatesToSend(s *store.Store, now time.Time) (*types.Set[string], error) 
 	return dates, nil
 }
 
-func deleteSentDates(s *store.Store, dates *types.Set[string]) error {
+func deleteSentDates(s *store.Store, dates types.Set[string]) error {
 	var datePrefixes []string
 	for date := range dates.Map() {
 		datePrefixes = append(datePrefixes, datePrefix(date))
@@ -290,8 +290,8 @@ func sendQueries(ctx context.Context, url string, q ...Query) error {
 	return err
 }
 
-func findDatesFromKeys(keys [][]byte) *types.Set[string] {
-	dates := types.NewSet[string]()
+func findDatesFromKeys(keys [][]byte) types.Set[string] {
+	dates := types.MakeSet[string]()
 	for _, keyb := range keys {
 		var k storageKey
 		if err := k.Unmarshal(keyb); err != nil {

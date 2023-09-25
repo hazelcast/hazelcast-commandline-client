@@ -21,7 +21,7 @@ func GenerateFirstPingQuery(ga GlobalAttributes, sa SessionAttributes, t time.Ti
 
 type MetricValues map[string]int
 
-func GenerateQueries(db *store.Store, ga GlobalAttributes, dates *types.Set[string]) []Query {
+func GenerateQueries(db *store.Store, ga GlobalAttributes, dates types.Set[string]) []Query {
 	qs := make([]Query, 0, dates.Len())
 	for date := range dates.Map() {
 		entries := make(map[[4]string]MetricValues)
