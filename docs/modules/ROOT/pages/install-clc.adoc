@@ -85,7 +85,7 @@ Install Script (Intel)::
 +
 [source,shell,subs="attributes"]
 ----
-curl -sL https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/unix/install.sh | bash
+curl https://hazelcast.com/clc/install.sh | bash
 ----
 
 Install Script (Apple Silicon)::
@@ -94,7 +94,7 @@ Install Script (Apple Silicon)::
 +
 [source,shell,subs="attributes"]
 ----
-curl -sL https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/unix/install.sh | bash
+curl https://hazelcast.com/clc/install.sh | bash
 ----
 
 Build from Source::
@@ -153,7 +153,7 @@ Install Script (AMD64)::
 +
 [source,shell,subs="attributes"]
 ----
-curl -sL https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/unix/install.sh | bash
+curl https://hazelcast.com/clc/install.sh | bash
 ----
 
 Build from Source::

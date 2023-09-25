@@ -13,7 +13,7 @@ Currently we provide precompiled binaries of CLC for the following platforms and
 
 You can run the following command to install the latest stable CLC on a computer running Linux x64 or macOS 10.15 (Catalina) x64/ARM 64 (M1/M2):
 ```
-curl -sL https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/unix/install.sh | bash
+curl https://hazelcast.com/clc/install.sh | bash
 ```
 
 On macOS, binaries downloaded outside of AppStore require your intervention to run.
