@@ -34,7 +34,7 @@ func generateData_WikipediaTest(t *testing.T) {
 		t := tcx.T
 		ctx := context.Background()
 		tcx.WithReset(func() {
-			err := tcx.CLCExecuteErr(ctx, "demo", "generate-data", "wikipedia-event-stream", "map="+m.Name(), "--timeout", "2s")
+			err := tcx.CLCExecuteErr(ctx, "demo", "generate-data", "wikipedia-event-stream", "map="+m.Name(), "--timeout", "2s", "--yes")
 			require.Error(t, err)
 			size := check.MustValue(m.Size(context.Background()))
 			require.Greater(t, size, 0)
@@ -48,7 +48,7 @@ func generateData_Wikipedia_MaxValues_Test(t *testing.T) {
 		ctx := context.Background()
 		count := 10
 		tcx.WithReset(func() {
-			tcx.CLCExecute(ctx, "demo", "generate-data", "wikipedia-event-stream", "map="+m.Name(), fmt.Sprintf("--max-values=%d", count))
+			tcx.CLCExecute(ctx, "demo", "generate-data", "wikipedia-event-stream", "map="+m.Name(), fmt.Sprintf("--max-values=%d", count), "--yes")
 			size := check.MustValue(m.Size(context.Background()))
 			require.Equal(t, count, size)
 		})
