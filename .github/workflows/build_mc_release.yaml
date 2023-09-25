@@ -32,7 +32,8 @@ jobs:
           echo "Release files:"
           cat build/release.txt
 
-      - name: "Release zip"
-        uses: "softprops/action-gh-release@v1"
+      - name: "Upload zip"
+        uses: actions/upload-artifact@v3
         with:
-          files: "build/*.zip"
+          name: builds
+          path: build/*.zip

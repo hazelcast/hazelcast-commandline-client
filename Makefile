@@ -47,7 +47,7 @@ endif
 mc-build:
 	CGO_ENABLED=0 go build -tags $(MC_TAGS),hazelcastinternal,hazelcastinternaltest -ldflags "$(LDFLAGS)" -o build/$(BINARY_NAME) ./cmd/clc
 
-mc-release: build
+mc-release: mc-build
 	cp build/$(BINARY_NAME) build/$(RELEASE_BASE)
 	cd build && zip -r $(RELEASE_BASE).zip $(RELEASE_BASE)
 	echo $(RELEASE_BASE).zip >> build/$(RELEASE_FILE)
