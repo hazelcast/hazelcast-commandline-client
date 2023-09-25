@@ -12,14 +12,14 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/types"
 
-	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/jet"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec/control"
 )
 
-func WaitJobState(ctx context.Context, ec plug.ExecContext, sp stage.Statuser[any], jobNameOrID string, state int32, duration time.Duration) error {
+func WaitJobState(ctx context.Context, ec plug.ExecContext, sp stage.Statuser[int64], state int32, duration time.Duration) error {
+	jobID := sp.Value()
 	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
 		return err
@@ -30,14 +30,15 @@ func WaitJobState(ctx context.Context, ec plug.ExecContext, sp stage.Statuser[an
 		if err != nil {
 			return err
 		}
-		ok, err := jet.EnsureJobState(jl, jobNameOrID, state)
+		ok, state, err := jet.EnsureJobState(jl, jobID, state)
 		if err != nil {
 			return err
 		}
 		if ok {
 			return nil
 		}
-		ec.Logger().Debugf("Waiting %s for job %s to transition to state %s", duration.String(), jobNameOrID, jet.StatusToString(state))
+		s := idToString(jobID)
+		ec.Logger().Debugf("Waiting %s for job %s to transition to state %s", duration.String(), s, jet.StatusToString(state))
 		time.Sleep(duration)
 	}
 }
@@ -58,61 +59,62 @@ func idToString(id int64) string {
 
 func terminateJob(ctx context.Context, ec plug.ExecContext, tm int32, cm TerminateCommand) error {
 	nameOrID := ec.GetStringArg(argJobID)
-	stages := []stage.Stage[any]{
-		stage.MakeConnectStage[any](ec),
+	stages := []stage.Stage[int64]{
+		stage.MakeConnectStage[int64](ec),
 		{
 			ProgressMsg: fmt.Sprintf(cm.inProgressMsg, nameOrID),
 			SuccessMsg:  fmt.Sprintf(cm.successMsg, nameOrID),
 			FailureMsg:  cm.failureMsg,
-			Func: func(ctx context.Context, status stage.Statuser[any]) (any, error) {
-				ci, err := cmd.ClientInternal(ctx, ec, status)
+			Func: func(ctx context.Context, status stage.Statuser[int64]) (int64, error) {
+				ci, err := ec.ClientInternal(ctx)
 				if err != nil {
-					return nil, err
+					return 0, err
 				}
 				j := jet.New(ci, status, ec.Logger())
 				jis, err := j.GetJobList(ctx)
 				if err != nil {
-					return nil, err
+					return 0, err
 				}
 				jm, err := NewJobNameToIDMap(jis)
 				if err != nil {
-					return nil, err
+					return 0, err
 				}
 				jid, ok := jm.GetIDForName(nameOrID)
 				if !ok {
-					return nil, fmt.Errorf("%w: %s", jet.ErrInvalidJobID, nameOrID)
+					return 0, fmt.Errorf("%w: %s", jet.ErrInvalidJobID, nameOrID)
 				}
 				ec.Logger().Info("%s %s (%s)", cm.inProgressMsg, nameOrID, idToString(jid))
 				ji, ok := jm.GetInfoForID(jid)
 				if !ok {
-					return nil, fmt.Errorf("%w: %s", jet.ErrInvalidJobID, nameOrID)
+					return 0, fmt.Errorf("%w: %s", jet.ErrInvalidJobID, nameOrID)
 				}
 				var coord types.UUID
 				if ji.LightJob {
 					conns := ci.ConnectionManager().ActiveConnections()
 					if len(conns) == 0 {
-						return nil, errors.New("not connected")
+						return 0, errors.New("not connected")
 					}
 					coord = conns[0].MemberUUID()
 				}
-				return nil, j.TerminateJob(ctx, jid, cm.terminateMode, coord)
+				return jid, j.TerminateJob(ctx, jid, cm.terminateMode, coord)
 			},
 		},
 	}
 	wait := ec.Props().GetBool(flagWait)
 	if wait {
-		stages = append(stages, stage.Stage[any]{
+		stages = append(stages, stage.Stage[int64]{
 			ProgressMsg: fmt.Sprintf("Waiting for job to be %sed", cm.name),
 			SuccessMsg:  fmt.Sprintf("Job %s is %sed", nameOrID, cm.name),
 			FailureMsg:  fmt.Sprintf("Failed to %s %s", cm.name, nameOrID),
-			Func: func(ctx context.Context, status stage.Statuser[any]) (any, error) {
-				msg := fmt.Sprintf("Waiting for job %s to be %sed", nameOrID, cm.name)
+			Func: func(ctx context.Context, status stage.Statuser[int64]) (int64, error) {
+				s := idToString(status.Value())
+				msg := fmt.Sprintf("Waiting for job %s to be %sed", s, cm.name)
 				ec.Logger().Info(msg)
-				return nil, WaitJobState(ctx, ec, status, nameOrID, cm.waitState, 1*time.Second)
+				return 0, WaitJobState(ctx, ec, status, cm.waitState, 1*time.Second)
 			},
 		})
 	}
-	_, err := stage.Execute[any](ctx, ec, nil, stage.NewFixedProvider(stages...))
+	_, err := stage.Execute(ctx, ec, 0, stage.NewFixedProvider(stages...))
 	if err != nil {
 		return err
 	}
