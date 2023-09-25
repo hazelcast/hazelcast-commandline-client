@@ -53,6 +53,7 @@ func executeTest(t *testing.T) {
 			SuccessMsg:  "Success 3",
 			FailureMsg:  "Failure 3",
 			Func: func(ctx context.Context, status stage.Statuser[any]) (any, error) {
+				status.SetText("Custom text")
 				for i := 0; i < 5; i++ {
 					status.SetRemainingDuration(5*time.Second - time.Duration(i+1)*time.Second)
 				}
@@ -68,11 +69,12 @@ func executeTest(t *testing.T) {
 		" [1/3] Progressing 1",
 		" [2/3] Progressing 2",
 		" [3/3] Progressing 3",
-		" [3/3] Progressing 3 (4s left)",
-		" [3/3] Progressing 3 (3s left)",
-		" [3/3] Progressing 3 (2s left)",
-		" [3/3] Progressing 3 (1s left)",
-		" [3/3] Progressing 3",
+		" [3/3] Custom text",
+		" [3/3] Custom text (4s left)",
+		" [3/3] Custom text (3s left)",
+		" [3/3] Custom text (2s left)",
+		" [3/3] Custom text (1s left)",
+		" [3/3] Custom text",
 	}
 	assert.Equal(t, texts, ec.Spinner.Texts)
 	progresses := []float32{0.2, 0.4, 0.6, 0.8, 1}

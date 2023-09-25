@@ -63,6 +63,10 @@ The following environment variables are experimental and may be removed in a fut
 |Disables color output if set to `1`.
 |`0` (false)
 
+|CLC_SKIP_UPDATE_CHECK
+|Disables checking new version of CLC.
+|`0` (false)
+
 |===
 
 

@@ -26,45 +26,46 @@ func (ResumeCommand) Init(cc plug.InitContext) error {
 
 func (ResumeCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	nameOrID := ec.GetStringArg(argJobID)
-	stages := []stage.Stage[any]{
-		stage.MakeConnectStage[any](ec),
+	stages := []stage.Stage[int64]{
+		stage.MakeConnectStage[int64](ec),
 		{
 			ProgressMsg: fmt.Sprintf("Initiating resume of job: %s", nameOrID),
 			SuccessMsg:  fmt.Sprintf("Initiated resume of job %s", nameOrID),
 			FailureMsg:  fmt.Sprintf("Failed initiating job resume %s", nameOrID),
-			Func: func(ctx context.Context, status stage.Statuser[any]) (any, error) {
+			Func: func(ctx context.Context, status stage.Statuser[int64]) (int64, error) {
 				ci, err := ec.ClientInternal(ctx)
 				if err != nil {
-					return nil, err
+					return 0, err
 				}
 				j := jet.New(ci, status, ec.Logger())
 				jis, err := j.GetJobList(ctx)
 				if err != nil {
-					return nil, err
+					return 0, err
 				}
 				jm, err := NewJobNameToIDMap(jis)
 				if err != nil {
-					return nil, err
+					return 0, err
 				}
 				jid, ok := jm.GetIDForName(nameOrID)
 				if !ok {
-					return nil, jet.ErrInvalidJobID
+					return 0, jet.ErrInvalidJobID
 				}
-				return nil, j.ResumeJob(ctx, jid)
+				return jid, j.ResumeJob(ctx, jid)
 			},
 		},
 	}
 	if ec.Props().GetBool(flagWait) {
-		stages = append(stages, stage.Stage[any]{
+		stages = append(stages, stage.Stage[int64]{
 			ProgressMsg: fmt.Sprintf("Waiting for job %s to resume", nameOrID),
 			SuccessMsg:  fmt.Sprintf("Job %s is resumed", nameOrID),
 			FailureMsg:  fmt.Sprintf("Job %s failed to resume", nameOrID),
-			Func: func(ctx context.Context, status stage.Statuser[any]) (any, error) {
-				return nil, WaitJobState(ctx, ec, status, nameOrID, jet.JobStatusRunning, 2*time.Second)
+			Func: func(ctx context.Context, status stage.Statuser[int64]) (int64, error) {
+				jobID := status.Value()
+				return jobID, WaitJobState(ctx, ec, status, jet.JobStatusRunning, 2*time.Second)
 			},
 		})
 	}
-	_, err := stage.Execute[any](ctx, ec, nil, stage.NewFixedProvider(stages...))
+	_, err := stage.Execute(ctx, ec, 0, stage.NewFixedProvider(stages...))
 	if err != nil {
 		return err
 	}

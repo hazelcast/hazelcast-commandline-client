@@ -411,7 +411,7 @@ This command is only available in the interactive mode.`, cm.typeName)
 func (cm MapUnlockCommand[T]) Exec(ctx context.Context, ec plug.ExecContext) error {
 	name := ec.Props().GetString(base.FlagName)
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		ci, err := ec.ClientInternal(ctx)
+		ci, err := cmd.ClientInternal(ctx, ec, sp)
 		if err != nil {
 			return nil, err
 		}

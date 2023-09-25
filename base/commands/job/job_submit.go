@@ -16,7 +16,10 @@ import (
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/jet"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/types"
 )
 
 const (
@@ -55,16 +58,32 @@ func (SubmitCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if !strings.HasSuffix(path, ".jar") {
 		return fmt.Errorf("submitted file is not a jar file: %s", path)
 	}
-	return submitJar(ctx, ec, path)
+	jobID, err := submitJar(ctx, ec, path)
+	if err != nil {
+		return err
+	}
+	jobName := ec.Props().GetString(flagName)
+	if jobName == "" {
+		return nil
+	}
+	ec.PrintlnUnnecessary("")
+	return ec.AddOutputRows(ctx, output.Row{
+		output.Column{
+			Name:  "Job ID",
+			Type:  serialization.TypeString,
+			Value: idToString(jobID),
+		},
+	})
+
 }
 
-func submitJar(ctx context.Context, ec plug.ExecContext, path string) error {
+func submitJar(ctx context.Context, ec plug.ExecContext, path string) (int64, error) {
 	wait := ec.Props().GetBool(flagWait)
 	jobName := ec.Props().GetString(flagName)
 	snapshot := ec.Props().GetString(flagSnapshot)
 	className := ec.Props().GetString(flagClass)
 	if wait && jobName == "" {
-		return fmt.Errorf("--wait requires the --name to be set")
+		return 0, fmt.Errorf("--wait requires the --name to be set")
 	}
 	tries := int(ec.Props().GetInt(flagRetries))
 	if tries < 0 {
@@ -74,50 +93,89 @@ func submitJar(ctx context.Context, ec plug.ExecContext, path string) error {
 	_, fn := filepath.Split(path)
 	fn = strings.TrimSuffix(fn, ".jar")
 	args := ec.GetStringSliceArg(argArg)
-	stages := []stage.Stage[any]{
-		stage.MakeConnectStage[any](ec),
+	stages := []stage.Stage[int64]{
+		stage.MakeConnectStage[int64](ec),
 		{
 			ProgressMsg: "Submitting the job",
 			SuccessMsg:  "Submitted the job",
 			FailureMsg:  "Failed submitting the job",
-			Func: func(ctx context.Context, status stage.Statuser[any]) (any, error) {
+			Func: func(ctx context.Context, status stage.Statuser[int64]) (int64, error) {
 				ci, err := ec.ClientInternal(ctx)
 				if err != nil {
-					return nil, err
+					return 0, err
 				}
 				if sv, ok := cmd.CheckServerCompatible(ci, minServerVersion); !ok {
 					err := fmt.Errorf("server (%s) does not support this command, at least %s is expected", sv, minServerVersion)
-					return nil, err
+					return 0, err
 				}
 				j := jet.New(ci, status, ec.Logger())
+				var jobIDs []int64
 				err = retry(tries, ec.Logger(), func(try int) error {
 					if try == 0 {
 						ec.Logger().Info("Submitting %s", jobName)
 					} else {
 						ec.Logger().Info("Submitting %s, retry %d", jobName, try)
 					}
+					// try to deduce the job ID
+					var before, after types.Set[int64]
+					if jobName != "" {
+						before, err = getJobIDs(ctx, j, jobName)
+						if err != nil {
+							return err
+						}
+					}
 					br := jet.CreateBinaryReaderForPath(path)
-					return j.SubmitJob(ctx, path, jobName, className, snapshot, args, br)
+					if err := j.SubmitJob(ctx, path, jobName, className, snapshot, args, br); err != nil {
+						return err
+					}
+					if jobName != "" {
+						after, err = getJobIDs(ctx, j, jobName)
+						if err != nil {
+							return err
+						}
+					}
+					diff := after.Diff(before)
+					jobIDs = diff.Items()
+					return nil
 				})
-				return nil, err
+				if jobName == "" {
+					return 0, nil
+				}
+				// at this point we may have 0, 1 or more jobIDs,
+				// deal with that
+				if len(jobIDs) == 0 {
+					// couldn't find any job,
+					// this is unlikely to happen if the job name was specified
+					return 0, fmt.Errorf("could not find the job with name: %s", jobName)
+				}
+				if len(jobIDs) > 1 {
+					// there are more than one jobs with the same name,
+					// this is a problem!
+					ec.Logger().Warn("Multiple job IDs returned for job with name: %s", jobName)
+					return 0, fmt.Errorf("could not determine the job ID")
+				}
+				// ideal case, there's only job with this name.
+				// it must be the one we submitted.
+				return jobIDs[0], err
 			},
 		},
 	}
 	if wait {
-		stages = append(stages, stage.Stage[any]{
+		stages = append(stages, stage.Stage[int64]{
 			ProgressMsg: fmt.Sprintf("Waiting for job %s to start", jobName),
 			SuccessMsg:  fmt.Sprintf("Job %s started", jobName),
 			FailureMsg:  fmt.Sprintf("Job %s failed to start", jobName),
-			Func: func(ctx context.Context, status stage.Statuser[any]) (any, error) {
-				return nil, WaitJobState(ctx, ec, status, jobName, jet.JobStatusRunning, 2*time.Second)
+			Func: func(ctx context.Context, status stage.Statuser[int64]) (int64, error) {
+				jobID := status.Value()
+				return jobID, WaitJobState(ctx, ec, status, jet.JobStatusRunning, 2*time.Second)
 			},
 		})
 	}
-	_, err := stage.Execute[any](ctx, ec, nil, stage.NewFixedProvider(stages...))
+	jobID, err := stage.Execute[int64](ctx, ec, 0, stage.NewFixedProvider(stages...))
 	if err != nil {
-		return err
+		return 0, err
 	}
-	return nil
+	return jobID, nil
 }
 
 func retry(times int, lg log.Logger, f func(try int) error) error {
@@ -132,6 +190,20 @@ func retry(times int, lg log.Logger, f func(try int) error) error {
 		return nil
 	}
 	return fmt.Errorf("failed after %d tries: %w", times, err)
+}
+
+func getJobIDs(ctx context.Context, j *jet.Jet, jobName string) (types.Set[int64], error) {
+	jl, err := j.GetJobList(ctx)
+	if err != nil {
+		return types.Set[int64]{}, err
+	}
+	ids := types.MakeSet[int64]()
+	for _, item := range jl {
+		if item.NameOrId == jobName {
+			ids.Add(item.JobId)
+		}
+	}
+	return ids, nil
 }
 
 func init() {
