@@ -78,6 +78,9 @@ func main() {
 }
 
 func startMetricsTicker(ctx context.Context) {
+	if !metrics.PhoneHomeEnabled() {
+		return
+	}
 	go func() {
 		ticker := time.NewTicker(24 * time.Hour)
 		defer ticker.Stop()
@@ -98,7 +101,7 @@ func trySendingMetrics(ctx context.Context) {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 	storeOtherMetrics()
-	// try to send the data stored locally
+	// try to send the locally stored metrics
 	// if there is no metric to send, do nothing
 	metrics.Send(ctx)
 }
