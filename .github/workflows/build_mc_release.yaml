@@ -1,4 +1,4 @@
-name: "Release MC CLC"
+name: "Release MC4CLC"
 on:
   push:
     tags:
@@ -8,6 +8,8 @@ permissions:
 env:
   IS_MC_BUILD: 1
   CLC_VERSION: ${GITHUB_REF_NAME}
+  TARGZ: false
+  BINARY_NAME: clc
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -24,14 +26,13 @@ jobs:
         run: |
           go install golang.org/x/tools/...@latest
           go mod tidy
-          GOOS=linux GOARCH=amd64 make mc-release BINARY_NAME=clc TARGZ=false
-          GOOS=linux GOARCH=arm64 make mc-release BINARY_NAME=clc TARGZ=false
-          GOOS=linux GOARCH=arm make mc-release BINARY_NAME=clc TARGZ=false
-          GOOS=darwin GOARCH=amd64 make mc-release BINARY_NAME=clc TARGZ=false
-          GOOS=darwin GOARCH=arm64 make mc-release BINARY_NAME=clc TARGZ=false
+          GOOS=linux GOARCH=amd64 make mc-release
+          GOOS=linux GOARCH=arm64 make mc-release 
+          GOOS=linux GOARCH=arm make mc-release
+          GOOS=darwin GOARCH=amd64 make mc-release
+          GOOS=darwin GOARCH=arm64 make mc-release
           echo "Release files:"
           cat build/release.txt
-
       - name: "Upload zip"
         uses: actions/upload-artifact@v3
         with:
