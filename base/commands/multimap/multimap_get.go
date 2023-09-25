@@ -10,6 +10,7 @@ import (
 )
 
 func init() {
-	c := commands.NewMapGetCommand("MultiMap", codec.EncodeMultiMapGetRequest, makeDecodeResponseRowsFunc(codec.DecodeMultiMapGetResponse))
+	d := makeDecodeResponseRowsFunc(codec.DecodeMultiMapGetResponse)
+	c := commands.NewMapGetCommand("MultiMap", codec.EncodeMultiMapGetRequest, d, getMultiMap)
 	check.Must(plug.Registry.RegisterCommand("multi-map:get", c))
 }

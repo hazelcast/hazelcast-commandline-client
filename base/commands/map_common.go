@@ -15,36 +15,43 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
+type mapPrefixFunc[T any] func(ctx context.Context, ec plug.ExecContext, sp clc.Spinner) (T, error)
+
 type nameRequestEncodeFunc func(name string) *hazelcast.ClientMessage
 type pairsResponseDecodeFunc func(message *hazelcast.ClientMessage) []hazelcast.Pair
 
-type MapEntrySetCommand struct {
+type MapEntrySetCommand[T any] struct {
 	typeName string
 	encoder  nameRequestEncodeFunc
 	decoder  pairsResponseDecodeFunc
+	prefixer mapPrefixFunc[T]
 }
 
-func NewMapEntrySetCommand(typeName string, encoder nameRequestEncodeFunc, decoder pairsResponseDecodeFunc) *MapEntrySetCommand {
-	return &MapEntrySetCommand{
+func NewMapEntrySetCommand[T any](typeName string, encoder nameRequestEncodeFunc, decoder pairsResponseDecodeFunc, prefixer mapPrefixFunc[T]) *MapEntrySetCommand[T] {
+	return &MapEntrySetCommand[T]{
 		typeName: typeName,
 		encoder:  encoder,
 		decoder:  decoder,
+		prefixer: prefixer,
 	}
 }
 
-func (cm MapEntrySetCommand) Init(cc plug.InitContext) error {
+func (cm MapEntrySetCommand[T]) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("entry-set")
 	help := fmt.Sprintf("Get all entries of a %s", cm.typeName)
 	cc.SetCommandHelp(help, help)
 	return nil
 }
 
-func (cm MapEntrySetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (cm MapEntrySetCommand[T]) Exec(ctx context.Context, ec plug.ExecContext) error {
 	name := ec.Props().GetString(base.FlagName)
 	showType := ec.Props().GetBool(base.FlagShowType)
 	rowsV, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		ci, err := cmd.ClientInternal(ctx, ec, sp)
 		if err != nil {
+			return nil, err
+		}
+		if _, err = cm.prefixer(ctx, ec, sp); err != nil {
 			return nil, err
 		}
 		req := cm.encoder(name)
@@ -67,21 +74,23 @@ func (cm MapEntrySetCommand) Exec(ctx context.Context, ec plug.ExecContext) erro
 type getRequestEncodeFunc func(name string, keyData hazelcast.Data, threadID int64) *hazelcast.ClientMessage
 type getResponseDecodeFunc func(ctx context.Context, ec plug.ExecContext, res *hazelcast.ClientMessage) ([]output.Row, error)
 
-type MapGetCommand struct {
+type MapGetCommand[T any] struct {
 	typeName string
 	encoder  getRequestEncodeFunc
 	decoder  getResponseDecodeFunc
+	prefixer mapPrefixFunc[T]
 }
 
-func NewMapGetCommand(typeName string, encoder getRequestEncodeFunc, decoder getResponseDecodeFunc) *MapGetCommand {
-	return &MapGetCommand{
+func NewMapGetCommand[T any](typeName string, encoder getRequestEncodeFunc, decoder getResponseDecodeFunc, prefixer mapPrefixFunc[T]) *MapGetCommand[T] {
+	return &MapGetCommand[T]{
 		typeName: typeName,
 		encoder:  encoder,
 		decoder:  decoder,
+		prefixer: prefixer,
 	}
 }
 
-func (cm MapGetCommand) Init(cc plug.InitContext) error {
+func (cm MapGetCommand[T]) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("get")
 	AddKeyTypeFlag(cc)
 	help := fmt.Sprintf("Get a value from the given %s", cm.typeName)
@@ -90,12 +99,15 @@ func (cm MapGetCommand) Init(cc plug.InitContext) error {
 	return nil
 }
 
-func (cm MapGetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (cm MapGetCommand[T]) Exec(ctx context.Context, ec plug.ExecContext) error {
 	name := ec.Props().GetString(base.FlagName)
 	keyStr := ec.GetStringArg(ArgKey)
 	rowsV, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		ci, err := cmd.ClientInternal(ctx, ec, sp)
 		if err != nil {
+			return nil, err
+		}
+		if _, err = cm.prefixer(ctx, ec, sp); err != nil {
 			return nil, err
 		}
 		sp.SetText(fmt.Sprintf("Getting from %s '%s'", cm.typeName, name))
@@ -124,33 +136,38 @@ func (cm MapGetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 
 type dataSliceDecoderFunc func(message *hazelcast.ClientMessage) []*hazelcast.Data
 
-type MapKeySetCommand struct {
+type MapKeySetCommand[T any] struct {
 	typeName string
 	encoder  nameRequestEncodeFunc
 	decoder  dataSliceDecoderFunc
+	prefixer mapPrefixFunc[T]
 }
 
-func NewMapKeySetCommand(typeName string, encoder nameRequestEncodeFunc, decoder dataSliceDecoderFunc) *MapKeySetCommand {
-	return &MapKeySetCommand{
+func NewMapKeySetCommand[T any](typeName string, encoder nameRequestEncodeFunc, decoder dataSliceDecoderFunc, prefixer mapPrefixFunc[T]) *MapKeySetCommand[T] {
+	return &MapKeySetCommand[T]{
 		typeName: typeName,
 		encoder:  encoder,
 		decoder:  decoder,
+		prefixer: prefixer,
 	}
 }
 
-func (cm MapKeySetCommand) Init(cc plug.InitContext) error {
+func (cm MapKeySetCommand[T]) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("key-set")
 	help := fmt.Sprintf("Get all keys of a %s", cm.typeName)
 	cc.SetCommandHelp(help, help)
 	return nil
 }
 
-func (cm MapKeySetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (cm MapKeySetCommand[T]) Exec(ctx context.Context, ec plug.ExecContext) error {
 	name := ec.Props().GetString(base.FlagName)
 	showType := ec.Props().GetBool(base.FlagShowType)
 	rowsV, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		ci, err := cmd.ClientInternal(ctx, ec, sp)
 		if err != nil {
+			return nil, err
+		}
+		if _, err = cm.prefixer(ctx, ec, sp); err != nil {
 			return nil, err
 		}
 		req := cm.encoder(name)
@@ -270,7 +287,7 @@ This command is only available in the interactive mode.`, cm.typeName)
 func (cm LockCommand[T]) Exec(ctx context.Context, ec plug.ExecContext) error {
 	name := ec.Props().GetString(base.FlagName)
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		ci, err := cmd.ClientInternal(ctx, ec, sp)
+		key, err := MakeValueFromString(ec.GetStringArg(ArgKey), ec.Props().GetString(FlagKeyType))
 		if err != nil {
 			return nil, err
 		}
@@ -278,16 +295,11 @@ func (cm LockCommand[T]) Exec(ctx context.Context, ec plug.ExecContext) error {
 		if err != nil {
 			return nil, err
 		}
-		keyStr := ec.GetStringArg(ArgKey)
-		keyData, err := MakeKeyData(ec, ci, keyStr)
-		if err != nil {
-			return nil, err
-		}
 		sp.SetText(fmt.Sprintf("Locking the key in %s '%s'", cm.typeName, name))
 		if ttl := GetTTL(ec); ttl != clc.TTLUnset {
-			return nil, m.LockWithLease(ctx, keyData, time.Duration(GetTTL(ec)))
+			return nil, m.LockWithLease(ctx, key, time.Duration(GetTTL(ec)))
 		}
-		return nil, m.Lock(ctx, keyData)
+		return nil, m.Lock(ctx, key)
 	})
 	if err != nil {
 		return err
@@ -335,25 +347,20 @@ This command is only available in the interactive mode.`, cm.typeName)
 func (cm MapTryLockCommand[T]) Exec(ctx context.Context, ec plug.ExecContext) error {
 	rowsV, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		mapName := ec.Props().GetString(base.FlagName)
-		ci, err := cmd.ClientInternal(ctx, ec, sp)
-		if err != nil {
-			return nil, err
-		}
 		sp.SetText(fmt.Sprintf("Locking key in map %s", mapName))
 		m, err := cm.getFn(ctx, ec, sp)
 		if err != nil {
 			return nil, err
 		}
-		keyStr := ec.GetStringArg(ArgKey)
-		keyData, err := MakeKeyData(ec, ci, keyStr)
+		key, err := MakeValueFromString(ec.GetStringArg(ArgKey), ec.GetStringArg(FlagKeyType))
 		if err != nil {
 			return nil, err
 		}
 		var locked bool
 		if ttl := GetTTL(ec); ttl != clc.TTLUnset {
-			locked, err = m.TryLockWithLease(ctx, keyData, time.Duration(GetTTL(ec)))
+			locked, err = m.TryLockWithLease(ctx, key, time.Duration(GetTTL(ec)))
 		} else {
-			locked, err = m.TryLock(ctx, keyData)
+			locked, err = m.TryLock(ctx, key)
 		}
 		row := output.Row{
 			{
@@ -411,21 +418,13 @@ This command is only available in the interactive mode.`, cm.typeName)
 func (cm MapUnlockCommand[T]) Exec(ctx context.Context, ec plug.ExecContext) error {
 	name := ec.Props().GetString(base.FlagName)
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		ci, err := cmd.ClientInternal(ctx, ec, sp)
-		if err != nil {
-			return nil, err
-		}
+		key, err := MakeValueFromString(ec.GetStringArg(ArgKey), ec.Props().GetString(FlagKeyType))
 		sp.SetText(fmt.Sprintf("Unlocking key in %s '%s'", cm.typeName, name))
 		m, err := cm.getFn(ctx, ec, sp)
 		if err != nil {
 			return nil, err
 		}
-		keyStr := ec.GetStringArg(ArgKey)
-		keyData, err := MakeKeyData(ec, ci, keyStr)
-		if err != nil {
-			return nil, err
-		}
-		return nil, m.Unlock(ctx, keyData)
+		return nil, m.Unlock(ctx, key)
 	})
 	if err != nil {
 		return err
@@ -436,33 +435,38 @@ func (cm MapUnlockCommand[T]) Exec(ctx context.Context, ec plug.ExecContext) err
 	return nil
 }
 
-type MapValuesCommand struct {
+type MapValuesCommand[T any] struct {
 	typeName string
 	encoder  nameRequestEncodeFunc
 	decoder  dataSliceDecoderFunc
+	prefixer mapPrefixFunc[T]
 }
 
-func NewMapValuesCommand(typeName string, encoder nameRequestEncodeFunc, decoder dataSliceDecoderFunc) *MapValuesCommand {
-	return &MapValuesCommand{
+func NewMapValuesCommand[T any](typeName string, encoder nameRequestEncodeFunc, decoder dataSliceDecoderFunc, prefixer mapPrefixFunc[T]) *MapValuesCommand[T] {
+	return &MapValuesCommand[T]{
 		typeName: typeName,
 		encoder:  encoder,
 		decoder:  decoder,
+		prefixer: prefixer,
 	}
 }
 
-func (cm MapValuesCommand) Init(cc plug.InitContext) error {
+func (cm MapValuesCommand[T]) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("values")
 	help := fmt.Sprintf("Get all values of a %s", cm.typeName)
 	cc.SetCommandHelp(help, help)
 	return nil
 }
 
-func (cm *MapValuesCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (cm *MapValuesCommand[T]) Exec(ctx context.Context, ec plug.ExecContext) error {
 	name := ec.Props().GetString(base.FlagName)
 	showType := ec.Props().GetBool(base.FlagShowType)
 	rowsV, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		ci, err := cmd.ClientInternal(ctx, ec, sp)
 		if err != nil {
+			return nil, err
+		}
+		if _, err := cm.prefixer(ctx, ec, sp); err != nil {
 			return nil, err
 		}
 		sp.SetText(fmt.Sprintf("Getting values of %s", name))

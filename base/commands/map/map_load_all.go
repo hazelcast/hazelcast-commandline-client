@@ -6,15 +6,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hazelcast/hazelcast-go-client"
-
 	"github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
 )
 
 type MapLoadAllCommand struct{}
@@ -35,30 +31,22 @@ If no key is given, all keys are loaded.`
 func (MapLoadAllCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	name := ec.Props().GetString(base.FlagName)
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		ci, err := cmd.ClientInternal(ctx, ec, sp)
+		replace := ec.Props().GetBool(mapFlagReplace)
+		keyStrs := ec.GetStringSliceArg(commands.ArgKey)
+		keys := make([]any, len(keyStrs))
+		kt := ec.Props().GetString(commands.FlagKeyType)
+		keys, err := commands.MakeValuesFromStrings(kt, keyStrs)
 		if err != nil {
 			return nil, err
 		}
-		var keys []hazelcast.Data
-		for _, keyStr := range ec.GetStringSliceArg(commands.ArgKey) {
-			keyData, err := commands.MakeKeyData(ec, ci, keyStr)
-			if err != nil {
-				return nil, err
-			}
-			keys = append(keys, keyData)
-		}
-		replace := ec.Props().GetBool(mapFlagReplace)
-		var req *hazelcast.ClientMessage
-		if len(keys) == 0 {
-			req = codec.EncodeMapLoadAllRequest(name, replace)
-		} else {
-			req = codec.EncodeMapLoadGivenKeysRequest(name, keys, replace)
-		}
-		sp.SetText(fmt.Sprintf("Loading keys into the Map '%s'", name))
-		if _, err = ci.InvokeOnRandomTarget(ctx, req, nil); err != nil {
+		m, err := getMap(ctx, ec, sp)
+		if err != nil {
 			return nil, err
 		}
-		return nil, nil
+		if replace {
+			return nil, m.LoadAllReplacing(ctx, keys...)
+		}
+		return nil, m.LoadAllWithoutReplacing(ctx, keys...)
 	})
 	if err != nil {
 		return err
