@@ -75,7 +75,7 @@ func loginWithParams_NonInteractiveTest(t *testing.T) {
 	tcx.Tester(func(tcx it.TestContext) {
 		ctx := context.Background()
 		tcx.CLCExecute(ctx, "viridian", "login", "--api-base", "dev2", "--api-key", it.ViridianAPIKey(), "--api-secret", it.ViridianAPISecret())
-		tcx.AssertStdoutContains("Viridian token was fetched and saved.")
+		tcx.AssertStdoutContains("Saved the access token")
 	})
 }
 
