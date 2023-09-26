@@ -20,6 +20,16 @@ public class NoNamespaceNested {
         public void write(@Nonnull CompactWriter writer, @Nonnull NoNamespaceNested object) {
             writer.writeBoolean("baz", object.baz);
         }
+
+        @Override
+        public Class<NoNamespaceNested> getCompactClass() {
+            return NoNamespaceNested.class;
+        }
+
+        @Override
+        public String getTypeName() {
+            return "00000000-0000-000a-0000-00000000000a";
+        }
     };
 
     public static final CompactSerializer<NoNamespaceNested> HZ_COMPACT_SERIALIZER = new Serializer();

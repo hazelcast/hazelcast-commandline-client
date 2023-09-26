@@ -22,6 +22,16 @@ public class Example2 {
         public void write(@Nonnull CompactWriter writer, @Nonnull Example2 object) {
             writer.writeInt32("foo", object.foo);
         }
+
+        @Override
+        public Class<Example2> getCompactClass() {
+            return Example2.class;
+        }
+
+        @Override
+        public String getTypeName() {
+            return "00000000-0000-000a-0000-00000000000a";
+        }
     };
 
     public static final CompactSerializer<Example2> HZ_COMPACT_SERIALIZER = new Serializer();

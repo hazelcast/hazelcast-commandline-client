@@ -24,6 +24,16 @@ public class Student {
             writer.writeString("name", object.name);
             writer.writeInt16("number", object.number);
         }
+
+        @Override
+        public Class<Student> getCompactClass() {
+            return Student.class;
+        }
+
+        @Override
+        public String getTypeName() {
+            return "00000000-0000-000a-0000-00000000000a";
+        }
     };
 
     public static final CompactSerializer<Student> HZ_COMPACT_SERIALIZER = new Serializer();

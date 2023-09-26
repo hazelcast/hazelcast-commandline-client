@@ -26,6 +26,16 @@ public class School {
             writer.writeInt32("id", object.id);
             writer.writeArrayOfCompact("classrooms", object.classrooms);
         }
+
+        @Override
+        public Class<School> getCompactClass() {
+            return School.class;
+        }
+
+        @Override
+        public String getTypeName() {
+            return "00000000-0000-000a-0000-00000000000a";
+        }
     };
 
     public static final CompactSerializer<School> HZ_COMPACT_SERIALIZER = new Serializer();

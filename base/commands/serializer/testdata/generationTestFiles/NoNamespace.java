@@ -22,6 +22,16 @@ public class NoNamespace {
             writer.writeBoolean("foo", object.foo);
             writer.writeCompact("bar", object.bar);
         }
+
+        @Override
+        public Class<NoNamespace> getCompactClass() {
+            return NoNamespace.class;
+        }
+
+        @Override
+        public String getTypeName() {
+            return "00000000-0000-000a-0000-00000000000a";
+        }
     };
 
     public static final CompactSerializer<NoNamespace> HZ_COMPACT_SERIALIZER = new Serializer();

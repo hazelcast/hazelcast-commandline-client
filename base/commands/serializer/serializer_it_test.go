@@ -3,10 +3,12 @@
 package serializer
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/hazelcast/hazelcast-go-client/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -37,6 +39,11 @@ var (
 )
 
 func init() {
+	UUIDGenFunc = func() types.UUID {
+		return types.NewUUIDWith(10, 10)
+	}
+	s := types.NewUUIDWith(10, 10).String()
+	fmt.Println(s)
 	generationTestFilesDir := filepath.Join("testdata", "generationTestFiles")
 	generationTestFilesSchemaDir := filepath.Join("testdata", "generationTestFiles", "schema")
 

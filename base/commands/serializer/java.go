@@ -9,6 +9,7 @@ import (
 	"text/template"
 
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 const (
@@ -17,6 +18,9 @@ const (
 	float32Type = "float32"
 	float64Type = "float64"
 )
+
+// UUIDGenFunc is a variable, because we are overriding its behaviour to return a constant UUID during the tests.
+var UUIDGenFunc = types.NewUUID
 
 var indent4 = strings.Repeat(" ", 4)
 var indent8 = strings.Repeat(" ", 8)
@@ -75,8 +79,9 @@ type codeTemplate struct {
 }
 
 type classSchema struct {
-	Class  Class
-	Schema Schema
+	Class    Class
+	Schema   Schema
+	TypeName string
 }
 
 func GenerateClass(cls Class, sch Schema, w io.Writer) error {
@@ -103,8 +108,9 @@ func GenerateClass(cls Class, sch Schema, w io.Writer) error {
 		tmpl = template.Must(tmpl, err)
 	}
 	err = tmpl.Execute(w, classSchema{
-		Class:  cls,
-		Schema: sch,
+		Class:    cls,
+		Schema:   sch,
+		TypeName: UUIDGenFunc().String(),
 	})
 	return err
 }

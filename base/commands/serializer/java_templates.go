@@ -24,6 +24,16 @@ const javaCompactSerializerTemplate = `public static final class Serializer impl
         public void write(@Nonnull CompactWriter writer, @Nonnull {{ .Class.Name }} object) {
 {{range $field := .Class.Fields}}            writer.write{{methodName (toJavaType $field.Type) $field.Type }}("{{ $field.Name }}", object.{{ $field.Name }});
 {{end}}        }
+
+        @Override
+        public Class<{{ .Class.Name }}> getCompactClass() {
+            return {{ .Class.Name }}.class;
+        }
+
+        @Override
+        public String getTypeName() {
+            return "{{ .TypeName }}";
+        }
     };
 
     public static final CompactSerializer<{{ .Class.Name }}> HZ_COMPACT_SERIALIZER = new Serializer();`

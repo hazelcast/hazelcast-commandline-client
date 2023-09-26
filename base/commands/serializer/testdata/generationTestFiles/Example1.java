@@ -24,6 +24,16 @@ public class Example1 {
             writer.writeCompact("example", object.example);
             writer.writeArrayOfCompact("examples", object.examples);
         }
+
+        @Override
+        public Class<Example1> getCompactClass() {
+            return Example1.class;
+        }
+
+        @Override
+        public String getTypeName() {
+            return "00000000-0000-000a-0000-00000000000a";
+        }
     };
 
     public static final CompactSerializer<Example1> HZ_COMPACT_SERIALIZER = new Serializer();

@@ -100,6 +100,16 @@ public class AllTypes {
             writer.writeCompact("mcompact", object.mcompact);
             writer.writeArrayOfCompact("mcompactArray", object.mcompactArray);
         }
+
+        @Override
+        public Class<AllTypes> getCompactClass() {
+            return AllTypes.class;
+        }
+
+        @Override
+        public String getTypeName() {
+            return "00000000-0000-000a-0000-00000000000a";
+        }
     };
 
     public static final CompactSerializer<AllTypes> HZ_COMPACT_SERIALIZER = new Serializer();
