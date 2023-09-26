@@ -113,8 +113,50 @@ ClientConfig clientConfig = new ClientConfig();
                         new com.education.School.Serializer());
 ----
 
-== Creating Mapping
+== SQL Support
 
-== Writing to a Map using Java Client
+=== Creating Mapping
 
-== Querying the Map using Python Client
+If map's keys or values have `Compact` format, you need to provide the following additional options while creating the mapping:
+
+* `keyCompactTypeName`
+* `valueCompactTypeName`
+
+[source,sql]
+----
+CREATE OR REPLACE MAPPING students(
+     id INT EXTERNAL NAME "__key.id",
+     name VARCHAR
+) TYPE IMap
+OPTIONS (
+     'keyFormat' = 'compact',
+     'keyCompactTypeName' = 'studentId',
+     'valueFormat' = 'compact',
+     'valueCompactTypeName' = 'student'
+);
+----
+
+=== Writing to a Map using Java Client
+
+[source,java]
+----
+IMap<Integer, Student> studentsMap = client.getMap("students");
+Student s = new Student(4, "Student4");
+studentsMap.put(4, s);
+----
+
+=== Querying the Map using Java Client
+
+[source, java]
+----
+SqlResult result = sqlService.execute("SELECT this FROM students")
+for (SqlRow row : result) {
+    Student s = row.getObject("this");
+    System.out.println(s.getId())
+    System.out.println(s.getName())
+}
+----
+
+== Schema Evolution
+
+== Generic Record Representation
