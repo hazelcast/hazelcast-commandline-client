@@ -14,10 +14,6 @@ You need the following:
 Let's assume we have the following entities in our application:
 
 * Student
-** Name
-** Number
-** List of AssignedLessons
-* Teacher
 ** ID
 ** Name
 * Classroom
@@ -29,8 +25,8 @@ Let's assume we have the following entities in our application:
 
 and their relationship defined as:
 
-* School has classrooms.
-* Classrooms have students.
+* School has classrooms (1->n)
+* Classrooms have students (n -> n)
 
 Their schema definitions should be:
 
@@ -40,19 +36,8 @@ namespace: "com.people"
 classes:
   - name: Student
     fields:
-      - name: name
-        type: string
-      - name: number
-        type: int16
-      - name: AssignedLessons
-        type: com.education.Lesson[]
-        external: true
-      - name: advisor
-        type: Teacher
-  - name: Teacher
-    fields:
       - name: id
-        type: string
+        type: int32
       - name: name
         type: string
 ----
@@ -85,14 +70,11 @@ classes:
         type: com.rooms.Classroom[]
 ----
 
-Schema definitions can contain following information:
+Schema definitions contains following information:
 
-* described the contents of a compact classes: `Student`, `Classroom`, `School`, `Teacher`.
+* described the contents of a compact classes: `Student`, `Classroom`, `School`.
 * imported other schema using `imports`.
 * specify a namespaces for schema files using `namespace`.
-* referenced classes (in this example `com.lesson`) that are not present in the given schemas.
-* referenced to an internal class (in this example `Student` reference to `Teacher` in the same schema file).
-* an external schema is used and specified with `external: true`, assuming `com.education.Lesson` is already defined in the project.
 
 == Generating POJOs and Compact Classes from Schemas
 
@@ -106,7 +88,6 @@ clc serializer generate school.yaml -l java
 This will generate the classes into the current working directory. If you want to save them to another directory you can append `-o <my_directory>` to the command. After running the command, following classes will be generated:
 
 * `Student.java`
-* `Teacher.java`
 * `School.java`
 * `Classroom.java`
 
@@ -124,14 +105,15 @@ Let's use Java configuration this time and use the following code to register th
 
 [source,java]
 ----
-ClientConfig config = new ClientConfig();
-config.getSerializationConfig().getCompactSerializationConfig().setSerializers(
-    new com.rooms.Classroom.Serializer(),
-    new com.people.Student.Serializer(),
-    new com.people.Teacher.Serializer(),
-    new com.education.School.Serializer()
-);
+ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getSerializationConfig()
+                .getCompactSerializationConfig()
+                .setSerializers(new com.rooms.Classroom.Serializer(),
+                        new com.people.Student.Serializer(),
+                        new com.education.School.Serializer());
 ----
+
+== Creating Mapping
 
 == Writing to a Map using Java Client
 
