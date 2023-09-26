@@ -23,15 +23,11 @@ const (
 	argTitleQuery    = "query"
 )
 
-type arg0er interface {
-	Arg0() string
-}
-
 type SQLCommand struct{}
 
 func (SQLCommand) Augment(ec plug.ExecContext, props *plug.Properties) error {
 	// set the default format to table in the interactive mode
-	if ecc, ok := ec.(arg0er); ok {
+	if ecc, ok := ec.(clc.Arg0er); ok {
 		if ec.CommandName() == ecc.Arg0()+" shell" && len(ec.Args()) == 0 {
 			props.Set(clc.PropertyFormat, base.PrinterTable)
 		}

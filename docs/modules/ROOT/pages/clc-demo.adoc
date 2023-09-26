@@ -23,6 +23,9 @@ Generate data for given name, supported names are:
 - wikipedia-event-stream: Real-time Wikipedia event stream. Following key-value pairs can be set
 	- map=<MAP-NAME>: generated stream items are written into the map
 
+Note that the data is streamed from Wikipedia changes.
+Hazelcast has no control over the incoming data,
+
 Usage:
 
 [source,bash]

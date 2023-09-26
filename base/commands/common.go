@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client"
@@ -217,6 +218,28 @@ func AddValueTypeFlag(cc plug.InitContext) {
 	cc.AddStringFlag(FlagValueType, "v", "string", false, help)
 }
 
+func MakeValueFromString(s string, typeStr string) (any, error) {
+	if typeStr == "" {
+		typeStr = "string"
+	}
+	return mk.ValueFromString(s, typeStr)
+}
+
+func MakeValuesFromStrings(typeStr string, items []string) ([]any, error) {
+	if typeStr == "" {
+		typeStr = "string"
+	}
+	vs := make([]any, len(items))
+	for i, s := range items {
+		v, err := mk.ValueFromString(s, typeStr)
+		if err != nil {
+			return nil, fmt.Errorf("converting string to key: %w", err)
+		}
+		vs[i] = v
+	}
+	return vs, nil
+}
+
 func MakeKeyData(ec plug.ExecContext, ci *hazelcast.ClientInternal, keyStr string) (hazelcast.Data, error) {
 	kt := ec.Props().GetString(FlagKeyType)
 	if kt == "" {
@@ -269,4 +292,12 @@ func GetTTL(ec plug.ExecContext) int64 {
 		return ec.Props().GetInt(FlagTTL)
 	}
 	return clc.TTLUnset
+}
+
+func IsYes(ec plug.ExecContext) bool {
+	yes := ec.Props().GetBool(clc.FlagAutoYes)
+	if yes {
+		return true
+	}
+	return os.Getenv(clc.EnvYes) == "1"
 }

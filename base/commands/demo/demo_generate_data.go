@@ -12,6 +12,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 
+	"github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/sql"
@@ -21,6 +22,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/demo/wikimedia"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/prompt"
 )
 
 const (
@@ -50,6 +52,7 @@ Generate data for given name, supported names are:
 	cc.SetCommandHelp(long, short)
 	cc.AddIntFlag(flagMaxValues, "", 0, false, "number of events to create (default: 0, no limits)")
 	cc.AddBoolFlag(flagPreview, "", false, false, "print the generated data without interacting with the cluster")
+	cc.AddBoolFlag(clc.FlagAutoYes, "", false, false, "skip confirming the data generation")
 	cc.AddStringArg(argGeneratorName, argTitleGeneratorName)
 	cc.AddKeyValueSliceArg(argKeyValues, argTitleKeyValues, 0, clc.MaxArgs)
 	return nil
@@ -63,6 +66,20 @@ func (GenerateDataCommand) Exec(ctx context.Context, ec plug.ExecContext) error 
 	}
 	kvs := ec.GetKeyValuesArg(argKeyValues)
 	preview := ec.Props().GetBool(flagPreview)
+	yes := commands.IsYes(ec)
+	if !yes {
+		p := prompt.New(ec.Stdin(), ec.Stdout())
+		ec.PrintlnUnnecessary("The data is streamed from Wikipedia changes.")
+		ec.PrintlnUnnecessary("Hazelcast has no control over the incoming data,")
+		yes, err := p.YesNo("Proceed?")
+		if err != nil {
+			ec.Logger().Info("User input could not be processed due to error: %s", err.Error())
+			return hzerrors.ErrUserCancelled
+		}
+		if !yes {
+			return hzerrors.ErrUserCancelled
+		}
+	}
 	if preview {
 		return generatePreviewResult(ctx, ec, generator, kvs.Map())
 	}

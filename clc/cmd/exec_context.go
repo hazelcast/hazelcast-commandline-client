@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"sync/atomic"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
@@ -35,20 +36,21 @@ const (
 type ClientFn func(ctx context.Context, cfg hazelcast.Config) (*hazelcast.ClientInternal, error)
 
 type ExecContext struct {
-	lg          log.Logger
-	stdout      io.Writer
-	stderr      io.Writer
-	stdin       io.Reader
-	args        []string
-	kwargs      map[string]any
-	props       *plug.Properties
-	mode        plug.Mode
-	cmd         *cobra.Command
-	main        *Main
-	spinnerWait time.Duration
-	printer     plug.Printer
-	cp          config.Provider
-	ms          metrics.MetricStorer
+	lg            log.Logger
+	stdout        io.Writer
+	stderr        io.Writer
+	stdin         io.Reader
+	args          []string
+	kwargs        map[string]any
+	props         *plug.Properties
+	mode          plug.Mode
+	cmd           *cobra.Command
+	main          *Main
+	spinnerWait   time.Duration
+	printer       plug.Printer
+	cp            config.Provider
+	spinnerPaused atomic.Bool
+	ms            metrics.MetricStorer
 }
 
 func NewExecContext(lg log.Logger, sio clc.IO, props *plug.Properties, mode plug.Mode, ms metrics.MetricStorer) (*ExecContext, error) {
@@ -144,10 +146,14 @@ func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInt
 	if ci != nil {
 		return ci, nil
 	}
+	ec.pauseSpinner()
 	cfg, err := ec.cp.ClientConfig(ctx, ec)
 	if err != nil {
+		// unpausing here, since can't use defer
+		ec.unpauseSpinner()
 		return nil, err
 	}
+	ec.unpauseSpinner()
 	if err := ec.main.ensureClient(ctx, cfg); err != nil {
 		return nil, err
 	}
@@ -228,8 +234,9 @@ func (ec *ExecContext) ExecuteBlocking(ctx context.Context, f func(context.Conte
 		}
 		ch <- v
 	}()
-	timer := time.NewTimer(ec.spinnerWait)
-	defer timer.Stop()
+	var started bool
+	ticker := time.NewTicker(ec.spinnerWait)
+	defer ticker.Stop()
 	for {
 		select {
 		case <-ctx.Done():
@@ -247,10 +254,15 @@ func (ec *ExecContext) ExecuteBlocking(ctx context.Context, f func(context.Conte
 				return nil, func() {}, err
 			}
 			return v, stop, nil
-		case <-timer.C:
+		case <-ticker.C:
 			if !ec.Quiet() {
 				if s, ok := sp.(clc.SpinnerStarter); ok {
-					s.Start()
+					if !ec.spinnerPaused.Load() {
+						if !started {
+							started = true
+							s.Start()
+						}
+					}
 				}
 			}
 		}
@@ -261,6 +273,14 @@ func (ec *ExecContext) PrintlnUnnecessary(text string) {
 	if !ec.Quiet() {
 		I2(fmt.Fprintln(ec.Stdout(), str.Colorize(text)))
 	}
+}
+
+func (ec *ExecContext) pauseSpinner() {
+	ec.spinnerPaused.Store(true)
+}
+
+func (ec *ExecContext) unpauseSpinner() {
+	ec.spinnerPaused.Store(false)
 }
 
 func (ec *ExecContext) Quiet() bool {

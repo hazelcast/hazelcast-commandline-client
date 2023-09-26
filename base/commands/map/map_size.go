@@ -9,6 +9,6 @@ import (
 )
 
 func init() {
-	cmd := commands.NewSizeCommand("Map", "map", getMap)
-	check.Must(plug.Registry.RegisterCommand("map:size", cmd))
+	c := commands.NewSizeCommand("Map", "map", getMap)
+	check.Must(plug.Registry.RegisterCommand("map:size", c))
 }

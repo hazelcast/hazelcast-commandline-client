@@ -35,6 +35,8 @@ If no key is given, all keys are loaded.`
 func (MapLoadAllCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	name := ec.Props().GetString(base.FlagName)
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		replace := ec.Props().GetBool(mapFlagReplace)
+		// TODO: use Map.LoadAllX methods in the Go client when they are fixed. --YT
 		ci, err := cmd.ClientInternal(ctx, ec, sp)
 		if err != nil {
 			return nil, err
@@ -48,7 +50,6 @@ func (MapLoadAllCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 			}
 			keys = append(keys, keyData)
 		}
-		replace := ec.Props().GetBool(mapFlagReplace)
 		var req *hazelcast.ClientMessage
 		if len(keys) == 0 {
 			req = codec.EncodeMapLoadAllRequest(name, replace)
