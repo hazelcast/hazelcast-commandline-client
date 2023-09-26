@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client"
@@ -281,4 +282,12 @@ func GetTTL(ec plug.ExecContext) int64 {
 		return ec.Props().GetInt(FlagTTL)
 	}
 	return clc.TTLUnset
+}
+
+func IsYes(ec plug.ExecContext) bool {
+	yes := ec.Props().GetBool(clc.FlagAutoYes)
+	if yes {
+		return true
+	}
+	return os.Getenv(clc.EnvYes) == "1"
 }
