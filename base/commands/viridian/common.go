@@ -16,8 +16,6 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/secrets"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/selector"
-	clcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
@@ -45,27 +43,19 @@ func findTokenPath(apiKey string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("cannot access the secrets, did you login?: %w", err)
 	}
-	if len(tokenPaths) == 0 {
-		return "", fmt.Errorf("no secrets found, did you login?")
-	}
-	var ps []string
+	// sort tokens, so findTokenPath returns the same token everytime.
+	sort.Slice(tokenPaths, func(i, j int) bool {
+		return tokenPaths[i] < tokenPaths[j]
+	})
+	var tp string
 	for _, p := range tokenPaths {
 		if strings.HasPrefix(p, ac) {
-			ps = append(ps, p)
+			tp = p
+			break
 		}
 	}
-	if len(ps) == 1 {
-		return ps[0], nil
-	}
-	sort.Slice(ps, func(i, j int) bool {
-		return ps[i] < ps[j]
-	})
-	tp, canceled, err := selector.Show(context.TODO(), "Select an API key", ps...)
-	if err != nil {
-		return "", err
-	}
-	if canceled {
-		return "", clcerrors.ErrUserCancelled
+	if tp == "" {
+		return "", fmt.Errorf("no secrets found, did you login?")
 	}
 	return tp, nil
 }
