@@ -77,17 +77,20 @@ classes:
        external: bool # to mark external types (external to this yaml file)
 ----
 
-==== namespace:
+==== namespace
+
 Used for logical grouping of classes. Typically, for every namespace, you will have a schema file. Namespace is optional. If not provided, the classes will be generated at global namespace (no namespace). The user should provide the language specific best practice when using the namespace. The tool will use the namespace while generating code if provided.
 
-==== imports:
+==== imports
+
 Used to import other schema files. The type definitions in the imported yaml schemas can be used within this yaml file. Cyclic imports will be checked and handled properly. For this version of the tool, an import can only be a single file name and the tool will assume all yaml files imported will be in the same directory as the importing schema file.
 
-==== classes:
+==== classes
+
 Used to define classes in the schema.
 
-* name
-* fields
+* name: Name of the class
+* fields: Field specification of the class
 ** name: Name of the field
 ** type: Type of the field. Normally you should refer to another class as namespace.classname. You can use a class without namespace when the class is defined in the same schema yaml file. type can be one of the following:
 *** `boolean`
