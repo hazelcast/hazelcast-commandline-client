@@ -1,0 +1,103 @@
+= Using Compact Serializer Generator
+
+:description: User can generate compact classes for their POJOs using CLC's compact serializer generator feature.
+{description}
+
+== Before you Begin
+
+You need the following:
+
+- Hazelcast CLC
+- a Hazelcast cluster
+
+== Creating Schemas for Business Objects
+Let's assume we have the following entities in our application:
+
+* Student
+** Name
+** Number
+* Teacher
+** ID
+** Name
+* Classroom
+** ID
+** Students
+* School
+** ID
+** Classrooms
+
+and their relationship defined as:
+
+* School has classrooms.
+* Classrooms have students.
+
+Their schema definitions should be:
+
+[source,yaml]
+----
+namespace: "com.people"
+classes:
+  - name: Student
+    fields:
+      - name: name
+        type: string
+      - name: number
+        type: int16
+      - name: assignedLessons
+        type: com.lesson[]
+        external: true
+      - name: advisor
+        type: Teacher
+  - name: Teacher
+    fields:
+      - name: id
+        type: string
+      - name: name
+        type: string
+----
+
+[source,yaml]
+----
+namespace: "com.rooms"
+imports:
+  - people.yaml
+classes:
+  - name: Classroom
+    fields:
+      - name: id
+        type: int32
+      - name: students
+        type: com.people.Student[]
+----
+
+[source,yaml]
+----
+namespace: "com.education"
+imports:
+  - classroom.yaml
+classes:
+  - name: School
+    fields:
+      - name: id
+        type: int32
+      - name: classrooms
+        type: com.rooms.Classroom[]
+----
+
+Schema definitions can contain following information:
+
+* described the contents of a compact classes: `Student`, `Classroom`, `School`, `Teacher`.
+* imported other schema using `imports`.
+* specify a namespaces for schema files using `namespace`.
+* referenced classes (in this example `com.lesson`) that are not present in the given schemas.
+* referenced to an internal class (in this example `Student` reference to `Teacher` in the same schema file).
+
+== Generating POJOs and Compact Classes from Schemas
+
+
+
+== Creating Compact Serialization Configuration
+
+== Writing to a Map using Java Client
+
+== Querying the Map using Python Client

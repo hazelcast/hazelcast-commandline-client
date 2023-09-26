@@ -11,6 +11,7 @@
 * xref:configuration.adoc[Configure]
 ** xref:connect-to-viridian.adoc[Connect to {hazelcast-cloud}]
 ** xref:connect-to-platform.adoc[Connect to Platform]
+** xref:using-compact-serializer-generator.adoc[Using Compact Serializer Generator]
 //** xref:config-wizard.adoc[CLC Configuration Wizard ]
 * xref:upgrade-clc.adoc[Upgrade]
 
@@ -33,6 +34,7 @@
 ** xref:clc-version.adoc[]
 ** xref:clc-viridian.adoc[]
 ** xref:clc-project.adoc[]
+** xref:clc-serializer-generator.adoc[]
 * xref:configuration-format.adoc[]
 * xref:environment-variables.adoc[]
 * xref:keyboard-shortcuts.adoc[]
