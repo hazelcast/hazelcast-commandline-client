@@ -1,0 +1,26 @@
+= 5.3.4 Release Notes
+
+== New Features
+
+* Added the `serializer generate` command that creates Java Compact Serialization classess from the given schema.
+* Added an update checker which displays a notification in the interactive mode. You can disable it by setting the `CLC_SKIP_SERVER_VERSION_CHECK` to `1`.
+* In order to make an informed decision about CLC improvements and features, we started to collect non-identifiable telemetry. You can disable this by setting `HZ_PHONE_HOME_ENABLED` environment variable to `false`. You can find more information in the xref:phone-homes.adoc documentation.
+* CLC can now be installed using an install script on Linux and macOS systems. Just run `curl https://hazelcast.com/clc/install.sh | bash`.
+
+== Improvements
+
+* Improved configuration selector.
+* If there's a single configuration, do not display the configuration selector and use that configuration automatically.
+* Updated `job submit` command to deduce the job ID.
+
+== Changes
+
+* Confirmation is required from the user when `demo generate-data` command runs.
+
+== Fixes
+
+* CLC interactive prompt doesn't change after config wizard.
+* Readline panic in the interactive mode if terminal width cannot be determined and left arrow is pressed.
+* Map proxy is created when a `map` command is used.
+* "connecting to cluster" prompt is not shown when `object list` command runs.
+* Fixed `list add` command.
