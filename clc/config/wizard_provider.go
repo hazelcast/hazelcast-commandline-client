@@ -19,15 +19,15 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-const configurationHelp = `No configurations found.
+const fmtConfigurationHelp = `No configurations found.
 
 Run the following command to learn more about adding a configuration:
 
-	clc config add --help
+	%[1]s config add --help
 
 Or run the following command to import a Viridian cluster configuration:
 
-	clc config import --help
+	%[1]s config import --help
 `
 
 type WizardProvider struct {
@@ -81,10 +81,12 @@ func (p *WizardProvider) ClientConfig(ctx context.Context, ec plug.ExecContext) 
 	cs, err := FindAll(paths.Configs())
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
+			printNoConfigHelp(ec)
 			return hazelcast.Config{}, clcerrors.ErrNoClusterConfig
 		}
 	}
 	if len(cs) == 0 {
+		printNoConfigHelp(ec)
 		return hazelcast.Config{}, clcerrors.ErrNoClusterConfig
 	}
 	if len(cs) == 1 {
@@ -121,4 +123,13 @@ func (p *WizardProvider) runWizard(ctx context.Context, cs []string) (string, er
 		return "", clcerrors.ErrUserCancelled
 	}
 	return cfg, nil
+}
+
+func printNoConfigHelp(ec plug.ExecContext) {
+	var arg0 = "clc"
+	if c, ok := ec.(clc.Arg0er); ok {
+		arg0 = c.Arg0()
+	}
+	text := fmt.Sprintf(fmtConfigurationHelp, arg0)
+	ec.PrintlnUnnecessary(text)
 }

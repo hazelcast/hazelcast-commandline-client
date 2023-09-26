@@ -26,3 +26,7 @@ type Spinner interface {
 type SpinnerStarter interface {
 	Start()
 }
+
+type Arg0er interface {
+	Arg0() string
+}
