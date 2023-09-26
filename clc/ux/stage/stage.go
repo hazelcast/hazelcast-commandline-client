@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	hzerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/str"
@@ -167,8 +166,7 @@ func Execute[T any](ctx context.Context, ec plug.ExecContext, value T, sp Provid
 				// the error can be ignored
 				ec.PrintlnUnnecessary(fmt.Sprintf("ERROR %s %s: %s", ss.IndexText(), stg.FailureMsg, ie.Unwrap().Error()))
 			} else {
-				ec.PrintlnUnnecessary(fmt.Sprintf("ERROR %s: %s", stg.FailureMsg, err.Error()))
-				return value, hzerrors.WrappedError{Err: err}
+				return value, fmt.Errorf("%s: %w", stg.FailureMsg, err)
 			}
 		}
 		stop()
