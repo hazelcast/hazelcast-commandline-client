@@ -4,7 +4,7 @@
 
 * Added the `serializer generate` command that creates Java Compact Serialization classess from the given schema.
 * Added an update checker which displays a notification in the interactive mode. You can disable it by setting the `CLC_SKIP_SERVER_VERSION_CHECK` to `1`.
-* In order to make an informed decision about CLC improvements and features, we started to collect non-identifiable telemetry. You can disable this by setting `HZ_PHONE_HOME_ENABLED` environment variable to `false`. You can find more information in the xref:phone-homes.adoc documentation.
+* In order to make an informed decision about CLC improvements and features, we started to collect non-identifiable telemetry. You can disable this by setting `HZ_PHONE_HOME_ENABLED` environment variable to `false`. You can find more information in the xref:phone-homes.adoc[documentation].
 * CLC can now be installed using an install script on Linux and macOS systems. Just run `curl https://hazelcast.com/clc/install.sh | bash`.
 
 == Improvements
