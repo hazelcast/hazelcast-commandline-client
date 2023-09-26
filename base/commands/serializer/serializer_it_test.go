@@ -3,7 +3,6 @@
 package serializer
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -39,11 +38,6 @@ var (
 )
 
 func init() {
-	UUIDGenFunc = func() types.UUID {
-		return types.NewUUIDWith(10, 10)
-	}
-	s := types.NewUUIDWith(10, 10).String()
-	fmt.Println(s)
 	generationTestFilesDir := filepath.Join("testdata", "generationTestFiles")
 	generationTestFilesSchemaDir := filepath.Join("testdata", "generationTestFiles", "schema")
 
@@ -98,6 +92,13 @@ func makeKey(className, fileName string) ClassInfo {
 }
 
 func TestGenerate(t *testing.T) {
+	// Set UUID Generator Func to return a constant value in tests
+	UUIDGenFunc = func() types.UUID {
+		return types.NewUUIDWith(10, 10)
+	}
+	defer func() {
+		UUIDGenFunc = types.NewUUID
+	}()
 	tcs := []struct {
 		expected          map[ClassInfo]string
 		name              string
