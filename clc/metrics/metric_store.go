@@ -118,8 +118,6 @@ func (ms *metricStore) ensureGlobalMetrics() error {
 
 func (ms *metricStore) Store(key Key, metric string, val int) {
 	metrics := strings.Split(metric, ".")
-	_ = 2
-	_ = 3
 	ms.mu.Lock()
 	for _, m := range metrics {
 		sk := newStorageKey(key, ms.sessionAttrs.AcquisitionSource, ms.sessionAttrs.CLCVersion, m)
@@ -180,6 +178,8 @@ func (ms *metricStore) Send(ctx context.Context) error {
 }
 
 func (ms *metricStore) persistMetrics(s *store.Store) {
+	ms.mu.Lock()
+	defer ms.mu.Unlock()
 	ms.persistIncrementMetrics(s)
 	ms.persistStoreMetrics(s)
 }
@@ -198,8 +198,6 @@ func getTryNextTime(s *store.Store) (time.Time, error) {
 }
 
 func (ms *metricStore) persistIncrementMetrics(s *store.Store) {
-	ms.mu.Lock()
-	defer ms.mu.Unlock()
 	for key, val := range ms.increments {
 		var newVal int
 		keyb, err := key.Marshal()
@@ -233,8 +231,6 @@ func (ms *metricStore) persistIncrementMetrics(s *store.Store) {
 }
 
 func (ms *metricStore) persistStoreMetrics(s *store.Store) {
-	ms.mu.Lock()
-	defer ms.mu.Unlock()
 	for key, val := range ms.updates {
 		// int marshalling should not return an error
 		valb, _ := json.Marshal(val)
