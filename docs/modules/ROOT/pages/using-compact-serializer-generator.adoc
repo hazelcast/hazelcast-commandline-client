@@ -16,6 +16,7 @@ Let's assume we have the following entities in our application:
 * Student
 ** Name
 ** Number
+** List of AssignedLessons
 * Teacher
 ** ID
 ** Name
@@ -43,8 +44,8 @@ classes:
         type: string
       - name: number
         type: int16
-      - name: assignedLessons
-        type: com.lesson[]
+      - name: AssignedLessons
+        type: com.education.Lesson[]
         external: true
       - name: advisor
         type: Teacher
@@ -91,12 +92,46 @@ Schema definitions can contain following information:
 * specify a namespaces for schema files using `namespace`.
 * referenced classes (in this example `com.lesson`) that are not present in the given schemas.
 * referenced to an internal class (in this example `Student` reference to `Teacher` in the same schema file).
+* an external schema is used and specified with `external: true`, assuming `com.education.Lesson` is already defined in the project.
 
 == Generating POJOs and Compact Classes from Schemas
 
+To be able to generate compact classes, following command can be used:
 
+[source,bash]
+----
+clc serializer generate school.yaml -l java
+----
+
+This will generate the classes into the current working directory. If you want to save them to another directory you can append `-o <my_directory>` to the command. After running the command, following classes will be generated:
+
+* `Student.java`
+* `Teacher.java`
+* `School.java`
+* `Classroom.java`
+
+User should copy the generated classes to their own packages in their codebase.
 
 == Creating Compact Serialization Configuration
+
+The output of the `generate` command lists configuration options, there are 3 different ways to configure:
+
+* Java Configuration
+* XML Configuration
+* YAML Configuration
+
+Let's use Java configuration this time and use the following code to register the generated compact classes:
+
+[source,java]
+----
+ClientConfig config = new ClientConfig();
+config.getSerializationConfig().getCompactSerializationConfig().setSerializers(
+    new com.rooms.Classroom.Serializer(),
+    new com.people.Student.Serializer(),
+    new com.people.Teacher.Serializer(),
+    new com.education.School.Serializer()
+);
+----
 
 == Writing to a Map using Java Client
 
