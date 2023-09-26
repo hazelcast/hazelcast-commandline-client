@@ -1,0 +1,25 @@
+= Phone Homes
+
+CLC uses phone home data to learn about the usage of CLC.
+
+CLC instances collects usage metrics for 24 hours span and sends phone home data every 24 hours.
+
+== What is sent in?
+
+- ID for CLC Home installation
+- Name of the operating system
+- Name of the architecture
+- CLC version
+- Acquisition source (e.g Docker, Management Center)
+- Connected Hazelcast Cluster ID
+- Connected Viridian Cluster ID
+- Number of command runs spanned in 24 hours
+- Number of created CLC configurations
+
+== Disabling Phone Homes
+
+Phone homes can be disabled by setting the following environment variable.
+
+```
+export HZ_PHONE_HOME_ENABLED=false
+```

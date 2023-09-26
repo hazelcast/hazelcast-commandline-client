@@ -40,7 +40,7 @@
 |
 
 |HZ_PHONE_HOME_ENABLED
-|Enables phone home collection for CLC usage statistics.
+|Enables phone home collection for CLC usage statistics. Set 'false' to disable phone homes.
 |true
 
 |===
