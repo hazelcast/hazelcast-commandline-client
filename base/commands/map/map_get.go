@@ -3,6 +3,8 @@
 package _map
 
 import (
+	"github.com/hazelcast/hazelcast-go-client"
+
 	"github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -10,6 +12,6 @@ import (
 )
 
 func init() {
-	c := commands.NewMapGetCommand("Map", codec.EncodeMapGetRequest, makeDecodeResponseRowsFunc(codec.DecodeMapGetResponse))
+	c := commands.NewMapGetCommand[*hazelcast.Map]("Map", "map", codec.EncodeMapGetRequest, makeDecodeResponseRowsFunc(codec.DecodeMapGetResponse), getMap)
 	check.Must(plug.Registry.RegisterCommand("map:get", c))
 }

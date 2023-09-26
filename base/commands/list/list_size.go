@@ -9,6 +9,6 @@ import (
 )
 
 func init() {
-	cmd := commands.NewSizeCommand("List", getList)
+	cmd := commands.NewSizeCommand("List", "list", getList)
 	check.Must(plug.Registry.RegisterCommand("list:size", cmd))
 }

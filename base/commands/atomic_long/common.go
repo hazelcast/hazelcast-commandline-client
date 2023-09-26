@@ -29,6 +29,7 @@ func atomicLongChangeValue(ctx context.Context, ec plug.ExecContext, verb string
 		if err != nil {
 			return nil, err
 		}
+		cmd.IncrementClusterMetric(ctx, ec, "total.atomiclong")
 		sp.SetText(fmt.Sprintf("%sing the AtomicLong %s", verb, name))
 		val, err := ali.AddAndGet(ctx, change(by))
 		if err != nil {

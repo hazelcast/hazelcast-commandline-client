@@ -39,6 +39,10 @@
 |Sets the configuration CLC will use if `--config` flag is not specified.
 |
 
+|HZ_PHONE_HOME_ENABLED
+|Enables phone home collection for CLC usage statistics.
+|true
+
 |===
 
 The following environment variables are experimental and may be removed in a future version.

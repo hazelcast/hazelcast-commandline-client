@@ -10,7 +10,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/jet"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -35,6 +35,7 @@ func (ListCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		if err != nil {
 			return nil, err
 		}
+		cmd.IncrementClusterMetric(ctx, ec, "total.job")
 		sp.SetText("Getting the job list")
 		j := jet.New(ci, sp, ec.Logger())
 		jl, err := j.GetJobList(ctx)
@@ -139,5 +140,5 @@ func msToOffsetDateTimeColumn(ms int64, name string) output.Column {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("job:list", &ListCommand{}))
+	check.Must(plug.Registry.RegisterCommand("job:list", &ListCommand{}))
 }

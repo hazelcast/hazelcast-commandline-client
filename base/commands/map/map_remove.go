@@ -10,6 +10,6 @@ import (
 )
 
 func init() {
-	c := commands.NewMapRemoveCommand("Map", codec.EncodeMapRemoveRequest, makeDecodeResponseRowsFunc(codec.DecodeMapRemoveResponse))
+	c := commands.NewMapRemoveCommand("Map", "map", codec.EncodeMapRemoveRequest, makeDecodeResponseRowsFunc(codec.DecodeMapRemoveResponse))
 	check.Must(plug.Registry.RegisterCommand("map:remove", c))
 }

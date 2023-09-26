@@ -36,6 +36,7 @@ func removeFromList(ctx context.Context, ec plug.ExecContext, name string, index
 		if err != nil {
 			return nil, err
 		}
+		cmd.IncrementClusterMetric(ctx, ec, "total.list")
 		pid, err := internal.StringToPartitionID(ci, name)
 		if err != nil {
 			return nil, err

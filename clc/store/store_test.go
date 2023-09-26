@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	badger "github.com/dgraph-io/badger/v4"
 	"github.com/stretchr/testify/require"
@@ -22,6 +23,19 @@ func TestStore_GetSetEntry(t *testing.T) {
 		check.Must(s.SetEntry([]byte("key1"), []byte("valnew")))
 		valnew := check.MustValue(s.GetEntry([]byte("key1")))
 		require.Equal(t, []byte("valnew"), valnew)
+	})
+}
+
+func TestStore_SettEntryWithTTL(t *testing.T) {
+	withStore(func(s *Store) {
+		check.Must(s.SetEntry([]byte("key1"), []byte("val1")))
+		check.Must(s.SetEntry([]byte("key2"), []byte("val2"), OptionWithTTL(100*time.Millisecond)))
+		check.Must(s.SetEntry([]byte("key3"), []byte("val3"), OptionWithTTL(5*time.Second)))
+		time.Sleep(200 * time.Millisecond)
+		entries := check.MustValue(getAllEntries(s.db))
+		require.Equal(t, entries["key1"], []byte("val1"))
+		require.NotContains(t, entries, "key2")
+		require.Equal(t, entries["key3"], []byte("val3"))
 	})
 }
 
@@ -83,11 +97,12 @@ func TestStore_RunForeachWithPrefix(t *testing.T) {
 func TestStore_DeleteEntriesWithPrefix(t *testing.T) {
 	withStore(func(s *Store) {
 		check.Must(insertValues(s.db, map[string][]byte{
-			"prefix.key1": []byte(""),
-			"prefix.key2": []byte(""),
-			"noprefix":    []byte(""),
+			"1.prefix.key1": []byte(""),
+			"1.prefix.key2": []byte(""),
+			"2.prefix.key3": []byte(""),
+			"noprefix":      []byte(""),
 		}))
-		check.Must(s.DeleteEntriesWithPrefix("prefix"))
+		check.Must(s.DeleteEntriesWithPrefixes("1.prefix", "2.prefix"))
 		entries := check.MustValue(getAllEntries(s.db))
 		expected := map[string][]byte{
 			"noprefix": nil,

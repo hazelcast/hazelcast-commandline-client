@@ -7,8 +7,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/jet"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
@@ -37,6 +38,7 @@ func (ResumeCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 				if err != nil {
 					return 0, err
 				}
+				cmd.IncrementClusterMetric(ctx, ec, "total.job")
 				j := jet.New(ci, status, ec.Logger())
 				jis, err := j.GetJobList(ctx)
 				if err != nil {
@@ -73,5 +75,5 @@ func (ResumeCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("job:resume", &ResumeCommand{}))
+	check.Must(plug.Registry.RegisterCommand("job:resume", &ResumeCommand{}))
 }

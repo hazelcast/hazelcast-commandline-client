@@ -10,6 +10,6 @@ import (
 )
 
 func init() {
-	c := commands.NewMapRemoveCommand("MultiMap", codec.EncodeMultiMapRemoveRequest, makeDecodeResponseRowsFunc(codec.DecodeMultiMapRemoveResponse))
+	c := commands.NewMapRemoveCommand("MultiMap", "multimap", codec.EncodeMultiMapRemoveRequest, makeDecodeResponseRowsFunc(codec.DecodeMultiMapRemoveResponse))
 	check.Must(plug.Registry.RegisterCommand("multi-map:remove", c))
 }

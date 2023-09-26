@@ -3,25 +3,32 @@ package config
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"sync/atomic"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/pflag"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/selector"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/terminal"
 
-	"github.com/hazelcast/hazelcast-commandline-client/clc/config/wizard"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	clcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-var (
-	errNoConfig = errors.New("no configuration was provided and cannot display the configuration wizard; use the --config flag")
-)
+const fmtConfigurationHelp = `No configurations found.
+
+Run the following command to learn more about adding a configuration:
+
+	%[1]s config add --help
+
+Or run the following command to import a Viridian cluster configuration:
+
+	%[1]s config import --help
+`
 
 type WizardProvider struct {
 	fp  *atomic.Pointer[FileProvider]
@@ -74,10 +81,12 @@ func (p *WizardProvider) ClientConfig(ctx context.Context, ec plug.ExecContext) 
 	cs, err := FindAll(paths.Configs())
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
+			printNoConfigHelp(ec)
 			return hazelcast.Config{}, clcerrors.ErrNoClusterConfig
 		}
 	}
 	if len(cs) == 0 {
+		printNoConfigHelp(ec)
 		return hazelcast.Config{}, clcerrors.ErrNoClusterConfig
 	}
 	if len(cs) == 1 {
@@ -85,10 +94,10 @@ func (p *WizardProvider) ClientConfig(ctx context.Context, ec plug.ExecContext) 
 	}
 	if configName == "" {
 		if terminal.IsPipe(maybeUnwrapStdout(ec)) {
-			return hazelcast.Config{}, errNoConfig
+			return hazelcast.Config{}, fmt.Errorf(`no configuration was provided and cannot display the configuration wizard; use the --config flag`)
 		}
 		// ask the config to the user
-		configName, err = p.runWizard(cs)
+		configName, err = p.runWizard(ctx, cs)
 		if err != nil {
 			return hazelcast.Config{}, err
 		}
@@ -105,14 +114,22 @@ func (p *WizardProvider) ClientConfig(ctx context.Context, ec plug.ExecContext) 
 	return config, nil
 }
 
-func (p *WizardProvider) runWizard(configNames []string) (string, error) {
-	m := wizard.InitializeList(configNames)
-	model, err := tea.NewProgram(m).Run()
+func (p *WizardProvider) runWizard(ctx context.Context, cs []string) (string, error) {
+	cfg, canceled, err := selector.Show(ctx, "Select a configuration", cs...)
 	if err != nil {
 		return "", err
 	}
-	if model.View() == "" {
-		return "", clcerrors.ErrNoClusterConfig
+	if canceled {
+		return "", clcerrors.ErrUserCancelled
 	}
-	return model.View(), nil
+	return cfg, nil
+}
+
+func printNoConfigHelp(ec plug.ExecContext) {
+	var arg0 = "clc"
+	if c, ok := ec.(clc.Arg0er); ok {
+		arg0 = c.Arg0()
+	}
+	text := fmt.Sprintf(fmtConfigurationHelp, arg0)
+	ec.PrintlnUnnecessary(text)
 }

@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
@@ -47,6 +48,7 @@ The log format may be one of:
 }
 
 func (StreamLogCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+	cmd.IncrementMetric(ctx, ec, "total.viridian")
 	api, err := getAPI(ec)
 	if err != nil {
 		return err

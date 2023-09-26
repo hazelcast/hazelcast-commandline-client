@@ -21,7 +21,8 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/terminal"
 )
 
-const banner = `Hazelcast CLC %s (c) 2023 Hazelcast Inc.
+const (
+	banner = `Hazelcast CLC %s (c) 2023 Hazelcast Inc.
 		
 * Participate in our survey at: https://forms.gle/rPFywdQjvib1QCe49
 * Type 'help' for help information. Prefix non-SQL commands with \
@@ -29,6 +30,8 @@ const banner = `Hazelcast CLC %s (c) 2023 Hazelcast Inc.
 %s%s
 
 `
+	defaultPrompt = "SQL> "
+)
 
 type ShellCommand struct {
 	shortcuts map[string]struct{}
@@ -56,10 +59,11 @@ func (cm *ShellCommand) Exec(context.Context, plug.ExecContext) error {
 }
 
 func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext) error {
+	cmd.IncrementMetric(ctx, ec, "total.shell")
 	if len(ec.Args()) > 0 {
 		return puberrors.ErrNotAvailable
 	}
-	m, err := ec.(*cmd.ExecContext).Main().Clone(cmd.ModeInteractive)
+	m, err := ec.(*cmd.ExecContext).Main().Clone(plug.ModeInteractive)
 	if err != nil {
 		return fmt.Errorf("cloning Main: %w", err)
 	}
@@ -100,7 +104,7 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 	promptFn := func() string {
 		cfgPath := ec.ConfigPath()
 		if cfgPath == "" {
-			return "> "
+			return defaultPrompt
 		}
 		// Best effort for absolute path
 		p, err := filepath.Abs(cfgPath)
@@ -108,7 +112,7 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 			cfgPath = p
 		}
 		pd := paths.ParentDir(cfgPath)
-		return fmt.Sprintf("%s> ", str.MaybeShorten(pd, 12))
+		return fmt.Sprintf("%s %s ", str.MaybeShorten(pd, 12), defaultPrompt)
 	}
 	sh, err := shell.New(promptFn, " ... ", path, ec.Stdout(), ec.Stderr(), ec.Stdin(), endLineFn, textFn)
 	if err != nil {
