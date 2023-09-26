@@ -9,6 +9,6 @@ import (
 )
 
 func init() {
-	c := commands.NewTryLockCommand("MultiMap", getMultiMap)
+	c := commands.NewTryLockCommand("MultiMap", "multimap", getMultiMap)
 	check.Must(plug.Registry.RegisterCommand("multi-map:try-lock", c, plug.OnlyInteractive{}))
 }

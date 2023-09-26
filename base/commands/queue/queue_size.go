@@ -9,6 +9,6 @@ import (
 )
 
 func init() {
-	c := commands.NewSizeCommand("Queue", getQueue)
+	c := commands.NewSizeCommand("Queue", "queue", getQueue)
 	check.Must(plug.Registry.RegisterCommand("queue:size", c))
 }

@@ -12,7 +12,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
 )
@@ -41,6 +41,7 @@ func (MapLoadAllCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		if err != nil {
 			return nil, err
 		}
+		cmd.IncrementClusterMetric(ctx, ec, "total.map")
 		var keys []hazelcast.Data
 		for _, keyStr := range ec.GetStringSliceArg(commands.ArgKey) {
 			keyData, err := commands.MakeKeyData(ec, ci, keyStr)
@@ -71,5 +72,5 @@ func (MapLoadAllCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("map:load-all", &MapLoadAllCommand{}))
+	check.Must(plug.Registry.RegisterCommand("map:load-all", &MapLoadAllCommand{}))
 }

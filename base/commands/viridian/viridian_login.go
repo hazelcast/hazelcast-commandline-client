@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/secrets"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -51,6 +52,7 @@ Alternatively, you can use the following environment variables:
 }
 
 func (cm LoginCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+	cmd.IncrementMetric(ctx, ec, "total.viridian")
 	key, secret, err := getAPIKeySecret(ec)
 	if err != nil {
 		return err

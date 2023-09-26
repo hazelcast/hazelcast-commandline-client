@@ -59,10 +59,11 @@ func (cm *ShellCommand) Exec(context.Context, plug.ExecContext) error {
 }
 
 func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext) error {
+	cmd.IncrementMetric(ctx, ec, "total.shell")
 	if len(ec.Args()) > 0 {
 		return puberrors.ErrNotAvailable
 	}
-	m, err := ec.(*cmd.ExecContext).Main().Clone(cmd.ModeInteractive)
+	m, err := ec.(*cmd.ExecContext).Main().Clone(plug.ModeInteractive)
 	if err != nil {
 		return fmt.Errorf("cloning Main: %w", err)
 	}

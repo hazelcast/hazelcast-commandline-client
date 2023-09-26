@@ -87,6 +87,7 @@ func (GenerateDataCommand) Exec(ctx context.Context, ec plug.ExecContext) error 
 }
 
 func generatePreviewResult(ctx context.Context, ec plug.ExecContext, generator dataStreamGenerator, keyVals map[string]string) error {
+	cmd.IncrementMetric(ctx, ec, "total.demo")
 	maxCount := ec.Props().GetInt(flagMaxValues)
 	if maxCount < 1 {
 		maxCount = 10
@@ -121,15 +122,16 @@ func generateResult(ctx context.Context, ec plug.ExecContext, generator dataStre
 		return fmt.Errorf("either %s key-value pair must be given or --preview must be used", pairMapName)
 	}
 	maxCount := ec.Props().GetInt(flagMaxValues)
+	query, err := generator.GenerateMappingQuery(mapName)
+	if err != nil {
+		return err
+	}
 	query, stop, err := cmd.ExecuteBlocking(ctx, ec, func(ctx context.Context, sp clc.Spinner) (string, error) {
 		sp.SetText("Creating the mapping")
-		query, err := generator.GenerateMappingQuery(mapName)
-		if err != nil {
-			return "", err
-		}
 		if _, err := sql.ExecSQL(ctx, ec, query); err != nil {
 			return "", err
 		}
+		cmd.IncrementClusterMetric(ctx, ec, "total.demo")
 		return query, nil
 	})
 	if err != nil {

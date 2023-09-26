@@ -12,6 +12,6 @@ import (
 )
 
 func init() {
-	c := commands.NewMapGetCommand[*hazelcast.Map]("Map", codec.EncodeMapGetRequest, makeDecodeResponseRowsFunc(codec.DecodeMapGetResponse), getMap)
+	c := commands.NewMapGetCommand[*hazelcast.Map]("Map", "map", codec.EncodeMapGetRequest, makeDecodeResponseRowsFunc(codec.DecodeMapGetResponse), getMap)
 	check.Must(plug.Registry.RegisterCommand("map:get", c))
 }

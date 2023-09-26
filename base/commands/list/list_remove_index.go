@@ -8,7 +8,7 @@ import (
 	"math"
 
 	"github.com/hazelcast/hazelcast-commandline-client/base"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
@@ -35,5 +35,5 @@ func (mc *ListRemoveIndexCommand) Exec(ctx context.Context, ec plug.ExecContext)
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("list:remove-index", &ListRemoveIndexCommand{}))
+	check.Must(plug.Registry.RegisterCommand("list:remove-index", &ListRemoveIndexCommand{}))
 }
