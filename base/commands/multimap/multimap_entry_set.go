@@ -10,6 +10,6 @@ import (
 )
 
 func init() {
-	c := commands.NewMapEntrySetCommand("MultiMap", codec.EncodeMultiMapEntrySetRequest, codec.DecodeMultiMapEntrySetResponse)
+	c := commands.NewMapEntrySetCommand("MultiMap", codec.EncodeMultiMapEntrySetRequest, codec.DecodeMultiMapEntrySetResponse, getMultiMap)
 	check.Must(plug.Registry.RegisterCommand("multi-map:entry-set", c))
 }
