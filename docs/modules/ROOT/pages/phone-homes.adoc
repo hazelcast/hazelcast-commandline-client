@@ -2,7 +2,7 @@
 
 CLC uses phone home data to learn about the usage of CLC.
 
-CLC instances collects usage metrics for 24 hours span and sends phone home data every 24 hours.
+CLC instances collect usage metrics over a 24-hour period and send phone home data every 24 hours.
 
 == What is sent in?
 
@@ -13,7 +13,7 @@ CLC instances collects usage metrics for 24 hours span and sends phone home data
 - Acquisition source (e.g Docker, Management Center)
 - Connected Hazelcast Cluster ID
 - Connected Viridian Cluster ID
-- Number of command runs spanned in 24 hours
+- Number of times commands are run. Command runs are stored separately for each command type.
 - Number of created CLC configurations
 
 == Disabling Phone Homes
