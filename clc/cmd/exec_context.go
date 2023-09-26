@@ -146,6 +146,8 @@ func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInt
 	ec.pauseSpinner()
 	cfg, err := ec.cp.ClientConfig(ctx, ec)
 	if err != nil {
+		// unpausing here, since can't use defer
+		ec.unpauseSpinner()
 		return nil, err
 	}
 	ec.unpauseSpinner()
