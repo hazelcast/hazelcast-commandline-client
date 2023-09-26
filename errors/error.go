@@ -21,7 +21,7 @@ import (
 )
 
 var (
-	ErrUserCancelled   = errors.New("cancelled")
+	ErrUserCancelled   = errors.New("canceled")
 	ErrNotDecoded      = errors.New("not decoded")
 	ErrNotAvailable    = errors.New("not available")
 	ErrNoClusterConfig = errors.New("no configuration was specified")
