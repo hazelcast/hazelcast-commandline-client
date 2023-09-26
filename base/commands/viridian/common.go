@@ -3,11 +3,9 @@
 package viridian
 
 import (
-	"archive/zip"
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -15,12 +13,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/secrets"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/types"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
@@ -31,7 +28,7 @@ const (
 
 var (
 	ErrClusterFailed  = errors.New("cluster failed")
-	ErrLoadingSecrets = errors.New("could not load Viridian secrets, did you login?")
+	ErrLoadingSecrets = errors.New("could not load Viridian secrets, did you retrieve the access token using the login command?")
 )
 
 func findTokenPath(apiKey string) (string, error) {
@@ -135,83 +132,16 @@ func waitClusterState(ctx context.Context, ec plug.ExecContext, api *viridian.AP
 }
 
 func tryImportConfig(ctx context.Context, ec plug.ExecContext, api *viridian.API, clusterID, cfgName string) (configPath string, err error) {
-	cpv, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText("Importing configuration")
-		zipPath, stop, err := api.DownloadConfig(ctx, clusterID, "python")
-		if err != nil {
-			return nil, err
-		}
-		defer stop()
-		cfgPath, err := config.CreateFromZip(ctx, ec, cfgName, zipPath)
-		if err != nil {
-			return nil, err
-		}
-		cfgDir, _ := filepath.Split(cfgPath)
-		// import the Java/.Net certificates
-		zipPath, stop, err = api.DownloadConfig(ctx, clusterID, "java")
-		if err != nil {
-			return nil, err
-		}
-		defer stop()
-		fns := types.NewSet("client.keystore", "client.pfx", "client.truststore")
-		imp, err := importFileFromZip(ctx, ec, fns, zipPath, cfgDir)
-		if err != nil {
-			return nil, err
-		}
-		if imp.Len() != fns.Len() {
-			ec.Logger().Warn("Could not import all artifacts")
-		}
-		return cfgPath, nil
-	})
+	return importConfig(ctx, ec, api, clusterID, cfgName, "clc", config.CreateFromZip)
+}
+
+func importConfig(ctx context.Context, ec plug.ExecContext, api *viridian.API, clusterID, cfgName, language string, f func(context.Context, string, string, log.Logger) (string, error)) (configPath string, err error) {
+	zipPath, stop, err := api.DownloadConfig(ctx, clusterID, language)
 	if err != nil {
 		return "", err
 	}
-	stop()
-	cp := cpv.(string)
-	ec.Logger().Info("Imported configuration %s and saved to %s", cfgName, cp)
-	ec.PrintlnUnnecessary(fmt.Sprintf("OK Imported configuration %s", cfgName))
-	return cp, nil
-}
-
-// importFileFromZip extracts files matching selectPaths to targetDir
-// Note that this function assumes a Viridian sample zip file.
-func importFileFromZip(ctx context.Context, ec plug.ExecContext, selectPaths *types.Set[string], zipPath, targetDir string) (imported *types.Set[string], err error) {
-	s := types.NewSet[string]()
-	zr, err := zip.OpenReader(zipPath)
-	if err != nil {
-		return nil, err
-	}
-	defer zr.Close()
-	for _, rf := range zr.File {
-		if ctx.Err() != nil {
-			return nil, ctx.Err()
-		}
-		_, fn := filepath.Split(rf.Name)
-		if selectPaths.Has(fn) {
-			if err := copyZipFile(rf, paths.Join(targetDir, fn)); err != nil {
-				ec.Logger().Error(fmt.Errorf("extracting file: %w", err))
-				continue
-			}
-			s.Add(fn)
-		}
-	}
-	return s, nil
-}
-
-func copyZipFile(file *zip.File, path string) error {
-	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
-	if err != nil {
-		return err
-	}
-	r, err := file.Open()
-	if err != nil {
-		return err
-	}
-	defer r.Close()
-	if _, err = io.Copy(f, r); err != nil {
-		return err
-	}
-	return nil
+	defer stop()
+	return f(ctx, cfgName, zipPath, ec.Logger())
 }
 
 func matchClusterState(cluster viridian.Cluster, state string) (bool, error) {
@@ -243,4 +173,11 @@ func fixClusterState(state string) string {
 	state = strings.Replace(state, "STOPPED", "PAUSED", 1)
 	state = strings.Replace(state, "STOP", "PAUSE", 1)
 	return state
+}
+
+func ClusterType(isDev bool) string {
+	if isDev {
+		return "Development"
+	}
+	return "Production"
 }

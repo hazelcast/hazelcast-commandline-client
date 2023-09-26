@@ -1,5 +1,5 @@
-= Get Started With the Hazelcast CLC
-:description: In this tutorial, you'll learn how to use Hazelcast CLC commands to authenticate with Hazelcast {hazelcast-cloud} and create two production clusters. You'll connect to and switch between clusters from the command line. Finally, you'll perform some basic operations on a cluster from both the command line and by running a script to automate the same actions.
+= Get Started with the Hazelcast CLC
+:description: In this tutorial, you'll learn how to use Hazelcast CLC commands to authenticate with Hazelcast {hazelcast-cloud} and create two production clusters. You'll connect to and switch between the clusters from the command line. Finally, you'll perform some basic operations on a cluster from both the command line and by running a script to automate the same actions.
 
 {description}
 
@@ -8,13 +8,14 @@
 You need the following:
 
 - xref:install-clc.adoc[Hazelcast CLC] installed on your local machine.
+- xref:cloud:ROOT:create-account.adoc[{hazelcast-cloud} account]
 - xref:cloud:ROOT:developer.adoc[{hazelcast-cloud} API key and secret]
 
 == Step 1. Authenticating with {hazelcast-cloud}
 
 To allow the Hazelcast CLC to to interact with {hazelcast-cloud} clusters, you must generate a {hazelcast-cloud} token.
 
-. Execute the following command to retrieve the {hazelcast-cloud} token.
+. Execute the following command to retrieve the token.
 +
 [source,shell]
 ----
@@ -23,7 +24,7 @@ clc viridian login
 
 . When prompted, enter your API key and secret. If both are correct, the token is retrieved and saved.
 
-== Step 2. Create Two {hazelcast-cloud} Clusters
+== Step 2. Create Two Clusters on {hazelcast-cloud}
 
 In this step, you'll create two production clusters called Test1 and Test2 from the command line, and run some commands to check their status.
 
@@ -51,7 +52,7 @@ clc viridian create-cluster --name Test2
 clc viridian list-clusters
 ----
 +
-The details of all clusters linked to your Hazelcast {hazelcast-cloud} account are returned, including the Cluster ID, Cluster Name, Current Status, Hazelcast Version.
+The details of all clusters linked to your {hazelcast-cloud} account are returned, including the Cluster ID, Cluster Name, Current Status, Hazelcast Version.
 
 
 [[step-2-prod-configure]]
@@ -202,7 +203,7 @@ SELECT * FROM currencydata ORDER BY Code;
 
 [tabs] 
 ==== 
-Linux and MacOS::
+Linux and macOS::
 + 
 --
 . To run the script on your Test1 cluster, execute the following command.

@@ -8,7 +8,7 @@
 |Environment Variable|Description|Default
 
 |CLC_CLIENT_LABELS
-|Sets the client labels. The labels must be separated by commas. This value is used in {hazelcast-cloud} and Management Center. See xref:{page-latest-supported-mc}@management-center:clusters:clients.adoc[the Management Center documentation] for more information.
+|Sets the client labels. The labels must be separated by commas. This value is used in {hazelcast-cloud} and Management Center. See xref:{page-latest-supported-mc}@management-center:clusters:clients.adoc[Management Center documentation] for more information.
 |`CLC,USER@HOST-TIMESTAMP`
 
 |CLC_CLIENT_NAME
@@ -61,6 +61,10 @@ The following environment variables are experimental and may be removed in a fut
 
 |NO_COLOR
 |Disables color output if set to `1`.
+|`0` (false)
+
+|CLC_SKIP_UPDATE_CHECK
+|Disables checking new version of CLC.
 |`0` (false)
 
 |===

@@ -3,6 +3,7 @@
 package project
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -11,11 +12,10 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/str"
 )
 
 func loadFromDefaults(templateDir string) (map[string]string, error) {
@@ -38,18 +38,11 @@ func loadFromDefaults(templateDir string) (map[string]string, error) {
 }
 
 func updatePropsWithUserValues(ec plug.ExecContext, props map[string]string) error {
-	for _, arg := range ec.Args() {
-		k, v := str.ParseKeyValue(arg)
-		if k == "" {
-			continue
+	for _, kv := range ec.GetKeyValuesArg(argPlaceholder) {
+		if !regexpValidKey.MatchString(kv.Key) {
+			return fmt.Errorf("invalid key: %s, only letters and numbers are allowed", kv.Key)
 		}
-		if !regexpValidKey.MatchString(k) {
-			return fmt.Errorf("invalid key: %s, only letters and numbers are allowed", k)
-		}
-		if k == "" {
-			return fmt.Errorf("blank keys are not allowed")
-		}
-		props[k] = v
+		props[kv.Key] = kv.Value
 	}
 	return nil
 }
@@ -103,11 +96,11 @@ func parseYAML(prefix string, yamlFile []byte, result map[string]string) error {
 		case string:
 			(result)[fullKey] = val
 		default:
-			if _, isMap := val.(map[any]any); !isMap {
+			if _, isMap := val.(map[string]any); !isMap {
 				(result)[fullKey] = fmt.Sprintf("%v", val)
 			}
 		}
-		if subMap, isMap := v.(map[any]any); isMap {
+		if subMap, isMap := v.(map[string]any); isMap {
 			err = parseYAML(fullKey, marshalYAML(subMap), result)
 			if err != nil {
 				return err
@@ -124,14 +117,15 @@ func joinKeys(prefix, key string) string {
 	return prefix + "." + key
 }
 
-func marshalYAML(m map[any]any) []byte {
+func marshalYAML(m map[string]any) []byte {
 	d, _ := yaml.Marshal(m)
 	return d
 }
 
-func cloneTemplate(baseDir string, name string) error {
+func cloneTemplate(ctx context.Context, baseDir, name string) error {
 	u := templateRepoURL(name)
-	_, err := git.PlainClone(filepath.Join(baseDir, name), false, &git.CloneOptions{
+	path := filepath.Join(baseDir, name)
+	_, err := git.PlainCloneContext(ctx, path, false, &git.CloneOptions{
 		URL:      u,
 		Progress: nil,
 		Depth:    1,
@@ -145,11 +139,40 @@ func cloneTemplate(baseDir string, name string) error {
 	return nil
 }
 
-func templateRepoURL(templateName string) string {
+func updateTemplate(ctx context.Context, baseDir, name string) error {
+	path := filepath.Join(baseDir, name)
+	r, err := git.PlainOpen(path)
+	if err != nil {
+		return fmt.Errorf("opening local git repository: %w", err)
+	}
+	wt, err := r.Worktree()
+	if err != nil {
+		return fmt.Errorf("opening work tree: %w", err)
+	}
+	opts := &git.PullOptions{
+		SingleBranch: true,
+		Depth:        1,
+		Progress:     nil,
+		Force:        true,
+	}
+	if err = wt.PullContext(ctx, opts); err != nil {
+		if !errors.Is(err, git.NoErrAlreadyUpToDate) {
+			return err
+		}
+	}
+	return nil
+}
+
+func templateOrgURL() string {
 	u := os.Getenv(envTemplateSource)
 	if u == "" {
 		u = hzTemplatesOrganization
 	}
+	return u
+}
+
+func templateRepoURL(templateName string) string {
+	u := templateOrgURL()
 	u = strings.TrimSuffix(u, "/")
 	return fmt.Sprintf("%s/%s", u, templateName)
 }

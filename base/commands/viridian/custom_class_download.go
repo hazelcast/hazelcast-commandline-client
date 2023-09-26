@@ -7,38 +7,42 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/errors"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/prompt"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
 const flagOutputPath = "output-path"
 
-type CustomClassDownloadCmd struct{}
+type CustomClassDownloadCommand struct{}
 
-func (cmd CustomClassDownloadCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("download-custom-class [cluster-name/cluster-ID] [file-name/artifact-ID] [flags]")
+func (CustomClassDownloadCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("download-custom-class")
 	long := `Downloads a custom class from the given Viridian cluster.
 
 Make sure you login before running this command.
 `
 	short := "Downloads a custom class from the given Viridian cluster."
 	cc.SetCommandHelp(long, short)
-	cc.SetPositionalArgCount(2, 2)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	cc.AddStringFlag(flagOutputPath, "o", "", false, "download path")
+	cc.AddBoolFlag(clc.FlagAutoYes, "", false, false, "skip confirming overwrite")
+	cc.AddStringArg(argClusterID, argTitleClusterID)
+	cc.AddStringArg(argArtifactID, argTitleArtifactID)
 	return nil
 }
 
-func (cmd CustomClassDownloadCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (CustomClassDownloadCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	api, err := getAPI(ec)
 	if err != nil {
 		return err
 	}
 	// inputs
-	clusterName := ec.Args()[0]
-	artifact := ec.Args()[1]
+	clusterName := ec.GetStringArg(argClusterID)
+	artifact := ec.GetStringArg(argArtifactID)
 	target := ec.Props().GetString(flagOutputPath)
 	// extract target info
 	t, err := viridian.CreateTargetInfo(target)
@@ -72,10 +76,17 @@ func (cmd CustomClassDownloadCmd) Exec(ctx context.Context, ec plug.ExecContext)
 		return handleErrorResponse(ec, err)
 	}
 	stop()
-	ec.PrintlnUnnecessary("Custom class was downloaded.")
-	return nil
+	ec.PrintlnUnnecessary("OK Custom class was saved.\n")
+	return ec.AddOutputRows(ctx, output.Row{
+		output.Column{
+			Name: "Path",
+			Type: serialization.TypeString,
+			// TODO: t.Path should not have / as the suffix
+			Value: t.Path + t.FileName,
+		},
+	})
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("viridian:download-custom-class", &CustomClassDownloadCmd{}))
+	check.Must(plug.Registry.RegisterCommand("viridian:download-custom-class", &CustomClassDownloadCommand{}))
 }

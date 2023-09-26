@@ -12,10 +12,11 @@ clc project [command] [flags]
 == Commands
 
 * <<clc-project-create, clc project create>>
+* <<clc-project-list-templates, clc project list-templates>>
 
 == clc project create
 
-Creates project from the given template.
+Creates a project from the given template.
 
 Usage:
 
@@ -53,7 +54,7 @@ Templates are located in https://github.com/hazelcast-templates. You can overrid
 
 ==== Rules while creating your own templates:
 
-* Templates are in link:.https://pkg.go.dev/text/template[Go template] format.
+* Templates are in link:https://pkg.go.dev/text/template[Go template] format.
 * You can create a "defaults.yaml" file for default values in template's root directory.
 * Template files must have the ".template" extension.
 * Files with "." and "_" prefixes are ignored unless they have the ".keep" extension.
@@ -82,7 +83,7 @@ You can use the placeholders in "defaults.yaml" and the following configuration 
 * log_path
 * log_level
 
-Example (Linux and MacOS):
+Example (Linux and macOS):
 
 [source,bash]
 ----
@@ -100,4 +101,42 @@ clc project create^
 simple-streaming-pipeline^
 --output-dir my-project^
 my_key1=my_value1 my_key2=my_value2
+----
+
+== clc project list-templates
+
+Lists templates that can be used while creating projects.
+
+Usage:
+
+[source,bash]
+----
+clc project list-templates [flags]
+----
+
+Parameters:
+
+[cols="1m,1a,2a,1a"]
+|===
+|Parameter|Required|Description|Default
+
+|--local
+|false
+|When enabled, it only lists templates that exist in `<clc_home>/templates`
+|
+
+|--force
+|false
+|Templates are fetched and cached in a local data store. iIf you want to force CLC to fetch the latest templates from the remote repositories, you should set this parameter.
+|
+
+|===
+
+WARNING: --force and --local parameters cannot be set at the same time, because they serve for different purposes. --force is used for templates in remote repositories, while --local is used to list templates in local environment.
+
+Example:
+
+[source,bash]
+----
+clc project list-templates
 ----

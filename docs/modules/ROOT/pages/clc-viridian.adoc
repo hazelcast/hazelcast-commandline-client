@@ -1,6 +1,6 @@
 = clc viridian
 
-This command group provides commands for doing various {hazelcast-cloud} operations, such as creating and managing clusters.
+This command group provides commands for doing various operations on Hazelcast {hazelcast-cloud}, such as creating and managing clusters.
 
 All commands except `viridian login` require the generation of a token using an API key and secret, which you can retrieve from the {hazelcast-cloud} console. Running `viridian login` prompts you for this information, and creates and saves the token.
 
@@ -14,7 +14,6 @@ clc viridian [command] [options]
 == Commands
 
 * <<clc-viridian-login, clc viridian login>>
-* <<clc-viridian-list-cluster-types, clc viridian list-cluster-types>>
 * <<clc-viridian-create-cluster, clc viridian create-cluster>>
 * <<clc-viridian-get-cluster, clc viridian get-cluster>>
 * <<clc-viridian-list-clusters, clc viridian list-clusters>>
@@ -65,32 +64,6 @@ Parameters:
 
 |===
 
-== clc viridian list-cluster-types
-
-Lists available cluster types that can be used while creating a {hazelcast-cloud} cluster.
-
-Make sure you authenticate with the {hazelcast-cloud} API using `viridian login` before running this command.
-
-Usage:
-
-[source,bash]
-----
-clc viridian list-cluster-types [flags]
-----
-
-Parameters:
-
-[cols="1m,1a,2a,1a"]
-|===
-|Parameter|Required|Description|Default
-
-|`--api-key`
-|Optional
-|Sets the API key. Overrides the `CLC_VIRIDIAN_API_KEY` environment variable. If not given, one of the existing API keys will be used.
-|
-
-|===
-
 == clc viridian create-cluster
 
 Creates a {hazelcast-cloud} cluster.
@@ -120,9 +93,14 @@ Parameters:
 |Sets the name of the created cluster. If not given, an auto-generated name will be used.
 |
 
-|`--cluster-type`
+|`--development`
 |Optional
-|Sets the cluster-type for the created cluster.
+|Creates a development cluster.
+|
+
+|`--prerelease`
+|Optional
+|Creates the cluster with a prerelease image.
 |
 
 |===
@@ -233,7 +211,7 @@ Parameters:
 
 == clc viridian delete-cluster
 
-Deletes the given {hazelcast-cloud} cluster. Note that, all data in the cluster is deleted irreversibly.
+Deletes the given {hazelcast-cloud} cluster. All data in the cluster is deleted irreversibly.
 
 Make sure you authenticate to the {hazelcast-cloud} API using `viridian login` before running this command.
 
@@ -333,7 +311,7 @@ Parameters:
 
 == clc viridian import-config
 
-Imports connection configuration of the given {hazelcast-cloud} cluster.
+Imports the connection configuration of the given {hazelcast-cloud} cluster.
 
 Make sure you authenticate to the {hazelcast-cloud} API using `viridian login` before running this command.
 

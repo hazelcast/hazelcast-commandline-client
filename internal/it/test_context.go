@@ -30,7 +30,7 @@ import (
 	"time"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
@@ -169,6 +169,12 @@ func (tcx TestContext) Tester(f func(tcx TestContext)) {
 				d, _ := filepath.Split(p)
 				check.Must(os.MkdirAll(d, 0700))
 				home.WithFile(p, bytesConfig, func(_ string) {
+					if tcx.LogPath == "" {
+						tcx.LogPath = paths.ResolveLogPath("test")
+					}
+					if tcx.LogLevel == "" {
+						tcx.LogLevel = "info"
+					}
 					tcx.main = check.MustValue(tcx.createMain())
 					tcx.T.Logf("created CLC main")
 					defer func() {
@@ -260,9 +266,9 @@ func (tcx TestContext) AssertStdoutDollar(text string) {
 
 func (tcx TestContext) AssertJSONStdoutHasRowWithFields(fields ...string) map[string]any {
 	stdout := tcx.ExpectStdout.String()
+	tcx.T.Log("STDOUT:", stdout)
 	var m map[string]any
 	check.Must(json.Unmarshal([]byte(stdout), &m))
-	tcx.T.Log("STDOUT:", stdout)
 	if len(fields) != len(m) {
 		tcx.T.Fatalf("stdout does not have the same number fields as %v", fields)
 	}

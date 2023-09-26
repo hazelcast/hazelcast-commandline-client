@@ -203,7 +203,7 @@ Parameters:
 
 == clc job export-snapshot
 
-Exports a snapshot from a Jet job. Note that this feature requires Viridian or Hazelcast Enterprise.
+Exports a snapshot from a Jet job. This feature requires Hazelcast {hazelcast-cloud} or Hazelcast Enterprise.
 
 Usage:
 

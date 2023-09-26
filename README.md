@@ -2,33 +2,40 @@
 
 ## Installation
 
-We provide binaries for the popular platforms at our [Releases](https://github.com/hazelcast/hazelcast-commandline-client/releases) page.
-In order to install CLC:
-
-* Download the release package for your platform,
-* Extract it,
-* Optionally move the `clc` binary to somewhere in your *PATH*, so it can be run in any terminal without additional settings.
-
 Currently we provide precompiled binaries of CLC for the following platforms and architectures:
 
 * Linux/amd64
 * Windows/amd64
-* MacOS/amd64
-* MacOS/arm64
+* macOS/amd64
+* macOS/arm64
 
-Additionally, we provide an installer for Windows 10 and up.
-The installer can install CLC for either system-wide or just for the user.
-It adds the `clc` binary automatically to the `$PATH`, so it can be run in any terminal without additional settings.
+### Linux / macOS
 
-On MacOS, you may need to remove the CLC binary from quarantine, if you get a security warning:
+You can run the following command to install the latest stable CLC on a computer running Linux x64 or macOS 10.15 (Catalina) x64/ARM 64 (M1/M2):
+```
+curl -sL https://raw.githubusercontent.com/hazelcast/hazelcast-commandline-client/main/extras/unix/install.sh | bash
+```
+
+On macOS, binaries downloaded outside of AppStore require your intervention to run.
+The install script automatically handles this, but if you downloaded a release package you can do it manually:
 ```
 $ xattr -d com.apple.quarantine CLC_FOLDER/clc
 ```
 Use the correct path instead of `CLC_FOLDER` in the command above.
 
+### Windows
+
+We provide an installer for Windows 10 and up.
+The installer can install CLC either system-wide or just for the user.
+It adds the `clc` binary automatically to the `$PATH`, so it can be run in any terminal without additional settings.
+
+Check out our [Releases](https://github.com/hazelcast/hazelcast-commandline-client/releases/latest) page for the download.
+
+### Building from Source
+
 If your platform is not one of the above, you may want to compile CLC yourself. Our build process is very simple and doesn't have many dependencies.
-In most cases just running `make` is sufficient to build CLC if you have the latest [Go](https://go.dev/) compiler installed.
-See [Building from source](#building-from-source) section.
+In most cases, running `make` is sufficient to build CLC if you have the latest [Go](https://go.dev/) compiler and GNU make installed.
+See [Building from source](#building-from-source) section for detailed instructions.
 
 ## Usage Summary
 
@@ -51,14 +58,6 @@ This file can exist anywhere in the file system, and can be used with the `--con
 $ clc -c test/config.yaml
 ```
 
-If there is a `config.yaml` in the same directory with the CLC binary and the configuration was not explicitly set, CLC tries to load that configuration file:
-```
-$ ls -lh
-total 17M
--rwxrwxr-x 1 yuce yuce  17M Nov 26 23:11 clc*
--rw------- 1 yuce yuce  200 Nov 26 23:12 config.yaml
-```
-
 `configs` directory in `$CLC_HOME` is special, it contains all the configurations known to CLC.
 Known configurations can be directly specified by their names, instead of the full path.
 `clc config list` command lists the configurations known to CLC:
@@ -73,6 +72,9 @@ $ clc -c pr-3066
 ```
 
 If no configuration is specified, the `default` configuration is used if it exists.
+The name of the default configuration may be overriden using the `CLC_CONFIG` environment variable.
+
+If there's only a single named configuration, then it is used if the configuration is not specified with `-c`/`--config`.
 
 #### Configuration format
 
@@ -202,14 +204,14 @@ The following targets are tested and supported.
 The prior versions of the given targets would also work, but that's not tested. 
 
 * Ubuntu 22.04 or better.
-* MacOS 12 or better.
+* macOS 15 or better.
 * Windows 10 or better.
 
 ### Requirements
 
-* Go 1.19 or better
+* Go 1.21 or better
 * Git
-* GNU Make (on Linux and MacOS)
+* GNU Make (on Linux and macOS)
 * Command Prompt or Powershell (on Windows) 
 * go-winres: https://github.com/tc-hib/go-winres (on Windows)
  
@@ -236,7 +238,7 @@ The `clc` or `clc.exe` binary is created in the `build` directory.
 
 CLC starts the in interactive mode by default.
 
-On Linux and MacOS:
+On Linux and macOS:
 ```
 ./build/clc
 ```

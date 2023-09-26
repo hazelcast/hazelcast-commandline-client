@@ -29,6 +29,7 @@ func TestGenerateData(t *testing.T) {
 }
 
 func generateData_WikipediaTest(t *testing.T) {
+	it.MarkFlaky(t, "https://github.com/hazelcast/hazelcast-commandline-client/issues/350")
 	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
 		t := tcx.T
 		ctx := context.Background()
@@ -50,6 +51,19 @@ func generateData_Wikipedia_MaxValues_Test(t *testing.T) {
 			tcx.CLCExecute(ctx, "demo", "generate-data", "wikipedia-event-stream", "map="+m.Name(), fmt.Sprintf("--max-values=%d", count))
 			size := check.MustValue(m.Size(context.Background()))
 			require.Equal(t, count, size)
+		})
+	})
+}
+
+func TestMapSetMany(t *testing.T) {
+	it.MapTester(t, func(tcx it.TestContext, m *hz.Map) {
+		t := tcx.T
+		ctx := context.Background()
+		count := 10
+		tcx.WithReset(func() {
+			tcx.CLCExecute(ctx, "demo", "map-setmany", "10", "--name", m.Name(), "--size", "1")
+			require.Equal(t, count, check.MustValue(m.Size(context.Background())))
+			require.Equal(t, "a", check.MustValue(m.Get(ctx, "k1")))
 		})
 	})
 }

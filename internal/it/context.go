@@ -14,6 +14,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/terminal"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/types"
 )
 
 type CommandContext struct {
@@ -23,24 +24,40 @@ type CommandContext struct {
 	IsInteractive bool
 }
 
+func (c CommandContext) AddKeyValueSliceArg(key, title string, min, max int) {
+	panic("implement me")
+}
+
+func (c CommandContext) AddStringArg(key, title string) {
+	panic("implement me")
+}
+
+func (c CommandContext) AddStringSliceArg(key, title string, min, max int) {
+	panic("implement me")
+}
+
+func (c CommandContext) AddInt64Arg(key, title string) {
+	panic("implement me")
+}
+
 func (c CommandContext) AddStringFlag(long, short, value string, required bool, help string) {
-	//TODO implement me
+	panic("implement me")
 }
 
 func (c CommandContext) AddBoolFlag(long, short string, value bool, required bool, help string) {
-	//TODO implement me
+	panic("implement me")
 }
 
 func (c CommandContext) AddIntFlag(long, short string, value int64, required bool, help string) {
-	//TODO implement me
+	panic("implement me")
 }
 
 func (c CommandContext) SetPositionalArgCount(min, max int) {
-	//TODO implement me
+	panic("implement me")
 }
 
 func (c CommandContext) Hide() {
-	//TODO implement me
+	panic("implement me")
 }
 
 func (c CommandContext) Interactive() bool {
@@ -57,44 +74,52 @@ func (c *CommandContext) SetCommandUsage(usage string) {
 }
 
 func (c CommandContext) AddCommandGroup(id, title string) {
-	//TODO implement me
+	panic("implement me")
 }
 
 func (c CommandContext) SetCommandGroup(id string) {
-	//TODO implement me
+	panic("implement me")
 }
 
 func (c CommandContext) AddStringConfig(name, value, flag string, help string) {
-	//TODO implement me
+	panic("implement me")
 }
 
 func (c CommandContext) SetTopLevel(b bool) {
-	//TODO implement me
+	panic("implement me")
 }
 
 type ExecContext struct {
-	lg     *Logger
-	stdout *bytes.Buffer
-	stderr *bytes.Buffer
-	stdin  *bytes.Buffer
-	args   []string
-	props  *plug.Properties
-	Rows   []output.Row
+	lg      *Logger
+	stdout  *bytes.Buffer
+	stderr  *bytes.Buffer
+	stdin   *bytes.Buffer
+	args    []string
+	props   *plug.Properties
+	Rows    []output.Row
+	Spinner *Spinner
 }
 
 func NewExecuteContext(args []string) *ExecContext {
 	return &ExecContext{
-		lg:     NewLogger(),
-		stdout: &bytes.Buffer{},
-		stderr: &bytes.Buffer{},
-		stdin:  &bytes.Buffer{},
-		args:   args,
-		props:  plug.NewProperties(),
+		lg:      NewLogger(),
+		stdout:  &bytes.Buffer{},
+		stderr:  &bytes.Buffer{},
+		stdin:   &bytes.Buffer{},
+		args:    args,
+		props:   plug.NewProperties(),
+		Spinner: NewSpinner(),
 	}
 }
-func (ec *ExecContext) ExecuteBlocking(context.Context, func(context.Context, clc.Spinner) (any, error)) (any, context.CancelFunc, error) {
-	//TODO implement me
+
+func (ec *ExecContext) GetKeyValuesArg(key string) types.KeyValues[string, string] {
 	panic("implement me")
+}
+
+func (ec *ExecContext) ExecuteBlocking(ctx context.Context, f func(context.Context, clc.Spinner) (any, error)) (any, context.CancelFunc, error) {
+	v, err := f(ctx, ec.Spinner)
+	stop := func() {}
+	return v, stop, err
 }
 
 func (ec *ExecContext) Props() plug.ReadOnlyProperties {
@@ -102,7 +127,6 @@ func (ec *ExecContext) Props() plug.ReadOnlyProperties {
 }
 
 func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInternal, error) {
-	//TODO implement me
 	panic("implement me")
 }
 
@@ -111,7 +135,6 @@ func (ec *ExecContext) Interactive() bool {
 }
 
 func (ec *ExecContext) AddOutputStream(ctx context.Context, ch <-chan output.Row) error {
-	//TODO implement me
 	panic("implement me")
 }
 
@@ -140,13 +163,16 @@ func (ec *ExecContext) Args() []string {
 	return ec.args
 }
 
-func (ec *ExecContext) ShowHelpAndExit() {
+func (ec *ExecContext) ConfigPath() string {
 	//TODO implement me
 	panic("implement me")
 }
 
+func (ec *ExecContext) ShowHelpAndExit() {
+	panic("implement me")
+}
+
 func (ec *ExecContext) CommandName() string {
-	//TODO implement me
 	panic("implement me")
 }
 
@@ -184,6 +210,40 @@ func (ec *ExecContext) PrintlnUnnecessary(text string) {
 	}
 }
 
+func (ec *ExecContext) GetStringArg(key string) string {
+	panic("implement me")
+}
+
+func (ec *ExecContext) GetStringSliceArg(key string) []string {
+	panic("implement me")
+}
+
+func (ec *ExecContext) GetInt64Arg(key string) int64 {
+	panic("implement me")
+}
+
 func (ec *ExecContext) WrapResult(f func() error) error {
 	return f()
+}
+
+type Spinner struct {
+	Texts      []string
+	Progresses []float32
+}
+
+func NewSpinner() *Spinner {
+	return &Spinner{}
+}
+
+func (s *Spinner) Reset() {
+	s.Texts = nil
+	s.Progresses = nil
+}
+
+func (s *Spinner) SetText(text string) {
+	s.Texts = append(s.Texts, text)
+}
+
+func (s *Spinner) SetProgress(progress float32) {
+	s.Progresses = append(s.Progresses, progress)
 }

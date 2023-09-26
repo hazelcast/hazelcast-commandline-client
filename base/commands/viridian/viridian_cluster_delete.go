@@ -4,32 +4,35 @@ package viridian
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	"github.com/hazelcast/hazelcast-commandline-client/errors"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/prompt"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
-type ClusterDeleteCmd struct{}
+type ClusterDeleteCommand struct{}
 
-func (cm ClusterDeleteCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("delete-cluster [cluster-ID/name] [flags]")
+func (ClusterDeleteCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("delete-cluster")
 	long := `Deletes the given Viridian cluster.
 
 Make sure you login before running this command.
 `
 	short := "Deletes the given Viridian cluster"
 	cc.SetCommandHelp(long, short)
-	cc.SetPositionalArgCount(1, 1)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	cc.AddBoolFlag(clc.FlagAutoYes, "", false, false, "skip confirming the delete operation")
+	cc.AddStringArg(argClusterID, argTitleClusterID)
 	return nil
 }
 
-func (cm ClusterDeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (ClusterDeleteCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	api, err := getAPI(ec)
 	if err != nil {
 		return err
@@ -46,23 +49,41 @@ func (cm ClusterDeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 			return errors.ErrUserCancelled
 		}
 	}
-	clusterNameOrID := ec.Args()[0]
-	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText("Deleting the cluster")
-		err := api.DeleteCluster(ctx, clusterNameOrID)
-		if err != nil {
-			return nil, err
-		}
-		return nil, nil
-	})
+	nameOrID := ec.GetStringArg(argClusterID)
+	st := stage.Stage[viridian.Cluster]{
+		ProgressMsg: "Initiating cluster deletion",
+		SuccessMsg:  "Inititated cluster deletion",
+		FailureMsg:  "Failed to inititate cluster deletion",
+		Func: func(ctx context.Context, status stage.Statuser[viridian.Cluster]) (viridian.Cluster, error) {
+			cluster, err := api.DeleteCluster(ctx, nameOrID)
+			if err != nil {
+				return cluster, err
+			}
+			return cluster, nil
+		},
+	}
+	cluster, err := stage.Execute(ctx, ec, viridian.Cluster{}, stage.NewFixedProvider(st))
 	if err != nil {
 		return handleErrorResponse(ec, err)
 	}
-	stop()
-	ec.PrintlnUnnecessary(fmt.Sprintf("Cluster %s was deleted.", clusterNameOrID))
-	return nil
+	ec.PrintlnUnnecessary("")
+	row := []output.Column{
+		{
+			Name:  "ID",
+			Type:  serialization.TypeString,
+			Value: cluster.ID,
+		},
+	}
+	if ec.Props().GetBool(clc.PropertyVerbose) {
+		row = append(row, output.Column{
+			Name:  "Name",
+			Type:  serialization.TypeString,
+			Value: cluster.Name,
+		})
+	}
+	return ec.AddOutputRows(ctx, row)
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("viridian:delete-cluster", &ClusterDeleteCmd{}))
+	check.Must(plug.Registry.RegisterCommand("viridian:delete-cluster", &ClusterDeleteCommand{}))
 }

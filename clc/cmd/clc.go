@@ -30,22 +30,30 @@ var (
 	MainCommandShortHelp = "Hazelcast CLC"
 )
 
+type Mode int
+
+const (
+	ModeNonInteractive Mode = iota
+	ModeInteractive
+	ModeScripting
+)
+
 type Main struct {
-	root          *cobra.Command
-	cmds          map[string]*cobra.Command
-	lg            *logger.Logger
-	stderr        io.WriteCloser
-	stdout        io.WriteCloser
-	stdin         io.Reader
-	isInteractive bool
-	outputFormat  string
-	configLoaded  bool
-	props         *plug.Properties
-	cc            *CommandContext
-	cp            config.Provider
-	arg0          string
-	ciMu          *sync.Mutex
-	ci            *atomic.Pointer[hazelcast.ClientInternal]
+	root         *cobra.Command
+	cmds         map[string]*cobra.Command
+	lg           *logger.Logger
+	stderr       io.WriteCloser
+	stdout       io.WriteCloser
+	stdin        io.Reader
+	mode         Mode
+	outputFormat string
+	configLoaded bool
+	props        *plug.Properties
+	cc           *CommandContext
+	cp           config.Provider
+	arg0         string
+	ciMu         *sync.Mutex
+	ci           *atomic.Pointer[hazelcast.ClientInternal]
 }
 
 func NewMain(arg0, cfgPath string, cfgProvider config.Provider, logPath, logLevel string, sio clc.IO) (*Main, error) {
@@ -91,7 +99,7 @@ func NewMain(arg0, cfgPath string, cfgProvider config.Provider, logPath, logLeve
 	m.props.Set(clc.PropertyConfig, cfgPath)
 	m.props.Set(clc.PropertyLogPath, logPath)
 	m.props.Set(clc.PropertyLogLevel, logLevel)
-	m.cc = NewCommandContext(rc, cfgProvider, m.isInteractive)
+	m.cc = NewCommandContext(rc, cfgProvider, m.mode)
 	if err := m.runInitializers(m.cc); err != nil {
 		return nil, err
 	}
@@ -101,9 +109,9 @@ func NewMain(arg0, cfgPath string, cfgProvider config.Provider, logPath, logLeve
 	return m, nil
 }
 
-func (m *Main) Clone(interactive bool) (*Main, error) {
+func (m *Main) Clone(mode Mode) (*Main, error) {
 	mc := *m
-	mc.isInteractive = true
+	mc.mode = mode
 	rc := &cobra.Command{
 		SilenceErrors: true,
 	}
@@ -120,7 +128,7 @@ func (m *Main) Clone(interactive bool) (*Main, error) {
 		},
 	})
 	mc.cmds = map[string]*cobra.Command{}
-	mc.cc = NewCommandContext(rc, mc.cp, interactive)
+	mc.cc = NewCommandContext(rc, mc.cp, mode)
 	if err := mc.runInitializers(mc.cc); err != nil {
 		return nil, err
 	}
@@ -138,7 +146,7 @@ func (m *Main) Execute(ctx context.Context, args ...string) error {
 	var cm *cobra.Command
 	var cmdArgs []string
 	var err error
-	if !m.isInteractive {
+	if m.mode == ModeNonInteractive {
 		cm, cmdArgs, err = m.root.Find(args)
 		if err != nil {
 			return err
@@ -255,11 +263,11 @@ func (m *Main) createCommands() error {
 	for _, c := range plug.Registry.Commands() {
 		c := c
 		// check if current command available in current mode
-		if !plug.Registry.IsAvailable(m.isInteractive, c.Name) {
+		if !plug.Registry.IsAvailable(m.mode != ModeNonInteractive, c.Name) {
 			continue
 		}
 		// skip interactive commands in interactive mode
-		if m.isInteractive {
+		if m.mode == ModeInteractive {
 			if _, ok := c.Item.(plug.InteractiveCommander); ok {
 				continue
 			}
@@ -276,7 +284,7 @@ func (m *Main) createCommands() error {
 			p, ok := m.cmds[name]
 			if !ok {
 				p = &cobra.Command{
-					Use: fmt.Sprintf("%s [command] [flags]", ps[i-1]),
+					Use: fmt.Sprintf("%s {command} [flags]", ps[i-1]),
 				}
 				p.SetUsageTemplate(usageTemplate)
 				m.cmds[name] = p
@@ -286,11 +294,11 @@ func (m *Main) createCommands() error {
 		}
 		// current command
 		cmd := &cobra.Command{
-			Use:          ps[len(ps)-1],
+			Use:          fmt.Sprintf("%s {command} [flags]", ps[len(ps)-1]),
 			SilenceUsage: true,
 		}
 		cmd.SetUsageTemplate(usageTemplate)
-		cc := NewCommandContext(cmd, m.cp, m.isInteractive)
+		cc := NewCommandContext(cmd, m.cp, m.mode)
 		if ci, ok := c.Item.(plug.Initializer); ok {
 			if err := ci.Init(cc); err != nil {
 				if errors.Is(err, puberrors.ErrNotAvailable) {
@@ -299,12 +307,10 @@ func (m *Main) createCommands() error {
 				return fmt.Errorf("initializing command: %w", err)
 			}
 		}
-		// add the backslash prefix for top-level commands in the interactive mode
-		if m.isInteractive && parent == m.root {
-			cmd.Use = fmt.Sprintf("\\%s", cmd.Use)
-		}
 		addUniqueCommandGroup(cc, parent)
 		if !cc.TopLevel() {
+			cmd.Args = cc.ArgsFunc()
+			cmd.Use = cc.GetCommandUsage()
 			cmd.RunE = func(cmd *cobra.Command, args []string) error {
 				cfs := cmd.Flags()
 				props := m.props
@@ -320,13 +326,15 @@ func (m *Main) createCommands() error {
 					Stderr: m.stderr,
 					Stdout: m.stdout,
 				}
-				ec, err := NewExecContext(m.lg, sio, m.props, m.isInteractive)
+				ec, err := NewExecContext(m.lg, sio, m.props, m.mode)
 				if err != nil {
 					return err
 				}
 				ec.SetConfigProvider(m.cp)
 				ec.SetMain(m)
-				ec.SetArgs(args)
+				if err := ec.SetArgs(args, cc.argSpecs); err != nil {
+					return err
+				}
 				ec.SetCmd(cmd)
 				ctx := context.Background()
 				t, err := parseDuration(ec.Props().GetString(clc.PropertyTimeout))
@@ -341,27 +349,12 @@ func (m *Main) createCommands() error {
 				if err := m.runAugmentors(ec, props); err != nil {
 					return err
 				}
-				// to wrap or not to wrap
-				// that's the problem
-				if _, ok := c.Item.(plug.UnwrappableCommander); ok {
-					err = c.Item.Exec(ctx, ec)
-				} else {
-					err = ec.WrapResult(func() error {
-						return c.Item.Exec(ctx, ec)
-					})
-				}
-				if err != nil {
+				if err = c.Item.Exec(ctx, ec); err != nil {
 					return err
 				}
 				if ic, ok := c.Item.(plug.InteractiveCommander); ok {
-					ec.SetInteractive(true)
-					if _, ok := c.Item.(plug.UnwrappableCommander); ok {
-						err = ic.ExecInteractive(ctx, ec)
-					} else {
-						err = ec.WrapResult(func() error {
-							return ic.ExecInteractive(ctx, ec)
-						})
-					}
+					ec.SetMode(ModeInteractive)
+					err = ic.ExecInteractive(ctx, ec)
 					if errors.Is(err, puberrors.ErrNotAvailable) {
 						return nil
 					}
@@ -369,6 +362,10 @@ func (m *Main) createCommands() error {
 				}
 				return nil
 			}
+		}
+		// add the backslash prefix for top-level commands in the interactive mode
+		if m.mode != ModeNonInteractive && parent == m.root {
+			cmd.Use = fmt.Sprintf("\\%s", cmd.Use)
 		}
 		parent.AddCommand(cmd)
 		m.cmds[c.Name] = cmd

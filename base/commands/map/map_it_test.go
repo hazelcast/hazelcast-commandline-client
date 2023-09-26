@@ -154,7 +154,6 @@ func size_InteractiveTest(t *testing.T) {
 			tcx.WithReset(func() {
 				check.Must(m.Set(ctx, "foo", "bar"))
 				tcx.WriteStdin([]byte(fmt.Sprintf("\\map -n %s size\n", m.Name())))
-				tcx.AssertStderrContains("OK")
 				tcx.AssertStdoutDollarWithPath("testdata/map_size_1.txt")
 			})
 		})
@@ -190,20 +189,18 @@ func keySet_InteractiveTest(t *testing.T) {
 		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			tcx.WithReset(func() {
 				tcx.WriteStdin([]byte(fmt.Sprintf("\\map -n %s key-set\n", m.Name())))
-				tcx.AssertStdoutContains("No entries found.")
+				tcx.AssertStdoutContains("OK No keys found in Map")
 			})
 			// set an entry
 			tcx.WithReset(func() {
 				check.Must(m.Set(ctx, "foo", "bar"))
 				tcx.WriteStdin([]byte(fmt.Sprintf("\\map -n %s key-set\n", m.Name())))
-				tcx.AssertStderrContains("OK")
 				tcx.AssertStdoutDollarWithPath("testdata/map_key_set.txt")
 			})
 			// show type
 			tcx.WithReset(func() {
 				check.Must(m.Set(ctx, "foo", "bar"))
 				tcx.WriteStdin([]byte(fmt.Sprintf("\\map -n %s key-set --show-type\n", m.Name())))
-				tcx.AssertStderrContains("OK")
 				tcx.AssertStdoutDollarWithPath("testdata/map_key_set_show_type.txt")
 			})
 		})
@@ -259,13 +256,13 @@ func lock_InteractiveTest(t *testing.T) {
 		go tcx.WithShell(context.TODO(), func(tcx it.TestContext) {
 			tcx.WithReset(func() {
 				tcx.WriteStdinf(fmt.Sprintf("\\map -n %s lock %s\n", m.Name(), key))
-				tcx.AssertStderrContains("OK")
+				tcx.AssertStdoutContains("OK")
 				contUnlock <- true
 			})
 			tcx.WithReset(func() {
 				<-contLock
 				tcx.WriteStdinf(fmt.Sprintf("\\map -n %s unlock %s\n", m.Name(), key))
-				tcx.AssertStderrContains("OK")
+				tcx.AssertStdoutContains("OK")
 				contUnlock <- true
 			})
 		})
@@ -334,7 +331,7 @@ func loadAll_Replacing_NonInteractiveTest(t *testing.T) {
 			check.Must(m.PutTransient(context.Background(), "k0", "new-v0"))
 			check.Must(m.PutTransient(context.Background(), "k1", "new-v1"))
 			check.Must(tcx.CLC().Execute(ctx, "map", "-n", m.Name(), "load-all", "--replace"))
-			tcx.AssertStderrContains("OK")
+			tcx.AssertStdoutContains("OK")
 			require.Equal(t, "v0", check.MustValue(m.Get(ctx, "k0")))
 			require.Equal(t, "v1", check.MustValue(m.Get(ctx, "k1")))
 		})
@@ -353,7 +350,7 @@ func loadAll_NonReplacing_NonInteractiveTest(t *testing.T) {
 			check.Must(m.PutTransient(context.Background(), "k0", "new-v0"))
 			check.Must(m.PutTransient(context.Background(), "k1", "new-v1"))
 			check.Must(tcx.CLC().Execute(ctx, "map", "-n", m.Name(), "load-all"))
-			tcx.AssertStderrContains("OK")
+			tcx.AssertStdoutContains("OK")
 			require.Equal(t, "new-v0", check.MustValue(m.Get(ctx, "k0")))
 			require.Equal(t, "new-v1", check.MustValue(m.Get(ctx, "k1")))
 		})
@@ -372,7 +369,7 @@ func loadAll_Replacing_WithKeys_NonInteractiveTest(t *testing.T) {
 			check.Must(m.PutTransient(context.Background(), "k0", "new-v0"))
 			check.Must(m.PutTransient(context.Background(), "k1", "new-v1"))
 			check.Must(tcx.CLC().Execute(ctx, "map", "-n", m.Name(), "load-all", "k0", "--replace"))
-			tcx.AssertStderrContains("OK")
+			tcx.AssertStdoutContains("OK")
 			require.Equal(t, "v0", check.MustValue(m.Get(ctx, "k0")))
 			require.Equal(t, "new-v1", check.MustValue(m.Get(ctx, "k1")))
 		})
