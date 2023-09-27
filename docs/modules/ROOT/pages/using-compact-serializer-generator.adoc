@@ -106,11 +106,11 @@ Let's use Java configuration this time and use the following code to register th
 [source,java]
 ----
 ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getSerializationConfig()
-                .getCompactSerializationConfig()
-                .setSerializers(new com.rooms.Classroom.Serializer(),
-                        new com.people.Student.Serializer(),
-                        new com.education.School.Serializer());
+clientConfig.getSerializationConfig()
+    .getCompactSerializationConfig()
+    .setSerializers(new com.rooms.Classroom.Serializer(),
+            new com.people.Student.Serializer(),
+            new com.education.School.Serializer());
 ----
 
 == SQL Support
@@ -141,8 +141,24 @@ OPTIONS (
 [source,java]
 ----
 IMap<Integer, Student> studentsMap = client.getMap("students");
-Student s = new Student(4, "Student4");
-studentsMap.put(4, s);
+Student s1 = new Student(1, "Student1");
+studentsMap.put(1, s1);
+Student s2 = new Student(2, "Student2");
+studentsMap.put(2, s2);
+Student s3 = new Student(3, "Student3");
+studentsMap.put(3, s3);
+----
+
+=== Checking the Created Map Records' Type
+
+[source,bash]
+----
+clc map entry-set --name students --show-type -f table
+
+ __key | __key_type | this | this_type |      id | name
+     3 | INT32      | >    | COMPACT   |       3 | Student3
+     2 | INT32      | >    | COMPACT   |       2 | Student2
+     1 | INT32      | >    | COMPACT   |       1 | Student1
 ----
 
 === Querying the Map using Java Client
@@ -156,7 +172,3 @@ for (SqlRow row : result) {
     System.out.println(s.getName())
 }
 ----
-
-== Schema Evolution
-
-== Generic Record Representation
