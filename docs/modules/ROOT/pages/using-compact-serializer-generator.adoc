@@ -32,7 +32,7 @@ Their schema definitions should be:
 
 [source,yaml]
 ----
-namespace: "com.people"
+namespace: "org.example"
 classes:
   - name: Student
     fields:
@@ -44,7 +44,7 @@ classes:
 
 [source,yaml]
 ----
-namespace: "com.rooms"
+namespace: "org.example"
 imports:
   - people.yaml
 classes:
@@ -58,7 +58,7 @@ classes:
 
 [source,yaml]
 ----
-namespace: "com.education"
+namespace: "org.example"
 imports:
   - classroom.yaml
 classes:
@@ -165,7 +165,7 @@ clc map entry-set --name students --show-type -f table
 
 [source, java]
 ----
-SqlResult result = sqlService.execute("SELECT this FROM students")
+SqlResult result = sqlService.execute("SELECT this FROM students WHERE ")
 for (SqlRow row : result) {
     Student s = row.getObject("this");
     System.out.println(s.getId())
