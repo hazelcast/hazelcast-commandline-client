@@ -57,7 +57,7 @@ func UniqueClusterName() string {
 var defaultDedicatedClusterName = UniqueClusterName()
 var rc *RemoteControllerClientWrapper
 var rcMu = &sync.RWMutex{}
-var DefaultDedicatedTestCluster = NewSingletonTestCluster(defaultDedicatedClusterName, func() TestCluster {
+var defaultDedicatedTestCluster = NewSingletonTestCluster(defaultDedicatedClusterName, func() TestCluster {
 	port := NextPort()
 	return rc.startNewCluster(MemberCount(), XMLConfig(defaultDedicatedClusterName, port), port)
 })
