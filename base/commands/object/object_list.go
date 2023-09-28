@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/hazelcast/hazelcast-commandline-client/base/objects"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
@@ -126,5 +126,5 @@ func init() {
 	sort.Slice(objTypes, func(i, j int) bool {
 		return objTypes[i] < objTypes[j]
 	})
-	Must(plug.Registry.RegisterCommand("object:list", &ListCommand{}))
+	check.Must(plug.Registry.RegisterCommand("object:list", &ListCommand{}))
 }

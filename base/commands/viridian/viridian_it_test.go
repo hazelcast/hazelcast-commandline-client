@@ -75,7 +75,7 @@ func loginWithParams_NonInteractiveTest(t *testing.T) {
 	tcx.Tester(func(tcx it.TestContext) {
 		ctx := context.Background()
 		tcx.CLCExecute(ctx, "viridian", "login", "--api-base", "dev2", "--api-key", it.ViridianAPIKey(), "--api-secret", it.ViridianAPISecret())
-		tcx.AssertStdoutContains("Viridian token was fetched and saved.")
+		tcx.AssertStdoutContains("Saved the access token")
 	})
 }
 
@@ -132,12 +132,12 @@ func listClusters_InteractiveTest(t *testing.T) {
 		tcx.WithShell(ctx, func(tcx it.TestContext) {
 			tcx.WithReset(func() {
 				tcx.WriteStdin([]byte("\\viridian list-clusters\n"))
-				tcx.AssertStderrContains("OK")
+				tcx.AssertStdoutContains("OK")
 			})
 			c := createOrGetClusterWithState(ctx, tcx, "RUNNING")
 			tcx.WithReset(func() {
 				tcx.WriteStdin([]byte("\\viridian list-clusters\n"))
-				tcx.AssertStderrContains("OK")
+				tcx.AssertStdoutContains("OK")
 				tcx.AssertStdoutContains(c.ID)
 			})
 		})
@@ -166,8 +166,7 @@ func createCluster_InteractiveTest(t *testing.T) {
 				tcx.WriteStdinf("\\viridian create-cluster --development --verbose --name %s \n", clusterName)
 				time.Sleep(10 * time.Second)
 				check.Must(waitState(ctx, tcx, "", "RUNNING"))
-				tcx.AssertStdoutContains(fmt.Sprintf("Imported configuration: %s", clusterName))
-				tcx.AssertStderrContains("OK")
+				tcx.AssertStdoutContains("OK")
 				require.True(t, paths.Exists(paths.ResolveConfigDir(clusterName)))
 				_ = check.MustValue(tcx.Viridian.GetClusterWithName(ctx, clusterName))
 
@@ -180,7 +179,7 @@ func stopCluster_NonInteractiveTest(t *testing.T) {
 	viridianTester(t, func(ctx context.Context, tcx it.TestContext) {
 		c := createOrGetClusterWithState(ctx, tcx, "RUNNING")
 		tcx.CLCExecute(ctx, "viridian", "stop-cluster", c.ID)
-		tcx.AssertStderrContains("OK")
+		tcx.AssertStdoutContains("OK")
 		check.Must(waitState(ctx, tcx, c.ID, "STOPPED"))
 	})
 }
@@ -192,7 +191,7 @@ func stopCluster_InteractiveTest(t *testing.T) {
 			tcx.WithReset(func() {
 				c := createOrGetClusterWithState(ctx, tcx, "RUNNING")
 				tcx.WriteStdinf("\\viridian stop-cluster %s\n", c.Name)
-				tcx.AssertStderrContains("OK")
+				tcx.AssertStdoutContains("OK")
 				check.Must(waitState(ctx, tcx, c.ID, "STOPPED"))
 			})
 		})
@@ -215,7 +214,7 @@ func resumeCluster_InteractiveTest(t *testing.T) {
 			tcx.WithReset(func() {
 				c := createOrGetClusterWithState(ctx, tcx, "STOPPED")
 				tcx.WriteStdinf("\\viridian resume-cluster %s\n", c.Name)
-				tcx.AssertStderrContains("OK")
+				tcx.AssertStdoutContains("OK")
 				check.Must(waitState(ctx, tcx, c.ID, "RUNNING"))
 			})
 		})
@@ -240,7 +239,7 @@ func getCluster_InteractiveTest(t *testing.T) {
 			tcx.WithReset(func() {
 				c := createOrGetClusterWithState(ctx, tcx, "")
 				tcx.WriteStdinf("\\viridian get-cluster %s\n", c.Name)
-				tcx.AssertStderrContains("OK")
+				tcx.AssertStdoutContains("OK")
 				tcx.AssertStdoutContains(c.Name)
 				tcx.AssertStdoutContains(c.ID)
 			})
@@ -269,7 +268,7 @@ func deleteCluster_InteractiveTest(t *testing.T) {
 				tcx.WriteStdinf("\\viridian delete-cluster %s\n", c.Name)
 				tcx.AssertStdoutContains("(y/n)")
 				tcx.WriteStdin([]byte("y"))
-				tcx.AssertStderrContains("OK")
+				tcx.AssertStdoutContains("OK")
 				require.Eventually(t, func() bool {
 					_, err := tcx.Viridian.GetCluster(ctx, c.ID)
 					return err == nil
@@ -287,7 +286,7 @@ func downloadLogs_NonInteractiveTest(t *testing.T) {
 		c := createOrGetClusterWithState(ctx, tcx, "RUNNING")
 		tcx.WithReset(func() {
 			tcx.CLCExecute(ctx, "viridian", "download-logs", c.ID, "--output-dir", dir)
-			tcx.AssertStderrContains("OK")
+			tcx.AssertStdoutContains("OK")
 			require.FileExists(t, paths.Join(dir, "node-1.log"))
 		})
 	})
@@ -303,7 +302,7 @@ func downloadLogs_InteractiveTest(t *testing.T) {
 			tcx.WithReset(func() {
 				c := createOrGetClusterWithState(ctx, tcx, "RUNNING")
 				tcx.WriteStdinf("\\viridian download-logs %s -o %s\n", c.Name, dir)
-				tcx.AssertStderrContains("OK")
+				tcx.AssertStdoutContains("OK")
 				require.FileExists(t, paths.Join(dir, "node-1.log"))
 			})
 		})

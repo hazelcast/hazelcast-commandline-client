@@ -7,9 +7,18 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/types"
+)
+
+type Mode int
+
+const (
+	ModeNonInteractive Mode = iota
+	ModeInteractive
+	ModeScripting
 )
 
 type InitContext interface {
@@ -33,6 +42,7 @@ type InitContext interface {
 type ExecContext interface {
 	AddOutputRows(ctx context.Context, rows ...output.Row) error
 	AddOutputStream(ctx context.Context, ch <-chan output.Row) error
+	Metrics() metrics.MetricStorer
 	Args() []string
 	GetStringArg(key string) string
 	GetStringSliceArg(key string) []string
@@ -41,7 +51,7 @@ type ExecContext interface {
 	ConfigPath() string
 	ClientInternal(ctx context.Context) (*hazelcast.ClientInternal, error)
 	CommandName() string
-	Interactive() bool
+	Mode() Mode
 	Logger() log.Logger
 	Props() ReadOnlyProperties
 	ShowHelpAndExit()

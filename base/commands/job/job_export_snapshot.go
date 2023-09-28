@@ -10,7 +10,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/jet"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -42,6 +42,7 @@ func (ExportSnapshotCommand) Exec(ctx context.Context, ec plug.ExecContext) erro
 		if err != nil {
 			return nil, err
 		}
+		cmd.IncrementClusterMetric(ctx, ec, "total.job")
 		j := jet.New(ci, sp, ec.Logger())
 		jis, err := j.GetJobList(ctx)
 		if err != nil {
@@ -104,5 +105,5 @@ func autoGenerateSnapshotName(jobName string) string {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("job:export-snapshot", &ExportSnapshotCommand{}))
+	check.Must(plug.Registry.RegisterCommand("job:export-snapshot", &ExportSnapshotCommand{}))
 }

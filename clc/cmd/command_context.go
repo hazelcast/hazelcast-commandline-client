@@ -9,6 +9,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
 type ArgType int
@@ -36,14 +37,14 @@ type CommandContext struct {
 	stringValues map[string]*string
 	boolValues   map[string]*bool
 	intValues    map[string]*int64
-	mode         Mode
+	mode         plug.Mode
 	isTopLevel   bool
 	group        *cobra.Group
 	argSpecs     []ArgSpec
 	usage        string
 }
 
-func NewCommandContext(cmd *cobra.Command, cfgProvider config.Provider, mode Mode) *CommandContext {
+func NewCommandContext(cmd *cobra.Command, cfgProvider config.Provider, mode plug.Mode) *CommandContext {
 	return &CommandContext{
 		Cmd:          cmd,
 		CP:           cfgProvider,
@@ -137,7 +138,7 @@ func (cc *CommandContext) Hide() {
 }
 
 func (cc *CommandContext) Interactive() bool {
-	return cc.mode == ModeInteractive
+	return cc.mode == plug.ModeInteractive
 }
 
 func (cc *CommandContext) SetCommandHelp(long, short string) {

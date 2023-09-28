@@ -9,6 +9,6 @@ import (
 )
 
 func init() {
-	c := commands.NewDestroyCommand("Topic", getTopic)
+	c := commands.NewDestroyCommand("Topic", "topic", getTopic)
 	check.Must(plug.Registry.RegisterCommand("topic:destroy", c))
 }

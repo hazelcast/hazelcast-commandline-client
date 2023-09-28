@@ -1,5 +1,5 @@
 #define MyAppName "Hazelcast CLC"
-#define MyAppVersion "v5.3.3-SNAPSHOT"
+#define MyAppVersion "v5.3.4"
 #define MyAppPublisher "Hazelcast, Inc."
 #define MyAppURL "https://www.hazelcast.com/"
 #define MyAppExeName "clc.exe"

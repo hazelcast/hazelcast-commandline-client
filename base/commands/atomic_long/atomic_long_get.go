@@ -29,6 +29,7 @@ func (GetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		if err != nil {
 			return nil, err
 		}
+		cmd.IncrementClusterMetric(ctx, ec, "total.atomiclong")
 		sp.SetText(fmt.Sprintf("Getting value of AtomicLong %s", ali.Name()))
 		val, err := ali.Get(ctx)
 		if err != nil {

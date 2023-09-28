@@ -53,11 +53,11 @@ func NewFileProvider(path string) (*FileProvider, error) {
 
 func (p *FileProvider) load(path string) error {
 	path = paths.ResolveConfigPath(path)
+	if path == "" {
+		// there is no default config, user will be prompted for config later
+		return nil
+	}
 	if !paths.Exists(path) {
-		if path == "" {
-			// there is no default config, user will be prompted for config later
-			return nil
-		}
 		return fmt.Errorf("configuration does not exist %s: %w", path, os.ErrNotExist)
 	}
 	p.path = path
