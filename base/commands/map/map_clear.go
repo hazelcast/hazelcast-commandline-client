@@ -9,6 +9,6 @@ import (
 )
 
 func init() {
-	cmd := commands.NewClearCommand("Map", getMap)
+	cmd := commands.NewClearCommand("Map", "map", getMap)
 	check.Must(plug.Registry.RegisterCommand("map:clear", cmd))
 }

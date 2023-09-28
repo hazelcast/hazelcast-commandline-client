@@ -104,20 +104,20 @@ func MakeHzConfig(props plug.ReadOnlyProperties, lg log.Logger) (hazelcast.Confi
 	cfg.Logger.CustomLogger = lg
 	cfg.Cluster.Unisocket = true
 	cfg.Stats.Enabled = true
-	if ca := props.GetString(clc.PropertyClusterAddress); ca != "" {
-		lg.Debugf("Cluster address: %s", ca)
-		cfg.Cluster.Network.SetAddresses(ca)
-	}
-	if cn := props.GetString(clc.PropertyClusterName); cn != "" {
-		lg.Debugf("Cluster name: %s", cn)
-		cfg.Cluster.Name = cn
-	}
 	var viridianEnabled bool
 	if vt := props.GetString(clc.PropertyClusterDiscoveryToken); vt != "" {
 		lg.Debugf("Viridan token: XXX")
 		cfg.Cluster.Cloud.Enabled = true
 		cfg.Cluster.Cloud.Token = vt
 		viridianEnabled = true
+	}
+	if ca := props.GetString(clc.PropertyClusterAddress); ca != "" && !viridianEnabled {
+		lg.Debugf("Cluster address: %s", ca)
+		cfg.Cluster.Network.SetAddresses(ca)
+	}
+	if cn := props.GetString(clc.PropertyClusterName); cn != "" {
+		lg.Debugf("Cluster name: %s", cn)
+		cfg.Cluster.Name = cn
 	}
 	if props.GetBool(clc.PropertySSLEnabled) || viridianEnabled {
 		sn := "hazelcast.cloud"

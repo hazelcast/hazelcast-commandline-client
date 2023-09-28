@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client"
@@ -10,6 +11,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/base"
 	_ "github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/mk"
@@ -34,12 +36,14 @@ type getDestroyerFunc[T Destroyer] func(context.Context, plug.ExecContext, clc.S
 
 type DestroyCommand[T Destroyer] struct {
 	typeName       string
+	metricName     string
 	getDestroyerFn getDestroyerFunc[T]
 }
 
-func NewDestroyCommand[T Destroyer](typeName string, getFn getDestroyerFunc[T]) *DestroyCommand[T] {
+func NewDestroyCommand[T Destroyer](typeName string, metricName string, getFn getDestroyerFunc[T]) *DestroyCommand[T] {
 	return &DestroyCommand[T]{
 		typeName:       typeName,
+		metricName:     metricName,
 		getDestroyerFn: getFn,
 	}
 }
@@ -74,6 +78,7 @@ func (cm DestroyCommand[T]) Exec(ctx context.Context, ec plug.ExecContext) error
 		if err != nil {
 			return nil, err
 		}
+		cmd.IncrementClusterMetric(ctx, ec, "total."+cm.metricName)
 		sp.SetText(fmt.Sprintf("Destroying %s '%s'", cm.typeName, name))
 		if err := m.Destroy(ctx); err != nil {
 			return nil, err
@@ -97,12 +102,14 @@ type getClearerFunc[T Clearer] func(context.Context, plug.ExecContext, clc.Spinn
 
 type ClearCommand[T Clearer] struct {
 	typeName     string
+	metricName   string
 	getClearerFn getClearerFunc[T]
 }
 
-func NewClearCommand[T Clearer](typeName string, getFn getClearerFunc[T]) *ClearCommand[T] {
+func NewClearCommand[T Clearer](typeName, metricName string, getFn getClearerFunc[T]) *ClearCommand[T] {
 	return &ClearCommand[T]{
 		typeName:     typeName,
+		metricName:   metricName,
 		getClearerFn: getFn,
 	}
 }
@@ -134,6 +141,7 @@ func (cm ClearCommand[T]) Exec(ctx context.Context, ec plug.ExecContext) error {
 		if err != nil {
 			return nil, err
 		}
+		cmd.IncrementClusterMetric(ctx, ec, "total."+cm.metricName)
 		sp.SetText(fmt.Sprintf("Clearing %s '%s'", cm.typeName, name))
 		if err := m.Clear(ctx); err != nil {
 			return nil, err
@@ -157,12 +165,14 @@ type getSizerFunc[T Sizer] func(context.Context, plug.ExecContext, clc.Spinner) 
 
 type SizeCommand[T Sizer] struct {
 	typeName   string
+	metricName string
 	getSizerFn getSizerFunc[T]
 }
 
-func NewSizeCommand[T Sizer](typeName string, getFn getSizerFunc[T]) *SizeCommand[T] {
+func NewSizeCommand[T Sizer](typeName, metricName string, getFn getSizerFunc[T]) *SizeCommand[T] {
 	return &SizeCommand[T]{
 		typeName:   typeName,
+		metricName: metricName,
 		getSizerFn: getFn,
 	}
 }
@@ -181,6 +191,7 @@ func (cm SizeCommand[T]) Exec(ctx context.Context, ec plug.ExecContext) error {
 		if err != nil {
 			return nil, err
 		}
+		cmd.IncrementClusterMetric(ctx, ec, "total."+cm.metricName)
 		sp.SetText(fmt.Sprintf("Getting the size of %s '%s'", cm.typeName, name))
 		return m.Size(ctx)
 	})
@@ -205,6 +216,28 @@ func AddKeyTypeFlag(cc plug.InitContext) {
 func AddValueTypeFlag(cc plug.InitContext) {
 	help := fmt.Sprintf("value type (one of: %s)", strings.Join(internal.SupportedTypeNames, ", "))
 	cc.AddStringFlag(FlagValueType, "v", "string", false, help)
+}
+
+func MakeValueFromString(s string, typeStr string) (any, error) {
+	if typeStr == "" {
+		typeStr = "string"
+	}
+	return mk.ValueFromString(s, typeStr)
+}
+
+func MakeValuesFromStrings(typeStr string, items []string) ([]any, error) {
+	if typeStr == "" {
+		typeStr = "string"
+	}
+	vs := make([]any, len(items))
+	for i, s := range items {
+		v, err := mk.ValueFromString(s, typeStr)
+		if err != nil {
+			return nil, fmt.Errorf("converting string to key: %w", err)
+		}
+		vs[i] = v
+	}
+	return vs, nil
 }
 
 func MakeKeyData(ec plug.ExecContext, ci *hazelcast.ClientInternal, keyStr string) (hazelcast.Data, error) {
@@ -259,4 +292,12 @@ func GetTTL(ec plug.ExecContext) int64 {
 		return ec.Props().GetInt(FlagTTL)
 	}
 	return clc.TTLUnset
+}
+
+func IsYes(ec plug.ExecContext) bool {
+	yes := ec.Props().GetBool(clc.FlagAutoYes)
+	if yes {
+		return true
+	}
+	return os.Getenv(clc.EnvYes) == "1"
 }

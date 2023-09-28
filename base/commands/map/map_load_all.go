@@ -12,7 +12,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
 )
@@ -35,10 +35,13 @@ If no key is given, all keys are loaded.`
 func (MapLoadAllCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	name := ec.Props().GetString(base.FlagName)
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		replace := ec.Props().GetBool(mapFlagReplace)
+		// TODO: use Map.LoadAllX methods in the Go client when they are fixed. --YT
 		ci, err := cmd.ClientInternal(ctx, ec, sp)
 		if err != nil {
 			return nil, err
 		}
+		cmd.IncrementClusterMetric(ctx, ec, "total.map")
 		var keys []hazelcast.Data
 		for _, keyStr := range ec.GetStringSliceArg(commands.ArgKey) {
 			keyData, err := commands.MakeKeyData(ec, ci, keyStr)
@@ -47,7 +50,6 @@ func (MapLoadAllCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 			}
 			keys = append(keys, keyData)
 		}
-		replace := ec.Props().GetBool(mapFlagReplace)
 		var req *hazelcast.ClientMessage
 		if len(keys) == 0 {
 			req = codec.EncodeMapLoadAllRequest(name, replace)
@@ -70,5 +72,5 @@ func (MapLoadAllCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("map:load-all", &MapLoadAllCommand{}))
+	check.Must(plug.Registry.RegisterCommand("map:load-all", &MapLoadAllCommand{}))
 }

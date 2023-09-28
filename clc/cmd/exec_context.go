@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"sync/atomic"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
 	cmderrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
@@ -34,22 +36,24 @@ const (
 type ClientFn func(ctx context.Context, cfg hazelcast.Config) (*hazelcast.ClientInternal, error)
 
 type ExecContext struct {
-	lg          log.Logger
-	stdout      io.Writer
-	stderr      io.Writer
-	stdin       io.Reader
-	args        []string
-	kwargs      map[string]any
-	props       *plug.Properties
-	mode        Mode
-	cmd         *cobra.Command
-	main        *Main
-	spinnerWait time.Duration
-	printer     plug.Printer
-	cp          config.Provider
+	lg            log.Logger
+	stdout        io.Writer
+	stderr        io.Writer
+	stdin         io.Reader
+	args          []string
+	kwargs        map[string]any
+	props         *plug.Properties
+	mode          plug.Mode
+	cmd           *cobra.Command
+	main          *Main
+	spinnerWait   time.Duration
+	printer       plug.Printer
+	cp            config.Provider
+	spinnerPaused atomic.Bool
+	ms            metrics.MetricStorer
 }
 
-func NewExecContext(lg log.Logger, sio clc.IO, props *plug.Properties, mode Mode) (*ExecContext, error) {
+func NewExecContext(lg log.Logger, sio clc.IO, props *plug.Properties, mode plug.Mode, ms metrics.MetricStorer) (*ExecContext, error) {
 	return &ExecContext{
 		lg:          lg,
 		stdout:      sio.Stdout,
@@ -59,6 +63,7 @@ func NewExecContext(lg log.Logger, sio clc.IO, props *plug.Properties, mode Mode
 		mode:        mode,
 		spinnerWait: 1 * time.Second,
 		kwargs:      map[string]any{},
+		ms:          ms,
 	}, nil
 }
 
@@ -141,18 +146,22 @@ func (ec *ExecContext) ClientInternal(ctx context.Context) (*hazelcast.ClientInt
 	if ci != nil {
 		return ci, nil
 	}
+	ec.pauseSpinner()
 	cfg, err := ec.cp.ClientConfig(ctx, ec)
 	if err != nil {
+		// unpausing here, since can't use defer
+		ec.unpauseSpinner()
 		return nil, err
 	}
+	ec.unpauseSpinner()
 	if err := ec.main.ensureClient(ctx, cfg); err != nil {
 		return nil, err
 	}
 	return ec.main.clientInternal(), nil
 }
 
-func (ec *ExecContext) Interactive() bool {
-	return ec.mode == ModeInteractive
+func (ec *ExecContext) Mode() plug.Mode {
+	return ec.mode
 }
 
 func (ec *ExecContext) AddOutputRows(ctx context.Context, rows ...output.Row) error {
@@ -172,9 +181,13 @@ func (ec *ExecContext) AddOutputStream(ctx context.Context, ch <-chan output.Row
 	return ec.printer.PrintStream(ctx, ec.stdout, output.NewChanRows(ch))
 }
 
+func (ec *ExecContext) Metrics() metrics.MetricStorer {
+	return ec.ms
+}
+
 func (ec *ExecContext) ShowHelpAndExit() {
 	Must(ec.cmd.Help())
-	if !ec.Interactive() {
+	if ec.Mode() != plug.ModeInteractive {
 		os.Exit(0)
 	}
 }
@@ -183,7 +196,7 @@ func (ec *ExecContext) CommandName() string {
 	return ec.cmd.CommandPath()
 }
 
-func (ec *ExecContext) SetMode(mode Mode) {
+func (ec *ExecContext) SetMode(mode plug.Mode) {
 	ec.mode = mode
 }
 
@@ -221,8 +234,9 @@ func (ec *ExecContext) ExecuteBlocking(ctx context.Context, f func(context.Conte
 		}
 		ch <- v
 	}()
-	timer := time.NewTimer(ec.spinnerWait)
-	defer timer.Stop()
+	var started bool
+	ticker := time.NewTicker(ec.spinnerWait)
+	defer ticker.Stop()
 	for {
 		select {
 		case <-ctx.Done():
@@ -240,10 +254,15 @@ func (ec *ExecContext) ExecuteBlocking(ctx context.Context, f func(context.Conte
 				return nil, func() {}, err
 			}
 			return v, stop, nil
-		case <-timer.C:
+		case <-ticker.C:
 			if !ec.Quiet() {
 				if s, ok := sp.(clc.SpinnerStarter); ok {
-					s.Start()
+					if !ec.spinnerPaused.Load() {
+						if !started {
+							started = true
+							s.Start()
+						}
+					}
 				}
 			}
 		}
@@ -254,6 +273,14 @@ func (ec *ExecContext) PrintlnUnnecessary(text string) {
 	if !ec.Quiet() {
 		I2(fmt.Fprintln(ec.Stdout(), str.Colorize(text)))
 	}
+}
+
+func (ec *ExecContext) pauseSpinner() {
+	ec.spinnerPaused.Store(true)
+}
+
+func (ec *ExecContext) unpauseSpinner() {
+	ec.spinnerPaused.Store(false)
 }
 
 func (ec *ExecContext) Quiet() bool {

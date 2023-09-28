@@ -266,9 +266,13 @@ detect_last_release () {
     re='$1 ~ /tag_name/ { gsub(/[",]/, "", $2); print($2) }'
     text="$(httpget https://api.github.com/repos/hazelcast/hazelcast-commandline-client/releases)"
     if [[ "$state_beta" == "yes" ]]; then
+        set +e
         v=$(echo "$text" | awk "$re" | head -1)
+        set -e
     else
+        set +e
         v=$(echo "$text" | awk "$re" | grep -vi preview | grep -vi beta | head -1)
+        set -e
     fi
     if [[ "$v" == "" ]]; then
         bye "could not determine the latest version"
