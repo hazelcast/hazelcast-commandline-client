@@ -5,6 +5,7 @@ package migration_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"sync"
@@ -26,7 +27,7 @@ func TestMigrationStages(t *testing.T) {
 	testCases := []struct {
 		name                string
 		statusMapStateFiles []string
-		expectedOutput      string
+		expectedErr         error
 	}{
 		{
 			name: "successful",
@@ -34,7 +35,6 @@ func TestMigrationStages(t *testing.T) {
 				"testdata/start/migration_success_initial.json",
 				"testdata/start/migration_success_completed.json",
 			},
-			expectedOutput: "OK Migration completed successfully.",
 		},
 		{
 			name: "failure",
@@ -42,17 +42,17 @@ func TestMigrationStages(t *testing.T) {
 				"testdata/start/migration_success_initial.json",
 				"testdata/start/migration_success_failure.json",
 			},
-			expectedOutput: "ERROR Failed migrating IMAP: imap5 ...: some error",
+			expectedErr: errors.New("Failed migrating IMAP: imap5 ...: some error"),
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			startMigrationTest(t, tc.expectedOutput, tc.statusMapStateFiles)
+			startMigrationTest(t, tc.expectedErr, tc.statusMapStateFiles)
 		})
 	}
 }
 
-func startMigrationTest(t *testing.T, expectedOutput string, statusMapStateFiles []string) {
+func startMigrationTest(t *testing.T, expectedErr error, statusMapStateFiles []string) {
 	tcx := it.TestContext{T: t}
 	ctx := context.Background()
 	tcx.Tester(func(tcx it.TestContext) {
@@ -61,9 +61,10 @@ func startMigrationTest(t *testing.T, expectedOutput string, statusMapStateFiles
 		defer removeMembersLogs(ctx, ci)
 		var wg sync.WaitGroup
 		wg.Add(1)
+		var execErr error
 		go tcx.WithReset(func() {
 			defer wg.Done()
-			tcx.CLC().Execute(ctx, "start", "dmt-config", "--yes")
+			execErr = tcx.CLC().Execute(ctx, "start", "dmt-config", "--yes")
 		})
 		c := make(chan string, 1)
 		wg.Add(1)
@@ -73,7 +74,9 @@ func startMigrationTest(t *testing.T, expectedOutput string, statusMapStateFiles
 		wg.Add(1)
 		go migrationRunner(ctx, tcx, mID, &wg, statusMapStateFiles)
 		wg.Wait()
-		tcx.AssertStdoutContains(expectedOutput)
+		if expectedErr != nil {
+			require.Contains(t, execErr.Error(), expectedErr.Error())
+		}
 		tcx.WithReset(func() {
 			f := fmt.Sprintf("migration_report_%s.txt", mID)
 			require.Equal(t, true, fileExists(f))

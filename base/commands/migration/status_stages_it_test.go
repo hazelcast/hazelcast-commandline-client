@@ -40,12 +40,13 @@ func noMigrationsStatusTest(t *testing.T) {
 	tcx.Tester(func(tcx it.TestContext) {
 		var wg sync.WaitGroup
 		wg.Add(1)
+		var execErr error
 		go tcx.WithReset(func() {
 			defer wg.Done()
-			tcx.CLC().Execute(ctx, "status")
+			execErr = tcx.CLC().Execute(ctx, "status")
 		})
 		wg.Wait()
-		tcx.AssertStdoutContains("there are no migrations are in progress on migration cluster")
+		require.Contains(t, execErr.Error(), "there are no migrations are in progress on migration cluster")
 	})
 }
 
