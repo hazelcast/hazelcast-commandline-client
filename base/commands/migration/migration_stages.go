@@ -40,16 +40,21 @@ func createMigrationStages(ctx context.Context, ec plug.ExecContext, ci *hazelca
 			SuccessMsg:  fmt.Sprintf("Migrated %s: %s ...", d.Type, d.Name),
 			FailureMsg:  fmt.Sprintf("Failed migrating %s: %s ...", d.Type, d.Name),
 			Func: func(ct context.Context, status stage.Statuser[any]) (any, error) {
+				var execErr error
+			StatusReaderLoop:
 				for {
 					if ctx.Err() != nil {
 						if errors.Is(err, context.DeadlineExceeded) {
-							return nil, timeoutErr
+							execErr = timeoutErr
+							break StatusReaderLoop
 						}
-						return nil, fmt.Errorf("migration failed: %w", err)
+						execErr = fmt.Errorf("migration failed: %w", err)
+						break StatusReaderLoop
 					}
 					generalStatus, err := fetchMigrationStatus(ctx, ci, migrationID)
 					if err != nil {
-						return nil, fmt.Errorf("reading migration status: %w", err)
+						execErr = fmt.Errorf("reading migration status: %w", err)
+						break StatusReaderLoop
 					}
 					switch Status(generalStatus) {
 					case StatusComplete:
@@ -57,33 +62,41 @@ func createMigrationStages(ctx context.Context, ec plug.ExecContext, ci *hazelca
 					case StatusFailed:
 						errs, err := fetchMigrationErrors(ctx, ci, migrationID)
 						if err != nil {
-							return nil, fmt.Errorf("fetching migration errors: %w", err)
+							execErr = fmt.Errorf("fetching migration errors: %w", err)
+							break StatusReaderLoop
 						}
-						return nil, errors.New(errs)
+						execErr = errors.New(errs)
+						break StatusReaderLoop
 					case StatusCanceled, StatusCanceling:
-						return nil, errors2.ErrUserCancelled
+						execErr = errors2.ErrUserCancelled
+						break StatusReaderLoop
 					}
 					q := fmt.Sprintf(`SELECT JSON_QUERY(this, '$.migrations[%d]') FROM %s WHERE __key= '%s'`, i, StatusMapName, migrationID)
 					res, err := ci.Client().SQL().Execute(ctx, q)
 					if err != nil {
-						return nil, err
+						execErr = err
+						break StatusReaderLoop
 					}
 					iter, err := res.Iterator()
 					if err != nil {
-						return nil, err
+						execErr = err
+						break StatusReaderLoop
 					}
 					if iter.HasNext() {
 						row, err := iter.Next()
 						if err != nil {
-							return nil, err
+							execErr = err
+							break StatusReaderLoop
 						}
 						rowStr, err := row.Get(0)
 						if err != nil {
-							return nil, err
+							execErr = err
+							break StatusReaderLoop
 						}
 						var m DSMigrationStatus
 						if err = json.Unmarshal(rowStr.(serialization.JSON), &m); err != nil {
-							return nil, err
+							execErr = err
+							break StatusReaderLoop
 						}
 						status.SetProgress(m.CompletionPercentage)
 						switch m.Status {
@@ -92,11 +105,16 @@ func createMigrationStages(ctx context.Context, ec plug.ExecContext, ci *hazelca
 						case StatusFailed:
 							return nil, stage.IgnoreError(errors.New(m.Error))
 						case StatusCanceled:
-							return nil, errors2.ErrUserCancelled
+							execErr = errors2.ErrUserCancelled
+							break StatusReaderLoop
 						}
 					}
 					time.Sleep(1 * time.Second)
 				}
+				if execErr != nil {
+					status.SetText(execErr.Error())
+				}
+				return nil, execErr
 			},
 		})
 	}
