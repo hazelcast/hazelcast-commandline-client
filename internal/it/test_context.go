@@ -35,6 +35,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/metrics"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/shell"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -121,7 +122,7 @@ func (tcx TestContext) Tester(f func(tcx TestContext)) {
 				tcx.Cluster = defaultViridianTestCluster.Launch(tcx.T)
 				tcx.Viridian = defaultViridianTestCluster.cls.(*viridianTestCluster).api
 			} else {
-				tcx.Cluster = DefaultDedicatedTestCluster.Launch(tcx.T)
+				tcx.Cluster = defaultDedicatedTestCluster.Launch(tcx.T)
 			}
 		}
 		if tcx.ClientConfig == nil {
@@ -329,7 +330,7 @@ func (tcx TestContext) createMain() (*cmd.Main, error) {
 	if err != nil {
 		panic(err)
 	}
-	return cmd.NewMain("clctest", tcx.ConfigPath, fp, tcx.LogPath, tcx.LogLevel, tcx.IO())
+	return cmd.NewMain("clctest", tcx.ConfigPath, fp, tcx.LogPath, tcx.LogLevel, tcx.IO(), &metrics.NopMetricStore{})
 }
 
 func WithEnv(name, value string, f func()) {

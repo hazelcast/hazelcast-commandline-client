@@ -12,6 +12,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 
+	"github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/sql"
@@ -21,6 +22,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/demo/wikimedia"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/prompt"
 )
 
 const (
@@ -50,6 +52,7 @@ Generate data for given name, supported names are:
 	cc.SetCommandHelp(long, short)
 	cc.AddIntFlag(flagMaxValues, "", 0, false, "number of events to create (default: 0, no limits)")
 	cc.AddBoolFlag(flagPreview, "", false, false, "print the generated data without interacting with the cluster")
+	cc.AddBoolFlag(clc.FlagAutoYes, "", false, false, "skip confirming the data generation")
 	cc.AddStringArg(argGeneratorName, argTitleGeneratorName)
 	cc.AddKeyValueSliceArg(argKeyValues, argTitleKeyValues, 0, clc.MaxArgs)
 	return nil
@@ -63,6 +66,20 @@ func (GenerateDataCommand) Exec(ctx context.Context, ec plug.ExecContext) error 
 	}
 	kvs := ec.GetKeyValuesArg(argKeyValues)
 	preview := ec.Props().GetBool(flagPreview)
+	yes := commands.IsYes(ec)
+	if !yes {
+		p := prompt.New(ec.Stdin(), ec.Stdout())
+		ec.PrintlnUnnecessary("The data is streamed from Wikipedia changes.")
+		ec.PrintlnUnnecessary("Hazelcast has no control over the incoming data,")
+		yes, err := p.YesNo("Proceed?")
+		if err != nil {
+			ec.Logger().Info("User input could not be processed due to error: %s", err.Error())
+			return hzerrors.ErrUserCancelled
+		}
+		if !yes {
+			return hzerrors.ErrUserCancelled
+		}
+	}
 	if preview {
 		return generatePreviewResult(ctx, ec, generator, kvs.Map())
 	}
@@ -70,6 +87,7 @@ func (GenerateDataCommand) Exec(ctx context.Context, ec plug.ExecContext) error 
 }
 
 func generatePreviewResult(ctx context.Context, ec plug.ExecContext, generator dataStreamGenerator, keyVals map[string]string) error {
+	cmd.IncrementMetric(ctx, ec, "total.demo")
 	maxCount := ec.Props().GetInt(flagMaxValues)
 	if maxCount < 1 {
 		maxCount = 10
@@ -104,15 +122,16 @@ func generateResult(ctx context.Context, ec plug.ExecContext, generator dataStre
 		return fmt.Errorf("either %s key-value pair must be given or --preview must be used", pairMapName)
 	}
 	maxCount := ec.Props().GetInt(flagMaxValues)
+	query, err := generator.GenerateMappingQuery(mapName)
+	if err != nil {
+		return err
+	}
 	query, stop, err := cmd.ExecuteBlocking(ctx, ec, func(ctx context.Context, sp clc.Spinner) (string, error) {
 		sp.SetText("Creating the mapping")
-		query, err := generator.GenerateMappingQuery(mapName)
-		if err != nil {
-			return "", err
-		}
 		if _, err := sql.ExecSQL(ctx, ec, query); err != nil {
 			return "", err
 		}
+		cmd.IncrementClusterMetric(ctx, ec, "total.demo")
 		return query, nil
 	})
 	if err != nil {
@@ -133,7 +152,7 @@ func generateResult(ctx context.Context, ec plug.ExecContext, generator dataStre
 		errCh := make(chan error)
 		itemCh, stopStream := generator.Stream(ctx)
 		defer stopStream()
-		ci, err := ec.ClientInternal(ctx)
+		ci, err := cmd.ClientInternal(ctx, ec, sp)
 		if err != nil {
 			return 0, err
 		}
@@ -230,19 +249,6 @@ type dataStreamGenerator interface {
 
 var supportedEventStreams = map[string]dataStreamGenerator{
 	"wikipedia-event-stream": wikimedia.StreamGenerator{},
-}
-
-func getMap(ctx context.Context, ec plug.ExecContext, sp clc.Spinner, mapName string) (*hazelcast.Map, error) {
-	ci, err := cmd.ClientInternal(ctx, ec, sp)
-	if err != nil {
-		return nil, err
-	}
-	sp.SetText(fmt.Sprintf("Getting Map '%s'", mapName))
-	m, err := ci.Client().GetMap(ctx, mapName)
-	if err != nil {
-		return nil, err
-	}
-	return m, nil
 }
 
 func init() {

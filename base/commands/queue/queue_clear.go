@@ -9,6 +9,6 @@ import (
 )
 
 func init() {
-	c := commands.NewClearCommand("Queue", getQueue)
+	c := commands.NewClearCommand("Queue", "queue", getQueue)
 	check.Must(plug.Registry.RegisterCommand("queue:clear", c))
 }

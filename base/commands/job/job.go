@@ -6,7 +6,7 @@ import (
 	"context"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
@@ -27,5 +27,5 @@ func (Command) Exec(context.Context, plug.ExecContext) error {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("job", &Command{}))
+	check.Must(plug.Registry.RegisterCommand("job", &Command{}))
 }

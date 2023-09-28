@@ -6,6 +6,7 @@ import (
 	"context"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	"github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -33,6 +34,7 @@ Make sure you login before running this command.
 }
 
 func (ClusterDeleteCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+	cmd.IncrementMetric(ctx, ec, "total.viridian")
 	api, err := getAPI(ec)
 	if err != nil {
 		return err
@@ -76,9 +78,9 @@ func (ClusterDeleteCommand) Exec(ctx context.Context, ec plug.ExecContext) error
 	}
 	if ec.Props().GetBool(clc.PropertyVerbose) {
 		row = append(row, output.Column{
-			Name:  "ID",
+			Name:  "Name",
 			Type:  serialization.TypeString,
-			Value: cluster.ID,
+			Value: cluster.Name,
 		})
 	}
 	return ec.AddOutputRows(ctx, row)

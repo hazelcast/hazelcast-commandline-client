@@ -6,6 +6,7 @@ import (
 	"context"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -28,6 +29,7 @@ Make sure you login before running this command.
 }
 
 func (ClusterListCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+	cmd.IncrementMetric(ctx, ec, "total.viridian")
 	api, err := getAPI(ec)
 	if err != nil {
 		return err

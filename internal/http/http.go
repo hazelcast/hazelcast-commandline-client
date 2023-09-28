@@ -3,6 +3,7 @@ package http
 import (
 	"bytes"
 	"context"
+	"io"
 	"net/http"
 )
 
@@ -22,6 +23,19 @@ func (c *Client) Get(ctx context.Context, url string) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (c *Client) Post(ctx context.Context, url string, body io.Reader) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, "POST", url, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, err

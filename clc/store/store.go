@@ -3,6 +3,7 @@ package store
 import (
 	"errors"
 	"sync"
+	"time"
 
 	"github.com/dgraph-io/badger/v4"
 
@@ -58,6 +59,10 @@ func (s *Store) open() error {
 	return nil
 }
 
+func (s *Store) close() error {
+	return s.db.Close()
+}
+
 type badgerLogger struct {
 	logger log.Logger
 }
@@ -79,13 +84,22 @@ func (l badgerLogger) Debugf(log string, args ...any) {
 	l.logger.Debugf(log, args...)
 }
 
-func (s *Store) close() error {
-	return s.db.Close()
+type Option interface {
+	ModifyEntry(*badger.Entry)
 }
 
-func (s *Store) SetEntry(key, val []byte) error {
+type OptionWithTTL time.Duration
+
+func (s OptionWithTTL) ModifyEntry(e *badger.Entry) {
+	e.WithTTL(time.Duration(s))
+}
+
+func (s *Store) SetEntry(key, val []byte, opts ...Option) error {
 	err := s.db.Update(func(txn *badger.Txn) error {
 		e := badger.NewEntry(key, val)
+		for _, opt := range opts {
+			opt.ModifyEntry(e)
+		}
 		return txn.SetEntry(e)
 	})
 	return err
@@ -132,7 +146,7 @@ func (s *Store) GetKeysWithPrefix(prefix string) ([][]byte, error) {
 
 type UpdateFunc = func(current []byte, found bool) []byte
 
-func (s *Store) UpdateEntry(key []byte, f UpdateFunc) error {
+func (s *Store) UpdateEntry(key []byte, f UpdateFunc, opts ...Option) error {
 	var item []byte
 	err := s.db.Update(func(txn *badger.Txn) error {
 		it, err := txn.Get(key)
@@ -149,6 +163,10 @@ func (s *Store) UpdateEntry(key []byte, f UpdateFunc) error {
 			}
 		}
 		newVal := f(item, found)
+		e := badger.NewEntry(key, newVal)
+		for _, opt := range opts {
+			opt.ModifyEntry(e)
+		}
 		return txn.Set(key, newVal)
 	})
 	return err
@@ -182,18 +200,10 @@ func (s *Store) RunForeachWithPrefix(prefix string, f ForeachFunc) error {
 	return err
 }
 
-func (s *Store) DeleteEntriesWithPrefix(prefix string) error {
-	keys, err := s.GetKeysWithPrefix(prefix)
-	if err != nil {
-		return err
+func (s *Store) DeleteEntriesWithPrefixes(prefixes ...string) error {
+	var ps [][]byte
+	for _, p := range prefixes {
+		ps = append(ps, []byte(p))
 	}
-	err = s.db.Update(func(txn *badger.Txn) error {
-		for _, key := range keys {
-			if err := txn.Delete(key); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-	return err
+	return s.db.DropPrefix(ps...)
 }

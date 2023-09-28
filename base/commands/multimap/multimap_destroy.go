@@ -9,6 +9,6 @@ import (
 )
 
 func init() {
-	cmd := commands.NewDestroyCommand("MultiMap", getMultiMap)
+	cmd := commands.NewDestroyCommand("MultiMap", "multimap", getMultiMap)
 	check.Must(plug.Registry.RegisterCommand("multi-map:destroy", cmd))
 }

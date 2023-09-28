@@ -9,6 +9,6 @@ import (
 )
 
 func init() {
-	c := commands.NewLockCommand("Map", getMap)
+	c := commands.NewLockCommand("Map", "map", getMap)
 	check.Must(plug.Registry.RegisterCommand("map:lock", c, plug.OnlyInteractive{}))
 }

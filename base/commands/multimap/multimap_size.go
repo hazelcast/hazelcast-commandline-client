@@ -9,6 +9,6 @@ import (
 )
 
 func init() {
-	cmd := commands.NewSizeCommand("MultiMap", getMultiMap)
+	cmd := commands.NewSizeCommand("MultiMap", "multimap", getMultiMap)
 	check.Must(plug.Registry.RegisterCommand("multi-map:size", cmd))
 }
