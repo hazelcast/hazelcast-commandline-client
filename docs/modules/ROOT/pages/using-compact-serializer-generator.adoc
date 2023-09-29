@@ -91,7 +91,7 @@ This will generate the classes into the current working directory. If you want t
 * `School.java`
 * `Classroom.java`
 
-User should copy the generated classes to their own packages in their codebase.
+Generated classes should be moved to their own packages in user's codebase.
 
 == Creating Compact Serialization Configuration
 
@@ -113,7 +113,7 @@ clientConfig.getSerializationConfig()
             new com.education.School.Serializer());
 ----
 
-== SQL Support
+== Using SQL Support
 
 === Creating Mapping
 
@@ -136,36 +136,43 @@ OPTIONS (
 );
 ----
 
+You can execute the SQL either using CLC or Java Client.
+
 === Writing to a Map using Java Client
 
 [source,java]
 ----
 IMap<Integer, Student> studentsMap = client.getMap("students");
-Student s1 = new Student(1, "Student1");
-studentsMap.put(1, s1);
-Student s2 = new Student(2, "Student2");
-studentsMap.put(2, s2);
-Student s3 = new Student(3, "Student3");
-studentsMap.put(3, s3);
+students.set("joe", new Student(1, "Joe Dalton"));
+students.set("william", new Student(2, "William Dalton"));
+students.set("jack", new Student(3, "Jack Dalton"));
+students.set("Averell", new Student(4, "Averell Dalton"));
 ----
 
-=== Checking the Created Map Records' Type
+=== Checking the Created Records' Type
+
+As we created the mapping with `Compact` format, we should check if the format is in desired type.
 
 [source,bash]
 ----
 clc map entry-set --name students --show-type -f table
 
- __key | __key_type | this | this_type |      id | name
-     3 | INT32      | >    | COMPACT   |       3 | Student3
-     2 | INT32      | >    | COMPACT   |       2 | Student2
-     1 | INT32      | >    | COMPACT   |       1 | Student1
+ __key   | __key_type | this | this_type |      id | name
+ joe     | STRING     | >    | COMPACT   |       1 | Joe Dalton
+ william | STRING     | >    | COMPACT   |       2 | William Dalton
+ Averell | STRING     | >    | COMPACT   |       4 | Averell Dalton
+ jack    | STRING     | >    | COMPACT   |       3 | Jack Dalton
 ----
+
+As it can be seen `this_type` column has `COMPACT` value for the all records.
 
 === Querying the Map using Java Client
 
+It is possible to query Compact values from the map and assign them to Java objects as it is shown:
+
 [source, java]
 ----
-SqlResult result = sqlService.execute("SELECT this FROM students WHERE ")
+SqlResult result = sqlService.execute(String.format("SELECT this FROM students WHERE name = '%s'", "Joe Dalton"))
 for (SqlRow row : result) {
     Student s = row.getObject("this");
     System.out.println(s.getId())
