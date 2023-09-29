@@ -1,0 +1,10 @@
+namespace: "org.example"
+imports:
+  - classroom.yaml
+classes:
+  - name: School
+    fields:
+      - name: id
+        type: int32
+      - name: classrooms
+        type: org.example.Classroom[]
