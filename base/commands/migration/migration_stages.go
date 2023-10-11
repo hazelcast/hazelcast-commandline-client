@@ -37,8 +37,8 @@ func createMigrationStages(ctx context.Context, ec plug.ExecContext, ci *hazelca
 		i := i
 		stages = append(stages, stage.Stage[any]{
 			ProgressMsg: fmt.Sprintf("Migrating %s: %s", d.Type, d.Name),
-			SuccessMsg:  fmt.Sprintf("Migrated %s: %s ...", d.Type, d.Name),
-			FailureMsg:  fmt.Sprintf("Failed migrating %s: %s ...", d.Type, d.Name),
+			SuccessMsg:  fmt.Sprintf("Migrated %s: %s", d.Type, d.Name),
+			FailureMsg:  fmt.Sprintf("Failed migrating %s: %s", d.Type, d.Name),
 			Func: func(ct context.Context, status stage.Statuser[any]) (any, error) {
 				var execErr error
 			StatusReaderLoop:

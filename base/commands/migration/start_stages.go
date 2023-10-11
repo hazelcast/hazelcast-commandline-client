@@ -44,7 +44,7 @@ func (st *StartStages) Build(ctx context.Context, ec plug.ExecContext) []stage.S
 		},
 		{
 			ProgressMsg: "Starting the migration",
-			SuccessMsg:  "Started the migration",
+			SuccessMsg:  fmt.Sprintf("Started the migration with ID: %s", st.migrationID),
 			FailureMsg:  "Could not start the migration",
 			Func:        st.startStage(),
 		},

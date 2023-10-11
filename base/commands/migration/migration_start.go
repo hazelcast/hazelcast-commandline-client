@@ -10,8 +10,10 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	clcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/prompt"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
 type StartCmd struct{}
@@ -72,7 +74,13 @@ Selected data structures in the source cluster will be migrated to the target cl
 	}
 	ec.PrintlnUnnecessary("")
 	ec.PrintlnUnnecessary("OK Migration completed successfully.")
-	return nil
+	return ec.AddOutputRows(ctx, output.Row{
+		output.Column{
+			Name:  "Migration ID",
+			Type:  serialization.TypeString,
+			Value: mID,
+		},
+	})
 }
 
 func init() {
