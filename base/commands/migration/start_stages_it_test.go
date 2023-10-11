@@ -57,6 +57,7 @@ func startMigrationTest(t *testing.T, expectedErr error, statusMapStateFiles []s
 	ctx := context.Background()
 	tcx.Tester(func(tcx it.TestContext) {
 		ci := hz.NewClientInternal(tcx.Client)
+		createMapping(ctx, tcx)
 		createMemberLogs(t, ctx, ci)
 		defer removeMembersLogs(ctx, ci)
 		var wg sync.WaitGroup
@@ -74,6 +75,9 @@ func startMigrationTest(t *testing.T, expectedErr error, statusMapStateFiles []s
 		wg.Add(1)
 		go migrationRunner(ctx, tcx, mID, &wg, statusMapStateFiles)
 		wg.Wait()
+		if expectedErr == nil {
+			require.Equal(t, nil, execErr)
+		}
 		if expectedErr != nil {
 			require.Contains(t, execErr.Error(), expectedErr.Error())
 		}
@@ -92,8 +96,6 @@ func startMigrationTest(t *testing.T, expectedErr error, statusMapStateFiles []s
 }
 
 func migrationRunner(ctx context.Context, tcx it.TestContext, migrationID string, wg *sync.WaitGroup, statusMapStateFiles []string) {
-	mSQL := fmt.Sprintf(`CREATE MAPPING IF NOT EXISTS %s TYPE IMap OPTIONS('keyFormat'='varchar', 'valueFormat'='json')`, migration.StatusMapName)
-	MustValue(tcx.Client.SQL().Execute(ctx, mSQL))
 	statusMap := MustValue(tcx.Client.GetMap(ctx, migration.StatusMapName))
 	for _, f := range statusMapStateFiles {
 		b := MustValue(os.ReadFile(f))

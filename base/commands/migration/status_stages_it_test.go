@@ -67,7 +67,7 @@ func statusTest(t *testing.T) {
 		time.Sleep(1 * time.Second)
 		statusRunner(t, mID, tcx, ctx)
 		wg.Wait()
-		tcx.AssertStdoutContains("OK  Connected to the migration cluster.")
+		tcx.AssertStdoutContains("Connected to the migration cluster")
 		tcx.WithReset(func() {
 			f := fmt.Sprintf("migration_report_%s.txt", mID)
 			require.Equal(t, true, fileExists(f))
