@@ -1,10 +1,15 @@
+//go:build migration
+
 package migration
 
 const (
-	startQueueName           = "__datamigration_start_queue"
-	statusMapEntryName       = "status"
+	StatusMapName            = "__datamigration_migrations"
 	MigrationsInProgressList = "__datamigrations_in_progress"
 	CancelQueue              = "__datamigration_cancel_queue"
-	argDMTConfig       = "dmtConfig"
-	argTitleDMTConfig  = "DMT configuration"
+)
+
+type Status string
+
+const (
+	StatusCanceling Status = "CANCELING"
 )

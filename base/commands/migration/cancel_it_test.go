@@ -5,6 +5,8 @@ package migration_test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"os"
 	"sync"
 	"testing"
 
@@ -17,20 +19,20 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestStatus(t *testing.T) {
+func TestCancel(t *testing.T) {
 	testCases := []struct {
 		name string
 		f    func(t *testing.T)
 	}{
-		{name: "status", f: statusTest},
-		{name: "noMigrationsStatus", f: noMigrationsStatusTest},
+		{name: "cancel", f: cancelTest},
+		{name: "noMigrations", f: noMigrationsCancelTest},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, tc.f)
 	}
 }
 
-func noMigrationsStatusTest(t *testing.T) {
+func noMigrationsCancelTest(t *testing.T) {
 	tcx := it.TestContext{T: t}
 	ctx := context.Background()
 	tcx.Tester(func(tcx it.TestContext) {
@@ -45,11 +47,15 @@ func noMigrationsStatusTest(t *testing.T) {
 	})
 }
 
-func statusTest(t *testing.T) {
+func cancelTest(t *testing.T) {
 	tcx := it.TestContext{T: t}
 	ctx := context.Background()
 	tcx.Tester(func(tcx it.TestContext) {
 		mID := migration.MakeMigrationID()
+		createMapping(ctx, tcx)
+		statusMap := MustValue(tcx.Client.GetMap(ctx, migration.StatusMapName))
+		b := MustValue(os.ReadFile("testdata/cancel/migration_cancelling.json"))
+		Must(statusMap.Set(ctx, mID, serialization.JSON(b)))
 		l := MustValue(tcx.Client.GetList(ctx, migration.MigrationsInProgressList))
 		m := MustValue(json.Marshal(migration.MigrationInProgress{
 			MigrationID: mID,
@@ -63,9 +69,12 @@ func statusTest(t *testing.T) {
 			Must(tcx.CLC().Execute(ctx, "cancel"))
 		})
 		wg.Wait()
-		tcx.AssertStdoutContains(`OK   [1/2] Connected to the migration cluster.
- OK   [2/2] Canceled the migration.
-
- OK   Migration canceled successfully.`)
+		MustValue(l.Remove(ctx, serialization.JSON(m)))
+		tcx.AssertStdoutContains(`Migration canceled successfully.`)
 	})
+}
+
+func createMapping(ctx context.Context, tcx it.TestContext) {
+	mSQL := fmt.Sprintf(`CREATE MAPPING IF NOT EXISTS %s TYPE IMap OPTIONS('keyFormat'='varchar', 'valueFormat'='json')`, migration.StatusMapName)
+	MustValue(tcx.Client.SQL().Execute(ctx, mSQL))
 }

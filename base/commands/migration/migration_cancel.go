@@ -19,14 +19,13 @@ func (c CancelCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandGroup("migration")
 	help := "Cancel the data migration"
 	cc.SetCommandHelp(help, help)
-	cc.SetPositionalArgCount(0, 0)
 	return nil
 }
 
 func (c CancelCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	sts := NewCancelStages()
 	sp := stage.NewFixedProvider(sts.Build(ctx, ec)...)
-	if err := stage.Execute(ctx, ec, sp); err != nil {
+	if _, err := stage.Execute(ctx, ec, any(nil), sp); err != nil {
 		return err
 	}
 	ec.PrintlnUnnecessary("")
