@@ -191,15 +191,11 @@ func saveReportToFile(ctx context.Context, ci *hazelcast.ClientInternal, migrati
 
 func waitForMigrationToBeCreated(ctx context.Context, ci *hazelcast.ClientInternal, migrationID string) error {
 	for {
-		statusMap, err := ci.Client().GetMap(ctx, StatusMapName)
+		status, err := fetchMigrationStatus(ctx, ci, migrationID)
 		if err != nil {
 			return err
 		}
-		ok, err := statusMap.ContainsKey(ctx, migrationID)
-		if err != nil {
-			return err
-		}
-		if ok {
+		if Status(status) == StatusInProgress {
 			return nil
 		}
 	}
@@ -288,7 +284,7 @@ func fetchMigrationErrors(ctx context.Context, ci *hazelcast.ClientInternal, mig
 		return "", err
 	}
 	var errs []string
-	for it.HasNext() { // single iteration is enough that we are reading single result for a single migration
+	for it.HasNext() {
 		row, err := it.Next()
 		if err != nil {
 			return "", err
