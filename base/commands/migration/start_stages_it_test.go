@@ -42,7 +42,7 @@ func TestMigrationStages(t *testing.T) {
 				"testdata/start/migration_success_initial.json",
 				"testdata/start/migration_success_failure.json",
 			},
-			expectedErr: errors.New("Failed migrating IMAP: imap5 ...: some error"),
+			expectedErr: errors.New("Failed migrating IMAP: imap5: some error"),
 		},
 	}
 	for _, tc := range testCases {
@@ -98,6 +98,7 @@ func migrationRunner(ctx context.Context, tcx it.TestContext, migrationID string
 	for _, f := range statusMapStateFiles {
 		b := MustValue(os.ReadFile(f))
 		Must(statusMap.Set(ctx, migrationID, serialization.JSON(b)))
+		time.Sleep(2 * time.Second)
 	}
 	wg.Done()
 }
