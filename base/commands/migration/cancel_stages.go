@@ -98,35 +98,6 @@ func waitForCancel(ctx context.Context, ci *hazelcast.ClientInternal, migrationI
 	}
 }
 
-func fetchMigrationStatus(ctx context.Context, ci *hazelcast.ClientInternal, migrationID string) (string, error) {
-	q := fmt.Sprintf(`SELECT JSON_QUERY(this, '$.status') FROM %s WHERE __key='%s'`, StatusMapName, migrationID)
-	res, err := ci.Client().SQL().Execute(ctx, q)
-	if err != nil {
-		return "", err
-	}
-	it, err := res.Iterator()
-	if err != nil {
-		return "", err
-	}
-	if it.HasNext() { // single iteration is enough that we are reading single result for a single migration
-		row, err := it.Next()
-		if err != nil {
-			return "", err
-		}
-		r, err := row.Get(0)
-		var m string
-		if err = json.Unmarshal(r.(serialization.JSON), &m); err != nil {
-			return "", err
-		}
-		return m, nil
-	}
-	return "", nil
-}
-
-type MigrationInProgress struct {
-	MigrationID string `json:"migrationId"`
-}
-
 type CancelItem struct {
 	ID string `json:"id"`
 }
