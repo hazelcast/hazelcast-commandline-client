@@ -19,7 +19,7 @@ import (
 )
 
 var timeoutErr = fmt.Errorf("migration could not be completed: reached timeout while reading status: "+
-	"please ensure that you are using Hazelcast's migration cluster distribution and your DMT config points to that cluster: %w",
+	"please ensure that you are using Hazelcast's migration cluster distribution and your DMT configuration points to that cluster: %w",
 	context.DeadlineExceeded)
 
 func createMigrationStages(ctx context.Context, ec plug.ExecContext, ci *hazelcast.ClientInternal, migrationID string) ([]stage.Stage[any], error) {
