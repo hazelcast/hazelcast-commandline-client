@@ -5,7 +5,6 @@ package migration_test
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"os"
 	"sync"
 	"testing"
@@ -72,9 +71,4 @@ func cancelTest(t *testing.T) {
 		MustValue(l.Remove(ctx, serialization.JSON(m)))
 		tcx.AssertStdoutContains(`Migration canceled successfully.`)
 	})
-}
-
-func createMapping(ctx context.Context, tcx it.TestContext) {
-	mSQL := fmt.Sprintf(`CREATE MAPPING IF NOT EXISTS %s TYPE IMap OPTIONS('keyFormat'='varchar', 'valueFormat'='json')`, migration.StatusMapName)
-	MustValue(tcx.Client.SQL().Execute(ctx, mSQL))
 }
