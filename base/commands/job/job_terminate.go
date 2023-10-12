@@ -6,7 +6,7 @@ import (
 	"context"
 	"fmt"
 
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/jet"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
@@ -44,7 +44,7 @@ func (cm TerminateCommand) Exec(ctx context.Context, ec plug.ExecContext) error 
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("job:cancel", &TerminateCommand{
+	check.Must(plug.Registry.RegisterCommand("job:cancel", &TerminateCommand{
 		name:               "cancel",
 		longHelp:           "Cancels the job with the given ID or name",
 		shortHelp:          "Cancels the job with the given ID or name",
@@ -55,7 +55,7 @@ func init() {
 		successMsg:         "Started cancellation of '%s'",
 		failureMsg:         "Failed to start job cancellation",
 	}))
-	Must(plug.Registry.RegisterCommand("job:suspend", &TerminateCommand{
+	check.Must(plug.Registry.RegisterCommand("job:suspend", &TerminateCommand{
 		name:               "suspend",
 		longHelp:           "Suspends the job with the given ID or name",
 		shortHelp:          "Suspends the job with the given ID or name",
@@ -66,7 +66,7 @@ func init() {
 		successMsg:         "Started suspension of '%s'",
 		failureMsg:         "Failed to start job suspension",
 	}))
-	Must(plug.Registry.RegisterCommand("job:restart", &TerminateCommand{
+	check.Must(plug.Registry.RegisterCommand("job:restart", &TerminateCommand{
 		name:               "restart",
 		longHelp:           "Restarts the job with the given ID or name",
 		shortHelp:          "Restarts the job with the given ID or name",

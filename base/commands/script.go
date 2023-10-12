@@ -52,6 +52,7 @@ See examples/sql/dessert.sql for a sample script.
 }
 
 func (ScriptCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+	cmd.IncrementMetric(ctx, ec, "total.script")
 	args := ec.GetStringSliceArg(argPath)
 	in := ec.Stdin()
 	if len(args) > 0 {
@@ -67,7 +68,7 @@ func (ScriptCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		Stderr: ec.Stderr(),
 		Stdout: ec.Stdout(),
 	}
-	m, err := ec.(*cmd.ExecContext).Main().Clone(cmd.ModeScripting)
+	m, err := ec.(*cmd.ExecContext).Main().Clone(plug.ModeScripting)
 	if err != nil {
 		return fmt.Errorf("cloning Main: %w", err)
 	}

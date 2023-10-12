@@ -15,36 +15,46 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 )
 
+type mapPrefixFunc[T any] func(ctx context.Context, ec plug.ExecContext, sp clc.Spinner) (T, error)
+
 type nameRequestEncodeFunc func(name string) *hazelcast.ClientMessage
 type pairsResponseDecodeFunc func(message *hazelcast.ClientMessage) []hazelcast.Pair
 
-type MapEntrySetCommand struct {
-	typeName string
-	encoder  nameRequestEncodeFunc
-	decoder  pairsResponseDecodeFunc
+type MapEntrySetCommand[T any] struct {
+	typeName   string
+	metricName string
+	encoder    nameRequestEncodeFunc
+	decoder    pairsResponseDecodeFunc
+	prefixer   mapPrefixFunc[T]
 }
 
-func NewMapEntrySetCommand(typeName string, encoder nameRequestEncodeFunc, decoder pairsResponseDecodeFunc) *MapEntrySetCommand {
-	return &MapEntrySetCommand{
-		typeName: typeName,
-		encoder:  encoder,
-		decoder:  decoder,
+func NewMapEntrySetCommand[T any](typeName, metricName string, encoder nameRequestEncodeFunc, decoder pairsResponseDecodeFunc, prefixer mapPrefixFunc[T]) *MapEntrySetCommand[T] {
+	return &MapEntrySetCommand[T]{
+		typeName:   typeName,
+		metricName: metricName,
+		encoder:    encoder,
+		decoder:    decoder,
+		prefixer:   prefixer,
 	}
 }
 
-func (cm MapEntrySetCommand) Init(cc plug.InitContext) error {
+func (cm MapEntrySetCommand[T]) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("entry-set")
 	help := fmt.Sprintf("Get all entries of a %s", cm.typeName)
 	cc.SetCommandHelp(help, help)
 	return nil
 }
 
-func (cm MapEntrySetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (cm MapEntrySetCommand[T]) Exec(ctx context.Context, ec plug.ExecContext) error {
 	name := ec.Props().GetString(base.FlagName)
 	showType := ec.Props().GetBool(base.FlagShowType)
 	rowsV, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		ci, err := cmd.ClientInternal(ctx, ec, sp)
 		if err != nil {
+			return nil, err
+		}
+		cmd.IncrementClusterMetric(ctx, ec, "total."+cm.metricName)
+		if _, err = cm.prefixer(ctx, ec, sp); err != nil {
 			return nil, err
 		}
 		req := cm.encoder(name)
@@ -67,21 +77,25 @@ func (cm MapEntrySetCommand) Exec(ctx context.Context, ec plug.ExecContext) erro
 type getRequestEncodeFunc func(name string, keyData hazelcast.Data, threadID int64) *hazelcast.ClientMessage
 type getResponseDecodeFunc func(ctx context.Context, ec plug.ExecContext, res *hazelcast.ClientMessage) ([]output.Row, error)
 
-type MapGetCommand struct {
-	typeName string
-	encoder  getRequestEncodeFunc
-	decoder  getResponseDecodeFunc
+type MapGetCommand[T any] struct {
+	typeName   string
+	metricName string
+	encoder    getRequestEncodeFunc
+	decoder    getResponseDecodeFunc
+	prefixer   mapPrefixFunc[T]
 }
 
-func NewMapGetCommand(typeName string, encoder getRequestEncodeFunc, decoder getResponseDecodeFunc) *MapGetCommand {
-	return &MapGetCommand{
-		typeName: typeName,
-		encoder:  encoder,
-		decoder:  decoder,
+func NewMapGetCommand[T any](typeName, metricName string, encoder getRequestEncodeFunc, decoder getResponseDecodeFunc, prefixer mapPrefixFunc[T]) *MapGetCommand[T] {
+	return &MapGetCommand[T]{
+		typeName:   typeName,
+		metricName: metricName,
+		encoder:    encoder,
+		decoder:    decoder,
+		prefixer:   prefixer,
 	}
 }
 
-func (cm MapGetCommand) Init(cc plug.InitContext) error {
+func (cm MapGetCommand[T]) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("get")
 	AddKeyTypeFlag(cc)
 	help := fmt.Sprintf("Get a value from the given %s", cm.typeName)
@@ -90,12 +104,16 @@ func (cm MapGetCommand) Init(cc plug.InitContext) error {
 	return nil
 }
 
-func (cm MapGetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (cm MapGetCommand[T]) Exec(ctx context.Context, ec plug.ExecContext) error {
 	name := ec.Props().GetString(base.FlagName)
 	keyStr := ec.GetStringArg(ArgKey)
 	rowsV, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		ci, err := cmd.ClientInternal(ctx, ec, sp)
 		if err != nil {
+			return nil, err
+		}
+		cmd.IncrementClusterMetric(ctx, ec, "total."+cm.metricName)
+		if _, err = cm.prefixer(ctx, ec, sp); err != nil {
 			return nil, err
 		}
 		sp.SetText(fmt.Sprintf("Getting from %s '%s'", cm.typeName, name))
@@ -124,33 +142,41 @@ func (cm MapGetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 
 type dataSliceDecoderFunc func(message *hazelcast.ClientMessage) []*hazelcast.Data
 
-type MapKeySetCommand struct {
-	typeName string
-	encoder  nameRequestEncodeFunc
-	decoder  dataSliceDecoderFunc
+type MapKeySetCommand[T any] struct {
+	typeName   string
+	metricName string
+	encoder    nameRequestEncodeFunc
+	decoder    dataSliceDecoderFunc
+	prefixer   mapPrefixFunc[T]
 }
 
-func NewMapKeySetCommand(typeName string, encoder nameRequestEncodeFunc, decoder dataSliceDecoderFunc) *MapKeySetCommand {
-	return &MapKeySetCommand{
-		typeName: typeName,
-		encoder:  encoder,
-		decoder:  decoder,
+func NewMapKeySetCommand[T any](typeName, metricName string, encoder nameRequestEncodeFunc, decoder dataSliceDecoderFunc, prefixer mapPrefixFunc[T]) *MapKeySetCommand[T] {
+	return &MapKeySetCommand[T]{
+		typeName:   typeName,
+		metricName: metricName,
+		encoder:    encoder,
+		decoder:    decoder,
+		prefixer:   prefixer,
 	}
 }
 
-func (cm MapKeySetCommand) Init(cc plug.InitContext) error {
+func (cm MapKeySetCommand[T]) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("key-set")
 	help := fmt.Sprintf("Get all keys of a %s", cm.typeName)
 	cc.SetCommandHelp(help, help)
 	return nil
 }
 
-func (cm MapKeySetCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (cm MapKeySetCommand[T]) Exec(ctx context.Context, ec plug.ExecContext) error {
 	name := ec.Props().GetString(base.FlagName)
 	showType := ec.Props().GetBool(base.FlagShowType)
 	rowsV, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		ci, err := cmd.ClientInternal(ctx, ec, sp)
 		if err != nil {
+			return nil, err
+		}
+		cmd.IncrementClusterMetric(ctx, ec, "total."+cm.metricName)
+		if _, err = cm.prefixer(ctx, ec, sp); err != nil {
 			return nil, err
 		}
 		req := cm.encoder(name)
@@ -184,16 +210,18 @@ func (cm MapKeySetCommand) Exec(ctx context.Context, ec plug.ExecContext) error 
 }
 
 type MapRemoveCommand struct {
-	typeName string
-	encoder  getRequestEncodeFunc
-	decoder  getResponseDecodeFunc
+	typeName   string
+	metricName string
+	encoder    getRequestEncodeFunc
+	decoder    getResponseDecodeFunc
 }
 
-func NewMapRemoveCommand(typeName string, encoder getRequestEncodeFunc, decoder getResponseDecodeFunc) *MapRemoveCommand {
+func NewMapRemoveCommand(typeName, metricName string, encoder getRequestEncodeFunc, decoder getResponseDecodeFunc) *MapRemoveCommand {
 	return &MapRemoveCommand{
-		typeName: typeName,
-		encoder:  encoder,
-		decoder:  decoder,
+		typeName:   typeName,
+		metricName: metricName,
+		encoder:    encoder,
+		decoder:    decoder,
 	}
 }
 
@@ -214,6 +242,7 @@ func (cm MapRemoveCommand) Exec(ctx context.Context, ec plug.ExecContext) error 
 		if err != nil {
 			return nil, err
 		}
+		cmd.IncrementClusterMetric(ctx, ec, "total."+cm.metricName)
 		sp.SetText(fmt.Sprintf("Removing from %s '%s'", cm.typeName, name))
 		keyData, err := MakeKeyData(ec, ci, keyStr)
 		if err != nil {
@@ -243,14 +272,16 @@ type Locker interface {
 type getLockerFunc[T Locker] func(context.Context, plug.ExecContext, clc.Spinner) (T, error)
 
 type LockCommand[T Locker] struct {
-	typeName string
-	getFn    getLockerFunc[T]
+	typeName   string
+	metricName string
+	getFn      getLockerFunc[T]
 }
 
-func NewLockCommand[T Locker](typeName string, getFn getLockerFunc[T]) *LockCommand[T] {
+func NewLockCommand[T Locker](typeName, metricName string, getFn getLockerFunc[T]) *LockCommand[T] {
 	return &LockCommand[T]{
-		typeName: typeName,
-		getFn:    getFn,
+		typeName:   typeName,
+		metricName: metricName,
+		getFn:      getFn,
 	}
 }
 
@@ -270,7 +301,7 @@ This command is only available in the interactive mode.`, cm.typeName)
 func (cm LockCommand[T]) Exec(ctx context.Context, ec plug.ExecContext) error {
 	name := ec.Props().GetString(base.FlagName)
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		ci, err := cmd.ClientInternal(ctx, ec, sp)
+		key, err := MakeValueFromString(ec.GetStringArg(ArgKey), ec.Props().GetString(FlagKeyType))
 		if err != nil {
 			return nil, err
 		}
@@ -278,16 +309,12 @@ func (cm LockCommand[T]) Exec(ctx context.Context, ec plug.ExecContext) error {
 		if err != nil {
 			return nil, err
 		}
-		keyStr := ec.GetStringArg(ArgKey)
-		keyData, err := MakeKeyData(ec, ci, keyStr)
-		if err != nil {
-			return nil, err
-		}
+		cmd.IncrementClusterMetric(ctx, ec, "total."+cm.metricName)
 		sp.SetText(fmt.Sprintf("Locking the key in %s '%s'", cm.typeName, name))
 		if ttl := GetTTL(ec); ttl != clc.TTLUnset {
-			return nil, m.LockWithLease(ctx, keyData, time.Duration(GetTTL(ec)))
+			return nil, m.LockWithLease(ctx, key, time.Duration(GetTTL(ec)))
 		}
-		return nil, m.Lock(ctx, keyData)
+		return nil, m.Lock(ctx, key)
 	})
 	if err != nil {
 		return err
@@ -306,14 +333,16 @@ type LockTrier interface {
 type getLockTrierFunc[T LockTrier] func(context.Context, plug.ExecContext, clc.Spinner) (T, error)
 
 type MapTryLockCommand[T LockTrier] struct {
-	typeName string
-	getFn    getLockTrierFunc[T]
+	typeName   string
+	metricName string
+	getFn      getLockTrierFunc[T]
 }
 
-func NewTryLockCommand[T LockTrier](typeName string, getFn getLockTrierFunc[T]) *MapTryLockCommand[T] {
+func NewTryLockCommand[T LockTrier](typeName, metricName string, getFn getLockTrierFunc[T]) *MapTryLockCommand[T] {
 	return &MapTryLockCommand[T]{
-		typeName: typeName,
-		getFn:    getFn,
+		typeName:   typeName,
+		metricName: metricName,
+		getFn:      getFn,
 	}
 }
 
@@ -335,25 +364,21 @@ This command is only available in the interactive mode.`, cm.typeName)
 func (cm MapTryLockCommand[T]) Exec(ctx context.Context, ec plug.ExecContext) error {
 	rowsV, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		mapName := ec.Props().GetString(base.FlagName)
-		ci, err := cmd.ClientInternal(ctx, ec, sp)
-		if err != nil {
-			return nil, err
-		}
 		sp.SetText(fmt.Sprintf("Locking key in map %s", mapName))
 		m, err := cm.getFn(ctx, ec, sp)
 		if err != nil {
 			return nil, err
 		}
-		keyStr := ec.GetStringArg(ArgKey)
-		keyData, err := MakeKeyData(ec, ci, keyStr)
+		cmd.IncrementClusterMetric(ctx, ec, "total."+cm.metricName)
+		key, err := MakeValueFromString(ec.GetStringArg(ArgKey), ec.Props().GetString(FlagKeyType))
 		if err != nil {
 			return nil, err
 		}
 		var locked bool
 		if ttl := GetTTL(ec); ttl != clc.TTLUnset {
-			locked, err = m.TryLockWithLease(ctx, keyData, time.Duration(GetTTL(ec)))
+			locked, err = m.TryLockWithLease(ctx, key, time.Duration(GetTTL(ec)))
 		} else {
-			locked, err = m.TryLock(ctx, keyData)
+			locked, err = m.TryLock(ctx, key)
 		}
 		row := output.Row{
 			{
@@ -385,14 +410,16 @@ type Unlocker interface {
 type getUnlockerFunc[T Unlocker] func(context.Context, plug.ExecContext, clc.Spinner) (T, error)
 
 type MapUnlockCommand[T Unlocker] struct {
-	typeName string
-	getFn    getUnlockerFunc[T]
+	typeName   string
+	metricName string
+	getFn      getUnlockerFunc[T]
 }
 
-func NewMapUnlockCommand[T Unlocker](typeName string, getFn getUnlockerFunc[T]) *MapUnlockCommand[T] {
+func NewMapUnlockCommand[T Unlocker](typeName, metricName string, getFn getUnlockerFunc[T]) *MapUnlockCommand[T] {
 	return &MapUnlockCommand[T]{
-		typeName: typeName,
-		getFn:    getFn,
+		typeName:   typeName,
+		metricName: metricName,
+		getFn:      getFn,
 	}
 }
 
@@ -411,21 +438,14 @@ This command is only available in the interactive mode.`, cm.typeName)
 func (cm MapUnlockCommand[T]) Exec(ctx context.Context, ec plug.ExecContext) error {
 	name := ec.Props().GetString(base.FlagName)
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		ci, err := ec.ClientInternal(ctx)
-		if err != nil {
-			return nil, err
-		}
+		key, err := MakeValueFromString(ec.GetStringArg(ArgKey), ec.Props().GetString(FlagKeyType))
 		sp.SetText(fmt.Sprintf("Unlocking key in %s '%s'", cm.typeName, name))
 		m, err := cm.getFn(ctx, ec, sp)
 		if err != nil {
 			return nil, err
 		}
-		keyStr := ec.GetStringArg(ArgKey)
-		keyData, err := MakeKeyData(ec, ci, keyStr)
-		if err != nil {
-			return nil, err
-		}
-		return nil, m.Unlock(ctx, keyData)
+		cmd.IncrementClusterMetric(ctx, ec, "total."+cm.metricName)
+		return nil, m.Unlock(ctx, key)
 	})
 	if err != nil {
 		return err
@@ -436,33 +456,41 @@ func (cm MapUnlockCommand[T]) Exec(ctx context.Context, ec plug.ExecContext) err
 	return nil
 }
 
-type MapValuesCommand struct {
-	typeName string
-	encoder  nameRequestEncodeFunc
-	decoder  dataSliceDecoderFunc
+type MapValuesCommand[T any] struct {
+	typeName   string
+	metricName string
+	encoder    nameRequestEncodeFunc
+	decoder    dataSliceDecoderFunc
+	prefixer   mapPrefixFunc[T]
 }
 
-func NewMapValuesCommand(typeName string, encoder nameRequestEncodeFunc, decoder dataSliceDecoderFunc) *MapValuesCommand {
-	return &MapValuesCommand{
-		typeName: typeName,
-		encoder:  encoder,
-		decoder:  decoder,
+func NewMapValuesCommand[T any](typeName, metricName string, encoder nameRequestEncodeFunc, decoder dataSliceDecoderFunc, prefixer mapPrefixFunc[T]) *MapValuesCommand[T] {
+	return &MapValuesCommand[T]{
+		typeName:   typeName,
+		metricName: metricName,
+		encoder:    encoder,
+		decoder:    decoder,
+		prefixer:   prefixer,
 	}
 }
 
-func (cm MapValuesCommand) Init(cc plug.InitContext) error {
+func (cm MapValuesCommand[T]) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("values")
 	help := fmt.Sprintf("Get all values of a %s", cm.typeName)
 	cc.SetCommandHelp(help, help)
 	return nil
 }
 
-func (cm *MapValuesCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (cm *MapValuesCommand[T]) Exec(ctx context.Context, ec plug.ExecContext) error {
 	name := ec.Props().GetString(base.FlagName)
 	showType := ec.Props().GetBool(base.FlagShowType)
 	rowsV, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		ci, err := cmd.ClientInternal(ctx, ec, sp)
 		if err != nil {
+			return nil, err
+		}
+		cmd.IncrementClusterMetric(ctx, ec, "total."+cm.metricName)
+		if _, err := cm.prefixer(ctx, ec, sp); err != nil {
 			return nil, err
 		}
 		sp.SetText(fmt.Sprintf("Getting values of %s", name))

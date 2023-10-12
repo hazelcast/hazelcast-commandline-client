@@ -140,17 +140,20 @@ func (j Jet) ResumeJob(ctx context.Context, jobID int64) error {
 	return nil
 }
 
-func EnsureJobState(jobs []control.JobAndSqlSummary, jobNameOrID string, state int32) (bool, error) {
+func EnsureJobState(jobs []control.JobAndSqlSummary, jobID int64, state int32) (bool, int32, error) {
 	for _, j := range jobs {
-		if j.NameOrId == jobNameOrID {
+		if j.JobId == jobID {
 			if j.Status == state {
-				return true, nil
+				return true, j.Status, nil
+			}
+			if j.Status == JobStatusCompleted {
+				return false, j.Status, nil
 			}
 			if j.Status == JobStatusFailed {
-				return false, ErrJobFailed
+				return false, j.Status, ErrJobFailed
 			}
-			return false, nil
+			return false, j.Status, nil
 		}
 	}
-	return false, ErrJobNotFound
+	return false, -1, ErrJobNotFound
 }

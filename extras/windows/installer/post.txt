@@ -3,7 +3,8 @@ You can launch the CLC from the Hazelcast group in the Start menu.
 
 Useful links:
 
-* Hazelcast CLC documentation: https://docs.hazelcast.com/hazelcast/latest-dev/clients/clc
+* Hazelcast CLC documentation: https://docs.hazelcast.com/hazelcast/latest/clients/clc
+* Get started with Viridian: https://docs.hazelcast.com/cloud/get-started
 * Get Started with Hazelcast: https://docs.hazelcast.com/hazelcast/latest/getting-started/get-started-cli
 * Hazelcast CLC Survey - please complete the survey to share your feedback: https://forms.gle/rPFywdQjvib1QCe49
 

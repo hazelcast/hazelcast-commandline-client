@@ -13,7 +13,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	clcsql "github.com/hazelcast/hazelcast-commandline-client/clc/sql"
 	"github.com/hazelcast/hazelcast-commandline-client/errors"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
@@ -23,15 +23,11 @@ const (
 	argTitleQuery    = "query"
 )
 
-type arg0er interface {
-	Arg0() string
-}
-
 type SQLCommand struct{}
 
 func (SQLCommand) Augment(ec plug.ExecContext, props *plug.Properties) error {
 	// set the default format to table in the interactive mode
-	if ecc, ok := ec.(arg0er); ok {
+	if ecc, ok := ec.(clc.Arg0er); ok {
 		if ec.CommandName() == ecc.Arg0()+" shell" && len(ec.Args()) == 0 {
 			props.Set(clc.PropertyFormat, base.PrinterTable)
 		}
@@ -70,6 +66,7 @@ func (SQLCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		if err != nil {
 			return nil, err
 		}
+		cmd.IncrementClusterMetric(ctx, ec, "total.sql")
 		if sv, ok := cmd.CheckServerCompatible(ci, minServerVersion); !ok {
 			return nil, fmt.Errorf("server (%s) does not support this command, at least %s is expected", sv, minServerVersion)
 		}
@@ -87,5 +84,5 @@ func (SQLCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 
 func init() {
 	plug.Registry.RegisterAugmentor("20-sql", &SQLCommand{})
-	Must(plug.Registry.RegisterCommand("sql", &SQLCommand{}))
+	check.Must(plug.Registry.RegisterCommand("sql", &SQLCommand{}))
 }

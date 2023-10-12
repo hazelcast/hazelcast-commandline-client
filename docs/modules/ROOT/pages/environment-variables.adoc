@@ -39,6 +39,10 @@
 |Sets the configuration CLC will use if `--config` flag is not specified.
 |
 
+|HZ_PHONE_HOME_ENABLED
+|Enables phone home collection for CLC usage statistics. Set 'false' to disable phone homes.
+|true
+
 |===
 
 The following environment variables are experimental and may be removed in a future version.
@@ -61,6 +65,10 @@ The following environment variables are experimental and may be removed in a fut
 
 |NO_COLOR
 |Disables color output if set to `1`.
+|`0` (false)
+
+|CLC_SKIP_UPDATE_CHECK
+|Disables checking new version of CLC.
 |`0` (false)
 
 |===

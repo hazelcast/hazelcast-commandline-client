@@ -11,7 +11,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
@@ -42,6 +42,7 @@ func (PollCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		if err != nil {
 			return nil, err
 		}
+		cmd.IncrementClusterMetric(ctx, ec, "total.queue")
 		sp.SetText(fmt.Sprintf("Polling from Queue '%s'", queueName))
 		req := codec.EncodeQueuePollRequest(queueName, 0)
 		pID, err := internal.StringToPartitionID(ci, queueName)
@@ -87,5 +88,5 @@ func (PollCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("queue:poll", &PollCommand{}))
+	check.Must(plug.Registry.RegisterCommand("queue:poll", &PollCommand{}))
 }

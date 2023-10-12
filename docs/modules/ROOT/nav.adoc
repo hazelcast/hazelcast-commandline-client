@@ -33,10 +33,14 @@
 ** xref:clc-version.adoc[]
 ** xref:clc-viridian.adoc[]
 ** xref:clc-project.adoc[]
+** xref:clc-serializer-generator.adoc[]
+* xref:configuration-format.adoc[]
 * xref:environment-variables.adoc[]
 * xref:keyboard-shortcuts.adoc[]
+* xref:phone-homes.adoc[]
 
 .Release Notes
+* xref:release-notes-5.3.4.adoc[5.3.4]
 * xref:release-notes-5.3.3.adoc[5.3.3]
 * xref:release-notes-5.3.2.adoc[5.3.2]
 * xref:release-notes-5.3.1.adoc[5.3.1]

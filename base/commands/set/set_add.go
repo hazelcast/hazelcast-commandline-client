@@ -34,6 +34,7 @@ func (AddCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 		if err != nil {
 			return nil, err
 		}
+		cmd.IncrementClusterMetric(ctx, ec, "total.set")
 		s, err := ci.Client().GetSet(ctx, name)
 		if err != nil {
 			return nil, err
