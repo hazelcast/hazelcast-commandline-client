@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -22,10 +23,12 @@ var timeoutErr = fmt.Errorf("migration could not be completed: reached timeout w
 	"please ensure that you are using Hazelcast's migration cluster distribution and your DMT configuration points to that cluster: %w",
 	context.DeadlineExceeded)
 
+var migrationStatusNotFoundErr = fmt.Errorf("migration status not found")
+
 func createMigrationStages(ctx context.Context, ec plug.ExecContext, ci *hazelcast.ClientInternal, migrationID string) ([]stage.Stage[any], error) {
 	childCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
-	if err := waitForMigrationToBeCreated(childCtx, ci, migrationID); err != nil {
+	if err := waitForMigrationToBeInProgress(childCtx, ci, migrationID); err != nil {
 		return nil, fmt.Errorf("waiting migration to be created: %w", err)
 	}
 	var stages []stage.Stage[any]
@@ -181,6 +184,9 @@ func saveReportToFile(ctx context.Context, ci *hazelcast.ClientInternal, migrati
 	if err != nil {
 		return err
 	}
+	if report == "" {
+		return nil
+	}
 	f, err := os.Create(fmt.Sprintf(fileName))
 	if err != nil {
 		return err
@@ -189,10 +195,13 @@ func saveReportToFile(ctx context.Context, ci *hazelcast.ClientInternal, migrati
 	return os.WriteFile(fileName, []byte(report), 0600)
 }
 
-func waitForMigrationToBeCreated(ctx context.Context, ci *hazelcast.ClientInternal, migrationID string) error {
+func waitForMigrationToBeInProgress(ctx context.Context, ci *hazelcast.ClientInternal, migrationID string) error {
 	for {
 		status, err := fetchMigrationStatus(ctx, ci, migrationID)
 		if err != nil {
+			if errors.Is(err, migrationStatusNotFoundErr) {
+				continue // migration status will not be available for a while, so we should wait for it
+			}
 			return err
 		}
 		if Status(status) == StatusInProgress {
@@ -244,6 +253,8 @@ func fetchMigrationStatus(ctx context.Context, ci *hazelcast.ClientInternal, mig
 			return "", err
 		}
 		return m, nil
+	} else {
+		return "", migrationStatusNotFoundErr
 	}
 	return "", nil
 }
@@ -304,11 +315,8 @@ func finalizeMigration(ctx context.Context, ec plug.ExecContext, ci *hazelcast.C
 	if err != nil {
 		return err
 	}
-	var name string
-	if reportOutputDir == "" {
-		name = fmt.Sprintf("migration_report_%s.txt", migrationID)
-	}
-	err = saveReportToFile(ctx, ci, migrationID, name)
+	outFile := filepath.Join(reportOutputDir, fmt.Sprintf("migration_report_%s.txt", migrationID))
+	err = saveReportToFile(ctx, ci, migrationID, outFile)
 	if err != nil {
 		return fmt.Errorf("saving report to file: %w", err)
 	}
