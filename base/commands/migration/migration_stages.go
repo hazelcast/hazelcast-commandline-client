@@ -158,6 +158,8 @@ func dataStructuresToBeMigrated(ctx context.Context, ec plug.ExecContext, migrat
 				Type: m.Type,
 			})
 		}
+	} else {
+		return nil, fmt.Errorf("no datastructures found to migrate")
 	}
 	return dss, nil
 }
@@ -280,6 +282,8 @@ func fetchMigrationReport(ctx context.Context, ci *hazelcast.ClientInternal, mig
 			return "", err
 		}
 		return m, nil
+	} else {
+		return "", fmt.Errorf("migration report cannot be found")
 	}
 	return "", nil
 }
