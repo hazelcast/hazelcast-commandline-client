@@ -46,7 +46,7 @@ func noMigrationsStatusTest(t *testing.T) {
 			execErr = tcx.CLC().Execute(ctx, "status")
 		})
 		wg.Wait()
-		require.Contains(t, execErr.Error(), "there are no migrations are in progress on migration cluster")
+		require.Contains(t, execErr.Error(), "there are no migrations in progress")
 	})
 }
 

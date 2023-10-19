@@ -54,7 +54,10 @@ Selected data structures in the source cluster will be migrated to the target cl
 	}
 	ec.PrintlnUnnecessary("")
 	mID := MakeMigrationID()
-	sts := NewStartStages(ec.Logger(), mID, ec.GetStringArg(argDMTConfig))
+	sts, err := NewStartStages(ec.Logger(), mID, ec.GetStringArg(argDMTConfig))
+	if err != nil {
+		return err
+	}
 	sp := stage.NewFixedProvider(sts.Build(ctx, ec)...)
 	if _, err := stage.Execute(ctx, ec, any(nil), sp); err != nil {
 		return err

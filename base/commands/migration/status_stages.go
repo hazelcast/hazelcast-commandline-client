@@ -54,12 +54,11 @@ func (st *StatusStages) connectStage(ec plug.ExecContext) func(context.Context, 
 			return nil, err
 		}
 		if len(all) == 0 {
-			return nil, fmt.Errorf("there are no migrations are in progress on migration cluster")
+			return nil, fmt.Errorf("there are no migrations in progress")
 		}
 		var mip MigrationInProgress
 		m := all[0].(serialization.JSON)
-		err = json.Unmarshal(m, &mip)
-		if err != nil {
+		if err = json.Unmarshal(m, &mip); err != nil {
 			return nil, fmt.Errorf("parsing migration in progress: %w", err)
 		}
 		st.statusMap, err = st.ci.Client().GetMap(ctx, StatusMapName)
