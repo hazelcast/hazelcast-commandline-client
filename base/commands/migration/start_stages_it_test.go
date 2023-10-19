@@ -67,23 +67,20 @@ func startMigrationTest(t *testing.T, expectedErr error, statusMapStateFiles []s
 			defer wg.Done()
 			execErr = tcx.CLC().Execute(ctx, "start", "dmt-config", "--yes")
 		})
-		c := make(chan string, 1)
-		wg.Add(1)
+		c := make(chan string)
 		go findMigrationID(ctx, tcx, c)
 		mID := <-c
-		wg.Done()
 		wg.Add(1)
 		go migrationRunner(ctx, tcx, mID, &wg, statusMapStateFiles)
 		wg.Wait()
 		if expectedErr == nil {
 			require.Equal(t, nil, execErr)
-		}
-		if expectedErr != nil {
+		} else {
 			require.Contains(t, execErr.Error(), expectedErr.Error())
 		}
 		tcx.WithReset(func() {
 			f := fmt.Sprintf("migration_report_%s.txt", mID)
-			require.Equal(t, true, fileExists(f))
+			require.Equal(t, true, paths.Exists(f))
 			Must(os.Remove(f))
 			b := MustValue(os.ReadFile(paths.ResolveLogPath("test")))
 			for _, m := range ci.OrderedMembers() {
@@ -121,13 +118,4 @@ func findMigrationID(ctx context.Context, tcx it.TestContext, c chan string) {
 			break
 		}
 	}
-}
-
-func fileExists(filename string) bool {
-	MustValue(os.Getwd())
-	_, err := os.Stat(filename)
-	if os.IsNotExist(err) {
-		return false
-	}
-	return true
 }

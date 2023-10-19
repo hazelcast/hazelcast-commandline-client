@@ -14,6 +14,7 @@ import (
 	_ "github.com/hazelcast/hazelcast-commandline-client/base"
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/base/commands/migration"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
 	hz "github.com/hazelcast/hazelcast-go-client"
@@ -70,16 +71,14 @@ func statusTest(t *testing.T) {
 		tcx.AssertStdoutContains("Connected to the migration cluster")
 		tcx.WithReset(func() {
 			f := fmt.Sprintf("migration_report_%s.txt", mID)
-			require.Equal(t, true, fileExists(f))
+			require.Equal(t, true, paths.Exists(f))
 			Must(os.Remove(f))
-			/*
-				b := MustValue(os.ReadFile(paths.DefaultLogPath(time.Now())))
-				for _, m := range ci.OrderedMembers() {
-						require.Contains(t, string(b), fmt.Sprintf("[%s_%s] log1", mID, m.UUID.String()))
-						require.Contains(t, string(b), fmt.Sprintf("[%s_%s] log2", mID, m.UUID.String()))
-						require.Contains(t, string(b), fmt.Sprintf("[%s_%s] log3", mID, m.UUID.String()))
-				}
-			*/
+			b := MustValue(os.ReadFile(paths.ResolveLogPath("test")))
+			for _, m := range ci.OrderedMembers() {
+				require.Contains(t, string(b), fmt.Sprintf("[%s_%s] log1", mID, m.UUID.String()))
+				require.Contains(t, string(b), fmt.Sprintf("[%s_%s] log2", mID, m.UUID.String()))
+				require.Contains(t, string(b), fmt.Sprintf("[%s_%s] log3", mID, m.UUID.String()))
+			}
 		})
 	})
 }
