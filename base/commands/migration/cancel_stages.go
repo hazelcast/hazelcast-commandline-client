@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -82,7 +83,9 @@ func (st *CancelStages) cancelStage() func(context.Context, stage.Statuser[any])
 		if err != nil {
 			return nil, err
 		}
-		return nil, waitForCancel(ctx, st.ci, st.migrationID)
+		childCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		defer cancel()
+		return nil, waitForCancel(childCtx, st.ci, st.migrationID)
 	}
 }
 
