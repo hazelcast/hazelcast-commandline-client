@@ -4,13 +4,11 @@ package migration
 
 const (
 	StartQueueName           = "__datamigration_start_queue"
-	StatusMapEntryName       = "status"
 	StatusMapName            = "__datamigration_migrations"
 	UpdateTopicPrefix        = "__datamigration_updates_"
 	DebugLogsListPrefix      = "__datamigration_debug_logs_"
 	MigrationsInProgressList = "__datamigrations_in_progress"
-	startQueueName           = "__datamigration_start_queue"
-	statusMapEntryName       = "status"
+	CancelQueue              = "__datamigration_cancel_queue"
 	argDMTConfig             = "dmtConfig"
 	argTitleDMTConfig        = "DMT configuration"
 )
