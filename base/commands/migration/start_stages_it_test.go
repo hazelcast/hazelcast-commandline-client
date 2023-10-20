@@ -60,18 +60,19 @@ func startMigrationTest(t *testing.T, expectedErr error, statusMapStateFiles []s
 		createMapping(ctx, tcx)
 		createMemberLogs(t, ctx, ci)
 		defer removeMembersLogs(ctx, ci)
+		outDir := MustValue(os.MkdirTemp("", "clc-"))
 		var wg sync.WaitGroup
 		wg.Add(1)
 		var execErr error
 		go tcx.WithReset(func() {
 			defer wg.Done()
-			execErr = tcx.CLC().Execute(ctx, "start", "dmt-config", "--yes")
+			execErr = tcx.CLC().Execute(ctx, "start", "dmt-config", "--yes", "-o", outDir)
 		})
 		c := make(chan string)
 		go findMigrationID(ctx, tcx, c)
 		mID := <-c
 		wg.Add(1)
-		go migrationRunner(ctx, tcx, mID, &wg, statusMapStateFiles)
+		go migrationRunner(t, ctx, tcx, mID, &wg, statusMapStateFiles)
 		wg.Wait()
 		if expectedErr == nil {
 			require.Equal(t, nil, execErr)
@@ -79,7 +80,7 @@ func startMigrationTest(t *testing.T, expectedErr error, statusMapStateFiles []s
 			require.Contains(t, execErr.Error(), expectedErr.Error())
 		}
 		tcx.WithReset(func() {
-			f := fmt.Sprintf("migration_report_%s.txt", mID)
+			f := paths.Join(outDir, fmt.Sprintf("migration_report_%s.txt", mID))
 			require.Equal(t, true, paths.Exists(f))
 			Must(os.Remove(f))
 			b := MustValue(os.ReadFile(paths.ResolveLogPath("test")))
@@ -92,12 +93,13 @@ func startMigrationTest(t *testing.T, expectedErr error, statusMapStateFiles []s
 	})
 }
 
-func migrationRunner(ctx context.Context, tcx it.TestContext, migrationID string, wg *sync.WaitGroup, statusMapStateFiles []string) {
+func migrationRunner(t *testing.T, ctx context.Context, tcx it.TestContext, migrationID string, wg *sync.WaitGroup, statusMapStateFiles []string) {
 	statusMap := MustValue(tcx.Client.GetMap(ctx, migration.StatusMapName))
 	for _, f := range statusMapStateFiles {
 		b := MustValue(os.ReadFile(f))
-		Must(statusMap.Set(ctx, migrationID, serialization.JSON(b)))
-		time.Sleep(2 * time.Second)
+		it.Eventually(t, func() bool {
+			return statusMap.Set(ctx, migrationID, serialization.JSON(b)) == nil
+		})
 	}
 	wg.Done()
 }
