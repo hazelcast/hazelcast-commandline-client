@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/json"
 	"os"
-	"sync"
 	"testing"
 
 	_ "github.com/hazelcast/hazelcast-commandline-client/base"
@@ -55,13 +54,9 @@ func cancelTest(t *testing.T) {
 		}))
 		ok := MustValue(l.Add(ctx, serialization.JSON(m)))
 		require.Equal(t, true, ok)
-		var wg sync.WaitGroup
-		wg.Add(1)
-		go tcx.WithReset(func() {
-			defer wg.Done()
+		tcx.WithReset(func() {
 			Must(tcx.CLC().Execute(ctx, "cancel"))
 		})
-		wg.Wait()
 		MustValue(l.Remove(ctx, serialization.JSON(m)))
 		tcx.AssertStdoutContains(`Migration canceled successfully.`)
 	})
