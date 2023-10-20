@@ -35,14 +35,8 @@ func noMigrationsCancelTest(t *testing.T) {
 	tcx := it.TestContext{T: t}
 	ctx := context.Background()
 	tcx.Tester(func(tcx it.TestContext) {
-		var wg sync.WaitGroup
-		wg.Add(1)
-		go tcx.WithReset(func() {
-			defer wg.Done()
-			tcx.CLC().Execute(ctx, "cancel")
-		})
-		wg.Wait()
-		tcx.AssertStderrContains("there are no migrations in progress")
+		err := tcx.CLC().Execute(ctx, "cancel")
+		require.Contains(t, err.Error(), "there are no migrations in progress")
 	})
 }
 
