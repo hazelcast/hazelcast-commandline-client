@@ -1,4 +1,4 @@
-//go:build migration
+//go:build std || migration
 
 package migration
 
@@ -13,7 +13,6 @@ const (
 	statusMapEntryName       = "status"
 	argDMTConfig             = "dmtConfig"
 	argTitleDMTConfig        = "DMT configuration"
-	CancelQueue              = "__datamigration_cancel_queue"
 )
 
 type Status string
