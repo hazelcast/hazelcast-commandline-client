@@ -5,6 +5,7 @@ package migration
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
@@ -23,15 +24,15 @@ type StartStages struct {
 	logger      log.Logger
 }
 
-func NewStartStages(logger log.Logger, migrationID, configDir string) *StartStages {
+func NewStartStages(logger log.Logger, migrationID, configDir string) (*StartStages, error) {
 	if migrationID == "" {
-		panic("migrationID is required")
+		return nil, errors.New("migrationID is required")
 	}
 	return &StartStages{
 		migrationID: migrationID,
 		configDir:   configDir,
 		logger:      logger,
-	}
+	}, nil
 }
 
 func (st *StartStages) Build(ctx context.Context, ec plug.ExecContext) []stage.Stage[any] {

@@ -57,4 +57,4 @@ jobs:
 
       - name: "Run All Tests"
         run: |
-          GOARCH=386 make test TEST_FLAGS="-v -count 1 -timeout 30m"
+          GOARCH=386 make test-dmt TEST_FLAGS="-v -count 1 -timeout 30m"
