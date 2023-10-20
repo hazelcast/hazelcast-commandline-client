@@ -52,7 +52,7 @@ func (s StatusCmd) Exec(ctx context.Context, ec plug.ExecContext) (err error) {
 		return err
 	}
 	ec.PrintlnUnnecessary("")
-	ec.PrintlnUnnecessary("OK")
+	ec.PrintlnUnnecessary("\nOK")
 	return nil
 }
 
