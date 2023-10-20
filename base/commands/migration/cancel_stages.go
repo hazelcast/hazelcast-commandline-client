@@ -1,4 +1,4 @@
-//go:build migration
+//go:build std || migration
 
 package migration
 
@@ -57,7 +57,7 @@ func (st *CancelStages) connectStage(ec plug.ExecContext) func(context.Context, 
 			return nil, err
 		}
 		if len(all) == 0 {
-			return nil, fmt.Errorf("there are no migrations are in progress on migration cluster")
+			return nil, fmt.Errorf("there are no migrations in progress")
 		}
 		var mip MigrationInProgress
 		m := all[0].(serialization.JSON)

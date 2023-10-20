@@ -1,4 +1,4 @@
-//go:build migration
+//go:build std || migration
 
 package migration_test
 
@@ -42,7 +42,7 @@ func noMigrationsCancelTest(t *testing.T) {
 			tcx.CLC().Execute(ctx, "cancel")
 		})
 		wg.Wait()
-		tcx.AssertStdoutContains("there are no migrations are in progress on migration cluster")
+		tcx.AssertStderrContains("there are no migrations in progress")
 	})
 }
 
