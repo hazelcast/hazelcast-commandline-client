@@ -1,0 +1,70 @@
+{
+  "id": "e6e928d3-63af-4e72-8c42-0bfcf0ab6cf7",
+  "status": "IN_PROGRESS",
+  "startTimestamp": "2023-01-01T00:00:00Z",
+  "finishTimestamp": "2023-01-01T00:01:00Z",
+  "type": "MIGRATION",
+  "completionPercentage": 12.123,
+  "migrations": [
+    {
+      "name": "imap5",
+      "type": "IMAP",
+      "status": "IN_PROGRESS",
+      "startTimestamp": "2023-01-01T00:00:00Z",
+      "entriesMigrated": 121,
+      "totalEntries": 1000,
+      "completionPercentage": 12.1
+    },
+    {
+      "name": "rmap4",
+      "type": "REPLICATED_MAP",
+      "status": "IN_PROGRESS",
+      "startTimestamp": "2023-01-01T00:00:00Z",
+      "finishTimestamp": "2023-01-01T00:01:00Z",
+      "entriesMigrated": 1212,
+      "totalEntries": 10000,
+      "completionPercentage": 12.12
+    },
+    {
+      "name": "rmap3",
+      "type": "REPLICATED_MAP",
+      "status": "IN_PROGRESS",
+      "startTimestamp": "2023-09-01T12:11:48+0200",
+      "finishTimestamp": "2023-01-01T00:01:00Z",
+      "entriesMigrated": 1212,
+      "totalEntries": 10000,
+      "completionPercentage": 12.12
+    },
+    {
+      "name": "rmap2",
+      "type": "REPLICATED_MAP",
+      "status": "IN_PROGRESS",
+      "startTimestamp": "2023-09-01T12:11:48+0200",
+      "finishTimestamp": "2023-01-01T00:01:00Z",
+      "entriesMigrated": 1212,
+      "totalEntries": 10000,
+      "completionPercentage": 12.12
+    },
+    {
+      "name": "imap1",
+      "type": "IMAP",
+      "status": "IN_PROGRESS",
+      "startTimestamp": "2023-01-01T00:00:00Z",
+      "finishTimestamp": "2023-01-01T00:01:00Z",
+      "entriesMigrated": 1212,
+      "totalEntries": 10000,
+      "completionPercentage": 12.12,
+      "error": "some error"
+    },
+    {
+      "name": "imap12",
+      "type": "IMAP",
+      "status": "NOT_STARTED",
+      "entriesMigrated": 0,
+      "totalEntries": 10000,
+      "completionPercentage": 0
+    }
+  ],
+  "logs": ["some user friendly log message", "another user friendly log message"],
+  "errors": []
+}

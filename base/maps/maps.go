@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hazelcast/hazelcast-commandline-client/base/commands/object"
 	"github.com/hazelcast/hazelcast-commandline-client/base/objects"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
@@ -19,7 +18,7 @@ func Indexes(ctx context.Context, ec plug.ExecContext, mapName string) error {
 	if mapName != "" {
 		mapNames = append(mapNames, mapName)
 	} else {
-		maps, err := objects.GetAll(ctx, ec, object.Map, false)
+		maps, err := objects.GetAll(ctx, ec, "map", false)
 		if err != nil {
 			return err
 		}

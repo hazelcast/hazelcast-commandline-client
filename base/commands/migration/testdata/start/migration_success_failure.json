@@ -1,0 +1,71 @@
+{
+  "id": "e6e928d3-63af-4e72-8c42-0bfcf0ab6cf7",
+  "status": "FAILED",
+  "startTimestamp": "2023-01-01T00:00:00Z",
+  "finishTimestamp": "2023-01-01T00:01:00Z",
+  "type": "MIGRATION",
+  "completionPercentage": 12.123,
+  "migrations": [
+    {
+      "name": "imap5",
+      "type": "IMAP",
+      "status": "COMPLETED",
+      "startTimestamp": "2023-01-01T00:00:00Z",
+      "entriesMigrated": 1000,
+      "totalEntries": 1000,
+      "completionPercentage": 100
+    },
+    {
+      "name": "rmap4",
+      "type": "REPLICATED_MAP",
+      "status": "COMPLETED",
+      "startTimestamp": "2023-01-01T00:00:00Z",
+      "finishTimestamp": "2023-01-01T00:01:00Z",
+      "entriesMigrated": 10000,
+      "totalEntries": 10000,
+      "completionPercentage": 100
+    },
+    {
+      "name": "rmap3",
+      "type": "REPLICATED_MAP",
+      "status": "COMPLETED",
+      "startTimestamp": "2023-09-01T12:11:48+0200",
+      "finishTimestamp": "2023-01-01T00:01:00Z",
+      "entriesMigrated": 10000,
+      "totalEntries": 10000,
+      "completionPercentage": 100
+    },
+    {
+      "name": "rmap2",
+      "type": "REPLICATED_MAP",
+      "status": "COMPLETED",
+      "startTimestamp": "2023-09-01T12:11:48+0200",
+      "finishTimestamp": "2023-01-01T00:01:00Z",
+      "entriesMigrated": 10000,
+      "totalEntries": 10000,
+      "completionPercentage": 100
+    },
+    {
+      "name": "imap1",
+      "type": "IMAP",
+      "status": "COMPLETED",
+      "startTimestamp": "2023-01-01T00:00:00Z",
+      "finishTimestamp": "2023-01-01T00:01:00Z",
+      "entriesMigrated": 10000,
+      "totalEntries": 10000,
+      "completionPercentage": 100
+    },
+    {
+      "name": "imap12",
+      "type": "IMAP",
+      "status": "FAILED",
+      "entriesMigrated": 10000,
+      "totalEntries": 10000,
+      "completionPercentage": 100,
+      "error": "some error"
+    }
+  ],
+  "logs": ["some user friendly log message", "another user friendly log message"],
+  "errors": ["some error"],
+  "report": "failed migration report"
+}

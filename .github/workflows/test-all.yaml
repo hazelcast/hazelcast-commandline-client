@@ -70,4 +70,4 @@ jobs:
 
       - name: "Run All Tests"
         run: |
-          make test
+          make test-dmt

@@ -19,8 +19,14 @@ TARGZ ?= true
 build:
 	CGO_ENABLED=0 go build -tags base,std,hazelcastinternal,hazelcastinternaltest -ldflags "$(LDFLAGS)"  -o build/$(BINARY_NAME) ./cmd/clc
 
+build-dmt:
+	CGO_ENABLED=0 go build -tags base,migration,config,home,version,hazelcastinternal,hazelcastinternaltest -ldflags "$(LDFLAGS)"  -o build/$(BINARY_NAME) ./cmd/clc
+
 test:
 	go test -tags base,std,hazelcastinternal,hazelcastinternaltest -p 1 $(TEST_FLAGS) ./...
+
+test-dmt:
+	go test -tags base,std,migration,config,home,version,hazelcastinternal,hazelcastinternaltest -p 1 $(TEST_FLAGS) ./...
 
 test-cover:
 	go test -tags base,std,hazelcastinternal,hazelcastinternaltest -p 1 $(TEST_FLAGS) -coverprofile=coverage.out -coverpkg $(PACKAGES) -coverprofile=$(COVERAGE_OUT) ./...

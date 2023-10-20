@@ -1,3 +1,5 @@
+//go:build std || migration
+
 package migration
 
 import (
@@ -21,7 +23,7 @@ type bundleFile struct {
 	Content string `json:"content"`
 }
 
-type configBundle struct {
+type ConfigBundle struct {
 	MigrationID    string       `json:"migrationId"`
 	ConfigPath     string       `json:"configPath"`
 	Source         []bundleFile `json:"source"`
@@ -30,7 +32,7 @@ type configBundle struct {
 	ReplicatedMaps []string     `json:"replicatedMaps"`
 }
 
-func (cb *configBundle) Walk(root string) error {
+func (cb *ConfigBundle) Walk(root string) error {
 	var err error
 	cb.IMaps, err = readItems(filepath.Join(root, "data", "imap_names.txt"))
 	if err != nil {
@@ -119,6 +121,10 @@ func readPathAsString(path string) (string, error) {
 	return string(b), nil
 }
 
-func makeMigrationID() string {
+func MakeMigrationID() string {
 	return types.NewUUID().String()
+}
+
+func MakeUpdateTopicName(migrationID string) string {
+	return UpdateTopicPrefix + migrationID
 }
