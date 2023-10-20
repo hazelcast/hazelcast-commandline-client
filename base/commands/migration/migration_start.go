@@ -4,7 +4,6 @@ package migration
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
@@ -31,7 +30,7 @@ func (StartCmd) Init(cc plug.InitContext) error {
 	return nil
 }
 
-func (StartCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (StartCmd) Exec(ctx context.Context, ec plug.ExecContext) (err error) {
 	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
 		return err
@@ -54,12 +53,18 @@ Selected data structures in the source cluster will be migrated to the target cl
 	}
 	ec.PrintlnUnnecessary("")
 	mID := MakeMigrationID()
+	defer func() {
+		finalizeErr := finalizeMigration(ctx, ec, ci, mID, ec.Props().GetString(flagOutputDir))
+		if err == nil {
+			err = finalizeErr
+		}
+	}()
 	sts, err := NewStartStages(ec.Logger(), mID, ec.GetStringArg(argDMTConfig))
 	if err != nil {
 		return err
 	}
 	sp := stage.NewFixedProvider(sts.Build(ctx, ec)...)
-	if _, err := stage.Execute(ctx, ec, any(nil), sp); err != nil {
+	if _, err = stage.Execute(ctx, ec, any(nil), sp); err != nil {
 		return err
 	}
 	mStages, err := createMigrationStages(ctx, ec, ci, mID)
@@ -68,10 +73,6 @@ Selected data structures in the source cluster will be migrated to the target cl
 	}
 	mp := stage.NewFixedProvider(mStages...)
 	_, err = stage.Execute(ctx, ec, any(nil), mp)
-	err2 := finalizeMigration(ctx, ec, ci, mID, ec.Props().GetString(flagOutputDir))
-	if err2 != nil {
-		return fmt.Errorf("finalizing migration: %w", err2)
-	}
 	if err != nil {
 		return err
 	}
