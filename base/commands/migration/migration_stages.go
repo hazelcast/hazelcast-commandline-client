@@ -188,6 +188,14 @@ func WaitForMigrationToBeInProgress(ctx context.Context, ci *hazelcast.ClientInt
 			}
 			return err
 		}
+		if Status(status) == StatusFailed {
+			errs, err := fetchMigrationErrors(ctx, ci, migrationID)
+			if err != nil {
+				return fmt.Errorf("migration failed and dmt cannot fetch migration errors: %w", err)
+			} else {
+				return errors.New(errs)
+			}
+		}
 		if Status(status) == StatusInProgress {
 			return nil
 		}
@@ -235,7 +243,7 @@ func fetchMigrationReport(ctx context.Context, ci *hazelcast.ClientInternal, mig
 }
 
 func fetchMigrationErrors(ctx context.Context, ci *hazelcast.ClientInternal, migrationID string) (string, error) {
-	q := fmt.Sprintf(`SELECT JSON_QUERY(this, '$.errors') FROM %s WHERE __key='%s'`, StatusMapName, migrationID)
+	q := fmt.Sprintf(`SELECT JSON_QUERY(this, '$.errors' WITH WRAPPER) FROM %s WHERE __key='%s'`, StatusMapName, migrationID)
 	res, err := ci.Client().SQL().Execute(ctx, q)
 	if err != nil {
 		return "", err
