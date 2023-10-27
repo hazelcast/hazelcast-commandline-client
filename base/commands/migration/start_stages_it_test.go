@@ -12,15 +12,16 @@ import (
 	"testing"
 	"time"
 
+	hz "github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/stretchr/testify/require"
+
 	_ "github.com/hazelcast/hazelcast-commandline-client/base"
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/base/commands/migration"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
-	hz "github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
-	"github.com/stretchr/testify/require"
 )
 
 func TestMigrationStages(t *testing.T) {
@@ -42,7 +43,7 @@ func TestMigrationStages(t *testing.T) {
 				"testdata/start/migration_success_initial.json",
 				"testdata/start/migration_success_failure.json",
 			},
-			expectedErr: errors.New("Failed migrating IMAP: imap5: some error"),
+			expectedErr: errors.New("Failed migrating IMAP: imap5: [\"some error\"]"),
 		},
 	}
 	for _, tc := range testCases {
