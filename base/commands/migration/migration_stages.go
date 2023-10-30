@@ -253,7 +253,7 @@ func fetchMigrationErrors(ctx context.Context, ci *hazelcast.ClientInternal, mig
 	if err != nil {
 		return "", err
 	}
-	return strings.Join(errs, "\n"), nil
+	return "* " + strings.Join(errs, "\n* "), nil
 }
 
 func finalizeMigration(ctx context.Context, ec plug.ExecContext, ci *hazelcast.ClientInternal, migrationID, reportOutputDir string) error {
