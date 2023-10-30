@@ -43,7 +43,7 @@ func TestMigrationStages(t *testing.T) {
 				"testdata/start/migration_success_initial.json",
 				"testdata/start/migration_success_failure.json",
 			},
-			expectedErr: errors.New("Failed migrating IMAP: imap5: [\"some error\"]"),
+			expectedErr: errors.New("Failed migrating IMAP: imap5: some error\nanother error"),
 		},
 	}
 	for _, tc := range testCases {
