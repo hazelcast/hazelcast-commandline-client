@@ -1,5 +1,11 @@
 # Hazelcast CLC
 
+> [!IMPORTANT]
+> This repository contains the source code for CLC v5.3.3.
+> CLC v5.3.4 and up are binary only releases.
+> The binary releases can be downloaded from:
+> https://github.com/hazelcast/hazelcast-commandline-client/releases
+
 ## Installation
 
 Currently we provide precompiled binaries of CLC for the following platforms and architectures:
