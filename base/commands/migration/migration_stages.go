@@ -192,10 +192,11 @@ func WaitForMigrationToBeInProgress(ctx context.Context, ci *hazelcast.ClientInt
 			errs, err := fetchMigrationErrors(ctx, ci, migrationID)
 			if err != nil {
 				return fmt.Errorf("migration failed and dmt cannot fetch migration errors: %w", err)
-			return errors.New(errs)
-		}
-		if Status(status) == StatusInProgress {
-			return nil
+				return errors.New(errs)
+			}
+			if Status(status) == StatusInProgress {
+				return nil
+			}
 		}
 	}
 }
