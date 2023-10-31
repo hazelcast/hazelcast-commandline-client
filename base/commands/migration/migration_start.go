@@ -54,6 +54,7 @@ Selected data structures in the source cluster will be migrated to the target cl
 	ec.PrintlnUnnecessary("")
 	mID := MakeMigrationID()
 	defer func() {
+		maybePrintWarnings(ctx, ec, ci, mID)
 		finalizeErr := finalizeMigration(ctx, ec, ci, mID, ec.Props().GetString(flagOutputDir))
 		if err == nil {
 			err = finalizeErr
