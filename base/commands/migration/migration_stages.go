@@ -304,6 +304,9 @@ func querySingleRow(ctx context.Context, ci *hazelcast.ClientInternal, query str
 		if err != nil {
 			return "", err
 		}
+		if r == nil {
+			return nil, errors.New("no rows found")
+		}
 		return r, nil
 	}
 	return nil, errors.New("no rows found")
