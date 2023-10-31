@@ -274,11 +274,13 @@ func maybePrintWarnings(ctx context.Context, ec plug.ExecContext, ci *hazelcast.
 	row, err := querySingleRow(ctx, ci, q)
 	if err != nil {
 		ec.Logger().Error(err)
+		return
 	}
 	var warnings []string
 	err = json.Unmarshal(row.(serialization.JSON), &warnings)
 	if err != nil {
 		ec.Logger().Error(err)
+		return
 	}
 	ec.PrintlnUnnecessary("* " + strings.Join(warnings, "\n* "))
 }
