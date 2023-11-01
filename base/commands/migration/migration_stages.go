@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -76,6 +77,13 @@ func createMigrationStages(ctx context.Context, ec plug.ExecContext, ci *hazelca
 					case StatusCanceled, StatusCanceling:
 						execErr = clcerrors.ErrUserCancelled
 						break statusReaderLoop
+					case StatusInProgress:
+						rt, cp, err := fetchOverallProgress(ctx, ci, migrationID)
+						if err != nil {
+							ec.Logger().Error(err)
+						}
+						status.SetProgress(cp)
+						status.SetRemainingDuration(rt)
 					}
 					q := fmt.Sprintf(`SELECT JSON_QUERY(this, '$.migrations[%d]') FROM %s WHERE __key= '%s'`, i, StatusMapName, migrationID)
 					res, err := ci.Client().SQL().Execute(ctx, q)
@@ -104,7 +112,6 @@ func createMigrationStages(ctx context.Context, ec plug.ExecContext, ci *hazelca
 							execErr = err
 							break statusReaderLoop
 						}
-						status.SetProgress(m.CompletionPercentage)
 						switch m.Status {
 						case StatusComplete:
 							return nil, nil
@@ -208,6 +215,7 @@ type OverallMigrationStatus struct {
 	Errors               []string                       `json:"errors"`
 	Report               string                         `json:"report"`
 	CompletionPercentage float32                        `json:"completionPercentage"`
+	RemainingTime        float32                        `json:"remainingTime"`
 	Migrations           []DataStructureMigrationStatus `json:"migrations"`
 }
 
@@ -231,6 +239,46 @@ func fetchMigrationStatus(ctx context.Context, ci *hazelcast.ClientInternal, mig
 		return "", migrationStatusNotFoundErr
 	}
 	return strings.TrimSuffix(strings.TrimPrefix(string(r.(serialization.JSON)), `"`), `"`), nil
+}
+
+func fetchOverallProgress(ctx context.Context, ci *hazelcast.ClientInternal, migrationID string) (time.Duration, float32, error) {
+	q := fmt.Sprintf(`SELECT JSON_QUERY(this, '$.remainingTime'), JSON_QUERY(this, '$.completionPercentage') FROM %s WHERE __key='%s'`, StatusMapName, migrationID)
+	res, err := ci.Client().SQL().Execute(ctx, q)
+	if err != nil {
+		return 0, 0, err
+	}
+	it, err := res.Iterator()
+	if err != nil {
+		return 0, 0, err
+	}
+	if it.HasNext() {
+		// single iteration is enough that we are reading single result for a single migration
+		row, err := it.Next()
+		if err != nil {
+			return 0, 0, err
+		}
+		remainingTime, err := row.Get(0)
+		if err != nil {
+			return 0, 0, err
+		}
+		completionPercentage, err := row.Get(1)
+		if err != nil {
+			return 0, 0, err
+		}
+		// convert it to parsable duration format
+		rtStr := fmt.Sprintf("%sms", remainingTime.(serialization.JSON).String())
+		rt, err := time.ParseDuration(rtStr)
+		if err != nil {
+			return 0, 0, err
+		}
+		cpStr := completionPercentage.(serialization.JSON).String()
+		cp, err := strconv.ParseFloat(cpStr, 32)
+		if err != nil {
+			return 0, 0, err
+		}
+		return rt, float32(cp), nil
+	}
+	return 0, 0, errors.New("no rows found")
 }
 
 func fetchMigrationReport(ctx context.Context, ci *hazelcast.ClientInternal, migrationID string) (string, error) {
