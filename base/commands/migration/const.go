@@ -4,6 +4,7 @@ package migration
 
 const (
 	StartQueueName           = "__datamigration_start_queue"
+	EstimateQueueName        = "__datamigration_estimate_queue"
 	StatusMapName            = "__datamigration_migrations"
 	UpdateTopicPrefix        = "__datamigration_updates_"
 	DebugLogsListPrefix      = "__datamigration_debug_logs_"

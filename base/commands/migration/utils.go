@@ -5,6 +5,7 @@ package migration
 import (
 	"bufio"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"os"
@@ -12,6 +13,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
@@ -125,6 +127,15 @@ func MakeMigrationID() string {
 	return types.NewUUID().String()
 }
 
-func MakeUpdateTopicName(migrationID string) string {
-	return UpdateTopicPrefix + migrationID
+func makeConfigBundle(configDir, migrationID string) (serialization.JSON, error) {
+	var cb ConfigBundle
+	cb.MigrationID = migrationID
+	if err := cb.Walk(configDir); err != nil {
+		return nil, err
+	}
+	b, err := json.Marshal(cb)
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
 }
