@@ -53,7 +53,7 @@ func (st *StatusStages) connectStage(ec plug.ExecContext) func(context.Context, 
 
 func findMigrationInProgress(ctx context.Context, ci *hazelcast.ClientInternal) (MigrationInProgress, error) {
 	var mip MigrationInProgress
-	q := fmt.Sprintf("SELECT this FROM %s WHERE JSON_VALUE(this, '$.status') IN('STARTED', 'IN_PROGRESS', 'CANCELLING')", StatusMapName)
+	q := fmt.Sprintf("SELECT this FROM %s WHERE JSON_VALUE(this, '$.status') IN('STARTED', 'IN_PROGRESS', 'CANCELING')", StatusMapName)
 	r, err := querySingleRow(ctx, ci, q)
 	if err != nil {
 		return mip, fmt.Errorf("finding migration in progress: %w", err)
