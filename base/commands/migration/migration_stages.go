@@ -239,7 +239,9 @@ func fetchMigrationReport(ctx context.Context, ci *hazelcast.ClientInternal, mig
 	if err != nil {
 		return "", fmt.Errorf("migration report cannot be found: %w", err)
 	}
-	return strings.ReplaceAll(string(r.(serialization.JSON)), `\"`, ``), nil
+	var t string
+	json.Unmarshal(r.(serialization.JSON), &t)
+	return t, nil
 }
 
 func fetchMigrationErrors(ctx context.Context, ci *hazelcast.ClientInternal, migrationID string) (string, error) {
