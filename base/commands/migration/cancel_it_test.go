@@ -45,7 +45,7 @@ func cancelTest(t *testing.T) {
 	tcx := it.TestContext{T: t}
 	ctx := context.Background()
 	tcx.Tester(func(tcx it.TestContext) {
-		mID := "e6e928d3-63af-4e72-8c42-0bfcf0ab6cf7"
+		mID := migrationIDFunc()
 		ci := hz.NewClientInternal(tcx.Client)
 		createMapping(ctx, tcx)
 		setStatusInProgress(tcx, ctx)

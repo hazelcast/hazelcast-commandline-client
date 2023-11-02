@@ -87,7 +87,7 @@ func statusTest(t *testing.T) {
 }
 
 func setStatusInProgress(tcx it.TestContext, ctx context.Context) string {
-	mID := "e6e928d3-63af-4e72-8c42-0bfcf0ab6cf7"
+	mID := migrationIDFunc()
 	statusMap := MustValue(tcx.Client.GetMap(ctx, migration.StatusMapName))
 	b := MustValue(os.ReadFile("testdata/start/migration_success_initial.json"))
 	Must(statusMap.Set(ctx, mID, serialization.JSON(b)))
