@@ -81,7 +81,9 @@ func (es *EstimateStages) estimateStage() func(context.Context, stage.Statuser[a
 		if err = es.estimateQueue.Put(ctx, cb); err != nil {
 			return nil, fmt.Errorf("updating estimate Queue: %w", err)
 		}
-		if err = waitForEstimationToComplete(ctx, es.ci, es.migrationID, status); err != nil {
+		childCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		defer cancel()
+		if err = waitForEstimationToComplete(childCtx, es.ci, es.migrationID, status); err != nil {
 			return nil, fmt.Errorf("waiting for estimation to complete: %w", err)
 		}
 		return fetchEstimationResults(ctx, es.ci, es.migrationID)
@@ -95,7 +97,7 @@ func waitForEstimationToComplete(ctx context.Context, ci *hazelcast.ClientIntern
 		if duration > 0 {
 			stage.SetRemainingDuration(duration)
 		} else {
-			stage.SetText("It will take a bit longer than expected.")
+			stage.SetText("Estimation took longer than expected.")
 		}
 		status, err := fetchMigrationStatus(ctx, ci, migrationID)
 		if err != nil {
