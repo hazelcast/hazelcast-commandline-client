@@ -60,6 +60,8 @@ func cancelTest(t *testing.T) {
 		})
 		setStatusCancelling(mID, tcx, ctx)
 		wg.Wait()
+		statusMap := MustValue(tcx.Client.GetMap(ctx, migration.StatusMapName))
+		MustValue(statusMap.Remove(ctx, mID))
 		tcx.AssertStdoutContains(`Migration canceled successfully.`)
 	})
 }
