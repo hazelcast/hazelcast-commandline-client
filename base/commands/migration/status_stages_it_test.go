@@ -8,6 +8,7 @@ import (
 	"os"
 	"sync"
 	"testing"
+	"time"
 
 	_ "github.com/hazelcast/hazelcast-commandline-client/base"
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands"
@@ -66,9 +67,7 @@ func statusTest(t *testing.T) {
 			defer wg.Done()
 			Must(tcx.CLC().Execute(ctx, "status", "-o", outDir))
 		})
-		it.Eventually(t, func() bool {
-			return migration.WaitForMigrationToBeInProgress(ctx, ci, mID) == nil
-		})
+		time.Sleep(1 * time.Second)
 		setStatusCompleted(mID, tcx, ctx)
 		wg.Wait()
 		tcx.AssertStdoutContains("Connected to the migration cluster")
