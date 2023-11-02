@@ -20,7 +20,6 @@ type StartStages struct {
 	configDir   string
 	ci          *hazelcast.ClientInternal
 	startQueue  *hazelcast.Queue
-	statusMap   *hazelcast.Map
 	logger      log.Logger
 }
 
@@ -62,10 +61,6 @@ func (st *StartStages) connectStage(ec plug.ExecContext) func(context.Context, s
 		st.startQueue, err = st.ci.Client().GetQueue(ctx, StartQueueName)
 		if err != nil {
 			return nil, fmt.Errorf("retrieving the start Queue: %w", err)
-		}
-		st.statusMap, err = st.ci.Client().GetMap(ctx, StatusMapName)
-		if err != nil {
-			return nil, fmt.Errorf("retrieving the status Map: %w", err)
 		}
 		return nil, nil
 	}

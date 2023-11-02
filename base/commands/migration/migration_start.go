@@ -52,7 +52,7 @@ Selected data structures in the source cluster will be migrated to the target cl
 		}
 	}
 	ec.PrintlnUnnecessary("")
-	mID := MakeMigrationID()
+	mID := MigrationIDGeneratorFunc()
 	defer func() {
 		finalizeErr := finalizeMigration(ctx, ec, ci, mID, ec.Props().GetString(flagOutputDir))
 		if err == nil {

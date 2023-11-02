@@ -4,13 +4,11 @@ package migration_test
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"sync"
 	"testing"
-	"time"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -57,6 +55,8 @@ func startMigrationTest(t *testing.T, expectedErr error, statusMapStateFiles []s
 	tcx := it.TestContext{T: t}
 	ctx := context.Background()
 	tcx.Tester(func(tcx it.TestContext) {
+		migration.MigrationIDGeneratorFunc = migrationIDFunc
+		mID := migrationIDFunc()
 		ci := hz.NewClientInternal(tcx.Client)
 		createMapping(ctx, tcx)
 		createMemberLogs(t, ctx, ci)
@@ -69,9 +69,6 @@ func startMigrationTest(t *testing.T, expectedErr error, statusMapStateFiles []s
 			defer wg.Done()
 			execErr = tcx.CLC().Execute(ctx, "start", "dmt-config", "--yes", "-o", outDir)
 		})
-		c := make(chan string)
-		go findMigrationID(ctx, tcx, c)
-		mID := <-c
 		wg.Add(1)
 		go migrationRunner(t, ctx, tcx, mID, &wg, statusMapStateFiles)
 		wg.Wait()
@@ -110,15 +107,6 @@ func createMapping(ctx context.Context, tcx it.TestContext) {
 	MustValue(tcx.Client.SQL().Execute(ctx, mSQL))
 }
 
-func findMigrationID(ctx context.Context, tcx it.TestContext, c chan string) {
-	q := MustValue(tcx.Client.GetQueue(ctx, migration.StartQueueName))
-	var b migration.ConfigBundle
-	for {
-		v := MustValue(q.PollWithTimeout(ctx, time.Second))
-		if v != nil {
-			Must(json.Unmarshal(v.(serialization.JSON), &b))
-			c <- b.MigrationID
-			break
-		}
-	}
+func migrationIDFunc() string {
+	return "e6e928d3-63af-4e72-8c42-0bfcf0ab6cf7"
 }

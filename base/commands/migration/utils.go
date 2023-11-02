@@ -121,10 +121,8 @@ func readPathAsString(path string) (string, error) {
 	return string(b), nil
 }
 
-func MakeMigrationID() string {
-	return types.NewUUID().String()
-}
+var MigrationIDGeneratorFunc = makeMigrationID
 
-func MakeUpdateTopicName(migrationID string) string {
-	return UpdateTopicPrefix + migrationID
+func makeMigrationID() string {
+	return types.NewUUID().String()
 }

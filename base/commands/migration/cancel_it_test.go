@@ -4,8 +4,8 @@ package migration_test
 
 import (
 	"context"
-	"encoding/json"
 	"os"
+	"sync"
 	"testing"
 
 	_ "github.com/hazelcast/hazelcast-commandline-client/base"
@@ -13,6 +13,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/base/commands/migration"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
+	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/stretchr/testify/require"
 )
@@ -34,8 +35,9 @@ func noMigrationsCancelTest(t *testing.T) {
 	tcx := it.TestContext{T: t}
 	ctx := context.Background()
 	tcx.Tester(func(tcx it.TestContext) {
+		createMapping(ctx, tcx)
 		err := tcx.CLC().Execute(ctx, "cancel")
-		require.Contains(t, err.Error(), "there are no migrations in progress")
+		require.Contains(t, err.Error(), "finding migration in progress: no rows found")
 	})
 }
 
@@ -43,21 +45,27 @@ func cancelTest(t *testing.T) {
 	tcx := it.TestContext{T: t}
 	ctx := context.Background()
 	tcx.Tester(func(tcx it.TestContext) {
-		mID := migration.MakeMigrationID()
+		mID := "e6e928d3-63af-4e72-8c42-0bfcf0ab6cf7"
+		ci := hz.NewClientInternal(tcx.Client)
 		createMapping(ctx, tcx)
-		statusMap := MustValue(tcx.Client.GetMap(ctx, migration.StatusMapName))
-		b := MustValue(os.ReadFile("testdata/cancel/migration_cancelling.json"))
-		Must(statusMap.Set(ctx, mID, serialization.JSON(b)))
-		l := MustValue(tcx.Client.GetList(ctx, migration.MigrationsInProgressList))
-		m := MustValue(json.Marshal(migration.MigrationInProgress{
-			MigrationID: mID,
-		}))
-		ok := MustValue(l.Add(ctx, serialization.JSON(m)))
-		require.Equal(t, true, ok)
-		tcx.WithReset(func() {
+		setStatusInProgress(tcx, ctx)
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go tcx.WithReset(func() {
+			defer wg.Done()
 			Must(tcx.CLC().Execute(ctx, "cancel"))
 		})
-		MustValue(l.Remove(ctx, serialization.JSON(m)))
+		it.Eventually(t, func() bool {
+			return migration.WaitForMigrationToBeInProgress(ctx, ci, mID) == nil
+		})
+		setStatusCancelling(mID, tcx, ctx)
+		wg.Wait()
 		tcx.AssertStdoutContains(`Migration canceled successfully.`)
 	})
+}
+
+func setStatusCancelling(migrationID string, tcx it.TestContext, ctx context.Context) {
+	statusMap := MustValue(tcx.Client.GetMap(ctx, migration.StatusMapName))
+	b := MustValue(os.ReadFile("testdata/cancel/migration_cancelling.json"))
+	Must(statusMap.Set(ctx, migrationID, serialization.JSON(b)))
 }

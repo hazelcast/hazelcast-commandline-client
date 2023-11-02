@@ -130,7 +130,7 @@ func getDataStructuresToBeMigrated(ctx context.Context, ec plug.ExecContext, mig
 	if err != nil {
 		return nil, err
 	}
-	q := fmt.Sprintf(`SELECT this FROM %s WHERE __key= '%s'`, StatusMapName, migrationID)
+	q := fmt.Sprintf(`SELECT this FROM %s WHERE __key='%s'`, StatusMapName, migrationID)
 	r, err := querySingleRow(ctx, ci, q)
 	if err != nil {
 		return nil, err

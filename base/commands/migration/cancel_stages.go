@@ -5,7 +5,6 @@ package migration
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
@@ -15,10 +14,9 @@ import (
 )
 
 type CancelStages struct {
-	ci                       *hazelcast.ClientInternal
-	cancelQueue              *hazelcast.Queue
-	migrationsInProgressList *hazelcast.List
-	migrationID              string
+	ci          *hazelcast.ClientInternal
+	cancelQueue *hazelcast.Queue
+	migrationID string
 }
 
 func NewCancelStages() *CancelStages {
@@ -49,24 +47,11 @@ func (st *CancelStages) connectStage(ec plug.ExecContext) func(context.Context, 
 		if err != nil {
 			return nil, err
 		}
-		st.migrationsInProgressList, err = st.ci.Client().GetList(ctx, MigrationsInProgressList)
+		m, err := findMigrationInProgress(ctx, st.ci)
 		if err != nil {
 			return nil, err
 		}
-		all, err := st.migrationsInProgressList.GetAll(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if len(all) == 0 {
-			return nil, fmt.Errorf("there are no migrations in progress")
-		}
-		var mip MigrationInProgress
-		m := all[0].(serialization.JSON)
-		err = json.Unmarshal(m, &mip)
-		if err != nil {
-			return nil, fmt.Errorf("parsing migration in progress: %w", err)
-		}
-		st.migrationID = mip.MigrationID
+		st.migrationID = m.MigrationID
 		st.cancelQueue, err = st.ci.Client().GetQueue(ctx, CancelQueue)
 		return nil, err
 	}

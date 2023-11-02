@@ -14,9 +14,7 @@ import (
 )
 
 type StatusStages struct {
-	ci                       *hazelcast.ClientInternal
-	migrationsInProgressList *hazelcast.List
-	statusMap                *hazelcast.Map
+	ci *hazelcast.ClientInternal
 }
 
 func NewStatusStages() *StatusStages {
@@ -35,7 +33,7 @@ func (st *StatusStages) Build(ctx context.Context, ec plug.ExecContext) []stage.
 }
 
 type MigrationInProgress struct {
-	MigrationID string `json:"migrationId"`
+	MigrationID string `json:"id"`
 }
 
 func (st *StatusStages) connectStage(ec plug.ExecContext) func(context.Context, stage.Statuser[any]) (any, error) {
@@ -45,26 +43,24 @@ func (st *StatusStages) connectStage(ec plug.ExecContext) func(context.Context, 
 		if err != nil {
 			return nil, err
 		}
-		st.migrationsInProgressList, err = st.ci.Client().GetList(ctx, MigrationsInProgressList)
+		m, err := findMigrationInProgress(ctx, st.ci)
 		if err != nil {
 			return nil, err
 		}
-		all, err := st.migrationsInProgressList.GetAll(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if len(all) == 0 {
-			return nil, fmt.Errorf("there are no migrations in progress")
-		}
-		var mip MigrationInProgress
-		m := all[0].(serialization.JSON)
-		if err = json.Unmarshal(m, &mip); err != nil {
-			return nil, fmt.Errorf("parsing migration in progress: %w", err)
-		}
-		st.statusMap, err = st.ci.Client().GetMap(ctx, StatusMapName)
-		if err != nil {
-			return nil, err
-		}
-		return mip.MigrationID, err
+		return m.MigrationID, err
 	}
+}
+
+func findMigrationInProgress(ctx context.Context, ci *hazelcast.ClientInternal) (MigrationInProgress, error) {
+	var mip MigrationInProgress
+	q := fmt.Sprintf("SELECT this FROM %s WHERE JSON_VALUE(this, '$.status') IN('STARTED', 'IN_PROGRESS', 'CANCELLING')", StatusMapName)
+	r, err := querySingleRow(ctx, ci, q)
+	if err != nil {
+		return mip, fmt.Errorf("finding migration in progress: %w", err)
+	}
+	m := r.(serialization.JSON)
+	if err = json.Unmarshal(m, &mip); err != nil {
+		return mip, fmt.Errorf("parsing migration in progress: %w", err)
+	}
+	return mip, nil
 }
