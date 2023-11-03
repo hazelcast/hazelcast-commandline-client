@@ -8,7 +8,6 @@ import (
 	"os"
 	"sync"
 	"testing"
-	"time"
 
 	_ "github.com/hazelcast/hazelcast-commandline-client/base"
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands"
@@ -63,14 +62,13 @@ func statusTest(t *testing.T) {
 		mID := setStatusInProgress(tcx, ctx)
 		var wg sync.WaitGroup
 		wg.Add(1)
-		go tcx.WithReset(func() {
+		go func() {
 			defer wg.Done()
 			Must(tcx.CLC().Execute(ctx, "status", "-o", outDir))
-		})
-		time.Sleep(1 * time.Second)
+		}()
+		tcx.AssertStdoutContains("Connected to the migration cluster")
 		setStatusCompleted(mID, tcx, ctx)
 		wg.Wait()
-		tcx.AssertStdoutContains("Connected to the migration cluster")
 		tcx.WithReset(func() {
 			f := paths.Join(outDir, fmt.Sprintf("migration_report_%s.txt", mID))
 			require.Equal(t, true, paths.Exists(f))

@@ -7,13 +7,13 @@ import (
 	"os"
 	"sync"
 	"testing"
-	"time"
 
 	_ "github.com/hazelcast/hazelcast-commandline-client/base"
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/base/commands/migration"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
+	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/stretchr/testify/require"
 )
@@ -45,16 +45,18 @@ func cancelTest(t *testing.T) {
 	tcx := it.TestContext{T: t}
 	ctx := context.Background()
 	tcx.Tester(func(tcx it.TestContext) {
+		ci := hz.NewClientInternal(tcx.Client)
 		mID := migrationIDFunc()
 		createMapping(ctx, tcx)
 		setStatusInProgress(tcx, ctx)
 		var wg sync.WaitGroup
 		wg.Add(1)
-		go tcx.WithReset(func() {
+		go func() {
 			defer wg.Done()
 			Must(tcx.CLC().Execute(ctx, "cancel"))
-		})
-		time.Sleep(1 * time.Second)
+		}()
+		cq := MustValue(ci.Client().GetQueue(ctx, migration.CancelQueue))
+		MustValue(cq.Poll(ctx))
 		setStatusCancelling(mID, tcx, ctx)
 		wg.Wait()
 		statusMap := MustValue(tcx.Client.GetMap(ctx, migration.StatusMapName))
