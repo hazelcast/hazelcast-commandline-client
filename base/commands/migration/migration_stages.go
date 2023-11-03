@@ -81,9 +81,11 @@ func createMigrationStages(ctx context.Context, ec plug.ExecContext, ci *hazelca
 						rt, cp, err := fetchOverallProgress(ctx, ci, migrationID)
 						if err != nil {
 							ec.Logger().Error(err)
+							status.SetText("Unable to calculate remaining duration and progress")
+						} else {
+							status.SetProgress(cp)
+							status.SetRemainingDuration(rt)
 						}
-						status.SetProgress(cp)
-						status.SetRemainingDuration(rt)
 					}
 					q := fmt.Sprintf(`SELECT JSON_QUERY(this, '$.migrations[%d]') FROM %s WHERE __key= '%s'`, i, StatusMapName, migrationID)
 					res, err := ci.Client().SQL().Execute(ctx, q)
