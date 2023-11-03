@@ -25,30 +25,28 @@ func TestEstimate(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			check.Must(tcx.CLC().Execute(ctx, "estimate", "dmt-config"))
+			check.Must(tcx.CLC().Execute(ctx, "estimate", "testdata/dmt-config"))
 		}()
 		c := make(chan string)
 		go findEstimationID(ctx, tcx, c)
 		mID := <-c
-		go estimateRunner(t, ctx, tcx, mID)
+		go estimateRunner(ctx, tcx, mID)
 		wg.Wait()
 		tcx.AssertStdoutContains("OK Estimation completed successfully")
 	})
 }
 
-func estimateRunner(t *testing.T, ctx context.Context, tcx it.TestContext, migrationID string) {
+func estimateRunner(ctx context.Context, tcx it.TestContext, migrationID string) {
 	statusMap := check.MustValue(tcx.Client.GetMap(ctx, migration.StatusMapName))
 	b := check.MustValue(os.ReadFile("testdata/estimate/estimate_completed.json"))
-	it.Eventually(t, func() bool {
-		return statusMap.Set(ctx, migrationID, serialization.JSON(b)) == nil
-	})
+	check.Must(statusMap.Set(ctx, migrationID, serialization.JSON(b)))
 }
 
 func findEstimationID(ctx context.Context, tcx it.TestContext, c chan string) {
 	q := check.MustValue(tcx.Client.GetQueue(ctx, migration.EstimateQueueName))
 	var b migration.ConfigBundle
 	for {
-		v := check.MustValue(q.PollWithTimeout(ctx, time.Second))
+		v := check.MustValue(q.PollWithTimeout(ctx, 100*time.Millisecond))
 		if v != nil {
 			check.Must(json.Unmarshal(v.(serialization.JSON), &b))
 			c <- b.MigrationID

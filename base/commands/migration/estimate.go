@@ -24,11 +24,9 @@ func (e EstimateCmd) Init(cc plug.InitContext) error {
 
 func (e EstimateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	ec.PrintlnUnnecessary("")
-	ec.PrintlnUnnecessary(`Hazelcast Data Migration Tool v5.3.0
-(c) 2023 Hazelcast, Inc.
+	ec.PrintlnUnnecessary(fmt.Sprintf(`%s
 
-Estimation usually ends within 15 seconds.
-`)
+Estimation usually ends within 15 seconds.`, banner))
 	mID := MakeMigrationID()
 	stages, err := NewEstimateStages(ec.Logger(), mID, ec.GetStringArg(argDMTConfig))
 	if err != nil {
