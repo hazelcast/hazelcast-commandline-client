@@ -284,6 +284,8 @@ func maybePrintWarnings(ctx context.Context, ec plug.ExecContext, ci *hazelcast.
 	}
 	if len(warnings) <= 5 {
 		ec.PrintlnUnnecessary("* " + strings.Join(warnings, "\n* "))
+	} else {
+		ec.PrintlnUnnecessary(fmt.Sprintf("You have %d warnings that you can find in your migration report.", len(warnings)))
 	}
 }
 
