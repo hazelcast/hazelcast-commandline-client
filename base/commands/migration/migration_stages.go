@@ -265,9 +265,7 @@ func fetchOverallProgress(ctx context.Context, ci *hazelcast.ClientInternal, mig
 		if err != nil {
 			return 0, 0, err
 		}
-		// convert it to parsable duration format
-		rtStr := fmt.Sprintf("%sms", remainingTime.(serialization.JSON).String())
-		rt, err := time.ParseDuration(rtStr)
+		rt, err := strconv.ParseInt(remainingTime.(serialization.JSON).String(), 10, 64)
 		if err != nil {
 			return 0, 0, err
 		}
@@ -276,7 +274,7 @@ func fetchOverallProgress(ctx context.Context, ci *hazelcast.ClientInternal, mig
 		if err != nil {
 			return 0, 0, err
 		}
-		return rt, float32(cp), nil
+		return time.Duration(rt) * time.Millisecond, float32(cp), nil
 	}
 	return 0, 0, errors.New("no rows found")
 }
