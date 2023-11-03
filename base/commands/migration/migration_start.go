@@ -39,7 +39,16 @@ func (StartCmd) Exec(ctx context.Context, ec plug.ExecContext) (err error) {
 	ec.PrintlnUnnecessary(`Hazelcast Data Migration Tool v5.3.0
 (c) 2023 Hazelcast, Inc.
 	
-Selected data structures in the source cluster will be migrated to the target cluster.	
+Selected data structures in the source cluster will be migrated to the target cluster.
+
+Prerequisites:
+
+	* Only a single migration can be run simultaneously.
+	* The target cluster must be an enterprise cluster or Viridian cluster.
+	* At least one data structure must be given in the migration configuration.
+	* The data structures given in the migration configuration must exist in the source cluster.
+	* Existing data structures on the target cluster will be skipped.
+	* It is recommended source cluster to be in read-only mode.
 `)
 	if !ec.Props().GetBool(clc.FlagAutoYes) {
 		p := prompt.New(ec.Stdin(), ec.Stdout())
