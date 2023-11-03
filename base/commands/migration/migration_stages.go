@@ -196,7 +196,7 @@ func WaitForMigrationToBeInProgress(ctx context.Context, ci *hazelcast.ClientInt
 			}
 			return errors.New(errs)
 		}
-		if Status(status) == StatusInProgress {
+		if Status(status) == StatusInProgress || Status(status) == StatusComplete {
 			return nil
 		}
 	}
