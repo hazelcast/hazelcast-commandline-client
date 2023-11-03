@@ -282,7 +282,9 @@ func maybePrintWarnings(ctx context.Context, ec plug.ExecContext, ci *hazelcast.
 		ec.Logger().Error(err)
 		return
 	}
-	ec.PrintlnUnnecessary("* " + strings.Join(warnings, "\n* "))
+	if len(warnings) <= 5 {
+		ec.PrintlnUnnecessary("* " + strings.Join(warnings, "\n* "))
+	}
 }
 
 func querySingleRow(ctx context.Context, ci *hazelcast.ClientInternal, query string) (any, error) {
