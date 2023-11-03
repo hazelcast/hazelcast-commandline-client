@@ -271,6 +271,26 @@ func finalizeMigration(ctx context.Context, ec plug.ExecContext, ci *hazelcast.C
 	return nil
 }
 
+func maybePrintWarnings(ctx context.Context, ec plug.ExecContext, ci *hazelcast.ClientInternal, migrationID string) {
+	q := fmt.Sprintf(`SELECT JSON_QUERY(this, '$.warnings' WITH WRAPPER) FROM %s WHERE __key='%s'`, StatusMapName, migrationID)
+	row, err := querySingleRow(ctx, ci, q)
+	if err != nil {
+		ec.Logger().Error(err)
+		return
+	}
+	var warnings []string
+	err = json.Unmarshal(row.(serialization.JSON), &warnings)
+	if err != nil {
+		ec.Logger().Error(err)
+		return
+	}
+	if len(warnings) <= 5 {
+		ec.PrintlnUnnecessary("* " + strings.Join(warnings, "\n* "))
+	} else {
+		ec.PrintlnUnnecessary(fmt.Sprintf("You have %d warnings that you can find in your migration report.", len(warnings)))
+	}
+}
+
 func querySingleRow(ctx context.Context, ci *hazelcast.ClientInternal, query string) (any, error) {
 	res, err := ci.Client().SQL().Execute(ctx, query)
 	if err != nil {
@@ -289,6 +309,9 @@ func querySingleRow(ctx context.Context, ci *hazelcast.ClientInternal, query str
 		r, err := row.Get(0)
 		if err != nil {
 			return "", err
+		}
+		if r == nil {
+			return nil, errors.New("no rows found")
 		}
 		return r, nil
 	}
