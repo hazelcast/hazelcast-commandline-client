@@ -45,9 +45,12 @@ Prerequisites:
 
 	* Only a single migration can be run simultaneously.
 	* The target cluster must be an enterprise cluster or Viridian cluster.
-	* At least one data structure must be given in the migration configuration.
-	* The data structures given in the migration configuration must exist in the source cluster. 
-	* Existing data structures on the target cluster will be skipped. 
+	* At least one data structure name must be provided in the migration configuration file.
+	* The data structures given in the migration configuration must exist in the source cluster.
+
+Further Information:
+
+	* Existing data structures on the target cluster will be skipped.
 	* It is recommended that the source cluster is put in read-only mode before the migration starts.
 `)
 	if !ec.Props().GetBool(clc.FlagAutoYes) {
