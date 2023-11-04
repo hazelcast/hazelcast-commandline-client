@@ -59,22 +59,3 @@ func Colorize(text string) string {
 	}
 	return text
 }
-
-func BytesToMegabytes(bytesStr string) (string, error) {
-	bytes, err := strconv.ParseFloat(bytesStr, 64)
-	if err != nil {
-		return "", err
-	}
-	mb := bytes / (1024.0 * 1024.0)
-	return fmt.Sprintf("%.2f MBs", mb), nil
-}
-
-func MsToSecs(ms string) (string, error) {
-	milliseconds, err := strconv.ParseInt(ms, 10, 64)
-	if err != nil {
-		return "", err
-	}
-	seconds := float64(milliseconds) / 1000.0
-	secondsStr := fmt.Sprintf("%.1f sec", seconds)
-	return secondsStr, nil
-}

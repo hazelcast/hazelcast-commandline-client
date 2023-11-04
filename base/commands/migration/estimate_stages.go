@@ -6,12 +6,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/str"
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
@@ -146,15 +146,34 @@ func fetchEstimationResults(ctx context.Context, ci *hazelcast.ClientInternal, m
 		if err != nil {
 			return nil, err
 		}
-		et, err := str.MsToSecs(estimatedTime.(serialization.JSON).String())
+		et, err := MsToSecs(estimatedTime.(serialization.JSON).String())
 		if err != nil {
 			return nil, err
 		}
-		es, err := str.BytesToMegabytes(estimatedSize.(serialization.JSON).String())
+		es, err := BytesToMegabytes(estimatedSize.(serialization.JSON).String())
 		if err != nil {
 			return nil, err
 		}
 		return []string{fmt.Sprintf("Estimated Size: %s ", es), fmt.Sprintf("Estimated Time: %s", et)}, nil
 	}
 	return nil, errors.New("no rows found")
+}
+
+func BytesToMegabytes(bytesStr string) (string, error) {
+	bytes, err := strconv.ParseFloat(bytesStr, 64)
+	if err != nil {
+		return "", err
+	}
+	mb := bytes / (1024.0 * 1024.0)
+	return fmt.Sprintf("%.2f MBs", mb), nil
+}
+
+func MsToSecs(ms string) (string, error) {
+	milliseconds, err := strconv.ParseInt(ms, 10, 64)
+	if err != nil {
+		return "", err
+	}
+	seconds := float64(milliseconds) / 1000.0
+	secondsStr := fmt.Sprintf("%.1f sec", seconds)
+	return secondsStr, nil
 }

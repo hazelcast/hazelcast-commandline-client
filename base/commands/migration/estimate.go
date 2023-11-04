@@ -39,8 +39,8 @@ Estimation usually ends within 15 seconds.`, banner))
 	}
 	resArr := res.([]string)
 	ec.PrintlnUnnecessary("")
-	ec.PrintlnUnnecessary(fmt.Sprintf("OK %s", resArr[0]))
-	ec.PrintlnUnnecessary(fmt.Sprintf("OK %s", resArr[1]))
+	ec.PrintlnUnnecessary(resArr[0])
+	ec.PrintlnUnnecessary(resArr[1])
 	ec.PrintlnUnnecessary("")
 	ec.PrintlnUnnecessary("OK Estimation completed successfully.")
 	return nil
