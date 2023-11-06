@@ -25,7 +25,7 @@ func TestEstimate(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			check.Must(tcx.CLC().Execute(ctx, "estimate", "testdata/dmt-config"))
+			check.Must(tcx.CLC().Execute(ctx, "estimate", "testdata/dmt_config"))
 		}()
 		c := make(chan string)
 		go findEstimationID(ctx, tcx, c)

@@ -4,8 +4,10 @@ package migration
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	clcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -41,6 +43,10 @@ func (StartCmd) Exec(ctx context.Context, ec plug.ExecContext) (err error) {
 	
 Selected data structures in the source cluster will be migrated to the target cluster.	
 `)
+	conf := ec.GetStringArg(argDMTConfig)
+	if !paths.Exists(conf) {
+		return fmt.Errorf("migration config does not exist: %s", conf)
+	}
 	if !ec.Props().GetBool(clc.FlagAutoYes) {
 		p := prompt.New(ec.Stdin(), ec.Stdout())
 		yes, err := p.YesNo("Proceed?")
@@ -59,7 +65,7 @@ Selected data structures in the source cluster will be migrated to the target cl
 			err = finalizeErr
 		}
 	}()
-	sts, err := NewStartStages(ec.Logger(), mID, ec.GetStringArg(argDMTConfig))
+	sts, err := NewStartStages(ec.Logger(), mID, conf)
 	if err != nil {
 		return err
 	}

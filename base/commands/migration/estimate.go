@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -27,8 +28,12 @@ func (e EstimateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	ec.PrintlnUnnecessary(fmt.Sprintf(`%s
 
 Estimation usually ends within 15 seconds.`, banner))
+	conf := ec.GetStringArg(argDMTConfig)
+	if !paths.Exists(conf) {
+		return fmt.Errorf("migration config does not exist: %s", conf)
+	}
 	mID := MakeMigrationID()
-	stages, err := NewEstimateStages(ec.Logger(), mID, ec.GetStringArg(argDMTConfig))
+	stages, err := NewEstimateStages(ec.Logger(), mID, conf)
 	if err != nil {
 		return err
 	}
