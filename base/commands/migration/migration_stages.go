@@ -74,7 +74,7 @@ func createMigrationStages(ctx context.Context, ec plug.ExecContext, ci *hazelca
 						execErr = errors.New(errs)
 						break statusReaderLoop
 					case StatusCanceled, StatusCanceling:
-						execErr = clcerrors.ErrUserCancelled
+						execErr = errors.New("migration canceled by the user")
 						break statusReaderLoop
 					}
 					q := fmt.Sprintf(`SELECT JSON_QUERY(this, '$.migrations[%d]') FROM %s WHERE __key= '%s'`, i, StatusMapName, migrationID)
