@@ -146,11 +146,11 @@ func fetchEstimationResults(ctx context.Context, ci *hazelcast.ClientInternal, m
 		if err != nil {
 			return nil, err
 		}
-		et, err := MsToSecs(estimatedTime.(serialization.JSON).String())
+		et, err := msToSecs(estimatedTime.(serialization.JSON).String())
 		if err != nil {
 			return nil, err
 		}
-		es, err := BytesToMegabytes(estimatedSize.(serialization.JSON).String())
+		es, err := bytesToMegabytes(estimatedSize.(serialization.JSON).String())
 		if err != nil {
 			return nil, err
 		}
@@ -159,7 +159,7 @@ func fetchEstimationResults(ctx context.Context, ci *hazelcast.ClientInternal, m
 	return nil, errors.New("no rows found")
 }
 
-func BytesToMegabytes(bytesStr string) (string, error) {
+func bytesToMegabytes(bytesStr string) (string, error) {
 	bytes, err := strconv.ParseFloat(bytesStr, 64)
 	if err != nil {
 		return "", err
@@ -168,7 +168,7 @@ func BytesToMegabytes(bytesStr string) (string, error) {
 	return fmt.Sprintf("%.2f MBs", mb), nil
 }
 
-func MsToSecs(ms string) (string, error) {
+func msToSecs(ms string) (string, error) {
 	milliseconds, err := strconv.ParseInt(ms, 10, 64)
 	if err != nil {
 		return "", err
