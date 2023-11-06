@@ -49,9 +49,11 @@ Prerequisites:
 	* The data structures given in the migration configuration must exist in the source cluster.
 
 Further Information:
-
+	
 	* Existing data structures on the target cluster will be skipped.
 	* It is recommended that the source cluster is put in read-only mode before the migration starts.
+	* Viridian clusters supports at most 14GB of primal data. If you try to migrate more than that, the failure
+      is expected. You can consider Viridian Dedicated for larger data migrations.";
 `)
 	if !ec.Props().GetBool(clc.FlagAutoYes) {
 		p := prompt.New(ec.Stdin(), ec.Stdout())
