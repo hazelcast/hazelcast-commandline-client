@@ -37,7 +37,7 @@ func noMigrationsCancelTest(t *testing.T) {
 	tcx.Tester(func(tcx it.TestContext) {
 		createMapping(ctx, tcx)
 		err := tcx.CLC().Execute(ctx, "cancel")
-		require.Contains(t, err.Error(), "finding migration in progress: no rows found")
+		require.Contains(t, err.Error(), "finding migration in progress: no result found")
 	})
 }
 

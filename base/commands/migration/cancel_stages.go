@@ -32,6 +32,12 @@ func (st *CancelStages) Build(ctx context.Context, ec plug.ExecContext) []stage.
 			Func:        st.connectStage(ec),
 		},
 		{
+			ProgressMsg: "Finding migration in progress",
+			SuccessMsg:  "Found migration in progress",
+			FailureMsg:  "Could not find a migration in progress",
+			Func:        st.findMigrationInProgress(ec),
+		},
+		{
 			ProgressMsg: "Canceling the migration",
 			SuccessMsg:  "Canceled the migration",
 			FailureMsg:  "Could not cancel the migration",
@@ -47,13 +53,19 @@ func (st *CancelStages) connectStage(ec plug.ExecContext) func(context.Context, 
 		if err != nil {
 			return nil, err
 		}
+		st.cancelQueue, err = st.ci.Client().GetQueue(ctx, CancelQueue)
+		return nil, nil
+	}
+}
+
+func (st *CancelStages) findMigrationInProgress(ec plug.ExecContext) func(context.Context, stage.Statuser[any]) (any, error) {
+	return func(ctx context.Context, status stage.Statuser[any]) (any, error) {
 		m, err := findMigrationInProgress(ctx, st.ci)
 		if err != nil {
 			return nil, err
 		}
 		st.migrationID = m.MigrationID
-		st.cancelQueue, err = st.ci.Client().GetQueue(ctx, CancelQueue)
-		return nil, err
+		return nil, nil
 	}
 }
 

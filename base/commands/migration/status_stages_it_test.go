@@ -46,7 +46,7 @@ func noMigrationsStatusTest(t *testing.T) {
 			execErr = tcx.CLC().Execute(ctx, "status")
 		})
 		wg.Wait()
-		require.Contains(t, execErr.Error(), "finding migration in progress: no rows found")
+		require.Contains(t, execErr.Error(), "finding migration in progress: no result found")
 	})
 }
 
