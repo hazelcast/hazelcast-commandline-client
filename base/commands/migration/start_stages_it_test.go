@@ -33,15 +33,17 @@ func TestMigrationStages(t *testing.T) {
 		{
 			name: "successful",
 			statusMapStateFiles: []string{
-				"testdata/start/migration_success_initial.json",
-				"testdata/start/migration_success_completed.json",
+				"testdata/stages/migration_started.json",
+				"testdata/stages/migration_in_progress.json",
+				"testdata/stages/migration_completed.json",
 			},
 		},
 		{
 			name: "failure",
 			statusMapStateFiles: []string{
-				"testdata/start/migration_success_initial.json",
-				"testdata/start/migration_success_failure.json",
+				"testdata/stages/migration_started.json",
+				"testdata/stages/migration_in_progress.json",
+				"testdata/stages/migration_failed.json",
 			},
 			expectedErr: errors.New("Failed migrating IMAP: imap5: * some error\n* another error"),
 		},

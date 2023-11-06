@@ -67,6 +67,6 @@ func cancelTest(t *testing.T) {
 
 func setStatusCancelling(migrationID string, tcx it.TestContext, ctx context.Context) {
 	statusMap := MustValue(tcx.Client.GetMap(ctx, migration.StatusMapName))
-	b := MustValue(os.ReadFile("testdata/cancel/migration_cancelling.json"))
+	b := MustValue(os.ReadFile("testdata/stages/migration_cancelling.json"))
 	Must(statusMap.Set(ctx, migrationID, serialization.JSON(b)))
 }

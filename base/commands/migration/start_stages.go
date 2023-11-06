@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
@@ -48,6 +49,12 @@ func (st *StartStages) Build(ctx context.Context, ec plug.ExecContext) []stage.S
 			FailureMsg:  "Could not start the migration",
 			Func:        st.startStage(),
 		},
+		{
+			ProgressMsg: "Doing pre-checks",
+			SuccessMsg:  "Pre-checks complete",
+			FailureMsg:  "Could not complete pre-checks",
+			Func:        st.preCheckStage(),
+		},
 	}
 }
 
@@ -75,7 +82,46 @@ func (st *StartStages) startStage() func(context.Context, stage.Statuser[any]) (
 		if err = st.startQueue.Put(ctx, cb); err != nil {
 			return nil, fmt.Errorf("updating start Queue: %w", err)
 		}
+		childCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		defer cancel()
+		if err = waitForMigrationToStart(childCtx, st.ci, st.migrationID); err != nil {
+			return nil, err
+		}
 		return nil, nil
+	}
+}
+
+func (st *StartStages) preCheckStage() func(context.Context, stage.Statuser[any]) (any, error) {
+	return func(ctx context.Context, status stage.Statuser[any]) (any, error) {
+		childCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		defer cancel()
+		if err := WaitForMigrationToBeInProgress(childCtx, st.ci, st.migrationID); err != nil {
+			return nil, fmt.Errorf("waiting for prechecks to complete: %w", err)
+		}
+		return nil, nil
+	}
+}
+
+func waitForMigrationToStart(ctx context.Context, ci *hazelcast.ClientInternal, migrationID string) error {
+	for {
+		status, err := fetchMigrationStatus(ctx, ci, migrationID)
+		if err != nil {
+			if errors.Is(err, migrationStatusNotFoundErr) {
+				// migration status will not be available for a while, so we should wait for it
+				continue
+			}
+			return err
+		}
+		if Status(status) == StatusFailed {
+			errs, err := fetchMigrationErrors(ctx, ci, migrationID)
+			if err != nil {
+				return fmt.Errorf("migration failed and dmt cannot fetch migration errors: %w", err)
+			}
+			return errors.New(errs)
+		}
+		if Status(status) == StatusStarted || Status(status) == StatusInProgress || Status(status) == StatusComplete {
+			return nil
+		}
 	}
 }
 

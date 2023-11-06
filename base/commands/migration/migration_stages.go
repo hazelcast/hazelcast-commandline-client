@@ -27,11 +27,6 @@ var timeoutErr = fmt.Errorf("migration could not be completed: reached timeout w
 var migrationStatusNotFoundErr = fmt.Errorf("migration status not found")
 
 func createMigrationStages(ctx context.Context, ec plug.ExecContext, ci *hazelcast.ClientInternal, migrationID string) ([]stage.Stage[any], error) {
-	childCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
-	defer cancel()
-	if err := WaitForMigrationToBeInProgress(childCtx, ci, migrationID); err != nil {
-		return nil, fmt.Errorf("waiting migration to be created: %w", err)
-	}
 	var stages []stage.Stage[any]
 	dss, err := getDataStructuresToBeMigrated(ctx, ec, migrationID)
 	if err != nil {
