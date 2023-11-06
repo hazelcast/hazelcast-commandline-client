@@ -357,13 +357,18 @@ func querySingleRow(ctx context.Context, ci *hazelcast.ClientInternal, query str
 
 func maybePrintWarnings(ctx context.Context, ec plug.ExecContext, ci *hazelcast.ClientInternal, migrationID string) {
 	q := fmt.Sprintf(`SELECT JSON_QUERY(this, '$.warnings' WITH WRAPPER) FROM %s WHERE __key='%s'`, StatusMapName, migrationID)
-	row, err := querySingleRow(ctx, ci, q)
+	r, err := querySingleRow(ctx, ci, q)
+	if err != nil {
+		ec.Logger().Error(err)
+		return
+	}
+	rr, err := r.Get(0)
 	if err != nil {
 		ec.Logger().Error(err)
 		return
 	}
 	var warnings []string
-	err = json.Unmarshal(row.(serialization.JSON), &warnings)
+	err = json.Unmarshal(rr.(serialization.JSON), &warnings)
 	if err != nil {
 		ec.Logger().Error(err)
 		return
