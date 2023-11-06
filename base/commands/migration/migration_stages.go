@@ -367,6 +367,9 @@ func maybePrintWarnings(ctx context.Context, ec plug.ExecContext, ci *hazelcast.
 		ec.Logger().Error(err)
 		return
 	}
+	if rr == nil {
+		return
+	}
 	var warnings []string
 	err = json.Unmarshal(rr.(serialization.JSON), &warnings)
 	if err != nil {
