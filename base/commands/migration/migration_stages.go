@@ -30,6 +30,8 @@ var migrationStatusNotFoundErr = fmt.Errorf("migration status not found")
 
 var migrationReportNotFoundErr = "migration report cannot be found: %w"
 
+var noDataStructuresFoundErr = errors.New("no datastructures found to migrate")
+
 var progressMsg = "Migrating %s: %s"
 
 func createMigrationStages(ctx context.Context, ec plug.ExecContext, ci *hazelcast.ClientInternal, migrationID string) ([]stage.Stage[any], error) {
@@ -154,12 +156,15 @@ func getDataStructuresToBeMigrated(ctx context.Context, ec plug.ExecContext, mig
 	if err != nil {
 		return nil, err
 	}
+	if rr == nil {
+		return nil, noDataStructuresFoundErr
+	}
 	var status OverallMigrationStatus
 	if err = json.Unmarshal(rr.(serialization.JSON), &status); err != nil {
 		return nil, err
 	}
 	if len(status.Migrations) == 0 {
-		return nil, errors.New("no datastructures found to migrate")
+		return nil, noDataStructuresFoundErr
 	}
 	for _, m := range status.Migrations {
 		dss = append(dss, DataStructureInfo{
@@ -254,6 +259,9 @@ func fetchMigrationStatus(ctx context.Context, ci *hazelcast.ClientInternal, mig
 	if err != nil {
 		return "", migrationStatusNotFoundErr
 	}
+	if rr == nil {
+		return "", migrationStatusNotFoundErr
+	}
 	return strings.TrimSuffix(strings.TrimPrefix(string(rr.(serialization.JSON)), `"`), `"`), nil
 }
 
@@ -262,6 +270,9 @@ func fetchOverallProgress(ctx context.Context, ci *hazelcast.ClientInternal, mig
 	r, err := querySingleRow(ctx, ci, q)
 	if err != nil {
 		return 0, 0, err
+	}
+	if r == nil {
+		return 0, 0, errors.New("overall progress not found")
 	}
 	remainingTime, err := r.Get(0)
 	if err != nil {
@@ -295,6 +306,9 @@ func fetchMigrationReport(ctx context.Context, ci *hazelcast.ClientInternal, mig
 	if err != nil {
 		return "", fmt.Errorf(migrationReportNotFoundErr, err)
 	}
+	if r == nil {
+		return "", errors.New("migration report not found")
+	}
 	rr, err := r.Get(0)
 	if err != nil {
 		return "", fmt.Errorf(migrationReportNotFoundErr, err)
@@ -309,6 +323,9 @@ func fetchMigrationErrors(ctx context.Context, ci *hazelcast.ClientInternal, mig
 	r, err := querySingleRow(ctx, ci, q)
 	if err != nil {
 		return "", err
+	}
+	if r == nil {
+		return "", errors.New("could not fetch migration errors")
 	}
 	rr, err := r.Get(0)
 	if err != nil {
@@ -360,6 +377,10 @@ func maybePrintWarnings(ctx context.Context, ec plug.ExecContext, ci *hazelcast.
 	r, err := querySingleRow(ctx, ci, q)
 	if err != nil {
 		ec.Logger().Error(err)
+		return
+	}
+	if r == nil {
+		ec.Logger().Info("could not find any warnings")
 		return
 	}
 	rr, err := r.Get(0)
