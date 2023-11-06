@@ -27,6 +27,8 @@ var timeoutErr = fmt.Errorf("migration could not be completed: reached timeout w
 
 var migrationStatusNotFoundErr = fmt.Errorf("migration status not found")
 
+var progressMsg = "Migrating %s: %s"
+
 func createMigrationStages(ctx context.Context, ec plug.ExecContext, ci *hazelcast.ClientInternal, migrationID string) ([]stage.Stage[any], error) {
 	childCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
@@ -41,7 +43,7 @@ func createMigrationStages(ctx context.Context, ec plug.ExecContext, ci *hazelca
 	for i, d := range dss {
 		i := i
 		stages = append(stages, stage.Stage[any]{
-			ProgressMsg: fmt.Sprintf("Migrating %s: %s", d.Type, d.Name),
+			ProgressMsg: fmt.Sprintf(progressMsg, d.Type, d.Name),
 			SuccessMsg:  fmt.Sprintf("Migrated %s: %s", d.Type, d.Name),
 			FailureMsg:  fmt.Sprintf("Failed migrating %s: %s", d.Type, d.Name),
 			Func: func(ct context.Context, status stage.Statuser[any]) (any, error) {
@@ -83,6 +85,7 @@ func createMigrationStages(ctx context.Context, ec plug.ExecContext, ci *hazelca
 							ec.Logger().Error(err)
 							status.SetText("Unable to calculate remaining duration and progress")
 						} else {
+							status.SetText(fmt.Sprintf(progressMsg, d.Type, d.Name))
 							status.SetProgress(cp)
 							status.SetRemainingDuration(rt)
 						}
@@ -266,6 +269,12 @@ func fetchOverallProgress(ctx context.Context, ci *hazelcast.ClientInternal, mig
 		completionPercentage, err := row.Get(1)
 		if err != nil {
 			return 0, 0, err
+		}
+		if completionPercentage == nil {
+			return 0, 0, fmt.Errorf("completionPercentage is not available in %s", StatusMapName)
+		}
+		if remainingTime == nil {
+			return 0, 0, fmt.Errorf("remainingTime is not available in %s", StatusMapName)
 		}
 		rt, err := strconv.ParseInt(remainingTime.(serialization.JSON).String(), 10, 64)
 		if err != nil {
