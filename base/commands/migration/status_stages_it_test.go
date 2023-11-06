@@ -66,7 +66,7 @@ func statusTest(t *testing.T) {
 			defer wg.Done()
 			Must(tcx.CLC().Execute(ctx, "status", "-o", outDir))
 		}()
-		tcx.AssertStdoutContains("Connected to the migration cluster")
+		tcx.AssertStdoutContains("Found migration in progress")
 		setStatusCompleted(mID, tcx, ctx)
 		wg.Wait()
 		tcx.WithReset(func() {
