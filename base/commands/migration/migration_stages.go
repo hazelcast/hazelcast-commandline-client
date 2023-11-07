@@ -200,6 +200,9 @@ func saveReportToFile(ctx context.Context, ci *hazelcast.ClientInternal, migrati
 
 func WaitForMigrationToBeInProgress(ctx context.Context, ci *hazelcast.ClientInternal, migrationID string) error {
 	for {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
 		status, err := fetchMigrationStatus(ctx, ci, migrationID)
 		if err != nil {
 			if errors.Is(err, migrationStatusNotFoundErr) {
