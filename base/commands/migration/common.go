@@ -22,7 +22,11 @@ func findMigrationInProgress(ctx context.Context, ci *hazelcast.ClientInternal) 
 	if err != nil {
 		return mip, fmt.Errorf("finding migration in progress: %w", err)
 	}
-	m := r.(serialization.JSON)
+	rr, err := r.Get(0)
+	if err != nil {
+		return mip, fmt.Errorf("finding migration in progress: %w", err)
+	}
+	m := rr.(serialization.JSON)
 	if err = json.Unmarshal(m, &mip); err != nil {
 		return mip, fmt.Errorf("parsing migration in progress: %w", err)
 	}

@@ -32,7 +32,7 @@ Estimation usually ends within 15 seconds.`, banner))
 	if !paths.Exists(conf) {
 		return fmt.Errorf("migration config does not exist: %s", conf)
 	}
-	mID := MakeMigrationID()
+	mID := makeMigrationID()
 	stages, err := NewEstimateStages(ec.Logger(), mID, conf)
 	if err != nil {
 		return err
