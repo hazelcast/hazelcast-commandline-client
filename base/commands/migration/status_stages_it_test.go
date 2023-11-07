@@ -4,7 +4,6 @@ package migration_test
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"sync"
@@ -38,6 +37,7 @@ func noMigrationsStatusTest(t *testing.T) {
 	tcx := it.TestContext{T: t}
 	ctx := context.Background()
 	tcx.Tester(func(tcx it.TestContext) {
+		createMapping(ctx, tcx)
 		var wg sync.WaitGroup
 		wg.Add(1)
 		var execErr error
@@ -46,7 +46,7 @@ func noMigrationsStatusTest(t *testing.T) {
 			execErr = tcx.CLC().Execute(ctx, "status")
 		})
 		wg.Wait()
-		require.Contains(t, execErr.Error(), "there are no migrations in progress")
+		require.Contains(t, execErr.Error(), "finding migration in progress: no result found")
 	})
 }
 
@@ -55,23 +55,20 @@ func statusTest(t *testing.T) {
 	ctx := context.Background()
 	tcx.Tester(func(tcx it.TestContext) {
 		ci := hz.NewClientInternal(tcx.Client)
-		progressList := MustValue(tcx.Client.GetList(ctx, migration.MigrationsInProgressList))
-		mID := preStatusRunner(t, tcx, ctx, ci, progressList)
-		defer postStatusRunner(ctx, mID, progressList)
+		createMapping(ctx, tcx)
+		createMemberLogs(t, ctx, ci)
 		defer removeMembersLogs(ctx, ci)
 		outDir := MustValue(os.MkdirTemp("", "clc-"))
+		mID := setStatusInProgress(tcx, ctx)
 		var wg sync.WaitGroup
 		wg.Add(1)
-		go tcx.WithReset(func() {
+		go func() {
 			defer wg.Done()
 			Must(tcx.CLC().Execute(ctx, "status", "-o", outDir))
-		})
-		it.Eventually(t, func() bool {
-			return migration.WaitForMigrationToBeInProgress(ctx, ci, mID) == nil
-		})
-		statusRunner(mID, tcx, ctx)
+		}()
+		tcx.AssertStdoutContains("Found migration in progress")
+		setStatusCompleted(mID, tcx, ctx)
 		wg.Wait()
-		tcx.AssertStdoutContains("Connected to the migration cluster")
 		tcx.WithReset(func() {
 			f := paths.Join(outDir, fmt.Sprintf("migration_report_%s.txt", mID))
 			require.Equal(t, true, paths.Exists(f))
@@ -86,16 +83,18 @@ func statusTest(t *testing.T) {
 	})
 }
 
-func preStatusRunner(t *testing.T, tcx it.TestContext, ctx context.Context, ci *hz.ClientInternal, progressList *hz.List) string {
-	createMapping(ctx, tcx)
-	createMemberLogs(t, ctx, ci)
-	mID := migration.MakeMigrationID()
-	m := MustValue(json.Marshal(migration.MigrationInProgress{MigrationID: mID}))
-	require.Equal(t, true, MustValue(progressList.Add(ctx, serialization.JSON(m))))
+func setStatusInProgress(tcx it.TestContext, ctx context.Context) string {
+	mID := migrationIDFunc()
 	statusMap := MustValue(tcx.Client.GetMap(ctx, migration.StatusMapName))
-	b := MustValue(os.ReadFile("testdata/start/migration_success_initial.json"))
+	b := MustValue(os.ReadFile("testdata/stages/migration_in_progress.json"))
 	Must(statusMap.Set(ctx, mID, serialization.JSON(b)))
 	return mID
+}
+
+func setStatusCompleted(migrationID string, tcx it.TestContext, ctx context.Context) {
+	statusMap := MustValue(tcx.Client.GetMap(ctx, migration.StatusMapName))
+	b := MustValue(os.ReadFile("testdata/stages/migration_completed.json"))
+	Must(statusMap.Set(ctx, migrationID, serialization.JSON(b)))
 }
 
 func createMemberLogs(t *testing.T, ctx context.Context, ci *hz.ClientInternal) {
@@ -112,15 +111,4 @@ func removeMembersLogs(ctx context.Context, ci *hz.ClientInternal) {
 		l := MustValue(ci.Client().GetList(ctx, migration.DebugLogsListPrefix+m.UUID.String()))
 		Must(l.Destroy(ctx))
 	}
-}
-
-func statusRunner(migrationID string, tcx it.TestContext, ctx context.Context) {
-	statusMap := MustValue(tcx.Client.GetMap(ctx, migration.StatusMapName))
-	b := MustValue(os.ReadFile("testdata/start/migration_success_completed.json"))
-	Must(statusMap.Set(ctx, migrationID, serialization.JSON(b)))
-}
-
-func postStatusRunner(ctx context.Context, migrationID string, progressList *hz.List) {
-	m := MustValue(json.Marshal(migration.MigrationInProgress{MigrationID: migrationID}))
-	MustValue(progressList.Remove(ctx, serialization.JSON(m)))
 }

@@ -4,19 +4,14 @@ package migration
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 type StatusStages struct {
-	ci                       *hazelcast.ClientInternal
-	migrationsInProgressList *hazelcast.List
-	statusMap                *hazelcast.Map
+	ci *hazelcast.ClientInternal
 }
 
 func NewStatusStages() *StatusStages {
@@ -31,11 +26,13 @@ func (st *StatusStages) Build(ctx context.Context, ec plug.ExecContext) []stage.
 			FailureMsg:  "Could not connect to the migration cluster",
 			Func:        st.connectStage(ec),
 		},
+		{
+			ProgressMsg: "Finding migration in progress",
+			SuccessMsg:  "Found migration in progress",
+			FailureMsg:  "Could not find a migration in progress",
+			Func:        st.findMigrationInProgress(ec),
+		},
 	}
-}
-
-type MigrationInProgress struct {
-	MigrationID string `json:"migrationId"`
 }
 
 func (st *StatusStages) connectStage(ec plug.ExecContext) func(context.Context, stage.Statuser[any]) (any, error) {
@@ -45,26 +42,16 @@ func (st *StatusStages) connectStage(ec plug.ExecContext) func(context.Context, 
 		if err != nil {
 			return nil, err
 		}
-		st.migrationsInProgressList, err = st.ci.Client().GetList(ctx, MigrationsInProgressList)
+		return nil, nil
+	}
+}
+
+func (st *StatusStages) findMigrationInProgress(ec plug.ExecContext) func(context.Context, stage.Statuser[any]) (any, error) {
+	return func(ctx context.Context, status stage.Statuser[any]) (any, error) {
+		m, err := findMigrationInProgress(ctx, st.ci)
 		if err != nil {
 			return nil, err
 		}
-		all, err := st.migrationsInProgressList.GetAll(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if len(all) == 0 {
-			return nil, fmt.Errorf("there are no migrations in progress")
-		}
-		var mip MigrationInProgress
-		m := all[0].(serialization.JSON)
-		if err = json.Unmarshal(m, &mip); err != nil {
-			return nil, fmt.Errorf("parsing migration in progress: %w", err)
-		}
-		st.statusMap, err = st.ci.Client().GetMap(ctx, StatusMapName)
-		if err != nil {
-			return nil, err
-		}
-		return mip.MigrationID, err
+		return m.MigrationID, err
 	}
 }

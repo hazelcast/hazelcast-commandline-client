@@ -33,15 +33,17 @@ func TestMigrationStages(t *testing.T) {
 		{
 			name: "successful",
 			statusMapStateFiles: []string{
-				"testdata/start/migration_success_initial.json",
-				"testdata/start/migration_success_completed.json",
+				"testdata/stages/migration_started.json",
+				"testdata/stages/migration_in_progress.json",
+				"testdata/stages/migration_completed.json",
 			},
 		},
 		{
 			name: "failure",
 			statusMapStateFiles: []string{
-				"testdata/start/migration_success_initial.json",
-				"testdata/start/migration_success_failure.json",
+				"testdata/stages/migration_started.json",
+				"testdata/stages/migration_in_progress.json",
+				"testdata/stages/migration_failed.json",
 			},
 			expectedErr: errors.New("Failed migrating IMAP: imap5: * some error\n* another error"),
 		},
@@ -108,6 +110,10 @@ func migrationRunner(t *testing.T, ctx context.Context, tcx it.TestContext, migr
 func createMapping(ctx context.Context, tcx it.TestContext) {
 	mSQL := fmt.Sprintf(`CREATE MAPPING IF NOT EXISTS %s TYPE IMap OPTIONS('keyFormat'='varchar', 'valueFormat'='json')`, migration.StatusMapName)
 	MustValue(tcx.Client.SQL().Execute(ctx, mSQL))
+}
+
+func migrationIDFunc() string {
+	return "e6e928d3-63af-4e72-8c42-0bfcf0ab6cf7"
 }
 
 func findMigrationID(ctx context.Context, tcx it.TestContext, c chan string) {

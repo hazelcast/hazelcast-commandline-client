@@ -123,7 +123,9 @@ func readPathAsString(path string) (string, error) {
 	return string(b), nil
 }
 
-func MakeMigrationID() string {
+var MigrationIDGeneratorFunc = makeMigrationID
+
+func makeMigrationID() string {
 	return types.NewUUID().String()
 }
 

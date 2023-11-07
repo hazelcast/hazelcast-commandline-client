@@ -35,11 +35,6 @@ var noDataStructuresFoundErr = errors.New("no datastructures found to migrate")
 var progressMsg = "Migrating %s: %s"
 
 func createMigrationStages(ctx context.Context, ec plug.ExecContext, ci *hazelcast.ClientInternal, migrationID string) ([]stage.Stage[any], error) {
-	childCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
-	defer cancel()
-	if err := WaitForMigrationToBeInProgress(childCtx, ci, migrationID); err != nil {
-		return nil, fmt.Errorf("waiting migration to be created: %w", err)
-	}
 	var stages []stage.Stage[any]
 	dss, err := getDataStructuresToBeMigrated(ctx, ec, migrationID)
 	if err != nil {
@@ -82,7 +77,7 @@ func createMigrationStages(ctx context.Context, ec plug.ExecContext, ci *hazelca
 						execErr = errors.New(errs)
 						break statusReaderLoop
 					case StatusCanceled, StatusCanceling:
-						execErr = clcerrors.ErrUserCancelled
+						execErr = errors.New("migration canceled by the user")
 						break statusReaderLoop
 					case StatusInProgress:
 						rt, cp, err := fetchOverallProgress(ctx, ci, migrationID)
@@ -147,7 +142,7 @@ func getDataStructuresToBeMigrated(ctx context.Context, ec plug.ExecContext, mig
 	if err != nil {
 		return nil, err
 	}
-	q := fmt.Sprintf(`SELECT this FROM %s WHERE __key= '%s'`, StatusMapName, migrationID)
+	q := fmt.Sprintf(`SELECT this FROM %s WHERE __key='%s'`, StatusMapName, migrationID)
 	r, err := querySingleRow(ctx, ci, q)
 	if err != nil {
 		return nil, err
@@ -220,7 +215,7 @@ func WaitForMigrationToBeInProgress(ctx context.Context, ci *hazelcast.ClientInt
 			}
 			return errors.New(errs)
 		}
-		if Status(status) == StatusInProgress {
+		if Status(status) == StatusInProgress || Status(status) == StatusComplete {
 			return nil
 		}
 	}
@@ -369,7 +364,7 @@ func querySingleRow(ctx context.Context, ci *hazelcast.ClientInternal, query str
 		}
 		return row, nil
 	}
-	return nil, errors.New("no rows found")
+	return nil, errors.New("no result found")
 }
 
 func maybePrintWarnings(ctx context.Context, ec plug.ExecContext, ci *hazelcast.ClientInternal, migrationID string) {
