@@ -69,7 +69,7 @@ func startMigrationTest(t *testing.T, expectedErr error, statusMapStateFiles []s
 		var execErr error
 		go tcx.WithReset(func() {
 			defer wg.Done()
-			execErr = tcx.CLC().Execute(ctx, "start", "dmt-config", "--yes", "-o", outDir)
+			execErr = tcx.CLC().Execute(ctx, "start", "testdata/dmt_config", "--yes", "-o", outDir)
 		})
 		c := make(chan string)
 		go findMigrationID(ctx, tcx, c)

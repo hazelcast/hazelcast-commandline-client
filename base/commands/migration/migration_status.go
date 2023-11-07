@@ -37,6 +37,7 @@ func (s StatusCmd) Exec(ctx context.Context, ec plug.ExecContext) (err error) {
 		return err
 	}
 	defer func() {
+		maybePrintWarnings(ctx, ec, ci, mID.(string))
 		finalizeErr := finalizeMigration(ctx, ec, ci, mID.(string), ec.Props().GetString(flagOutputDir))
 		if err == nil {
 			err = finalizeErr

@@ -4,7 +4,6 @@ package migration
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -13,7 +12,6 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 type StartStages struct {
@@ -123,17 +121,4 @@ func waitForMigrationToStart(ctx context.Context, ci *hazelcast.ClientInternal, 
 			return nil
 		}
 	}
-}
-
-func makeConfigBundle(configDir, migrationID string) (serialization.JSON, error) {
-	var cb ConfigBundle
-	cb.MigrationID = migrationID
-	if err := cb.Walk(configDir); err != nil {
-		return nil, err
-	}
-	b, err := json.Marshal(cb)
-	if err != nil {
-		return nil, err
-	}
-	return b, nil
 }
