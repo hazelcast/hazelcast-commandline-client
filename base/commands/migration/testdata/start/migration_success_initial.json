@@ -5,6 +5,7 @@
   "finishTimestamp": "2023-01-01T00:01:00Z",
   "type": "MIGRATION",
   "completionPercentage": 12.123,
+  "remainingTime": 1,
   "migrations": [
     {
       "name": "imap5",
