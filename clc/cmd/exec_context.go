@@ -29,9 +29,21 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/types"
 )
 
-const (
-	cancelMsg = " (Ctrl+C to cancel) "
+var (
+	cancelMsg atomic.Value
 )
+
+func SetCancelMsg(msg string) {
+	cancelMsg.Store(msg)
+}
+
+func GetCancelMsg() string {
+	return cancelMsg.Load().(string)
+}
+
+func init() {
+	SetCancelMsg(" (Ctrl+C to cancel) ")
+}
 
 type ClientFn func(ctx context.Context, cfg hazelcast.Config) (*hazelcast.ClientInternal, error)
 
@@ -409,7 +421,7 @@ func (s *simpleSpinner) SetText(text string) {
 		s.sp.Prefix("")
 		return
 	}
-	s.sp.Prefix("      " + text + cancelMsg)
+	s.sp.Prefix("      " + text + GetCancelMsg())
 }
 
 func (s *simpleSpinner) SetProgress(progress float32) {
