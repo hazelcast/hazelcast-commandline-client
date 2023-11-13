@@ -45,7 +45,8 @@ func (StartCmd) Exec(ctx context.Context, ec plug.ExecContext) (err error) {
 	
 Selected data structures in the source cluster will be migrated to the target cluster.
 
-(Pressing CTRL+C does not cancel the migration progress)
+Exiting the application does not affect the migration progress.
+In order to cancel the migration, use the 'cancel' command.
 `)
 	conf := ec.GetStringArg(argDMTConfig)
 	if !paths.Exists(conf) {
