@@ -34,6 +34,7 @@ func (StartCmd) Init(cc plug.InitContext) error {
 }
 
 func (StartCmd) Exec(ctx context.Context, ec plug.ExecContext) (err error) {
+	cmd.SetCancelMsg(" (Ctrl+C to exit) ")
 	ci, err := ec.ClientInternal(ctx)
 	if err != nil {
 		return err
@@ -98,6 +99,5 @@ Selected data structures in the source cluster will be migrated to the target cl
 }
 
 func init() {
-	cmd.SetCancelMsg(" (Ctrl+C to exit) ")
 	check.Must(plug.Registry.RegisterCommand("start", &StartCmd{}))
 }
