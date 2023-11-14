@@ -86,7 +86,7 @@ func createMigrationStages(ctx context.Context, ec plug.ExecContext, ci *hazelca
 							status.SetText("Unable to calculate remaining duration and progress")
 						} else {
 							status.SetText(fmt.Sprintf(progressMsg, d.Type, d.Name))
-							status.SetProgress(cp)
+							status.SetProgress(cp / 100.0)
 							status.SetRemainingDuration(rt)
 						}
 					}
