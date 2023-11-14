@@ -22,10 +22,6 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
-var timeoutErr = fmt.Errorf("migration could not be completed: reached timeout while reading status: "+
-	"please ensure that you are using Hazelcast's migration cluster distribution and your DMT configuration points to that cluster: %w",
-	context.DeadlineExceeded)
-
 var migrationStatusNotFoundErr = fmt.Errorf("migration status not found")
 
 var migrationReportNotFoundErr = "migration report cannot be found: %w"
@@ -51,7 +47,7 @@ func createMigrationStages(ctx context.Context, ec plug.ExecContext, ci *hazelca
 			statusReaderLoop:
 				for {
 					if ctx.Err() != nil {
-						if errors.Is(err, context.DeadlineExceeded) {
+						if clcerrors.IsTimeout(ctx.Err()) {
 							execErr = timeoutErr
 							break statusReaderLoop
 						}

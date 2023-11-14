@@ -5,11 +5,15 @@ package migration
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
+
+var timeoutErr = errors.New("migration could not be completed: reached timeout while reading status: " +
+	"please ensure that you are using Hazelcast's migration cluster distribution and your DMT configuration points to that cluster")
 
 type MigrationInProgress struct {
 	MigrationID string `json:"id"`

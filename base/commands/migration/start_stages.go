@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
+	clcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-go-client"
@@ -103,6 +104,9 @@ func (st *StartStages) preCheckStage() func(context.Context, stage.Statuser[any]
 func waitForMigrationToStart(ctx context.Context, ci *hazelcast.ClientInternal, migrationID string) error {
 	for {
 		if ctx.Err() != nil {
+			if clcerrors.IsTimeout(ctx.Err()) {
+				return timeoutErr
+			}
 			return ctx.Err()
 		}
 		status, err := fetchMigrationStatus(ctx, ci, migrationID)
