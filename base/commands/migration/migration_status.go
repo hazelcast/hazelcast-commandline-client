@@ -33,10 +33,12 @@ func (s StatusCmd) Exec(ctx context.Context, ec plug.ExecContext) (err error) {
 		return err
 	}
 	defer func() {
-		maybePrintWarnings(ctx, ec, sts.ci, mID.(string))
-		finalizeErr := finalizeMigration(ctx, ec, sts.ci, mID.(string), ec.Props().GetString(flagOutputDir))
-		if err == nil {
-			err = finalizeErr
+		if sts.ci != nil {
+			maybePrintWarnings(ctx, ec, sts.ci, mID.(string))
+			finalizeErr := finalizeMigration(ctx, ec, sts.ci, mID.(string), ec.Props().GetString(flagOutputDir))
+			if err == nil {
+				err = finalizeErr
+			}
 		}
 	}()
 	mStages, err := createMigrationStages(ctx, ec, sts.ci, mID.(string))

@@ -65,10 +65,12 @@ In order to cancel the migration, use the 'cancel' command.
 		return err
 	}
 	defer func() {
-		maybePrintWarnings(ctx, ec, sts.ci, mID)
-		finalizeErr := finalizeMigration(ctx, ec, sts.ci, mID, ec.Props().GetString(flagOutputDir))
-		if err == nil {
-			err = finalizeErr
+		if sts.ci != nil {
+			maybePrintWarnings(ctx, ec, sts.ci, mID)
+			finalizeErr := finalizeMigration(ctx, ec, sts.ci, mID, ec.Props().GetString(flagOutputDir))
+			if err == nil {
+				err = finalizeErr
+			}
 		}
 	}()
 	sp := stage.NewFixedProvider(sts.Build(ctx, ec)...)
