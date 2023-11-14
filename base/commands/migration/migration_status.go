@@ -17,7 +17,7 @@ func (s StatusCmd) Unwrappable() {}
 func (s StatusCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("status")
 	cc.SetCommandGroup("migration")
-	help := "Get status of the data migration in progress"
+	help := "Get status of the data migration/estimation in progress"
 	cc.AddStringFlag(flagOutputDir, "o", "", false, "output directory for the migration report, if not given current directory is used")
 	cc.SetCommandHelp(help, help)
 	return nil
