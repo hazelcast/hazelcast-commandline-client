@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	clcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
@@ -33,11 +34,15 @@ func (StartCmd) Init(cc plug.InitContext) error {
 }
 
 func (StartCmd) Exec(ctx context.Context, ec plug.ExecContext) (err error) {
+	cmd.SetCancelMsg(" (Ctrl+C to exit) ")
 	ec.PrintlnUnnecessary("")
 	ec.PrintlnUnnecessary(`Hazelcast Data Migration Tool v5.3.0
 (c) 2023 Hazelcast, Inc.
 	
-Selected data structures in the source cluster will be migrated to the target cluster.	
+Selected data structures in the source cluster will be migrated to the target cluster.
+
+Exiting the application does not affect the migration progress.
+In order to cancel the migration, use the 'cancel' command.
 `)
 	conf := ec.GetStringArg(argDMTConfig)
 	if !paths.Exists(conf) {
