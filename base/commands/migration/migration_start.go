@@ -35,10 +35,6 @@ func (StartCmd) Init(cc plug.InitContext) error {
 
 func (StartCmd) Exec(ctx context.Context, ec plug.ExecContext) (err error) {
 	cmd.SetCancelMsg(" (Ctrl+C to exit) ")
-	ci, err := ec.ClientInternal(ctx)
-	if err != nil {
-		return err
-	}
 	ec.PrintlnUnnecessary("")
 	ec.PrintlnUnnecessary(`Hazelcast Data Migration Tool v5.3.0
 (c) 2023 Hazelcast, Inc.
@@ -64,22 +60,22 @@ In order to cancel the migration, use the 'cancel' command.
 	}
 	ec.PrintlnUnnecessary("")
 	mID := MigrationIDGeneratorFunc()
-	defer func() {
-		maybePrintWarnings(ctx, ec, ci, mID)
-		finalizeErr := finalizeMigration(ctx, ec, ci, mID, ec.Props().GetString(flagOutputDir))
-		if err == nil {
-			err = finalizeErr
-		}
-	}()
 	sts, err := NewStartStages(ec.Logger(), mID, conf)
 	if err != nil {
 		return err
 	}
+	defer func() {
+		maybePrintWarnings(ctx, ec, sts.ci, mID)
+		finalizeErr := finalizeMigration(ctx, ec, sts.ci, mID, ec.Props().GetString(flagOutputDir))
+		if err == nil {
+			err = finalizeErr
+		}
+	}()
 	sp := stage.NewFixedProvider(sts.Build(ctx, ec)...)
 	if _, err = stage.Execute(ctx, ec, any(nil), sp); err != nil {
 		return err
 	}
-	mStages, err := createMigrationStages(ctx, ec, ci, mID)
+	mStages, err := createMigrationStages(ctx, ec, sts.ci, mID)
 	if err != nil {
 		return err
 	}

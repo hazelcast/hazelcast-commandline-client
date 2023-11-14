@@ -27,9 +27,9 @@ func (st *StatusStages) Build(ctx context.Context, ec plug.ExecContext) []stage.
 			Func:        st.connectStage(ec),
 		},
 		{
-			ProgressMsg: "Finding migration in progress",
-			SuccessMsg:  "Found migration in progress",
-			FailureMsg:  "Could not find a migration in progress",
+			ProgressMsg: "Finding migration/estimation in progress",
+			SuccessMsg:  "Found migration/estimation in progress",
+			FailureMsg:  "Could not find a migration/estimation in progress",
 			Func:        st.findMigrationInProgress(ec),
 		},
 	}

@@ -17,17 +17,13 @@ func (s StatusCmd) Unwrappable() {}
 func (s StatusCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("status")
 	cc.SetCommandGroup("migration")
-	help := "Get status of the data migration in progress"
+	help := "Get status of the data migration/estimation in progress"
 	cc.AddStringFlag(flagOutputDir, "o", "", false, "output directory for the migration report, if not given current directory is used")
 	cc.SetCommandHelp(help, help)
 	return nil
 }
 
 func (s StatusCmd) Exec(ctx context.Context, ec plug.ExecContext) (err error) {
-	ci, err := ec.ClientInternal(ctx)
-	if err != nil {
-		return err
-	}
 	ec.PrintlnUnnecessary("")
 	ec.PrintlnUnnecessary(banner)
 	sts := NewStatusStages()
@@ -37,13 +33,13 @@ func (s StatusCmd) Exec(ctx context.Context, ec plug.ExecContext) (err error) {
 		return err
 	}
 	defer func() {
-		maybePrintWarnings(ctx, ec, ci, mID.(string))
-		finalizeErr := finalizeMigration(ctx, ec, ci, mID.(string), ec.Props().GetString(flagOutputDir))
+		maybePrintWarnings(ctx, ec, sts.ci, mID.(string))
+		finalizeErr := finalizeMigration(ctx, ec, sts.ci, mID.(string), ec.Props().GetString(flagOutputDir))
 		if err == nil {
 			err = finalizeErr
 		}
 	}()
-	mStages, err := createMigrationStages(ctx, ec, ci, mID.(string))
+	mStages, err := createMigrationStages(ctx, ec, sts.ci, mID.(string))
 	if err != nil {
 		return err
 	}

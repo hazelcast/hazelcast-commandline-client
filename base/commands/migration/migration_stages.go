@@ -86,7 +86,7 @@ func createMigrationStages(ctx context.Context, ec plug.ExecContext, ci *hazelca
 							status.SetText("Unable to calculate remaining duration and progress")
 						} else {
 							status.SetText(fmt.Sprintf(progressMsg, d.Type, d.Name))
-							status.SetProgress(cp)
+							status.SetProgress(cp / 100.0)
 							status.SetRemainingDuration(rt)
 						}
 					}
@@ -200,6 +200,9 @@ func saveReportToFile(ctx context.Context, ci *hazelcast.ClientInternal, migrati
 
 func WaitForMigrationToBeInProgress(ctx context.Context, ci *hazelcast.ClientInternal, migrationID string) error {
 	for {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
 		status, err := fetchMigrationStatus(ctx, ci, migrationID)
 		if err != nil {
 			if errors.Is(err, migrationStatusNotFoundErr) {

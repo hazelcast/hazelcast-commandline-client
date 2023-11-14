@@ -80,7 +80,7 @@ func (st *StartStages) startStage() func(context.Context, stage.Statuser[any]) (
 		if err = st.startQueue.Put(ctx, cb); err != nil {
 			return nil, fmt.Errorf("updating start Queue: %w", err)
 		}
-		childCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		childCtx, cancel := context.WithTimeout(ctx, time.Minute)
 		defer cancel()
 		if err = waitForMigrationToStart(childCtx, st.ci, st.migrationID); err != nil {
 			return nil, err
@@ -91,7 +91,7 @@ func (st *StartStages) startStage() func(context.Context, stage.Statuser[any]) (
 
 func (st *StartStages) preCheckStage() func(context.Context, stage.Statuser[any]) (any, error) {
 	return func(ctx context.Context, status stage.Statuser[any]) (any, error) {
-		childCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		childCtx, cancel := context.WithTimeout(ctx, time.Minute)
 		defer cancel()
 		if err := WaitForMigrationToBeInProgress(childCtx, st.ci, st.migrationID); err != nil {
 			return nil, fmt.Errorf("waiting for prechecks to complete: %w", err)
@@ -102,6 +102,9 @@ func (st *StartStages) preCheckStage() func(context.Context, stage.Statuser[any]
 
 func waitForMigrationToStart(ctx context.Context, ci *hazelcast.ClientInternal, migrationID string) error {
 	for {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
 		status, err := fetchMigrationStatus(ctx, ci, migrationID)
 		if err != nil {
 			if errors.Is(err, migrationStatusNotFoundErr) {
