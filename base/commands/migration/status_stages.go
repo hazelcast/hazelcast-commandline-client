@@ -18,8 +18,8 @@ func NewStatusStages() *StatusStages {
 	return &StatusStages{}
 }
 
-func (st *StatusStages) Build(ctx context.Context, ec plug.ExecContext) []stage.Stage[any] {
-	return []stage.Stage[any]{
+func (st *StatusStages) Build(ctx context.Context, ec plug.ExecContext) []stage.Stage[string] {
+	return []stage.Stage[string]{
 		{
 			ProgressMsg: "Connecting to the migration cluster",
 			SuccessMsg:  "Connected to the migration cluster",
@@ -35,22 +35,22 @@ func (st *StatusStages) Build(ctx context.Context, ec plug.ExecContext) []stage.
 	}
 }
 
-func (st *StatusStages) connectStage(ec plug.ExecContext) func(context.Context, stage.Statuser[any]) (any, error) {
-	return func(ctx context.Context, status stage.Statuser[any]) (any, error) {
+func (st *StatusStages) connectStage(ec plug.ExecContext) func(context.Context, stage.Statuser[string]) (string, error) {
+	return func(ctx context.Context, status stage.Statuser[string]) (string, error) {
 		var err error
 		st.ci, err = ec.ClientInternal(ctx)
 		if err != nil {
-			return nil, err
+			return "", err
 		}
-		return nil, nil
+		return "", nil
 	}
 }
 
-func (st *StatusStages) findMigrationInProgress(ec plug.ExecContext) func(context.Context, stage.Statuser[any]) (any, error) {
-	return func(ctx context.Context, status stage.Statuser[any]) (any, error) {
+func (st *StatusStages) findMigrationInProgress(ec plug.ExecContext) func(context.Context, stage.Statuser[string]) (string, error) {
+	return func(ctx context.Context, status stage.Statuser[string]) (string, error) {
 		m, err := findMigrationInProgress(ctx, st.ci)
 		if err != nil {
-			return nil, err
+			return "", err
 		}
 		return m.MigrationID, err
 	}
