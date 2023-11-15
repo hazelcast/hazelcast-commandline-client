@@ -27,21 +27,20 @@ func (s StatusCmd) Exec(ctx context.Context, ec plug.ExecContext) (err error) {
 	ec.PrintlnUnnecessary("")
 	ec.PrintlnUnnecessary(banner)
 	sts := NewStatusStages()
-	sp := stage.NewFixedProvider(sts.Build(ctx, ec)...)
-	mID, err := stage.Execute(ctx, ec, any(nil), sp)
+	mID, err := stage.Execute(ctx, ec, "", stage.NewFixedProvider(sts.Build(ctx, ec)...))
 	if err != nil {
 		return err
 	}
 	defer func() {
 		if sts.ci != nil {
-			maybePrintWarnings(ctx, ec, sts.ci, mID.(string))
-			finalizeErr := finalizeMigration(ctx, ec, sts.ci, mID.(string), ec.Props().GetString(flagOutputDir))
+			maybePrintWarnings(ctx, ec, sts.ci, mID)
+			finalizeErr := finalizeMigration(ctx, ec, sts.ci, mID, ec.Props().GetString(flagOutputDir))
 			if err == nil {
 				err = finalizeErr
 			}
 		}
 	}()
-	mStages, err := createMigrationStages(ctx, ec, sts.ci, mID.(string))
+	mStages, err := createMigrationStages(ctx, ec, sts.ci, mID)
 	if err != nil {
 		return err
 	}
