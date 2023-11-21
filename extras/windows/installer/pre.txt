@@ -1,4 +1,0 @@
-Welcome to the Hazelcast CLC Installation Wizard.
-The wizard will guide you through installing Hazelcast CLC on your computer.
-You can cancel the installation on any screen.
-Click on "Next" to continue with the installation.

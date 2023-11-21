@@ -1,1 +1,0 @@
-{"__key":10,"fieldBool":true,"fieldNull":null,"fieldNum":38.27,"fieldStr":"string"}

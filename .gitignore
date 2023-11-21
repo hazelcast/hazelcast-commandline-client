@@ -1,16 +1,3 @@
 .idea/
 .vscode/
-/docs/test/
-/docs/node_modules/
-build/
-.gradle/
-gradle/
-*.jar
-*.syso
-coverage.html
-coverage.out
-package-lock.json
 .DS_Store
-test.pid
-gradlew
-gradlew.bat
