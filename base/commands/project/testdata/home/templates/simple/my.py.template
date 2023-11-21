@@ -1,7 +1,0 @@
-def main():
-    print("key1: {{ .key1 }}")
-    print("another_key: {{ .another_key }}")
-    print("cluster address: {{ .cluster_address }}")
-
-if __name__ == "__main__":
-    main()

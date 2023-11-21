@@ -1,1 +1,0 @@
-{"__key":10,"this":{"fieldStr":"string","fieldNum":38.27,"fieldBool":true,"fieldNull":null,"fieldArray":[1,2,3],"fieldObj":{"inner":"foo"}}}
