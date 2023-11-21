@@ -22,8 +22,9 @@ We provide an easy to use install script for the following platforms:
 * macOS/arm64 (M1, M2, ...)
 
 You can install the latest version of CLC using:
-
-  curl https://hazelcast.com/clc/install.sh | bash
+```
+curl https://hazelcast.com/clc/install.sh | bash
+```
 
 ### Windows
 
