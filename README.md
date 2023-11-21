@@ -21,7 +21,7 @@ We provide an easy to use install script for the following platforms:
 * macOS/amd64 (Intel)
 * macOS/arm64 (M1, M2, ...)
 
-You can install the latest version of CLC using:
+You can install the latest GA version of CLC using:
 ```
 curl https://hazelcast.com/clc/install.sh | bash
 ```
