@@ -25,6 +25,10 @@ You can install the latest GA version of CLC using:
 ```
 curl https://hazelcast.com/clc/install.sh | bash
 ```
+You can install the latest BETA or preview version using:
+```
+curl https://hazelcast.com/clc/install.sh | bash -s -- --beta
+```
 
 ### Windows
 
