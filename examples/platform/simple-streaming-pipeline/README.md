@@ -16,7 +16,7 @@ gradle shadowJar
 ### Submit the Jet Job
 
 ```
-clc job submit ./build/libs/simple-streaming-pipeline-1.0-SNAPSHOT-all.jar
+clc job submit --name my-pipeline ./build/libs/simple-streaming-pipeline-1.0-SNAPSHOT-all.jar
 ```
 
 ### Observe the Map Updates
@@ -28,5 +28,5 @@ clc map -n my-map entry-set
 ### Clean Up
 
 ```
-clc job cancel ./build/libs/simple-streaming-pipeline-1.0-SNAPSHOT-all.jar
+clc job cancel --my-pipeline
 ```
