@@ -235,8 +235,10 @@ httpget () {
 }
 
 print_banner () {
+    local year
+    year=$(date +%Y)
     echo
-    echo "Hazelcast CLC Installer (c) 2023 Hazelcast, Inc."
+    echo "Hazelcast CLC Installer (c) 2023-$year Hazelcast, Inc."
     echo
 }
 
