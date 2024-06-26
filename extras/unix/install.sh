@@ -3,6 +3,8 @@
 # Hazelcast CLC Install script
 # (c) 2023 Hazelcast, Inc.
 
+DEFAULT_VERSION=v5.4.0
+
 set -eu -o pipefail
 
 check_ok () {
@@ -295,7 +297,8 @@ detect_last_release () {
         set -e
     fi
     if [[ "$v" == "" ]]; then
-        bye "could not determine the latest version"
+        v=$DEFAULT_VERSION
+        echo_note "Could not determine the latest version, downloading version $v"
     fi
     state_download_version="$v"
 }
